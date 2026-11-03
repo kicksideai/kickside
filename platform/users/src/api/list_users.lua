@@ -22,13 +22,15 @@ function M.process(limit: number, offset: number, options: any?): (number, any)
         return http.STATUS.INTERNAL_ERROR, { success = false, error = err }
     end
 
+    local user_ids = {}
+    for _, user in ipairs(users) do user_ids[#user_ids + 1] = user.user_id end
+    local memberships, groups_err = M._user_groups_repo.get_user_groups_batch(user_ids)
+    if groups_err then
+        log:error("failed to load user groups", { user_count = #user_ids, error = groups_err })
+        return http.STATUS.INTERNAL_ERROR, { success = false, error = groups_err }
+    end
     for _, user in ipairs(users) do
-        local groups_result, groups_err = M._user_groups_repo.get_user_groups(user.user_id)
-        if groups_err then
-            log:error("failed to load user groups", { user_id = user.user_id, error = groups_err })
-            return http.STATUS.INTERNAL_ERROR, { success = false, error = groups_err }
-        end
-        user.security_groups = groups_result and groups_result.groups or {}
+        user.security_groups = memberships[user.user_id] or {}
     end
 
     return http.STATUS.OK, { success = true, users = users, limit = limit, offset = offset, count = #users }

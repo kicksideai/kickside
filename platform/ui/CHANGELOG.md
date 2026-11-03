@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.7](https://github.com/kicksideai/kickside/compare/ui-v0.2.6...ui-v0.2.7) (2026-11-01)
+
+
+### Bug Fixes
+
+* **ui:** initialize legacy branding storage under the host project ([#283](https://github.com/kicksideai/kickside/issues/283)) ([cb43ab6](https://github.com/kicksideai/kickside/commit/cb43ab6aa21805838f168e0319cab5cfe9e5c44e))
+
+## [0.2.6](https://github.com/kicksideai/kickside/compare/ui-v0.2.5...ui-v0.2.6) (2026-10-30)
+
+
+### Bug Fixes
+
+* **ui:** expose scoped System tab discovery access ([#247](https://github.com/kicksideai/kickside/issues/247)) ([79afa1a](https://github.com/kicksideai/kickside/commit/79afa1aa9bfd48bef4c7beceb3081a3d79ed2754))
+
 ## [0.2.5](https://github.com/kicksideai/kickside/compare/ui-v0.2.4...ui-v0.2.5) (2026-10-28)
 
 

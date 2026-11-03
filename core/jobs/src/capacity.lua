@@ -62,7 +62,7 @@ local function new(runtime: {contract: any?, registry: any?}): table
     -- Missing workers remain unconfigured because dispatch owns target validation.
     function M.descriptor(worker_ref: any): (Descriptor?, error?)
         local reference = job_types.worker_reference(worker_ref)
-        if not reference then return nil, nil end
+        if not reference or reference.worker_ref == job_types.WAKE_CONTINUATION_TYPE then return nil, nil end
         local entry, lookup_err = registry.get(reference.target_id)
         if lookup_err then
             if errors.is(lookup_err, errors.NOT_FOUND) then return nil, nil end

@@ -120,7 +120,7 @@ function M.close_lost_runs(db: sql.DB, dbtype: string, requested_limit: integer?
     if policy_err then return 0, policy_err end
     if type(policy) ~= "table" then return 0, response_error("policy") end
     if requested_limit == nil then
-        local current, err = committed_policy.resolve_from(db)
+        local current, err = committed_policy.resolve()
         if err then return 0, err end
         requested_limit = current.worker_claim_batch
     end
@@ -163,7 +163,7 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
     if policy_err then return 0, policy_err end
     if type(policy) ~= "table" then return 0, response_error("policy") end
     if requested_limit == nil then
-        local current, err = committed_policy.resolve_from(db)
+        local current, err = committed_policy.resolve()
         if err then return 0, err end
         requested_limit = current.worker_claim_batch
     end

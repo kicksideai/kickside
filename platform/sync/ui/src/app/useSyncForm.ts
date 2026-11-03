@@ -38,6 +38,7 @@ export function useSyncForm(options: { managed: boolean }) {
   const title = ref('')
   const sinkId = ref('')
   const sinkConfig = ref<Record<string, unknown>>({})
+  const sinkInputSchema = ref<unknown>()
   const reconcileEnabled = ref(false)
   // A new sync starts running; a managed one keeps its live state.
   const enabled = ref(true)
@@ -47,6 +48,11 @@ export function useSyncForm(options: { managed: boolean }) {
   // form only carries it into the declaration.
   const triggerSpec = ref<Record<string, unknown>>({ v: 2 })
   const triggerValid = ref(false)
+  const sourceContext = computed(() => triggerValid.value && triggerSpec.value.source ? {
+    source: triggerSpec.value.source,
+    config: triggerSpec.value.config || {},
+    ...(triggerSpec.value.filter ? {filter: triggerSpec.value.filter} : {}),
+  } : undefined)
   const triggerError = ref('')
   // The selected source's item shape, reported alongside the spec. It rides the
   // input as output_schema, where it becomes the "Data Sync Finished" port's face.
@@ -78,6 +84,7 @@ export function useSyncForm(options: { managed: boolean }) {
   }
   function onSinkChange() {
     sinkConfig.value = {}
+    sinkInputSchema.value = undefined
     reconcileEnabled.value = false
   }
 
@@ -177,7 +184,7 @@ export function useSyncForm(options: { managed: boolean }) {
   // A sink endpoint's write input is always { content } unless the sink declares
   // a richer input_schema.
   const assistSinkSchemaObj = computed<{ properties?: Record<string, unknown>; required?: string[] } | null>(() =>
-    parseSchema(selectedSink.value?.input_schema)
+    parseSchema(sinkInputSchema.value ?? selectedSink.value?.input_schema)
     ?? (selectedSink.value ? { properties: { content: { type: 'string' } }, required: ['content'] } : null))
   const transformDetected = computed<{ needed: boolean; reason: string } | null>(() => {
     if (!sourceBinding.value || !selectedSink.value) return null
@@ -220,8 +227,17 @@ export function useSyncForm(options: { managed: boolean }) {
   })
   const assistValue = computed(() => (transform.value ? JSON.stringify(transform.value) : ''))
   function onAssistConfirmed(e: Event) {
-    const t = (e as CustomEvent).detail?.transform as SyncTransform | undefined
+    confirmTransform((e as CustomEvent).detail?.transform)
+  }
+  function confirmTransform(value: unknown) {
+    const t = value as SyncTransform | undefined
     if (t && typeof t.kind === 'string') transform.value = t
+  }
+  function onSinkBinding(value: unknown) {
+    if (!value || typeof value !== 'object') return
+    const binding = value as {input_schema?: unknown; transform?: unknown}
+    sinkInputSchema.value = binding.input_schema
+    confirmTransform(binding.transform)
   }
 
   const validationError = computed(() => {
@@ -285,12 +301,13 @@ export function useSyncForm(options: { managed: boolean }) {
 
   return {
     managed,
+    sourceContext,
     title, sinkId, sinkConfig, reconcileEnabled, triggerSeed, transform,
     sources, sinks, selectedSource, selectedSink, supportsReconcile,
     sinkItems, sinkPickerMeta, sinkConfigTag, sinkConfigSchema, sinkOptionsSchema, sinkHasOptions,
     transformDetected, canAssist, assistSourceSchema, assistSinkSchema, assistInputShape, assistHint, assistValue,
     validationError, assistSamples, sampleError,
-    onTriggerChange, onAssistConfirmed, onSinkChange, loadCatalog, seed, currentInput,
+    onTriggerChange, onAssistConfirmed, onSinkChange, onSinkBinding, loadCatalog, seed, currentInput,
   }
 }
 

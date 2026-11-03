@@ -4,11 +4,12 @@ namespace: kickside.settings.persist
 entries:
   - name: settings_writer
     kind: library.lua
-    meta: { comment: "Canonical writer — the only mutator. Validates, persists to the DB (secrets encrypted at rest), and updates the cache write-through; also owns the bulk DB read that warms the cache." }
+    meta: { comment: "Canonical writer — the only mutator. Validates, persists to the DB with a revision bump (secrets encrypted at rest), updates this node's cache, and publishes the revision to every node; also owns the bulk DB read that warms the cache." }
     source: file://writer.lua
-    modules: [sql, json, time, funcs, registry]
+    modules: [sql, json, time, funcs, registry, logger]
     imports:
       settings_defs: kickside.settings:settings_defs
       settings_cache: kickside.settings:settings_cache
       settings_secrets: kickside.settings:settings_secrets
       settings_types: kickside.settings:settings_types
+      settings_changes: kickside.settings:settings_changes

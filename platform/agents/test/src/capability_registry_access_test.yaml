@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: app
+entries:
+  - name: capability_registry_access_test
+    kind: function.lua
+    meta: {type: test, suite: capability_registry_access}
+    source: file://capability_registry_access_test.lua
+    method: run
+    modules: [security, funcs]
+    imports:
+      test: wippy.test:test
+      policy_composition: kickside.security:policy_composition

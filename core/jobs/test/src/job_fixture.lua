@@ -77,7 +77,7 @@ fixture.no_retention_schedule = {
 }
 
 -- The queue closure, parents first: kickside_job_run references kickside_job.
-local QUEUE_TABLES = { "kickside_job_policy_revision", "kickside_job_policy_override", "kickside_wake_fanout", "kickside_job_thread_cleanup", "kickside_job", "kickside_job_run",
+local QUEUE_TABLES = { "kickside_wake_fanout", "kickside_job_thread_cleanup", "kickside_job", "kickside_job_run",
     "kickside_job_worker", "kickside_job_worker_pulse" }
 
 local IDENTIFIER = "^[a-z_][a-z0-9_]*$"
@@ -260,10 +260,6 @@ function fixture.private_queue(queue_id: string): (sql.DB?, string?, error?)
     else
         rebuild_err = rebuild_sqlite(shared, queue)
     end
-    if not rebuild_err then
-        local _, seed_err = queue:execute("INSERT INTO kickside_job_policy_revision (id,revision) VALUES (1,0)", {})
-        rebuild_err = seed_err
-    end
     shared:release()
     if rebuild_err then
         queue:release()
@@ -278,7 +274,7 @@ end
 -- becomes due now. Returns the full leased row.
 function fixture.lease_own(db: sql.DB, dbtype: string, id: string?): (table?, error?)
     if not id or id == "" then return nil, failure("job fixture requires a job id") end
-    local policy, policy_err = committed_policy.resolve_from(db)
+    local policy, policy_err = committed_policy.resolve()
     if policy_err then return nil, policy_err end
     local now = lifecycle.now_string(dbtype)
     local due = dbtype == sql.type.POSTGRES and "COALESCE(scheduled_at, CAST(? AS TIMESTAMPTZ))"

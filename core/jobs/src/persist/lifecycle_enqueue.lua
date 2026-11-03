@@ -243,7 +243,7 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
     if owner_err then return nil, owner_err end
     local policy, policy_err
     if params.max_attempts == nil then
-        policy, policy_err = committed_policy.resolve_from(db_or_tx)
+        policy, policy_err = committed_policy.resolve()
     else
         policy, policy_err = cfg.policy()
     end

@@ -99,9 +99,8 @@ entries:
       comment: Supervised pool root; claims into idle slots and respawns every exited loop.
     source: file://worker_pool.lua
     method: main
-    modules: [sql, logger, time, channel, process, events, registry, funcs]
+    modules: [sql, logger, time, channel, process, events, registry]
     imports:
-      pool_applied: kickside.core.jobs.persist:pool_applied
       registry_version: kickside.core.jobs:registry_version
       proc_supervisor: kickside.core.jobs:proc_supervisor
       job_types: kickside.core.jobs:types
@@ -110,20 +109,20 @@ entries:
       reclaim: kickside.core.jobs.persist:reclaim
       claim_execution: kickside.core.jobs.persist:claim_execution
       jobs: kickside.core.jobs:jobs
-      policy_overrides: kickside.core.jobs.persist:policy_overrides
+      runtime_policy: kickside.core.jobs.policy:runtime
       retention_schedule: kickside.core.jobs.service:retention_schedule
       claim_refusal: kickside.core.jobs.service:claim_refusal
       job_class: kickside.core.jobs:job_class
       clock: kickside.core.jobs:clock
+      migration_runner: wippy.migration:runner
 
   - name: worker_pool
     kind: library.lua
     meta:
       comment: The pool root's sizing and respawn pacing.
     source: file://worker_pool.lua
-    modules: [sql, logger, time, channel, process, events, registry, funcs]
+    modules: [sql, logger, time, channel, process, events, registry]
     imports:
-      pool_applied: kickside.core.jobs.persist:pool_applied
       registry_version: kickside.core.jobs:registry_version
       proc_supervisor: kickside.core.jobs:proc_supervisor
       job_types: kickside.core.jobs:types
@@ -132,11 +131,12 @@ entries:
       reclaim: kickside.core.jobs.persist:reclaim
       claim_execution: kickside.core.jobs.persist:claim_execution
       jobs: kickside.core.jobs:jobs
-      policy_overrides: kickside.core.jobs.persist:policy_overrides
+      runtime_policy: kickside.core.jobs.policy:runtime
       retention_schedule: kickside.core.jobs.service:retention_schedule
       claim_refusal: kickside.core.jobs.service:claim_refusal
       job_class: kickside.core.jobs:job_class
       clock: kickside.core.jobs:clock
+      migration_runner: wippy.migration:runner
 
   - name: retention_schedule
     kind: library.lua

@@ -11,7 +11,12 @@ Durable leased-job engine: slots, claims, leases, supervised execution and wake 
   the contract-phase migration drops them; nothing writes them.
 
 A Hub update that changes the worker code upgrades the pool in place: the pool
-keeps its PID, slots and assignments and keeps claiming on the new code. A slot
+keeps its PID, slots and assignments. Before admitting new claims or replacement
+slots, the upgraded pool checks its own migrations through the migration
+framework. Pending migrations defer admission through the existing retry timer;
+registry and wake notices do not bypass that deadline. Running children remain
+alive, cancellation remains available, and retention waits for the schema too.
+Once ready, the pool stops reading migration status for that incarnation. A slot
 running an execution lets it finish under the code it started with, then exits
 and is replaced by a slot on the new code; idle slots are replaced at once. The
 drain of an in-flight execution is bounded by that execution's own declared
@@ -112,78 +117,49 @@ are published before any job row is locked.
 
 ## Live performance policy
 
-Jobs owns `kickside_job_policy_override`; it contains only admin overrides, as
-JSON values keyed by policy path. Administration clients use the Jobs library;
-Jobs does not depend on a settings module or a platform settings store:
+The editable policy paths are Settings definitions in namespace
+`kickside.core.jobs` (`kickside.core.jobs.policy.settings`):
+`worker.count_postgres` (default **4**, range 1–256), `worker.count_sqlite` (1–2),
+`worker.awaited_slots` (1–256), `worker.claim_batch` (1–256), `fairness.shares`
+(0–1000 per tier, nonzero total), `lease.timeout`, `lease.heartbeat`,
+`retry.max_attempts` (1–1000000), `retry.retry_after_ms` (1–86400000),
+`retry.max_delay_ms` (1000–86400000), and `proc.max_execution` (default **10m**).
 
-- `jobs.get_policy()` returns `{ policy, fields, revision }`. Each editable field includes
-  `value`, `source` (`default`, `host`, `admin`), `default`, `fallback`, unit and
-  numeric bounds. The registry declaration keeps shipped defaults in `defaults`
-  and explicit host assignments in `meta`; a host assignment remains Host even when equal
-  to its default.
-- `jobs.set_policy_overrides(values, unset?)` atomically sets a path/value map
-  and removes paths in `unset`. It requires `jobs.policy.write` on
-  `kickside.core.jobs:policy`, even for a direct library caller. Invalid writes
-  return native `errors.INVALID` errors and persist nothing. Removing an Admin
-  override reveals the Host value when configured, otherwise the Default.
-  A successful commit returns `committed = true`, the committed `revision`, and
-  the authoritative fields without awaiting the owner. Empty writes are invalid
-  and never advance the revision. A nudge transport failure retains the committed
-  fields in a native error response.
-- `jobs.get_pool_state()` reads the Jobs-owned applied-state row and durable
-  queued/running counts by tier. It returns `applied_revision`, last recorded
-  total/general/awaited slots, database, `updated_at`, and `apply_error` (a native
-  error envelope or null). Busy/idle counts use the running aggregation. Queued
-  includes future scheduled work and excludes parked slots. This is durable
-  applied state, not a process-liveness probe.
+Precedence is administrator override, then the host assignment in
+`kickside.core.jobs:policy` meta, then the shipped default in its `defaults`.
+Settings stores only overrides; Jobs reads the keys `get_namespace` reports as
+`overridden`, so a value without an override follows the host configuration
+rather than the Settings default. Each override is validated by
+`kickside.core.jobs.policy:validate`, which resolves the whole policy with the
+candidate: durations are positive, the lease timeout is a whole number of
+seconds and at least 1s, and the heartbeat is strictly shorter. Edits that move
+both lease values may need the heartbeat lowered before the timeout.
 
-The editable paths are `worker.count_postgres` (default **4**, range 1–256),
-`worker.count_sqlite` (1–2), `worker.awaited_slots` (1–256),
-`worker.claim_batch` (1–256), `fairness.shares` (0–1000 per tier, nonzero total),
-`lease.timeout`, `lease.heartbeat`, `retry.max_attempts` (1–1000000),
-`retry.retry_after_ms` (1–86400000), `retry.max_delay_ms` (1000–86400000), and
-`proc.max_execution` (default **10m**). All flow through `config.resolve`. Durations are positive;
-lease timeout is at least one whole second and heartbeat is strictly shorter.
+Without Settings, Jobs runs on its registry and host policy.
 
-Overrides and a monotonically increasing revision commit in one SQL transaction.
-A write nudges the consistent singleton owner and returns immediately. The owner
-checks the committed revision on start and every in-place handover; nudges
-accelerate discovery. It reads override
-values once per new revision and resolves an immutable runtime snapshot without
-editor metadata. A failed read or resolution leaves the owner and its busy
-children running on the last good snapshot. Existing events and deadlines retry
-pending application; there is no new retry timer. Registry-only readers keep their
-registry-version cache; they never read the override table or a memory store.
-All out-of-pool readers of editable values use the same committed-policy
-resolver on their existing SQL handle. Enqueue reads the committed attempt
-default only when no job-specific attempt limit is supplied. Recovery resolves
-its default batch limit once, outside its per-row loop.
-There is no policy cache, bootloader, polling or publication retry loop.
-
-The existing wake/idle/registry event loop applies capacity, batch and fairness
-changes. It adds no watcher, process or polling timer. A smaller pool stops
+The singleton pool owner subscribes to Settings change notifications before its
+first policy read. Each notification, registry commit and startup re-resolves the
+policy from the current overrides and applies it through the existing
+wake/idle/registry loop: there is no policy timer, revision table or polling. A
+failed read or resolution leaves the owner and its busy workers on the last good
+policy and retries on the owner's existing retry deadline. A smaller pool stops
 assigning surplus slots, lets busy slots finish, then retires them. An in-place
-upgrade preserves those retiring assignments and the last good policy snapshot.
+upgrade hands the live slots, their assignments and the last good policy to the
+new code.
+
+Out-of-pool readers (enqueue attempt defaults and recovery batch limits) resolve
+the same committed policy through `kickside.core.jobs.policy:settings_overrides`,
+which reads Settings under its own policy, so callers need no Settings access.
+Fixed registry reads (`config.policy`) never include overrides.
+
 Every claim entry point persists its execution snapshot in `kickside_job.lease_policy`
 and passes it with the assignment. Dispatch, heartbeats, completion, retries,
 cancellation fences and reclaim preserve that snapshot after database reloads;
 live edits cannot shorten a running execution's renewal or termination window.
 Migration 24 leaves pre-upgrade running rows with NULL `lease_policy`. Those jobs
-started before admin overrides existed, so the shared execution-policy reader
-resolves NULL to the cached registry/host policy on every execution path. It never
-guesses timing from heartbeat/deadline timestamps or adopts later admin overrides.
-New executions use the new lease pair and execution ceiling;
-new one-shot jobs inherit the new attempt limit. Retry delays travel with the claim and apply when that execution fails. Job-specific attempt/execution limits retain precedence.
-
-After resizing and activating the snapshot, the owner writes
-`kickside_job_pool_applied` and sends a realtime wakeup. Apply failure records a
-native error envelope while preserving the last good snapshot and applied
-revision. Status reads only SQL; there is no HTTP-to-owner request/reply,
-publication watermark or latched delivery error. Coalesced
-`kickside.jobs.performance.changed` invalidations run asynchronously off dispatch.
-A delivery error is reported to the process log; a newer pending event still
-sends its wakeup and otherwise the next owner event retries. The optional
-`kickside.core.jobs.performance:realtime` requirement is unbound by default,
-so backend-only hosts need no realtime implementation. Hosts that need realtime
-notifications bind their chosen implementation explicitly. Jobs grants contract-open access only to the
-selected resource and never depends on its platform.
+started before live policy existed, so the shared execution-policy reader
+resolves NULL to the registry/host policy on every execution path. It never
+guesses timing from heartbeat/deadline timestamps or adopts later overrides.
+New executions use the new lease pair and execution ceiling; new one-shot jobs
+inherit the new attempt limit. Retry delays travel with the claim and apply when
+that execution fails. Job-specific attempt/execution limits retain precedence.

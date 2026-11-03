@@ -33,7 +33,7 @@ entries:
         path: .meta.target_db
       - entry: kickside.core.jobs.migrations:22_capacity_groups
         path: .meta.target_db
-      - entry: kickside.core.jobs.migrations:24_policy_overrides
+      - entry: kickside.core.jobs.migrations:24_lease_policy
         path: .meta.target_db
       - entry: kickside.core.jobs.migrations:23_jobs_updated_at
         path: .meta.target_db
@@ -59,7 +59,6 @@ entries:
         count_postgres: 4
         awaited_slots: 1
         claim_batch: 16
-        policy_check_interval: 30s
       lease:
         timeout: 45s
         heartbeat: 10s
@@ -264,7 +263,6 @@ entries:
       - logger
     imports:
       runtime_policy: kickside.core.jobs.policy:runtime
-      pool_state: kickside.core.jobs.persist:pool_state
       config: kickside.core.jobs:config
       lifecycle: kickside.core.jobs.persist:lifecycle
       lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel

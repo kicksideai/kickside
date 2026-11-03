@@ -28,8 +28,8 @@ local function response_error(field: string): error
         details = {code = "job_claim_response", field = field}})
 end
 
-local function read_committed(db: any): (table?, error?)
-    local policy, err = committed_policy.resolve_from(db)
+local function read_committed(): (table?, error?)
+    local policy, err = committed_policy.resolve()
     if err then return nil, err end
     if type(policy) ~= "table" then return nil, response_error("policy") end
     return policy, nil
@@ -140,7 +140,7 @@ local available_concurrency_key = eligibility.available_key
 function claim.lease_row(tx: sql.Transaction, dbtype: string, id: string, token: string,
         lease_until: string, now: string, captured: string?): (table?, error?)
     if not captured then
-        local policy, policy_err = read_committed(tx)
+        local policy, policy_err = read_committed()
         if policy_err then return nil, policy_err end
         local encode_err
         captured, encode_err = json.encode(cfg.capture(policy))
@@ -183,7 +183,7 @@ end
 -- Legacy single claims retain their existing one-row path. Capacity-declared
 -- rows re-enter the shared batch path, which reserves their group resources.
 function claim.claim_job(db: sql.DB, dbtype: string): (table?, error?)
-    local policy, policy_err = read_committed(db)
+    local policy, policy_err = read_committed()
     if policy_err then return nil, policy_err end
     local captured, capture_err = json.encode(cfg.capture(policy))
     if capture_err then return nil, capture_err end
@@ -439,7 +439,7 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
         return nil, (errors.new({ message = "invalid claim capacity reservation", kind = errors.INVALID }) :: error)
     end
     local policy, policy_err = reservation and reservation.policy, nil
-    if not policy then policy, policy_err = read_committed(db) end
+    if not policy then policy, policy_err = read_committed() end
     if policy_err then return nil, policy_err end
     local captured, capture_err = json.encode(cfg.capture(policy))
     if capture_err then return nil, capture_err end

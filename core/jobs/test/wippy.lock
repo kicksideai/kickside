@@ -14,6 +14,8 @@ modules:
       version: 0.1.61
     - name: kickside/realtime-dispatch
       version: 0.0.0
+    - name: kickside/settings
+      version: 0.0.0
     - name: wippy/bootloader
       version: 0.3.18
       hash: c7e71b358539b450b49b55e725f60f2dac8218e1c596cf3a473ce71e36b10a9b

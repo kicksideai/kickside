@@ -17,7 +17,6 @@ entries:
       component: kickside.component:component
       canonical_json: kickside.contract:canonical_json
       source_ref_builder: kickside.core.provenance:source_ref
-      thread_ingest: kickside.knowledge.injection:thread_ingest
     method: handle
 
   - name: kb_memory_recall

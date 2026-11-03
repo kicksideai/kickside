@@ -68,8 +68,10 @@ entries:
       private: true
       comment: KB injection primary-thread projection and event helpers.
     source: file://thread_ingest_status.lua
+    modules: [registry]
     imports:
       thread_ingest_base: kickside.knowledge.injection:thread_ingest_base
+      engines: kickside.knowledge:engines
 
   - name: thread_ingest
     kind: library.lua

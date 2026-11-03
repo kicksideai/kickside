@@ -55,5 +55,5 @@ function M.database(): any
     return db
 end
 M.capture = config.capture
-M.resolve_from = M.policy
+M.resolve = M.policy
 return M

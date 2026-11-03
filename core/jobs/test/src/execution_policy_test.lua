@@ -12,15 +12,15 @@ local cancel = require("cancel")
 local reclaim = require("reclaim")
 local fence = require("fence")
 local worker = require("worker")
-local store = require("store")
+local admin = require("policy_settings_fixture")
 local fixture = require("job_fixture")
 local DB = "app:private_queue_claim_policy"
 local db, dialect
+local EDITED = {"lease.timeout", "lease.heartbeat", "retry.retry_after_ms", "retry.max_delay_ms",
+    "proc.max_execution", "worker.claim_batch", "fairness.shares"}
 local function edit(values)
-    local entry = assert(cfg.declaration())
-    return assert(store.write(DB, values, {}, function(overrides)
-        return cfg.effective(entry.meta, entry.data.defaults, overrides)
-    end))
+    local refusal = admin.set(values)
+    assert(refusal == nil, refusal)
 end
 local function row(job)
     return assert(db:query("SELECT * FROM kickside_job WHERE id=$1", {job.id}))[1]
@@ -58,7 +58,10 @@ return {run = test.run_cases(function()
                 ["proc.max_execution"] = "30m", ["worker.claim_batch"] = 3,
                 ["fairness.shares"] = {live = 0, backfill = 1, maintenance = 0}})
         end)
-        test.after_each(function() if db then db:release(); db = nil end end)
+        test.after_each(function()
+            if db then db:release(); db = nil end
+            admin.reset(EDITED)
+        end)
         for _, single in ipairs({true, false}) do
             test.it("claims committed timing and persists its snapshot/" .. tostring(single), function()
                 local job = claimed("entry", single)
@@ -96,13 +99,7 @@ return {run = test.run_cases(function()
         test.it("keeps the actual heartbeat process on its captured interval and timeout", function()
             test.is_nil(fixture.supervise_as_loop())
             local shared = assert(sql.get(cfg.db_id()))
-            local original = assert(store.read_from(shared)).values
-            local entry = assert(cfg.declaration())
-            local function write(values, unset)
-                return assert(store.write(cfg.db_id(), values, unset or {}, function(overrides)
-                    return cfg.effective(entry.meta, entry.data.defaults, overrides)
-                end))
-            end
+            local function write(values) edit(values) end
             local pid, id, before, after, seconds
             local ok, cause = pcall(function()
                 write({["lease.timeout"] = "10s", ["lease.heartbeat"] = "100ms"})
@@ -122,11 +119,6 @@ return {run = test.run_cases(function()
             end)
             local stop_err = pid and lease.stop(pid) or nil
             if id then assert(shared:execute("DELETE FROM kickside_job WHERE id=$1", {id})) end
-            local values, unset = {}, {}
-            for _, key in ipairs({"lease.timeout", "lease.heartbeat"}) do
-                if original[key] ~= nil then values[key] = original[key] else unset[#unset + 1] = key end
-            end
-            write(values, unset)
             shared:release()
             test.is_true(ok, tostring(cause))
             test.is_nil(stop_err)
@@ -149,10 +141,10 @@ return {run = test.run_cases(function()
                 assert(db:execute("UPDATE kickside_job SET lease_until=$1 WHERE id=$2",
                     {lifecycle.future_string(dialect, -1), job.id}))
             end
-            local original, reads = committed_policy.resolve_from, 0
-            committed_policy.resolve_from = function(tx) reads = reads + 1; return original(tx) end
+            local original, reads = committed_policy.resolve, 0
+            committed_policy.resolve = function() reads = reads + 1; return original() end
             local ok, count, err = pcall(reclaim.reclaim_terminated, db, dialect, nil, function() return true, nil end)
-            committed_policy.resolve_from = original
+            committed_policy.resolve = original
             test.is_true(ok)
             test.is_nil(err)
             test.eq(count, 0)

@@ -4,6 +4,7 @@ import { subscribeComponentMeta, type ComponentMetaEvent } from '@widgets/app/co
 import { errMsg } from '@widgets/app/errMsg'
 import { KNOWLEDGE_META_FIELD_TYPES } from './meta'
 import type { Engine, KbDetail, KnowledgeBase, ViewMode } from './knowledge.types.ts'
+import type { Events } from '../constants.ts'
 
 interface KnowledgeDetailOptions {
   detail: Ref<KbDetail | null>
@@ -13,7 +14,7 @@ interface KnowledgeDetailOptions {
   engineFor: (kbType: string) => Engine | undefined
   applyComponentMetaEvent: (id: string, payload: ComponentMetaEvent) => void
   route: ComputedRef<string | undefined>
-  navigate: (sub: string) => void
+  navigate: (request: Events['navigate']) => void
   loadEngines: () => Promise<void>
 }
 
@@ -159,6 +160,12 @@ export function useKnowledgeDetail({ detail, detailUnsub, kbs, engines, engineFo
     try { detailEl?.setAttribute('config', detailConfigJson()) } catch { /* noop */ }
   }
 
+  function backDetail() {
+    const id = detail.value?.id
+    if (!id || !innerRoute.value) { closeDetail(); return }
+    navigate({ path: id, back: { within: id } })
+  }
+
   function closeDetail(pushUrl = true) {
     detailRequestSeq++
     unmountDetailWc()
@@ -202,7 +209,7 @@ export function useKnowledgeDetail({ detail, detailUnsub, kbs, engines, engineFo
 
   return {
     detailLoading, detailError, detailHost, detailManageTag, detailViews, detailHasViews,
-    detailView, innerRoute, setDetailView, openDetail, refreshOpenDetail, closeDetail,
+    detailView, innerRoute, setDetailView, openDetail, refreshOpenDetail, closeDetail, backDetail,
     applyRoute, pushRoute, unmountDetailWc,
   }
 }

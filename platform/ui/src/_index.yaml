@@ -86,6 +86,7 @@ entries:
 
   - name: legacy_branding_fs
     kind: fs.directory
+    base: project
     directory: ./branding
     auto_init: true
 

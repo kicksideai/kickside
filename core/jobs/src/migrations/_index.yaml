@@ -89,15 +89,15 @@ entries:
       lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
     method: migrate
 
-  - name: 24_policy_overrides
+  - name: 24_lease_policy
     kind: function.lua
     meta:
-      comment: "Creates Jobs-owned policy overrides, revisions and durable execution snapshots on both SQL engines."
+      comment: "Adds the per-claim execution policy snapshot column on both SQL engines."
       type: migration
       target_db: ""
       depends_on: [ns:wippy.migration]
       timestamp: "2026-10-30T00:00:24Z"
-    source: file://24_policy_overrides.lua
+    source: file://24_lease_policy.lua
     imports:
       migration: wippy.migration:migration
     method: migrate

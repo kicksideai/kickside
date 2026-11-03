@@ -23,6 +23,7 @@ workspace:
     kickside/contract: ../../contract
     kickside/core: ../../core
     kickside/execution: ../../execution
+    kickside/settings: ../../../platform/settings
 vars:
   sqlite_path: ./.wippy/jobs-test.sqlite
   pg_host: localhost

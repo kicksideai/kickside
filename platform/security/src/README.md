@@ -63,10 +63,17 @@ scope catalog continues to merge DB selections, role descriptors, and built-in g
 
 The projector writes Security-owned custom-scope descriptors and derived routing
 entries in `kickside.security.projection`. It never updates another owner's
-`security.scope` fields, including `groups`, `policies`, or metadata. Each
-routing entry holds only local source IDs and group references; runtime follows
-those references live with bounded cycle detection. The catalog's derived
-policy list is display data and is not an authorization source.
+`security.scope` fields, including `groups`, `policies`, or metadata. Live
+resolution reads group compositions and native source policies from one registry
+snapshot, including before the first projection and during module updates.
+Composed groups contribute source policy IDs rather than native compatibility
+bindings. Live resolution drops removed composition grants while retaining native
+source grants, even before catalog reconciliation. Nested references retain
+bounded cycle detection. An empty catalog descriptor does not define executable
+authority without a current composition, native grant, or enabled stored scope.
+Legacy group sets use their persisted source references. Resolution leaves the
+registry unchanged. The catalog's derived policy list is display data and is not
+an authorization source.
 
 Users calls `kickside.security.runtime:resolve_groups`. This Security-owned
 function carries its own configured database and registry authority. Users

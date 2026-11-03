@@ -50,26 +50,6 @@ local function scope_entry_id(row: any): string
     return entry_id(tostring((row :: any).slug))
 end
 
-local function native_group_policies(snap)
-    local native, read_err = snap:find({[".kind"] = consts.POLICY_KIND})
-    if read_err then return nil, read_err end
-    local effective = {}
-    for _, policy in ipairs(native) do
-        local meta = policy.meta or {}
-        -- Security's delegation declarations are source grants too. Exclude
-        -- only derived entries, using the same ownership markers as policy_groups.
-        local projected = meta.managed_by == consts.MANAGED_BY
-            and (meta.scope_metadata == true or meta.scope_projection_policy ~= nil)
-        if not projected then
-            for _, group in ipairs((policy.data or {}).groups or {}) do
-                effective[group] = effective[group] or {}
-                effective[group][tostring(policy.id)] = true
-            end
-        end
-    end
-    return effective, nil
-end
-
 local function desired_entry(row: any, policies: any): any
     return {
         id = scope_entry_id(row),
@@ -128,43 +108,9 @@ local function compute(snap: any, fence_groups: any?): (any?, error?)
     local direct_policies = {}
     local scope_sources = {}
 
-    local declarations, declarations_err = snap:find({
-        [".kind"] = "registry.entry", ["meta.type"] = "kickside.security.group_composition",
-    })
-    if declarations_err then return nil, declarations_err end
-    for _, declaration in ipairs(declarations or {}) do
-        local data = declaration.data
-        local targets, target_err = composition.group_ids(data, tostring(declaration.id))
-        if target_err then return nil, target_err end
-        local selected = {}
-        for _, id in ipairs(data.policies or {}) do selected[#selected + 1] = id end
-        if data.select ~= nil then
-            if type(data.select) ~= "table" then
-                return nil, (errors.new({kind = errors.INVALID, retryable = false, message = "group composition select must be a registry filter: " .. tostring(declaration.id)}) :: error)
-            end
-            local filter = {}
-            for key, value in pairs(data.select) do filter[key] = value end
-            filter[".kind"] = consts.POLICY_KIND
-            local matches, matches_err = snap:find(filter)
-            if matches_err then return nil, matches_err end
-            for _, policy in ipairs(matches or {}) do selected[#selected + 1] = tostring(policy.id) end
-        end
-        local policies, policy_err = composition.expand_available(selected, snapshot_get)
-        if policy_err then return nil, policy_err end
-        for _, group in ipairs(targets) do
-            group_sources[group] = group_sources[group] or {}
-            local included = {}
-            for _, source in ipairs(group_sources[group]) do included[source] = true end
-            for _, source in ipairs(data.groups or {}) do
-                if not included[source] then
-                    group_sources[group][#group_sources[group] + 1] = source
-                    included[source] = true
-                end
-            end
-            group_policies[group] = group_policies[group] or {}
-            for _, id in ipairs(policies) do group_policies[group][#group_policies[group] + 1] = id end
-        end
-    end
+    local declared, declared_err = composition.group_compositions(snap)
+    if declared_err then return nil, declared_err end
+    group_policies, group_sources = declared.policies, declared.groups
 
     for group, policies in pairs(group_policies) do
         direct_policies[group] = {}
@@ -195,7 +141,7 @@ local function compute(snap: any, fence_groups: any?): (any?, error?)
         group_sources[set.scope_name] = set.groups
         group_rows[set.scope_name] = {slug = set.scope_name:match(":(.+)$"), internal = true, label = "Group set"}
     end
-    local native, native_err = native_group_policies(snap)
+    local native, native_err = composition.native_group_policies(snap)
     if not native then return nil, native_err end
     local effective, slug_sets = {}, {}
     local affected = {}
@@ -461,7 +407,7 @@ local function validate_groups(groups)
     if snapshot_err then return nil, snapshot_err end
     if not snap then return nil, (errors.new({kind = errors.UNAVAILABLE, retryable = true,
         message = "group validation snapshot unavailable"}) :: error) end
-    local known, known_err = native_group_policies(snap)
+    local known, known_err = composition.native_group_policies(snap)
     if known_err then return nil, known_err end
     local declarations, declaration_err = snap:find({[".kind"] = "registry.entry",
         ["meta.type"] = "kickside.security.group_composition"})

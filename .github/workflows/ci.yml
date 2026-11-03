@@ -659,6 +659,7 @@ jobs:
             mkdir -p "$TMPDIR"
             make install MOD=knowledge
             make build MOD=knowledge
+            make -C platform/knowledge test-ui
             make -C platform/knowledge lockrefresh
             cd platform/knowledge/test
             mkdir -p .wippy
@@ -1592,6 +1593,7 @@ jobs:
             mkdir -p "$TMPDIR"
             npm ci --prefix app --no-audit --no-fund
             python3 -m unittest discover -s app/test -p test_documentation_sources.py
+            python3 -m unittest discover -s app/test -p test_module_tree.py
             make -C app lockrefresh
             cd app/test
             mkdir -p .wippy
@@ -1611,6 +1613,7 @@ jobs:
             mkdir -p "$TMPDIR"
             npm ci --prefix app --no-audit --no-fund
             python3 -m unittest discover -s app/test -p test_documentation_sources.py
+            python3 -m unittest discover -s app/test -p test_module_tree.py
             make -C app lockrefresh
             cd app/test
             databases=()
@@ -1648,7 +1651,7 @@ jobs:
         node-version: '22'
     - uses: kicksideai/.github/actions/setup-wippy@5401fa65bed7d8648125957520e94206ed1ffd0b
       with:
-        version: 0.3.55a
+        version: 0.3.56a
         hub-url: https://hub.wippy.ai
     - name: Check out components module sources
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -1696,7 +1699,7 @@ jobs:
         node-version: '22'
     - uses: kicksideai/.github/actions/setup-wippy@5401fa65bed7d8648125957520e94206ed1ffd0b
       with:
-        version: 0.3.55a
+        version: 0.3.56a
         hub-url: https://hub.wippy.ai
     - name: Test missing and incomplete application bundles
       run: node --test app/scripts/check-app-bundle.test.mjs
@@ -1707,3 +1710,5 @@ jobs:
         set -euo pipefail
         version=$(jq -er '.app' .release-please-manifest.json)
         make -C app release-check VERSION="$version" WIPPY_BIN=wippy
+    - name: Test application surface navigation
+      run: npm test --prefix app/frontend/applications/main

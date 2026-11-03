@@ -9,6 +9,7 @@ entries:
     kind: registry.entry
     meta:
       type: kickside.core.threads.event
+      output_kind: kickside.knowledge.injection:injection_kind
     schema:
       $schema: https://json-schema.org/draft/2020-12/schema
       type: object

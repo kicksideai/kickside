@@ -337,7 +337,8 @@ local function define_tests(register)
             test.eq(meta.client_trace, "saved-session-trace")
             test.eq(meta.sso_provider, "fixture-provider")
             test.eq(meta.scope_id, minted.actor:meta().scope_id)
-            test.eq(meta.login_time, minted.actor:meta().login_time)
+            test.not_nil(meta.session.login_time)
+            test.eq(meta.session.login_time, minted.actor:meta().session.login_time)
             test.eq(meta.user_id, uid)
             local has_expansion = false
             for _, group in ipairs(meta.security_groups) do

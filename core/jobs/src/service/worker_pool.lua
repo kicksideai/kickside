@@ -4,8 +4,8 @@ local proc_supervisor = require("proc_supervisor")
 -- execution settles (its replacement loads the new code), when its heartbeat
 -- dies, or when it cannot start (database, dialect, policy); the root respawns
 -- every exited slot. On OUTDATED the root upgrades in place and hands its slots
--- and their assignments to the new code, so executions keep running and new
--- claims continue; it drains and ends on its own cancel.
+-- and their assignments to the new code. Executions keep running while new
+-- claims wait for this code's Jobs migrations; it drains on its own cancel.
 -- A slot that exits sooner than
 -- LOOP_RESPAWN_DELAY_MS after its spawn waits that long before its replacement
 -- starts, so a loop that cannot start retries at a steady pace.
@@ -29,9 +29,31 @@ local retention_schedule = require("retention_schedule")
 local claim_refusal = require("claim_refusal")
 local job_class = require("job_class")
 local clock = require("clock")
-local overrides = require("policy_overrides")
-local funcs = require("funcs")
-local applied = require("pool_applied")
+local migration_runner = require("migration_runner")
+local runtime_policy = require("runtime_policy")
+
+-- Registry publication can replace this pool before the install's migrations
+-- run. The migration owner supplies readiness; Jobs never executes migrations.
+local function schema_ready(): (boolean, error?)
+    local rows, err = migration_runner.setup(cfg.db_id()):find_migrations()
+    if err or not rows then
+        return false, errors.new({kind = errors.UNAVAILABLE, retryable = true,
+            message = "Jobs migration status unavailable: " .. tostring(err)})
+    end
+    local found = false
+    local prefix = "kickside.core.jobs.migrations:"
+    for _, row in ipairs(rows) do
+        if string.sub(tostring(row.id), 1, #prefix) == prefix then
+            found = true
+            if row.applied ~= true then return false, nil end
+        end
+    end
+    if not found then
+        return false, errors.new({kind = errors.INTERNAL, retryable = false,
+            message = "Jobs migrations are absent from the configured database"})
+    end
+    return true, nil
+end
 
 local function construct(dependencies: any): any
 local pool = {}
@@ -81,6 +103,10 @@ local pool_claim_execution = dependencies.claim_execution or claim_execution
 local pool_jobs = dependencies.jobs or jobs
 local pool_retention_schedule = dependencies.retention_schedule or retention_schedule
 local pool_job_class = dependencies.job_class or job_class
+local pool_schema_ready = dependencies.schema_ready or schema_ready
+-- Admin policy overrides live in Settings; a host without Settings runs on its
+-- registry and host policy.
+local pool_settings = dependencies.settings
 local pool_names = pool_process.registry
 
 local function unavailable(message: string, cause: error?): error
@@ -177,6 +203,20 @@ function pool.main(handover: any?): (any?, error?)
         return nil, unavailable("job worker pool registry version unavailable", version_err)
     end
     local current_version = version
+    -- Subscribe before the first policy read so a change committed in between
+    -- still arrives. Nil means Settings is not installed.
+    local settings_ch: any = nil
+    if pool_settings then
+        local changes, changes_err = pool_settings.subscribe()
+        if changes_err then
+            pool_names.unregister(cfg.POOL_NAME, process.registry.CONSISTENT)
+            subscription:close()
+            pool_process.unlisten(idle_ch)
+            pool_process.unlisten(wake_ch)
+            return nil, unavailable("job worker pool settings subscription unavailable", changes_err)
+        end
+        settings_ch = changes
+    end
     local delay_ns = (job_types.LOOP_RESPAWN_DELAY_MS :: number) * 1e6
     logger:info("job_worker pool root pid=" .. pid .. " detecting configured loops")
 
@@ -186,11 +226,12 @@ function pool.main(handover: any?): (any?, error?)
     local children: { [string]: boolean } = {}
     local retiring: { [string]: boolean } = {}
     local draining = false
+    local admitted = false
+    local waiting_for_schema = false
     local started_ns: { [integer]: number } = {}
     local due_ns: { [integer]: number } = {}
     local idle: { [string]: string } = {}
     local assigned: { [string]: table } = {}
-    local state_dirty = true
     local assignment_epoch: { [string]: integer } = {}
     local deadline_ns: number? = nil
     local deadline_kind: string? = nil
@@ -243,7 +284,6 @@ function pool.main(handover: any?): (any?, error?)
         local epoch = value.epoch
         if retiring[worker_id] then
             if type(epoch) == "number" and epoch == assignment_epoch[worker_id] and value.kind == "idle" then
-                state_dirty = true
                 assigned[worker_id] = nil
                 retire_idle(worker_id)
             end
@@ -253,7 +293,6 @@ function pool.main(handover: any?): (any?, error?)
             or type(epoch) ~= "number" or epoch % 1 ~= 0
             or epoch ~= assignment_epoch[worker_id] then return false end
         if value.kind == "idle" then
-            state_dirty = true
             assigned[worker_id] = nil
             if type(value.version) == "string" and value.version ~= "" then
                 idle[worker_id] = value.version
@@ -262,81 +301,44 @@ function pool.main(handover: any?): (any?, error?)
         return idle[worker_id] ~= nil
     end
 
-    local revision = -1
-    local owner_values: table = {}
-    local candidate_revision = -1
-    local candidate_values: table = {}
-    local candidate_policy: table? = nil
-    local policy_error: error? = nil
     local policy_pending = false
-    local policy_read_pending = false
-    local policy_check_ns: number? = nil
-    local hinted_revision = -1
+    -- The admin overrides of the active policy; registry commits and slot
+    -- recycling re-resolve host policy with them without rereading Settings.
+    local owner_overrides: table = {}
     local refresh_size: (number, table?) -> error?
-    local record_state: (() -> error?)? = nil
     local fail_policy: ((error) -> ())? = nil
-    local function notice(value: any): ()
-        state_dirty = true
-        if type(value) == "table" and type(value.revision) == "number" then
-            hinted_revision = math.max(hinted_revision, value.revision)
-        end
-    end
-    local function apply_policy(registry_changed: boolean?, discover: boolean?): error?
-        if not dependencies.overrides then return nil end
-        -- A failed SQL read follows the existing retry deadline; busy job
-        -- events must not turn a storage outage into a read per event.
-        if policy_read_pending and size_retry_ns ~= nil and pool_time.now():unix_nano() < size_retry_ns then return nil end
-        if discover or policy_read_pending then
-            local committed, read_err = dependencies.overrides.revision(cfg.db_id())
-            if read_err then policy_read_pending = true; return read_err end
-            if type(committed) ~= "number" or committed < 0 or committed % 1 ~= 0 then
-                policy_read_pending = true
-                return unavailable("Jobs committed policy revision is invalid", nil)
+    -- apply_policy resolves the registry/host policy with the Settings overrides,
+    -- read again when read_settings is set, and resizes to it. A failed read,
+    -- resolution or resize leaves the last good snapshot active and its busy
+    -- slots running.
+    local function apply_policy(read_settings: boolean): error?
+        -- A failed read follows the existing retry deadline; busy job events
+        -- must not turn a Settings outage into a read per event.
+        if policy_pending and size_retry_ns ~= nil and pool_time.now():unix_nano() < size_retry_ns then return nil end
+        local snapshot: table?, resolve_err: error? = nil, nil
+        local overrides = owner_overrides
+        if pool_settings then
+            if read_settings or policy_pending then
+                local current, read_err = pool_settings.overrides()
+                if read_err then policy_pending = true; return read_err end
+                overrides = current :: table
             end
-            hinted_revision = math.max(hinted_revision, committed)
-            policy_read_pending = false
-        end
-        if revision >= hinted_revision and revision >= 0 and not registry_changed and not policy_pending then return nil end
-        local values, next_revision = owner_values, revision
-        local snapshot: table? = nil
-        if revision < hinted_revision or revision < 0 then
-            if candidate_revision < hinted_revision or candidate_revision < 0 then
-                local current, err = dependencies.overrides.read(cfg.db_id())
-                if err then policy_read_pending = true; return err end
-                if type(current) ~= "table" or type(current.values) ~= "table" or type(current.revision) ~= "number"
-                    or current.revision < 0 or current.revision % 1 ~= 0 then
-                    policy_read_pending = true
-                    return unavailable("Jobs committed policy response is invalid", nil)
-                end
-                candidate_values, candidate_revision, candidate_policy = current.values, current.revision, nil
-            end
-            if not candidate_policy or registry_changed then
-                local resolved, resolve_err = cfg.runtime(candidate_values)
-                if resolve_err then return resolve_err end
-                candidate_policy = resolved
-            end
-            values, next_revision, snapshot = candidate_values, candidate_revision, candidate_policy
+            snapshot, resolve_err = cfg.runtime(overrides)
         else
-            local resolved, resolve_err = cfg.runtime(owner_values)
-            if resolve_err then return resolve_err end
-            snapshot = resolved
+            snapshot, resolve_err = policy_read()
         end
-        -- Detect dialect and resize before advancing the durable applied revision.
-        -- A failed candidate leaves the last good execution snapshot active.
+        if resolve_err or not snapshot then
+            policy_pending = true
+            return resolve_err or unavailable("Jobs policy resolution failed", nil)
+        end
         local resize_err = refresh_size(pool_time.now():unix_nano(), snapshot)
-        if resize_err then return resize_err end
-        local previous_interval = owner_policy and owner_policy.worker_policy_check_ms
-        owner_policy, owner_values, revision = snapshot, values, next_revision
-        local interval = owner_policy.worker_policy_check_ms
-        if interval ~= previous_interval or policy_check_ns == nil then
-            policy_check_ns = interval and pool_time.now():unix_nano() + interval * 1000000 or nil
-        end
-        policy_error, policy_pending = nil, false
-        state_dirty = true
-        if record_state then return record_state() end
+        if resize_err then policy_pending = true; return resize_err end
+        owner_policy, owner_overrides, policy_pending = snapshot, overrides, false
         return nil
     end
 
+    -- Registry commits can change host policy, and slot recycling recovers a
+    -- lost commit hint; both re-resolve it with the active overrides.
     local function refresh_registry_policy(): (boolean, error?)
         local fresh, fresh_err = registry_version.id(pool_registry)
         if fresh_err or not fresh then
@@ -346,37 +348,22 @@ function pool.main(handover: any?): (any?, error?)
         end
         local changed = fresh ~= current_version
         current_version = fresh
-        local apply_err = apply_policy(changed)
-        if apply_err then return false, apply_err end
-        if not dependencies.overrides or not changed then
-            local resize_err = refresh_size(pool_time.now():unix_nano())
-            if resize_err then return changed, resize_err end
-        end
-        return changed, nil
+        return changed, apply_policy(false)
     end
 
     -- due_evidence is a due backlog read before this dispatch's claim: every row
     -- it counts was committed before the claim read its candidates.
     local function dispatch_idle(reclaim_due: boolean, due_evidence: table?): ()
-        if draining then return end
+        if draining or not admitted then return end
         local policy = active_policy
         if not policy then return end
         -- Apply queued capacity reports before the authoritative scan, under
         -- the same assignment fence as the selected report. The bounded drain
         -- also coalesces committed wake demand without delaying new notices.
-        local woke = false
         for _ = 1, policy.worker_claim_batch do
             local queued = pool_channel.select({ idle_ch:case_receive(), wake_ch:case_receive(), default = true })
             if queued.default or queued.ok == false then break end
             if queued.channel == idle_ch then accept_idle(queued.value) end
-            if queued.channel == wake_ch then notice(queued.value); woke = true end
-        end
-        if woke then
-            local apply_err = apply_policy()
-            if apply_err then
-                if fail_policy then fail_policy(apply_err) end
-            end
-            policy = active_policy
         end
         local worker_ids: { string } = {}
         for worker_id, idle_version in pairs(idle) do
@@ -435,7 +422,6 @@ function pool.main(handover: any?): (any?, error?)
                 job.run_ctx = nil
                 local epoch = (assignment_epoch[worker_id] or 0) + 1
                 assignment_epoch[worker_id] = epoch
-                state_dirty = true
                 assigned[worker_id] = { job = job, run_id = run_ctx.id, epoch = epoch }
                 local _, send_err = pool_process.send(worker_id, cfg.ASSIGN_TOPIC,
                     { job = job, run_ctx = run_ctx, epoch = epoch })
@@ -610,7 +596,6 @@ function pool.main(handover: any?): (any?, error?)
             due_ns[slot] = now + delay_ns
             return
         end
-        state_dirty = true
         slot_of[tostring(child_pid)] = slot
         live[slot] = tostring(child_pid)
         children[tostring(child_pid)] = true
@@ -620,6 +605,21 @@ function pool.main(handover: any?): (any?, error?)
     end
 
     refresh_size = function(now: number, candidate: table?): error?
+        if not admitted then
+            if size_retry_ns ~= nil and now < size_retry_ns then return nil end
+            local ready, schema_err = pool_schema_ready()
+            if ready ~= true or schema_err then
+                if schema_err then
+                    logger:error("job_worker pool: schema readiness failed: " .. tostring(schema_err))
+                elseif not waiting_for_schema then
+                    logger:info("job_worker pool waiting for Jobs migrations")
+                end
+                waiting_for_schema = true
+                size_retry_ns = now + delay_ns
+                return nil
+            end
+            admitted = true
+        end
         local desired, policy, detect_err = detect_size_policy(candidate)
         if detect_err or not desired or not policy then
             logger:error("job_worker pool: size detection failed: " .. tostring(detect_err))
@@ -652,8 +652,6 @@ function pool.main(handover: any?): (any?, error?)
     -- retired slots still exiting; their EXIT events reach this same PID.
     local function adopt(state: table): ()
         owner_policy, active_policy = state.policy, state.policy
-        owner_values = state.policy_values or {}
-        revision = tonumber(state.policy_revision) or -1
         pool_database = state.database
         size = math.floor(tonumber(state.size) or 0) :: integer
         tier_step = math.floor(tonumber(state.tier_step) or 0) :: integer
@@ -698,69 +696,25 @@ function pool.main(handover: any?): (any?, error?)
         local due: { table } = {}
         for slot, at in pairs(due_ns) do due[#due + 1] = { slot = slot, at = at } end
         return { size = size, tier_step = tier_step, slots = slots, retired = retired, due = due,
-            policy = owner_policy, policy_values = owner_values, policy_revision = revision, database = pool_database }
+            policy = owner_policy, database = pool_database }
     end
 
-    local function slot_state(): table
-        local total = 0
-        for _ in pairs(children) do total = total + 1 end
-        local awaited = active_policy and active_policy.worker_awaited_slots or 0
-        return {applied_revision = revision, database = pool_database, total = total,
-            general = active_policy and pool.general_slots(active_policy, pool_database) or 0, awaited = awaited}
-    end
-    local recorded_state: table? = nil
-    local recorded_error: error? = nil
-    record_state = function(): error?
-        if not dependencies.applied then return nil end
-        local state = slot_state()
-        local same = recorded_state ~= nil and recorded_error == policy_error
-        if same then
-            for key, value in pairs(state) do if recorded_state[key] ~= value then same = false; break end end
-        end
-        if same then return nil end
-        local err = dependencies.applied.write(cfg.db_id(), state, policy_error)
-        if not err then recorded_state, recorded_error = state, policy_error end
-        return err
-    end
     fail_policy = function(err: error): ()
-        policy_error, policy_pending = err, true
+        policy_pending = true
         -- Startup may fail before any slot exists to produce another event.
         -- Reuse the owner retry deadline for failed reads as well as resizing.
         size_retry_ns = pool_time.now():unix_nano() + delay_ns
         logger:error("Jobs policy remains pending: " .. tostring(err))
-        local write_err = record_state()
-        if write_err then logger:error("Jobs applied-state write failed: " .. tostring(write_err)) end
-        state_dirty = true
-    end
-    -- One coalesced invalidation runs outside dispatch. Delivery errors are
-    -- reported in the process log; SQL remains the authority for applied state.
-    local publication: any = nil
-    local function publish_pending(): ()
-        if publication or not state_dirty then return end
-        local write_err = record_state()
-        if write_err then
-            logger:error("Jobs applied-state write failed: " .. tostring(write_err))
-            return
-        end
-        if not dependencies.notify then state_dirty = false; return end
-        local future, start_err = dependencies.notify()
-        if start_err or not future then
-            logger:error("Jobs status notification failed: " .. tostring(start_err))
-            return
-        end
-        state_dirty, publication = false, future
     end
 
     if type(handover) == "table" then adopt(handover :: table) end
-    local initial_err = apply_policy(true, true)
+    local initial_err = apply_policy(true)
     if initial_err then fail_policy(initial_err) end
-    if not active_policy and not dependencies.overrides then refresh_size(pool_time.now():unix_nano()) end
     -- Recover due work and leases before processing messages. There is no idle
     -- rescan timer; only durable deadlines discovered here can arm one.
     dispatch_idle(true)
-    retention_driver.run(pool_time.now():unix_nano())
+    if admitted then retention_driver.run(pool_time.now():unix_nano()) end
 
-    publish_pending()
     local wait_timer: any = nil
     local wait_timer_at: number? = nil
     while true do
@@ -774,9 +728,11 @@ function pool.main(handover: any?): (any?, error?)
         end
         consider_retry(dispatch_retry_ns)
         consider_retry(size_retry_ns)
-        for _, at in pairs(due_ns) do
-            local left = math.max(0, at - now)
-            if wait_ns == nil or left < (wait_ns :: number) then wait_ns = left end
+        if admitted then
+            for _, at in pairs(due_ns) do
+                local left = math.max(0, at - now)
+                if wait_ns == nil or left < (wait_ns :: number) then wait_ns = left end
+            end
         end
         local function consider(at: number?): ()
             if at ~= nil then
@@ -785,10 +741,9 @@ function pool.main(handover: any?): (any?, error?)
             end
         end
         consider(deadline_ns)
-        consider(retention_driver.deadline())
-        consider(policy_check_ns)
+        if admitted then consider(retention_driver.deadline()) end
         local cases = { events_ch:case_receive(), registry_ch:case_receive(), idle_ch:case_receive(), wake_ch:case_receive() }
-        if publication then cases[#cases + 1] = publication:response():case_receive() end
+        if settings_ch then cases[#cases + 1] = settings_ch:case_receive() end
         if wait_ns ~= nil then
             local at = now + (wait_ns :: number)
             if wait_timer == nil or wait_timer_at ~= at then
@@ -799,42 +754,33 @@ function pool.main(handover: any?): (any?, error?)
         end
         local selected = pool_channel.select(cases)
         if selected.channel == wait_timer then wait_timer, wait_timer_at = nil, nil end
-        local publication_result = publication and selected.channel == publication:response()
-        if publication_result then
-            local _, result_err = publication:result()
-            publication = nil
-            if result_err then
-                logger:error("Jobs status notification failed: " .. tostring(result_err))
-                -- An event received during delivery still gets its own wakeup.
-                -- Without newer demand, the next owner event retries delivery.
-                local newer_event = state_dirty
-                state_dirty = true
-                if newer_event then publish_pending() end
-            else
-                publish_pending()
-            end
-        end
         if selected.channel == registry_ch then
             if selected.ok == false then
                 local drain_err = drain()
                 return nil, drain_err or unavailable("job worker pool registry subscription closed", nil)
             end
+            local was_admitted = admitted
             local changed, apply_err = refresh_registry_policy()
             if apply_err then fail_policy(apply_err) end
-            if changed then dispatch_idle(false) end
+            if changed or (admitted and not was_admitted) then dispatch_idle(not was_admitted) end
+        end
+        if settings_ch and selected.channel == settings_ch then
+            if selected.ok == false then
+                settings_ch = nil
+            else
+                local apply_err = apply_policy(true)
+                if apply_err then fail_policy(apply_err) end
+                dispatch_idle(false)
+            end
         end
         local event = selected.channel == events_ch and selected.value or nil
         if selected.channel == idle_ch then
             if policy_pending then
-                local apply_err = apply_policy()
+                local apply_err = apply_policy(false)
                 if apply_err then fail_policy(apply_err) end
             end
-            state_dirty = true
             if accept_idle(selected.value) then dispatch_idle(false) end
         elseif selected.channel == wake_ch then
-            notice(selected.value)
-            local apply_err = apply_policy()
-            if apply_err then fail_policy(apply_err) end
             dispatch_idle(false)
         end
         if type(event) == "table" then
@@ -844,15 +790,12 @@ function pool.main(handover: any?): (any?, error?)
                 return nil, drain_err
             elseif event.kind == pool_process.event.OUTDATED then
                 logger:info("job_worker pool root is outdated, upgrading in place with its slots")
-                local apply_err = apply_policy(true, true)
-                if apply_err then fail_policy(apply_err) end
                 subscription:close()
                 pool_process.unlisten(idle_ch)
                 pool_process.unlisten(wake_ch)
                 return pool_process.upgrade(nil, handover_state())
             elseif event.kind == pool_process.event.EXIT then
                 local from = tostring(event.from)
-                state_dirty = true
                 children[from] = nil
                 retiring[from] = nil
                 release_exited_assignment(from)
@@ -875,24 +818,25 @@ function pool.main(handover: any?): (any?, error?)
             end
         end
         now = pool_time.now():unix_nano()
-        if policy_pending and selected.channel ~= wake_ch and selected.channel ~= idle_ch
-            and selected.channel ~= registry_ch and not publication_result then
-            local apply_err = apply_policy()
-            if apply_err then fail_policy(apply_err) end
-        end
         if dispatch_retry_ns ~= nil and now >= dispatch_retry_ns then
             local reclaim_retry = dispatch_retry_reclaim
             dispatch_retry_ns = nil
             dispatch_idle(reclaim_retry)
         end
         if size_retry_ns ~= nil and now >= size_retry_ns then
-            local resize_err
-            if dependencies.overrides then resize_err = apply_policy(true)
-            else resize_err = refresh_size(now) end
+            local was_admitted = admitted
+            size_retry_ns = nil
+            local resize_err = apply_policy(false)
             if resize_err then fail_policy(resize_err) end
+            if admitted and not was_admitted then
+                dispatch_idle(true)
+                retention_driver.run(now)
+            end
         end
-        for slot, at in pairs(due_ns) do
-            if at <= now then spawn(slot) end
+        if admitted then
+            for slot, at in pairs(due_ns) do
+                if at <= now then spawn(slot) end
+            end
         end
         if deadline_ns ~= nil and deadline_ns <= now then
             local reclaim_due = deadline_kind == "lease"
@@ -900,21 +844,10 @@ function pool.main(handover: any?): (any?, error?)
             deadline_kind = nil
             dispatch_idle(reclaim_due)
         end
-        if policy_check_ns ~= nil and policy_check_ns <= now then
-            -- Notifications are hints. Reconcile one durable revision row on a
-            -- coalesced owner deadline, even when no job or notification arrives.
-            -- Ordinary events never postpone it or add reads to the claim path.
-            policy_check_ns = now + owner_policy.worker_policy_check_ms * 1000000
-            local previous_revision = revision
-            local apply_err = apply_policy(false, true)
-            if apply_err then fail_policy(apply_err)
-            elseif revision ~= previous_revision then dispatch_idle(false) end
-        end
         local retention_deadline = retention_driver.deadline()
-        if retention_deadline ~= nil and retention_deadline <= now then
+        if admitted and retention_deadline ~= nil and retention_deadline <= now then
             retention_driver.run(now)
         end
-        if not publication_result then publish_pending() end
     end
 end
 
@@ -923,5 +856,4 @@ return pool
 end
 
 return construct({ sql_get = function() return sql.get(cfg.db_id()) end, policy = cfg.policy,
-    overrides = overrides, applied = applied,
-    notify = function() return funcs.new():async("kickside.core.jobs.performance:notify") end })
+    settings = runtime_policy })

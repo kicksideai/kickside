@@ -1,5 +1,6 @@
 local test = require("test")
 local security = require("security")
+local registry = require("registry")
 
 local function load_policy(id: string)
     local policy, err = security.policy(id)
@@ -19,6 +20,31 @@ local function decision(policy_id: string, action: string, resource: string): st
 end
 
 local function define_tests()
+    test.describe("Scoped System navigation", function()
+        test.it("offers an unassigned catalog capability without management authority", function()
+            local id = "kickside.ui.security:system_tabs_access"
+            local declaration = assert(registry.get(id))
+            test.eq(#declaration.data.groups, 0)
+            test.eq(decision(id, "access", "kickside.ui.api:list_settings_tabs.endpoint"), "allow")
+            for _, resource in ipairs({
+                "kickside.ui.api:set_config.endpoint", "kickside.ui.api:upload_logo.endpoint",
+                "kickside.ui.api:reset_splashes.endpoint", "kickside.ui:system_onboarding",
+                "kickside.settings.api:list_settings.endpoint", "kickside.settings.api:put_settings.endpoint",
+                "kickside.ui.api:list_settings_tabs.endpoint.future", "kickside.ui:fixture_management",
+            }) do
+                test.eq(decision(id, "access", resource), "undefined", resource)
+            end
+            test.eq(decision(id, "funcs.call", "kickside.ui.api:list_settings_tabs"), "undefined")
+            test.eq(decision(id, "db.get", "app:db"), "undefined")
+        end)
+        test.it("does not grant System discovery to ordinary members", function()
+            for _, id in ipairs({"kickside.ui.security:module_access", "kickside.ui.security:module_runtime",
+                "kickside.ui.security:ui_endpoint_access"}) do
+                test.eq(decision(id, "access", "kickside.ui.api:list_settings_tabs.endpoint"), "undefined", id)
+            end
+        end)
+    end)
+
     test.describe("kickside.ui public branding security policies", function()
         test.it("allows only the settings contract used by public branding", function()
             test.eq(decision("kickside.ui:public_branding_settings_contract", "contract.get", "kickside.settings:settings"), "allow")

@@ -62,6 +62,8 @@ entries:
     kind: library.lua
     source: file://policy_composition.lua
     modules: [registry, security]
+    imports:
+      security_consts: kickside.security:security_consts
 
   - name: sessions_invalidator
     kind: ns.requirement

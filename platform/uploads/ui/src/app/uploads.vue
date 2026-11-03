@@ -46,6 +46,9 @@ const query = ref('')
 const statusFilter = ref('all')
 const page = ref(1)
 const deleting = ref(false)
+let listRead: Promise<void> | null = null
+let listRefreshQueued = false
+let disposed = false
 const retrying = ref(false)
 
 const {
@@ -130,28 +133,49 @@ const pendingCount = computed(() => {
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / PAGE_SIZE)))
 
 // ── Server-driven list ────────────────────────────────────────────────────────
-async function fetchUploads() {
+function fetchUploads(): Promise<void> {
+  if (disposed) return Promise.resolve()
+  listRefreshQueued = true
+  if (listRead) return listRead
   loading.value = true
-  error.value = ''
-  try {
-    const params: Record<string, unknown> = { limit: PAGE_SIZE, offset: (page.value - 1) * PAGE_SIZE }
-    const q = query.value.trim()
-    if (q) params.q = q
-    if (statusFilter.value !== 'all') params.status = statusFilter.value
-    const { data } = await api.get('/api/v1/uploads/list', { params })
-    if (data.success) {
-      uploads.value = data.uploads || []
-      total.value = Number(data.meta?.total ?? uploads.value.length)
-      if (typeof data.component_id === 'string') componentId.value = data.component_id
-    } else {
-      uploads.value = []; total.value = 0
+  // One read plus a queued refresh covers invalidations received while awaiting
+  // the server. Start in a microtask so synchronous API failures cannot retain a
+  // settled promise and prevent later refreshes.
+  listRead = Promise.resolve().then(async () => {
+    try {
+      while (listRefreshQueued && !disposed) {
+        listRefreshQueued = false
+        const requestedPage = page.value
+        const requestedQuery = query.value.trim()
+        const requestedStatus = statusFilter.value
+        const isCurrent = () => !disposed && requestedPage === page.value
+          && requestedQuery === query.value.trim() && requestedStatus === statusFilter.value
+        error.value = ''
+        try {
+          const params: Record<string, unknown> = { limit: PAGE_SIZE, offset: (requestedPage - 1) * PAGE_SIZE }
+          if (requestedQuery) params.q = requestedQuery
+          if (requestedStatus !== 'all') params.status = requestedStatus
+          const { data } = await api.get('/api/v1/uploads/list', { params })
+          if (!isCurrent()) continue
+          if (data.success) {
+            uploads.value = data.uploads || []
+            total.value = Number(data.meta?.total ?? uploads.value.length)
+            if (typeof data.component_id === 'string') componentId.value = data.component_id
+          } else {
+            uploads.value = []; total.value = 0
+          }
+        } catch (e) {
+          if (!isCurrent()) continue
+          uploads.value = []; total.value = 0
+          error.value = e instanceof Error ? e.message : 'failed to load uploads'
+        }
+      }
+    } finally {
+      listRead = null
+      if (!disposed) loading.value = false
     }
-  } catch (e) {
-    uploads.value = []; total.value = 0
-    error.value = e instanceof Error ? e.message : 'failed to load uploads'
-  } finally {
-    loading.value = false
-  }
+  })
+  return listRead
 }
 
 function goto(p: number) {
@@ -175,6 +199,7 @@ watch(statusFilter, () => { page.value = 1; void fetchUploads() })
 // summary payload, so meta.changed is the invalidation signal to refetch this page.
 // Realtime only -- no polling.
 function connectRealtime() {
+  if (disposed) return
   const id = componentId.value
   if (!id || connectedComponentId === id) return
   if (componentUnsub) componentUnsub()
@@ -302,6 +327,8 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  disposed = true
+  listRefreshQueued = false
   previewRead++
   window.removeEventListener('keydown', onKeydown)
   if (searchTimer) clearTimeout(searchTimer)

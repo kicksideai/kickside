@@ -77,7 +77,7 @@ function M.builder(): any
     end
     return q
 end
-function M.resolve_from(...) return M.policy() end
+function M.resolve() return M.policy() end
 function M.read(job)
     if job and type(job.lease_policy) == "table" then return job.lease_policy, nil end
     return M.policy()

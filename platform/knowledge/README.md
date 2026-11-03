@@ -19,6 +19,13 @@ Review the manifest and registry requirements before enabling the module.
 Host resources and security groups bind through the install plan.
 
 
+## Engine ingestion
+
+An engine declares its primary-thread projections in `meta.projections`. The first
+projection that consumes `kickside.knowledge.events:content.upserted` supplies the
+ingest receipt and status cursor. Creation provisions the declared cursors before
+returning; ingestion addresses that cursor without registering another projection.
+
 ## Requirements
 
 For repository validation, use the Wippy release pinned in

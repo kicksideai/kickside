@@ -44,7 +44,7 @@ function M.builder(...): any
     function query:exec() return M.result("update", {rows_affected = M.count}) end
     return query
 end
-function M.resolve_from(...) return M.policy() end
+function M.resolve() return M.policy() end
 function M.load_from(_, job)
     if job.lease_policy then return job.lease_policy, nil end
     return M.policy()

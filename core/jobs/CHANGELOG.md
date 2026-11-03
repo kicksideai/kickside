@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.1.69](https://github.com/kicksideai/kickside/compare/jobs-v0.1.68...jobs-v0.1.69) (2026-11-03)
+
+
+### Bug Fixes
+
+* **jobs:** resume claims after registry-driven schema admission ([#290](https://github.com/kicksideai/kickside/issues/290)) ([86d3056](https://github.com/kicksideai/kickside/commit/86d30561c480b50b21e6e7e65947c5dd21bd45a7))
+
+## [0.1.68](https://github.com/kicksideai/kickside/compare/jobs-v0.1.67...jobs-v0.1.68) (2026-11-02)
+
+
+### Bug Fixes
+
+* **jobs:** wait for schema before admitting upgraded claims ([1c030c0](https://github.com/kicksideai/kickside/commit/1c030c02e83c6fdf34ca6fb6b5aa674cd20f2fdc))
+
+## [0.1.67](https://github.com/kicksideai/kickside/compare/jobs-v0.1.66...jobs-v0.1.67) (2026-10-30)
+
+
+### Bug Fixes
+
+* preserve knowledge ingestion authority across engines ([#257](https://github.com/kicksideai/kickside/issues/257)) ([023bbe8](https://github.com/kicksideai/kickside/commit/023bbe89f5fc80700007da189a7615a93d693078))
+
 ## [0.1.66](https://github.com/kicksideai/kickside/compare/jobs-v0.1.65...jobs-v0.1.66) (2026-10-30)
 
 

@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.2.11](https://github.com/kicksideai/kickside/compare/automation-v0.2.10...automation-v0.2.11) (2026-11-03)
+
+
+### Bug Fixes
+
+* **workflows:** create workflows from automation source contracts ([#213](https://github.com/kicksideai/kickside/issues/213)) ([a44c6f7](https://github.com/kicksideai/kickside/commit/a44c6f7b753bceeb9a39cb89784bfffc58b286b5))
+
+## [0.2.10](https://github.com/kicksideai/kickside/compare/automation-v0.2.9...automation-v0.2.10) (2026-11-01)
+
+
+### Bug Fixes
+
+* **automation:** run drive repairs after Jobs schema upgrades ([#285](https://github.com/kicksideai/kickside/issues/285)) ([5b32173](https://github.com/kicksideai/kickside/commit/5b32173b6f95925c871a63cada5b02f9bbd259cf))
+
+## [0.2.9](https://github.com/kicksideai/kickside/compare/automation-v0.2.8...automation-v0.2.9) (2026-10-30)
+
+
+### Bug Fixes
+
+* preserve knowledge ingestion authority across engines ([#257](https://github.com/kicksideai/kickside/issues/257)) ([023bbe8](https://github.com/kicksideai/kickside/commit/023bbe89f5fc80700007da189a7615a93d693078))
+
+## [0.2.8](https://github.com/kicksideai/kickside/compare/automation-v0.2.7...automation-v0.2.8) (2026-10-30)
+
+
+### Bug Fixes
+
+* make direct grants atomic and select installed task providers ([#256](https://github.com/kicksideai/kickside/issues/256)) ([2e51908](https://github.com/kicksideai/kickside/commit/2e519081e032aabb2137ede2e5f3903e55012566))
+
 ## [0.2.7](https://github.com/kicksideai/kickside/compare/automation-v0.2.6...automation-v0.2.7) (2026-10-29)
 
 

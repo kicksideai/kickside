@@ -7,9 +7,9 @@ local fixture = require("job_fixture")
 local M = {}
 function M.run(steps, setup, handover)
     local function ch() return {case_receive = function(self) return self end} end
-    local ctx: any = {events = ch(), registry = ch(), idle = ch(), wake = ch(), step = 0, spawned = 0, now_ns = 0,
-        reads = 0, revision_reads = 0, queries = 0, timers = 0, writes = {}, canceled = {}, live = {}, notices = {}, unlistened = 0,
-        committed = {revision = 1, values = {["worker.count_sqlite"] = 1, ["worker.awaited_slots"] = 1}}}
+    local ctx: any = {events = ch(), registry = ch(), idle = ch(), wake = ch(), settings = ch(), step = 0, spawned = 0,
+        now_ns = 0, reads = 0, subscriptions = 0, queries = 0, timers = 0, canceled = {}, live = {}, unlistened = 0,
+        overrides = {["worker.count_sqlite"] = 1, ["worker.awaited_slots"] = 1}}
     if handover then for _, slot in ipairs(handover.slots) do ctx.live[slot.pid] = true end end
     if setup then setup(ctx) end
     local instance = pool.new({
@@ -19,29 +19,19 @@ function M.run(steps, setup, handover)
             return {type = function() return sql.type.SQLITE end, release = function() end,
                 query = function() ctx.queries = ctx.queries + 1; return {}, nil end}, nil
         end,
-        overrides = {
-            revision = function() ctx.revision_reads = ctx.revision_reads + 1; return ctx.committed.revision, ctx.read_error end,
-            read = function() ctx.reads = ctx.reads + 1; return ctx.committed, ctx.read_error end,
+        settings = {
+            overrides = function()
+                ctx.reads = ctx.reads + 1
+                if ctx.read_error then return nil, ctx.read_error end
+                return ctx.overrides, nil
+            end,
+            subscribe = function()
+                ctx.subscriptions = ctx.subscriptions + 1
+                if ctx.subscribe_error then return nil, ctx.subscribe_error end
+                return ctx.settings, nil
+            end,
         },
-        applied = {write = function(_, state, err)
-            local copy = {}
-            for key, value in pairs(state) do copy[key] = value end
-            copy.apply_error = err
-            ctx.writes[#ctx.writes + 1] = copy
-            ctx.applied = copy
-            return ctx.write_error
-        end},
-        notify = ctx.publish and function()
-            ctx.notices[#ctx.notices + 1] = true
-            local at, response = #ctx.notices, ch()
-            local future = {response = function() return response end,
-                result = function()
-                    if ctx.fail_publication and at == 1 then return nil, ctx.fail_publication end
-                    return {data = function() return {success = true} end}, nil
-                end}
-            ctx.future = response
-            return future, nil
-        end or nil,
+        schema_ready = function() return true, nil end,
         retention_schedule = fixture.no_retention_schedule,
         reclaim = {reclaim_expired = function() return 0 end, reclaim_terminated = function() return 0 end,
             close_lost_runs = function() return 0 end},
@@ -91,12 +81,12 @@ function M.run(steps, setup, handover)
     ctx.result, ctx.error = instance.main(handover)
     return ctx
 end
-function M.nudge(ctx, revision)
-    return {channel = ctx.wake, value = {revision = revision}}
+function M.settings_change(ctx, revision)
+    return {channel = ctx.settings, value = {revision = revision}}
 end
 function M.handover()
     local values = {["worker.count_sqlite"] = 1, ["worker.awaited_slots"] = 1}
-    return {size = 2, policy = assert(cfg.runtime(values)), policy_values = values, policy_revision = 1, database = "sqlite",
+    return {size = 2, policy = assert(cfg.runtime(values)), database = "sqlite",
         slots = {{slot = 1, pid = "old-idle", epoch = 0, started_ns = 0},
             {slot = 2, pid = "old-busy", epoch = 1, started_ns = 0,
                 assignment = {job = {id = "running"}, run_id = "run"}}}, retired = {}, due = {}}

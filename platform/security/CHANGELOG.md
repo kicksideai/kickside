@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.23](https://github.com/kicksideai/kickside/compare/security-v0.2.22...security-v0.2.23) (2026-10-30)
+
+
+### Bug Fixes
+
+* **users:** keep per-login facts in the session block of actor metadata ([ea23ac2](https://github.com/kicksideai/kickside/commit/ea23ac223ad67b31e3076930223a5d77cd79b007))
+
+## [0.2.22](https://github.com/kicksideai/kickside/compare/security-v0.2.21...security-v0.2.22) (2026-10-30)
+
+
+### Bug Fixes
+
+* **security:** resolve only live group authority ([402ec62](https://github.com/kicksideai/kickside/commit/402ec625779094efa1df0b57a83bedc0b3e32c55))
+
+## [0.2.21](https://github.com/kicksideai/kickside/compare/security-v0.2.20...security-v0.2.21) (2026-10-30)
+
+
+### Bug Fixes
+
+* **security:** resolve live compositions before projection ([#255](https://github.com/kicksideai/kickside/issues/255)) ([f2db3b4](https://github.com/kicksideai/kickside/commit/f2db3b47a6bc809c500e0d3127418286aa77fb42))
+
 ## [0.2.20](https://github.com/kicksideai/kickside/compare/security-v0.2.19...security-v0.2.20) (2026-10-30)
 
 

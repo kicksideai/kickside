@@ -149,6 +149,8 @@ entries:
         value: app:api
       - name: ui_server
         value: app:gateway
+      - name: process_host
+        value: app:processes
 
   # app.deps:kickside_sync
   - version: ">=0.1.84"

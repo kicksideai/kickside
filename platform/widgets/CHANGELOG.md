@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.55](https://github.com/kicksideai/kickside/compare/widgets-v0.1.54...widgets-v0.1.55) (2026-10-30)
+
+
+### Bug Fixes
+
+* **knowledge:** discover externally created libraries in mounted catalogs ([#251](https://github.com/kicksideai/kickside/issues/251)) ([1065e22](https://github.com/kicksideai/kickside/commit/1065e22df386037b92147e42c192dfe365f52ba7))
+
 ## [0.1.54](https://github.com/kicksideai/kickside/compare/widgets-v0.1.53...widgets-v0.1.54) (2026-10-29)
 
 

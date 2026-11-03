@@ -7,7 +7,7 @@ local fixture = require("job_fixture")
 
 return {run = test.run_cases(function()
     test.describe("live pool capacity", function()
-        test.it("rechecks capacity on slot exit without opening SQL or rereading committed overrides", function()
+        test.it("rechecks capacity on slot exit without opening SQL or rereading unchanged Settings", function()
             local function ch() return {case_receive = function(self) return self end} end
             local events_ch, registry_ch, idle_ch, wake_ch = ch(), ch(), ch(), ch()
             local sql_reads, override_reads, version_reads, selections, before_exit, spawned = 0, 0, 0, 0, 0, 0
@@ -17,10 +17,14 @@ return {run = test.run_cases(function()
                     return {type = function() return sql.type.SQLITE end,
                         query = function() return {}, nil end, release = function() end}, nil
                 end,
-                overrides = {revision = function() return 1, nil end, read = function()
-                    override_reads = override_reads + 1
-                    return {revision = 1, values = {["worker.count_sqlite"] = 1, ["worker.awaited_slots"] = 1}}, nil
-                end},
+                settings = {
+                    overrides = function()
+                        override_reads = override_reads + 1
+                        return {["worker.count_sqlite"] = 1, ["worker.awaited_slots"] = 1}, nil
+                    end,
+                    subscribe = function() return ch(), nil end,
+                },
+                schema_ready = function() return true, nil end,
                 policy = function() return fixture.pool_policy(), nil end,
                 retention_schedule = fixture.no_retention_schedule,
                 reclaim = {reclaim_expired = function() return 0 end, reclaim_terminated = function() return 0 end,
@@ -37,7 +41,7 @@ return {run = test.run_cases(function()
                 },
                 registry = {current_version = function()
                     version_reads = version_reads + 1
-                    return {id = function() return "exit-version-" .. tostring(version_reads) end}, nil
+                    return {id = function() return "exit-version" end}, nil
                 end},
                 events = {subscribe = function() return {channel = function() return registry_ch end, close = function() end}, nil end},
                 time = {now = function() return {unix_nano = function() return 0 end} end,
@@ -51,7 +55,7 @@ return {run = test.run_cases(function()
                         return {channel = events_ch, value = {kind = process.event.EXIT, from = "slot-1"}}
                     end
                     test.eq(sql_reads, before_exit, "capacity refresh uses the cached dialect")
-                    test.eq(override_reads, 1, "the revision is already resolved by the owner")
+                    test.eq(override_reads, 1, "an unchanged registry version keeps the resolved policy")
                     test.eq(version_reads, 2, "slot exit checks for a lost registry commit hint")
                     return {channel = events_ch, value = {kind = process.event.CANCEL}}
                 end},
@@ -85,6 +89,7 @@ return {run = test.run_cases(function()
                     end,
                 },
                 claim_execution = {release_unstarted = function() error("active execution must settle before exit") end},
+                schema_ready = function() return true, nil end,
                 process = {
                     event = process.event, pid = function() return "resize-pool" end,
                     events = function() return events_ch end, set_options = function() end,

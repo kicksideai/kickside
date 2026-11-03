@@ -45,14 +45,14 @@ local function clamp(value, default, min, max)
 end
 user_agents.clamp = clamp
 
-local function entry_available(id, entry_type: string): (boolean, string?)
+local function entry_available(id, entry_type: string): (boolean, error?)
     return capability_visibility.validate_ids({ id }, entry_type, registry.get)
 end
 
 -- Verifies each referenced trait/tool is a canonical public capability. Registry
 -- reads run under the initiating actor/scope, so an id hidden from that actor is
 -- rejected even if another actor could resolve it.
-local function validate_entry_ids(ids: any, entry_type: string)
+local function validate_entry_ids(ids: any, entry_type: string): (boolean, error?)
     return capability_visibility.validate_ids(ids, entry_type, registry.get)
 end
 user_agents.validate_entry_ids = validate_entry_ids
@@ -95,10 +95,12 @@ function user_agents.sanitize_agent_refs(private_context: any): any
     return out
 end
 
-local function validate_trait_contexts(traits: any, trait_contexts: any): (boolean, string?)
-    local validation = capability_context.validate_trait_contexts(traits, trait_contexts, registry.get)
+local function validate_trait_contexts(traits: any, trait_contexts: any): (boolean, error?)
+    local validation, err = capability_context.validate_trait_contexts(traits, trait_contexts, registry.get)
+    if err then return false, err end
     if validation.ok == true then return true, nil end
-    return false, "capability context invalid: " .. capability_context.error_message(validation)
+    return false, errors.new({kind = errors.INVALID,
+        message = "capability context invalid: " .. capability_context.error_message(validation)})
 end
 
 function user_agents.list_for_user(user_id: string): { any }
@@ -204,11 +206,11 @@ local function create(args: table, get_service: any): (any?, error?)
     if traits == nil then traits = agent_types.default_traits() end
 
     local ok, verr = validate_entry_ids(traits, "trait")
-    if not ok then return nil, errors.new({ message = tostring(verr), kind = errors.INVALID }) end
-    ok, verr = validate_trait_contexts(traits, args.trait_contexts or {})
-    if not ok then return nil, errors.new({ message = tostring(verr), kind = errors.INVALID }) end
+    if not ok then return nil, verr end
+    local context_ok, context_err = validate_trait_contexts(traits, args.trait_contexts or {})
+    if not context_ok then return nil, context_err end
     ok, verr = validate_entry_ids(args.tools, "tool")
-    if not ok then return nil, errors.new({ message = tostring(verr), kind = errors.INVALID }) end
+    if not ok then return nil, verr end
 
     local delegates = args.delegates or {}
     local result, err = service:register({
@@ -259,9 +261,9 @@ local function update(component_id: string, args: table, get_service: any): (any
     end
 
     local ok, verr = validate_entry_ids(args.traits, "trait")
-    if not ok then return nil, errors.new({ message = tostring(verr), kind = errors.INVALID }) end
+    if not ok then return nil, verr end
     ok, verr = validate_entry_ids(args.tools, "tool")
-    if not ok then return nil, errors.new({ message = tostring(verr), kind = errors.INVALID }) end
+    if not ok then return nil, verr end
 
     local meta_fields = update_meta_fields(args)
     if args.title ~= nil then meta_fields.title = args.title end
@@ -317,8 +319,8 @@ local function update(component_id: string, args: table, get_service: any): (any
         memory_provider_id = args.memory_provider_id ~= nil and args.memory_provider_id or existing_ctx.memory_provider_id or "",
     }
 
-    ok, verr = validate_trait_contexts(private_context.traits, private_context.trait_contexts)
-    if not ok then return nil, errors.new({ message = tostring(verr), kind = errors.INVALID }) end
+    local context_ok, context_err = validate_trait_contexts(private_context.traits, private_context.trait_contexts)
+    if not context_ok then return nil, context_err end
 
     local commands = {}
     if next(meta_fields) ~= nil then

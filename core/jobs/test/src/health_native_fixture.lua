@@ -31,5 +31,5 @@ function M.get(...): any
     end
     return db, nil
 end
-function M.resolve_from(...) return M.policy() end
+function M.resolve() return M.policy() end
 return M

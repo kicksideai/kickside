@@ -19,13 +19,7 @@ local committed_error = require("committed_error")
 local sql_boundary = require("sql_boundary")
 
 local runtime_policy = require("runtime_policy")
-local pool_state = require("pool_state")
 local jobs = {}
-
-jobs.get_policy = runtime_policy.get
-jobs.set_policy_overrides = runtime_policy.set
-jobs.get_pool_state = pool_state.read
-
 
 local function response_error(field: string): error
     return errors.new({message = "Jobs database scope response is invalid", kind = errors.INTERNAL,
@@ -334,7 +328,7 @@ end
 
 function jobs.health(): (table?, error?)
     local result, err = with_db(function(db: sql.DB, dbtype: string): (table?, error?)
-        local policy, policy_err = runtime_policy.resolve_from(db)
+        local policy, policy_err = runtime_policy.resolve()
         if policy_err then return nil, policy_err end
         if type(policy) ~= "table" then return nil, response_error("health.policy") end
         local fresh_seconds = (policy :: any).lease_timeout_seconds

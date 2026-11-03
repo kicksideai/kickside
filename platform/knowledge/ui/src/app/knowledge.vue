@@ -45,7 +45,7 @@ const detailState = useKnowledgeDetail({
 })
 const {
   detailLoading, detailError, detailHost, detailManageTag, detailViews, detailHasViews,
-  detailView, innerRoute, setDetailView, openDetail, refreshOpenDetail, closeDetail,
+  detailView, innerRoute, setDetailView, openDetail, refreshOpenDetail, closeDetail, backDetail,
   applyRoute,
 } = detailState
 
@@ -334,7 +334,7 @@ useHostVisibilityRefresh(async () => {
     <template v-else>
       <div class="kx-bar">
         <div class="kx-bar-l">
-          <button class="kx-back" @click="closeDetail()"><Icon icon="tabler:arrow-left" aria-hidden="true" /> Back</button>
+          <button class="kx-back" @click="backDetail()"><Icon icon="tabler:arrow-left" aria-hidden="true" /> Back</button>
           <h1 class="kx-title" :title="detail.name || '(untitled)'">{{ detail.name || '(untitled)' }}</h1>
           <Tag v-if="detail.badge" :severity="badgeSeverity(detail.badge.tone)" class="kx-pill kx-tag-caps">
             <Icon :icon="detail.badge.icon" aria-hidden="true" />{{ detail.badge.label }}

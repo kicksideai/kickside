@@ -254,7 +254,7 @@ local function define_tests()
             local deadline = time.now():add(5 * time.SECOND)
             local old_scope
             while time.now():before(deadline) do
-                old_scope = assert(source_scope.resolve("kickside.security.groups:members"))
+                old_scope = assert(security.named_scope("kickside.security.groups:members"))
                 if old_scope:evaluate(security.new_actor("member"), "access", old_resource) == "allow" then break end
                 time.sleep("25ms")
             end
