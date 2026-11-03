@@ -24,6 +24,8 @@ exclude:
   - "ui/node_modules:**"
   - "ui/coverage/**"
   - "ui/coverage:**"
+  - "test-bot-accounts/**"
+  - "test-bot-accounts:**"
   - "test/**"
   - "test:**"
   - ".wippy/**"
