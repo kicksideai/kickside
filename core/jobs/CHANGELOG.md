@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.70](https://github.com/kicksideai/kickside/compare/jobs-v0.1.69...jobs-v0.1.70) (2026-11-03)
+
+
+### Features
+
+* **jobs:** apply live policy from Settings through the Jobs owner ([#215](https://github.com/kicksideai/kickside/issues/215)) ([879dad8](https://github.com/kicksideai/kickside/commit/879dad8215c9740fd0c8dcf782df9f7a01beea6c))
+
 ## [0.1.69](https://github.com/kicksideai/kickside/compare/jobs-v0.1.68...jobs-v0.1.69) (2026-11-03)
 
 
