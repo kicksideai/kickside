@@ -47,6 +47,9 @@ entries:
 
   - name: process_host
     kind: ns.requirement
+    # Hosts that installed Settings before the keeper existed keep booting on
+    # update; an explicit binding takes precedence.
+    default: app:processes
     meta:
       value_kind: process.host
       description: Process host the per-node settings change keeper runs on.
@@ -453,7 +456,7 @@ entries:
                 "required": ["success"] }
             format: application/schema+json
       - name: get_namespace
-        description: get_namespace({ namespace }) -> { success, values }. All key->value pairs in a namespace (defaults applied).
+        description: get_namespace({ namespace }) -> { success, values, overridden }. All key->value pairs in a namespace (defaults applied); overridden lists the keys whose value comes from a stored override.
         input_schemas:
           - definition: |
               { "type": "object", "properties": { "namespace": { "type": "string" } }, "required": ["namespace"] }
@@ -461,7 +464,7 @@ entries:
         output_schemas:
           - definition: |
               { "type": "object",
-                "properties": { "success": { "type": "boolean" }, "values": { "type": "object", "description": "key -> value map" }, "error": { "type": "string" } },
+                "properties": { "success": { "type": "boolean" }, "values": { "type": "object", "description": "key -> value map" }, "overridden": { "type": "array", "items": { "type": "string" }, "description": "keys whose value comes from a stored override" }, "error": { "type": "string" } },
                 "required": ["success"] }
             format: application/schema+json
 

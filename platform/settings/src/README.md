@@ -62,8 +62,8 @@ writing node's cache, and broadcasts the revision over the
 (`kickside.settings.service:keeper.service`) on every node. A keeper reloads
 its node's cache when the revision is newer than the one it holds, and rechecks
 the stored revision when another keeper joins, which covers node starts and
-healed partitions. Bind `kickside.settings:process_host` to the host the keeper
-runs on.
+healed partitions. The keeper runs on `kickside.settings:process_host`, which
+defaults to `app:processes`.
 
 A process that reacts to settings changes subscribes on its node:
 
@@ -85,7 +85,7 @@ change or when a keeper joins.
 - `set({ namespace, key, value, actor_id }) -> { success }` (validates against the declared type)
 - `unset({ namespace, key }) -> { success }` (revert to default)
 - `list({ namespace? }) -> { success, settings[] }` (declarations merged with overrides + provenance)
-- `get_namespace({ namespace }) -> { success, values }`
+- `get_namespace({ namespace }) -> { success, values, overridden }` (`overridden` lists the keys with a stored override)
 
 A consumer reads a setting through the contract; e.g. a retention sweeper reads
 `get({ namespace = "kickside.vacuum", key = "global_retention_days" })`.

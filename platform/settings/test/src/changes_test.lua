@@ -62,6 +62,12 @@ local function define_tests()
             open_settings():unset({ namespace = NS, key = "max_items" })
         end)
 
+        test.it("runs the keeper on the host's processes without an explicit binding", function()
+            local registry = require("registry")
+            local service = assert(registry.get("kickside.settings.service:keeper.service"))
+            test.eq(service.data.host, "app:processes")
+        end)
+
         test.it("commits each change with the next revision and tells subscribers once", function()
             local before = assert(writer.stored_revision())
             test.eq(open_settings():set({ namespace = NS, key = "max_items", value = 61 }).success, true)
