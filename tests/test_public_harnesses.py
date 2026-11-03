@@ -21,6 +21,15 @@ class PublicHarnessTests(unittest.TestCase):
                 with self.subTest(workflow=name, setup=setup):
                     self.assertRegex(setup, r'(?m)^        version: 0\.3\.56a$')
 
+    def test_root_make_test_runs_each_package_test_script(self):
+        for module, directory in (('workflows', 'platform/workflows/ui'), ('app-main', 'app/frontend/applications/main')):
+            with self.subTest(module=module):
+                result = subprocess.run(['make', '--no-print-directory', '-n', 'test', 'MOD=' + module],
+                                        cwd=ROOT, text=True, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn('cd ' + directory + ' &&', result.stdout)
+                self.assertIn('npm test', result.stdout)
+
     def test_release_extra_files_resolve_within_their_module(self):
         config = json.loads((ROOT / 'release-please-config.json').read_text())
         checked = []

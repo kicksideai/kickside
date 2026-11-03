@@ -252,6 +252,7 @@
       "exclude-paths": [
         "platform/security/.wippy",
         "platform/security/test",
+        "platform/security/test-bot-accounts",
         "platform/security/test-support",
         "platform/security/tests",
         "platform/security/ui/coverage",
