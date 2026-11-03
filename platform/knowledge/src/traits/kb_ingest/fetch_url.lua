@@ -153,6 +153,7 @@ local function handle(args)
     if access_err then
         return nil, errors.new({ message = tostring("cannot access KB: " .. tostring(access_err)), kind = errors.PERMISSION_DENIED })
     end
+    if not engine then return nil, errors.new({ message = "knowledge base has no embeddable engine binding", kind = errors.INTERNAL }) end
 
     -- The URL is model-chosen here, so guard against SSRF before fetching it
     -- server-side (loopback / RFC1918 / cloud-metadata / internal hosts).
@@ -218,7 +219,7 @@ local function handle(args)
             local source_ref = source_ref_for(args, metadata, stored_content_type, title)
             put_default(metadata, "external_id", source_ref.external_id)
             put_default(metadata, "external_version", source_ref.external_version)
-            local queued, ingest_err = assert(engine, "embeddable binding required"):embed_content({
+            local queued, ingest_err = engine:embed_content({
                 content = content,
                 content_type = stored_content_type,
                 title = title,

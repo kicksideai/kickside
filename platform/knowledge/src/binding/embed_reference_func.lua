@@ -74,6 +74,9 @@ local function handle(request)
     if access_err then
         return { success = false, error = "cannot access KB: " .. tostring(access_err) }
     end
+    if not engine then
+        return { success = false, error = "knowledge base has no embeddable engine binding" }
+    end
 
     local metadata = shallow_copy(request.metadata)
     metadata.source = trim(metadata.source) ~= "" and metadata.source or "embed_reference"
@@ -110,7 +113,6 @@ local function handle(request)
         return { success = false, error = "invalid source_ref: " .. tostring(ref_err) }
     end
 
-    assert(engine, "embeddable binding required")
     local queued, ingest_err = engine:embed_content({
         content = content_result.content,
         content_type = content_result.content_type or "text/plain",

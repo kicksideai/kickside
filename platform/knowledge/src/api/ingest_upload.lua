@@ -328,7 +328,7 @@ function ingest_impl(kb_id: any, upload_id: any, file: any, seen: { [string]: bo
 
     local engine, open_err = component.open(kb_id, component.ACCESS.WRITE, "kickside.contract:embeddable")
     if open_err then return nil, open_err end
-    assert(engine, "embeddable binding required")
+    if not engine then return nil, errors.new({ message = "knowledge base has no embeddable engine binding", kind = errors.INTERNAL }) end
     local result, ingest_err = engine:embed_content({
         content = content,
         content_type = content_type,

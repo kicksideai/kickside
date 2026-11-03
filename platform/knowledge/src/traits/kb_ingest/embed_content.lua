@@ -68,6 +68,7 @@ local function handle(args)
     if access_err then
         return nil, errors.new({ message = tostring("cannot access KB: " .. tostring(access_err)), kind = errors.PERMISSION_DENIED })
     end
+    if not engine then return nil, errors.new({ message = "knowledge base has no embeddable engine binding", kind = errors.INTERNAL }) end
 
     local content_type = trim(args.content_type)
     if content_type == "" then content_type = "text/plain" end
@@ -76,7 +77,6 @@ local function handle(args)
     metadata.source = trim(metadata.source) ~= "" and metadata.source or "agent.embed_content"
     local title = trim(args.title or metadata.title or metadata.filename or metadata.source_url)
 
-    assert(engine, "embeddable binding required")
     local result, ingest_err = engine:embed_content({
         content = content,
         content_type = content_type,

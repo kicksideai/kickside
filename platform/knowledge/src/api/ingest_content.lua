@@ -48,7 +48,10 @@ local function handler()
     end
 
     local engine, access_err = component.open(kb_id, component.ACCESS.WRITE, "kickside.contract:embeddable")
-    if access_err then
+    if not access_err and not engine then
+        access_err = errors.new({ message = "knowledge base has no embeddable engine binding", kind = errors.INTERNAL })
+    end
+    if access_err or not engine then
         local status = http_errors.classify(access_err)
         local msg = tostring(access_err or "access denied")
         res:set_status(status)
@@ -95,7 +98,6 @@ local function handler()
     put_default(source_ref, "title", title)
     put_default(source_ref, "content_type", content_type)
 
-    assert(engine, "embeddable binding required")
     local result, ingest_err = engine:embed_content({
         content = body.content,
         content_type = content_type,
