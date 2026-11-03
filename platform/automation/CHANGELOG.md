@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.11](https://github.com/kicksideai/kickside/compare/automation-v0.2.10...automation-v0.2.11) (2026-11-03)
+
+
+### Bug Fixes
+
+* **workflows:** create workflows from automation source contracts ([#213](https://github.com/kicksideai/kickside/issues/213)) ([a44c6f7](https://github.com/kicksideai/kickside/commit/a44c6f7b753bceeb9a39cb89784bfffc58b286b5))
+
 ## [0.2.10](https://github.com/kicksideai/kickside/compare/automation-v0.2.9...automation-v0.2.10) (2026-11-01)
 
 
