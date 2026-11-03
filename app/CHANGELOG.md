@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.31](https://github.com/kicksideai/kickside/compare/kickside-v0.2.30...kickside-v0.2.31) (2026-11-03)
+
+
+### Features
+
+* **settings:** propagate committed changes to every node ([#297](https://github.com/kicksideai/kickside/issues/297)) ([c45b3c3](https://github.com/kicksideai/kickside/commit/c45b3c314fdedf53d5562f4ac64c24a4f0b168c4))
+
 ## [0.2.30](https://github.com/kicksideai/kickside/compare/kickside-v0.2.29...kickside-v0.2.30) (2026-10-30)
 
 
