@@ -225,6 +225,26 @@ entries:
         }
       ],
       "working_directory": "/data",
+      "temporal": {
+        "enabled": true,
+        "namespace": "default",
+        "task_queue": "wippy-health",
+        "schedule": "* * * * *",
+        "database_host": {
+          "$ref": {
+            "resource_id": "${env.id}/database",
+            "output_key": "private_service"
+          }
+        },
+        "database_port": 5432,
+        "database_user": "kickside",
+        "password_secret": "database-password",
+        "password_secret_key": "password",
+        "security_secret": "encryption-key",
+        "security_secret_key": "key",
+        "persistence_database": "temporal",
+        "visibility_database": "temporal_visibility"
+      },
       "dependencies": {
         "image": {
           "target": "runtime-image",
