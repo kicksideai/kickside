@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { listWorkflows } from '../api/api'
 import { analyzeFlowCandidate, type FlowCandidate } from '../nodes/flow-candidate'
@@ -32,6 +32,9 @@ async function load() {
 }
 
 onMounted(load)
+watch(() => props.selected?.id, id => {
+  if (id && !rows.value.some(row => row.id === id)) void load()
+})
 
 function matches(item: FlowCandidate, q: string): boolean {
   return item.title.toLowerCase().includes(q) || item.id.toLowerCase().includes(q)

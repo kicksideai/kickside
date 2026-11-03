@@ -1,5 +1,5 @@
 import { mergeProps as a, openBlock as u, createElementBlock as p } from "vue";
-import { k as s, f as d, B as f, l as c } from "./index-B9KLaL2S.js";
+import { d as s, j as d, B as f, i as c } from "./index-BhiG6P-P.js";
 var m = {
   name: "BaseEditableHolder",
   extends: s,

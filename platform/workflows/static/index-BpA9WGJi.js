@@ -1,4 +1,4 @@
-import { B as o, k as i } from "./index-B9KLaL2S.js";
+import { B as o, d as i } from "./index-BhiG6P-P.js";
 import { openBlock as e, createElementBlock as s, mergeProps as r, createElementVNode as p } from "vue";
 var a = `
     .p-progressspinner {
@@ -77,11 +77,11 @@ var a = `
   root: "p-progressspinner",
   spin: "p-progressspinner-spin",
   circle: "p-progressspinner-circle"
-}, c = o.extend({
+}, d = o.extend({
   name: "progressspinner",
   style: a,
   classes: l
-}), d = {
+}), c = {
   name: "BaseProgressSpinner",
   extends: i,
   props: {
@@ -98,7 +98,7 @@ var a = `
       default: "2s"
     }
   },
-  style: c,
+  style: d,
   provide: function() {
     return {
       $pcProgressSpinner: this,
@@ -107,7 +107,7 @@ var a = `
   }
 }, g = {
   name: "ProgressSpinner",
-  extends: d,
+  extends: c,
   inheritAttrs: !1,
   computed: {
     svgStyle: function() {

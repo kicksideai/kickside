@@ -24,7 +24,7 @@ local tool_action = require("tool_action")
 
 -- Per-action fields; the input schema root stays a flat object.
 local ACTIONS = {
-    create = { required = { "title" }, optional = { "parent_id" } },
+    create = { required = { "title" }, optional = { "parent_id", "source_context" } },
     import = { required = { "flow" }, optional = { "bindings" } },
     apply = { required = { "id", "commands" } },
     publish = { required = { "id" } },
@@ -43,7 +43,7 @@ local function do_create(args: Map): (Map?, error?)
     local title = type(args.title) == "string" and args.title or ""
     if title == "" then return tool_result.fail(errors.INVALID, "title is required") end
     local parent_id = type(args.parent_id) == "string" and args.parent_id ~= "" and args.parent_id or nil
-    local created, err = repo.create(title, parent_id)
+    local created, err = repo.create(title, parent_id, nil, args.source_context)
     if err then return nil, err end
     if not created then return tool_result.fail(errors.INTERNAL, "create returned no workflow") end
     return { success = true, workflow = created }

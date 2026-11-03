@@ -22,10 +22,13 @@ const props = defineProps<{
   hasOptions: boolean
   optionsSchema: unknown
   lockedHint: string
+  sourceContext?: Record<string, unknown>
+  sourceSchema?: string
 }>()
 const emit = defineEmits<{
   (e: 'update:sinkId', v: string): void
   (e: 'update:config', cfg: Record<string, unknown>): void
+  (e: 'binding', value: unknown): void
 }>()
 
 function onConfigChange(cfg: unknown) {
@@ -59,7 +62,9 @@ function onConfigChange(cfg: unknown) {
           :config="props.config"
           :meta="props.pickerMeta"
           :provider="props.selectedSink.provider"
+          :attrs="{'source-context': props.sourceContext, 'source-schema': props.sourceSchema, 'return-route': '/automations'}"
           @change="onConfigChange"
+          @select="emit('binding', $event)"
         />
         <div v-if="props.hasOptions" class="kx-stage-opts">
           <span class="kx-opts-lbl">Options</span>

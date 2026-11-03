@@ -1,0 +1,124 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: app
+entries:
+  - name: source_creation_test
+    kind: function.lua
+    meta: {type: test, suite: workflows_source_creation}
+    source: file://source_creation_test.lua
+    method: run
+    modules: [funcs, security, uuid, time]
+    imports:
+      test: wippy.test:test
+      store: kickside.workflows.store:store
+      repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+      automation: kickside.automation:automation
+      canonical_json: kickside.contract:canonical_json
+      publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      run_writable: kickside.workflows.runs:run_writable
+      users: kickside.users.persist:user_repo
+      groups: kickside.users.persist:user_groups_repo
+      scaffold: app:engine_scaffold
+      types: kickside.workflows:types
+      consts: userspace.dataflow:consts
+      runs: app:runs_fixture
+      maintenance: kickside.workflows.runs:maintenance
+      assist: kickside.workflows:assist
+  - name: source_creation_exercise
+    kind: function.lua
+    meta: {type: test_helper, private: true, environment: test}
+    source: file://source_creation_test.lua
+    method: exercise
+    modules: [funcs, security, uuid, time]
+    imports:
+      test: wippy.test:test
+      store: kickside.workflows.store:store
+      repo: kickside.workflows.repo:repo
+      workflow: kickside.workflows:workflow
+      automation: kickside.automation:automation
+      canonical_json: kickside.contract:canonical_json
+      publish: kickside.workflows.repo:version_publish
+      version_read: kickside.workflows.repo:version_read
+      run_writable: kickside.workflows.runs:run_writable
+      users: kickside.users.persist:user_repo
+      groups: kickside.users.persist:user_groups_repo
+      scaffold: app:engine_scaffold
+      types: kickside.workflows:types
+      consts: userspace.dataflow:consts
+      runs: app:runs_fixture
+      maintenance: kickside.workflows.runs:maintenance
+      assist: kickside.workflows:assist
+  - name: source.customer_changed
+    kind: registry.entry
+    meta: {type: kickside.automation.port, title: Customer changed}
+    binding: kickside.workflows:workflow_kind
+    event: app:event.customer_changed
+    config_schema: {}
+  - name: event.customer_changed
+    kind: registry.entry
+    meta: {type: event}
+    schema:
+      type: object
+      required: [customer_id, region]
+      additionalProperties: false
+      properties:
+        customer_id: {type: string}
+        region: {type: string}
+  - name: source.order_received
+    kind: registry.entry
+    meta: {type: kickside.automation.port, title: Order received}
+    binding: kickside.workflows:workflow_kind
+    event: app:event.order_received
+    config_schema: {}
+  - name: event.order_received
+    kind: registry.entry
+    meta: {type: event}
+    schema:
+      type: object
+      required: [order_id, amount]
+      properties:
+        order_id: {type: string}
+        amount: {type: number}
+        region: {type: string}
+  - name: source.catalog_items
+    kind: registry.entry
+    meta: {type: kickside.automation.port, title: Catalog items}
+    binding: app:catalog_items_source
+    output_schema:
+      type: object
+      required: [sku, quantity]
+      properties:
+        sku: {type: string}
+        quantity: {type: integer}
+  - name: catalog_items_source
+    kind: contract.binding
+    contracts:
+      - contract: kickside.data:pullable
+        methods:
+          pull: app:catalog_items_pull
+  - name: catalog_items_pull
+    kind: function.lua
+    meta: {type: test_helper, private: true, environment: test}
+    source: file://source_creation_pull.lua
+    method: pull
+  - name: source.selected_record
+    kind: registry.entry
+    meta: {type: kickside.automation.port, title: Selected record}
+    binding: app:selected_record_source
+    event: app:event.customer_changed
+    config_schema:
+      thread_id: {type: string, required: true}
+  - name: selected_record_source
+    kind: contract.binding
+    contracts:
+      - contract: kickside.trigger:source_schema
+        methods:
+          describe: app:selected_record_schema
+  - name: selected_record_schema
+    kind: function.lua
+    meta: {type: test_helper, private: true, environment: test}
+    source: file://source_creation_schema.lua
+    method: describe
+    modules: [ctx]
