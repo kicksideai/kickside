@@ -55,7 +55,7 @@ type ListArgs = { namespace: string? }
 
 type BasicResponse = { success: boolean, error: string? }
 type GetResponse = { success: boolean, value: SettingValue?, error: string? }
-type NamespaceResponse = { success: boolean, values: { [string]: SettingValue }?, error: string? }
+type NamespaceResponse = { success: boolean, values: { [string]: SettingValue }?, overridden: { string }?, error: string? }
 
 type SettingListRow = {
     namespace: string,

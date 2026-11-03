@@ -85,7 +85,7 @@ change or when a keeper joins.
 - `set({ namespace, key, value, actor_id }) -> { success }` (validates against the declared type)
 - `unset({ namespace, key }) -> { success }` (revert to default)
 - `list({ namespace? }) -> { success, settings[] }` (declarations merged with overrides + provenance)
-- `get_namespace({ namespace }) -> { success, values }`
+- `get_namespace({ namespace }) -> { success, values, overridden }` (`overridden` lists the keys with a stored override)
 
 A consumer reads a setting through the contract; e.g. a retention sweeper reads
 `get({ namespace = "kickside.vacuum", key = "global_retention_days" })`.
