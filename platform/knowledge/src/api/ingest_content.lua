@@ -52,10 +52,8 @@ local function handler()
         access_err = errors.new({ message = "knowledge base has no embeddable engine binding", kind = errors.INTERNAL })
     end
     if access_err or not engine then
-        local status = http_errors.classify(access_err)
-        local msg = tostring(access_err or "access denied")
-        res:set_status(status)
-        res:write_json({ success = false, error = msg })
+        res:set_status(http_errors.classify(access_err))
+        res:write_json({ success = false, error = tostring(access_err) })
         return
     end
 
