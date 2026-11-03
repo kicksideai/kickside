@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.7](https://github.com/kicksideai/kickside/compare/workflows-v0.2.6...workflows-v0.2.7) (2026-11-03)
+
+
+### Bug Fixes
+
+* **build:** restore the root make test target, release exclusions and the Workflows test clock ([#294](https://github.com/kicksideai/kickside/issues/294)) ([2b4bb19](https://github.com/kicksideai/kickside/commit/2b4bb195e01cdfdce8494e4e7cc51c5dc55dbb47))
+
 ## [0.2.6](https://github.com/kicksideai/kickside/compare/workflows-v0.2.5...workflows-v0.2.6) (2026-11-03)
 
 
