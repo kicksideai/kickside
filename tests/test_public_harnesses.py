@@ -19,7 +19,7 @@ class PublicHarnessTests(unittest.TestCase):
             self.assertTrue(setups, name + ' must install the supported runtime')
             for setup in setups:
                 with self.subTest(workflow=name, setup=setup):
-                    self.assertRegex(setup, r'(?m)^        version: 0\.3\.55a$')
+                    self.assertRegex(setup, r'(?m)^        version: 0\.3\.56a$')
 
     def test_release_extra_files_resolve_within_their_module(self):
         config = json.loads((ROOT / 'release-please-config.json').read_text())
