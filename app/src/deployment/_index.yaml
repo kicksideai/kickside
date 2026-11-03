@@ -13,26 +13,11 @@ entries:
     {
       "name": "runtime-image",
       "repository": "wippy/kickside",
-      "platform": "linux/arm64",
       "retention": 10,
       "package_coordinate": "${module.coordinate}",
-      "runtime_url": "https://github.com/wippyai/runtime/releases/download/v0.3.55a/wippy-linux-arm64",
-      "checksum": "03afd8534e82acc04cf4aceec05771a1f48d83730a6fc38b6b1a9fd0e1aec412",
-      "signature": "wKHlWBEEpo1Iz36ZHjD2oZ+Q535HyQnEinCOsWSu7EC2UIfNpwahgyGl9Fw/pspqlly8GzMeVCp/e64jKdj2Dg==",
-      "public_key": "xcLLvYAfv/BCYborznp5nrm6qdIU/o9c2xJi0tr0fhw=",
       "hub_token_secret": {
         "name": "hub-token",
         "key": "token"
-      },
-      "temporal": {
-        "server": {
-          "url": "https://github.com/temporalio/temporal/releases/download/v1.31.2/temporal_1.31.2_linux_arm64.tar.gz",
-          "checksum": "662a79276ce97fac71637a76727278b28849078caa4dda25f3b7ba0567109e8b"
-        },
-        "cli": {
-          "url": "https://github.com/temporalio/cli/releases/download/v1.8.2/temporal_cli_1.8.2_linux_arm64.tar.gz",
-          "checksum": "83600a8fac6e3da54093e5da6918d399f501532b9f1172235603f9606f4ac6e4"
-        }
       },
       "dependencies": {
         "hub-token": {
@@ -231,7 +216,7 @@ entries:
         "-c"
       ],
       "args": [
-        "mkdir -p /data/.wippy && cp /app/wippy.lock /data/wippy.lock && mkdir -p /data/.wippy/vendor && cp -R /app/.wippy/vendor/. /data/.wippy/vendor/ && exec /usr/local/bin/wippy run -c --profile postgres --set artifact.materialization_root=/data/.wippy/artifacts --set \"vars.postgres_history_dsn=host=$KICKSIDE_PG_HOST port=$KICKSIDE_PG_PORT dbname=$KICKSIDE_PG_DATABASE user=$KICKSIDE_PG_USERNAME password=$KICKSIDE_PG_PASSWORD sslmode=verify-full sslrootcert=/etc/ssl/certs/aws-rds-global-bundle.pem\" --set \"vars.postgres_history_schema=wippy_registry\" -o app.env:file:file_path=/data/.env --set vars.instance_data_dir=/data -o keeper.components:fe_fs:directory=/data/project/frontend -o keeper.components:previews_fs:directory=/data/project/static/public/previews -o keeper.components:project_fs:directory=/data/project -o keeper.components:pw_runtime_fs:directory=/data/.wippy/fe-playwright-runtime -o keeper.components:siblings_fs:directory=/data -o keeper.components:staging_fs:directory=/data/.wippy/fe-sessions -o keeper.gov:source_fs:directory=/data/project/src -o keeper.state:db:file=/data/.wippy/state_reflect.db"
+        "mkdir -p /data/.wippy && cp /app/wippy.lock /data/wippy.lock && mkdir -p /data/.wippy/vendor && cp -R /app/.wippy/vendor/. /data/.wippy/vendor/ && exec /usr/local/bin/wippy run -c --profile postgres --set artifact.materialization_root=/data/.wippy/artifacts --set \"vars.postgres_history_dsn=host=$KICKSIDE_PG_HOST port=$KICKSIDE_PG_PORT dbname=$KICKSIDE_PG_DATABASE user=$KICKSIDE_PG_USERNAME password=$KICKSIDE_PG_PASSWORD sslmode=verify-full\" --set \"vars.postgres_history_schema=wippy_registry\" -o app.env:file:file_path=/data/.env --set vars.instance_data_dir=/data -o keeper.components:fe_fs:directory=/data/project/frontend -o keeper.components:previews_fs:directory=/data/project/static/public/previews -o keeper.components:project_fs:directory=/data/project -o keeper.components:pw_runtime_fs:directory=/data/.wippy/fe-playwright-runtime -o keeper.components:siblings_fs:directory=/data -o keeper.components:staging_fs:directory=/data/.wippy/fe-sessions -o keeper.gov:source_fs:directory=/data/project/src -o keeper.state:db:file=/data/.wippy/state_reflect.db"
       ],
       "mounts": [
         {
@@ -240,26 +225,6 @@ entries:
         }
       ],
       "working_directory": "/data",
-      "temporal": {
-        "enabled": true,
-        "namespace": "default",
-        "task_queue": "wippy-health",
-        "schedule": "* * * * *",
-        "database_host": {
-          "$ref": {
-            "resource_id": "${env.id}/database",
-            "output_key": "private_service"
-          }
-        },
-        "database_port": 5432,
-        "database_user": "kickside",
-        "password_secret": "database-password",
-        "password_secret_key": "password",
-        "security_secret": "encryption-key",
-        "security_secret_key": "key",
-        "persistence_database": "temporal",
-        "visibility_database": "temporal_visibility"
-      },
       "dependencies": {
         "image": {
           "target": "runtime-image",
