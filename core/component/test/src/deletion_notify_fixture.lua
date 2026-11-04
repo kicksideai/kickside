@@ -8,6 +8,6 @@ return {
         fixture.event = data.event
         fixture.event_commits = fixture.commits
         fixture.recipients = opts and opts.recipients
-        return {success = true}, nil
+        return fixture.result("notify", {success = true})
     end,
 }

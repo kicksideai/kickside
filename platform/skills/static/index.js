@@ -4145,7 +4145,7 @@ const fl = { key: 0 }, hl = /* @__PURE__ */ Mt({
   },
   emits: ["retry"],
   setup(t) {
-    const e = t, n = Pt(() => e.state.deletion_job?.status === "dead");
+    const e = t, n = Pt(() => !e.state.deletion_job || ["dead", "cancelled"].includes(e.state.deletion_job.status));
     return (o, r) => t.state.deleting_at ? (g(), y("span", {
       key: 0,
       class: "component-deletion",
@@ -4176,7 +4176,7 @@ const fl = { key: 0 }, hl = /* @__PURE__ */ Mt({
       ], 64))
     ], 32)) : T("", !0);
   }
-}), ml = /* @__PURE__ */ wr(hl, [["__scopeId", "data-v-47ff2c34"]]);
+}), ml = /* @__PURE__ */ wr(hl, [["__scopeId", "data-v-13f5648e"]]);
 function tt(t) {
   return !!t && typeof t == "object" && !Array.isArray(t);
 }

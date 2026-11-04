@@ -14,13 +14,15 @@ local function continue_page(id: string, err: any): any?
     local pending, continuation = teardown.cleanup_pending(err)
     if not pending or not continuation then return nil end
     return {success = true, component_id = id, deleted = false,
-        rearm = time.now():utc():format_rfc3339(), discarded = err:details().discarded}
+        rearm = time.now():utc():format_rfc3339(), discarded = err:details().discarded,
+        notification_error = err:details().notification_error}
 end
 
-local function wait_for_children(id: string): (any?, error?)
+local function wait_for_children(id: string, notification_error: any?): (any?, error?)
     local policy, policy_err = jobs_policy.resolve()
     if policy_err then return nil, policy_err end
     return {success = true, component_id = id, deleted = false,
+        notification_error = notification_error,
         rearm = time.now():add(tostring(policy.retry_after_ms) .. "ms"):utc():format("2006-01-02T15:04:05.000000Z07:00")}, nil
 end
 
@@ -58,9 +60,13 @@ function M.run(input: any): (any?, error?)
         return nil, errors.new({message = "component cleanup failed: " .. tostring(cleanup_err), kind = errors.INTERNAL, retryable = true})
     end
     local result, step, unregister_err = teardown.unregister(id, intent.child_policy)
+    if type(result) == "table" and result.notification_error and type(unregister_err) == "userdata" then
+        unregister_err = error_envelope.wrap(unregister_err, "component cleanup fails after commit",
+            {notification_error = result.notification_error})
+    end
     if step then
         if step == "pending" and type(unregister_err) == "userdata" and unregister_err:details().wait_for == "children" then
-            return wait_for_children(id)
+            return wait_for_children(id, unregister_err:details().notification_error)
         end
         if step == "pending" or step == "purge" then
             local continued = continue_page(id, unregister_err)
@@ -70,7 +76,8 @@ function M.run(input: any): (any?, error?)
     end
     return {success = true, component_id = id, deleted = result.deleted == true,
         discarded = type(cleanup_result) == "table" and cleanup_result.discarded or nil,
-        thread_discarded = result.thread_discarded, thread_notified = result.thread_notified}
+        thread_discarded = result.thread_discarded, thread_notified = result.thread_notified,
+        notification_error = result.notification_error}
 end
 
 return M

@@ -47,6 +47,30 @@ return {run = test.run_cases(function()
             test.eq(fixture.event_commits, 1)
             test.eq(fixture.recipients[1], "reader")
         end)
+        test.it("takes the structural lock before row writes for explicit reroot", function()
+            fixture.reset("unregister", "tree", errors.new({kind = errors.UNAVAILABLE, message = "structural lock refuses"}))
+            local result, step, err = teardown.unregister("component", "reparent_root")
+            test.is_nil(result); test.eq(step, "delete"); test.is_true(errors.is(err, errors.UNAVAILABLE))
+            test.eq(fixture.effects, 0); test.eq(fixture.row_locks, 0)
+        end)
+        test.it("retains a release notification error on a committed bounded page", function()
+            fixture.reset("unregister", "", nil); fixture.pending = true
+            fixture.release_source = errors.new({kind = errors.UNAVAILABLE, message = "release refuses", retryable = true})
+            local result, step, err = teardown.unregister("component", nil)
+            test.is_nil(result); test.eq(step, "pending"); test.is_true(errors.is(err, errors.CONFLICT))
+            test.not_nil(err:details().notification_error)
+            test.is_false(err:details().notification_error.retryable)
+            test.eq(fixture.purges, 0)
+        end)
+        for _, stage in ipairs({"notify", "committed"}) do
+            test.it("finishes post-commit cleanup after " .. stage .. " failure", function()
+                fixture.reset("unregister", stage, errors.new({kind = errors.UNAVAILABLE, message = "delivery refuses", retryable = true}))
+                local result, step, err = teardown.unregister("component", nil)
+                test.is_nil(step); test.is_nil(err); test.is_true(result.changes_made)
+                test.not_nil(result.notification_error); test.is_false(result.notification_error.retryable)
+                test.eq(fixture.notifications, 1); test.eq(fixture.purges, 1)
+            end)
+        end
         for _, operation in ipairs({"begin", "unregister", "enqueue"}) do
             local cases = operation == "enqueue" and {"success_release", "work_release"}
                 or {"begin_release", "work_rollback", "work_release", "work_both", "commit_release", "success_release"}
@@ -59,16 +83,30 @@ return {run = test.run_cases(function()
                             local source = errors.new({kind = kind, retryable = options.retryable, message = "cleanup refused",
                                 details = {code = "tx_cleanup", nested = {marker = "kept"}}})
                             local stage = mode == "begin_release" and "begin" or (mode == "commit_release" and "commit"
-                                or (mode == "success_release" and "" or (operation == "enqueue" and "enqueue" or "tree")))
+                                or (mode == "success_release" and "" or (operation == "enqueue" and "enqueue" or (operation == "unregister" and "lock" or "tree"))))
                             fixture.reset(operation, stage, primary)
                             if mode == "work_rollback" then fixture.rollback_source = source
                             else fixture.release_source = source end
                             if mode == "work_both" then fixture.rollback_source = primary end
-                            local result, step, actual = invoke(operation); native(actual, source)
+                            local result, step, actual = invoke(operation)
+                            if mode == "success_release" then
+                                if operation == "unregister" then
+                                    test.is_true(result.changes_made); test.is_nil(step); test.is_nil(actual)
+                                    test.eq(result.notification_error.kind, source:kind())
+                                    test.is_false(result.notification_error.retryable)
+                                    test.eq(result.notification_error.details.code, "tx_cleanup")
+                                    test.eq(fixture.notifications, 1); test.eq(fixture.purges, 1)
+                                else
+                                    test.is_true(result); test.eq(step, "notify"); test.eq(actual:kind(), source:kind()); test.eq(actual:details().code, "tx_cleanup")
+                                    test.is_false(actual:retryable())
+                                end
+                                return
+                            end
+                            native(actual, source)
                             if operation == "begin" or operation == "enqueue" then test.is_false(result)
                             elseif operation == "unregister" then test.is_nil(result) end
                             test.eq(step, mode == "begin_release" and "begin" or
-                                ((mode == "commit_release" or mode == "success_release") and "commit" or "delete"))
+                                (mode == "commit_release" and "commit" or "delete"))
                             test.eq(fixture.releases, 1); test.eq(fixture.notifications, 0); test.eq(fixture.purges, 0)
                             if mode ~= "success_release" then
                                 local cause = actual:details().operation_error

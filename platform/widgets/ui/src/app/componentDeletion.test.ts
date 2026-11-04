@@ -48,3 +48,14 @@ it('reports removal once when a later successful read omits a row', async () => 
   await flushPromises()
   expect(removed).toHaveBeenCalledExactlyOnceWith('selected')
 })
+
+for (const job of [undefined, {status: 'cancelled', attempts: 0}]) {
+  it(`offers retry for a marked component with ${job?.status ?? 'missing'} job`, async () => {
+    const wrapper = mount(ComponentDeletion, {props: {state: {deleting_at: 'marked', deletion_job: job}}})
+    mounted.push(wrapper)
+    expect(wrapper.text()).toContain('Deletion failed')
+    expect(wrapper.find('[role="progressbar"]').exists()).toBe(false)
+    await wrapper.get('button').trigger('click')
+    expect(wrapper.emitted('retry')).toHaveLength(1)
+  })
+}

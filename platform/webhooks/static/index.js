@@ -159,7 +159,7 @@ const wt = { key: 0 }, _t = /* @__PURE__ */ Se({
   },
   emits: ["retry"],
   setup(e) {
-    const t = e, n = U(() => t.state.deletion_job?.status === "dead");
+    const t = e, n = U(() => !t.state.deletion_job || ["dead", "cancelled"].includes(t.state.deletion_job.status));
     return (o, s) => e.state.deleting_at ? (b(), v("span", {
       key: 0,
       class: "component-deletion",
@@ -195,7 +195,7 @@ const wt = { key: 0 }, _t = /* @__PURE__ */ Se({
   for (const [o, s] of t)
     n[o] = s;
   return n;
-}, $t = /* @__PURE__ */ St(_t, [["__scopeId", "data-v-47ff2c34"]]);
+}, $t = /* @__PURE__ */ St(_t, [["__scopeId", "data-v-13f5648e"]]);
 function H(e) {
   return !!e && typeof e == "object" && !Array.isArray(e);
 }
@@ -1486,7 +1486,7 @@ const hn = { class: "kx" }, vn = { class: "kx-bar" }, yn = { class: "kx-count" }
                   size: "small",
                   title: "Remove",
                   "aria-label": `Remove ${l.label || "webhook"}`,
-                  disabled: I(l) > 0,
+                  disabled: !!l.deleting_at || I(l) > 0,
                   onClick: (z) => re(l)
                 }, {
                   icon: $(({ class: z }) => [

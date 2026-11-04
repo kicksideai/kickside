@@ -1257,7 +1257,7 @@ const qt = { key: 0 }, Ht = /* @__PURE__ */ Oo({
   },
   emits: ["retry"],
   setup(o) {
-    const t = o, a = g(() => t.state.deletion_job?.status === "dead");
+    const t = o, a = g(() => !t.state.deletion_job || ["dead", "cancelled"].includes(t.state.deletion_job.status));
     return (n, c) => o.state.deleting_at ? (s(), d("span", {
       key: 0,
       class: "component-deletion",
@@ -1288,7 +1288,7 @@ const qt = { key: 0 }, Ht = /* @__PURE__ */ Oo({
       ], 64))
     ], 32)) : j("", !0);
   }
-}), Gt = /* @__PURE__ */ gt(Ht, [["__scopeId", "data-v-ff2ded5c"]]);
+}), Gt = /* @__PURE__ */ gt(Ht, [["__scopeId", "data-v-11a2c221"]]);
 function Q(o) {
   return !!o && typeof o == "object" && !Array.isArray(o);
 }

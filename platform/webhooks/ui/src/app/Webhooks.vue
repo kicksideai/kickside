@@ -235,7 +235,7 @@ useComponentDeletion(rows, row => row.webhook_id)
               <Button v-if="row.status === 'active'" type="button" severity="danger" outlined size="small" title="Revoke" :aria-label="`Revoke ${row.label || 'webhook'}`" @click="askRevoke(row)" :disabled="!!row.deleting_at">
                 <template #icon="{ class: iconClass }"><Icon icon="tabler:ban" :class="iconClass" aria-hidden="true" /></template>
               </Button>
-              <Button type="button" severity="danger" outlined size="small" title="Remove" :aria-label="`Remove ${row.label || 'webhook'}`" :disabled="subscriberCount(row) > 0" @click="askDelete(row)">
+              <Button type="button" severity="danger" outlined size="small" title="Remove" :aria-label="`Remove ${row.label || 'webhook'}`" :disabled="!!row.deleting_at || subscriberCount(row) > 0" @click="askDelete(row)">
                 <template #icon="{ class: iconClass }"><Icon icon="tabler:trash" :class="iconClass" aria-hidden="true" /></template>
               </Button>
             </div>

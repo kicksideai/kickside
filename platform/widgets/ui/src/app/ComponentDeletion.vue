@@ -5,7 +5,7 @@ import ProgressSpinner from 'primevue/progressspinner'
 import type { ComponentDeletionState } from './useComponentDeletion'
 const props = defineProps<{state: ComponentDeletionState}>()
 defineEmits<{retry: []}>()
-const failed = computed(() => props.state.deletion_job?.status === 'dead')
+const failed = computed(() => !props.state.deletion_job || ['dead', 'cancelled'].includes(props.state.deletion_job.status))
 </script>
 
 <template>

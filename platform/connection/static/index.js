@@ -1,4 +1,4 @@
-import { B as Ne, C as Pe, c as Me, r as Te, d as Ae, b as J, e as De, W as Le, s as je, P as Oe } from "./styles-tpVissSe.js";
+import { B as Ne, C as Pe, c as Me, r as Te, d as je, b as J, e as Ae, W as De, s as Le, P as Oe } from "./styles-tpVissSe.js";
 import { openBlock as m, createElementBlock as g, mergeProps as ne, createElementVNode as i, defineComponent as ue, computed as q, withModifiers as oe, Fragment as V, createTextVNode as se, toDisplayString as x, createCommentVNode as w, createVNode as _, unref as d, watch as Re, onBeforeUnmount as pe, ref as k, withDirectives as Be, vModelText as Ie, withCtx as le, renderList as ce, normalizeClass as Y, createBlock as Ue, nextTick as Ve } from "vue";
 import { s as Ke, a as re, _ as ze } from "./ConnectionPicker.vue_vue_type_script_setup_true_lang-RKLMj11t.js";
 import { on as fe, api as U, host as He, loadByTagName as We, define as Fe } from "@wippy-fe/proxy";
@@ -146,7 +146,7 @@ const Xe = { key: 0 }, et = /* @__PURE__ */ ue({
   },
   emits: ["retry"],
   setup(r) {
-    const o = r, l = q(() => o.state.deletion_job?.status === "dead");
+    const o = r, l = q(() => !o.state.deletion_job || ["dead", "cancelled"].includes(o.state.deletion_job.status));
     return (c, u) => r.state.deleting_at ? (m(), g("span", {
       key: 0,
       class: "component-deletion",
@@ -182,7 +182,7 @@ const Xe = { key: 0 }, et = /* @__PURE__ */ ue({
   for (const [c, u] of o)
     l[c] = u;
   return l;
-}, nt = /* @__PURE__ */ tt(et, [["__scopeId", "data-v-47ff2c34"]]);
+}, nt = /* @__PURE__ */ tt(et, [["__scopeId", "data-v-13f5648e"]]);
 function I(r) {
   return !!r && typeof r == "object" && !Array.isArray(r);
 }
@@ -333,15 +333,15 @@ function ct({ providers: r, connections: o, search: l, confirmId: c }) {
       if (!M.has(Q)) return !1;
     return !0;
   }
-  function A(n) {
+  function j(n) {
     return Te(n.connection_state, n.expires_at);
   }
   function H(n) {
-    const a = A(n);
+    const a = j(n);
     return a === "connected" && E(n) ? "warn" : Me[a];
   }
   function Z(n) {
-    const a = A(n);
+    const a = j(n);
     return a === "connected" && E(n) ? "Limited access" : Pe[a];
   }
   function O(n) {
@@ -361,14 +361,14 @@ function ct({ providers: r, connections: o, search: l, confirmId: c }) {
   }
   function P(n) {
     if (c.value === n.component_id) return "Click the check again to remove this connection.";
-    const a = A(n);
+    const a = j(n);
     return a === "expired" ? "The stored access token is expired; reconnect or wait for refresh." : a === "needs_reauth" ? `Reauthorize this connection to restore access.${n.reauth_reason ? " " + n.reauth_reason : ""}` : a === "disabled" ? "This connection is disabled and will not be used." : E(n) ? "Reauthorize this connection to grant service scopes." : n.oauth ? "OAuth connection available for agents and automations." : "Connection available for agents and automations.";
   }
   function N(n) {
     const a = l.value.trim().toLowerCase();
     return !a || n.toLowerCase().includes(a);
   }
-  const D = q(() => r.value.filter((n) => N(`${p(n)} ${n.description ?? ""} ${(n.classes ?? []).join(" ")}`))), W = q(() => o.value.filter((n) => N(`${n.name ?? ""} ${n.provider ?? ""}`)));
+  const A = q(() => r.value.filter((n) => N(`${p(n)} ${n.description ?? ""} ${(n.classes ?? []).join(" ")}`))), W = q(() => o.value.filter((n) => N(`${n.name ?? ""} ${n.provider ?? ""}`)));
   return {
     providerKey: u,
     providerLabel: p,
@@ -380,13 +380,13 @@ function ct({ providers: r, connections: o, search: l, confirmId: c }) {
     availableScopeValues: K,
     hasOptionalProviderScopes: z,
     hasSignInOnlyScopes: E,
-    connectionState: A,
+    connectionState: j,
     statusClass: H,
     statusLabel: Z,
     expiryText: O,
     statusDetail: R,
     connectionDescription: P,
-    filteredProviders: D,
+    filteredProviders: A,
     filteredConnections: W
   };
 }
@@ -405,13 +405,13 @@ const dt = { class: "conn-page" }, ut = { class: "kx-head" }, pt = { class: "kx-
 }, kt = {
   key: 1,
   class: "block au d1"
-}, Ct = { class: "live-grid" }, St = { class: "lc-top" }, xt = { class: "lc-ico" }, $t = { class: "lc-top-r" }, wt = ["title", "aria-label", "onClick", "disabled"], Et = ["title", "aria-label", "onClick", "disabled"], Nt = ["title", "aria-label", "onClick", "disabled"], Pt = { class: "lc-name" }, Mt = { class: "lc-desc" }, Tt = { class: "lc-primary" }, At = {
+}, Ct = { class: "live-grid" }, St = { class: "lc-top" }, xt = { class: "lc-ico" }, $t = { class: "lc-top-r" }, wt = ["title", "aria-label", "onClick", "disabled"], Et = ["title", "aria-label", "onClick", "disabled"], Nt = ["title", "aria-label", "onClick", "disabled"], Pt = { class: "lc-name" }, Mt = { class: "lc-desc" }, Tt = { class: "lc-primary" }, jt = {
   key: 0,
   class: "lc-secondary"
-}, Dt = {
+}, At = {
   key: 0,
   class: "list-foot"
-}, Lt = ["disabled"], jt = {
+}, Dt = ["disabled"], Lt = {
   key: 2,
   class: "conn-empty au d1"
 }, Ot = { class: "lt-empty-hero is-success" }, Rt = {
@@ -432,12 +432,12 @@ const dt = { class: "conn-page" }, ut = { class: "kx-head" }, pt = { class: "kx-
       providerIcon: K,
       connIcon: z,
       statusClass: E,
-      statusLabel: A,
+      statusLabel: j,
       statusDetail: H,
       connectionDescription: Z,
       filteredProviders: O,
       filteredConnections: R
-    } = $, P = k(0), N = k(!1), D = k(!1), W = k(void 0), n = k(void 0), a = k(!1), y = k(null), M = k(null);
+    } = $, P = k(0), N = k(!1), A = k(!1), W = k(void 0), n = k(void 0), a = k(!1), y = k(null), M = k(null);
     function Q(s) {
       return `/api/v1/connections?${new URLSearchParams({
         limit: String(Zt),
@@ -497,43 +497,43 @@ const dt = { class: "conn-page" }, ut = { class: "kx-head" }, pt = { class: "kx-
         h.scopes_granted = B, h.scope_count = B.length;
       }
       typeof e.oauth_connection == "boolean" && (h.oauth = e.oauth_connection);
-      const j = { ...s, ...h };
+      const L = { ...s, ...h };
       for (const B of t) {
         const Ee = B === "title" ? "name" : B;
-        delete j[Ee];
+        delete L[Ee];
       }
-      return j;
+      return L;
     }
-    const L = /* @__PURE__ */ new Map(), G = /* @__PURE__ */ new Set();
+    const D = /* @__PURE__ */ new Map(), G = /* @__PURE__ */ new Set();
     let X = 0;
     function be(s, e) {
       o.value = o.value.map((t) => t.component_id === s ? ye(t, e.meta || {}, e.deleted || []) : t);
     }
     function ke() {
       X++, G.clear();
-      for (const s of L.values()) s();
-      L.clear();
+      for (const s of D.values()) s();
+      D.clear();
     }
     function ee() {
       const s = new Set(o.value.map((t) => t.component_id).filter(Boolean));
-      for (const [t, h] of L)
-        s.has(t) || (h(), L.delete(t));
+      for (const [t, h] of D)
+        s.has(t) || (h(), D.delete(t));
       const e = X;
       for (const t of s) {
-        if (L.has(t) || G.has(t)) continue;
+        if (D.has(t) || G.has(t)) continue;
         G.add(t);
-        const h = at(t, (j) => be(t, j), De);
+        const h = at(t, (L) => be(t, L), Ae);
         if (G.delete(t), !!h) {
-          if (e !== X || !o.value.some((j) => j.component_id === t)) {
+          if (e !== X || !o.value.some((L) => L.component_id === t)) {
             h();
             continue;
           }
-          L.set(t, h);
+          D.set(t, h);
         }
       }
     }
     function te(s, e) {
-      W.value = s, n.value = e, D.value = !0;
+      W.value = s, n.value = e, A.value = !0;
     }
     async function Ce(s) {
       y.value = s, a.value = !0, await Ve(), await xe();
@@ -563,7 +563,7 @@ const dt = { class: "conn-page" }, ut = { class: "kx-head" }, pt = { class: "kx-
       te(s.provider, s.oauth || e?.create_ui_id ? { componentId: s.component_id, name: s.name } : void 0);
     }
     function we() {
-      D.value = !1, n.value = void 0, o.value = [], F();
+      A.value = !1, n.value = void 0, o.value = [], F();
     }
     async function ae(s) {
       if (f.value !== s.component_id) {
@@ -579,7 +579,7 @@ const dt = { class: "conn-page" }, ut = { class: "kx-head" }, pt = { class: "kx-
         p.value = J(e);
       }
     }
-    return Ae(F), pe(ke), lt(o, (s) => s.component_id), (s, e) => (m(), g("div", dt, [
+    return je(F), pe(ke), lt(o, (s) => s.component_id), (s, e) => (m(), g("div", dt, [
       i("header", ut, [
         i("div", pt, [
           _(d(b), {
@@ -718,12 +718,12 @@ const dt = { class: "conn-page" }, ut = { class: "kx-head" }, pt = { class: "kx-
                   class: Y(["lc-status", `state-${d(E)(t)}`])
                 }, [
                   e[6] || (e[6] = i("span", { class: "dot" }, null, -1)),
-                  i("span", Tt, x(d(A)(t)), 1),
-                  d(H)(t) ? (m(), g("span", At, "· " + x(d(H)(t)), 1)) : w("", !0)
+                  i("span", Tt, x(d(j)(t)), 1),
+                  d(H)(t) ? (m(), g("span", jt, "· " + x(d(H)(t)), 1)) : w("", !0)
                 ], 2)
               ], 2))), 128))
             ]),
-            P.value || N.value ? (m(), g("div", Dt, [
+            P.value || N.value ? (m(), g("div", At, [
               i("span", null, x(o.value.length) + " of " + x(P.value || o.value.length) + " loaded", 1),
               N.value ? (m(), g("button", {
                 key: 0,
@@ -736,9 +736,9 @@ const dt = { class: "conn-page" }, ut = { class: "kx-head" }, pt = { class: "kx-
                   class: Y(u.value && "spin")
                 }, null, 8, ["icon", "class"]),
                 e[7] || (e[7] = se(" Load more ", -1))
-              ], 8, Lt)) : w("", !0)
+              ], 8, Dt)) : w("", !0)
             ])) : w("", !0)
-          ])) : !v.value && l.value.length ? (m(), g("section", jt, [
+          ])) : !v.value && l.value.length ? (m(), g("section", Lt, [
             i("div", Ot, [
               _(d(b), { icon: "tabler:plug-connected" })
             ]),
@@ -787,12 +787,12 @@ const dt = { class: "conn-page" }, ut = { class: "kx-head" }, pt = { class: "kx-
           ])) : w("", !0)
         ], 64))
       ]),
-      D.value ? (m(), Ue(ze, {
+      A.value ? (m(), Ue(ze, {
         key: 0,
         providers: l.value,
         provider: W.value,
         reauth: n.value,
-        onClose: e[3] || (e[3] = (t) => D.value = !1),
+        onClose: e[3] || (e[3] = (t) => A.value = !1),
         onConnected: we
       }, null, 8, ["providers", "provider", "reauth"])) : w("", !0),
       a.value ? (m(), g("div", {
@@ -805,12 +805,12 @@ const dt = { class: "conn-page" }, ut = { class: "kx-head" }, pt = { class: "kx-
 }), Xt = { props: { type: "object", properties: {} } }, en = {
   wippy: Xt
 };
-class tn extends Le {
+class tn extends De {
   static get wippyConfig() {
     return {
       propsSchema: en.wippy.props,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: je
+      inlineCss: Le
     };
   }
   static get vueConfig() {

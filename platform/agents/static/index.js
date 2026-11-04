@@ -1,5 +1,5 @@
 import { g as te, h as ne, W as se, P as ae } from "./primevue-plugin-Dn0ACs8V.js";
-import { defineComponent as H, computed as O, openBlock as m, createElementBlock as f, withModifiers as $, Fragment as M, createElementVNode as s, createTextVNode as j, toDisplayString as C, createCommentVNode as L, createVNode as i, unref as r, watch as q, onBeforeUnmount as oe, ref as y, withDirectives as ie, vModelText as le, withCtx as S, normalizeClass as N, renderList as re, withKeys as W } from "vue";
+import { defineComponent as H, computed as O, openBlock as m, createElementBlock as f, withModifiers as $, Fragment as M, createElementVNode as s, createTextVNode as T, toDisplayString as C, createCommentVNode as L, createVNode as i, unref as r, watch as q, onBeforeUnmount as oe, ref as y, withDirectives as ie, vModelText as le, withCtx as S, normalizeClass as N, renderList as re, withKeys as W } from "vue";
 import { s as w, e as V, _ as ce, l as de } from "./toolCatalog-BlyBDd4C.js";
 import { s as ue } from "./index-BvJc5yvO.js";
 import { _ as pe } from "./_plugin-vue_export-helper-CHgC5LLL.js";
@@ -13,7 +13,7 @@ const ge = { key: 0 }, ye = /* @__PURE__ */ H({
   },
   emits: ["retry"],
   setup(a) {
-    const p = a, v = O(() => p.state.deletion_job?.status === "dead");
+    const p = a, v = O(() => !p.state.deletion_job || ["dead", "cancelled"].includes(p.state.deletion_job.status));
     return (o, c) => a.state.deleting_at ? (m(), f("span", {
       key: 0,
       class: "component-deletion",
@@ -25,7 +25,7 @@ const ge = { key: 0 }, ye = /* @__PURE__ */ H({
     }, [
       v.value ? (m(), f(M, { key: 0 }, [
         s("span", null, [
-          c[3] || (c[3] = j("Deletion failed", -1)),
+          c[3] || (c[3] = T("Deletion failed", -1)),
           a.state.deletion_job?.last_error ? (m(), f("span", ge, ": " + C(a.state.deletion_job.last_error), 1)) : L("", !0)
         ]),
         i(r(w), {
@@ -44,19 +44,19 @@ const ge = { key: 0 }, ye = /* @__PURE__ */ H({
       ], 64))
     ], 32)) : L("", !0);
   }
-}), ke = /* @__PURE__ */ pe(ye, [["__scopeId", "data-v-47ff2c34"]]);
-function T(a) {
+}), ke = /* @__PURE__ */ pe(ye, [["__scopeId", "data-v-13f5648e"]]);
+function j(a) {
   return !!a && typeof a == "object" && !Array.isArray(a);
 }
 function _e(a, p) {
   return a;
 }
 function be(a, p, v) {
-  const o = T(a) ? a : {}, c = [
+  const o = j(a) ? a : {}, c = [
     o,
-    T(o.data) ? o.data : null,
-    T(o.payload) ? o.payload : null,
-    T(o.detail) ? o.detail : null
+    j(o.data) ? o.data : null,
+    j(o.payload) ? o.payload : null,
+    j(o.detail) ? o.detail : null
   ].filter(Boolean);
   for (const u of c) {
     if (u.event !== "component.meta.changed" && u.event !== "component.deleting" && u.event !== "component.deleted") continue;
@@ -66,7 +66,7 @@ function be(a, p, v) {
     return u.event !== "component.meta.changed" ? { event: u.event, component_id: d } : {
       event: "component.meta.changed",
       component_id: d,
-      meta: _e(T(u.meta) ? u.meta : {}),
+      meta: _e(j(u.meta) ? u.meta : {}),
       deleted: Array.isArray(u.deleted) ? u.deleted.map(String) : []
     };
   }
@@ -100,7 +100,7 @@ function xe(a, p, v) {
     o = !1, u(), typeof k == "function" && k();
   });
 }
-const we = () => te(), $e = { class: "kx" }, Ee = { class: "kx-head" }, De = { class: "kx-head-icon" }, Se = { class: "kx-head-actions" }, Ne = { class: "kx-count" }, Te = { class: "kx-search" }, je = {
+const we = () => te(), $e = { class: "kx" }, Ee = { class: "kx-head" }, De = { class: "kx-head-icon" }, Se = { class: "kx-head-actions" }, Ne = { class: "kx-count" }, je = { class: "kx-search" }, Te = {
   key: 0,
   class: "kx-err"
 }, Ae = { class: "kx-body" }, Le = {
@@ -245,9 +245,9 @@ const we = () => te(), $e = { class: "kx" }, Ee = { class: "kx-head" }, De = { c
               icon: "tabler:robot",
               "aria-hidden": "true"
             }),
-            j(" " + C(o.value.length) + " agent" + C(o.value.length !== 1 ? "s" : ""), 1)
+            T(" " + C(o.value.length) + " agent" + C(o.value.length !== 1 ? "s" : ""), 1)
           ]),
-          s("div", Te, [
+          s("div", je, [
             i(r(g), {
               icon: "tabler:search",
               class: "kx-search-ico",
@@ -279,7 +279,7 @@ const we = () => te(), $e = { class: "kx" }, Ee = { class: "kx-head" }, De = { c
           })
         ])
       ]),
-      v.value ? (m(), f("div", je, C(v.value), 1)) : L("", !0),
+      v.value ? (m(), f("div", Te, C(v.value), 1)) : L("", !0),
       s("div", Ae, [
         p.value && !o.value.length ? (m(), f("div", Le, [
           i(r(g), {
@@ -287,7 +287,7 @@ const we = () => te(), $e = { class: "kx" }, Ee = { class: "kx-head" }, De = { c
             class: "spin",
             "aria-hidden": "true"
           }),
-          n[4] || (n[4] = j(" Loading… ", -1))
+          n[4] || (n[4] = T(" Loading… ", -1))
         ])) : o.value.length ? z.value.length ? (m(), f("div", Ie, [
           (m(!0), f(M, null, re(z.value, (t) => (m(), f("div", {
             key: t.id,
@@ -324,7 +324,7 @@ const we = () => te(), $e = { class: "kx" }, Ee = { class: "kx-head" }, De = { c
                       icon: J(t.model) ? "tabler:category" : "tabler:cpu",
                       "aria-hidden": "true"
                     }, null, 8, ["icon"]),
-                    j(" " + C(b(t.model)), 1)
+                    T(" " + C(b(t.model)), 1)
                   ], 8, He)
                 ])) : L("", !0)
               ]),
@@ -403,7 +403,7 @@ const we = () => te(), $e = { class: "kx" }, Ee = { class: "kx-head" }, De = { c
                 icon: "tabler:message",
                 "aria-hidden": "true"
               }),
-              n[8] || (n[8] = j(" Chat ", -1))
+              n[8] || (n[8] = T(" Chat ", -1))
             ], 8, qe)
           ], 40, Ke))), 128))
         ])) : (m(), f("div", Ue, [...n[7] || (n[7] = [

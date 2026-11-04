@@ -2,8 +2,6 @@
 local sql = require("sql")
 local placement = require("placement")
 local component_types = require("component_types")
-local jobs = require("jobs")
-local persisted_json = require("persisted_json")
 type Executor = sql.DB | sql.Transaction
 
 local function response_error(field: string): error
@@ -89,36 +87,15 @@ local function validate_delete_tx(tx: Executor | ChildReader, payload: any): ({ 
     return children, nil
 end
 
--- Read current intents and Jobs state in the caller's tree-locked transaction.
--- Only row absence proves completion, including after Jobs history is pruned.
+-- Child row absence is the only completion proof. The marked parent fences
+-- placement writes, so readiness needs no structural lock or Jobs inspection.
 local function deletion_ready_tx(tx: Executor, payload: any): (boolean?, error?)
     if payload.child_policy == "reparent_root" then return true, nil end
-    local children, err = tx:query("SELECT component_id,delete_intent FROM " .. component_types.TABLES.COMPONENTS
-        .. " WHERE parent_id=$1 ORDER BY component_id", {payload.component_id})
+    local children, err = tx:query("SELECT 1 FROM " .. component_types.TABLES.COMPONENTS
+        .. " WHERE parent_id=$1 LIMIT 1", {payload.component_id})
     local read_err = rows_error(children, err, "failed to read deletion dependencies", "children.rows")
     if read_err then return nil, read_err end
-    local ids: string[] = {}
-    local dependencies: {any} = {}
-    for _, child in ipairs(children) do
-        if child.delete_intent ~= nil then
-            local intent, intent_err = persisted_json.decode_table(child.delete_intent, "component.delete_intent")
-            if intent_err then return nil, intent_err end
-            dependencies[#dependencies + 1] = {component_id = child.component_id, job_id = intent.job_id}
-            if type(intent.job_id) == "string" then ids[#ids + 1] = intent.job_id end
-        end
-    end
-    local statuses, status_err = jobs.get_job_statuses_tx(tx :: sql.Transaction, ids)
-    if status_err then return nil, status_err end
-    if type(statuses) ~= "table" then return nil, response_error("children.jobs") end
-    for _, child in ipairs(dependencies) do
-        local status = child.job_id and statuses[child.job_id] or "missing"
-        if status ~= "pending" and status ~= "running" then
-            return nil, errors.new({message = "child deletion does not complete its component removal", kind = errors.INVALID,
-                retryable = false, details = {child_component_id = child.component_id,
-                    deletion_job_id = child.job_id, status = status}})
-        end
-    end
-    return #children == 0, nil
+    return children[1] == nil, nil
 end
 
 -- The component's delete mark is committed before this command. Drain at most
@@ -160,10 +137,10 @@ end
 -- does not fire and these would otherwise orphan on every component deletion.
 local function delete_component(tx: Executor, db: Executor, command: component_types.Command): (component_types.CommandResult?, error?)
     local payload = command.payload or {}
-    local tree_err = placement.lock_tree(tx)
-    if tree_err then return nil, tree_err end
     local child_rows
     if payload.child_policy == "reparent_root" then
+        local tree_err = placement.lock_tree(tx)
+        if tree_err then return nil, tree_err end
         local validation_err
         child_rows, validation_err = validate_delete_tx(tx, payload)
         if validation_err then return nil, validation_err end

@@ -305,17 +305,17 @@ function M.begin_delete(component_id: string, gate_user_id: string?, child_polic
         job_id = queued.id
     end
     local _, commit_err = tx:commit()
-    commit_err = error_envelope.cleanup(function(): (any, error?) return db:release() end,
-        commit_err, "release component teardown database")
-    if commit_err then return false, "commit", commit_err, newly_marked end
-    if not enqueue then return true, nil, nil, newly_marked, job_id end
-    local _, nudge_err = jobs.nudge_workers()
-    local _, notify_err = meta_service.notify_access(component_id, nil, {event = "component.deleting", component_id = component_id,
-        deletion_job_id = job_id})
-    local notification_err = nudge_err
-    if notify_err then
-        notification_err = notification_err and error_envelope.wrap_secondary(notify_err, notification_err,
-            "component deletion notification failed") or notify_err
+    if commit_err then
+        return false, "commit", abort_transaction(db, tx, commit_err), newly_marked
+    end
+    local notification_err = error_envelope.cleanup(function(): (any, error?) return db:release() end,
+        nil, "release component teardown database")
+    if enqueue then
+        notification_err = error_envelope.cleanup(jobs.nudge_workers, notification_err, "nudge component deletion workers")
+        notification_err = error_envelope.cleanup(function(): (any, error?)
+            return meta_service.notify_access(component_id, nil, {event = "component.deleting", component_id = component_id,
+                deletion_job_id = job_id})
+        end, notification_err, "notify component deletion acceptance")
     end
     if notification_err then return true, "notify", committed_error.new(notification_err), newly_marked, job_id end
     return true, nil, nil, newly_marked, job_id
@@ -327,15 +327,9 @@ function M.deletion_ready(component_id: string, child_policy: string?): (boolean
     if child_policy == "reparent_root" then return true, nil end
     local db, open_err = sql.get(ops.db_id())
     if open_err then return nil, open_err end
-    local tx, begin_err = db:begin()
-    if begin_err then
-        return nil, error_envelope.cleanup(function(): (any, error?) return db:release() end,
-            begin_err, "release component dependency database")
-    end
-    local tree_err = placement.lock_tree(tx)
-    if tree_err then return nil, abort_transaction(db, tx, tree_err) end
-    local ready, readiness_err = ops.deletion_ready_tx(tx, {component_id = component_id, child_policy = child_policy})
-    local release_err = abort_transaction(db, tx, readiness_err)
+    local ready, readiness_err = ops.deletion_ready_tx(db, {component_id = component_id, child_policy = child_policy})
+    local release_err = error_envelope.cleanup(function(): (any, error?) return db:release() end,
+        readiness_err, "release component dependency database")
     if release_err then return nil, release_err end
     return ready, nil
 end
@@ -347,15 +341,30 @@ function M.unregister(component_id: string, child_policy: string?): (any, string
     local db, err_db = sql.get(ops.db_id())
     if err_db then return nil, "connect", err_db end
 
+    local summary, summary_err = ops.component_summary_tx(db, component_id)
+    if summary_err then
+        return nil, "delete", error_envelope.cleanup(function(): (any, error?) return db:release() end,
+            summary_err, "release component teardown database")
+    end
+    local parent_impl_id: string? = nil
+    if summary and (summary :: any).parent_id ~= nil then
+        local parent_summary, parent_summary_err = ops.component_summary_tx(db, tostring((summary :: any).parent_id))
+        if parent_summary_err then
+            return nil, "delete", error_envelope.cleanup(function(): (any, error?) return db:release() end,
+                parent_summary_err, "release component teardown database")
+        end
+        if parent_summary then parent_impl_id = tostring((parent_summary :: any).impl_id) end
+    end
+
     local tx, err_tx = db:begin()
     if err_tx then
         return nil, "begin", error_envelope.cleanup(function(): (any, error?) return db:release() end,
             err_tx, "release component teardown database")
     end
 
-    local tree_err = placement.lock_tree(tx)
-    if tree_err then
-        return nil, "delete", abort_transaction(db, tx, tree_err)
+    if child_policy == "reparent_root" then
+        local tree_err = placement.lock_tree(tx)
+        if tree_err then return nil, "delete", abort_transaction(db, tx, tree_err) end
     end
 
     local locked, lock_err = tx:execute("UPDATE kickside_components"
@@ -369,19 +378,6 @@ function M.unregister(component_id: string, child_policy: string?): (any, string
     end
     if rows[1] and rows[1].deleting_at == nil then
         return nil, "delete", abort_transaction(db, tx, (errors.new({ message = "component delete fence is not committed", kind = errors.CONFLICT }) :: error))
-    end
-
-    local summary, summary_err = ops.component_summary_tx(tx, component_id)
-    if summary_err then
-        return nil, "delete", abort_transaction(db, tx, summary_err)
-    end
-    local parent_impl_id: string? = nil
-    if summary and (summary :: any).parent_id ~= nil then
-        local parent_summary, parent_summary_err = ops.component_summary_tx(tx, tostring((summary :: any).parent_id))
-        if parent_summary_err then
-            return nil, "delete", abort_transaction(db, tx, parent_summary_err)
-        end
-        if parent_summary then parent_impl_id = tostring((parent_summary :: any).impl_id) end
     end
 
     local delete_result, err_delete = ops.dispatch(tx, db, {
@@ -421,21 +417,26 @@ function M.unregister(component_id: string, child_policy: string?): (any, string
         return nil, "commit", abort_transaction(db, tx, err_commit)
     end
 
-    local release_err = error_envelope.cleanup(function(): (any, error?) return db:release() end,
+    local notification_err = error_envelope.cleanup(function(): (any, error?) return db:release() end,
         nil, "release component teardown database")
-    if release_err then return nil, "commit", release_err end
 
     if delete_result and delete_result.changes_made and summary then
-        local _, notify_err = meta_service.notify_access(component_id, nil,
-            {event = "component.deleted", component_id = component_id}, {recipients = recipients})
-        if notify_err then return nil, "notify", committed_error.new(notify_err) end
-        local committed_err = component_lifecycle.committed()
-        if committed_err then return nil, "notify", committed_err end
+        notification_err = error_envelope.cleanup(function(): (any, error?)
+            return meta_service.notify_access(component_id, nil,
+                {event = "component.deleted", component_id = component_id}, {recipients = recipients})
+        end, notification_err, "notify component deletion completion")
+        notification_err = error_envelope.cleanup(function(): (any, error?)
+            return nil, component_lifecycle.committed()
+        end, notification_err, "notify component lifecycle")
+    end
+    if delete_result and notification_err then
+        delete_result.notification_error = error_envelope.encode(committed_error.new(notification_err))
     end
 
     if delete_result and delete_result.pending then
         return nil, "pending", (errors.new({ message = "component owner cleanup has another bounded page",
-            kind = errors.CONFLICT, retryable = true, details = { cleanup_pending = true, needs_continue = true, wait_for = delete_result.wait_for } }) :: error)
+            kind = errors.CONFLICT, retryable = true, details = { cleanup_pending = true, needs_continue = true, wait_for = delete_result.wait_for,
+                notification_error = delete_result.notification_error } }) :: error)
     end
 
     -- Reap the component's primary thread only AFTER the component row is gone.

@@ -45,6 +45,27 @@ return {run = test.run_cases(function()
                 end)
             end
         end
+        for _, wait_for in ipairs({false, "children"}) do
+            test.it("returns a committed notification error through rearm/" .. tostring(wait_for), function()
+                fixture.reset("pending", errors.new({kind = errors.CONFLICT, message = "bounded progress", details = {
+                    cleanup_pending = true, needs_continue = true, wait_for = wait_for or nil,
+                    notification_error = {kind = errors.UNAVAILABLE, retryable = false, details = {code = "delivery"}},
+                }}))
+                local result, err = worker.run({payload = {component_id = "component"}})
+                test.is_nil(err); test.eq(type(result.rearm), "string")
+                test.not_nil(result.notification_error); test.eq(result.notification_error.details.code, "delivery")
+                test.is_false(result.notification_error.retryable)
+            end)
+        end
+        test.it("preserves delivery diagnostics when remaining cleanup fails", function()
+            local source = errors.new({kind = errors.UNAVAILABLE, message = "thread purge refuses", retryable = true})
+            fixture.reset("purge", source)
+            fixture.notification_error = {kind = errors.UNAVAILABLE, retryable = false, details = {code = "delivery"}}
+            local result, err = worker.run({payload = {component_id = "component"}})
+            test.is_nil(result); test.eq(err:kind(), source:kind()); test.eq(err:retryable(), source:retryable())
+            test.not_nil(err:details()); test.not_nil(err:details().notification_error)
+            test.eq(err:details().notification_error.details.code, "delivery")
+        end)
         test.it("concurrent final removal remains an idempotent system delete", function()
             fixture.reset("removed_during_acceptance", errors.new({kind = errors.NOT_FOUND, message = "component is absent"}))
             local ok, err = component.system_delete("component", "reparent_root")

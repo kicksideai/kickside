@@ -942,8 +942,6 @@ entries:
     kind: library.lua
     source: file://delete_native_source.lua
     imports:
-      jobs: kickside.core.jobs:jobs
-      persisted_json: kickside.contract:persisted_json
       sql: app:delete_native_sql_adapter
       placement: app:delete_native_placement_adapter
       component_types: kickside.component:types

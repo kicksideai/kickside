@@ -3102,7 +3102,7 @@ const S1 = { class: "kx-head" }, $1 = { class: "kx-head-icon" }, E1 = { class: "
   },
   emits: ["retry"],
   setup(e) {
-    const t = e, n = U(() => t.state.deletion_job?.status === "dead");
+    const t = e, n = U(() => !t.state.deletion_job || ["dead", "cancelled"].includes(t.state.deletion_job.status));
     return (o, r) => e.state.deleting_at ? (x(), A("span", {
       key: 0,
       class: "component-deletion",
@@ -3133,7 +3133,7 @@ const S1 = { class: "kx-head" }, $1 = { class: "kx-head-icon" }, E1 = { class: "
       ], 64))
     ], 32)) : j("", !0);
   }
-}), D1 = /* @__PURE__ */ qy(M1, [["__scopeId", "data-v-47ff2c34"]]), P1 = 2e3;
+}), D1 = /* @__PURE__ */ qy(M1, [["__scopeId", "data-v-13f5648e"]]), P1 = 2e3;
 function cc(e) {
   const t = e.margin ?? 8, n = e.gap ?? 4, o = Math.max(0, e.viewportWidth), r = Math.max(0, e.viewportHeight), i = Math.max(0, o - t * 2), a = Math.min(Math.max(0, e.requestedWidth), i), s = e.align === "right" ? e.anchor.right - a : e.anchor.left, l = Math.max(t, Math.min(s, o - t - a)), c = Math.max(0, r - e.anchor.bottom - n - t), u = Math.max(0, e.anchor.top - n - t), d = c < e.requestedMaxHeight && u > c ? "above" : "below", f = d === "above" ? u : c, h = Math.round(Math.min(Math.max(0, e.requestedMaxHeight), f)), m = Math.min(Math.max(0, e.panelHeight ?? h), h), y = d === "above" ? e.anchor.top - n - m : e.anchor.bottom + n, v = e.containingBlockOrigin ?? { left: 0, top: 0 };
   return {

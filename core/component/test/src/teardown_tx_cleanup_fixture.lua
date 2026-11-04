@@ -2,7 +2,7 @@ local M: any = {}
 M.ACCESS, M.COMMAND_TYPES = {DELETE = 8}, {DELETE_COMPONENT = "delete"}
 function M.reset(operation, stage, source)
     M.event, M.event_commits, M.audience_commits, M.recipients = nil, nil, nil, nil
-    M.absent = false
+    M.absent, M.row_locks, M.pending = false, 0, false
     M.operation, M.stage, M.source = operation, stage, source
     M.release_source, M.rollback_source = nil, nil
     M.opens, M.releases, M.rollbacks, M.commits, M.effects, M.notifications, M.purges = 0, 0, 0, 0, 0, 0, 0
@@ -20,7 +20,7 @@ function M.sql_get()
     function db:begin() return M.result("begin", M.transaction()) end
     function db:release()
         M.releases = M.releases + 1
-        return true, M.release_source
+        return true, M.releases == 1 and M.release_source or nil
     end
     function db:type() return M.result("dialect", "sqlite") end
     function db:execute() return {rows_affected = 1}, nil end
@@ -31,6 +31,7 @@ function M.transaction(): any
     function tx:rollback() M.rollbacks = M.rollbacks + 1; return true, M.rollback_source end
     function tx:commit() M.commits = M.commits + 1; return M.result("commit", true) end
     function tx:execute(statement)
+        if statement:sub(1,6) == "UPDATE" then M.row_locks = M.row_locks + 1 end
         return M.result(statement:sub(1,6) == "UPDATE" and "lock" or "pointer", {rows_affected = 1})
     end
     function tx:query()
@@ -48,9 +49,9 @@ function M.mark_deleting_tx() return select(2, M.result("mark", true)) end
 function M.component_summary_tx() return M.result("summary", {impl_id = "fixture:implementation"}) end
 function M.dispatch()
     M.effects = M.effects + 1
-    return M.result("dispatch", {changes_made = true})
+    return M.result("dispatch", {changes_made = not M.pending, pending = M.pending})
 end
 function M.deleted() return select(2, M.result("lifecycle", true)) end
-function M.committed() M.notifications = M.notifications + 1; return nil end
+function M.committed() M.notifications = M.notifications + 1; return select(2, M.result("committed", true)) end
 function M.contract_get() M.purges = M.purges + 1; return nil, nil end
 return M
