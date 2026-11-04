@@ -82,11 +82,14 @@ local function fetcher_for(provider: string): (string?, string?)
     return found, nil
 end
 
-local function fetch_bytes(a: any): (string?, string?)
+-- Returns the bytes and, for a declared provider fetcher, its whole answer
+-- (filename and content_type when the provider knows them).
+local function fetch_bytes(a: any): (string?, string?, any?)
     local fetch, lookup_err = fetcher_for(tostring(a.source or ""))
     if lookup_err then return nil, lookup_err end
 
     local bytes: string? = nil
+    local fetched_result: any = nil
     if fetch == "" then
         local resp, derr = M.deps.http.get(attachment_url(a), {})
         if derr then return nil, "download failed: " .. tostring(derr) end
@@ -103,10 +106,29 @@ local function fetch_bytes(a: any): (string?, string?)
         local fetched = (result :: any).bytes
         if type(fetched) ~= "string" or fetched == "" then return nil, "fetch returned no bytes" end
         bytes = fetched
+        fetched_result = result
     end
 
     if #(bytes :: string) > M.MAX_BYTES then return nil, "too large" end
-    return bytes, nil
+    return bytes, nil, fetched_result
+end
+
+local function non_empty(value: any): string?
+    if type(value) == "string" and value ~= "" then return value end
+    return nil
+end
+
+-- Caller metadata (for example an upload completion token) is kept; the thread
+-- routing keys this module owns are set last and cannot be overridden.
+local function upload_metadata(a: any): { [string]: any }
+    local metadata: { [string]: any } = {}
+    if type(a.metadata) == "table" then
+        for key, value in pairs(a.metadata) do metadata[key] = value end
+    end
+    metadata.source = a.source
+    metadata.thread_id = a.thread_id
+    metadata.external_message_id = a.external_message_id
+    return metadata
 end
 
 function M.ingest(att: any): (any?, string?)
@@ -114,23 +136,20 @@ function M.ingest(att: any): (any?, string?)
     if not ok then return nil, reason end
     local a: any = att
 
-    local bytes, berr = fetch_bytes(a)
+    local bytes, berr, fetched = fetch_bytes(a)
     if berr ~= nil or bytes == nil then return nil, berr end
-    local content_type: string? = nil
-    content_type = attachment_content_type(a)
+    fetched = type(fetched) == "table" and fetched or {}
+    local content_type = attachment_content_type(a) or non_empty(fetched.content_type)
+    local filename = non_empty(a.filename) or non_empty(fetched.filename) or "attachment"
 
     local upload, uerr = M.deps.uploads.upload_file(
         tostring(a.actor_id),
         bytes :: string,
-        tostring(a.filename or "attachment"),
+        filename,
         #(bytes :: string),
         content_type,
         nil,
-        {
-            source = a.source,
-            thread_id = a.thread_id,
-            external_message_id = a.external_message_id,
-        }
+        upload_metadata(a)
     )
     if uerr or not upload then return nil, "upload failed: " .. tostring(uerr) end
     return upload
