@@ -86,6 +86,28 @@ local function define_tests()
             test.eq(img.size, 8)
         end)
 
+        test.it("finds the original of an image upload as the image processor stores it", function()
+            stub({ parts = { list_artifacts = function()
+                return { { artifact_id = "a-ocr", kind = "markdown", role = "primary", mime_type = "text/markdown" },
+                    { artifact_id = "a-page", kind = "image", role = "rendered-page", mime_type = "image/jpeg" },
+                    { artifact_id = "a-orig", kind = "image", role = "primary", mime_type = "image/png", size = 12 } }, nil
+            end } })
+            local img = reader.source_image("up-1")
+            test.eq(img.artifact_id, "a-orig")
+            test.eq(img.content_type, "image/png")
+            test.eq(img.size, 12)
+        end)
+
+        test.it("gives no image for a document with page renders and extracted images", function()
+            stub({ parts = { list_artifacts = function()
+                return { { artifact_id = "a-pdf", kind = "file", role = "source", mime_type = "application/pdf" },
+                    { artifact_id = "a-md", kind = "markdown", role = "primary", mime_type = "text/markdown" },
+                    { artifact_id = "a-page", kind = "image", role = "rendered-page", mime_type = "image/jpeg" },
+                    { artifact_id = "a-fig", kind = "image", role = "extracted-image", mime_type = "image/png" } }, nil
+            end } })
+            test.is_nil(reader.source_image("up-1"))
+        end)
+
         test.it("reads image bytes of this upload only and within the cap", function()
             stub()
             local img = reader.image_bytes("up-1", "a-img")

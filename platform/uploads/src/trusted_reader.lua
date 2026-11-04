@@ -87,6 +87,13 @@ function M.primary_text(upload_id: string, max_chars: number?): (PrimaryText?, a
     }, nil
 end
 
+-- The image processor stores the original of an image upload as kind=image,
+-- role=primary; a source-role image artifact counts as the original too.
+local function is_original_image(artifact: any, mime: string): boolean
+    if mime:sub(1, 6) ~= "image/" then return false end
+    return artifact.role == "source" or (artifact.kind == "image" and artifact.role == "primary")
+end
+
 -- source_image(upload_id) -> the original image artifact of an image upload,
 -- or nil for a document (documents are read as text only).
 function M.source_image(upload_id: string): (SourceImage?, any?)
@@ -94,7 +101,7 @@ function M.source_image(upload_id: string): (SourceImage?, any?)
     if err then return nil, err end
     for _, artifact in ipairs(artifacts or {}) do
         local mime = tostring(artifact.mime_type or ""):lower()
-        if artifact.role == "source" and mime:sub(1, 6) == "image/" then
+        if is_original_image(artifact, mime) then
             return { artifact_id = artifact.artifact_id, content_type = mime, size = tonumber(artifact.size) }, nil
         end
     end
