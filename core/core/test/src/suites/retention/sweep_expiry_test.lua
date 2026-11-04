@@ -8,6 +8,8 @@ local uuid = require("uuid")
 local sweeper = require("sweeper")
 local writer = require("threads_writer")
 local jobs = require("jobs")
+local claim = require("claim")
+local lifecycle = require("lifecycle")
 local prune_scaffold = require("prune_scaffold")
 
 local FORMER_EVENT_ROWS = 100000
@@ -51,10 +53,12 @@ local function define_tests()
             test.not_nil(enqueued)
             local handle = db()
             local token = "job-output-lease"
-            local leased, lease_err = handle:execute([[UPDATE kickside_job SET status='running',
-                lease_token=$1,execution_seq=1 WHERE id=$2]], { token, enqueued.id })
-            test.is_nil(lease_err)
-            test.eq(tonumber(leased.rows_affected), 1)
+            local admission = assert(handle:begin())
+            local dbtype = tostring(handle:type())
+            local leased, lease_err = claim.lease_row(admission, dbtype, enqueued.id, token,
+                lifecycle.future_string(dbtype, 60), lifecycle.now_string(dbtype))
+            if lease_err or not leased then admission:rollback(); handle:release(); error(lease_err or "fixture job is not pending") end
+            assert(admission:commit())
             local tx = assert(handle:begin())
             local appended, append_err = writer.append_system_tx(tx, tostring(handle:type()), thread_id,
                 { { type = "job_output", body_json = "{}" } }, enqueued.id)

@@ -90,7 +90,27 @@ local function cleanup()
         end
     end
 end
+local function release_boundaries()
+    for _, stage in ipairs({"lock", "proof"}) do
+        for _, kind in ipairs(kinds) do
+            test.it("release preserves boundary errors/" .. stage .. "/" .. kind, function()
+                local source = errors.new({kind = kind, retryable = true, message = "release proof unavailable",
+                    details = {code = "release_boundary", boundary = stage}})
+                fixture.reset("release", stage, source, sql.type.SQLITE)
+                local value, err = call("release")
+                test.is_false(value)
+                test.eq(err:kind(), source:kind())
+                test.is_true(err:retryable())
+                test.eq(err:details().code, "release_boundary")
+                test.eq(err:details().boundary, stage)
+                test.eq(fixture.rollbacks, 1)
+                test.eq(fixture.commits, 0)
+            end)
+        end
+    end
+end
 local function proofs()
+    release_boundaries()
     test.it("release fences the stored thread owner before requeueing a partial assignment", function()
         fixture.reset("release", "", nil, sql.type.POSTGRES)
         fixture.owner_rows = {{owner_kind = "thread", owner_id = "stored-thread"}}
@@ -192,7 +212,7 @@ local function proofs()
                 local value, err = call(mode)
                 test.is_nil(err)
                 test.is_true(value)
-                test.eq(fixture.writes, 2)
+                test.eq(fixture.writes, mode == "release" and 3 or 2)
                 test.eq(fixture.rollbacks, 0)
                 test.eq(fixture.commits, 1)
             end)

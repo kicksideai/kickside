@@ -1523,6 +1523,7 @@ entries:
     kind: library.lua
     source: file://start_fence_native_source.lua
     imports:
+      reclaim: kickside.core.jobs.persist:reclaim
       sql: app:start_fence_native_sql_adapter
       job_types: kickside.core.jobs:types
       lifecycle: kickside.core.jobs.persist:lifecycle

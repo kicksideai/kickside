@@ -302,14 +302,10 @@ return { run = test.run_cases(function()
             test.not_nil(paused)
             -- Lease this task's exact slot, then execute the production worker.
             -- The resident pool is disabled so no unrelated job can overtake it.
-            local token = uuid.v7()
-            local now = time.now():utc()
-            h.exec("UPDATE kickside_job SET status='running',execution_seq=execution_seq+1,lease_token=$1,"
-                .. "lease_until=$2,scheduled_at=$3 WHERE id=$4 AND status='pending'",
-                { token, now:add(60 * time.SECOND):format(time.RFC3339), now:format(time.RFC3339), job_id })
-            local job = h.query("SELECT * FROM kickside_job WHERE id=$1", { job_id })[1]
+            local job = h.lease_job(job_id)
             job.deadline = time.now():utc():add(h.execution_ceiling_ms() * time.MILLISECOND):format(time.RFC3339)
-            test.eq(job.lease_token, token)
+            test.not_nil(job.lease_token)
+            test.not_nil(job.heartbeat_at)
             local completed, complete_err = env.caller:call("kickside.automation:round", {
                 job = job, payload = { automation_id = id, drive_key = "main" } })
             test.is_nil(complete_err, tostring(complete_err))
@@ -347,14 +343,11 @@ return { run = test.run_cases(function()
                     cleanup_id = id
                     local job_id = h.read_drive(id, "main").job_id
                     cleanup_job_id = job_id
-                    local token = uuid.v7()
-                    local now = time.now():utc()
-                    h.exec("UPDATE kickside_job SET status='running',execution_seq=execution_seq+1,lease_token=$1,"
-                        .. "lease_until=$2,scheduled_at=$3 WHERE id=$4 AND status='pending'",
-                        { token, now:add(60 * time.SECOND):format(time.RFC3339), now:format(time.RFC3339), job_id })
-                    local job = h.query("SELECT * FROM kickside_job WHERE id=$1", { job_id })[1]
+                    local job = h.lease_job(job_id)
+                    local token = job.lease_token
                     job.deadline = time.now():utc():add(h.execution_ceiling_ms() * time.MILLISECOND):format(time.RFC3339)
-                    test.eq(job.lease_token, token)
+                    test.not_nil(job.lease_token)
+                    test.not_nil(job.heartbeat_at)
                     if mode == "paged" then
                         -- Retained history larger than one bounded Jobs purge page.
                         h.exec("UPDATE kickside_job SET execution_seq=102 WHERE id=$1", { job_id })
@@ -495,10 +488,7 @@ return { run = test.run_cases(function()
                 h.exec("CREATE TABLE recurring_cleanup_watch (component_id TEXT PRIMARY KEY, phase TEXT NOT NULL)")
                 local id = create()
                 local job_id = h.read_drive(id, "main").job_id
-                local now = time.now():utc()
-                h.exec("UPDATE kickside_job SET status='running',execution_seq=execution_seq+1,lease_token=$1,"
-                    .. "lease_until=$2 WHERE id=$3", { uuid.v7(), now:add(60 * time.SECOND):format(time.RFC3339), job_id })
-                local job = h.query("SELECT * FROM kickside_job WHERE id=$1", { job_id })[1]
+                local job = h.lease_job(job_id)
                 job.deadline = time.now():utc():add(h.execution_ceiling_ms() * time.MILLISECOND):format(time.RFC3339)
                 local deleted, delete_err = call({ action = "delete", id = id })
                 test.is_nil(delete_err, tostring(delete_err))

@@ -14,19 +14,20 @@ local function run(input: any): table
         local _, ready_err = process.send(payload.ready_to, "job_worker_ready", { job_id = input.job.id, target_pid = tostring(process.pid()) })
         if ready_err then return {ok = false, error_native = job_types.error_to_data(ready_err)} end
     end
-    if payload.fail == true then
-        local kind = job_types.native_kind(payload.error_kind) or errors.INTERNAL
-        return {ok = false, error_native = job_types.error_to_data(errors.new({message = tostring(payload.error_text or "configured proc failure"), kind = kind}) :: error)}
-    end
     if type(payload.finish_topic) == "string" then
         local finish = process.listen(payload.finish_topic)
         finish:receive()
+    end
+    if payload.fail == true then
+        local kind = job_types.native_kind(payload.error_kind) or errors.INTERNAL
+        return {ok = false, error_native = job_types.error_to_data(errors.new({message = tostring(payload.error_text or "configured proc failure"), kind = kind}) :: error)}
     end
     if payload.block == true then channel.new():receive() end
     local sleep_ms = math.floor(tonumber(payload.sleep_ms) or 0)
     if sleep_ms > 0 then
         time.sleep(tostring(sleep_ms) .. "ms")
     end
+    if payload.output ~= nil then return {ok = true, output = payload.output} end
     return {ok = true, output = { slept = true, sleep_ms = sleep_ms, record = { status = "completed" } }}
 end
 

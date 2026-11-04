@@ -168,15 +168,21 @@ local function finalize_job_run(
         :set("actions_json", actions_json)
         :where(sql.builder.eq({ id = run_ctx.id }))
         :where("status <> ?", job_types.RUN_STATE.LEASE_LOST)
+        :where("NOT EXISTS (SELECT 1 FROM kickside_job j WHERE j.id=kickside_job_run.job_id"
+            .. " AND j.status='running' AND j.lease_token=kickside_job_run.lease_token"
+            .. " AND j.last_error=? || kickside_job_run.lease_token)", job_types.TERMINATION_PENDING_PREFIX)
         :run_with(db_or_tx)
         :exec()
     local count, count_err = sql_boundary.single_row_count(result, update_err, "failed to finalize job run", "finalize.rows_affected", response_error)
     if count_err then return count_err end
     if count == 0 then
-        local rows, read_err = db_or_tx:query("SELECT status FROM kickside_job_run WHERE id=$1", {run_ctx.id})
+        local rows, read_err = db_or_tx:query("SELECT r.status, EXISTS (SELECT 1 FROM kickside_job j WHERE j.id=r.job_id"
+            .. " AND j.status='running' AND j.lease_token=r.lease_token AND j.last_error=$1 || r.lease_token)"
+            .. " AS termination_pending FROM kickside_job_run r WHERE r.id=$2", {job_types.TERMINATION_PENDING_PREFIX, run_ctx.id})
         if read_err then return errors.wrap(read_err, "job run finalization status failed") end
         if type(rows) ~= "table" then return response_error("finalize.rows") end
-        if rows[1] and rows[1].status == job_types.RUN_STATE.LEASE_LOST then return nil end
+        if rows[1] and (rows[1].status == job_types.RUN_STATE.LEASE_LOST
+            or rows[1].termination_pending == true or tonumber(rows[1].termination_pending) == 1) then return nil end
         return (errors.new({ message = "job run row not found during finalize", kind = errors.NOT_FOUND }) :: error)
     end
     return nil
@@ -352,6 +358,7 @@ local function fail_in_tx(db_or_tx: Executor, job: table, dbtype: string, error_
         :set("wake_demand_at", nil)
         :set("wake_control_pending", false)
         :where(sql.builder.eq({ id = job.id, status = job_types.JOB_STATE.RUNNING, lease_token = lease_token }))
+        :where("(last_error IS NULL OR last_error <> ?)", job_types.TERMINATION_PENDING_PREFIX .. lease_token)
         :run_with(db_or_tx)
         :exec()
     local count, count_err = sql_boundary.single_row_count(result, err, "fail update failed", "fail.rows_affected", response_error)

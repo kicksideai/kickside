@@ -50,8 +50,8 @@ local function job_still_running(db_or_tx: Executor, job: table, dbtype: string?
     local runs, run_err = sql.builder.select("status")
         :from("kickside_job_run")
         :where(sql.builder.eq({ id = run_id }))
-        :where("NOT EXISTS (SELECT 1 FROM kickside_job j WHERE j.id = ? AND substr(j.last_error, 1, ?) = ?)",
-            id, #job_types.TERMINATION_PENDING_PREFIX, job_types.TERMINATION_PENDING_PREFIX)
+        :where("NOT EXISTS (SELECT 1 FROM kickside_job j WHERE j.id = ? AND j.last_error = ?)",
+            id, job_types.TERMINATION_PENDING_PREFIX .. lease_token)
         :limit(1)
         :run_with(db_or_tx)
         :query()

@@ -139,6 +139,7 @@ entries:
     reclaim: kickside.core.jobs.persist:reclaim
     claim_execution: kickside.core.jobs.persist:claim_execution
     lifecycle: kickside.core.jobs.persist:lifecycle
+    lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
     proc_supervisor: kickside.core.jobs:proc_supervisor
     job_fixture: app:job_fixture
     row_bytes: kickside.core.jobs.persist:row_bytes
@@ -156,6 +157,7 @@ entries:
     reclaim: kickside.core.jobs.persist:reclaim
     claim_execution: kickside.core.jobs.persist:claim_execution
     lifecycle: kickside.core.jobs.persist:lifecycle
+    lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
     proc_supervisor: kickside.core.jobs:proc_supervisor
     job_fixture: app:job_fixture
     row_bytes: kickside.core.jobs.persist:row_bytes

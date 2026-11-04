@@ -15,6 +15,8 @@ local funcs = require("funcs")
 local contract = require("contract")
 local security = require("security")
 local drive = require("drive")
+local jobs_claim = require("jobs_claim")
+local lifecycle = require("lifecycle")
 local user_repo = require("user_repo")
 local user_groups_repo = require("user_groups_repo")
 
@@ -192,9 +194,17 @@ local function define_tests(section: string)
             if err then error(tostring(err)) end
             exec("UPDATE kickside_automation_drive SET round_token = $1, round_until = $2 WHERE automation_id = $3 AND drive_key = 'main'",
                 { "round-" .. automation_id, "2999-01-01T00:00:00Z", automation_id })
-            exec("INSERT INTO kickside_job (id, job_type, job_identity, status, lease_token, lease_until, execution_seq,"
-                .. " owner_kind, owner_id) VALUES ($1, 'kickside.automation:round', $2, 'running', $3, $4, 1, 'automation', $5)",
-                { round_job.id, "test:" .. round_job.id, round_job.lease_token, "2999-01-01T00:00:00Z", automation_id })
+            exec("INSERT INTO kickside_job (id, job_type, job_identity, status, owner_kind, owner_id)"
+                .. " VALUES ($1, 'kickside.automation:round', $2, 'pending', 'automation', $3)",
+                { round_job.id, "test:" .. round_job.id, automation_id })
+            d = assert(sql.get(DB))
+            tx = assert(d:begin())
+            local leased, lease_err = jobs_claim.lease_row(tx, tostring(d:type()), round_job.id,
+                round_job.lease_token, "2999-01-01T00:00:00Z", lifecycle.now_string(tostring(d:type())))
+            if lease_err or not leased then tx:rollback(); d:release(); error(lease_err or "fixture job is not pending") end
+            assert(tx:commit())
+            round_job = assert(d:query("SELECT * FROM kickside_job WHERE id=$1", {round_job.id}))[1]
+            assert(d:release())
         end)
 
         if section == "delivery" then

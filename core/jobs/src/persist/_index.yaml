@@ -188,6 +188,7 @@ entries:
     source: file://claim_execution.lua
     modules: [sql]
     imports:
+      reclaim: kickside.core.jobs.persist:reclaim
       job_types: kickside.core.jobs:types
       lifecycle: kickside.core.jobs.persist:lifecycle
       worker_marker: kickside.core.jobs.persist:worker_marker

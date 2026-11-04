@@ -9,6 +9,8 @@ entries:
     method: run
     modules: [funcs, security, uuid, json, sql, time]
     imports:
+      jobs_claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
       test: wippy.test:test
       users: kickside.users.persist:user_repo
       groups: kickside.users.persist:user_groups_repo
@@ -23,6 +25,8 @@ entries:
     method: exercise
     modules: [funcs, security, uuid, json, sql, time]
     imports:
+      jobs_claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
       test: wippy.test:test
       users: kickside.users.persist:user_repo
       groups: kickside.users.persist:user_groups_repo

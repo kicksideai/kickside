@@ -76,15 +76,24 @@ local function settle_child_exit(db: sql.DB, dbtype: string, job: table, run_ctx
     if control == "termination_unconfirmed" then
         return worker_fence.hold_unconfirmed_execution(db, job)
     elseif control == "revoked" then
+        if child_err and job_types.is_lease_lost_error(child_err) then
+            local history_err = lifecycle.finalize_job_run(db, dbtype, run_ctx,
+                job_types.RUN_STATE.LEASE_LOST, {}, {}, tostring(child_err))
+            if history_err then return history_err end
+        end
         local changed, finish_err = lifecycle_cancel.finish_cancellation(db, dbtype, {
             id = job.id, token = job.lease_token, execution_seq = job.execution_seq,
         })
         if finish_err then return finish_err end
         if not changed then
-            local _, settle_err = reclaim.settle_confirmed(db, dbtype, {
+            local settled, settle_err = reclaim.settle_confirmed(db, dbtype, {
                 id = job.id, token = job.lease_token, execution_seq = job.execution_seq,
+                failure = child_err and {cause = child_err, error_text = tostring(child_err), failure_class = failure_class_for(child_err),
+                    retry_floor = retry_floor_for(child_err)} or nil,
             })
-            return settle_err
+            if settle_err then return settle_err end
+            if not settled then return child_err end
+            return nil
         end
         local history_err = lifecycle.finalize_job_run(db, dbtype, run_ctx,
             job_types.RUN_STATE.FAILED, {}, {}, "job execution revoked")
@@ -99,9 +108,7 @@ local function settle_child_exit(db: sql.DB, dbtype: string, job: table, run_ctx
     elseif child_err then
         local fail_err = fail_job(db, dbtype, job, {}, tostring(child_err), failure_class_for(child_err), run_ctx, retry_floor_for(child_err))
         if fail_err and job_types.is_lease_lost_error(fail_err) then
-            local finalize_err = lifecycle.finalize_job_run(db, dbtype, run_ctx,
-                job_types.RUN_STATE.LEASE_LOST, {}, {}, tostring(child_err))
-            return finalize_err or fail_err
+            return settle_child_exit(db, dbtype, job, run_ctx, child_err, "revoked")
         end
         return fail_err
     end

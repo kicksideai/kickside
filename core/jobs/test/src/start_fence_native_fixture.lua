@@ -21,6 +21,7 @@ function M.executor(): any
 end
 function M.transaction(): any
     return {
+        query = function() return M.result("proof", {{}}) end,
         execute = function(self, stage)
             M.writes = M.writes + 1
             return M.result(stage, {rows_affected = 1})

@@ -27,7 +27,7 @@ return { run = function(options)
                 if job then
                     local _, cancel_err = jobs.cancel(job.id)
                     test.is_nil(cancel_err)
-                    if not completed then
+                    if completion and not completed then
                         local selected = channel.select({ completion:case_receive(), time.after("15s"):case_receive() })
                         test.eq(selected.channel, completion)
                     end
@@ -37,6 +37,133 @@ return { run = function(options)
                     test.is_nil(unlisten_err)
                 end
             end)
+            test.it("retains typed stale-child loss and closes its history after ownership ends", function()
+                local db = assert(sql.get("app:db"))
+                local dbtype = tostring(db:type())
+                local leased = assert(job_fixture.enqueue_leased(db, dbtype, {
+                    job_type = "test.stale.child", worker_ref = "proc://app:job_sleep_proc",
+                    job_identity = {namespace = "stale", scope = uuid.v7(), key = "child"},
+                }))
+                job = leased
+                local run = assert(lifecycle.start_job_run(db, dbtype, leased, tostring(process.pid()), 1))
+                test.is_nil(lifecycle.complete_job(db, leased, dbtype))
+                assert(db:release())
+                local child_err, control = worker_child.supervise_job_child(leased, run.id)
+                test.is_true(job_types.is_lease_lost_error(child_err))
+                db = assert(sql.get("app:db"))
+                local settle_err = worker.settle_child_exit(db, dbtype, leased, run, child_err, control)
+                local history = assert(db:query("SELECT status FROM kickside_job_run WHERE id=$1", {run.id}))[1]
+                local row = assert(db:query("SELECT status FROM kickside_job WHERE id=$1", {leased.id}))[1]
+                assert(db:release())
+                test.is_true(job_types.is_lease_lost_error(settle_err))
+                test.eq(history.status, "lease_lost")
+                test.eq(row.status, "done")
+            end)
+
+            test.it("recovers a supervisor-confirmed lease loss without treating it as an execution failure", function()
+                local db = assert(sql.get("app:db"))
+                local dbtype = tostring(db:type())
+                local leased = assert(job_fixture.enqueue_leased(db, dbtype, {
+                    job_type = "test.supervisor.lease", worker_ref = "proc://app:job_sleep_proc", max_attempts = 1,
+                    job_identity = {namespace = "lease", scope = uuid.v7(), key = "supervisor"},
+                    payload = {block = true, ready_to = tostring(process.pid()), max_execution_ms = 5000},
+                }))
+                job = leased
+                local run = assert(lifecycle.start_job_run(db, dbtype, leased, tostring(process.pid()), 1))
+                assert(db:release())
+                ready = process.listen("job_worker_ready")
+                completion = channel.new(1)
+                coroutine.spawn(function()
+                    local err, control = worker_child.supervise_job_child(leased, run.id)
+                    completion:send({err = err, control = control})
+                end)
+                local selected = channel.select({ready:case_receive(), completion:case_receive(), time.after("15s"):case_receive()})
+                completed = selected.channel == completion
+                test.eq(selected.channel, ready)
+                db = assert(sql.get("app:db"))
+                test.is_nil(worker_fence.prepare_termination(db, leased))
+                assert(db:release())
+                local past = dbtype == sql.type.SQLITE and "2000-01-01 00:00:00" or "2000-01-01T00:00:00Z"
+                test.is_true(assert(proc_supervisor.notify(leased.id, leased.lease_token,
+                    leased.execution_seq, "lease_renewed", past)))
+                selected = channel.select({completion:case_receive(), time.after("15s"):case_receive()})
+                completed = selected.channel == completion
+                test.eq(selected.channel, completion)
+                test.is_true(job_types.is_lease_lost_error(selected.value.err))
+                db = assert(sql.get("app:db"))
+                local settle_err = worker.settle_child_exit(db, dbtype, leased, run, selected.value.err, selected.value.control)
+                local row = assert(db:query("SELECT status,lease_token FROM kickside_job WHERE id=$1", {leased.id}))[1]
+                local history = assert(db:query("SELECT status FROM kickside_job_run WHERE id=$1", {run.id}))[1]
+                assert(db:release())
+                test.is_nil(settle_err)
+                test.eq(row.status, "pending")
+                test.is_nil(row.lease_token)
+                test.eq(history.status, "lease_lost")
+            end)
+
+            for _, intent in ipairs({"cancel", "expiry"}) do
+                for _, outcome in ipairs({"failure", "invalid", "timeout"}) do
+                    test.it("settles " .. intent .. " intent after supervised " .. outcome, function()
+                        local db = assert(sql.get("app:db"))
+                        local dbtype = tostring(db:type())
+                        local finish = "fenced_finish_" .. uuid.v7()
+                        local leased = assert(job_fixture.enqueue_leased(db, dbtype, {
+                            job_type = "test.fenced.outcome." .. uuid.v7(), worker_ref = "proc://app:job_sleep_proc",
+                            job_identity = {namespace = "fenced", scope = uuid.v7(), key = "outcome"},
+                            payload = {finish_topic = finish, ready_to = tostring(process.pid()),
+                                fail = outcome == "failure", output = outcome == "invalid" and {tier = "invalid"} or nil,
+                                max_execution_ms = outcome == "timeout" and 1000 or 5000},
+                        }))
+                        job = leased
+                        local run = assert(lifecycle.start_job_run(db, dbtype, leased, tostring(process.pid()), 1))
+                        assert(db:release())
+                        ready = process.listen("job_worker_ready")
+                        local done = channel.new(1)
+                        completion = done
+                        coroutine.spawn(function()
+                            local err, control = worker_child.supervise_job_child(leased, run.id)
+                            done:send({err = err, control = control})
+                        end)
+                        local selected = channel.select({ready:case_receive(), done:case_receive(), time.after("15s"):case_receive()})
+                        test.eq(selected.channel, ready)
+                        local target = selected.value.target_pid
+                        db = assert(sql.get("app:db"))
+                        if intent == "cancel" then
+                            test.is_true(assert(lifecycle_cancel.cancel_job(db, dbtype, {id = leased.id})))
+                        else
+                            test.is_nil(worker_fence.prepare_termination(db, leased))
+                            local tx = assert(db:begin())
+                            test.is_nil(reclaim.close_lost_run(tx, dbtype, leased.id, leased.execution_seq,
+                                leased.lease_token, lifecycle.now_string(dbtype)))
+                            assert(tx:commit())
+                        end
+                        assert(db:release())
+                        if outcome ~= "timeout" then assert(process.send(target, finish, {})) end
+                        selected = channel.select({done:case_receive(), time.after("15s"):case_receive()})
+                        completed = selected.channel == done
+                        test.eq(selected.channel, done)
+                        local child_err = selected.value.err
+                        db = assert(sql.get("app:db"))
+                        local before = assert(db:query("SELECT status,last_error FROM kickside_job WHERE id=$1", {leased.id}))[1]
+                        local before_history = assert(db:query("SELECT status FROM kickside_job_run WHERE id=$1", {run.id}))[1]
+                        test.eq(before_history.status, intent == "expiry" and "lease_lost" or "running")
+                        local settle_err = worker.settle_child_exit(db, dbtype, leased, run, child_err, selected.value.control)
+                        local row = assert(db:query("SELECT status,lease_token,last_error FROM kickside_job WHERE id=$1", {leased.id}))[1]
+                        local history = assert(db:query("SELECT status,error_text FROM kickside_job_run WHERE id=$1", {run.id}))[1]
+                        assert(db:release())
+                        if outcome ~= "timeout" then test.is_true(job_types.is_lease_lost_error(child_err))
+                        else test.not_nil(child_err) end
+                        test.eq(before.status, "running")
+                        test.eq(before.last_error, job_types.TERMINATION_PENDING_PREFIX .. leased.lease_token)
+                        test.is_nil(settle_err)
+                        test.eq(row.status, intent == "cancel" and "cancelled" or "pending")
+                        test.is_nil(row.lease_token)
+                        test.eq(history.status, intent == "expiry" and "lease_lost" or "failed")
+                        if intent == "expiry" then test.eq(history.error_text, "lease ended: execution lease reclaimed") end
+                    end)
+                end
+            end
+
             test.it("settles an expired supervised execution as retryable after child termination", function()
                 local db = assert(sql.get("app:db"))
                 local dbtype = tostring(db:type())
@@ -107,6 +234,7 @@ return { run = function(options)
                 test.is_nil(duplicate_err)
                 test.eq(#duplicates, 0)
                 assert(db:release())
+                test.is_nil(select(2, jobs.cancel(job.id)))
                 job = nil
             end)
 
@@ -117,6 +245,7 @@ return { run = function(options)
                     job_type = "test.expiry.completion", worker_ref = "func://app:generic_job_target",
                     job_identity = {namespace = "expiry", scope = uuid.v7(), key = "completion"},
                 }))
+                job = leased
                 local run = assert(lifecycle.start_job_run(db, dbtype, leased, tostring(process.pid()), 1))
                 local lease = {token = leased.lease_token, execution_seq = leased.execution_seq}
                 assert(db:release())
@@ -159,9 +288,11 @@ return { run = function(options)
                     job_identity = {namespace = "expiry", scope = uuid.v7(), key = "race"},
                     payload = {finish_topic = finish, ready_to = tostring(process.pid()), max_execution_ms = 5000},
                 }))
+                job = leased
                 local run = assert(lifecycle.start_job_run(db, dbtype, leased, tostring(process.pid()), 1))
                 ready = process.listen("job_worker_ready")
                 local done = channel.new(1)
+                completion = done
                 coroutine.spawn(function()
                     local control, err = worker.process_job(db, dbtype, tostring(process.pid()), leased, run.id)
                     done:send({control = control, err = err})
@@ -178,6 +309,7 @@ return { run = function(options)
                 assert(tx:commit())
                 assert(process.send(target, finish, {}))
                 selected = channel.select({done:case_receive(), time.after("15s"):case_receive()})
+                completed = selected.channel == done
                 test.eq(selected.channel, done)
                 local runs = assert(db:query("SELECT status,error_text FROM kickside_job_run WHERE id=$1", {run.id}))
                 local _, settle_err = reclaim.settle_confirmed(db, dbtype, {
