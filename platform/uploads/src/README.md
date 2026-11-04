@@ -149,6 +149,10 @@ module's own `source`, `thread_id` and `external_message_id` always win. The
 filename and content type come from `att`, else from the provider fetcher's
 answer.
 
+Both are available starting with Uploads 0.3.9. Consumers using them must
+require Uploads >=0.3.9: an older installed package satisfying a wildcard
+dependency has no `trusted_reader` entry and drops `att.metadata`.
+
 ## Upload artifact contract
 
 The `upload.type` entries in [types/_index.yaml](types/_index.yaml),
