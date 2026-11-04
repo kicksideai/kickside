@@ -21,7 +21,9 @@ function M.executor(): any
 end
 function M.transaction(): any
     return {
-        query = function() return M.result("proof", {{}}) end,
+        query = function(self, statement)
+            return M.result(string.find(statement, "SELECT id", 1, true) == 1 and "lock" or "proof", {{}})
+        end,
         execute = function(self, stage)
             M.writes = M.writes + 1
             return M.result(stage, {rows_affected = 1})

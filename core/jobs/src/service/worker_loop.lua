@@ -75,6 +75,10 @@ local function settle_child_exit(db: sql.DB, dbtype: string, job: table, run_ctx
     child_err: error?, control: string?): error?
     if control == "termination_unconfirmed" then
         return worker_fence.hold_unconfirmed_execution(db, job)
+    elseif control ~= "revoked" and child_err and job_types.is_lease_lost_error(child_err) then
+        local fence_err = worker_fence.prepare_termination(db, job)
+        if fence_err then return fence_err end
+        return settle_child_exit(db, dbtype, job, run_ctx, child_err, "revoked")
     elseif control == "revoked" then
         if child_err and job_types.is_lease_lost_error(child_err) then
             local history_err = lifecycle.finalize_job_run(db, dbtype, run_ctx,
@@ -86,13 +90,12 @@ local function settle_child_exit(db: sql.DB, dbtype: string, job: table, run_ctx
         })
         if finish_err then return finish_err end
         if not changed then
-            local settled, settle_err = reclaim.settle_confirmed(db, dbtype, {
+            local _, settle_err = reclaim.settle_confirmed(db, dbtype, {
                 id = job.id, token = job.lease_token, execution_seq = job.execution_seq,
                 failure = child_err and {cause = child_err, error_text = tostring(child_err), failure_class = failure_class_for(child_err),
                     retry_floor = retry_floor_for(child_err)} or nil,
             })
             if settle_err then return settle_err end
-            if not settled then return child_err end
             return nil
         end
         local history_err = lifecycle.finalize_job_run(db, dbtype, run_ctx,

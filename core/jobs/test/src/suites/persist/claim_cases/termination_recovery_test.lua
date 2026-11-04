@@ -157,10 +157,13 @@ local function define_tests()
                 if intent == "cancel" then
                     test.is_true(assert(lifecycle_cancel.cancel_job(db, dbtype, {id = job.id})))
                 else
-                    fence(db, dbtype, job)
-                    local tx = assert(db:begin())
-                    test.is_nil(reclaim.close_lost_run(tx, dbtype, job.id, job.execution_seq, job.lease_token, lifecycle.now_string(dbtype)))
-                    assert(tx:commit())
+                    assert(db:execute("UPDATE kickside_job SET lease_until=$1 WHERE id=$2", {past(dbtype), job.id}))
+                    local child_name = proc_supervisor.child_name(job.id, job.lease_token)
+                    assert(process.registry.register(child_name, nil, process.registry.CONSISTENT))
+                    local progress, expiry_err = reclaim.reclaim_expired(db, dbtype, 1)
+                    assert(process.registry.unregister(child_name, process.registry.CONSISTENT))
+                    test.is_nil(expiry_err)
+                    test.eq(progress, 1)
                 end
                 local released, err = claim_execution.release_unstarted(db, job, "unstarted-slot", run.id)
                 local row = read(db, job.id)

@@ -17,6 +17,17 @@ local worker_fence = require("worker_fence")
 local worker_pool = require("worker_pool")
 local lifecycle_cancel = require("lifecycle_cancel")
 
+local function expire_without_notification(db: sql.DB, dbtype: string, job: table)
+    local past = dbtype == sql.type.SQLITE and "2000-01-01 00:00:00" or "2000-01-01T00:00:00Z"
+    assert(db:execute("UPDATE kickside_job SET lease_until=$1 WHERE id=$2", {past, job.id}))
+    local notify = proc_supervisor.notify
+    proc_supervisor.notify = function(...) return true, nil end
+    local progress, err = reclaim.reclaim_expired(db, dbtype, 1)
+    proc_supervisor.notify = notify
+    test.is_nil(err)
+    test.eq(progress, 1)
+end
+
 return { run = function(options)
     test.is_nil(job_fixture.supervise_as_loop())
     return test.run_cases(function()
@@ -55,9 +66,49 @@ return { run = function(options)
                 local history = assert(db:query("SELECT status FROM kickside_job_run WHERE id=$1", {run.id}))[1]
                 local row = assert(db:query("SELECT status FROM kickside_job WHERE id=$1", {leased.id}))[1]
                 assert(db:release())
-                test.is_true(job_types.is_lease_lost_error(settle_err))
+                test.is_nil(settle_err)
                 test.eq(history.status, "lease_lost")
                 test.eq(row.status, "done")
+            end)
+
+            test.it("recovers an expired unfenced assignment rejected before supervisor spawn", function()
+                local db = assert(sql.get("app:db"))
+                local dbtype = tostring(db:type())
+                local leased = assert(job_fixture.enqueue_leased(db, dbtype, {
+                    job_type = "test.unstarted.expiry." .. uuid.v7(), worker_ref = "proc://app:job_sleep_proc",
+                    max_attempts = 1,
+                    job_identity = {namespace = "expiry", scope = uuid.v7(), key = "unstarted"},
+                }))
+                job = leased
+                local run = assert(lifecycle.start_job_run(db, dbtype, leased, tostring(process.pid()), 1))
+                local past = dbtype == sql.type.SQLITE and "2000-01-01 00:00:00" or "2000-01-01T00:00:00Z"
+                assert(db:execute("UPDATE kickside_job SET lease_until=$1 WHERE id=$2", {past, leased.id}))
+                assert(db:release())
+                local child_err, control = worker_child.supervise_job_child(leased, run.id)
+                test.is_true(job_types.is_lease_lost_error(child_err))
+                local alive, alive_err = proc_supervisor.child_alive(leased.id, leased.lease_token)
+                test.is_nil(alive_err)
+                test.is_false(alive)
+                db = assert(sql.get("app:db"))
+                local before = assert(db:query("SELECT status,last_error FROM kickside_job WHERE id=$1", {leased.id}))[1]
+                test.eq(before.status, "running")
+                test.is_nil(before.last_error)
+                local settle_err = worker.settle_child_exit(db, dbtype, leased, run, child_err, control)
+                local row = assert(db:query("SELECT status,lease_token FROM kickside_job WHERE id=$1", {leased.id}))[1]
+                local history = assert(db:query("SELECT status FROM kickside_job_run WHERE id=$1", {run.id}))[1]
+                test.is_nil(settle_err)
+                test.eq(row.status, "pending")
+                test.is_nil(row.lease_token)
+                test.eq(history.status, "lease_lost")
+                local next_jobs = assert(claim.claim_batch(db, dbtype, 1, nil, nil, nil, {leased.job_type}))
+                test.eq(#next_jobs, 1)
+                test.eq(next_jobs[1].id, leased.id)
+                test.eq(#assert(claim.claim_batch(db, dbtype, 1, nil, nil, nil, {leased.job_type})), 0)
+                test.is_nil(worker.settle_child_exit(db, dbtype, leased, run, child_err, control))
+                local current = assert(db:query("SELECT status,lease_token FROM kickside_job WHERE id=$1", {leased.id}))[1]
+                test.eq(current.status, "running")
+                test.eq(current.lease_token, next_jobs[1].lease_token)
+                assert(db:release())
             end)
 
             test.it("recovers a supervisor-confirmed lease loss without treating it as an execution failure", function()
@@ -131,11 +182,7 @@ return { run = function(options)
                         if intent == "cancel" then
                             test.is_true(assert(lifecycle_cancel.cancel_job(db, dbtype, {id = leased.id})))
                         else
-                            test.is_nil(worker_fence.prepare_termination(db, leased))
-                            local tx = assert(db:begin())
-                            test.is_nil(reclaim.close_lost_run(tx, dbtype, leased.id, leased.execution_seq,
-                                leased.lease_token, lifecycle.now_string(dbtype)))
-                            assert(tx:commit())
+                            expire_without_notification(db, dbtype, leased)
                         end
                         assert(db:release())
                         if outcome ~= "timeout" then assert(process.send(target, finish, {})) end
@@ -251,7 +298,10 @@ return { run = function(options)
                 assert(db:release())
                 test.is_true(assert(jobs.lease_valid(leased.id, lease)))
                 db = assert(sql.get("app:db"))
-                test.is_nil(worker_fence.prepare_termination(db, leased))
+                local child_name = proc_supervisor.child_name(leased.id, leased.lease_token)
+                assert(process.registry.register(child_name, nil, process.registry.CONSISTENT))
+                expire_without_notification(db, dbtype, leased)
+                assert(process.registry.unregister(child_name, process.registry.CONSISTENT))
                 assert(db:release())
                 local valid, valid_err = jobs.lease_valid(leased.id, lease)
                 test.is_nil(valid_err)
@@ -260,9 +310,6 @@ return { run = function(options)
                 local past = dbtype == sql.type.SQLITE and "2000-01-01 00:00:00" or "2000-01-01T00:00:00Z"
                 assert(db:execute("UPDATE kickside_job SET lease_until=$1 WHERE id=$2", {past, leased.id}))
                 test.eq(assert(reclaim.reclaim_terminated(db, dbtype, 1, function() return true, nil end)), 0)
-                local tx = assert(db:begin())
-                test.is_nil(reclaim.close_lost_run(tx, dbtype, leased.id, leased.execution_seq, leased.lease_token, lifecycle.now_string(dbtype)))
-                assert(tx:commit())
                 assert(db:release())
                 valid, valid_err = jobs.lease_valid(leased.id, lease)
                 test.is_nil(valid_err)
@@ -300,13 +347,7 @@ return { run = function(options)
                 local selected = channel.select({ready:case_receive(), done:case_receive(), time.after("15s"):case_receive()})
                 test.eq(selected.channel, ready)
                 local target = selected.value.target_pid
-                -- Commit the same fence and history as expiry while the target's
-                -- successful result is in flight, before the revoke notification.
-                test.is_nil(worker_fence.prepare_termination(db, leased))
-                local tx = assert(db:begin())
-                test.is_nil(reclaim.close_lost_run(tx, dbtype, leased.id, leased.execution_seq,
-                    leased.lease_token, lifecycle.now_string(dbtype)))
-                assert(tx:commit())
+                expire_without_notification(db, dbtype, leased)
                 assert(process.send(target, finish, {}))
                 selected = channel.select({done:case_receive(), time.after("15s"):case_receive()})
                 completed = selected.channel == done
