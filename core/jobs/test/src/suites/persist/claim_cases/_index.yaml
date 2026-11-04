@@ -130,6 +130,22 @@ entries:
   - sql
   - uuid
   - process
+  - time
+  - channel
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    claim: kickside.core.jobs.persist:claim
+    reclaim: kickside.core.jobs.persist:reclaim
+    claim_execution: kickside.core.jobs.persist:claim_execution
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+    job_fixture: app:job_fixture
+- name: termination_recovery_child
+  kind: process.lua
+  source: file://termination_recovery_test.lua
+  method: child
+  modules: [process, time, channel, sql, uuid]
   imports:
     test: wippy.test:test
     job_types: kickside.core.jobs:types

@@ -89,6 +89,168 @@ end
 
 local function define_tests()
     test.describe("jobs.lifecycle enqueue", function()
+        test.it("atomically replaces a pending predecessor and preserves identical input dedupe", function()
+            with_db(function(db)
+                local params = {namespace = "replace", scope = uuid.v7(), key = "job",
+                    owner_locator = {kind = "test", id = "replace"}, job_type = "test.replace",
+                    immutable_payload = {revision = 1}}
+                local first = assert(jobs.enqueue(params))
+                params.replace = true
+                local same = assert(jobs.enqueue(params))
+                test.eq(same.id, first.id)
+                test.is_true(same.existing)
+                test.is_nil(same.replaced_job_id)
+                params.immutable_payload = {revision = 2}
+                local second = assert(jobs.enqueue(params))
+                test.is_false(second.existing)
+                test.eq(second.replaced_job_id, first.id)
+                test.is_true(second.id ~= first.id)
+                test.eq(job_status(db, first.id), job_types.JOB_STATE.CANCELLED)
+                test.eq(job_status(db, second.id), job_types.JOB_STATE.PENDING)
+                local rows = assert(db:query("SELECT id FROM kickside_job WHERE job_identity=$1 AND status IN ('pending','running')", {first.job_identity}))
+                test.eq(#rows, 1)
+                test.eq(rows[1].id, second.id)
+                assert(jobs.cancel(second.id))
+            end)
+        end)
+
+        test.it("refuses replacement by another owner and validates its boolean option", function()
+            with_db(function(db)
+                local params = {namespace = "replace", scope = uuid.v7(), key = "job",
+                    owner_locator = {kind = "test", id = "owner"}, job_type = "test.replace", immutable_payload = {}}
+                local first = assert(jobs.enqueue(params))
+                params.replace = "yes"
+                local invalid, invalid_err = jobs.enqueue(params)
+                test.is_nil(invalid)
+                test.is_true(errors.is(invalid_err, errors.INVALID))
+                params.replace = true
+                params.owner_locator = {kind = "test", id = "another-owner"}
+                local refused, err = jobs.enqueue(params)
+                test.is_nil(refused)
+                test.is_true(errors.is(err, errors.CONFLICT))
+                test.is_false(err:retryable())
+                test.eq(job_status(db, first.id), job_types.JOB_STATE.PENDING)
+                assert(jobs.cancel(first.id))
+            end)
+        end)
+
+        test.it("retains a running identity and returns a retryable replacement conflict", function()
+            with_db(function(db)
+                local dbtype = tostring(db:type())
+                local params = {namespace = "replace", scope = uuid.v7(), key = "job",
+                    owner_locator = {kind = "thread", id = uuid.v7()}, job_type = "test.replace", immutable_payload = {revision = 1}}
+                local first = assert(jobs.enqueue(params))
+                local running = assert(job_fixture.lease_own(db, dbtype, first.id))
+                params.replace = true
+                test.eq(assert(jobs.enqueue(params)).id, first.id)
+                params.immutable_payload = {revision = 2}
+                for attempt = 1, 2 do
+                    if attempt == 2 then
+                        assert(db:execute("UPDATE kickside_job_thread_cleanup SET started=TRUE WHERE thread_id=$1", {params.owner_locator.id}))
+                    end
+                    local refused, err = jobs.enqueue(params)
+                    test.is_nil(refused)
+                    test.is_true(errors.is(err, errors.CONFLICT))
+                    test.is_true(err:retryable())
+                    test.eq(err:details().job_id, first.id)
+                    test.eq(job_row(db, first.id).lease_token, running.lease_token)
+                end
+                test.is_nil(lifecycle.fail_job(db, running, dbtype, "invalid input", "deterministic"))
+            end)
+        end)
+
+        test.it("keeps identical-input dedupe unchanged while an owner retires", function()
+            with_db(function(db)
+                local owner = uuid.v7()
+                local params = {namespace = "replace", scope = owner, key = "job",
+                    owner_locator = {kind = "thread", id = owner}, job_type = "test.replace", immutable_payload = {}}
+                local first = assert(jobs.enqueue(params))
+                assert(db:execute("UPDATE kickside_job_thread_cleanup SET started=TRUE WHERE thread_id=$1", {owner}))
+                for _, replace in ipairs({false, true}) do
+                    params.replace = replace
+                    local same = assert(jobs.enqueue(params))
+                    test.eq(same.id, first.id)
+                    test.is_true(same.existing)
+                end
+                assert(jobs.cancel(first.id))
+            end)
+        end)
+
+        test.it("rolls pending replacement back when successor validation fails", function()
+            with_db(function(db)
+                local params = {namespace = "replace", scope = uuid.v7(), key = "job",
+                    owner_locator = {kind = "test", id = "replace"}, job_type = "test.replace", immutable_payload = {revision = 1}}
+                local first = assert(jobs.enqueue(params))
+                params.replace = true
+                params.immutable_payload = {revision = 2}
+                params.scheduled_at = "invalid"
+                local successor, err = jobs.enqueue(params)
+                test.is_nil(successor)
+                test.is_true(errors.is(err, errors.INVALID))
+                test.eq(job_status(db, first.id), job_types.JOB_STATE.PENDING)
+                params.replace, params.scheduled_at, params.immutable_payload = false, nil, {revision = 1}
+                test.eq(assert(jobs.enqueue(params)).id, first.id)
+                assert(jobs.cancel(first.id))
+            end)
+        end)
+
+        test.it("leaves replacement commit and rollback with the transaction owner", function()
+            with_db(function(db)
+                local params = {namespace = "replace", scope = uuid.v7(), key = "job",
+                    owner_locator = {kind = "test", id = "replace"}, job_type = "test.replace", immutable_payload = {revision = 1}}
+                local first = assert(jobs.enqueue(params))
+                params.replace, params.immutable_payload = true, {revision = 2}
+                local tx = assert(db:begin())
+                local successor = assert(jobs.enqueue_tx(tx, tostring(db:type()), params))
+                test.eq(successor.replaced_job_id, first.id)
+                local rows = assert(tx:query("SELECT id,status FROM kickside_job WHERE job_identity=$1 ORDER BY id", {first.job_identity}))
+                test.eq(#rows, 2)
+                test.eq(rows[1].status, job_types.JOB_STATE.CANCELLED)
+                test.eq(rows[2].status, job_types.JOB_STATE.PENDING)
+                assert(tx:rollback())
+                test.eq(job_status(db, first.id), job_types.JOB_STATE.PENDING)
+                test.is_nil(job_status(db, successor.id))
+                tx = assert(db:begin())
+                successor = assert(jobs.enqueue_tx(tx, tostring(db:type()), params))
+                assert(tx:commit())
+                test.eq(job_status(db, first.id), job_types.JOB_STATE.CANCELLED)
+                test.eq(job_status(db, successor.id), job_types.JOB_STATE.PENDING)
+                assert(jobs.cancel(successor.id))
+            end)
+        end)
+
+        test.it("preserves the successor when enqueue races a pending replacement", function()
+            with_db(function(db)
+                local params = {namespace = "replace", scope = uuid.v7(), key = "job",
+                    owner_locator = {kind = "test", id = "replace"}, job_type = "test.replace", immutable_payload = {revision = 1}}
+                local first = assert(jobs.enqueue(params))
+                local done = channel.new(2)
+                for _, replace in ipairs({false, true}) do
+                    coroutine.spawn(function()
+                        local value, err = jobs.enqueue({namespace = params.namespace, scope = params.scope, key = params.key,
+                            owner_locator = params.owner_locator, job_type = params.job_type,
+                            immutable_payload = {revision = 2}, replace = replace})
+                        done:send({value = value, err = err, replace = replace})
+                    end)
+                end
+                local successor = nil
+                for _ = 1, 2 do
+                    local result = done:receive()
+                    if result.replace then
+                        test.is_nil(result.err, tostring(result.err))
+                        successor = result.value
+                    elseif result.err then test.is_true(errors.is(result.err, errors.CONFLICT)) end
+                end
+                test.not_nil(successor)
+                test.eq(successor.replaced_job_id, first.id)
+                local rows = assert(db:query("SELECT id,payload FROM kickside_job WHERE job_identity=$1 AND status IN ('pending','running')", {first.job_identity}))
+                test.eq(#rows, 1)
+                test.eq(rows[1].id, successor.id)
+                test.eq(assert(json.decode(rows[1].payload)).revision, 2)
+                assert(jobs.cancel(successor.id))
+            end)
+        end)
+
         test.it("retains native trace refusals without enqueueing a job", function()
             with_db(function(db: sql.DB)
                 local key = uuid.v7()

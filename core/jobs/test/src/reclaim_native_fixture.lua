@@ -39,11 +39,12 @@ end
 function M.database(): any
     local db: any = {}
     function db:begin() M.in_transaction = true; return M.result("begin", self) end
-    function db:rollback() M.rollbacks = M.rollbacks + 1; return M.result("rollback", true) end
-    function db:commit() M.commits = M.commits + 1; return M.result("commit", true) end
-    function db:query(...)
+    function db:rollback() M.in_transaction = false; M.rollbacks = M.rollbacks + 1; return M.result("rollback", true) end
+    function db:commit() M.in_transaction = false; M.commits = M.commits + 1; return M.result("commit", true) end
+    function db:query(statement, ...)
+        if statement == "candidate" then return M.result("lookup", {row()}) end
         M.queries = M.queries + 1
-        if (M.route == "many" or M.route == "terminated" or M.route == "live") and M.queries == 1 then
+        if M.route == "many" and M.queries == 1 then
             return M.result("lookup", {row()})
         end
         return M.result("history", {{id = "run", status = "running", lease_token = "token", started_at_unix = 1}})
@@ -67,7 +68,8 @@ function M.builder(): any
     end
     function q:query()
         M.selections = M.selections + 1
-        local locked = (M.route == "terminated" or M.route == "live") and M.selections == 2
+        local locked = ((M.route == "terminated" or M.route == "live") and M.selections == 2)
+            or (M.route == "expired" and M.commits == 1)
         return M.result(locked and "locked" or "lookup", {row()})
     end
     function q:exec()

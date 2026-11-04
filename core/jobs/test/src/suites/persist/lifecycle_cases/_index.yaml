@@ -257,6 +257,7 @@ entries:
   - sql
   - uuid
   imports:
+    jobs: kickside.core.jobs:jobs
     test: wippy.test:test
     job_types: kickside.core.jobs:types
     lifecycle: kickside.core.jobs.persist:lifecycle

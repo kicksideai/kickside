@@ -45,6 +45,10 @@ variables in the harness configuration for your test server.
 ## Use
 
 Enqueue work through the existing domain owner, using an exact worker entry ID and immutable payload. Workers retain the enclosing deadline and resolve owner-held execution identity. Use transactional enqueue when a durable fact and its job must commit together.
+Optional `replace = true` atomically cancels a pending job with changed immutable
+inputs and inserts its successor for the same owner. A running predecessor
+returns a retryable conflict with its job ID. See the dependency interface for
+the optional `replaced_job_id` result.
 
 After a caller-owned `jobs.enqueue_tx(tx, dbtype, params)` transaction commits,
 call `jobs.nudge_workers()` to notify the worker pool. Retired slot owners call

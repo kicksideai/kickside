@@ -2196,6 +2196,7 @@ entries:
       row_bytes: app:enqueue_native_row_bytes_adapter
       listing: kickside.core.jobs.persist:listing
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
       capacity: app:capacity_native_adapter
 
   - name: enqueue_native_test

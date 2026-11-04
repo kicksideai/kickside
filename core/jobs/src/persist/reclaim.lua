@@ -1,5 +1,5 @@
 -- Lease and termination-fence recovery of running jobs. reclaim_expired
--- returns running jobs whose lease elapsed (a crashed worker) back to pending;
+-- fences running jobs whose lease elapsed before checking child termination;
 -- reclaim_terminated settles termination fences whose execution child has
 -- ended; settle_confirmed settles one fence whose supervisor observed the exit.
 
@@ -22,8 +22,8 @@ local function response_error(field: string): error
         retryable = false, details = {code = "job_reclaim_response", field = field}})
 end
 
--- Recovery scopes. EXPIRED selects crashed executions: the lease elapsed and no
--- termination fence holds the row. TERMINATED selects termination-fenced rows
+-- Recovery scopes. EXPIRED selects elapsed leases without a termination fence
+-- and establishes that fence. TERMINATED selects termination-fenced rows
 -- whose recheck time (lease_until) passed and settles each one whose execution
 -- child no longer exists; the runtime drops a process's registered names when
 -- it completes, so an absent name proves the child ended. A child still alive
@@ -231,13 +231,31 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
     local revoked: table[] = {}
     local released: table[] = {}
     local ts = dbtype == sql.type.POSTGRES and "CAST(? AS TIMESTAMPTZ)" or "?"
-    local settles_fence = scope ~= EXPIRED
     for _, row in ipairs(rows) do
         local alive = false
         if scope == TERMINATED then
             alive = observations[tostring(row.id)].alive
         end
-        if alive then
+        if scope == EXPIRED then
+            local marker = PREFIX .. tostring(row.lease_token or "")
+            local size_err = row_bytes.check_update(tx, "kickside_job", row.id,
+                { last_error = marker }, (policy :: any).max_row_bytes, "fence_expired_job")
+            if size_err then return 0, sql_boundary.rollback(tx, size_err, "reclaim rollback failed") end
+            local result, err = scope_rows(sql.builder.update("kickside_job"):set("last_error", marker)
+                :where(sql.builder.eq({ id = row.id, status = job_types.JOB_STATE.RUNNING })),
+                scope, now, plan.execution, dbtype):run_with(tx):exec()
+            local changed, proof_err = sql_boundary.bounded_row_count(result, err,
+                "reclaim fence failed", "reclaim.update", 1, response_error)
+            if proof_err then return 0, sql_boundary.rollback(tx, proof_err, "reclaim rollback failed") end
+            if changed == 1 then
+                local history_err = M.close_lost_run(tx, dbtype, tostring(row.id),
+                    tonumber(row.execution_seq) :: integer, tostring(row.lease_token or ""), now)
+                if history_err then return 0, sql_boundary.rollback(tx, history_err, "reclaim rollback failed") end
+                revoked[#revoked + 1] = { id = tostring(row.id), token = tostring(row.lease_token or ""),
+                    execution_seq = tonumber(row.execution_seq) }
+                n = n + 1
+            end
+        elseif alive then
             local captured, capture_err = execution_policy.read(row)
             if capture_err then return 0, sql_boundary.rollback(tx, capture_err, "reclaim rollback failed") end
             local recheck = lifecycle.future_string(dbtype, captured.lease_timeout_seconds)
@@ -261,7 +279,7 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
                     wake_enabled = control and true or current.wake_enabled,
                     attempts = control and 0 or current.attempts,
                     wake_control_pending = false,
-                    last_error = settles_fence and TERMINATION_SETTLED or current.last_error }
+                    last_error = TERMINATION_SETTLED }
             end, (policy :: any).max_row_bytes, "reclaim_job")
             if size_err then return 0, sql_boundary.rollback(tx, size_err, "reclaim rollback failed") end
             local update = sql.builder.update("kickside_job")
@@ -273,7 +291,7 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
                 :set("wake_enabled", sql.builder.expr("CASE WHEN wake_control_pending THEN TRUE ELSE wake_enabled END"))
                 :set("attempts", sql.builder.expr("CASE WHEN wake_control_pending THEN 0 ELSE attempts END"))
                 :set("wake_control_pending", false)
-            if settles_fence then update = update:set("last_error", TERMINATION_SETTLED) end
+            update = update:set("last_error", TERMINATION_SETTLED)
             local result, err = scope_rows(update:where(sql.builder.eq({ id = row.id, status = job_types.JOB_STATE.RUNNING })),
                 scope, now, plan.execution, dbtype):run_with(tx):exec()
             local changed, proof_err = sql_boundary.bounded_row_count(result, err,
@@ -282,19 +300,10 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
             if changed == 1 then
                 local marker_err = worker_marker.clear(tx, row.id)
                 if marker_err then return 0, sql_boundary.rollback(tx, marker_err, "reclaim rollback failed") end
-                if settles_fence then
-                    local history_err = finalize_fenced_run(tx, dbtype, row)
-                    if history_err then return 0, sql_boundary.rollback(tx, history_err, "reclaim rollback failed") end
-                    released[#released + 1] = row
-                end
+                local history_err = finalize_fenced_run(tx, dbtype, row)
+                if history_err then return 0, sql_boundary.rollback(tx, history_err, "reclaim rollback failed") end
+                released[#released + 1] = row
                 n = n + 1
-                if scope == EXPIRED then
-                    local history_err = M.close_lost_run(tx, dbtype, tostring(row.id),
-                        tonumber(row.execution_seq) :: integer, tostring(row.lease_token or ""), now)
-                    if history_err then return 0, sql_boundary.rollback(tx, history_err, "reclaim rollback failed") end
-                    revoked[#revoked + 1] = { id = tostring(row.id), token = tostring(row.lease_token or ""),
-                        execution_seq = tonumber(row.execution_seq) }
-                end
             end
         end
     end
@@ -314,11 +323,13 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
     return n, nil
 end
 
--- Return running jobs whose lease has elapsed to pending so they can be
--- reclaimed. Used to recover work owned by a crashed worker. Returns the count
--- of jobs reclaimed.
+-- Fence elapsed leases before revocation, then settle only executions whose
+-- registered child has ended. Gone executions recover in the same pass.
 function M.reclaim_expired(db: sql.DB, dbtype: string, requested_limit: integer?): (integer, error?)
-    return reclaim(db, dbtype, requested_limit, { scope = EXPIRED })
+    local fenced, fence_err = reclaim(db, dbtype, requested_limit, { scope = EXPIRED })
+    if fence_err then return 0, fence_err end
+    if fenced == 0 then return 0, nil end
+    return M.reclaim_terminated(db, dbtype, requested_limit)
 end
 
 -- Settle termination-fenced executions whose child has ended, wherever the

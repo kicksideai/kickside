@@ -2,6 +2,8 @@ local test = require("test")
 local sql = require("sql")
 local uuid = require("uuid")
 local process = require("process")
+local time = require("time")
+local channel = require("channel")
 local job_types = require("job_types")
 local claim = require("claim")
 local reclaim = require("reclaim")
@@ -72,6 +74,69 @@ end
 
 local function define_tests()
     test.describe("jobs termination fence recovery", function()
+        test.it("fences an expired execution until its registered process ends", function()
+            local db = assert(job_fixture.private_queue("app:private_queue_termination_recovery_test"))
+            local dbtype = tostring(db:type())
+            local job = leased(db, dbtype)
+            local ready = process.listen("termination_test_ready")
+            local events = process.events()
+            local pid = assert(process.spawn_monitored("app:termination_recovery_child", "app:processes",
+                {job_id = job.id, token = job.lease_token, parent = tostring(process.pid())}))
+            local deadline = time.after("5s")
+            local selected = channel.select({ready:case_receive(), deadline:case_receive()})
+            test.eq(selected.channel, ready)
+            local ok, assertion_err = pcall(function()
+                test.is_true(assert(proc_supervisor.child_alive(job.id, job.lease_token)))
+                assert(db:execute("UPDATE kickside_job SET lease_until=$1 WHERE id=$2", {past(dbtype), job.id}))
+                local count, err = reclaim.reclaim_expired(db, dbtype)
+                test.is_nil(err)
+                test.eq(count, 0)
+                test.eq(read(db, job.id).status, job_types.JOB_STATE.RUNNING)
+                test.is_true(fenced(read(db, job.id).last_error))
+                test.is_true(assert(proc_supervisor.child_alive(job.id, job.lease_token)))
+                local duplicate, claim_err = claim.claim_job(db, dbtype)
+                test.is_nil(claim_err)
+                test.is_nil(duplicate)
+            end)
+            assert(process.send(tostring(pid), "termination_test_finish", {}))
+            local ended = false
+            while not ended do
+                selected = channel.select({events:case_receive(), deadline:case_receive()})
+                if selected.channel ~= events then error("execution child did not exit") end
+                local event = selected.value
+                ended = event.kind == process.event.EXIT and tostring(event.from) == tostring(pid)
+                if ended then test.is_nil(event.result.error) end
+            end
+            if not ok then assert(db:release()); error(assertion_err) end
+            local alive, alive_err = proc_supervisor.child_alive(job.id, job.lease_token)
+            test.is_nil(alive_err)
+            test.is_false(alive)
+            assert(db:execute("UPDATE kickside_job SET lease_until=$1 WHERE id=$2", {past(dbtype), job.id}))
+            test.eq(assert(reclaim.reclaim_terminated(db, dbtype)), 1)
+            local successor = assert(claim.claim_job(db, dbtype))
+            test.eq(successor.id, job.id)
+            test.eq(tonumber(successor.execution_seq), assert(tonumber(job.execution_seq)) + 1)
+            local empty, empty_err = claim.claim_job(db, dbtype)
+            test.is_nil(empty_err)
+            test.is_nil(empty)
+            test.eq(assert(reclaim.reclaim_terminated(db, dbtype)), 0)
+            assert(db:release())
+        end)
+
+        test.it("recovers an expired execution whose process is gone in the same pass", function()
+            local db = assert(job_fixture.private_queue("app:private_queue_termination_recovery_test"))
+            local dbtype = tostring(db:type())
+            local job = leased(db, dbtype)
+            assert(db:execute("UPDATE kickside_job SET lease_until=$1 WHERE id=$2", {past(dbtype), job.id}))
+            test.eq(assert(reclaim.reclaim_expired(db, dbtype)), 1)
+            test.eq(read(db, job.id).status, job_types.JOB_STATE.PENDING)
+            test.eq(assert(claim.claim_job(db, dbtype)).id, job.id)
+            local empty, empty_err = claim.claim_job(db, dbtype)
+            test.is_nil(empty_err)
+            test.is_nil(empty)
+            assert(db:release())
+        end)
+
         test.it("rechecks a renewed lease after reading child liveness", function()
             local db = assert(job_fixture.private_queue("app:private_queue_termination_recovery_test"))
             local dbtype = tostring(db:type())
@@ -243,4 +308,13 @@ local function run(options)
     return run_cases(options)
 end
 
-return { run = run }
+local function child(args: table): boolean
+    local finish = process.listen("termination_test_finish")
+    assert(process.registry.register(proc_supervisor.child_name(args.job_id, args.token), nil,
+        process.registry.CONSISTENT))
+    assert(process.send(args.parent, "termination_test_ready", {}))
+    finish:receive()
+    return true
+end
+
+return { run = run, child = child }

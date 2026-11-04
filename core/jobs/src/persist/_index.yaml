@@ -84,6 +84,7 @@ entries:
       row_bytes: kickside.core.jobs.persist:row_bytes
       listing: kickside.core.jobs.persist:listing
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
       capacity: kickside.core.jobs:capacity
 
   - name: thread_fence
