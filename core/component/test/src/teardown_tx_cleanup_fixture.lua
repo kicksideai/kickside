@@ -9,6 +9,8 @@ function M.result(stage, value)
     if M.stage == stage then return nil, M.source end
     return value, nil
 end
+function M.enqueue_tx() return M.result("enqueue", {id = "job"}) end
+function M.nudge_workers() return 0, nil end
 function M.db_id() return "fixture-db" end
 function M.sql_get()
     M.opens = M.opens + 1

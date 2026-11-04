@@ -353,14 +353,8 @@ local function emit_singleton_event(class: string, event: { [string]: any }): (a
     })
 end
 
--- system_delete tears down a component as the trusted lifecycle engine: it runs the
--- impl's deletable cleanup and unregisters the row through the SHARED teardown core,
--- WITHOUT an actor access gate. This is the delete-side sibling of the trusted reads
--- (list_system / list_for_subject): the access seam stays inside this module and only
--- in-process system callers use it -- the lifecycle reaper reaping a deleted owner's
--- components. Request paths must use the access-gated component_service `delete`.
--- Idempotent: an already-removed component is a successful no-op, so a retried reap
--- never errors. The deletable runs under the ambient (system) actor + scope.
+-- Trusted lifecycle callers enqueue the same deletion as the request path.
+-- An absent component succeeds; active work retains the cleanup_pending contract.
 local function system_delete(component_id: string, child_policy: string?): (boolean, error?)
     if type(component_id) ~= "string" or component_id == "" then
         return false, (errors.new({ message = "component_id is required", kind = errors.INVALID }) :: error)
@@ -378,40 +372,13 @@ local function system_delete(component_id: string, child_policy: string?): (bool
         return true, nil
     end
 
-    local preflight_ok, preflight_step, preflight_err, owns_fence = teardown.begin_delete(component_id, nil, child_policy)
+    local preflight_ok, preflight_step, preflight_err = teardown.begin_delete(component_id, nil, child_policy)
     if not preflight_ok then
         return false, envelope.call_error(preflight_err, "system_delete preflight (" .. tostring(preflight_step) .. ")")
     end
 
-    -- Same cascade as the gated delete (teardown.run_deletable + unregister); the only
-    -- difference is the nil gate_user_id, so no DELETE access check is applied. A declared
-    -- deletable that fails to open or clean up is a hard stop: unregistering now would
-    -- orphan its side data, so the reap fails and the reaper's durable retry re-runs it.
-    local declared, cleanup_success, cleanup_err = teardown.run_deletable(component, security.actor(), security.scope(), component_id)
-    if declared and not cleanup_success then
-        cleanup_err = teardown.retain_failed_delete(cleanup_err, owns_fence)
-        if teardown.cleanup_pending(cleanup_err) then
-            return false, cleanup_err
-        end
-        local abandon_err = teardown.abandon_delete(component_id)
-        if abandon_err then
-            cleanup_err = error_envelope.wrap_secondary(abandon_err, cleanup_err, "the delete mark stays")
-        end
-        return false, envelope.call_error(cleanup_err, "system_delete deletable cleanup failed")
-    end
-    local released, step, err = teardown.unregister(component_id, child_policy)
-    if step == "purge" and released ~= nil then
-        -- The component is released; only the thread reap failed. The release
-        -- stands — an unreferenced thread is inert and its events age out under
-        -- retention — and the reap error is surfaced for the caller's log.
-        if type(err) == "userdata" then return true, err end
-        return true, (errors.new({ message = "released; thread reap failed: " .. tostring(err), kind = errors.INTERNAL }) :: error)
-    end
-    if step == "pending" then return false, err end
-    if step then
-        return false, envelope.call_error(err, "system_delete unregister (" .. step .. ")")
-    end
-    return true, nil
+    return false, errors.new({message = "component deletion is in progress", kind = errors.CONFLICT,
+        retryable = true, details = {cleanup_pending = true, wait_for = "deletion_job"}})
 end
 
 -- set_meta(component_id, fields, opts?) -> (true) | (false, err). The canonical public

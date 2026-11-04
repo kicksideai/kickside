@@ -1,6 +1,4 @@
--- A committed deleting_at mark is the durable continuation for a component
--- whose kind cleanup stopped between pages or whose caller crashed. The core
--- retention service retries one bounded page after an eligibility change.
+-- Retention enrolls committed deletion intents in their component Jobs identity.
 local sql = require("sql")
 local component_types = require("component_types")
 local component = require("component")
@@ -22,8 +20,7 @@ function M.run(limit: integer, owner_id: string?): (integer?, error?, boolean?, 
     local db, open_err = sql.get(component_types.db_id())
     if open_err then return nil, errors.wrap(open_err, "component cleanup database unavailable") end
     if type(db) ~= "table" and type(db) ~= "userdata" then return nil, response_error("database") end
-    -- A released owner must not sit behind another page of live leases. The
-    -- delete mark is the authority; unrelated owner ids are harmless misses.
+    -- A directed wake addresses its owner's mark without waiting for a scan page.
     local query = "SELECT component_id FROM kickside_components WHERE deleting_at IS NOT NULL"
     local params: { any } = { limit }
     local limit_sql = "$1"

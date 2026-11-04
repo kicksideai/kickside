@@ -26,3 +26,8 @@ entries:
     kind: ns.dependency
     component: kickside/realtime-dispatch
     version: "*"
+
+  - name: dep.kickside.jobs
+    kind: ns.dependency
+    component: kickside/jobs
+    version: '*'

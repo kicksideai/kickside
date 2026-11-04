@@ -91,6 +91,7 @@ entries:
     method: run
     modules: [registry, process, channel, contract, security, uuid]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       component_lifecycle: kickside.component:component_lifecycle
       lifecycle_stub: app:component_lifecycle_test_impl
@@ -1175,10 +1176,12 @@ entries:
     kind: library.lua
     source: file://teardown_cause_source.lua
     modules:
+    - json
     - security
     - registry
     - time
     imports:
+      jobs: kickside.core.jobs:jobs
       error_envelope: kickside.contract:error_envelope
       sql: app:teardown_cause_sql
       contract: app:teardown_cause_contract
@@ -1251,9 +1254,11 @@ entries:
     kind: library.lua
     source: file://cleanup_setup_source.lua
     modules:
+    - json
     - sql
     - time
     imports:
+      jobs: kickside.core.jobs:jobs
       error_envelope: kickside.contract:error_envelope
       security: app:cleanup_setup_security
       contract: app:cleanup_setup_contract
@@ -1399,6 +1404,7 @@ entries:
       type: test
       suite: component_system_delete_native
     imports:
+      worker: app:system_delete_worker_native
       test: wippy.test:test
       component: app:system_delete_source
       fixture: app:system_delete_fixture
@@ -1586,10 +1592,12 @@ entries:
     kind: library.lua
     source: file://teardown_tx_cleanup_source.lua
     modules:
+    - json
     - security
     - registry
     - time
     imports:
+      jobs: app:teardown_tx_cleanup_jobs
       error_envelope: kickside.contract:error_envelope
       sql: app:teardown_tx_cleanup_sql
       contract: app:teardown_tx_cleanup_contract
@@ -1629,6 +1637,8 @@ entries:
       type: test
       suite: component_inherited_cleanup_native
     imports:
+      worker: app:system_delete_worker_native
+      fixture: app:system_delete_fixture
       test: wippy.test:test
       teardown: kickside.component.persist:teardown
 
@@ -1680,6 +1690,7 @@ entries:
       type: test
       suite: component_gated_delete_native
     imports:
+      worker: app:gated_delete_worker_native
       test: wippy.test:test
       binding: app:gated_delete_source
       fixture: app:gated_delete_fixture

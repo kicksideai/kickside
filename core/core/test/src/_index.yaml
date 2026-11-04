@@ -1208,6 +1208,7 @@ entries:
     meta: {type: test, suite: cleanup_wake}
     modules: [sql, uuid, funcs, json]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       fixture: kickside.core.threads:contract_fixture
       teardown: app:cleanup_teardown_probe
@@ -1283,6 +1284,7 @@ entries:
     source: file://reaper_native_source.lua
     modules: [security]
     imports:
+      component_teardown: kickside.component.persist:teardown
       persisted_json: kickside.contract:persisted_json
       component_envelope: kickside.component:envelope
       component: app:reaper_native_component_adapter
@@ -4313,3 +4315,12 @@ entries:
       repair: app:projection_pin_repair
       pin: kickside.core.retention:pin
       prune: kickside.core.retention:prune
+
+  - name: deletion_test_worker
+    kind: library.lua
+    source: file://deletion_test_worker.lua
+    modules: [funcs, sql, time, uuid, process]
+    imports:
+      claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      completion: kickside.core.jobs.service:worker_completion

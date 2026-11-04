@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 -- Reaper: a kickside.lifecycle.events:principal.deleted report reaps every component the named owner still owns,
 -- through the trusted component.system_delete. Registers real components owned by a
 -- test user, drives one reaper tick over a constructed event batch, and asserts the
@@ -128,6 +129,16 @@ local function define_tests()
             local rows = component.list_system({ meta = { owner = subject_id or owner_id }, include = { meta = false } })
             return rows and #rows or 0
         end
+        local function finish_owner(subject_id: string?): (boolean, error?)
+            local rows, list_err = component.list_system({meta = {owner = subject_id or owner_id}, include = {meta = false}, limit = 100})
+            if list_err then return false, list_err end
+            for _, row in ipairs(rows) do
+                local finished, finish_err = deletion_worker.run(row.component_id)
+                if finish_err then return false, finish_err end
+                test.is_true(finished.deleted)
+            end
+            return true, nil
+        end
         local function run_as_system(input: table, actor_id: string?): (table?, error?)
             local actor = security.new_actor(actor_id or lifecycle_consts.SYSTEM_ACTOR,
                 { system = true, groups = { "system", "lifecycle" } })
@@ -253,6 +264,9 @@ local function define_tests()
             register("second")
             test.eq(owned_count(), 2)
 
+            local pending, pending_err = tick()
+            test.is_nil(pending); test.not_nil(pending_err)
+            test.is_true((finish_owner()))
             local out = tick()
             test.is_true(type(out) == "table")
             test.eq(out.last_seq, 1)
@@ -475,6 +489,9 @@ local function define_tests()
             test.is_nil(call_err, tostring(call_err))
             test.not_nil(result)
             test.is_true(result.reported, tostring(result.error))
+            local pending, pending_err = tick(principal)
+            test.is_nil(pending); test.not_nil(pending_err)
+            test.is_true((finish_owner(principal)))
             local out, err = tick(principal)
             test.is_nil(err, tostring(err))
             test.not_nil(out)
@@ -500,6 +517,12 @@ local function define_tests()
             test.not_nil(err)
             test.eq(owned_count(principal), 1, "parent remains a durable ownership pointer")
             test.eq(owned_count(parent), 1, "child remains for retry")
+            local child_finished, child_err = finish_owner(parent)
+            test.is_false(child_finished); test.not_nil(child_err)
+            test.is_true((finish_owner(parent)))
+            local parent_pending, parent_err = tick(principal)
+            test.is_nil(parent_pending); test.not_nil(parent_err)
+            test.is_true((finish_owner(principal)))
             local retried, retry_err = tick(principal)
             test.is_nil(retry_err, tostring(retry_err))
             test.not_nil(retried)
@@ -513,7 +536,23 @@ local function define_tests()
             local first, first_err = tick(principal)
             test.is_nil(first)
             test.not_nil(first_err)
-            test.eq(owned_count(principal), 1, "one row remains after the bounded pass: " .. tostring(first_err))
+            test.eq(owned_count(principal), 51, "enrollment retains components until their workers run")
+            local db = assert(sql.get("app:db"))
+            local marked, mark_err = db:query("SELECT COUNT(*) AS n FROM kickside_components c JOIN kickside_component_meta m ON m.component_id=c.component_id WHERE m.key='owner' AND m.value=$1 AND c.deleting_at IS NOT NULL", {principal})
+            db:release()
+            test.is_nil(mark_err)
+            test.eq(tonumber(marked[1].n), 50, "the reaper enrolls its bounded independent page")
+            local rows = component.list_system({meta = {owner = principal}, include = {meta = false}, limit = 100})
+            for _, row in ipairs(rows) do
+                local db = assert(sql.get("app:db"))
+                local marked = db:query("SELECT deleting_at FROM kickside_components WHERE component_id=$1", {row.component_id})
+                db:release()
+                if marked[1].deleting_at ~= nil then test.not_nil((deletion_worker.run(row.component_id))) end
+            end
+            test.eq(owned_count(principal), 1)
+            local pending, pending_err = tick(principal)
+            test.is_nil(pending); test.not_nil(pending_err)
+            test.is_true((finish_owner(principal)))
             local second, second_err = tick(principal)
             test.is_nil(second_err, tostring(second_err))
             test.not_nil(second)

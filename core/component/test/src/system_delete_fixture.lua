@@ -1,6 +1,6 @@
 local M: any = {}
 function M.reset(stage, source)
-    M.stage, M.source, M.abandon_source, M.absent = stage, source, nil, false
+    M.stage, M.source, M.absent = stage, source, false
     M.reads, M.begins, M.cleanups, M.abandons, M.unregisters = 0, 0, 0, 0, 0
 end
 function M.reader()
@@ -21,14 +21,13 @@ function M.begin_delete(id, user, policy)
     return true, nil, nil, true
 end
 function M.run_deletable(...) M.cleanups = M.cleanups + 1
-    if M.stage == "cleanup" then return true, false, M.source end
+    if M.stage == "cleanup" or M.stage == "cleanup_replay" then return true, false, M.source end
     return true, true, nil
 end
-function M.abandon_delete(...) M.abandons = M.abandons + 1; return M.abandon_source end
 function M.unregister(...) M.unregisters = M.unregisters + 1
     if M.stage == "unregister" then return nil, "transaction", M.source end
     if M.stage == "pending" then return nil, "pending", M.source end
     if M.stage == "purge" then return 1, "purge", M.source end
-    return 1, nil, nil
+    return {deleted = true}, nil, nil
 end
 return M

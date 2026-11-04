@@ -1,7 +1,7 @@
 local M: any = {}
 M.ACCESS = {DELETE = 8}
 function M.reset(stage, source)
-    M.stage, M.source, M.abandon_source, M.absent = stage, source, nil, false
+    M.stage, M.source, M.absent = stage, source, false
     M.reads, M.begins, M.cleanups, M.abandons, M.unregisters = 0, 0, 0, 0, 0
 end
 function M.actor() return {id = function() return "actor" end} end
@@ -29,10 +29,9 @@ function M.begin_delete(id, user, policy)
 end
 function M.run_deletable()
     M.cleanups = M.cleanups + 1
-    if M.stage == "cleanup" or M.stage == "pending" then return true, false, M.source end
+    if M.stage == "cleanup" or M.stage == "pending" or M.stage == "cleanup_replay" then return true, false, M.source end
     return false, false, nil
 end
-function M.abandon_delete() M.abandons = M.abandons + 1; return M.abandon_source end
 function M.unregister()
     M.unregisters = M.unregisters + 1
     local result = {component_id = "component", deleted = true, changes_made = true}

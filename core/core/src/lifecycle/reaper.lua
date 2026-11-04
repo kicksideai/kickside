@@ -10,6 +10,7 @@
 -- failed tick safely re-runs the same window.
 
 local component = require("component")
+local component_teardown = require("component_teardown")
 local consts = require("lifecycle_consts")
 local persisted_json = require("persisted_json")
 local registry = require("registry")
@@ -48,20 +49,29 @@ local function reap_owner(owner_id: string, depth: integer, budget: { remaining:
     if budget.remaining == 0 and #rows > 0 then
         return cleanup_error("component owner cleanup has another bounded page", owner_id)
     end
+    local pending_error: error? = nil
     for _, row in ipairs(rows :: { any }) do
         local cid = (row :: any).component_id
         if type(cid) ~= "string" or cid == "" then return cleanup_error("component owner scan returned an invalid id") end
         local child_err = reap_owner(cid :: string, depth + 1, budget)
-        if child_err then return child_err end
-        if budget.remaining == 0 then
-            return cleanup_error("component owner cleanup has another bounded page", owner_id)
+        if child_err then
+            if not component_teardown.cleanup_pending(child_err) then return child_err end
+            pending_error = pending_error or child_err
+        else
+            if budget.remaining == 0 then
+                return cleanup_error("component owner cleanup has another bounded page", owner_id)
+            end
+            local ok, delete_err = component.system_delete(cid :: string, "reparent_root")
+            if delete_err or ok ~= true then
+                if not component_teardown.cleanup_pending(delete_err) then
+                    return cleanup_error("component owner delete failed for " .. cid, delete_err or "no deletion proof")
+                end
+                pending_error = pending_error or delete_err
+            else
+                budget.deleted = budget.deleted + 1
+            end
+            budget.remaining = budget.remaining - 1
         end
-        local ok, delete_err = component.system_delete(cid :: string, "reparent_root")
-        if delete_err or ok ~= true then
-            return cleanup_error("component owner delete failed for " .. cid, delete_err or "no deletion proof")
-        end
-        budget.remaining = budget.remaining - 1
-        budget.deleted = budget.deleted + 1
     end
     if budget.remaining == 0 then
         local more, more_err = component.list_system({ meta = { [consts.OWNER_META_KEY] = owner_id },
@@ -69,7 +79,7 @@ local function reap_owner(owner_id: string, depth: integer, budget: { remaining:
         if more_err or type(more) ~= "table" then return cleanup_error("component owner continuation scan failed", more_err or "no rows result") end
         if #more > 0 then return cleanup_error("component owner cleanup has another bounded page", owner_id) end
     end
-    return nil
+    return pending_error
 end
 
 local function cleanup_target(entry: any): string

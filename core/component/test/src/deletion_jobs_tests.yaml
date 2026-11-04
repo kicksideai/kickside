@@ -1,0 +1,71 @@
+version: '1.0'
+namespace: app
+entries:
+  - name: deletion_jobs_test
+    kind: function.lua
+    meta: {type: test, suite: component_deletion_jobs, timeout: 60s}
+    source: file://deletion_jobs_test.lua
+    method: run
+    modules: [sql, uuid, security, contract, process, time, channel, funcs]
+    imports: {test: 'wippy.test:test'}
+  - name: deletion_jobs_request
+    kind: process.lua
+    source: file://deletion_jobs_test.lua
+    method: request
+    modules: [sql, uuid, security, contract, process, time, channel, funcs]
+    imports: {test: 'wippy.test:test'}
+  - name: deletion_jobs_binding
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: 'app:autoinit_test_status'}
+      - contract: kickside.contract:deletable
+        methods: {delete: 'app:deletion_jobs_cleanup'}
+  - name: deletion_jobs_cleanup
+    kind: function.lua
+    source: file://deletion_jobs_cleanup.lua
+    method: handle
+    modules: [sql, ctx, security, funcs, process, time, channel]
+  - name: deletion_test_worker
+    kind: library.lua
+    source: file://deletion_test_worker.lua
+    modules: [funcs, sql, time, uuid, process]
+    imports:
+      claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      completion: kickside.core.jobs.service:worker_completion
+
+  - name: system_delete_worker_sql
+    kind: library.lua
+    source: file://delete_worker_native_sql.lua
+    imports: {fixture: app:system_delete_fixture}
+  - name: system_delete_worker_native
+    kind: library.lua
+    source: file://delete_worker_native_source.lua
+    modules: [security]
+    imports:
+      sql: app:system_delete_worker_sql
+      component_types: kickside.component:types
+      persisted_json: kickside.contract:persisted_json
+      teardown: app:system_delete_teardown
+      error_envelope: kickside.contract:error_envelope
+
+  - name: gated_delete_worker_sql
+    kind: library.lua
+    source: file://delete_worker_native_sql.lua
+    imports: {fixture: app:gated_delete_fixture}
+  - name: gated_delete_worker_native
+    kind: library.lua
+    source: file://delete_worker_native_source.lua
+    modules: [security]
+    imports:
+      sql: app:gated_delete_worker_sql
+      component_types: kickside.component:types
+      persisted_json: kickside.contract:persisted_json
+      teardown: app:gated_delete_teardown
+      error_envelope: kickside.contract:error_envelope
+
+  - name: teardown_tx_cleanup_jobs
+    kind: library.lua
+    source: file://teardown_tx_cleanup_jobs.lua
+    imports: {fixture: app:teardown_tx_cleanup_fixture}

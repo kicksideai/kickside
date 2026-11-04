@@ -65,7 +65,6 @@ entries:
     modules:
       - security
     imports:
-      error_envelope: kickside.contract:error_envelope
       envelope: kickside.component:envelope
       component_reader: kickside.component.persist:component_reader
       component_ops: kickside.component.persist:component_ops

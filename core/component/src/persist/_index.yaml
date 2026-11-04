@@ -300,7 +300,9 @@ entries:
       - registry
       - security
       - time
+      - json
     imports:
+      jobs: kickside.core.jobs:jobs
       error_envelope: kickside.contract:error_envelope
       component_ops: kickside.component.persist:component_ops
       placement: kickside.component.persist:placement

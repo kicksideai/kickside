@@ -196,6 +196,7 @@ entries:
     method: run
     modules: [registry, funcs, security]
     imports:
+      component_teardown: kickside.component.persist:teardown
       persisted_json: kickside.contract:persisted_json
       component_envelope: kickside.component:envelope
       component: kickside.component:component

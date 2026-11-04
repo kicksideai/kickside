@@ -39,8 +39,10 @@ entries:
       - contract
       - funcs
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       component: kickside.component:component
+      teardown: kickside.component.persist:teardown
 
   - name: emit_singleton_probe
     kind: function.lua
@@ -209,6 +211,7 @@ entries:
       - contract
       - funcs
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       component: kickside.component:component
       teardown: kickside.component.persist:teardown
@@ -228,6 +231,7 @@ entries:
       - security
       - contract
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
 
   - name: dep.wippy.bootloader
@@ -263,3 +267,13 @@ entries:
     parameters:
       - name: wippy.migration:app_db
         value: app:db
+
+  - name: dep.kickside.jobs
+    kind: ns.dependency
+    component: kickside/jobs
+    version: '*'
+    parameters:
+      - name: kickside.core.jobs:target_db
+        value: app:db
+      - name: kickside.core.jobs:process_host
+        value: app:processes
