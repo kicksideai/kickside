@@ -45,6 +45,12 @@ return {run = test.run_cases(function()
                 end)
             end
         end
+        test.it("concurrent final removal remains an idempotent system delete", function()
+            fixture.reset("removed_during_acceptance", errors.new({kind = errors.NOT_FOUND, message = "component is absent"}))
+            local ok, err = component.system_delete("component", "reparent_root")
+            test.is_true(ok); test.is_nil(err)
+            test.eq(fixture.begins, 1); test.eq(fixture.cleanups, 0)
+        end)
         test.it("absent component remains an idempotent no-op", function()
             fixture.reset("", nil); fixture.absent = true; local ok, err = component.system_delete("component", "reparent_root")
             test.is_true(ok); test.is_nil(err); test.eq(fixture.begins, 0); test.eq(fixture.cleanups, 0); test.eq(fixture.unregisters, 0)

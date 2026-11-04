@@ -2,6 +2,7 @@ local M: any = {}
 M.ACCESS, M.COMMAND_TYPES = {DELETE = 8}, {DELETE_COMPONENT = "delete"}
 function M.reset(operation, stage, source)
     M.event, M.event_commits, M.audience_commits, M.recipients = nil, nil, nil, nil
+    M.absent = false
     M.operation, M.stage, M.source = operation, stage, source
     M.release_source, M.rollback_source = nil, nil
     M.opens, M.releases, M.rollbacks, M.commits, M.effects, M.notifications, M.purges = 0, 0, 0, 0, 0, 0, 0
@@ -33,6 +34,7 @@ function M.transaction(): any
         return M.result(statement:sub(1,6) == "UPDATE" and "lock" or "pointer", {rows_affected = 1})
     end
     function tx:query()
+        if M.absent then return {} end
         local row = {}
         if M.operation ~= "begin" then row.deleting_at = "marked" end
         return M.result("fence", {row})

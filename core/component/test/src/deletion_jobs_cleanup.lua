@@ -24,6 +24,10 @@ function M.handle(request: any): any
     local rows, read_err = db:query("SELECT calls FROM deletion_job_cleanup WHERE component_id=$1", {id})
     db:release()
     if read_err then error(read_err) end
+    if mode == "pages" and tonumber(rows[1].calls) <= 5 then
+        error(errors.new({message = "cleanup page completes", kind = errors.CONFLICT,
+            details = {cleanup_pending = true, needs_continue = true}}))
+    end
     if mode == "dead_once" and tonumber(rows[1].calls) == 1 then
         error(errors.new({message = "cleanup input is invalid", kind = errors.INVALID}))
     end

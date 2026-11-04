@@ -14,6 +14,18 @@ local function native(actual: error?, source: error)
 end
 return {run = test.run_cases(function()
     test.describe("native teardown transaction cleanup", function()
+        test.it("classifies confirmed absence without hiding transaction cleanup errors", function()
+            fixture.reset("begin", "", nil); fixture.absent = true
+            local ok, step, err = teardown.begin_delete("component", nil, nil)
+            test.is_false(ok); test.eq(step, "absent"); test.is_true(errors.is(err, errors.NOT_FOUND))
+            for _, cleanup in ipairs({"release_source", "rollback_source"}) do
+                fixture.reset("begin", "", nil); fixture.absent = true
+                fixture[cleanup] = errors.new({kind = errors.NOT_FOUND, message = "cleanup dependency is absent"})
+                ok, step, err = teardown.begin_delete("component", nil, nil)
+                test.is_false(ok); test.eq(step, "delete"); test.is_true(errors.is(err, errors.NOT_FOUND))
+                test.not_nil(err:details().operation_error)
+            end
+        end)
         test.it("reports a nudge failure separately after committed acceptance", function()
             fixture.reset("begin", "nudge", errors.new({kind = errors.UNAVAILABLE, message = "nudge refuses", retryable = true}))
             local ok, step, err, marked, job_id = teardown.begin_delete("component", "actor", nil)

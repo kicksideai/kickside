@@ -5,6 +5,7 @@ local component_types = require("component_types")
 local persisted_json = require("persisted_json")
 local teardown = require("teardown")
 local error_envelope = require("error_envelope")
+local jobs_policy = require("jobs_policy")
 
 local M = {}
 
@@ -14,6 +15,13 @@ local function continue_page(id: string, err: any): any?
     if not pending or not continuation then return nil end
     return {success = true, component_id = id, deleted = false,
         rearm = time.now():utc():format_rfc3339(), discarded = err:details().discarded}
+end
+
+local function wait_for_children(id: string): (any?, error?)
+    local policy, policy_err = jobs_policy.resolve()
+    if policy_err then return nil, policy_err end
+    return {success = true, component_id = id, deleted = false,
+        rearm = time.now():add(tostring(policy.retry_after_ms) .. "ms"):utc():format("2006-01-02T15:04:05.000000Z07:00")}, nil
 end
 
 function M.run(input: any): (any?, error?)
@@ -36,6 +44,9 @@ function M.run(input: any): (any?, error?)
     end
     local intent, intent_err = persisted_json.decode_table(row.delete_intent, "component.delete_intent")
     if intent_err then return nil, intent_err end
+    local ready, readiness_err = teardown.deletion_ready(id, intent.child_policy)
+    if readiness_err then return nil, readiness_err end
+    if not ready then return wait_for_children(id) end
     local context, context_err = persisted_json.decode_table(row.private_context, "component.private_context")
     if context_err then return nil, context_err end
     local declared, cleaned, cleanup_err, cleanup_result = teardown.run_deletable({impl_id = row.impl_id, private_context = context},
@@ -48,6 +59,9 @@ function M.run(input: any): (any?, error?)
     end
     local result, step, unregister_err = teardown.unregister(id, intent.child_policy)
     if step then
+        if step == "pending" and type(unregister_err) == "userdata" and unregister_err:details().wait_for == "children" then
+            return wait_for_children(id)
+        end
         if step == "pending" or step == "purge" then
             local continued = continue_page(id, unregister_err)
             if continued then return continued end

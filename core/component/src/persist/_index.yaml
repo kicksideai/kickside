@@ -267,6 +267,8 @@ entries:
     source: file://delete_ops.lua
     modules: [sql]
     imports:
+      jobs: kickside.core.jobs:jobs
+      persisted_json: kickside.contract:persisted_json
       component_types: kickside.component:types
       placement: kickside.component.persist:placement
 

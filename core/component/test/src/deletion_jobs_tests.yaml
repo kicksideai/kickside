@@ -44,6 +44,7 @@ entries:
     source: file://delete_worker_native_source.lua
     modules: [security, time]
     imports:
+      jobs_policy: kickside.core.jobs.policy:runtime
       sql: app:system_delete_worker_sql
       component_types: kickside.component:types
       persisted_json: kickside.contract:persisted_json
@@ -59,6 +60,7 @@ entries:
     source: file://delete_worker_native_source.lua
     modules: [security, time]
     imports:
+      jobs_policy: kickside.core.jobs.policy:runtime
       sql: app:gated_delete_worker_sql
       component_types: kickside.component:types
       persisted_json: kickside.contract:persisted_json

@@ -387,6 +387,7 @@ entries:
         - kickside.component:notification_methods
     modules: [sql, security, time]
     imports:
+      jobs_policy: kickside.core.jobs.policy:runtime
       component_types: kickside.component:types
       persisted_json: kickside.contract:persisted_json
       teardown: kickside.component.persist:teardown

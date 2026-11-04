@@ -192,8 +192,8 @@ function M.run_deletable(component: any, actor: any, scope: any, component_id: s
     return true, cleanup_success, cleanup_err or reported_error, cleanup_result
 end
 
--- A kind that committed a bounded cleanup page keeps the delete fence until
--- the retention slot resumes it. Ordinary failures still abandon the mark.
+-- A committed cleanup page continues under the deletion fence. Dependency
+-- waits and blocked cleanup do not count as successful page progress.
 function M.cleanup_pending(err: any): (boolean, boolean)
     if type(err) ~= "userdata" then return false, false end
     local details = (err :: any):details()
@@ -213,9 +213,9 @@ end
 -- Begin a delete: check every deterministic component-row deletion gate, then
 -- commit the delete mark, all before an implementation's deletable is allowed to
 -- mutate its own store. The gates keep known-invalid requests (most importantly a
--- parent with children and no child_policy) from consuming their side data; the
--- real unregister repeats them in its write transaction. The mark makes the
--- component fence refuse every consumer write from here on, so nothing lands in
+-- parent with live children and no child_policy) from consuming their side data; the
+-- final unregister requires physical child absence in its write transaction.
+-- The mark makes the component fence refuse every consumer write, so nothing lands in
 -- the backing data the cleanup releases before the row goes. On PostgreSQL the
 -- mark waits for the writes already past the fence.
 -- Returns (ok, step?, err?, newly_marked?, job_id?) with the same step vocabulary as unregister.
@@ -268,7 +268,9 @@ function M.begin_delete(component_id: string, gate_user_id: string?, child_polic
         end
     end
     if rows[1] == nil then
-        return false, "delete", abort_transaction(db, tx, errors.new({message = "component is absent", kind = errors.NOT_FOUND}))
+        local absent = errors.new({message = "component is absent", kind = errors.NOT_FOUND})
+        local close_err = abort_transaction(db, tx, absent)
+        return false, close_err == absent and "absent" or "delete", close_err
     end
     local intent: any
     if rows[1].delete_intent ~= nil then
@@ -317,6 +319,25 @@ function M.begin_delete(component_id: string, gate_user_id: string?, child_polic
     end
     if notification_err then return true, "notify", committed_error.new(notification_err), newly_marked, job_id end
     return true, nil, nil, newly_marked, job_id
+end
+
+-- Dependency inspection precedes provider cleanup; accepted parents cannot gain
+-- new children because the existing placement fence holds throughout deletion.
+function M.deletion_ready(component_id: string, child_policy: string?): (boolean?, error?)
+    if child_policy == "reparent_root" then return true, nil end
+    local db, open_err = sql.get(ops.db_id())
+    if open_err then return nil, open_err end
+    local tx, begin_err = db:begin()
+    if begin_err then
+        return nil, error_envelope.cleanup(function(): (any, error?) return db:release() end,
+            begin_err, "release component dependency database")
+    end
+    local tree_err = placement.lock_tree(tx)
+    if tree_err then return nil, abort_transaction(db, tx, tree_err) end
+    local ready, readiness_err = ops.deletion_ready_tx(tx, {component_id = component_id, child_policy = child_policy})
+    local release_err = abort_transaction(db, tx, readiness_err)
+    if release_err then return nil, release_err end
+    return ready, nil
 end
 
 -- Unregister consumes the committed delete fence inside the deletion job.
@@ -414,7 +435,7 @@ function M.unregister(component_id: string, child_policy: string?): (any, string
 
     if delete_result and delete_result.pending then
         return nil, "pending", (errors.new({ message = "component owner cleanup has another bounded page",
-            kind = errors.CONFLICT, retryable = true, details = { cleanup_pending = true, needs_continue = true } }) :: error)
+            kind = errors.CONFLICT, retryable = true, details = { cleanup_pending = true, needs_continue = true, wait_for = delete_result.wait_for } }) :: error)
     end
 
     -- Reap the component's primary thread only AFTER the component row is gone.

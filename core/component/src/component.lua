@@ -373,6 +373,8 @@ local function system_delete(component_id: string, child_policy: string?): (bool
     end
 
     local preflight_ok, preflight_step, preflight_err = teardown.begin_delete(component_id, nil, child_policy)
+    if preflight_step == "absent" and type(preflight_err) == "userdata"
+        and errors.is(preflight_err, errors.NOT_FOUND) then return true, nil end
     if not preflight_ok or preflight_err then
         return false, envelope.call_error(preflight_err, "system_delete preflight (" .. tostring(preflight_step) .. ")")
     end

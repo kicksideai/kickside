@@ -150,6 +150,7 @@ return {
     reaching_grants = access_ops.reaching_grants,
     principal_masks = access_ops.principal_masks,
     validate_delete_tx = delete_ops.validate_delete_tx,
+    deletion_ready_tx = delete_ops.deletion_ready_tx,
     component_summary_tx = component_summary_tx,
     set_public_meta = meta_ops.set_public_meta,
     raise_meta_floor = meta_ops.raise_meta_floor,

@@ -17,6 +17,7 @@ function M.reader()
 end
 function M.begin_delete(id, user, policy)
     M.begins = M.begins + 1; M.user, M.policy = user, policy
+    if M.stage == "removed_during_acceptance" then return false, "absent", M.source end
     if M.stage == "preflight" then return false, "transaction", M.source, true end
     return true, nil, nil, true
 end
