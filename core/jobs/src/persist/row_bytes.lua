@@ -1,8 +1,9 @@
--- A portable upper bound for the encoded values stored in one jobs row.
--- Object encoding includes column names and punctuation, so neither engine can
--- store an omitted variable-length value without it contributing to this cap.
+-- A portable bound for admitted row data, with separately bounded safety
+-- control metadata during termination. Object encoding includes column names
+-- and punctuation as well as variable-length values.
 local json = require("json")
 local sql = require("sql")
+local job_types = require("job_types")
 
 local M = {}
 M.NULL = {}
@@ -113,6 +114,22 @@ function M.check_update(exec: any, table_name: string, id: string, changes: any,
     end
     if table_name == "kickside_job" and row.updated_at ~= nil then
         row.updated_at = JOB_UPDATED_AT_MAX
+    end
+    -- Safety control metadata has a fixed bound independent of admitted data.
+    -- Existing rows can already consume the entire application budget, so
+    -- admission headroom alone cannot make their termination fence writable.
+    if table_name == "kickside_job" and row.status == job_types.JOB_STATE.RUNNING
+        and type(row.last_error) == "string"
+        and #row.last_error <= #job_types.TERMINATION_PENDING_PREFIX + 36
+        and string.sub(row.last_error, 1, #job_types.TERMINATION_PENDING_PREFIX) == job_types.TERMINATION_PENDING_PREFIX then
+        row.last_error = nil
+        if type(row.lease_until) == "string" and #row.lease_until <= 40 then row.lease_until = nil end
+        if type(row.heartbeat_at) == "string" and #row.heartbeat_at <= 40 then row.heartbeat_at = nil end
+    elseif table_name == "kickside_job_run" and row.status == job_types.RUN_STATE.LEASE_LOST
+        and type(row.error_text) == "string" and #row.error_text <= 256 then
+        row.error_text = nil
+        row.status = nil
+        if type(row.finished_at) == "string" and #row.finished_at <= 40 then row.finished_at = nil end
     end
     local bytes, bytes_err = M.measure(row)
     if bytes_err then return bytes_err end

@@ -29,6 +29,8 @@ local function job_still_running(db_or_tx: Executor, job: table, dbtype: string?
         :where(sql.builder.eq({ id = id, status = job_types.JOB_STATE.RUNNING,
             lease_token = lease_token, execution_seq = execution_seq }))
         :where("lease_until IS NOT NULL AND lease_until > ?", now)
+        :where("(last_error IS NULL OR substr(last_error, 1, ?) <> ?)",
+            #job_types.TERMINATION_PENDING_PREFIX, job_types.TERMINATION_PENDING_PREFIX)
         :limit(1)
         :run_with(db_or_tx)
         :query()
@@ -48,6 +50,8 @@ local function job_still_running(db_or_tx: Executor, job: table, dbtype: string?
     local runs, run_err = sql.builder.select("status")
         :from("kickside_job_run")
         :where(sql.builder.eq({ id = run_id }))
+        :where("NOT EXISTS (SELECT 1 FROM kickside_job j WHERE j.id = ? AND substr(j.last_error, 1, ?) = ?)",
+            id, #job_types.TERMINATION_PENDING_PREFIX, job_types.TERMINATION_PENDING_PREFIX)
         :limit(1)
         :run_with(db_or_tx)
         :query()

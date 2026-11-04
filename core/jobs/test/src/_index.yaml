@@ -2135,6 +2135,7 @@ entries:
     modules: [sql]
     imports:
       json: app:row_bytes_native_fixture
+      job_types: kickside.core.jobs:types
 
   - name: row_bytes_native_test
     kind: function.lua

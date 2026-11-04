@@ -27,7 +27,7 @@ return {run = test.run_cases(function()
                 schema_ready = function() return true, nil end,
                 policy = function() return fixture.pool_policy(), nil end,
                 retention_schedule = fixture.no_retention_schedule,
-                reclaim = {reclaim_expired = function() return 0 end, reclaim_terminated = function() return 0 end,
+                reclaim = {reclaim_expired = function() return 0 end, reclaim_terminated = function() return 0, nil, 0 end,
                     close_lost_runs = function() return 0 end},
                 claim = {due_backlog = function() return {count = 0}, nil end,
                     claim_batch = function() return {}, nil end},
@@ -76,7 +76,7 @@ return {run = test.run_cases(function()
                 sql_get = function() return db, nil end,
                 policy = function() return fixture.pool_policy({worker_count_postgres = desired, worker_awaited_slots = 0}), nil end,
                 retention_schedule = fixture.no_retention_schedule,
-                reclaim = {reclaim_expired = function() return 0 end, reclaim_terminated = function() return 0 end,
+                reclaim = {reclaim_expired = function() return 0 end, reclaim_terminated = function() return 0, nil, 0 end,
                     close_lost_runs = function() return 0 end},
                 claim = {
                     due_backlog = function() return {count = 0}, nil end,

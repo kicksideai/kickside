@@ -157,7 +157,7 @@ end
 
 type ReclaimPlan = { scope: string, execution: table?, alive: ((string, string) -> (boolean, error?))? }
 
-local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, plan: ReclaimPlan): (integer, error?)
+local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, plan: ReclaimPlan): (integer, error?, integer?)
     local scope = plan.scope
     local policy, policy_err = cfg.policy()
     if policy_err then return 0, policy_err end
@@ -174,7 +174,7 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
             kind = errors.INVALID }) :: error)
     end
     local now = lifecycle.now_string(dbtype)
-    local query = scope_rows(sql.builder.select("id", "lease_token", "execution_seq", "last_error", "owner_kind", "owner_id", "lease_policy")
+    local query = scope_rows(sql.builder.select("id", "lease_token", "execution_seq", "last_error", "owner_kind", "owner_id", "lease_policy", "lease_until", "heartbeat_at")
         :from("kickside_job")
         :where(sql.builder.eq({ status = job_types.JOB_STATE.RUNNING })), scope, now, plan.execution, dbtype)
         :order_by("id ASC")
@@ -186,7 +186,7 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
         local candidates, read_err = db:query(statement, args)
         if read_err then return 0, errors.wrap(read_err, "reclaim select failed") end
         if type(candidates) ~= "table" then return 0, response_error("reclaim.rows") end
-        if #candidates == 0 then return 0, nil end
+        if #candidates == 0 then return 0, nil, 0 end
         local ids: string[] = {}
         local marks: string[] = {}
         for _, row in ipairs(candidates) do
@@ -195,7 +195,7 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
             if live_err then return 0, live_err end
             if type(live) ~= "boolean" then return 0, response_error("termination.alive") end
             observations[tostring(row.id)] = { lease_token = row.lease_token, execution_seq = row.execution_seq,
-                last_error = row.last_error, alive = live }
+                last_error = row.last_error, lease_until = row.lease_until, alive = live }
             ids[#ids + 1] = tostring(row.id)
             marks[#marks + 1] = "?"
         end
@@ -221,7 +221,7 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
             local observed = observations[tostring(row.id)]
             if observed and observed.lease_token == row.lease_token
                 and tonumber(observed.execution_seq) == tonumber(row.execution_seq)
-                and observed.last_error == row.last_error then
+                and observed.last_error == row.last_error and observed.lease_until == row.lease_until then
                 retained[#retained + 1] = row
             end
         end
@@ -269,21 +269,27 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
                 "termination recheck failed", "termination.update", 1, response_error)
             if proof_err then return 0, sql_boundary.rollback(tx, proof_err, "reclaim rollback failed") end
         else
+            -- Cancellation clears heartbeat_at; termination rechecks preserve it.
+            -- Unlike lease_until, this intent survives older recheck writes.
+            local cancelled = row.heartbeat_at == nil
+            local settled_error = cancelled and "cancelled" or TERMINATION_SETTLED
+            local settled_status = cancelled and job_types.JOB_STATE.CANCELLED or job_types.JOB_STATE.PENDING
             local size_err = row_bytes.check_update(tx, "kickside_job", row.id, function(current)
                 local control = current.wake_control_pending == true
                     or tonumber(current.wake_control_pending) == 1
-                return { status = job_types.JOB_STATE.PENDING,
+                return { status = settled_status,
                     lease_token = row_bytes.NULL, lease_until = row_bytes.NULL,
                     heartbeat_at = row_bytes.NULL,
                     scheduled_at = control and now or (current.scheduled_at or row_bytes.NULL),
                     wake_enabled = control and true or current.wake_enabled,
                     attempts = control and 0 or current.attempts,
                     wake_control_pending = false,
-                    last_error = TERMINATION_SETTLED }
+                    last_error = settled_error,
+                    finished_at = cancelled and now or (current.finished_at or row_bytes.NULL) }
             end, (policy :: any).max_row_bytes, "reclaim_job")
             if size_err then return 0, sql_boundary.rollback(tx, size_err, "reclaim rollback failed") end
             local update = sql.builder.update("kickside_job")
-                :set("status", job_types.JOB_STATE.PENDING)
+                :set("status", settled_status)
                 :set("lease_token", nil)
                 :set("lease_until", nil)
                 :set("heartbeat_at", nil)
@@ -291,7 +297,8 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
                 :set("wake_enabled", sql.builder.expr("CASE WHEN wake_control_pending THEN TRUE ELSE wake_enabled END"))
                 :set("attempts", sql.builder.expr("CASE WHEN wake_control_pending THEN 0 ELSE attempts END"))
                 :set("wake_control_pending", false)
-            update = update:set("last_error", TERMINATION_SETTLED)
+            if cancelled then update = update:set("finished_at", now) end
+            update = update:set("last_error", settled_error)
             local result, err = scope_rows(update:where(sql.builder.eq({ id = row.id, status = job_types.JOB_STATE.RUNNING })),
                 scope, now, plan.execution, dbtype):run_with(tx):exec()
             local changed, proof_err = sql_boundary.bounded_row_count(result, err,
@@ -320,7 +327,7 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
             if notify_err then return n, notify_err end
         end
     end
-    return n, nil
+    return n, nil, #rows
 end
 
 -- Fence elapsed leases before revocation, then settle only executions whose
@@ -329,15 +336,17 @@ function M.reclaim_expired(db: sql.DB, dbtype: string, requested_limit: integer?
     local fenced, fence_err = reclaim(db, dbtype, requested_limit, { scope = EXPIRED })
     if fence_err then return 0, fence_err end
     if fenced == 0 then return 0, nil end
-    return M.reclaim_terminated(db, dbtype, requested_limit)
+    local _, settle_err = M.reclaim_terminated(db, dbtype, requested_limit)
+    return fenced, settle_err
 end
 
 -- Settle termination-fenced executions whose child has ended, wherever the
 -- fence came from: a supervisor that stopped before recording the exit, a held
 -- child that exited later, or a runtime process that is gone. alive(job_id,
 -- token) defaults to the runtime's registration of the execution child.
+-- The third result counts processed rows, including live-child rechecks.
 function M.reclaim_terminated(db: sql.DB, dbtype: string, requested_limit: integer?,
-        alive: ((string, string) -> (boolean, error?))?): (integer, error?)
+        alive: ((string, string) -> (boolean, error?))?): (integer, error?, integer?)
     return reclaim(db, dbtype, requested_limit, { scope = TERMINATED, alive = alive or proc_supervisor.child_alive })
 end
 

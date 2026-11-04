@@ -348,7 +348,7 @@ local function define_tests()
                     query = function() return {}, nil end, release = function() end } end,
                 reclaim = {
                     reclaim_expired = function() return 0, nil end,
-                    reclaim_terminated = function() return 0, nil end,
+                    reclaim_terminated = function() return 0, nil, 0 end,
                     close_lost_runs = function() return 0, nil end,
                 },
                 claim = {
@@ -411,7 +411,7 @@ local function define_tests()
                     release = function() end } end,
                 reclaim = {
                     reclaim_expired = function() return 0, nil end,
-                    reclaim_terminated = function() return 0, nil end,
+                    reclaim_terminated = function() return 0, nil, 0 end,
                     close_lost_runs = function() return 0, nil end,
                 },
                 claim = {

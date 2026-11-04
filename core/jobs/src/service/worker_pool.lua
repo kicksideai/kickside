@@ -397,9 +397,9 @@ function pool.main(handover: any?): (any?, error?)
             until (count or 0) < reclaim_limit
             if not reclaim_err then
                 repeat
-                    local count, pass_err = pool_reclaim.reclaim_terminated(db, dbtype, reclaim_limit)
+                    local _, pass_err, processed = pool_reclaim.reclaim_terminated(db, dbtype, reclaim_limit)
                     if pass_err then reclaim_err = pass_err; break end
-                until (count or 0) < reclaim_limit
+                until processed < reclaim_limit
             end
             if not reclaim_err then
                 repeat

@@ -58,6 +58,28 @@ its bounded cleanup continuation errors. Both operations use the public
 [dependency interface](src/README.md#dependency-interface) for return values,
 authorization, and retry semantics.
 
+
+Termination recovery keeps the active identity until the execution ends. A
+termination marker invalidates the lease even when a future deadline schedules
+another liveness check. Cancellation clears the heartbeat timestamp, which
+persists as its intent while the lease deadline schedules termination rechecks.
+Expiry settlement returns the job to pending, while cancellation settlement
+makes it cancelled. Committed `lease_lost` history remains immutable.
+
+`reclaim_expired` returns the number of expired rows fenced in its scan, so
+callers can drain every page independently of asynchronous child settlement.
+`reclaim_terminated` retains its settled count and adds a third result counting
+processed rows, including live-child rechecks; the pool drains on this progress.
+
+The row data budget reserves separate bounded space for safety control values:
+a running job's termination marker (prefix plus at most 36 token bytes) and its
+two deadline timestamps (at most 40 bytes each), or a lost run's status, finish
+timestamp (at most 40 bytes), and diagnostic (at most 256 bytes). These values
+can exceed `max_row_bytes` by their bounded encoded size during termination;
+application data remains subject to the configured limit. This also permits
+termination of existing rows admitted before this reserve applies, without
+rewriting or truncating their data.
+
 ## Reference
 
 - [Module reference](src/README.md)

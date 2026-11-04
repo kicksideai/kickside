@@ -152,8 +152,11 @@ local function finalize_job_run(
     local duration_ms = math.max(0, math.floor((time.now():unix() - started_unix) * 1000))
     local finished_at = clock.now(dbtype)
     local size_err = row_bytes.check_update(db_or_tx, "kickside_job_run", run_ctx.id,
-        { status = status, finished_at = finished_at, duration_ms = duration_ms,
-            error_text = error_text or row_bytes.NULL, result_json = result_json, actions_json = actions_json },
+        function(current)
+            if current.status == job_types.RUN_STATE.LEASE_LOST then return {} end
+            return { status = status, finished_at = finished_at, duration_ms = duration_ms,
+                error_text = error_text or row_bytes.NULL, result_json = result_json, actions_json = actions_json }
+        end,
         (policy :: any).max_row_bytes, "finalize_job_run")
     if size_err then return size_err end
     local result, update_err = sql.builder.update("kickside_job_run")
@@ -164,11 +167,16 @@ local function finalize_job_run(
         :set("result_json", result_json)
         :set("actions_json", actions_json)
         :where(sql.builder.eq({ id = run_ctx.id }))
+        :where("status <> ?", job_types.RUN_STATE.LEASE_LOST)
         :run_with(db_or_tx)
         :exec()
     local count, count_err = sql_boundary.single_row_count(result, update_err, "failed to finalize job run", "finalize.rows_affected", response_error)
     if count_err then return count_err end
     if count == 0 then
+        local rows, read_err = db_or_tx:query("SELECT status FROM kickside_job_run WHERE id=$1", {run_ctx.id})
+        if read_err then return errors.wrap(read_err, "job run finalization status failed") end
+        if type(rows) ~= "table" then return response_error("finalize.rows") end
+        if rows[1] and rows[1].status == job_types.RUN_STATE.LEASE_LOST then return nil end
         return (errors.new({ message = "job run row not found during finalize", kind = errors.NOT_FOUND }) :: error)
     end
     return nil
@@ -196,6 +204,8 @@ local function heartbeat_job(db_or_tx: Executor, job: table, dbtype: string): er
         :set("heartbeat_at", heartbeat_at)
         :set("lease_until", lease_until)
         :where(sql.builder.eq({ id = job.id, status = job_types.JOB_STATE.RUNNING, lease_token = lease_token }))
+        :where("(last_error IS NULL OR substr(last_error, 1, ?) <> ?)",
+            #job_types.TERMINATION_PENDING_PREFIX, job_types.TERMINATION_PENDING_PREFIX)
         :run_with(db_or_tx)
         :exec()
     local count, count_err = sql_boundary.single_row_count(result, err, "heartbeat update failed", "heartbeat.rows_affected", response_error)

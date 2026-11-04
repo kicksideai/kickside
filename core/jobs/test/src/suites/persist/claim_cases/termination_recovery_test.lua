@@ -11,6 +11,9 @@ local claim_execution = require("claim_execution")
 local lifecycle = require("lifecycle")
 local proc_supervisor = require("proc_supervisor")
 local job_fixture = require("job_fixture")
+local row_bytes = require("row_bytes")
+local config = require("config")
+local lease_status = require("lease_status")
 
 local function past(dbtype: string): string
     return dbtype == sql.type.SQLITE and "2000-01-01 00:00:00" or "2000-01-01T00:00:00Z"
@@ -74,6 +77,89 @@ end
 
 local function define_tests()
     test.describe("jobs termination fence recovery", function()
+        test.it("rejects a termination fence even when run history already reports success", function()
+            local db = assert(job_fixture.private_queue("app:private_queue_termination_recovery_test"))
+            local dbtype = tostring(db:type())
+            local job = leased(db, dbtype)
+            local run = assert(lifecycle.start_job_run(db, dbtype, job, "history-owner", 1))
+            test.is_nil(lifecycle.finalize_job_run(db, dbtype, run, job_types.RUN_STATE.SUCCESS, {}, {}, nil))
+            fence(db, dbtype, job)
+            local valid, err = lease_status.job_still_running(db, job, dbtype, run.id)
+            assert(db:release())
+            test.is_nil(err)
+            test.is_false(valid)
+        end)
+
+        test.it("reports fencing progress while draining multiple live-child pages", function()
+            local db = assert(job_fixture.private_queue("app:private_queue_termination_recovery_test"))
+            local dbtype = tostring(db:type())
+            local jobs = {leased(db, dbtype), leased(db, dbtype), leased(db, dbtype)}
+            for _, job in ipairs(jobs) do
+                assert(db:execute("UPDATE kickside_job SET lease_until=$1 WHERE id=$2", {past(dbtype), job.id}))
+                assert(process.registry.register(proc_supervisor.child_name(job.id, job.lease_token), nil, process.registry.CONSISTENT))
+            end
+            local ok, err = pcall(function()
+                for _ = 1, #jobs do test.eq(assert(reclaim.reclaim_expired(db, dbtype, 1)), 1) end
+                test.eq(assert(reclaim.reclaim_expired(db, dbtype, 1)), 0)
+                for _, job in ipairs(jobs) do test.is_true(fenced(read(db, job.id).last_error)) end
+            end)
+            for _, job in ipairs(jobs) do
+                assert(process.registry.unregister(proc_supervisor.child_name(job.id, job.lease_token), process.registry.CONSISTENT))
+            end
+            assert(db:release())
+            if not ok then error(err) end
+        end)
+
+        test.it("reports terminated-page progress independently of settled executions", function()
+            local db = assert(job_fixture.private_queue("app:private_queue_termination_recovery_test"))
+            local dbtype = tostring(db:type())
+            local jobs = {leased(db, dbtype), leased(db, dbtype), leased(db, dbtype)}
+            for _, job in ipairs(jobs) do fence(db, dbtype, job) end
+            local observations = 0
+            for _ = 1, #jobs do
+                local settled, err, processed = reclaim.reclaim_terminated(db, dbtype, 1, function()
+                    observations = observations + 1
+                    return true, nil
+                end)
+                test.is_nil(err)
+                test.eq(settled, 0)
+                test.eq(processed, 1)
+            end
+            local settled, err, processed = reclaim.reclaim_terminated(db, dbtype, 1, function() return true, nil end)
+            assert(db:release())
+            test.is_nil(err)
+            test.eq(settled, 0)
+            test.eq(processed, 0)
+            test.eq(observations, #jobs)
+        end)
+
+        test.it("fences and recovers a previously admitted row at the byte boundary without blocking its page", function()
+            local db = assert(job_fixture.private_queue("app:private_queue_termination_recovery_test"))
+            local dbtype = tostring(db:type())
+            local job = leased(db, dbtype)
+            local other = leased(db, dbtype)
+            local cap = assert(config.policy()).max_row_bytes
+            local tx = assert(db:begin())
+            local rows = assert(tx:query("SELECT * FROM kickside_job WHERE id=$1", {job.id}))
+            local row = rows[1]
+            row.updated_at = "9999-12-31T23:59:59.999999999+00:00"
+            row.lease_until = past(dbtype)
+            row.payload = dbtype == sql.type.POSTGRES and '{"pad": ""}' or '{"pad":""}'
+            local base = assert(row_bytes.measure(row))
+            local padding = string.rep("x", cap - base)
+            assert(tx:execute("UPDATE kickside_job SET payload=$1,lease_until=$2 WHERE id=$3", {(dbtype == sql.type.POSTGRES and '{"pad": "' or '{"pad":"') .. padding .. '"}', past(dbtype), job.id}))
+            local size_err = row_bytes.check_update(tx, "kickside_job", job.id, {}, cap, "boundary_fixture")
+            if size_err then assert(tx:rollback()); assert(db:release()); error(size_err) end
+            assert(tx:commit())
+            assert(db:execute("UPDATE kickside_job SET lease_until=$1 WHERE id=$2", {past(dbtype), other.id}))
+            local count, err = reclaim.reclaim_expired(db, dbtype, 2)
+            test.is_nil(err)
+            test.eq(count, 2)
+            test.eq(read(db, job.id).status, "pending")
+            test.eq(read(db, other.id).status, "pending")
+            assert(db:release())
+        end)
+
         test.it("fences an expired execution until its registered process ends", function()
             local db = assert(job_fixture.private_queue("app:private_queue_termination_recovery_test"))
             local dbtype = tostring(db:type())
@@ -90,7 +176,7 @@ local function define_tests()
                 assert(db:execute("UPDATE kickside_job SET lease_until=$1 WHERE id=$2", {past(dbtype), job.id}))
                 local count, err = reclaim.reclaim_expired(db, dbtype)
                 test.is_nil(err)
-                test.eq(count, 0)
+                test.eq(count, 1)
                 test.eq(read(db, job.id).status, job_types.JOB_STATE.RUNNING)
                 test.is_true(fenced(read(db, job.id).last_error))
                 test.is_true(assert(proc_supervisor.child_alive(job.id, job.lease_token)))
@@ -314,6 +400,7 @@ local function child(args: table): boolean
         process.registry.CONSISTENT))
     assert(process.send(args.parent, "termination_test_ready", {}))
     finish:receive()
+    assert(process.registry.unregister(proc_supervisor.child_name(args.job_id, args.token), process.registry.CONSISTENT))
     return true
 end
 

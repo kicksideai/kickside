@@ -80,9 +80,15 @@ local function settle_child_exit(db: sql.DB, dbtype: string, job: table, run_ctx
             id = job.id, token = job.lease_token, execution_seq = job.execution_seq,
         })
         if finish_err then return finish_err end
+        if not changed then
+            local _, settle_err = reclaim.settle_confirmed(db, dbtype, {
+                id = job.id, token = job.lease_token, execution_seq = job.execution_seq,
+            })
+            return settle_err
+        end
         local history_err = lifecycle.finalize_job_run(db, dbtype, run_ctx,
             job_types.RUN_STATE.FAILED, {}, {}, "job execution revoked")
-        if history_err or not changed then return history_err end
+        if history_err then return history_err end
         return lease_release.notify(tostring(job.id), tonumber(job.execution_seq),
             { kind = job.owner_kind, id = job.owner_id })
     elseif control == "shutdown" and not child_err then
