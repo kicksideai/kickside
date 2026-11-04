@@ -290,6 +290,12 @@ entries:
         methods:
           get_info: kickside.uploads.binding:file_provider_func
 
+  - name: text_trim
+    kind: library.lua
+    meta:
+      comment: Whitespace trim that holds on large text (the anchored Lua pattern gives up past ~45 KB).
+    source: file://text_trim.lua
+
   - name: metadata_sanitizer
     kind: library.lua
     meta:
