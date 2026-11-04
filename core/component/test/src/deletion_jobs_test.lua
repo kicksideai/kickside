@@ -217,7 +217,7 @@ M.run = test.run_cases(function()
             test.is_nil(retry_err); test.is_true(result.deleted)
             test.eq(query("SELECT option_marker FROM deletion_job_cleanup WHERE component_id=$1", {id})[1].option_marker, "original")
         end)
-        test.it("continues successful bounded pages without failure attempts or lost visibility", function()
+        test.it("continues successful bounded pages without failure attempts", function()
             local owner = "delete-job-" .. uuid.v4()
             local id = seed("retention", owner)
             local db = assert(sql.get("app:db"))
@@ -228,14 +228,13 @@ M.run = test.run_cases(function()
             local children = {}
             for _ = 1, 5 do children[#children + 1] = seed("retention", owner, id) end
             test.is_true(service(owner):delete({component_id = id, child_policy = "reparent_root"}).success)
-            for page = 1, 5 do
+            for page = 1, 6 do
                 local result, err = deletion_worker.run(id)
                 test.is_nil(err, tostring(err))
-                if page < 5 then
+                if page < 6 then
                     test.eq(type(result.rearm), "string")
                     test.eq(jobs(id)[1].status, "pending")
                     test.eq(tonumber(jobs(id)[1].attempts), 0)
-                    test.is_true(service(owner):get({component_id = id}).success, "read grants survive bounded teardown")
                 else test.is_true(result.deleted) end
             end
             for _, child in ipairs(children) do

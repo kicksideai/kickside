@@ -2,6 +2,7 @@ local M: any = {}
 M.ACCESS, M.COMMAND_TYPES = {DELETE = 8}, {DELETE_COMPONENT = "delete"}
 function M.reset(operation, stage, source)
     M.event, M.event_commits, M.audience_commits, M.recipients = nil, nil, nil, nil
+    M.audiences, M.event_effects = 0, nil
     M.absent, M.row_locks, M.pending = false, 0, false
     M.operation, M.stage, M.source = operation, stage, source
     M.release_source, M.rollback_source = nil, nil

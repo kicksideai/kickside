@@ -3,7 +3,6 @@ function M.reset(stage, err, dialect)
     M.stage, M.err, M.dialect = stage, err, dialect
     M.missing, M.proof, M.queries, M.writes = false, nil, 0, 0
     M.owner_writes, M.owner_reads = 0, 0
-    M.final_writes = 0
 end
 function M.result(stage, value): (any, error?)
     if stage == M.stage then
@@ -34,11 +33,6 @@ function M.transaction(): any
             elseif statement:find("WITH doomed", 1, true) then
                 M.owner_writes = M.owner_writes + 1
                 return M.result("owner_delete_" .. M.owner_writes, {rows_affected = 0})
-            elseif statement:find("DELETE FROM kickside_component_access", 1, true)
-                or statement:find("DELETE FROM kickside_component_meta", 1, true) then
-                M.final_writes = M.final_writes + 1
-                M.owner_writes = M.owner_writes + 1
-                return M.result("final_delete_" .. M.final_writes, {rows_affected = 0})
             elseif statement:find("SET path=", 1, true) then
                 return M.result("path_write", {rows_affected = 1})
             elseif statement:find("SET parent_id=NULL", 1, true) then

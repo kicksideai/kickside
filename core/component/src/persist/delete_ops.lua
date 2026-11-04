@@ -16,7 +16,7 @@ local function rows_error(rows: any, err: error?, operation: string, field: stri
 end
 
 local function affected_count(result: any, err: error?, operation: string, field: string,
-    maximum: number, exact: integer?): (integer?, error?)
+    maximum: integer, exact: integer?): (integer?, error?)
     if err then return nil, errors.wrap(err, operation) end
     if type(result) ~= "table" then return nil, response_error(field) end
     local count = tonumber(result.rows_affected)
@@ -104,6 +104,8 @@ end
 local function drain_owner_rows(tx: Executor, component_id: string): (boolean?, error?)
     local specs = {
         { "kickside_component_declaration_fence", "automation_id" },
+        { component_types.TABLES.ACCESS, "access_id" },
+        { component_types.TABLES.META, "meta_id" },
         { "kickside_execution_identity_audit", "identity_generation" },
     }
     local remaining = 100
@@ -182,14 +184,11 @@ local function delete_component(tx: Executor, db: Executor, command: component_t
         end
     end
 
-    local edge_err = placement.unlink_node(tx, payload.component_id :: string)
+    local edges_pending, edge_err = placement.unlink_node_page(tx, db, payload.component_id :: string, 100)
     if edge_err then return nil, edge_err end
-    -- Read grants, inherited reach and public metadata survive every continuation.
-    -- Remove them atomically with the row so readers retain deletion visibility.
-    for _, spec in ipairs({{component_types.TABLES.ACCESS, "access_id"}, {component_types.TABLES.META, "meta_id"}}) do
-        local removed, remove_err = tx:execute("DELETE FROM " .. spec[1] .. " WHERE component_id=$1", {payload.component_id})
-        local _, proof_err = affected_count(removed, remove_err, "component final owner cleanup failed", "owner.delete", math.huge, nil)
-        if proof_err then return nil, proof_err end
+    if edges_pending then
+        return { component_id = payload.component_id, changes_made = false,
+            rows_affected = 0, deleted = false, pending = true }, nil
     end
 
     local result, err = sql.builder.delete(component_types.TABLES.COMPONENTS)

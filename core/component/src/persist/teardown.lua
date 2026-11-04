@@ -336,8 +336,14 @@ end
 
 -- Unregister consumes the committed delete fence inside the deletion job.
 function M.unregister(component_id: string, child_policy: string?): (any, string?, any)
-    local recipients, audience_err = meta_service.resolve_recipients(component_id, ops.ACCESS.READ)
-    if audience_err then return nil, "notify", audience_err end
+    -- Cleanup has succeeded. Notify before draining stored read grants;
+    -- bounded teardown can revoke access before the component row disappears.
+    local notification_err = error_envelope.cleanup(function(): (any, error?)
+        local recipients, audience_err = meta_service.resolve_recipients(component_id, ops.ACCESS.READ)
+        if audience_err then return nil, audience_err end
+        return meta_service.notify_access(component_id, nil,
+            {event = "component.deleted", component_id = component_id}, {recipients = recipients})
+    end, nil, "notify component deletion completion")
     local db, err_db = sql.get(ops.db_id())
     if err_db then return nil, "connect", err_db end
 
@@ -417,14 +423,10 @@ function M.unregister(component_id: string, child_policy: string?): (any, string
         return nil, "commit", abort_transaction(db, tx, err_commit)
     end
 
-    local notification_err = error_envelope.cleanup(function(): (any, error?) return db:release() end,
-        nil, "release component teardown database")
+    notification_err = error_envelope.cleanup(function(): (any, error?) return db:release() end,
+        notification_err, "release component teardown database")
 
     if delete_result and delete_result.changes_made and summary then
-        notification_err = error_envelope.cleanup(function(): (any, error?)
-            return meta_service.notify_access(component_id, nil,
-                {event = "component.deleted", component_id = component_id}, {recipients = recipients})
-        end, notification_err, "notify component deletion completion")
         notification_err = error_envelope.cleanup(function(): (any, error?)
             return nil, component_lifecycle.committed()
         end, notification_err, "notify component lifecycle")

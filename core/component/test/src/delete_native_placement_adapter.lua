@@ -13,7 +13,7 @@ end
 function M.relink_root_page(tx, db, id, limit): (boolean?, error?)
     return fixture.result("relink", false)
 end
-function M.unlink_node(tx, id): error?
-    return select(2, fixture.result("unlink", true))
+function M.unlink_node_page(tx, db, id, limit): (boolean?, error?)
+    return fixture.result("unlink", false)
 end
 return M
