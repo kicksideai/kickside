@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ComponentDeletion from '@widgets/app/ComponentDeletion.vue'
+import { useComponentDeletion } from '@widgets/app/useComponentDeletion'
 import { ref, computed, onBeforeUnmount } from 'vue'
 import { Icon } from '@iconify/vue'
 import Button from 'primevue/button'
@@ -275,6 +277,7 @@ onBeforeUnmount(() => {
   install.unmountCustomInstallUi()
   clearRealtimeSubscriptions()
 })
+useComponentDeletion(automations, row => row.id)
 </script>
 
 <template>
@@ -322,7 +325,7 @@ onBeforeUnmount(() => {
 
       <div v-else class="kx-list">
         <div v-for="a in filtered" :key="a.id" class="kx-row" :class="drawerId === a.id && 'is-open'">
-          <button type="button" class="kx-open" :aria-label="`Open ${pretty(a)} details`" @click="openDrawer(a)">
+          <button type="button" class="kx-open" :aria-label="`Open ${pretty(a)} details`" @click="!a.deleting_at && openDrawer(a)" :disabled="!!a.deleting_at">
             <span class="kx-ficon"><Icon :icon="iconFor(a)" aria-hidden="true" /></span>
             <span class="kx-id">
               <span class="kx-name" :title="pretty(a)">{{ pretty(a) }}</span>
@@ -347,17 +350,18 @@ onBeforeUnmount(() => {
               outlined
               size="small"
               v-if="(hasAction(a, 'pause') || hasAction(a, 'resume')) && !isTerminal(a)"
-              :disabled="busyId === a.id"
+              :disabled="!!a.deleting_at || (busyId === a.id)"
               :aria-label="`${isPaused(a) ? 'Resume' : 'Pause'} ${pretty(a)}`"
               :title="isPaused(a) ? 'Resume' : 'Pause'"
               @click="toggleEnabled(a)"
             >
               <template #icon="{ class: iconClass }"><Icon :icon="isPaused(a) ? 'tabler:player-play-filled' : 'tabler:player-pause'" aria-hidden="true" :class="iconClass" /></template>
             </Button>
-            <ActionMenu :items="actionItemsFor(a)" :name="pretty(a)" :busy="busyId === a.id" @select="dispatchAction(a, $event)" />
+            <ActionMenu :items="actionItemsFor(a)" :name="pretty(a)" :busy="!!a.deleting_at || busyId === a.id" @select="dispatchAction(a, $event)" />
           </div>
 
-          <div v-if="rowMessage(a) || detailMetrics(a).length || metrics(a).length" class="kx-rowfoot">
+          <div v-if="a.deleting_at || rowMessage(a) || detailMetrics(a).length || metrics(a).length" class="kx-rowfoot">
+            <ComponentDeletion :state="a" @retry="askRemove(a)" />
             <div v-if="rowMessage(a)" class="kx-rowmsg" :class="`kx-rowmsg-${rowMessage(a)?.tone}`">
               <Icon :icon="rowMessage(a)?.tone === 'error' ? 'tabler:alert-circle' : 'tabler:circle-check'" aria-hidden="true" />
               <span class="kx-rowmsg-txt" :title="rowMessage(a)?.text">{{ rowMessage(a)?.text }}</span>
@@ -370,7 +374,7 @@ onBeforeUnmount(() => {
                 class="kx-recover"
                 data-testid="row-recover"
                 :aria-label="`Recover ${pretty(a)}`"
-                :disabled="busyId === a.id"
+                :disabled="!!a.deleting_at || (busyId === a.id)"
                 label="Recover"
                 @click="dispatchRecover(a)"
               >

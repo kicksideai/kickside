@@ -140,6 +140,8 @@ local function project_connection(row: any): any
 
     return {
         component_id = component_id,
+        deleting_at = row.deleting_at,
+        deletion_job_id = row.deletion_job_id,
         name = name,
         provider = provider,
         icon = icon,

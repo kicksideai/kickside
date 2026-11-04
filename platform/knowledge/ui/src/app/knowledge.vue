@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ComponentDeletion from '@widgets/app/ComponentDeletion.vue'
+import { useComponentDeletion } from '@widgets/app/useComponentDeletion'
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import Button from 'primevue/button'
@@ -106,36 +108,6 @@ async function onDialogSaved() {
 // ─── delete ──────────────────────────────────────────────────────────────
 // The destructive confirm runs in the host layer via host.confirm (rendered
 // outside this web component), so no in-component modal is needed.
-const pendingDeletes = ref<Record<string, string>>({})
-const deletionComplete = ref('')
-const deletionNotice = computed(() => Object.keys(pendingDeletes.value).length
-  ? `Deleting ${Object.values(pendingDeletes.value).join(', ')}: cleanup is in progress and continues in the background.`
-  : deletionComplete.value)
-let cleanupTimer: ReturnType<typeof setTimeout> | undefined
-let disposed = false
-
-function scheduleCleanup() {
-  if (disposed || cleanupTimer !== undefined || !Object.keys(pendingDeletes.value).length) return
-  cleanupTimer = setTimeout(async () => {
-    cleanupTimer = undefined
-    const loaded = await load({ preserve: true })
-    if (disposed) return
-    if (loaded) {
-      for (const [id, name] of Object.entries(pendingDeletes.value)) {
-        if (kbs.value.some(kb => kb.id === id)) continue
-        delete pendingDeletes.value[id]
-        deletionComplete.value = `Deletion complete: ${name}.`
-      }
-    }
-    scheduleCleanup()
-  }, 1000)
-}
-
-onBeforeUnmount(() => {
-  disposed = true
-  if (cleanupTimer !== undefined) clearTimeout(cleanupTimer)
-})
-
 async function askRemove(k: KnowledgeBase) {
   const ok = await host.confirm({
     header: 'Delete knowledge base',
@@ -151,13 +123,8 @@ async function askRemove(k: KnowledgeBase) {
   try {
     const { data } = await api.delete(`/api/v1/knowledge/${k.id}`)
     if (!data?.success) throw new Error(data?.error || 'delete failed')
-    deletionComplete.value = ''
-    if (data.in_progress === true) {
-      pendingDeletes.value[k.id] = k.name || '(untitled)'
-      scheduleCleanup()
-    }
     if (detail.value?.id === k.id) closeDetail()
-    await load({ preserve: data.in_progress === true })
+    await load()
   } catch (e) {
     showSurfaceError(errMsg(e, 'delete failed'))
   }
@@ -229,11 +196,11 @@ useHostVisibilityRefresh(async () => {
     error.value = errMsg(e, 'host API unavailable')
   }
 })
+useComponentDeletion(kbs, row => row.id, id => { if (detail.value?.id === id) closeDetail() })
 </script>
 
 <template>
   <div class="kx">
-    <div v-if="deletionNotice" class="kx-notice" role="status">{{ deletionNotice }}</div>
     <!-- ─── List view ─────────────────────────────────────────────── -->
     <template v-if="!detail">
       <header class="kx-head">
@@ -287,10 +254,11 @@ useHostVisibilityRefresh(async () => {
             role="button"
             tabindex="0"
             :aria-label="`Open ${k.name || 'knowledge base'}`"
-            @click="openDetail(k)"
-            @keydown.enter="openDetail(k)"
-            @keydown.space.prevent="openDetail(k)"
+            @click="!k.deleting_at && openDetail(k)"
+            @keydown.enter="!k.deleting_at && openDetail(k)"
+            @keydown.space.prevent="!k.deleting_at && openDetail(k)"
           >
+            <ComponentDeletion :state="k" @retry="askRemove(k)" />
             <div class="kx-card-head">
               <span class="kx-ficon"><Icon :icon="k.icon || k.badge?.icon || 'tabler:books'" aria-hidden="true" /></span>
               <div class="kx-card-id">
@@ -302,13 +270,13 @@ useHostVisibilityRefresh(async () => {
                 </div>
               </div>
               <div class="kx-card-actions" @click.stop>
-                <Button type="button" severity="secondary" outlined size="small" title="Edit" :aria-label="`Edit ${k.name}`" @click="openEdit(k)">
+                <Button type="button" severity="secondary" outlined size="small" title="Edit" :aria-label="`Edit ${k.name}`" @click="!k.deleting_at && openEdit(k)" :disabled="!!k.deleting_at">
                   <template #icon="{ class: iconClass }"><Icon icon="tabler:pencil" :class="iconClass" aria-hidden="true" /></template>
                 </Button>
-                <Button type="button" severity="secondary" outlined size="small" title="Share" :aria-label="`Share ${k.name}`" @click="openShare(k)">
+                <Button type="button" severity="secondary" outlined size="small" title="Share" :aria-label="`Share ${k.name}`" @click="openShare(k)" :disabled="!!k.deleting_at">
                   <template #icon="{ class: iconClass }"><Icon icon="tabler:share" :class="iconClass" aria-hidden="true" /></template>
                 </Button>
-                <Button type="button" severity="danger" outlined size="small" title="Delete" :aria-label="`Delete ${k.name}`" @click="askRemove(k)">
+                <Button type="button" severity="danger" outlined size="small" title="Delete" :aria-label="`Delete ${k.name}`" @click="askRemove(k)" :disabled="!!k.deleting_at">
                   <template #icon="{ class: iconClass }"><Icon icon="tabler:trash" :class="iconClass" aria-hidden="true" /></template>
                 </Button>
               </div>

@@ -10,6 +10,20 @@ local function native(result: any, source: error)
 end
 return {run = test.run_cases(function()
     test.describe("native gated component deletion causes", function()
+        test.it("returns committed acceptance with a separate notification error", function()
+            local source = errors.new({message = "nudge unavailable", kind = errors.UNAVAILABLE, retryable = true})
+            fixture.reset("notify", source)
+            local result = binding.handle({component_id = "component"})
+            test.is_true(result.success); test.is_true(result.in_progress); test.is_false(result.deleted)
+            test.eq(result.job_id, "job")
+            test.eq(result.notification_error.kind, source:kind())
+            test.is_false(result.notification_error.retryable)
+        end)
+        test.it("rejects a missing worker intent deterministically", function()
+            fixture.reset("worker_intent", nil)
+            local result, err = worker.run({payload = {component_id = "component"}})
+            test.is_nil(result); test.eq(err:kind(), errors.INVALID)
+        end)
         for _, stage in ipairs({"read", "access_check", "access", "commit", "cleanup"}) do
             for _, kind in ipairs(kinds) do
                 for _, options in ipairs({{}, {retryable = false}, {retryable = true}}) do

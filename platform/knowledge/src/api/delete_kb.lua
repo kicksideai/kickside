@@ -66,7 +66,7 @@ local function handler()
 
     res:set_status(result.in_progress == true and http.STATUS.ACCEPTED or http.STATUS.OK)
     res:write_json({ success = true, deleted = result.deleted == true,
-        in_progress = result.in_progress == true, status = result.status, cleanup_pending = result.cleanup_pending,
+        job_id = result.job_id, notification_error = result.notification_error, in_progress = result.in_progress == true, status = result.status, cleanup_pending = result.cleanup_pending,
         kind = result.kind, retryable = result.retryable, details = result.details, discarded = result.discarded })
 end
 

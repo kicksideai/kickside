@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ComponentDeletion from '@widgets/app/ComponentDeletion.vue'
+import { useComponentDeletion } from '@widgets/app/useComponentDeletion'
 import { computed, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import Button from 'primevue/button'
@@ -56,7 +58,6 @@ async function load() {
   try {
     rows.value = await fetchWebhooks()
   } catch (e) {
-    rows.value = []
     error.value = errMsg(e, 'could not load webhooks')
   } finally {
     loading.value = false
@@ -151,7 +152,7 @@ async function askDelete(row: WebhookRow) {
   if (!ok) return
   try {
     await deleteWebhook(row.webhook_id)
-    host.toast({ severity: 'success', summary: 'Removed', detail: row.label || row.webhook_id })
+    host.toast({ severity: 'success', summary: 'Deletion accepted', detail: row.label || row.webhook_id })
     if (editing.value?.webhook_id === row.webhook_id) closeEdit()
     await load()
   } catch (e) {
@@ -161,6 +162,7 @@ async function askDelete(row: WebhookRow) {
 }
 
 useHostVisibilityRefresh(load)
+useComponentDeletion(rows, row => row.webhook_id)
 </script>
 
 <template>
@@ -212,8 +214,9 @@ useHostVisibilityRefresh(load)
           v-for="row in filtered" :key="row.webhook_id"
           class="kx-card" :class="row.status === 'revoked' && 'is-revoked'"
           tabindex="0" role="button" :aria-label="`Open ${row.label || 'webhook'}`"
-          @click="openEdit(row)" @keydown.enter="openEdit(row)" @keydown.space.prevent="openEdit(row)"
+          @click="!row.deleting_at && openEdit(row)" @keydown.enter="!row.deleting_at && openEdit(row)" @keydown.space.prevent="!row.deleting_at && openEdit(row)"
         >
+          <ComponentDeletion :state="row" @retry="askDelete(row)" />
           <div class="kx-card-head">
             <span class="kx-ficon"><Icon icon="tabler:webhook" aria-hidden="true" /></span>
             <div class="kx-card-id">
@@ -226,10 +229,10 @@ useHostVisibilityRefresh(load)
               </div>
             </div>
             <div class="kx-card-actions" @click.stop>
-              <Button type="button" severity="secondary" outlined size="small" title="Open" :aria-label="`Open ${row.label || 'webhook'}`" @click="openEdit(row)">
+              <Button type="button" severity="secondary" outlined size="small" title="Open" :aria-label="`Open ${row.label || 'webhook'}`" @click="!row.deleting_at && openEdit(row)" :disabled="!!row.deleting_at">
                 <template #icon="{ class: iconClass }"><Icon icon="tabler:pencil" :class="iconClass" aria-hidden="true" /></template>
               </Button>
-              <Button v-if="row.status === 'active'" type="button" severity="danger" outlined size="small" title="Revoke" :aria-label="`Revoke ${row.label || 'webhook'}`" @click="askRevoke(row)">
+              <Button v-if="row.status === 'active'" type="button" severity="danger" outlined size="small" title="Revoke" :aria-label="`Revoke ${row.label || 'webhook'}`" @click="askRevoke(row)" :disabled="!!row.deleting_at">
                 <template #icon="{ class: iconClass }"><Icon icon="tabler:ban" :class="iconClass" aria-hidden="true" /></template>
               </Button>
               <Button type="button" severity="danger" outlined size="small" title="Remove" :aria-label="`Remove ${row.label || 'webhook'}`" :disabled="subscriberCount(row) > 0" @click="askDelete(row)">

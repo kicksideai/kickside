@@ -7,6 +7,9 @@ local security = require("security")
 local time = require("time")
 local json = require("json")
 local jobs = require("jobs")
+local persisted_json = require("persisted_json")
+local committed_error = require("committed_error")
+local meta_service = require("meta_service")
 local ops = require("component_ops")
 local placement = require("placement")
 local component_lifecycle = require("component_lifecycle")
@@ -215,9 +218,9 @@ end
 -- component fence refuse every consumer write from here on, so nothing lands in
 -- the backing data the cleanup releases before the row goes. On PostgreSQL the
 -- mark waits for the writes already past the fence.
--- Returns (ok, step?, err?, newly_marked?) with the same step vocabulary as unregister.
+-- Returns (ok, step?, err?, newly_marked?, job_id?) with the same step vocabulary as unregister.
 
-function M.begin_delete(component_id: string, gate_user_id: string?, child_policy: string?, delete_options: any?): (boolean, string?, any, boolean?)
+function M.begin_delete(component_id: string, gate_user_id: string?, child_policy: string?, delete_options: any?): (boolean, string?, any, boolean?, string?)
     local db, db_err = sql.get(ops.db_id())
     if db_err then return false, "connect", db_err end
     local tx, tx_err = db:begin()
@@ -267,35 +270,59 @@ function M.begin_delete(component_id: string, gate_user_id: string?, child_polic
     if rows[1] == nil then
         return false, "delete", abort_transaction(db, tx, errors.new({message = "component is absent", kind = errors.NOT_FOUND}))
     end
-    if rows[1].delete_intent == nil then
-        local intent_policy = child_policy
-        if not newly_marked then intent_policy = "reparent_root" end
-        local intent, encode_err = json.encode({child_policy = intent_policy, options = delete_options})
-        if encode_err then return false, "delete", abort_transaction(db, tx, encode_err) end
-        local _, intent_err = tx:execute("UPDATE kickside_components SET delete_intent=$1 WHERE component_id=$2", {intent, component_id})
+    local intent: any
+    if rows[1].delete_intent ~= nil then
+        local intent_err
+        intent, intent_err = persisted_json.decode_table(rows[1].delete_intent, "component.delete_intent")
         if intent_err then return false, "delete", abort_transaction(db, tx, intent_err) end
+    else
+        -- Only legacy marks lack the first authorized request's policy.
+        intent = {child_policy = newly_marked and child_policy or "reparent_root", options = delete_options}
+        if newly_marked then intent.child_policy = child_policy end
     end
-    local dialect, dialect_err = db:type()
-    if dialect_err then return false, "delete", abort_transaction(db, tx, dialect_err) end
-    local queued, enqueue_err = jobs.enqueue_tx(tx, tostring(dialect), {
-        namespace = "component", scope = component_id, key = "delete",
-        owner_locator = {kind = "component", id = component_id},
-        job_type = "kickside.component:delete_worker", immutable_payload = {component_id = component_id},
-    })
-    if enqueue_err or not queued then
-        return false, "delete", abort_transaction(db, tx, enqueue_err or internal("component deletion enqueue returned no job", component_id))
+    local job_id = intent.job_id
+    local enqueue = gate_user_id ~= nil or rows[1].delete_intent == nil
+    if enqueue then
+        local dialect, dialect_err = db:type()
+        if dialect_err then return false, "delete", abort_transaction(db, tx, dialect_err) end
+        local queued, enqueue_err = jobs.enqueue_tx(tx, tostring(dialect), {
+            namespace = "component", scope = component_id, key = "delete",
+            owner_locator = {kind = "component", id = component_id},
+            job_type = "kickside.component:delete_worker", immutable_payload = {component_id = component_id},
+        })
+        if enqueue_err or not queued then
+            return false, "delete", abort_transaction(db, tx, enqueue_err or internal("component deletion enqueue returned no job", component_id))
+        end
+        if job_id ~= queued.id or rows[1].delete_intent == nil then
+            intent.job_id = queued.id
+            local encoded, encode_err = json.encode(intent)
+            if encode_err then return false, "delete", abort_transaction(db, tx, encode_err) end
+            local _, intent_err = tx:execute("UPDATE kickside_components SET delete_intent=$1 WHERE component_id=$2", {encoded, component_id})
+            if intent_err then return false, "delete", abort_transaction(db, tx, intent_err) end
+        end
+        job_id = queued.id
     end
     local _, commit_err = tx:commit()
     commit_err = error_envelope.cleanup(function(): (any, error?) return db:release() end,
         commit_err, "release component teardown database")
     if commit_err then return false, "commit", commit_err, newly_marked end
+    if not enqueue then return true, nil, nil, newly_marked, job_id end
     local _, nudge_err = jobs.nudge_workers()
-    if nudge_err then return false, "notify", nudge_err, newly_marked end
-    return true, nil, nil, newly_marked
+    local _, notify_err = meta_service.notify_access(component_id, nil, {event = "component.deleting", component_id = component_id,
+        deletion_job_id = job_id})
+    local notification_err = nudge_err
+    if notify_err then
+        notification_err = notification_err and error_envelope.wrap_secondary(notify_err, notification_err,
+            "component deletion notification failed") or notify_err
+    end
+    if notification_err then return true, "notify", committed_error.new(notification_err), newly_marked, job_id end
+    return true, nil, nil, newly_marked, job_id
 end
 
 -- Unregister consumes the committed delete fence inside the deletion job.
 function M.unregister(component_id: string, child_policy: string?): (any, string?, any)
+    local recipients, audience_err = meta_service.resolve_recipients(component_id, ops.ACCESS.READ)
+    if audience_err then return nil, "notify", audience_err end
     local db, err_db = sql.get(ops.db_id())
     if err_db then return nil, "connect", err_db end
 
@@ -378,6 +405,9 @@ function M.unregister(component_id: string, child_policy: string?): (any, string
     if release_err then return nil, "commit", release_err end
 
     if delete_result and delete_result.changes_made and summary then
+        local _, notify_err = meta_service.notify_access(component_id, nil,
+            {event = "component.deleted", component_id = component_id}, {recipients = recipients})
+        if notify_err then return nil, "notify", committed_error.new(notify_err) end
         local committed_err = component_lifecycle.committed()
         if committed_err then return nil, "notify", committed_err end
     end

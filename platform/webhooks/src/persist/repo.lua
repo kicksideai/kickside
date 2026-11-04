@@ -293,23 +293,33 @@ function M.list(options: any?): ({ Map }?, error?, string?)
         cursor = decoded
     end
 
-    local reader, reader_err = component_read_port.build({ access_mask = component.ACCESS.READ })
+    local reader, reader_err = component_read_port.build({access_mask = component.ACCESS.READ,
+        impl_ids = {"kickside.webhooks:webhook_kind"}})
     if reader_err then return nil, reader_err end
-    local join = consts.TABLES.WEBHOOKS .. " w ON w.webhook_id = CAST(c.component_id AS TEXT)"
-    local query = component_query.filtered_query(reader, {
-        "w.webhook_id", "w.secret_prefix", "w.label", "w.status", "w.schema_json", "w.created_at", "w.updated_at", "w.last_used_at",
-    }):inner_join(join)
-    local candidates = component_query.implementation_candidates(reader):inner_join(join)
     local db, db_err = db_open()
     if not db then return nil, errors.new({ kind = errors.UNAVAILABLE, message = tostring(db_err) }) end
+    local dialect, dialect_err = db:type()
+    if dialect_err then db:release(); return nil, dialect_err end
+    local component_created = dialect == sql.type.POSTGRES
+        and "CAST(EXTRACT(EPOCH FROM CAST(c.created_at AS TIMESTAMPTZ)) AS BIGINT)"
+        or "CAST(strftime('%s',c.created_at) AS INTEGER)"
+    local created = "COALESCE(w.created_at," .. component_created .. ")"
+    local identity = "CAST(c.component_id AS TEXT)"
+    local join = consts.TABLES.WEBHOOKS .. " w ON w.webhook_id = " .. identity
+    local available = "(w.webhook_id IS NOT NULL OR c.deleting_at IS NOT NULL)"
+    local query = component_query.filtered_query(reader, {
+        identity .. " AS webhook_id", "w.secret_prefix", "w.label", "w.status", "w.schema_json",
+        created .. " AS created_at", "w.updated_at", "w.last_used_at",
+    }):left_join(join):where(available)
+    local candidates = component_query.implementation_candidates(reader):left_join(join):where(available)
     local narrowed, narrow_err = implementation_access.narrow(db, query, candidates)
     if narrow_err then db:release(); return nil, narrow_err end
     query = narrowed
     if cursor then
-        query = query:where("(w.created_at < ? OR (w.created_at = ? AND w.webhook_id < ?))",
+        query = query:where("(" .. created .. " < ? OR (" .. created .. " = ? AND " .. identity .. " < ?))",
             cursor.created_at, cursor.created_at, cursor.webhook_id)
     end
-    local rows, q_err = query:order_by("w.created_at DESC, w.webhook_id DESC"):limit(limit + 1):run_with(db):query()
+    local rows, q_err = query:order_by(created .. " DESC, " .. identity .. " DESC"):limit(limit + 1):run_with(db):query()
     if q_err then db:release(); return nil, errors.new({ kind = errors.INTERNAL, message = "webhook list failed: " .. tostring(q_err) }) end
     rows = rows or {}
     local next_cursor: string? = nil
@@ -325,13 +335,13 @@ function M.list(options: any?): ({ Map }?, error?, string?)
         ids[#ids + 1] = tostring(row.webhook_id)
         marks[#marks + 1] = "?"
     end
-    local visible: { [string]: boolean } = {}
+    local visible: { [string]: any } = {}
     local counts: { [string]: integer } = {}
     if #ids > 0 then
         -- Retain the contract's authority check with page-bounded component IDs.
-        local components, access_err = component.query({ component_ids = ids, access_mask = component.ACCESS.READ, limit = #ids })
+        local components, access_err = component.query({ component_ids = ids, access_mask = component.ACCESS.READ, include = {meta = true}, limit = #ids })
         if access_err then db:release(); return nil, access_err end
-        for _, item in ipairs(components or {}) do visible[item.component_id] = true end
+        for _, item in ipairs(components or {}) do visible[item.component_id] = item end
         local subscribers, sub_err = sql.builder.select("thread_id", "COUNT(*) AS count")
             :from("kickside_projection"):where("thread_id IN (" .. table.concat(marks, ",") .. ")", unpack(ids))
             :where("state != ?", "invalid"):group_by("thread_id"):run_with(db):query()
@@ -348,6 +358,9 @@ function M.list(options: any?): ({ Map }?, error?, string?)
     local out: { Map } = {}
     for _, row in ipairs(rows) do
         if visible[row.webhook_id] then
+            local item = visible[row.webhook_id]
+            row.deleting_at, row.deletion_job_id = item.deleting_at, item.deletion_job_id
+            row.label = row.label or (item.meta and item.meta.title)
             row.schema = decode_schema(row.schema_json)
             row.schema_json = nil
             row.subscriber_count = counts[row.webhook_id] or 0

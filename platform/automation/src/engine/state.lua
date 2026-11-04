@@ -110,6 +110,8 @@ function part.attach(M: any, dependencies: any, P: any): ()
             local meta_t: Map = c.meta or {}
             local entry: automation_types.InstalledAutomation = {
                 id           = c.component_id,
+                deleting_at = c.deleting_at,
+                deletion_job_id = c.deletion_job_id,
                 type         = c.impl_id,
                 title        = meta_t.title or "",
                 owner_id     = meta_t.owner,

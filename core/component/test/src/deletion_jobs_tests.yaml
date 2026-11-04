@@ -7,13 +7,13 @@ entries:
     source: file://deletion_jobs_test.lua
     method: run
     modules: [sql, uuid, security, contract, process, time, channel, funcs]
-    imports: {test: 'wippy.test:test'}
+    imports: {test: 'wippy.test:test', deletion_worker: 'app:deletion_test_worker', component: 'kickside.component:component'}
   - name: deletion_jobs_request
     kind: process.lua
     source: file://deletion_jobs_test.lua
     method: request
     modules: [sql, uuid, security, contract, process, time, channel, funcs]
-    imports: {test: 'wippy.test:test'}
+    imports: {test: 'wippy.test:test', deletion_worker: 'app:deletion_test_worker', component: 'kickside.component:component'}
   - name: deletion_jobs_binding
     kind: contract.binding
     contracts:
@@ -42,7 +42,7 @@ entries:
   - name: system_delete_worker_native
     kind: library.lua
     source: file://delete_worker_native_source.lua
-    modules: [security]
+    modules: [security, time]
     imports:
       sql: app:system_delete_worker_sql
       component_types: kickside.component:types
@@ -57,7 +57,7 @@ entries:
   - name: gated_delete_worker_native
     kind: library.lua
     source: file://delete_worker_native_source.lua
-    modules: [security]
+    modules: [security, time]
     imports:
       sql: app:gated_delete_worker_sql
       component_types: kickside.component:types
@@ -69,3 +69,21 @@ entries:
     kind: library.lua
     source: file://teardown_tx_cleanup_jobs.lua
     imports: {fixture: app:teardown_tx_cleanup_fixture}
+
+  - name: component_get_api_test
+    kind: function.lua
+    source: file://component_get_api_test.lua
+    method: run
+    meta: {type: test, suite: component_get_api}
+    modules: [http]
+    imports: {test: 'wippy.test:test', api: 'app:component_get_api_source'}
+
+  - name: component_get_api_source
+    kind: library.lua
+    source: file://component_get_api_source.lua
+    modules: [http, security]
+    imports:
+      component: kickside.component:component
+      envelope: kickside.component:envelope
+      http_errors: kickside.contract:http_errors
+      http_context: kickside.component.api:http_context

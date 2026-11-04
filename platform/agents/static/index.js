@@ -1,92 +1,188 @@
-import { g as G, h as Q, W as X, P as Y } from "./primevue-plugin-Dn0ACs8V.js";
-import { defineComponent as Z, ref as r, computed as ee, watch as te, openBlock as c, createElementBlock as d, createElementVNode as a, createVNode as n, unref as i, createTextVNode as C, toDisplayString as h, withDirectives as se, vModelText as ae, withCtx as g, normalizeClass as f, createCommentVNode as V, Fragment as ne, renderList as ie, withKeys as K, withModifiers as D } from "vue";
-import { Icon as l } from "@iconify/vue";
-import { s as y, _ as le, e as M, l as oe } from "./toolCatalog-B7JOn9aF.js";
-import { host as re, api as x, loadByTagName as ce, define as de } from "@wippy-fe/proxy";
-import { s as ue } from "./styles-DLTipENZ.js";
-const pe = () => G(), ve = { class: "kx" }, he = { class: "kx-head" }, me = { class: "kx-head-icon" }, ke = { class: "kx-head-actions" }, ge = { class: "kx-count" }, fe = { class: "kx-search" }, ye = {
+import { g as te, h as ne, W as se, P as ae } from "./primevue-plugin-Dn0ACs8V.js";
+import { defineComponent as H, computed as O, openBlock as m, createElementBlock as f, withModifiers as $, Fragment as M, createElementVNode as s, createTextVNode as j, toDisplayString as C, createCommentVNode as L, createVNode as i, unref as r, watch as q, onBeforeUnmount as oe, ref as y, withDirectives as ie, vModelText as le, withCtx as S, normalizeClass as N, renderList as re, withKeys as W } from "vue";
+import { s as w, e as V, _ as ce, l as de } from "./toolCatalog-BlyBDd4C.js";
+import { s as ue } from "./index-BvJc5yvO.js";
+import { _ as pe } from "./_plugin-vue_export-helper-CHgC5LLL.js";
+import { on as ve, api as A, host as F, loadByTagName as me, define as fe } from "@wippy-fe/proxy";
+import { Icon as g } from "@iconify/vue";
+import { s as he } from "./styles-CN0_5BM1.js";
+const ge = { key: 0 }, ye = /* @__PURE__ */ H({
+  __name: "ComponentDeletion",
+  props: {
+    state: {}
+  },
+  emits: ["retry"],
+  setup(a) {
+    const p = a, v = O(() => p.state.deletion_job?.status === "dead");
+    return (o, c) => a.state.deleting_at ? (m(), f("span", {
+      key: 0,
+      class: "component-deletion",
+      role: "status",
+      onClick: c[1] || (c[1] = $(() => {
+      }, ["stop"])),
+      onKeydown: c[2] || (c[2] = $(() => {
+      }, ["stop"]))
+    }, [
+      v.value ? (m(), f(M, { key: 0 }, [
+        s("span", null, [
+          c[3] || (c[3] = j("Deletion failed", -1)),
+          a.state.deletion_job?.last_error ? (m(), f("span", ge, ": " + C(a.state.deletion_job.last_error), 1)) : L("", !0)
+        ]),
+        i(r(w), {
+          label: "Retry deletion",
+          severity: "secondary",
+          size: "small",
+          outlined: "",
+          onClick: c[0] || (c[0] = $((u) => o.$emit("retry"), ["stop"]))
+        })
+      ], 64)) : (m(), f(M, { key: 1 }, [
+        i(r(ue), {
+          class: "component-deletion-spinner",
+          "aria-label": "Deletion in progress"
+        }),
+        c[4] || (c[4] = s("span", null, "Deleting…", -1))
+      ], 64))
+    ], 32)) : L("", !0);
+  }
+}), ke = /* @__PURE__ */ pe(ye, [["__scopeId", "data-v-47ff2c34"]]);
+function T(a) {
+  return !!a && typeof a == "object" && !Array.isArray(a);
+}
+function _e(a, p) {
+  return a;
+}
+function be(a, p, v) {
+  const o = T(a) ? a : {}, c = [
+    o,
+    T(o.data) ? o.data : null,
+    T(o.payload) ? o.payload : null,
+    T(o.detail) ? o.detail : null
+  ].filter(Boolean);
+  for (const u of c) {
+    if (u.event !== "component.meta.changed" && u.event !== "component.deleting" && u.event !== "component.deleted") continue;
+    const k = String(u.component_id || ""), l = String(o.topic || u.topic || "");
+    if (!k && (!l.startsWith("component.") || l === "component.")) continue;
+    const d = k || p || l.slice(10);
+    return u.event !== "component.meta.changed" ? { event: u.event, component_id: d } : {
+      event: "component.meta.changed",
+      component_id: d,
+      meta: _e(T(u.meta) ? u.meta : {}),
+      deleted: Array.isArray(u.deleted) ? u.deleted.map(String) : []
+    };
+  }
+  return null;
+}
+function Ce(a, p) {
+  const v = be(a, p);
+  return v && v.event !== "component.meta.changed" ? v : null;
+}
+function xe(a, p, v) {
+  let o = !0;
+  async function c(l) {
+    try {
+      const { data: d } = await A.get(`/api/v1/components/${encodeURIComponent(p(l))}`);
+      if (!d?.success) throw new Error(V(d, "Could not read deletion progress"));
+      o && a.value.includes(l) && (l.deleting_at = d.deleting_at, l.deletion_job_id = d.deletion_job_id, l.deletion_job = d.deletion_job);
+    } catch (d) {
+      o && a.value.includes(l) && F.handleError("other", { message: V(d, "Could not read deletion progress") });
+    }
+  }
+  const u = q(() => a.value, (l, d = []) => {
+    for (const _ of d) l.some((b) => p(b) === p(_));
+    for (const _ of l) _.deleting_at && c(_);
+  }, { immediate: !0 }), k = ve("@message", (l) => {
+    const d = Ce(l);
+    if (!d) return;
+    const _ = a.value.find((b) => p(b) === d.component_id);
+    _ && (d.event === "component.deleted" ? a.value = a.value.filter((b) => p(b) !== d.component_id) : c(_));
+  });
+  oe(() => {
+    o = !1, u(), typeof k == "function" && k();
+  });
+}
+const we = () => te(), $e = { class: "kx" }, Ee = { class: "kx-head" }, De = { class: "kx-head-icon" }, Se = { class: "kx-head-actions" }, Ne = { class: "kx-count" }, Te = { class: "kx-search" }, je = {
   key: 0,
   class: "kx-err"
-}, be = { class: "kx-body" }, _e = {
+}, Ae = { class: "kx-body" }, Le = {
   key: 0,
   class: "kx-loading"
-}, Ce = {
+}, Re = {
   key: 1,
   class: "kx-empty"
-}, xe = { class: "kx-empty-ico" }, we = {
+}, Ve = { class: "kx-empty-ico" }, Ue = {
   key: 2,
   class: "kx-empty"
-}, $e = {
+}, Ie = {
   key: 3,
   class: "kx-grid"
-}, Ee = ["onClick", "onKeydown"], Ne = { class: "kx-card-head" }, Le = { class: "kx-ficon" }, Se = { class: "kx-card-id" }, Te = ["title"], Ve = {
+}, Ke = ["onClick", "onKeydown"], Me = { class: "kx-card-head" }, ze = { class: "kx-ficon" }, Be = { class: "kx-card-id" }, Pe = ["title"], We = {
   key: 0,
   class: "kx-card-meta"
-}, De = ["title"], Ae = { class: "kx-card-desc" }, Ue = ["disabled", "onClick", "title"], Ke = /* @__PURE__ */ Z({
+}, He = ["title"], Oe = { class: "kx-card-desc" }, qe = ["disabled", "onClick", "title"], Fe = /* @__PURE__ */ H({
   __name: "agents",
-  setup(P) {
-    const w = r(!1), p = r(""), u = r([]), $ = r(""), E = r([]), N = r([]), b = r([]), z = pe();
-    function H(e) {
+  setup(a) {
+    const p = y(!1), v = y(""), o = y([]), c = y(""), u = y([]), k = y([]), l = y([]), d = we();
+    function _(e) {
       return e && e.charAt(0).toUpperCase() + e.slice(1);
     }
-    function I(e) {
-      return e ? e.startsWith("class:") ? H(e.slice(6)) : b.value.find((s) => s.name === e)?.title || e : "";
+    function b(e) {
+      return e ? e.startsWith("class:") ? _(e.slice(6)) : l.value.find((n) => n.name === e)?.title || e : "";
     }
-    function O(e) {
+    function J(e) {
       return !!e && e.startsWith("class:");
     }
-    const A = ee(() => {
-      const e = $.value.trim().toLowerCase();
-      return e ? u.value.filter(
-        (s) => (s.title || "").toLowerCase().includes(e) || (s.description || "").toLowerCase().includes(e)
-      ) : u.value;
+    const z = O(() => {
+      const e = c.value.trim().toLowerCase();
+      return e ? o.value.filter(
+        (n) => (n.title || "").toLowerCase().includes(e) || (n.description || "").toLowerCase().includes(e)
+      ) : o.value;
     });
-    async function L() {
-      w.value = !0, p.value = "";
+    async function U() {
+      p.value = !0, v.value = "";
       try {
-        const { data: e } = await x.get("/api/v1/user-agents");
+        const { data: e } = await A.get("/api/v1/user-agents");
         if (!e?.success) throw new Error(e?.error || "failed to load agents");
-        u.value = e.agents || [];
+        o.value = e.agents || [];
       } catch (e) {
-        u.value = [], p.value = M(e, "could not load agents");
+        v.value = V(e, "could not load agents");
       } finally {
-        w.value = !1;
+        p.value = !1;
       }
     }
-    async function R() {
+    async function G() {
       try {
-        const { data: e } = await x.get("/api/v1/agents/traits");
-        E.value = e?.success ? e.traits || [] : [];
+        const { data: e } = await A.get("/api/v1/agents/traits");
+        u.value = e?.success ? e.traits || [] : [];
       } catch {
-        E.value = [];
-      }
-      try {
-        N.value = await oe();
-      } catch {
-        N.value = [];
+        u.value = [];
       }
       try {
-        const { data: e } = await x.get("/api/v1/models/list?capability=generate", { headers: { "Cache-Control": "no-cache", Pragma: "no-cache" } });
-        b.value = e?.success ? e.models || [] : [];
+        k.value = await de();
       } catch {
-        b.value = [];
+        k.value = [];
+      }
+      try {
+        const { data: e } = await A.get("/api/v1/models/list?capability=generate", { headers: { "Cache-Control": "no-cache", Pragma: "no-cache" } });
+        l.value = e?.success ? e.models || [] : [];
+      } catch {
+        l.value = [];
       }
     }
-    function W(e) {
-      e.start_token && z("kickside-chat-open", { kind: "start", startToken: e.start_token });
+    function Q(e) {
+      e.start_token && d("kickside-chat-open", { kind: "start", startToken: e.start_token });
     }
-    const m = r(!1), S = r(null);
-    function U() {
-      S.value = null, m.value = !0;
-    }
-    function _(e) {
-      S.value = e.id, m.value = !0;
-    }
+    const E = y(!1), I = y(null);
     function B() {
-      m.value = !1, L();
+      I.value = null, E.value = !0;
     }
-    async function j(e) {
-      if (await re.confirm({
+    function R(e) {
+      I.value = e.id, E.value = !0;
+    }
+    function X() {
+      E.value = !1, U();
+    }
+    async function P(e) {
+      if (await F.confirm({
         header: "Delete agent",
         message: `Delete “${e.title || "(untitled)"}”? This can't be undone.`,
         icon: "tabler:trash",
@@ -94,88 +190,88 @@ const pe = () => G(), ve = { class: "kx" }, he = { class: "kx-head" }, me = { cl
         rejectLabel: "Cancel",
         acceptClass: "p-button-danger"
       })) {
-        p.value = "";
+        v.value = "";
         try {
-          const { data: t } = await x.delete(`/api/v1/user-agents/${e.id}`);
+          const { data: t } = await A.delete(`/api/v1/user-agents/${e.id}`);
           if (!t?.success) throw new Error(t?.error || "delete failed");
-          await L();
+          await U();
         } catch (t) {
-          p.value = M(t, "delete failed");
+          v.value = V(t, "delete failed");
         }
       }
     }
-    const k = r(!1), T = r(null), v = r(null);
-    function q(e) {
-      T.value = e, k.value = !0;
+    const D = y(!1), K = y(null), x = y(null);
+    function Y(e) {
+      K.value = e, D.value = !0;
     }
-    function F() {
-      k.value = !1, T.value = null;
+    function Z() {
+      D.value = !1, K.value = null;
     }
-    async function J() {
-      const e = T.value;
-      if (!v.value || !e) return;
-      if (v.value.innerHTML = "", !customElements.get("kickside-share"))
+    async function ee() {
+      const e = K.value;
+      if (!x.value || !e) return;
+      if (x.value.innerHTML = "", !customElements.get("kickside-share"))
         try {
-          await ce("kickside-share", { timeoutMs: 8e3 });
+          await me("kickside-share", { timeoutMs: 8e3 });
         } catch {
         }
-      const s = document.createElement("kickside-share");
-      s.setAttribute("config", JSON.stringify({
+      const n = document.createElement("kickside-share");
+      n.setAttribute("config", JSON.stringify({
         resource_id: e.id,
         access_url: `/api/v1/component-access/grants/${encodeURIComponent(e.id)}`,
         share_url: `/api/v1/component-access/share/${encodeURIComponent(e.id)}`,
         title: e.title || ""
-      })), s.style.display = "block", s.addEventListener("close", F), v.value.appendChild(s);
+      })), n.style.display = "block", n.addEventListener("close", Z), x.value.appendChild(n);
     }
-    return te([k, v], async () => {
-      k.value && v.value && await J();
-    }), Q(async () => {
-      await Promise.all([L(), R()]);
-    }), (e, s) => (c(), d("div", ve, [
-      a("header", he, [
-        a("div", me, [
-          n(i(l), {
+    return q([D, x], async () => {
+      D.value && x.value && await ee();
+    }), ne(async () => {
+      await Promise.all([U(), G()]);
+    }), xe(o, (e) => e.id), (e, n) => (m(), f("div", $e, [
+      s("header", Ee, [
+        s("div", De, [
+          i(r(g), {
             icon: "tabler:robot",
             "aria-hidden": "true"
           })
         ]),
-        s[3] || (s[3] = a("div", { class: "kx-head-text" }, [
-          a("h1", { class: "kx-title" }, "Agents"),
-          a("p", { class: "kx-head-sub" }, "Configured assistants — a model, a prompt, and the capabilities and tools they use.")
+        n[3] || (n[3] = s("div", { class: "kx-head-text" }, [
+          s("h1", { class: "kx-title" }, "Agents"),
+          s("p", { class: "kx-head-sub" }, "Configured assistants — a model, a prompt, and the capabilities and tools they use.")
         ], -1)),
-        a("div", ke, [
-          a("span", ge, [
-            n(i(l), {
+        s("div", Se, [
+          s("span", Ne, [
+            i(r(g), {
               icon: "tabler:robot",
               "aria-hidden": "true"
             }),
-            C(" " + h(u.value.length) + " agent" + h(u.value.length !== 1 ? "s" : ""), 1)
+            j(" " + C(o.value.length) + " agent" + C(o.value.length !== 1 ? "s" : ""), 1)
           ]),
-          a("div", fe, [
-            n(i(l), {
+          s("div", Te, [
+            i(r(g), {
               icon: "tabler:search",
               class: "kx-search-ico",
               "aria-hidden": "true"
             }),
-            se(a("input", {
-              "onUpdate:modelValue": s[0] || (s[0] = (t) => $.value = t),
+            ie(s("input", {
+              "onUpdate:modelValue": n[0] || (n[0] = (t) => c.value = t),
               class: "kx-search-input",
               type: "text",
               placeholder: "Search agents…"
             }, null, 512), [
-              [ae, $.value]
+              [le, c.value]
             ])
           ]),
-          n(i(y), {
+          i(r(w), {
             type: "button",
             "data-testid": "agents-create",
             label: "New agent",
-            onClick: U
+            onClick: B
           }, {
-            icon: g(({ class: t }) => [
-              n(i(l), {
+            icon: S(({ class: t }) => [
+              i(r(g), {
                 icon: "tabler:plus",
-                class: f(t),
+                class: N(t),
                 "aria-hidden": "true"
               }, null, 8, ["class"])
             ]),
@@ -183,148 +279,155 @@ const pe = () => G(), ve = { class: "kx" }, he = { class: "kx-head" }, me = { cl
           })
         ])
       ]),
-      p.value ? (c(), d("div", ye, h(p.value), 1)) : V("", !0),
-      a("div", be, [
-        w.value && !u.value.length ? (c(), d("div", _e, [
-          n(i(l), {
+      v.value ? (m(), f("div", je, C(v.value), 1)) : L("", !0),
+      s("div", Ae, [
+        p.value && !o.value.length ? (m(), f("div", Le, [
+          i(r(g), {
             icon: "tabler:loader-2",
             class: "spin",
             "aria-hidden": "true"
           }),
-          s[4] || (s[4] = C(" Loading… ", -1))
-        ])) : u.value.length ? A.value.length ? (c(), d("div", $e, [
-          (c(!0), d(ne, null, ie(A.value, (t) => (c(), d("div", {
+          n[4] || (n[4] = j(" Loading… ", -1))
+        ])) : o.value.length ? z.value.length ? (m(), f("div", Ie, [
+          (m(!0), f(M, null, re(z.value, (t) => (m(), f("div", {
             key: t.id,
             class: "kx-card kx-focus-halo",
             tabindex: "0",
-            onClick: (o) => _(t),
+            onClick: (h) => !t.deleting_at && R(t),
             onKeydown: [
-              K((o) => _(t), ["enter"]),
-              K(D((o) => _(t), ["prevent"]), ["space"])
+              W((h) => !t.deleting_at && R(t), ["enter"]),
+              W($((h) => !t.deleting_at && R(t), ["prevent"]), ["space"])
             ]
           }, [
-            a("div", Ne, [
-              a("span", Le, [
-                n(i(l), {
+            i(ke, {
+              state: t,
+              onRetry: (h) => P(t)
+            }, null, 8, ["state", "onRetry"]),
+            s("div", Me, [
+              s("span", ze, [
+                i(r(g), {
                   icon: t.icon || "tabler:robot",
                   "aria-hidden": "true"
                 }, null, 8, ["icon"])
               ]),
-              a("div", Se, [
-                a("div", {
+              s("div", Be, [
+                s("div", {
                   class: "kx-card-name",
                   title: t.title || "(untitled)"
-                }, h(t.title || "(untitled)"), 9, Te),
-                t.model ? (c(), d("div", Ve, [
-                  a("span", {
+                }, C(t.title || "(untitled)"), 9, Pe),
+                t.model ? (m(), f("div", We, [
+                  s("span", {
                     class: "kx-model",
                     title: t.model
                   }, [
-                    n(i(l), {
-                      icon: O(t.model) ? "tabler:category" : "tabler:cpu",
+                    i(r(g), {
+                      icon: J(t.model) ? "tabler:category" : "tabler:cpu",
                       "aria-hidden": "true"
                     }, null, 8, ["icon"]),
-                    C(" " + h(I(t.model)), 1)
-                  ], 8, De)
-                ])) : V("", !0)
+                    j(" " + C(b(t.model)), 1)
+                  ], 8, He)
+                ])) : L("", !0)
               ]),
-              a("div", {
+              s("div", {
                 class: "kx-card-actions",
-                onClick: s[1] || (s[1] = D(() => {
+                onClick: n[1] || (n[1] = $(() => {
                 }, ["stop"]))
               }, [
-                n(i(y), {
+                i(r(w), {
                   type: "button",
                   severity: "secondary",
                   outlined: "",
                   size: "small",
                   title: "Edit",
                   "aria-label": `Edit ${t.title}`,
-                  onClick: (o) => _(t)
+                  onClick: (h) => !t.deleting_at && R(t),
+                  disabled: !!t.deleting_at
                 }, {
-                  icon: g(({ class: o }) => [
-                    n(i(l), {
+                  icon: S(({ class: h }) => [
+                    i(r(g), {
                       icon: "tabler:pencil",
-                      class: f(o),
+                      class: N(h),
                       "aria-hidden": "true"
                     }, null, 8, ["class"])
                   ]),
                   _: 1
-                }, 8, ["aria-label", "onClick"]),
-                n(i(y), {
+                }, 8, ["aria-label", "onClick", "disabled"]),
+                i(r(w), {
                   type: "button",
                   severity: "secondary",
                   outlined: "",
                   size: "small",
                   title: "Share",
                   "aria-label": `Share ${t.title}`,
-                  onClick: (o) => q(t)
+                  onClick: (h) => Y(t),
+                  disabled: !!t.deleting_at
                 }, {
-                  icon: g(({ class: o }) => [
-                    n(i(l), {
+                  icon: S(({ class: h }) => [
+                    i(r(g), {
                       icon: "tabler:share",
-                      class: f(o),
+                      class: N(h),
                       "aria-hidden": "true"
                     }, null, 8, ["class"])
                   ]),
                   _: 1
-                }, 8, ["aria-label", "onClick"]),
-                n(i(y), {
+                }, 8, ["aria-label", "onClick", "disabled"]),
+                i(r(w), {
                   type: "button",
                   severity: "danger",
                   outlined: "",
                   size: "small",
                   title: "Delete",
                   "aria-label": `Delete ${t.title}`,
-                  onClick: (o) => j(t)
+                  onClick: (h) => P(t),
+                  disabled: !!t.deleting_at
                 }, {
-                  icon: g(({ class: o }) => [
-                    n(i(l), {
+                  icon: S(({ class: h }) => [
+                    i(r(g), {
                       icon: "tabler:trash",
-                      class: f(o),
+                      class: N(h),
                       "aria-hidden": "true"
                     }, null, 8, ["class"])
                   ]),
                   _: 1
-                }, 8, ["aria-label", "onClick"])
+                }, 8, ["aria-label", "onClick", "disabled"])
               ])
             ]),
-            a("div", Ae, h(t.description || "No description"), 1),
-            a("button", {
+            s("div", Oe, C(t.description || "No description"), 1),
+            s("button", {
               class: "kx-card-chat",
-              disabled: !t.start_token,
-              onClick: D((o) => W(t), ["stop"]),
+              disabled: !!t.deleting_at || !t.start_token,
+              onClick: $((h) => Q(t), ["stop"]),
               title: t.start_token ? "Chat with this agent" : "Chat unavailable"
             }, [
-              n(i(l), {
+              i(r(g), {
                 icon: "tabler:message",
                 "aria-hidden": "true"
               }),
-              s[8] || (s[8] = C(" Chat ", -1))
-            ], 8, Ue)
-          ], 40, Ee))), 128))
-        ])) : (c(), d("div", we, [...s[7] || (s[7] = [
-          a("div", { class: "kx-empty-title" }, "No matches", -1),
-          a("div", { class: "kx-empty-sub" }, "No agents match the current search.", -1)
-        ])])) : (c(), d("div", Ce, [
-          a("div", xe, [
-            n(i(l), {
+              n[8] || (n[8] = j(" Chat ", -1))
+            ], 8, qe)
+          ], 40, Ke))), 128))
+        ])) : (m(), f("div", Ue, [...n[7] || (n[7] = [
+          s("div", { class: "kx-empty-title" }, "No matches", -1),
+          s("div", { class: "kx-empty-sub" }, "No agents match the current search.", -1)
+        ])])) : (m(), f("div", Re, [
+          s("div", Ve, [
+            i(r(g), {
               icon: "tabler:robot",
               "aria-hidden": "true"
             })
           ]),
-          s[5] || (s[5] = a("div", { class: "kx-empty-title" }, "No agents yet", -1)),
-          s[6] || (s[6] = a("div", { class: "kx-empty-sub" }, "Agents are configured assistants — a model, a prompt, and the capabilities and tools they can use. Create one to get started.", -1)),
-          n(i(y), {
+          n[5] || (n[5] = s("div", { class: "kx-empty-title" }, "No agents yet", -1)),
+          n[6] || (n[6] = s("div", { class: "kx-empty-sub" }, "Agents are configured assistants — a model, a prompt, and the capabilities and tools they can use. Create one to get started.", -1)),
+          i(r(w), {
             type: "button",
             "data-testid": "agents-create",
             label: "New agent",
-            onClick: U
+            onClick: B
           }, {
-            icon: g(({ class: t }) => [
-              n(i(l), {
+            icon: S(({ class: t }) => [
+              i(r(g), {
                 icon: "tabler:plus",
-                class: f(t),
+                class: N(t),
                 "aria-hidden": "true"
               }, null, 8, ["class"])
             ]),
@@ -332,37 +435,37 @@ const pe = () => G(), ve = { class: "kx" }, he = { class: "kx-head" }, me = { cl
           })
         ]))
       ]),
-      n(le, {
-        open: m.value,
-        "agent-id": S.value,
-        traits: E.value,
-        tools: N.value,
-        models: b.value,
-        agents: u.value,
-        onClose: s[2] || (s[2] = (t) => m.value = !1),
-        onSaved: B
+      i(ce, {
+        open: E.value,
+        "agent-id": I.value,
+        traits: u.value,
+        tools: k.value,
+        models: l.value,
+        agents: o.value,
+        onClose: n[2] || (n[2] = (t) => E.value = !1),
+        onSaved: X
       }, null, 8, ["open", "agent-id", "traits", "tools", "models", "agents"]),
-      k.value ? (c(), d("div", {
+      D.value ? (m(), f("div", {
         key: 1,
         ref_key: "shareHost",
-        ref: v
-      }, null, 512)) : V("", !0)
+        ref: x
+      }, null, 512)) : L("", !0)
     ]));
   }
-}), Me = { props: { type: "object", properties: {} } }, Pe = {
-  wippy: Me
+}), Je = { props: { type: "object", properties: {} } }, Ge = {
+  wippy: Je
 };
-class ze extends X {
+class Qe extends se {
   static get wippyConfig() {
     return {
-      propsSchema: Pe.wippy.props,
+      propsSchema: Ge.wippy.props,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: ue
+      inlineCss: he
     };
   }
   static get vueConfig() {
-    return { rootComponent: Ke, plugins: [Y] };
+    return { rootComponent: Fe, plugins: [ae] };
   }
 }
-de(import.meta.url, ze);
+fe(import.meta.url, Qe);
 //# sourceMappingURL=index.js.map

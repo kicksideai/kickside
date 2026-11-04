@@ -1188,6 +1188,9 @@ entries:
       component_ops: app:teardown_cause_fixture
       placement: kickside.component.persist:placement
       component_lifecycle: kickside.component:component_lifecycle
+      persisted_json: kickside.contract:persisted_json
+      committed_error: kickside.contract:committed_error
+      meta_service: kickside.component:meta_service
 
   - name: teardown_cause_test
     kind: function.lua
@@ -1266,6 +1269,9 @@ entries:
       component_ops: kickside.component.persist:component_ops
       placement: kickside.component.persist:placement
       component_lifecycle: kickside.component:component_lifecycle
+      persisted_json: kickside.contract:persisted_json
+      committed_error: kickside.contract:committed_error
+      meta_service: kickside.component:meta_service
 
   - name: cleanup_setup_test
     kind: function.lua
@@ -1597,6 +1603,9 @@ entries:
     - registry
     - time
     imports:
+      meta_service: app:deletion_notify_fixture
+      persisted_json: kickside.contract:persisted_json
+      committed_error: kickside.contract:committed_error
       jobs: app:teardown_tx_cleanup_jobs
       error_envelope: kickside.contract:error_envelope
       sql: app:teardown_tx_cleanup_sql
@@ -1681,6 +1690,7 @@ entries:
       teardown: app:gated_delete_teardown
       envelope: kickside.component:envelope
       error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
 
   - name: gated_delete_native_test
     kind: function.lua
@@ -2474,6 +2484,7 @@ entries:
     source: file://metadata_tx_source.lua
     modules: [time, contract]
     imports:
+      execution_identity: kickside.execution:execution_identity
       sql: app:metadata_tx_sql
       security: app:metadata_tx_security
       registry: app:metadata_tx_registry
@@ -2508,6 +2519,7 @@ entries:
     source: file://metadata_retry_source.lua
     modules: [time, contract, registry]
     imports:
+      execution_identity: kickside.execution:execution_identity
       sql: app:committed_retry_sql
       security: app:committed_retry_security
       funcs: app:metadata_retry_funcs
@@ -2552,6 +2564,7 @@ entries:
     source: file://notification_access_source.lua
     modules: [sql, time, security, contract, registry, funcs]
     imports:
+      execution_identity: kickside.execution:execution_identity
       component_command: kickside.component:component_command
       committed_error: kickside.contract:committed_error
       component_ops: app:notification_access_ops
@@ -2900,3 +2913,8 @@ entries:
     imports:
       test: wippy.test:test
       access_ops: kickside.component.persist:access_ops
+
+  - name: deletion_notify_fixture
+    kind: library.lua
+    source: file://deletion_notify_fixture.lua
+    imports: {fixture: app:teardown_tx_cleanup_fixture}

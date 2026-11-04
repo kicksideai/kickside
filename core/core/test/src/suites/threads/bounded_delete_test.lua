@@ -27,10 +27,9 @@ return { run = test.run_cases(function()
             test.is_true(result.cleanup_pending)
             test.eq(f.projection_count(id), 305, "the request commits intent before any cleanup")
             local finished, finish_err = deletion_worker.run(id)
-            test.is_nil(finished)
-            test.is_true(finish_err:details().cleanup_pending)
-            test.is_true(finish_err:details().needs_continue)
-            local discarded = finish_err:details().discarded
+            test.is_nil(finish_err, tostring(finish_err))
+            test.eq(type(finished.rearm), "string")
+            local discarded = finished.discarded
             local removed = 0
             for _, table_name in ipairs({ "kickside_event", "kickside_thread_subject", "kickside_projection_cursor",
                 "kickside_retention_policy", "kickside_retention_pin", "kickside_retention_pin_tombstone",

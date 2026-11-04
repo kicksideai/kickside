@@ -1,0 +1,1 @@
+../../src/api/get_component.lua

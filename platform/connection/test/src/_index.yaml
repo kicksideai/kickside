@@ -565,3 +565,12 @@ entries:
       driver: kickside.connection.client:driver
       schema: kickside.connection.client:schema
       types: kickside.connection.client:types
+
+  - name: connections_mutation_test
+    kind: function.lua
+    meta: {type: test, suite: connections_mutation}
+    source: file://connections_mutation_test.lua
+    method: run
+    modules: [uuid, security, contract, funcs]
+    imports:
+      test: wippy.test:test

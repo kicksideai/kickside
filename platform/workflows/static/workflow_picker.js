@@ -1,10 +1,10 @@
 import { u as U, a as V, s as j, W as O, P as R } from "./index-BhiG6P-P.js";
 import { defineComponent as B, ref as m, onUnmounted as T, computed as S, openBlock as c, createElementBlock as A, Fragment as I, createVNode as p, unref as n, createBlock as v, withCtx as i, createTextVNode as f, createCommentVNode as y, toDisplayString as J } from "vue";
-import { L as _, f as k, h as K, X as M } from "./pickerselect-BgeyeLCq.js";
-import { s as z, g as D, c as F } from "./versions-DiyNrF8l.js";
+import { L as _, f as k, h as K, X as M } from "./pickerselect-By4p9K1S.js";
+import { s as z, g as D, c as F } from "./versions-DLybI1MU.js";
 import { on as H, define as L } from "@wippy-fe/proxy";
-import { W as X } from "./WcMount-DMmeXI-l.js";
-import { _ as q, s as G } from "./workflow-embed-Bn6hDWGj.js";
+import { W as X } from "./WcMount-uWtDjrEa.js";
+import { _ as q, s as G } from "./workflow-embed-B-oXahj5.js";
 import "@iconify/vue";
 const Q = /* @__PURE__ */ B({
   __name: "WorkflowPicker",

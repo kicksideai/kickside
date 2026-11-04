@@ -24,6 +24,9 @@ function M.handle(request: any): any
     local rows, read_err = db:query("SELECT calls FROM deletion_job_cleanup WHERE component_id=$1", {id})
     db:release()
     if read_err then error(read_err) end
+    if mode == "dead_once" and tonumber(rows[1].calls) == 1 then
+        error(errors.new({message = "cleanup input is invalid", kind = errors.INVALID}))
+    end
     if mode == "crash" and tonumber(rows[1].calls) == 1 then
         local deadline = time.after("30s")
         local selected = channel.select({events:case_receive(), deadline:case_receive()})

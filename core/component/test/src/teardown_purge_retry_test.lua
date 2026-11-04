@@ -126,7 +126,11 @@ local function define_tests()
             local finished, err = deletion_worker.run(cid)
             local ok = not exists(cid)
                 test.is_true(ok)
-                test.is_true(errors.is(err, errors.CONFLICT))
+                if mode == 3 then
+                    test.is_nil(err, tostring(err)); test.eq(type(finished.rearm), "string")
+                else
+                    test.is_true(errors.is(err, errors.CONFLICT))
+                end
                 test.eq(pending_reap(cid), 1)
                 local result, call_err = funcs.new():call("kickside.component:retention", {})
                 test.is_nil(call_err, tostring(call_err))

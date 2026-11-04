@@ -248,6 +248,8 @@ function M.list(args: any): ({ skill_types.SkillSummary }?, error?)
             elseif id_ok and q_ok then
                 out[#out + 1] = {
                     skill_id = c.component_id,
+                    deleting_at = c.deleting_at,
+                    deletion_job_id = c.deletion_job_id,
                     name = meta.title,
                     description = meta.comment,
                     status = meta.status,

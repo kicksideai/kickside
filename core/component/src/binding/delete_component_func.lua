@@ -3,6 +3,7 @@ local component_reader = require("component_reader")
 local ops = require("component_ops")
 local teardown = require("teardown")
 local envelope = require("envelope")
+local committed_error = require("committed_error")
 
 -- Constants
 local VALIDATION_ERRORS = {
@@ -92,7 +93,7 @@ local function handle(request_dto)
     -- retry with reparent_root) without restoring already-cleaned state. Past the
     -- gates the delete mark is committed: the component fence refuses consumer
     -- writes from here on.
-    local preflight_ok, preflight_step, preflight_err = teardown.begin_delete(component_id, user_id, child_policy, delete_options)
+    local preflight_ok, preflight_step, preflight_err, _, job_id = teardown.begin_delete(component_id, user_id, child_policy, delete_options)
     if not preflight_ok then
         if preflight_step == "access" and not preflight_err then
             return envelope.fail(DATABASE_ERRORS.ACCESS_DENIED, errors.PERMISSION_DENIED)
@@ -102,7 +103,8 @@ local function handle(request_dto)
 
     return {
         success = true, component_id = component_id, status = "in_progress",
-        in_progress = true, deleted = false, cleanup_pending = true,
+        in_progress = true, deleted = false, cleanup_pending = true, job_id = job_id,
+        notification_error = preflight_err and envelope.from_error(committed_error.new(preflight_err)) or nil,
     }
 end
 

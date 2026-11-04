@@ -2,7 +2,7 @@ import { u as Z, g as rr, W as ar, P as or } from "./primevue-plugin-Dn0ACs8V.js
 import { defineComponent as er, ref as u, computed as I, watch as V, onMounted as tr, openBlock as t, createElementBlock as c, createElementVNode as p, toDisplayString as d, withDirectives as cr, vModelText as pr, createVNode as g, withCtx as ir, Fragment as C, renderList as T, normalizeClass as x, unref as n, createCommentVNode as m, createTextVNode as nr, nextTick as j } from "vue";
 import { Icon as A } from "@iconify/vue";
 import { api as sr, define as lr } from "@wippy-fe/proxy";
-import { u as vr, t as H, b as K, W as ur } from "./trait-presentation-BWGyO4dN.js";
+import { u as vr, t as H, b as K, W as ur } from "./trait-presentation-lBqZZyB5.js";
 import { _ as dr } from "./AnchoredPanel.vue_vue_type_style_index_0_lang-DSLnUKFT.js";
 const fr = {
   class: "kx-agent-trait-picker",

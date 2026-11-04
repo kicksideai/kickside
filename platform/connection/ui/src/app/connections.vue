@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ComponentDeletion from '@widgets/app/ComponentDeletion.vue'
+import { useComponentDeletion } from '@widgets/app/useComponentDeletion'
 import { ref, onBeforeUnmount, nextTick } from 'vue'
 import { Icon } from '@iconify/vue'
 import Button from 'primevue/button'
@@ -81,11 +83,8 @@ async function load() {
       ...((credentialProvs.data?.providers ?? []) as Provider[]),
     ])
   } catch (e) {
-    loadError.value = apiError(e)
-    connections.value = []
-    providers.value = []
-    connectionsTotal.value = 0
-    connectionsHasMore.value = false
+    if (connections.value.length) error.value = apiError(e)
+    else loadError.value = apiError(e)
     syncComponentSubscriptions()
   } finally {
     loading.value = false
@@ -260,6 +259,7 @@ async function remove(c: Connection) {
 
 useHostVisibilityRefresh(load)
 onBeforeUnmount(clearComponentSubscriptions)
+useComponentDeletion(connections, row => row.component_id)
 </script>
 
 <template>
@@ -284,7 +284,7 @@ onBeforeUnmount(clearComponentSubscriptions)
     </header>
 
     <div class="conn-body">
-      <div v-if="loading" class="conn-loading">Loading…</div>
+      <div v-if="loading && !connections.length" class="conn-loading">Loading…</div>
 
       <!-- Initial load failed: a directed error with retry, not an empty list. -->
       <section v-else-if="loadError" class="conn-empty au d1">
@@ -305,13 +305,14 @@ onBeforeUnmount(clearComponentSubscriptions)
           <div class="block-head"><h2 class="lt-section-header">Your connections</h2></div>
           <div class="live-grid">
             <div v-for="c in filteredConnections" :key="c.component_id" class="live-card s-live" :class="`state-${statusClass(c)}`">
+              <ComponentDeletion :state="c" @retry="confirmId = c.component_id; remove(c)" />
               <div class="lc-top">
                 <div class="lc-ico"><Icon :icon="connIcon(c)" aria-hidden="true" /></div>
                 <div class="lc-top-r">
-                  <button class="lc-add" :title="`Share ${c.name || c.provider}`" :aria-label="`Share ${c.name || c.provider}`" @click="openShare(c)">
+                  <button class="lc-add" :title="`Share ${c.name || c.provider}`" :aria-label="`Share ${c.name || c.provider}`" @click="openShare(c)" :disabled="!!c.deleting_at">
                     <Icon icon="tabler:share" />
                   </button>
-                  <button class="lc-add" :title="`Reconnect ${c.name || c.provider}`" :aria-label="`Reconnect ${c.name || c.provider}`" @click="reconnect(c)">
+                  <button class="lc-add" :title="`Reconnect ${c.name || c.provider}`" :aria-label="`Reconnect ${c.name || c.provider}`" @click="reconnect(c)" :disabled="!!c.deleting_at">
                     <Icon icon="tabler:refresh" />
                   </button>
                   <button
@@ -320,7 +321,7 @@ onBeforeUnmount(clearComponentSubscriptions)
                     :title="confirmId === c.component_id ? 'Click again to remove' : `Remove ${c.name || c.provider}`"
                     :aria-label="`Remove ${c.name || c.provider}`"
                     @click="remove(c)"
-                  >
+                   :disabled="!!c.deleting_at">
                     <Icon :icon="confirmId === c.component_id ? 'tabler:check' : 'tabler:trash'" />
                   </button>
                 </div>

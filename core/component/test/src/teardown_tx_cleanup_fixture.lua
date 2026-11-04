@@ -1,6 +1,7 @@
 local M: any = {}
 M.ACCESS, M.COMMAND_TYPES = {DELETE = 8}, {DELETE_COMPONENT = "delete"}
 function M.reset(operation, stage, source)
+    M.event, M.event_commits, M.audience_commits, M.recipients = nil, nil, nil, nil
     M.operation, M.stage, M.source = operation, stage, source
     M.release_source, M.rollback_source = nil, nil
     M.opens, M.releases, M.rollbacks, M.commits, M.effects, M.notifications, M.purges = 0, 0, 0, 0, 0, 0, 0
@@ -10,7 +11,7 @@ function M.result(stage, value)
     return value, nil
 end
 function M.enqueue_tx() return M.result("enqueue", {id = "job"}) end
-function M.nudge_workers() return 0, nil end
+function M.nudge_workers() return M.result("nudge", 0) end
 function M.db_id() return "fixture-db" end
 function M.sql_get()
     M.opens = M.opens + 1

@@ -30,11 +30,16 @@ return {run = test.run_cases(function()
                         details = {code = "inherited_cleanup", cleanup_pending = true, needs_continue = true, cause = {marker = "kept"}}})
                     fixture.reset("cleanup", source)
                     local finished, actual = worker.run({payload = {component_id = "component"}})
-                    test.is_nil(finished)
-                    test.eq(actual:kind(), source:kind()); test.eq(actual:retryable(), source:retryable())
-                    test.eq(actual:details().code, "inherited_cleanup"); test.eq(actual:details().cause.marker, "kept")
-                    local pending, more = teardown.cleanup_pending(actual); test.is_true(pending); test.is_true(more)
-                    test.is_nil(actual:details().wait_for)
+                    if kind == errors.CONFLICT then
+                        test.is_nil(actual); test.eq(type(finished.rearm), "string")
+                        test.eq(fixture.unregisters, 0)
+                    else
+                        test.is_nil(finished)
+                        test.eq(actual:kind(), source:kind()); test.eq(actual:retryable(), source:retryable())
+                        test.eq(actual:details().code, "inherited_cleanup"); test.eq(actual:details().cause.marker, "kept")
+                        local pending, more = teardown.cleanup_pending(actual); test.is_true(pending); test.is_true(more)
+                        test.is_nil(actual:details().wait_for)
+                    end
                 end)
             end
         end

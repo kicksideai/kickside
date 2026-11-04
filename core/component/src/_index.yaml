@@ -196,6 +196,7 @@ entries:
       - registry
       - funcs
     imports:
+      execution_identity: kickside.execution:execution_identity
       component_command: kickside.component:component_command
       committed_error: kickside.contract:committed_error
       autoinit: kickside.component:autoinit
@@ -207,7 +208,7 @@ entries:
 
   # Component fanout reaches the stored audience under this component-owned
   # realtime authority, added to the caller's scope inside notify_access only;
-  # the caller names the component, never its recipients.
+  # request callers name the component; maintenance may carry a captured audience.
   - name: realtime_notify
     kind: security.policy
     meta:
@@ -260,6 +261,7 @@ entries:
       - registry
       - funcs
     imports:
+      execution_identity: kickside.execution:execution_identity
       component_command: kickside.component:component_command
       committed_error: kickside.contract:committed_error
       autoinit: kickside.component:autoinit
@@ -378,8 +380,12 @@ entries:
     method: run
     security:
       actor: {id: system:kickside.component.retention}
-      policies: [kickside.component:retention_db_access]
-    modules: [sql, security]
+      policies:
+        - kickside.component:retention_db_access
+        - kickside.component:notification_contracts
+        - kickside.component:notification_implementations
+        - kickside.component:notification_methods
+    modules: [sql, security, time]
     imports:
       component_types: kickside.component:types
       persisted_json: kickside.contract:persisted_json

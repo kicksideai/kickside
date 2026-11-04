@@ -8,7 +8,7 @@ export default defineConfig({
     alias: { '@widgets': resolve(__dirname, '../../widgets/ui/src') },
     // Shared widget sources import the host proxy too; make their bare import
     // resolve to this consumer's copy during Vite tests and development.
-    dedupe: ['@wippy-fe/proxy'],
+    dedupe: ['vue', 'primevue', '@wippy-fe/proxy'],
   },
   plugins: [vue({ template: { compilerOptions: { isCustomElement: (t) => t.startsWith('wc-') } } }), wippyComponentPlugin()],
   base: '',

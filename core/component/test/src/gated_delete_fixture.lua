@@ -22,8 +22,8 @@ function M.reader()
 end
 function M.begin_delete(id, user, policy)
     M.begins = M.begins + 1; M.policy = policy
-    if M.stage == "access_check" or M.stage == "access" or M.stage == "commit" then
-        return false, M.stage, M.source, true
+    if M.stage == "access_check" or M.stage == "access" or M.stage == "commit" or M.stage == "notify" then
+        return M.stage == "notify", M.stage, M.source, true, "job"
     end
     return true, nil, nil, true
 end

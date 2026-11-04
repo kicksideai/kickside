@@ -48,7 +48,8 @@ local function handler()
     end
 
     res:set_status(http.STATUS.OK)
-    res:write_json({ success = true, deleted = true })
+    res:write_json({ success = true, deleted = result.deleted == true, in_progress = result.in_progress,
+        job_id = result.job_id, notification_error = result.notification_error })
 end
 
 return { handler = handler }

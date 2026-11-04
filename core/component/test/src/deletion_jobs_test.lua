@@ -7,6 +7,8 @@ local process = require("process")
 local time = require("time")
 local channel = require("channel")
 local funcs = require("funcs")
+local deletion_worker = require("deletion_worker")
+local component = require("component")
 local M = {}
 local function service(owner: string): any
     local scope = assert(security.named_scope("wippy.security:process"))
@@ -77,6 +79,11 @@ M.run = test.run_cases(function()
                 test.is_true(result.success, tostring(result.error))
                 test.is_true(result.in_progress)
                 test.is_false(result.deleted)
+                test.eq(result.job_id, jobs(id)[1].id)
+                local visible = service(owner):get({component_id = id})
+                test.not_nil(visible.deleting_at)
+                test.eq(visible.deletion_job_id, result.job_id)
+                test.eq(visible.deletion_job.status, "pending")
                 test.eq(#jobs(id), 1)
                 test.eq(tonumber(jobs(id)[1].priority), 0)
                 test.eq(#query("SELECT component_id FROM kickside_components WHERE component_id=$1 AND deleting_at IS NOT NULL", {id}), 1)
@@ -152,6 +159,89 @@ M.run = test.run_cases(function()
             pool_until(parent)
             test.is_true(service(owner):delete({component_id = mover}).in_progress)
             pool_until(mover)
+        end)
+        test.it("projects deletion state through every reader and access context", function()
+            local owner = "delete-job-" .. uuid.v4()
+            local id = seed("retention", owner)
+            local accepted = service(owner):delete({component_id = id})
+            test.eq(type(accepted.job_id), "string")
+            local access = service(owner):get_access_context({component_id = id})
+            test.not_nil(access.deleting_at); test.eq(access.deletion_job_id, accepted.job_id)
+            local readers = {
+                service(owner):list({filter = {component_ids = {id}}}),
+                service(owner):query({component_ids = {id}}),
+                service(owner):list_children({}),
+            }
+            for _, response in ipairs(readers) do
+                test.not_nil(response.components)
+                local found = false
+                for _, row in ipairs(response.components) do
+                    if row.component_id == id then
+                        found = true; test.not_nil(row.deleting_at); test.eq(row.deletion_job_id, accepted.job_id)
+                    end
+                end
+                test.is_true(found, "marked component remains listed")
+            end
+            local rows = assert(component.list_system({component_ids = {id}}))
+            test.not_nil(rows[1].deleting_at); test.eq(rows[1].deletion_job_id, accepted.job_id)
+            local hidden = service("other-" .. uuid.v4()):get({component_id = id})
+            test.is_false(hidden.success); test.is_nil(hidden.deletion_job)
+            pool_until(id)
+        end)
+        test.it("preserves terminal failure until an authorized explicit retry", function()
+            local owner = "delete-job-" .. uuid.v4()
+            local id = seed("dead_once", owner)
+            local accepted = service(owner):delete({component_id = id, delete_options = {marker = "original"}})
+            local _, failure = deletion_worker.run(id)
+            test.not_nil(failure)
+            test.eq(jobs(id)[1].status, "dead")
+            local visible = service(owner):get({component_id = id})
+            test.not_nil(visible.deleting_at); test.eq(visible.deletion_job_id, accepted.job_id)
+            test.eq(visible.deletion_job.status, "dead")
+            test.eq(visible.deletion_job.attempts, 1)
+            test.not_nil(visible.deletion_job.last_error)
+            for _ = 1, 2 do
+                local retained, err = funcs.call("kickside.component:retention", {change = {owner_locator = {id = id}}})
+                test.is_nil(err); test.is_true(retained.success)
+                local ok, pending = component.system_delete(id, "reparent_root")
+                test.is_false(ok); test.not_nil(pending)
+            end
+            test.eq(#jobs(id), 1, "maintenance cannot restart a dead job")
+            local refused = service("other-" .. uuid.v4()):delete({component_id = id})
+            test.is_false(refused.success); test.eq(#jobs(id), 1)
+            local retried = service(owner):delete({component_id = id, delete_options = {marker = "replacement"}})
+            test.is_true(retried.success); test.is_false(retried.deleted)
+            test.eq(type(retried.job_id), "string"); test.is_true(retried.job_id ~= accepted.job_id)
+            test.eq(service(owner):get({component_id = id}).deletion_job_id, retried.job_id)
+            local result, retry_err = deletion_worker.run(id)
+            test.is_nil(retry_err); test.is_true(result.deleted)
+            test.eq(query("SELECT option_marker FROM deletion_job_cleanup WHERE component_id=$1", {id})[1].option_marker, "original")
+        end)
+        test.it("continues successful bounded pages without failure attempts or lost visibility", function()
+            local owner = "delete-job-" .. uuid.v4()
+            local id = seed("retention", owner)
+            local db = assert(sql.get("app:db"))
+            for _ = 1, 125 do
+                assert(db:execute("INSERT INTO kickside_component_access (access_id,component_id,source_component_id,subject_id,subject_type,access_mask) VALUES ($1,$2,$3,$4,'user',1)", {uuid.v4(), id, id, "reader-" .. uuid.v4()}))
+            end
+            assert(db:release())
+            local children = {}
+            for _ = 1, 5 do children[#children + 1] = seed("retention", owner, id) end
+            test.is_true(service(owner):delete({component_id = id, child_policy = "reparent_root"}).success)
+            for page = 1, 5 do
+                local result, err = deletion_worker.run(id)
+                test.is_nil(err, tostring(err))
+                if page < 5 then
+                    test.eq(type(result.rearm), "string")
+                    test.eq(jobs(id)[1].status, "pending")
+                    test.eq(tonumber(jobs(id)[1].attempts), 0)
+                    test.is_true(service(owner):get({component_id = id}).success, "read grants survive bounded teardown")
+                else test.is_true(result.deleted) end
+            end
+            for _, child in ipairs(children) do
+                test.is_true(service(owner):delete({component_id = child}).success)
+                test.is_true(deletion_worker.run(child).deleted)
+            end
         end)
         test.it("rejects authorization and preflight before enqueue", function()
             local owner = "delete-job-" .. uuid.v4()
