@@ -353,6 +353,7 @@ entries:
     method: run
     modules: [sql, uuid, json, process, channel, time]
     imports:
+      round_harness: kickside.automation:round_harness
       cleanup: app:drive_repair_cleanup
       test: wippy.test:test
       drive: kickside.automation:drive

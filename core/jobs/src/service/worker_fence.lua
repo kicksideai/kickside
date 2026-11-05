@@ -7,6 +7,7 @@ local lifecycle = require("lifecycle")
 local row_bytes = require("row_bytes")
 local worker_marker = require("worker_marker")
 local boundary = require("sql_boundary")
+local reclaim = require("reclaim")
 
 local worker_fence = {}
 local function response_error(field: string): error
@@ -32,7 +33,7 @@ worker_fence.termination_marker = termination_marker
 -- The durable marker is written before a terminate request. Reclaim and lease
 -- heartbeat exclude it, so a failed quarantine statement cannot expose the
 -- expiring old lease to another worker.
-function worker_fence.prepare_termination(db: sql.DB, job: table): error?
+function worker_fence.prepare_termination(db: sql.DB, job: table, cause: error?): error?
     local policy, policy_err = read_policy()
     if policy_err then return policy_err end
     local tx, begin_err = boundary.begin(db, "termination marker transaction failed", "transaction", response_error)
@@ -46,8 +47,24 @@ function worker_fence.prepare_termination(db: sql.DB, job: table): error?
         :where(sql.builder.eq({ id = job.id, status = job_types.JOB_STATE.RUNNING,
             lease_token = job.lease_token }))
         :run_with(tx):exec()
-    local _, update_err = boundary.single_row_count(result, err, "failed to fence termination", "update.rows_affected", response_error)
+    local changed, update_err = boundary.single_row_count(result, err, "failed to fence termination", "update.rows_affected", response_error)
     if update_err then return boundary.rollback(tx, update_err, "termination fence rollback failed") end
+    if changed == 1 and cause and job_types.is_lease_lost_error(cause) then
+        local dbtype, type_err = boundary.database_type(db, "termination fence dialect failed", "database.type", response_error)
+        if type_err then return boundary.rollback(tx, type_err, "termination fence rollback failed") end
+        local rows, read_err = tx:query("SELECT heartbeat_at,execution_seq FROM kickside_job WHERE id=$1", {job.id})
+        if read_err then return boundary.rollback(tx, errors.wrap(read_err, "termination intent read failed"), "termination fence rollback failed") end
+        if type(rows) ~= "table" or not rows[1] then
+            return boundary.rollback(tx, response_error("intent.rows"), "termination fence rollback failed")
+        end
+        -- Cancellation clears heartbeat_at under this same row lock. Commit
+        -- expiry history with its fence so recovery cannot record a failure.
+        if rows[1].heartbeat_at ~= nil then
+            local history_err = reclaim.close_lost_run(tx, dbtype :: string, tostring(job.id),
+                tonumber(rows[1].execution_seq) :: integer, tostring(job.lease_token), lifecycle.now_string(dbtype :: string))
+            if history_err then return boundary.rollback(tx, history_err, "termination fence rollback failed") end
+        end
+    end
     local _, commit_err = tx:commit()
     if commit_err then
         return errors.wrap(commit_err, "failed to commit termination fence")

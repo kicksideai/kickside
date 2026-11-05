@@ -11,8 +11,12 @@ local function run(input: any): table
     input = type(input) == "table" and input or {}
     local payload = type(input.payload) == "table" and input.payload or {}
     if type(payload.ready_to) == "string" then
-        local _, ready_err = process.send(payload.ready_to, "job_worker_ready", { job_id = input.job.id })
+        local _, ready_err = process.send(payload.ready_to, "job_worker_ready", { job_id = input.job.id, target_pid = tostring(process.pid()) })
         if ready_err then return {ok = false, error_native = job_types.error_to_data(ready_err)} end
+    end
+    if type(payload.finish_topic) == "string" then
+        local finish = process.listen(payload.finish_topic)
+        finish:receive()
     end
     if payload.fail == true then
         local kind = job_types.native_kind(payload.error_kind) or errors.INTERNAL
@@ -23,6 +27,7 @@ local function run(input: any): table
     if sleep_ms > 0 then
         time.sleep(tostring(sleep_ms) .. "ms")
     end
+    if payload.output ~= nil then return {ok = true, output = payload.output} end
     return {ok = true, output = { slept = true, sleep_ms = sleep_ms, record = { status = "completed" } }}
 end
 

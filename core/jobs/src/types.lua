@@ -247,6 +247,7 @@ function M.error_from_data(data: any): (error?, error?)
 end
 
 M.TERMINATION_PENDING_PREFIX = "termination_pending:"
+M.TERMINATION_SETTLED = "termination settled: execution ended"
 
 -- details.reason of a claim refusal the pool distinguishes: an occupied worker
 -- marker contradicts the slot's idle notice.

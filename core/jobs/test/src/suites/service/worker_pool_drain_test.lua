@@ -13,6 +13,7 @@ local function run_drain(stop_kind: string, timeout: boolean, stop_during_drain:
     local outcome = { cancels = {}, exits = {}, assignments = 0, upgrades = 0, closed = false,
         released = 0, selections = 0 }
     local spawned = 0
+    local termination_pages = 0
     local desired = 2
     local retired = "drain-slot-2"
     local function closed(): ()
@@ -30,7 +31,10 @@ local function run_drain(stop_kind: string, timeout: boolean, stop_during_drain:
         policy = function() return job_fixture.pool_policy({ worker_count_sqlite = desired,
             worker_count_postgres = desired, worker_awaited_slots = 0 }), nil end,
         reclaim = { reclaim_expired = function() return 0, nil end,
-            reclaim_terminated = function() return 0, nil end,
+            reclaim_terminated = function(_, _, limit)
+                termination_pages = termination_pages + 1
+                return 0, nil, termination_pages < 3 and limit or 0
+            end,
             close_lost_runs = function() return 0, nil end },
         claim = { due_backlog = function() return { count = 0, oldest_age_ms = 0, overdue = 0 }, nil end,
             claim_batch = function(_, _, _, _, _, ids)
@@ -97,6 +101,7 @@ local function run_drain(stop_kind: string, timeout: boolean, stop_during_drain:
     })
     local _, err = pool.main()
     outcome.err = err
+    test.eq(termination_pages, 3, "the pool drains live-child pages independently of settlements")
     return outcome
 end
 
@@ -125,7 +130,7 @@ local function pool_driver(script: any, options: table?): (any, table)
         policy = function() return job_fixture.pool_policy({ worker_count_sqlite = outcome.desired,
             worker_count_postgres = outcome.desired, worker_awaited_slots = 0 }), nil end,
         reclaim = { reclaim_expired = function() return 0, nil end,
-            reclaim_terminated = function() return 0, nil end,
+            reclaim_terminated = function() return 0, nil, 0 end,
             close_lost_runs = function() return 0, nil end },
         claim = { due_backlog = function() return { count = 0, oldest_age_ms = 0, overdue = 0 }, nil end,
             claim_batch = function(_, _, _, _, _, ids)
