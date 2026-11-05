@@ -1380,7 +1380,7 @@ function Ho(e, t, n) {
     try {
       const { data: v } = await de.get(`/api/v1/components/${encodeURIComponent(m)}`);
       if (!v?.success) throw new Error(ee(v, "Could not read deletion progress"));
-      c() && (x.deleting_at = h?.deleting_at || v.deleting_at, x.deletion_job_id = h?.deletion_job_id || v.deletion_job_id, h && (h.deletion_job_id = x.deletion_job_id), x.deletion_job = v.deletion_job ?? null);
+      c() && (x.deleting_at = h?.deleting_at || v.deleting_at, x.deletion_job_id = v.deletion_job_id, h && (h.deletion_job_id = x.deletion_job_id), x.deletion_job = v.deletion_job ?? null);
     } catch (v) {
       c() && Fe.handleError("other", { message: ee(v, "Could not read deletion progress") });
     }
@@ -1388,14 +1388,13 @@ function Ho(e, t, n) {
   const $ = Be(() => e.value, (x, m = []) => {
     const h = x.filter((c) => !i.has(t(c)));
     for (const c of m) !i.has(t(c)) && h.some((v) => t(v) === t(c));
-    for (const c of a.keys()) h.some((v) => t(v) === c) || a.delete(c);
     if (h.length !== x.length) {
       e.value = h;
       return;
     }
     for (const c of x) {
       const v = a.get(t(c));
-      v && Object.assign(c, v);
+      v && (c.deletion_job_id !== v.deletion_job_id && (c.deletion_job = void 0), Object.assign(c, v));
       const A = m.find((K) => t(K) === t(c));
       c.deletion_job === void 0 && A?.deletion_job_id === c.deletion_job_id && (c.deletion_job = A?.deletion_job), c.deleting_at && g(c);
     }

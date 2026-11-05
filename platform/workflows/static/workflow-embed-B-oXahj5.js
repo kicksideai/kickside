@@ -1,7 +1,7 @@
 import { defineComponent as y, ref as c, computed as k, onMounted as z, watch as _, openBlock as p, createElementBlock as m, Fragment as C, toDisplayString as a, createCommentVNode as S, createVNode as d, withCtx as M, createElementVNode as o, unref as b, createTextVNode as E } from "vue";
 import { Icon as g } from "@iconify/vue";
 import "@wippy-fe/proxy";
-import { _ as N, m as I, J as j } from "./pickerselect-D61gmB4b.js";
+import { _ as N, m as I, J as j } from "./pickerselect-By4p9K1S.js";
 const F = {
   key: 0,
   class: "wf-embed-note"

@@ -12,7 +12,7 @@ export interface CreateFlowDeps {
   createWorkflow(title: string, parentId?: string): Promise<string>
   applyScaffold(id: string): Promise<void>
   setLabels(id: string, labels: string[]): Promise<void>
-  deleteWorkflow(id: string): Promise<unknown>
+  deleteWorkflow(id: string): Promise<void>
 }
 
 export class WorkflowCreateFlow {

@@ -35,7 +35,7 @@ export function useComponentDeletion<T extends ComponentDeletionState>(
       if (!data?.success) throw new Error(errMsg(data, 'Could not read deletion progress'))
       if (current()) {
         row.deleting_at = generation?.deleting_at || data.deleting_at
-        row.deletion_job_id = generation?.deletion_job_id || data.deletion_job_id
+        row.deletion_job_id = data.deletion_job_id
         if (generation) generation.deletion_job_id = row.deletion_job_id
         row.deletion_job = data.deletion_job ?? null
       }
@@ -46,11 +46,13 @@ export function useComponentDeletion<T extends ComponentDeletionState>(
   const stop = watch(() => rows.value, (list, previous = []) => {
     const remaining = list.filter(row => !deleted.has(id(row)))
     for (const row of previous) if (!deleted.has(id(row)) && !remaining.some(current => id(current) === id(row))) onDeleted?.(id(row))
-    for (const componentId of accepted.keys()) if (!remaining.some(row => id(row) === componentId)) accepted.delete(componentId)
     if (remaining.length !== list.length) { rows.value = remaining; return }
     for (const row of list) {
       const state = accepted.get(id(row))
-      if (state) Object.assign(row, state)
+      if (state) {
+        if (row.deletion_job_id !== state.deletion_job_id) row.deletion_job = undefined
+        Object.assign(row, state)
+      }
       const prior = previous.find(prior => id(prior) === id(row))
       if (row.deletion_job === undefined && prior?.deletion_job_id === row.deletion_job_id) row.deletion_job = prior?.deletion_job
       if (row.deleting_at) void read(row)

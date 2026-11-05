@@ -231,8 +231,8 @@ async function confirmDelete() {
   deleteBusy.value = true
   error.value = ''
   try {
-    const result = await deleteWorkflow(row.id)
-    acceptDeletion(row.id, result)
+    await deleteWorkflow(row.id)
+    acceptDeletion(row.id)
     await load()
     focusAfterDelete.value = true
     deleteTarget.value = null

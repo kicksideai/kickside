@@ -69,11 +69,10 @@ export async function createWorkflow(title: string, parentId?: string): Promise<
 // Remove a workflow component through the shared teardown (DELETE /api/v1/workflows/{id}),
 // which purges the definition tables. Used to clear abandoned empty drafts and to delete a
 // workflow from its row.
-export async function deleteWorkflow(id: string): Promise<{job_id?: string | null} | undefined> {
+export async function deleteWorkflow(id: string): Promise<void> {
   if (!id) return
   const { data } = await api.delete(`/api/v1/workflows/${encodeURIComponent(id)}`)
   if (data && data.success === false) throw new Error(String(data.error || 'delete failed'))
-  return {job_id: data?.job_id}
 }
 
 export async function getState(id: string): Promise<Record<string, unknown>> {

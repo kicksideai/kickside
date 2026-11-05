@@ -200,3 +200,43 @@ it('does not carry resolved failure to a different job on list refresh', async (
   await flushPromises()
   expect(rows.value[0].deletion_job).toBeUndefined()
 })
+
+it('keeps an off-page accepted deletion marked when a stale page returns', async () => {
+  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'page-two'}])
+  let acceptDeletion!: ReturnType<typeof useComponentDeletion>['acceptDeletion']
+  mounted.push(mount(defineComponent({setup() {({acceptDeletion} = useComponentDeletion(rows, row => row.id)); return () => null}})))
+  acceptDeletion('page-two', {job_id: 'accepted-job'})
+  const markedAt = rows.value[0].deleting_at
+  rows.value = [{id: 'page-one'}]
+  await flushPromises()
+  vi.mocked(api.get).mockRejectedValue(new Error('Progress unavailable'))
+  rows.value = [{id: 'page-two'}]
+  await flushPromises()
+  expect(rows.value[0].deleting_at).toBe(markedAt)
+  expect(rows.value[0].deletion_job_id).toBe('accepted-job')
+  expect(rows.value[0].deletion_job).toBeUndefined()
+})
+
+it('takes the server retry handle and progress together and retains only matching progress', async () => {
+  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected'}])
+  let acceptDeletion!: ReturnType<typeof useComponentDeletion>['acceptDeletion']
+  mounted.push(mount(defineComponent({setup() {({acceptDeletion} = useComponentDeletion(rows, row => row.id)); return () => null}})))
+  acceptDeletion('selected', {job_id: 'attempt-a'})
+  const running = {status: 'running', attempts: 1}
+  vi.mocked(api.get).mockResolvedValue({data: {success: true, deleting_at: 'marked', deletion_job_id: 'attempt-b', deletion_job: running}} as never)
+  rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'attempt-a'}]
+  await flushPromises()
+  expect(rows.value[0].deletion_job_id).toBe('attempt-b')
+  expect(rows.value[0].deletion_job).toEqual(running)
+  vi.mocked(api.get).mockRejectedValue(new Error('Progress unavailable'))
+  rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'attempt-a', deletion_job: {status: 'dead', attempts: 3}}]
+  await flushPromises()
+  expect(rows.value[0].deletion_job_id).toBe('attempt-b')
+  expect(rows.value[0].deletion_job).toEqual(running)
+  rows.value = []
+  await flushPromises()
+  rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'attempt-a', deletion_job: {status: 'dead', attempts: 3}}]
+  await flushPromises()
+  expect(rows.value[0].deletion_job_id).toBe('attempt-b')
+  expect(rows.value[0].deletion_job).toBeUndefined()
+})

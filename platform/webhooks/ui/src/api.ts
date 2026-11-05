@@ -70,11 +70,10 @@ export async function revokeWebhook(id: string): Promise<void> {
   }
 }
 
-export async function deleteWebhook(id: string): Promise<{job_id?: string | null}> {
+export async function deleteWebhook(id: string): Promise<void> {
   try {
     const { data } = await api.delete('/api/v1/webhooks/' + encodeURIComponent(id))
     if (!data?.success) throw new Error(data?.error || 'delete failed')
-    return {job_id: data.job_id}
   } catch (e) {
     throw new Error(friendlyError(errMsg(e, 'could not delete webhook')))
   }

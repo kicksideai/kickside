@@ -3,12 +3,12 @@ import { inject as Nt, watch as _e, onBeforeUnmount as rt, openBlock as x, creat
 import { on as Qr, api as In, host as ry, loadByTagName as Di, define as iy } from "@wippy-fe/proxy";
 import { e as Os } from "./errMsg-CxKGcp1F.js";
 import { s as nt, a as Jf } from "./index-CghiLgVY.js";
-import { n as Co, p as ay, a as ei, s as sy, g as Qf, b as Pi, c as ep, d as Ll, e as Bl, f as he, h as qe, i as ly, j as Xu, k as tp, l as uy, m as np, o as op, q as Zu, t as cy, F as Lt, r as Ri, u as ti, v as rp, w as ni, x as Fl, y as Ns, z as Vl, A as zi, B as Hl, C as Ju, D as dy, E as fy, G as Qu, K as et, H as py, I as hy, _ as my, J as vy, L as gy, M as wy, N as yy, O as ec, P as by, Q as xy, R as ky, S as _y, T as Cy, U as Sy, V as ip, W as $y, X as Ey } from "./pickerselect-D61gmB4b.js";
+import { n as Co, p as ay, a as ei, s as sy, g as Qf, b as Pi, c as ep, d as Ll, e as Bl, f as he, h as qe, i as ly, j as Xu, k as tp, l as uy, m as np, o as op, q as Zu, t as cy, F as Lt, r as Ri, u as ti, v as rp, w as ni, x as Fl, y as Ns, z as Vl, A as zi, B as Hl, C as Ju, D as dy, E as fy, G as Qu, K as et, H as py, I as hy, _ as my, J as vy, L as gy, M as wy, N as yy, O as ec, P as by, Q as xy, R as ky, S as _y, T as Cy, U as Sy, V as ip, W as $y, X as Ey } from "./pickerselect-By4p9K1S.js";
 import { s as mt } from "./index-BpA9WGJi.js";
 import { Icon as ae } from "@iconify/vue";
-import { x as Yt, s as Xt, p as Iy, P as Oy, l as ap, F as Ny, u as Ay, b as Ty, g as sp, a as My, r as Dy } from "./versions-BQtpq6nW.js";
-import { r as dn, a as jl, b as So, c as lp, s as It, d as Py, i as Ry, e as zy, g as ua, f as Ly, h as ca, j as By, l as up, k as cp, p as tc, m as Ul, n as Fy, o as Vy, q as dp, t as bo, u as $o, v as Wl, _ as ao, w as fp, x as Hy, y as jy, z as Uy, A as pp, B as Wy } from "./http-error-va1DckMs.js";
-import { s as ql, a as Kl, _ as Gl, h as Fn, A as nc } from "./SchemaEditor.vue_vue_type_script_setup_true_lang-BTHS2BNg.js";
+import { x as Yt, s as Xt, p as Iy, P as Oy, l as ap, F as Ny, u as Ay, b as Ty, g as sp, a as My, r as Dy } from "./versions-DLybI1MU.js";
+import { r as dn, a as jl, b as So, c as lp, s as It, d as Py, i as Ry, e as zy, g as ua, f as Ly, h as ca, j as By, l as up, k as cp, p as tc, m as Ul, n as Fy, o as Vy, q as dp, t as bo, u as $o, v as Wl, _ as ao, w as fp, x as Hy, y as jy, z as Uy, A as pp, B as Wy } from "./http-error-SaAp2f6M.js";
+import { s as ql, a as Kl, _ as Gl, h as Fn, A as nc } from "./SchemaEditor.vue_vue_type_script_setup_true_lang-B5OAMV7O.js";
 import { _ as qy, W as Vr } from "./WcMount-uWtDjrEa.js";
 function Eo(e) {
   "@babel/helpers - typeof";
@@ -161,7 +161,7 @@ function ab(e, t, n) {
     try {
       const { data: m } = await In.get(`/api/v1/components/${encodeURIComponent(d)}`);
       if (!m?.success) throw new Error(Os(m, "Could not read deletion progress"));
-      p() && (u.deleting_at = f?.deleting_at || m.deleting_at, u.deletion_job_id = f?.deletion_job_id || m.deletion_job_id, f && (f.deletion_job_id = u.deletion_job_id), u.deletion_job = m.deletion_job ?? null);
+      p() && (u.deleting_at = f?.deleting_at || m.deleting_at, u.deletion_job_id = m.deletion_job_id, f && (f.deletion_job_id = u.deletion_job_id), u.deletion_job = m.deletion_job ?? null);
     } catch (m) {
       p() && ry.handleError("other", { message: Os(m, "Could not read deletion progress") });
     }
@@ -169,14 +169,13 @@ function ab(e, t, n) {
   const l = _e(() => e.value, (u, d = []) => {
     const f = u.filter((p) => !r.has(t(p)));
     for (const p of d) !r.has(t(p)) && f.some((m) => t(m) === t(p));
-    for (const p of i.keys()) f.some((m) => t(m) === p) || i.delete(p);
     if (f.length !== u.length) {
       e.value = f;
       return;
     }
     for (const p of u) {
       const m = i.get(t(p));
-      m && Object.assign(p, m);
+      m && (p.deletion_job_id !== m.deletion_job_id && (p.deletion_job = void 0), Object.assign(p, m));
       const w = d.find((v) => t(v) === t(p));
       p.deletion_job === void 0 && w?.deletion_job_id === p.deletion_job_id && (p.deletion_job = w?.deletion_job), p.deleting_at && s(p);
     }
@@ -5142,8 +5141,7 @@ const z0 = { class: "kx-modal-head-icon" }, L0 = { class: "kx-modal-body" }, B0 
       if (!(!M || q.value)) {
         q.value = !0, s.value = "";
         try {
-          const N = await Xu(M.id);
-          L(M.id, N), await F(), Z.value = !0, le.value = null;
+          await Xu(M.id), L(M.id), await F(), Z.value = !0, le.value = null;
         } catch (N) {
           s.value = qe(N, "Couldn’t delete this Workflow.");
         } finally {

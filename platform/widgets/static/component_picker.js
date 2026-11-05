@@ -1,5 +1,5 @@
 import { u as rt, a as et, W as at } from "./index-C70m2Vvt.js";
-import { openBlock as d, createElementBlock as g, mergeProps as $, renderSlot as to, createTextVNode as mo, toDisplayString as L, resolveComponent as Ao, resolveDirective as it, withDirectives as ct, createBlock as po, resolveDynamicComponent as lt, withCtx as No, createCommentVNode as E, normalizeClass as G, createElementVNode as k, defineComponent as To, computed as f, withModifiers as N, Fragment as K, createVNode as x, unref as z, watch as uo, onBeforeUnmount as st, ref as S, withKeys as Oo, renderList as pt } from "vue";
+import { openBlock as d, createElementBlock as u, mergeProps as $, renderSlot as to, createTextVNode as mo, toDisplayString as L, resolveComponent as Ao, resolveDirective as it, withDirectives as ct, createBlock as po, resolveDynamicComponent as lt, withCtx as No, createCommentVNode as E, normalizeClass as G, createElementVNode as k, defineComponent as To, computed as f, withModifiers as N, Fragment as K, createVNode as x, unref as z, watch as uo, onBeforeUnmount as st, ref as S, withKeys as Oo, renderList as pt } from "vue";
 import { Icon as I } from "@iconify/vue";
 import { on as dt, api as bo, host as ut, define as bt } from "@wippy-fe/proxy";
 import { p as gt } from "./pickerValue-SPnnNBeX.js";
@@ -168,7 +168,7 @@ var Fo = {
   }
 }, Pt = ["data-p"];
 function It(o, t, a, r, s, c) {
-  return d(), g("span", $({
+  return d(), u("span", $({
     class: o.cx("root"),
     "data-p": c.dataP
   }, o.ptmi("root")), [to(o.$slots, "default", {}, function() {
@@ -1078,7 +1078,7 @@ function Rt(o, t, a, r, s, c) {
           key: 0,
           class: [o.cx("loadingIcon"), o.cx("icon")]
         }, o.ptm("loadingIcon")), function() {
-          return [o.loadingIcon ? (d(), g("span", $({
+          return [o.loadingIcon ? (d(), u("span", $({
             key: 0,
             class: [o.cx("loadingIcon"), o.cx("icon"), o.loadingIcon]
           }, o.ptm("loadingIcon")), null, 16)) : (d(), po(A, $({
@@ -1090,12 +1090,12 @@ function Rt(o, t, a, r, s, c) {
           key: 1,
           class: [o.cx("icon")]
         }, o.ptm("icon")), function() {
-          return [o.icon ? (d(), g("span", $({
+          return [o.icon ? (d(), u("span", $({
             key: 0,
             class: [o.cx("icon"), o.icon, o.iconClass],
             "data-p": c.dataIconP
           }, o.ptm("icon")), null, 16, Ut)) : E("", !0)];
-        }), o.label ? (d(), g("span", $({
+        }), o.label ? (d(), u("span", $({
           key: 2,
           class: o.cx("label")
         }, o.ptm("label"), {
@@ -1232,10 +1232,10 @@ var Mt = `
   }
 }, Jt = ["fill", "stroke-width"];
 function qt(o, t, a, r, s, c) {
-  return d(), g("div", $({
+  return d(), u("div", $({
     class: o.cx("root"),
     role: "progressbar"
-  }, o.ptmi("root")), [(d(), g("svg", $({
+  }, o.ptmi("root")), [(d(), u("svg", $({
     class: o.cx("spin"),
     viewBox: "25 25 50 50",
     style: c.svgStyle
@@ -1258,7 +1258,7 @@ const Ht = { key: 0 }, Gt = /* @__PURE__ */ To({
   emits: ["retry"],
   setup(o) {
     const t = o, a = f(() => t.state.deletion_job === null || ["dead", "cancelled"].includes(t.state.deletion_job?.status || ""));
-    return (r, s) => o.state.deleting_at ? (d(), g("span", {
+    return (r, s) => o.state.deleting_at ? (d(), u("span", {
       key: 0,
       class: "component-deletion",
       role: "status",
@@ -1267,10 +1267,10 @@ const Ht = { key: 0 }, Gt = /* @__PURE__ */ To({
       onKeydown: s[2] || (s[2] = N(() => {
       }, ["stop"]))
     }, [
-      a.value ? (d(), g(K, { key: 0 }, [
+      a.value ? (d(), u(K, { key: 0 }, [
         k("span", null, [
           s[3] || (s[3] = mo("Deletion failed", -1)),
-          o.state.deletion_job?.last_error ? (d(), g("span", Ht, ": " + L(o.state.deletion_job.last_error), 1)) : E("", !0)
+          o.state.deletion_job?.last_error ? (d(), u("span", Ht, ": " + L(o.state.deletion_job.last_error), 1)) : E("", !0)
         ]),
         x(z(Ro), {
           label: "Retry deletion",
@@ -1279,7 +1279,7 @@ const Ht = { key: 0 }, Gt = /* @__PURE__ */ To({
           outlined: "",
           onClick: s[0] || (s[0] = N((c) => r.$emit("retry"), ["stop"]))
         })
-      ], 64)) : (d(), g(K, { key: 1 }, [
+      ], 64)) : (d(), u(K, { key: 1 }, [
         x(z(Mo), {
           class: "component-deletion-spinner",
           "aria-label": "Deletion in progress"
@@ -1324,41 +1324,40 @@ function on(o, t, a) {
   let r = !0;
   const s = /* @__PURE__ */ new Set(), c = /* @__PURE__ */ new Map();
   function A(h, v) {
-    const u = o.value.find((T) => t(T) === h), l = c.get(h), b = {
-      deleting_at: l?.deleting_at || u?.deleting_at || (/* @__PURE__ */ new Date()).toISOString(),
-      deletion_job_id: v?.job_id || l?.deletion_job_id || u?.deletion_job_id
+    const b = o.value.find((T) => t(T) === h), l = c.get(h), g = {
+      deleting_at: l?.deleting_at || b?.deleting_at || (/* @__PURE__ */ new Date()).toISOString(),
+      deletion_job_id: v?.job_id || l?.deletion_job_id || b?.deletion_job_id
     };
-    c.set(h, b), u && (Object.assign(u, b), u.deletion_job = void 0);
+    c.set(h, g), b && (Object.assign(b, g), b.deletion_job = void 0);
   }
   async function C(h) {
-    const v = t(h), u = c.get(v), l = () => r && o.value.includes(h) && c.get(v) === u;
+    const v = t(h), b = c.get(v), l = () => r && o.value.includes(h) && c.get(v) === b;
     try {
-      const { data: b } = await bo.get(`/api/v1/components/${encodeURIComponent(v)}`);
-      if (!b?.success) throw new Error(Do(b, "Could not read deletion progress"));
-      l() && (h.deleting_at = u?.deleting_at || b.deleting_at, h.deletion_job_id = u?.deletion_job_id || b.deletion_job_id, u && (u.deletion_job_id = h.deletion_job_id), h.deletion_job = b.deletion_job ?? null);
-    } catch (b) {
-      l() && ut.handleError("other", { message: Do(b, "Could not read deletion progress") });
+      const { data: g } = await bo.get(`/api/v1/components/${encodeURIComponent(v)}`);
+      if (!g?.success) throw new Error(Do(g, "Could not read deletion progress"));
+      l() && (h.deleting_at = b?.deleting_at || g.deleting_at, h.deletion_job_id = g.deletion_job_id, b && (b.deletion_job_id = h.deletion_job_id), h.deletion_job = g.deletion_job ?? null);
+    } catch (g) {
+      l() && ut.handleError("other", { message: Do(g, "Could not read deletion progress") });
     }
   }
   const O = uo(() => o.value, (h, v = []) => {
-    const u = h.filter((l) => !s.has(t(l)));
-    for (const l of v) !s.has(t(l)) && !u.some((b) => t(b) === t(l)) && a?.(t(l));
-    for (const l of c.keys()) u.some((b) => t(b) === l) || c.delete(l);
-    if (u.length !== h.length) {
-      o.value = u;
+    const b = h.filter((l) => !s.has(t(l)));
+    for (const l of v) !s.has(t(l)) && !b.some((g) => t(g) === t(l)) && a?.(t(l));
+    if (b.length !== h.length) {
+      o.value = b;
       return;
     }
     for (const l of h) {
-      const b = c.get(t(l));
-      b && Object.assign(l, b);
+      const g = c.get(t(l));
+      g && (l.deletion_job_id !== g.deletion_job_id && (l.deletion_job = void 0), Object.assign(l, g));
       const T = v.find((ao) => t(ao) === t(l));
       l.deletion_job === void 0 && T?.deletion_job_id === l.deletion_job_id && (l.deletion_job = T?.deletion_job), l.deleting_at && C(l);
     }
   }, { immediate: !0 }), V = dt("@message", (h) => {
     const v = Zt(h);
     if (!v) return;
-    const u = o.value.find((l) => t(l) === v.component_id);
-    v.event === "component.deleted" ? (u && !s.has(v.component_id) && a?.(v.component_id), s.add(v.component_id), c.delete(v.component_id), o.value = o.value.filter((l) => t(l) !== v.component_id)) : u && (A(v.component_id), C(u));
+    const b = o.value.find((l) => t(l) === v.component_id);
+    v.event === "component.deleted" ? (b && !s.has(v.component_id) && a?.(v.component_id), s.add(v.component_id), c.delete(v.component_id), o.value = o.value.filter((l) => t(l) !== v.component_id)) : b && (A(v.component_id), C(b));
   });
   return st(() => {
     r = !1, O(), typeof V == "function" && V();
@@ -1442,7 +1441,7 @@ const tn = ["aria-expanded", "onKeydown"], nn = { class: "cp-pop" }, rn = {
       const p = s(i);
       return typeof p?.id == "string" ? p.id : "";
     }
-    const u = f(() => r(t.value?.source).trim() || O(t.value?.schema, "source") || "/api/v1/threads"), l = f(() => u.value.split("?")[0] === "/api/v1/threads"), b = f(() => {
+    const b = f(() => r(t.value?.source).trim() || O(t.value?.schema, "source") || "/api/v1/threads"), l = f(() => b.value.split("?")[0] === "/api/v1/threads"), g = f(() => {
       const n = r(t.value?.meta).trim();
       if (n.startsWith("{"))
         try {
@@ -1451,11 +1450,11 @@ const tn = ["aria-expanded", "onKeydown"], nn = { class: "cp-pop" }, rn = {
           return {};
         }
       return {};
-    }), T = f(() => r(t.value?.threadClass).trim() || r(b.value.thread_class).trim()), ao = f(() => r(t.value?.implId).trim() || r(b.value.impl_id).trim() || O(t.value?.schema, "impl_id")), xo = f(() => r(t.value?.deleteEndpoint).trim() || r(b.value.delete_endpoint).trim()), vo = f(() => {
+    }), T = f(() => r(t.value?.threadClass).trim() || r(g.value.thread_class).trim()), ao = f(() => r(t.value?.implId).trim() || r(g.value.impl_id).trim() || O(t.value?.schema, "impl_id")), xo = f(() => r(t.value?.deleteEndpoint).trim() || r(g.value.delete_endpoint).trim()), vo = f(() => {
       if (!l.value) return null;
-      const n = b.value?.component?.create_ui;
+      const n = g.value?.component?.create_ui;
       return n && typeof n == "object" ? n : null;
-    }), U = S(null), io = f(() => r(vo.value?.tag_name).trim() || r(U.value?.tag_name).trim()), Wo = f(() => r(vo.value?.title).trim() || r(U.value?.title).trim()), M = f(() => (r(t.value?.title).trim() || r(b.value.title).trim()).toLowerCase()), ko = f(() => t.value?.placeholder || (M.value ? `Select a ${M.value}…` : "Select…")), Ko = f(() => M.value || Wo.value.toLowerCase() || "one"), _o = f(() => `Create new ${Ko.value}`), fo = f(() => M.value ? `Untitled ${M.value}` : "Untitled"), Vo = f(() => M.value ? `No ${M.value} available yet — create one first, then return here.` : "Nothing available yet — create one first, then return here."), j = S([]), J = S(!1), q = S(!1), P = S(!1), co = S(!1), _ = S(""), Q = S(""), H = S(""), F = S(""), So = S(null);
+    }), U = S(null), io = f(() => r(vo.value?.tag_name).trim() || r(U.value?.tag_name).trim()), Wo = f(() => r(vo.value?.title).trim() || r(U.value?.title).trim()), M = f(() => (r(t.value?.title).trim() || r(g.value.title).trim()).toLowerCase()), ko = f(() => t.value?.placeholder || (M.value ? `Select a ${M.value}…` : "Select…")), Ko = f(() => M.value || Wo.value.toLowerCase() || "one"), _o = f(() => `Create new ${Ko.value}`), fo = f(() => M.value ? `Untitled ${M.value}` : "Untitled"), Vo = f(() => M.value ? `No ${M.value} available yet — create one first, then return here.` : "Nothing available yet — create one first, then return here."), j = S([]), J = S(!1), q = S(!1), P = S(!1), co = S(!1), _ = S(""), Q = S(""), H = S(""), F = S(""), So = S(null);
     async function Jo() {
       if (!l.value) {
         U.value = null;
@@ -1481,9 +1480,9 @@ const tn = ["aria-expanded", "onKeydown"], nn = { class: "cp-pop" }, rn = {
       if (!q.value) {
         q.value = !0;
         try {
-          const [n, e = ""] = u.value.split("?"), i = new URLSearchParams(e);
+          const [n, e = ""] = b.value.split("?"), i = new URLSearchParams(e);
           l.value && (T.value && i.set("thread_class", T.value), ao.value && i.set("impl_id", ao.value), i.set("limit", "100"));
-          const p = l.value ? `${n}?${i}` : u.value, y = [];
+          const p = l.value ? `${n}?${i}` : b.value, y = [];
           let so = p, Y = 0;
           for (; ; ) {
             const { data: m } = await bo.get(so);
@@ -1614,7 +1613,7 @@ const tn = ["aria-expanded", "onKeydown"], nn = { class: "cp-pop" }, rn = {
     const { acceptDeletion: ot } = on(j, (n) => n.id, (n) => {
       n === _.value && (_.value = "");
     });
-    return (n, e) => (d(), g(K, null, [
+    return (n, e) => (d(), u(K, null, [
       k("div", {
         ref_key: "ctrl",
         ref: So,
@@ -1651,22 +1650,22 @@ const tn = ["aria-expanded", "onKeydown"], nn = { class: "cp-pop" }, rn = {
       }, {
         default: No(() => [
           k("div", nn, [
-            q.value && !j.value.length ? (d(), g("div", rn, [
+            q.value && !j.value.length ? (d(), u("div", rn, [
               x(z(I), {
                 icon: "tabler:loader-2",
                 class: "spin",
                 "aria-hidden": "true"
               }),
               e[1] || (e[1] = mo(" Loading…", -1))
-            ])) : co.value ? (d(), g("div", en, [
+            ])) : co.value ? (d(), u("div", en, [
               x(ft, {
                 tag: io.value,
                 onCreated: Zo,
                 onClose: Io
               }, null, 8, ["tag"])
-            ])) : j.value.length ? (d(), g(K, { key: 3 }, [
+            ])) : j.value.length ? (d(), u(K, { key: 3 }, [
               k("div", cn, [
-                (d(!0), g(K, null, pt(j.value, (i) => (d(), g("div", {
+                (d(!0), u(K, null, pt(j.value, (i) => (d(), u("div", {
                   key: i.id,
                   class: G(["cp-row cp-row--compound", i.id === _.value && "cp-row-on"])
                 }, [
@@ -1693,8 +1692,8 @@ const tn = ["aria-expanded", "onKeydown"], nn = { class: "cp-pop" }, rn = {
                     state: i,
                     onRetry: (p) => Co(i)
                   }, null, 8, ["state", "onRetry"]),
-                  xo.value && !i.deleting_at ? (d(), g(K, { key: 0 }, [
-                    Q.value === i.id ? (d(), g(K, { key: 0 }, [
+                  xo.value && !i.deleting_at ? (d(), u(K, { key: 0 }, [
+                    Q.value === i.id ? (d(), u(K, { key: 0 }, [
                       k("button", {
                         type: "button",
                         class: "cp-row-del cp-row-del-yes",
@@ -1722,7 +1721,7 @@ const tn = ["aria-expanded", "onKeydown"], nn = { class: "cp-pop" }, rn = {
                           "aria-hidden": "true"
                         })
                       ])
-                    ], 64)) : (d(), g("button", {
+                    ], 64)) : (d(), u("button", {
                       key: 1,
                       type: "button",
                       class: "cp-row-del",
@@ -1738,9 +1737,9 @@ const tn = ["aria-expanded", "onKeydown"], nn = { class: "cp-pop" }, rn = {
                     ], 8, dn))
                   ], 64)) : E("", !0)
                 ], 2))), 128)),
-                F.value ? (d(), g("div", un, L(F.value), 1)) : E("", !0)
+                F.value ? (d(), u("div", un, L(F.value), 1)) : E("", !0)
               ]),
-              io.value ? (d(), g("button", {
+              io.value ? (d(), u("button", {
                 key: 0,
                 type: "button",
                 class: "cp-create-foot",
@@ -1753,9 +1752,9 @@ const tn = ["aria-expanded", "onKeydown"], nn = { class: "cp-pop" }, rn = {
                 }),
                 k("span", null, L(_o.value), 1)
               ])) : E("", !0)
-            ], 64)) : (d(), g("div", an, [
+            ], 64)) : (d(), u("div", an, [
               k("span", null, L(Vo.value), 1),
-              io.value ? (d(), g("button", {
+              io.value ? (d(), u("button", {
                 key: 0,
                 type: "button",
                 class: "cp-create-btn",

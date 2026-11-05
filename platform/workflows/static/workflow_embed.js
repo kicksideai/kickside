@@ -1,11 +1,11 @@
 import { u as ue, a as ie, s as w, W as de, P as ce } from "./index-BhiG6P-P.js";
 import { defineComponent as fe, defineAsyncComponent as ve, computed as _, ref as h, onBeforeUnmount as pe, watch as me, openBlock as n, createElementBlock as m, createVNode as d, unref as a, createElementVNode as u, createBlock as v, withCtx as c, createTextVNode as b, toDisplayString as k, withModifiers as be, createCommentVNode as I, Fragment as he } from "vue";
-import { L as ye, Y as we, f as A, m as ke, J as ge, h as _e, X as Ce } from "./pickerselect-D61gmB4b.js";
+import { L as ye, Y as we, f as A, m as ke, J as ge, h as _e, X as Ce } from "./pickerselect-By4p9K1S.js";
 import { s as K } from "./index-BpA9WGJi.js";
-import { a as Ee, b as Re, C as Se, s as We, _ as z, g as Ie, D as Pe, A as Oe, i as Ae } from "./http-error-va1DckMs.js";
+import { a as Ee, b as Re, C as Se, s as We, _ as z, g as Ie, D as Pe, A as Oe, i as Ae } from "./http-error-SaAp2f6M.js";
 import { on as Y, define as je } from "@wippy-fe/proxy";
 import { Icon as j } from "@iconify/vue";
-import { _ as Ve, s as $e } from "./workflow-embed-Dzqm-nmg.js";
+import { _ as Ve, s as $e } from "./workflow-embed-B-oXahj5.js";
 const Le = "Run Workflow";
 function G(t, r) {
   const l = t[r];
@@ -107,7 +107,7 @@ const Je = { class: "wf-embed" }, Be = {
 }, ot = { class: "wf-embed-actions" }, ut = /* @__PURE__ */ fe({
   __name: "EmbedWorkflow",
   setup(t) {
-    const r = ve(() => import("./SchemaEditor-IS16xCWo.js")), l = ue(), f = ie(), i = _(() => Fe(l.value)), o = h(null), S = h(!1), C = h(""), P = h({}), B = h(0), L = h(!0), p = h("ready"), V = h(!1), E = h(""), g = h(""), y = h(null);
+    const r = ve(() => import("./SchemaEditor-BpTdl8zF.js")), l = ue(), f = ie(), i = _(() => Fe(l.value)), o = h(null), S = h(!1), C = h(""), P = h({}), B = h(0), L = h(!0), p = h("ready"), V = h(!1), E = h(""), g = h(""), y = h(null);
     let N = null, H = null, x = !1;
     const X = _(() => o.value ? `/workflows/${o.value.id}` : "");
     function Q() {
