@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 import { onBeforeUnmount, watch, type Ref } from 'vue'
 import { api, host, on } from '@wippy-fe/proxy'
 import { componentDeletionEvent } from './componentRealtime'

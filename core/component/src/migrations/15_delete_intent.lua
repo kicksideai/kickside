@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 return require("migration").define(function()
     migration("15 deletion intent", function()
         for _, engine in ipairs({"postgres", "sqlite"}) do

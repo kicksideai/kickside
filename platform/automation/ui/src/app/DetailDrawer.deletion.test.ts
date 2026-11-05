@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 import { afterEach, expect, it, vi } from 'vitest'
 import { mount, shallowMount, flushPromises } from '@vue/test-utils'
 import { nextTick } from 'vue'
