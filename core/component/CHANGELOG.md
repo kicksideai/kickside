@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.6](https://github.com/kicksideai/kickside/compare/component-v0.3.5...component-v0.3.6) (2026-11-05)
+
+
+### Bug Fixes
+
+* **component:** execute deletion cleanup through Jobs ([c034b5c](https://github.com/kicksideai/kickside/commit/c034b5c8e5cc2c92a5ced4d8ae70107361f2e9d3))
+* **component:** expose asynchronous deletion progress ([e4ca4b7](https://github.com/kicksideai/kickside/commit/e4ca4b7ab5185ecc6ecf83b336ca3e6edf5aca6e))
+* **component:** preserve published notification access ([efcbc6e](https://github.com/kicksideai/kickside/commit/efcbc6e2e8a161a96e58958662c5816ba808e429))
+* **component:** restore bounded final deletion pages ([cc5c7a5](https://github.com/kicksideai/kickside/commit/cc5c7a5ea54818c1d0a538842d1c2881a988b5b4))
+* **component:** run deletion cleanup through Jobs ([da3f7ae](https://github.com/kicksideai/kickside/commit/da3f7aee8dce4136a65d1c94bda6604820bc8355))
+* **component:** simplify deletion waiting and committed delivery ([584eae6](https://github.com/kicksideai/kickside/commit/584eae6145e5e9b4ea36bdbd6527ffe376e9f7fe))
+* **component:** wait for authorized child deletion before teardown ([94ba45d](https://github.com/kicksideai/kickside/commit/94ba45df29f52d5f7b4766dd04bd335f92771752))
+* preserve deletion view state and bind notification authority ([2ea5cf1](https://github.com/kicksideai/kickside/commit/2ea5cf1a31352ba4ba1915daeca384d06d2e7b70))
+
 ## [0.3.5](https://github.com/kicksideai/kickside/compare/component-v0.3.4...component-v0.3.5) (2026-10-30)
 
 

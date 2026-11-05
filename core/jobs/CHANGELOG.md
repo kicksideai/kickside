@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.71](https://github.com/kicksideai/kickside/compare/jobs-v0.1.70...jobs-v0.1.71) (2026-11-05)
+
+
+### Bug Fixes
+
+* **jobs:** commit lease-loss history with the termination fence ([4a07c37](https://github.com/kicksideai/kickside/commit/4a07c372c1992449b39af4379952052483a9bc26))
+* **jobs:** fence lease expiry and replace pending jobs atomically ([7304b94](https://github.com/kicksideai/kickside/commit/7304b94654503e4f566faf1dcad5ff261a2c4692))
+* **jobs:** fence lease expiry and replace pending jobs atomically ([09fe7b8](https://github.com/kicksideai/kickside/commit/09fe7b830c5804c61a2139a0aa8193d0270abd3f))
+* **jobs:** preserve termination intent and fenced lease ownership ([6ce13a2](https://github.com/kicksideai/kickside/commit/6ce13a2772d0bfb733524da5ffdff0877ac63bbe))
+* **jobs:** preserve termination intent through worker failures ([caca58c](https://github.com/kicksideai/kickside/commit/caca58c3d337ef20fcfc6491914af456f9d5486b))
+* **jobs:** settle supervisor lease loss before failure ([72bf2c4](https://github.com/kicksideai/kickside/commit/72bf2c4fe30a77aa133c02e0ba27c8a8313c97ab))
+
 ## [0.1.70](https://github.com/kicksideai/kickside/compare/jobs-v0.1.69...jobs-v0.1.70) (2026-11-03)
 
 
