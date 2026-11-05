@@ -358,8 +358,8 @@ local function define_tests()
         test.it("a read before the cache is warmed surfaces an error, never a silent DB reload", function()
             -- Queued change notifications can warm a cold snapshot independently
             -- of reads. Await the keeper's stop before testing read ownership.
-            change_keeper_state("stop", "stopped")
             local ok, err = pcall(function()
+                change_keeper_state("stop", "stopped")
                 local s = assert(store.get("kickside.settings:cache"))
                 assert(s:set("snapshot", "null", 0))
                 s:release()
@@ -369,10 +369,14 @@ local function define_tests()
                 test.eq(r.error, "settings cache is not warmed")
             end)
 
-            local _, reload_err = writer.reload()
-            change_keeper_state("start", "running")
-            test.is_nil(reload_err)
+            local reload_ok, reload_err = pcall(function()
+                local _, err = writer.reload()
+                test.is_nil(err)
+            end)
+            local restart_ok, restart_err = pcall(change_keeper_state, "start", "running")
             if not ok then error(err, 0) end
+            if not reload_ok then error(reload_err, 0) end
+            if not restart_ok then error(restart_err, 0) end
             test.eq(open_settings():get({ namespace = NS, key = "max_items" }).success, true)
         end)
 
