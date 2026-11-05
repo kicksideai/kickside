@@ -8,6 +8,7 @@
 local upload_query_repo = require("upload_query_repo")
 local artifact_parts_repo = require("artifact_parts_repo")
 local artifact_content_repo = require("artifact_content_repo")
+local metadata_sanitizer = require("metadata_sanitizer")
 
 local M = {}
 
@@ -16,7 +17,7 @@ M.deps = { query = upload_query_repo, parts = artifact_parts_repo, content = art
 M.DEFAULT_MAX_CHARS = 200000
 
 type Info = { upload_id: string, status: string, filename: string?, mime_type: string?, size: number?, created_at: string? }
-type Provenance = { source: unknown?, crm_files: unknown? }
+type Provenance = { [string]: unknown }
 type PrimaryText = { text: string, chars: integer, truncated: boolean, content_type: string?, artifact_id: string, metadata: unknown? }
 type SourceImage = { artifact_id: string, content_type: string, size: number? }
 type ImageBytes = { bytes: string, content_type: string, size: integer }
@@ -58,12 +59,13 @@ function M.info(upload_id: string): (Info?, error?)
     }, nil
 end
 
--- provenance(upload_id) -> { source, crm_files } as written by the uploader.
+-- provenance(upload_id) -> the upload's metadata as its uploader wrote it,
+-- without the module's private keys (the same rule as the upload API):
+-- whatever keys a caller tagged the upload with to recognize it later.
 function M.provenance(upload_id: string): (Provenance?, error?)
     local upload, err = M.deps.query.get(upload_id)
     if err or not upload then return nil, err end
-    local metadata = metadata_of(upload)
-    return { source = metadata.source, crm_files = metadata.crm_files }, nil
+    return metadata_sanitizer.public(metadata_of(upload)) :: Provenance, nil
 end
 
 -- primary_text(upload_id, max_chars?) -> the converted text (markdown for a

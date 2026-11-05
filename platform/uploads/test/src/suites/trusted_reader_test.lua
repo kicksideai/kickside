@@ -12,6 +12,8 @@ local function stub(over: any)
             return { uuid = "up-1", storage_state = "completed", mime_type = "application/pdf", size = 24713,
                 created_at = "2026-11-04T12:00:00Z",
                 metadata = { filename = "brief.pdf", source = "hubspot", __upload_token = "secret",
+                    __upload_tokens = { "secret-2" }, storage_path = "s3://bucket/up-1",
+                    ticket = { system = "helpdesk", id = "T-9" },
                     crm_files = { crm_id = "c1", record_id = "person:1", provider = "hubspot", ref = "42" } } }, nil
         end },
         parts = {
@@ -51,12 +53,18 @@ local function define_tests()
             test.is_true(errors.is(err, errors.NOT_FOUND))
         end)
 
-        test.it("returns provenance without private keys", function()
+        test.it("returns the uploader's metadata, whatever its keys, without the private ones", function()
             stub()
-            local p = reader.provenance("up-1")
+            local p = reader.provenance("up-1") :: any
             test.eq(p.source, "hubspot")
+            test.eq(p.filename, "brief.pdf")
+            test.eq(p.ticket.id, "T-9")
             test.eq(p.crm_files.record_id, "person:1")
             test.is_nil(p.__upload_token)
+            test.is_nil(p.__upload_tokens)
+            test.is_nil(p.storage_path)
+            local _, err = reader.provenance("missing")
+            test.is_true(errors.is(err, errors.NOT_FOUND))
         end)
 
         test.it("returns the primary text and cuts it without splitting a UTF-8 character", function()

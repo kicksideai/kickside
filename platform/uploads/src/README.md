@@ -135,12 +135,14 @@ installed package satisfying a wildcard dependency does not provide them.
 ## Trusted reader and provider attachments
 
 `kickside.uploads:trusted_reader` is a read-only library over any upload,
-regardless of its owner: `info`, `provenance` (`metadata.source` and
-`metadata.crm_files`), `primary_text` (converted text, cut UTF-8 safely at
+regardless of its owner: `info`, `provenance` (the upload's metadata as the
+uploader wrote it, without the private keys the upload API also hides, such as
+`__upload_token`), `primary_text` (converted text, cut UTF-8 safely at
 `max_chars` bytes), `source_image` (the original artifact of an image upload,
 `nil` for documents) and `image_bytes` (one image artifact of that upload). Like
 `delivery_url`, it does not authorize the caller: the importing module must
-check its own access rule and the upload's provenance before calling it.
+check its own access rule and the upload's provenance (for example a key it
+wrote into `att.metadata` when it ingested the file) before calling it.
 
 `kickside.uploads:attachment_ingest.ingest(att)` accepts optional
 `att.metadata`; it is stored on the upload, for example `__upload_token` (which
