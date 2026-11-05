@@ -117,4 +117,13 @@ entries:
     imports:
       core_db: kickside.core:db
       component: kickside.core.threads:component
+      read_access: kickside.core.projections:read_access
+      core_types: kickside.core:types
+
+  - name: read_access
+    kind: library.lua
+    source: file://read_access.lua
+    modules: [sql]
+    imports:
+      component: kickside.core.threads:component
       core_types: kickside.core:types

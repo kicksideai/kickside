@@ -34,6 +34,7 @@ entries:
     clock: kickside.core.jobs:clock
     threads_consts: kickside.core.threads:consts
     threads_normalize: kickside.core.threads.persist:normalize
+    component_client: kickside.component:component
     threads_component: kickside.core.threads:component
     core_types: kickside.core:types
     autoinit: kickside.component:autoinit

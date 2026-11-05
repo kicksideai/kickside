@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Read-only boundary for committed materialized views. It exposes projection
 -- bodies only: no event log, cursor, lag, catch-up, replay, or worker controls.
 
@@ -6,6 +7,7 @@ local json = require("json")
 
 local core_db = require("core_db")
 local component = require("component")
+local read_access = require("read_access")
 local core_types = require("core_types")
 
 local M = {}
@@ -41,8 +43,14 @@ function M.get(args: any): (any?, error?)
          WHERE thread_id = $1 AND kind = $2 AND projection_key = $3
          LIMIT 1
     ]], { owner_id, kind, projection_key })
+    local event_allowed, event_err = true, nil
+    if not query_err and type(rows) == "table" and rows[1] then
+        event_allowed, event_err = read_access.has_access(db, owner_id)
+    end
     db:release()
     if query_err then return nil, (errors.wrap(query_err, "failed to read materialized view") :: error) end
+    if event_err then return nil, event_err end
+    if not event_allowed then return nil, failure("read access denied", errors.PERMISSION_DENIED) end
     if type(rows) ~= "table" or not rows[1] then return { body = {} }, nil end
 
     local body = (rows[1] :: any).body

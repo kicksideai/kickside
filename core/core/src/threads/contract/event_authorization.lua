@@ -5,6 +5,7 @@ local sql_boundary = require("sql_boundary")
 local error_envelope = require("error_envelope")
 local security = require("security")
 local registry = require("registry")
+local event_declaration = require("event_declaration")
 local uuid = require("uuid")
 local json = require("json")
 local writer = require("threads_writer")
@@ -18,7 +19,7 @@ local actor_id = common.actor_id
 local M = {}
 local GENERIC_THREAD_MESSAGE = "kickside.threads:message.created"
 local THREAD_EVENT_META_TYPE = "kickside.core.threads.event"
-local GENERIC_THREAD_IMPL = "kickside.core:thread"
+local GENERIC_THREAD_IMPL = require("threads_consts").THREAD_IMPL_ID
 
 local function response_error(field: string): error
     return errors.new({kind = errors.INTERNAL, retryable = false,
@@ -41,18 +42,8 @@ end
 
 local function event_types_for_impl(impl_id: string): (table?, table?, error?)
     if impl_id == GENERIC_THREAD_IMPL then return { [GENERIC_THREAD_MESSAGE] = true }, {}, nil end
-    local entry, registry_err = registry.get(impl_id)
-    if registry_err then
-        if errors.is(registry_err, errors.NOT_FOUND) then return nil, nil, invalid("component kind is not registered", registry_err) end
-        return nil, nil, registry_failure("thread component declaration lookup failed", registry_err)
-    end
-    if not entry then return nil, nil, invalid("component kind is not registered") end
-    local data = type(entry.data) == "table" and entry.data or {}
-    local meta = type(entry.meta) == "table" and entry.meta or data.meta
-    local kind = entry.kind or data.kind
-    if kind ~= "contract.binding" or type(meta) ~= "table" or type(meta.events) ~= "table" then
-        return nil, nil, invalid("component kind has no valid event declaration")
-    end
+    local events, declaration_err = event_declaration.load(impl_id, true)
+    if declaration_err then return nil, nil, declaration_err end
     local function collect(raw: any, output: boolean): (table?, error?)
         local set: table = {}
         if raw == nil then return set, nil end
@@ -82,9 +73,9 @@ local function event_types_for_impl(impl_id: string): (table?, table?, error?)
         end
         return set, nil
     end
-    local inputs, input_err = collect(meta.events.input, false)
+    local inputs, input_err = collect(events.input, false)
     if input_err then return nil, nil, input_err end
-    local outputs, output_err = collect(meta.events.output, true)
+    local outputs, output_err = collect(events.output, true)
     if output_err then return nil, nil, output_err end
     return inputs, outputs, nil
 end

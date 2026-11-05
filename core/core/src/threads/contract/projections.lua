@@ -37,11 +37,11 @@ end
 
 -- gate_thread_write opens the db and confirms the actor has WRITE on the thread
 -- before a projection mutation. Returns the db handle (caller releases) on success.
-local function gate_thread_access(thread_id: string, mask: integer): (sql.DB?, table?, error?, boolean?)
+local function gate_thread_access(thread_id: string, mask: integer, event_payload: boolean?): (sql.DB?, table?, error?, boolean?)
     local db, db_err = open_db()
     if db_err then return nil, nil, db_err end
     local _db = db :: sql.DB
-    local thread, gate_err = reader.gate_read(_db, thread_id, mask)
+    local thread, gate_err = reader.gate_read(_db, thread_id, mask, event_payload)
     if gate_err then
         local err, released = release(_db, gate_err)
         return nil, nil, err, released and errors.is(gate_err, errors.NOT_FOUND)
@@ -54,8 +54,8 @@ local function gate_thread_write(thread_id: string): (sql.DB?, error?)
     return db, err
 end
 
-local function gate_thread_read(thread_id: string): (sql.DB?, table?, error?, boolean?)
-    return gate_thread_access(thread_id, (masks.ACCESS.READ :: integer))
+local function gate_thread_read(thread_id: string, event_payload: boolean?): (sql.DB?, table?, error?, boolean?)
+    return gate_thread_access(thread_id, (masks.ACCESS.READ :: integer), event_payload)
 end
 
 -- register_projection defines a projection on a thread (reversible via
@@ -133,7 +133,7 @@ function M.list_projections(args: any): (any?, error?)
     local cursors_after, cursors_after_err = page_cursor.decode(args.cursors_cursor, args.thread_id, "cursors")
     if cursors_after_err then return nil, cursors_after_err end
 
-    local db, thread, gate_err, missing_thread = gate_thread_read(args.thread_id :: string)
+    local db, thread, gate_err, missing_thread = gate_thread_read(args.thread_id :: string, true)
     if gate_err then
         -- A lazy thread that has never been emitted to has no thread row yet, hence no
         -- projections -- that reads as empty, not an error (the canonical lazy-thread
@@ -173,7 +173,7 @@ function M.get_projection_cursor(args: any): (any?, error?)
             return nil, (errors.new({ message = key .. " must be a string", kind = errors.INVALID }) :: error)
         end
     end
-    local db, _, gate_err = gate_thread_read(args.thread_id :: string)
+    local db, _, gate_err = gate_thread_read(args.thread_id :: string, true)
     if gate_err then return nil, gate_err end
     local pair, find_err = proj_reader.find_projection_cursor(db :: sql.DB, args.thread_id :: string, args)
     find_err = release(db :: sql.DB, find_err)

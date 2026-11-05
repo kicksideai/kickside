@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- GET /threads/{id}/events — a thread's events, gated on READ. Query:
 -- ?before&from_seq&to_seq&limit&ascending&event_type. Response: { success, events,
 -- max_pruned_seq, next_seq, source_gap? }.

@@ -17,6 +17,8 @@ entries:
     component_client: app:authorization_release_component
     core_types: kickside.core:types
     contract_common: app:authorization_release_common
+    threads_consts: kickside.core.threads:consts
+    event_declaration: app:authorization_release_declaration
     registry: app:authorization_release_registry
     security: app:authorization_release_security
     sql_boundary: kickside.core.jobs.persist:sql_boundary
@@ -56,4 +58,12 @@ entries:
     fixture: app:authorization_release_fixture
     api: app:authorization_release_source
     canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope
+
+- name: authorization_release_declaration
+  kind: library.lua
+  source: file://event_read_declaration.lua
+  imports:
+    threads_consts: kickside.core.threads:consts
+    registry: app:authorization_release_registry
     error_envelope: kickside.contract:error_envelope

@@ -30,6 +30,19 @@ namespace belongs to the component kind's module. A component kind's
       methods: { get_status: kickside.core.threads:thread_status }
 ```
 
+A binding may set `meta.events.read: admin` to require component ADMIN for raw
+thread event reads, external-event lookups, pullables, and Core projection body
+reads. The level is fixed when the thread binds to its component; a kind adopting
+the field covers threads bound afterwards. Existing rows retain their stored
+level. A thread attached by a `trusted_audit` caller takes the kind that caller
+supplies. Thread metadata stays readable at READ. Realtime updates for `admin`
+threads strip `event`, `data`, and `thread` metadata for every recipient, including
+admins; clients refetch through the authorized read APIs. Omitting the field stores an empty
+level and keeps READ, including the generic `kickside.core:thread` kind and kinds
+absent from the registry. Invalid values return the typed declaration error at
+binding time. Internal projection, retention, and lifecycle work keeps its service
+identity and persistence access.
+
 An authenticated component writer may append its stored kind's declared input
 and output events. Component WRITE applies to owners, direct and group grantees,
 and inherited grants; WRITE does not require READ. Outputs marked `system_only:

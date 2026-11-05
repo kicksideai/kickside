@@ -31,7 +31,7 @@ end
 -- access at required_mask. The first four results retain the status/display
 -- tuple; the optional fifth result carries the native failure for transport.
 -- Allowed requests return (true, 200, nil, component_id, nil).
-function access.gate_thread_access(db: Executor, thread_id: string, required_mask: integer): (boolean, integer, string?, string?, error?)
+function access.gate_thread_access(db: Executor, thread_id: string, required_mask: integer, event_payload: boolean?): (boolean, integer, string?, string?, error?)
     local failure: error? = nil
     local display: string? = nil
     local component_id: string? = nil
@@ -39,7 +39,7 @@ function access.gate_thread_access(db: Executor, thread_id: string, required_mas
         failure = not_found()
         display = "thread not found"
     else
-        local loaded, load_err = reader.get_component_id(db, thread_id)
+        local loaded, load_err, event_read = reader.get_component_id(db, thread_id)
         component_id = loaded
         if load_err then
             failure = errors.wrap(load_err, "failed to load thread")
@@ -48,7 +48,8 @@ function access.gate_thread_access(db: Executor, thread_id: string, required_mas
             failure = not_found()
             display = "thread not found"
         else
-            local allowed, access_err = component.has_access(component_id, required_mask)
+            local allowed, access_err = component.has_access(component_id, event_payload and event_read == "admin"
+                and (masks.ACCESS.ADMIN :: integer) or required_mask)
             if access_err then
                 failure = access_err
                 display = tostring(access_err)

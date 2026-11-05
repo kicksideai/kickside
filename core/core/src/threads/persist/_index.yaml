@@ -84,6 +84,7 @@ entries:
       - uuid
       - json
     imports:
+      event_declaration: kickside.core.threads:event_declaration
       clock: kickside.core.jobs:clock
       threads_consts: kickside.core.threads:consts
       core_types: kickside.core:types
@@ -100,6 +101,7 @@ entries:
       - sql
       - uuid
     imports:
+      component_client: kickside.component:component
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       error_envelope: kickside.contract:error_envelope
       committed_error: kickside.contract:committed_error

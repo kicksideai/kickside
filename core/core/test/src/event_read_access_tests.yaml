@@ -1,0 +1,349 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: event.read.test
+entries:
+  - name: access_test
+    kind: function.lua
+    source: file://event_read_access_test.lua
+    method: run
+    meta: {type: test, suite: event_read_access}
+    modules: [uuid, sql, security, contract, funcs, http_client, system, json, process, channel, time]
+    imports:
+      test: wippy.test:test
+      notify: kickside.core.threads:notify
+      provision: kickside.core.threads:provision
+      autoinit: kickside.component:autoinit
+      crud: kickside.core.threads.persist:thread_crud
+  - name: admin_kind
+    kind: contract.binding
+    meta:
+      events:
+        read: admin
+        input: [{type: "kickside.threads:message.created"}]
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: "kickside.core.threads:thread_status"}
+  - name: public_kind
+    kind: contract.binding
+    meta:
+      events:
+        input: [{type: "kickside.threads:message.created"}]
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: "kickside.core.threads:thread_status"}
+  - name: invalid_kind
+    kind: contract.binding
+    meta:
+      events:
+        read: reader
+        input: [{type: "kickside.threads:message.created"}]
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: "kickside.core.threads:thread_status"}
+  - name: false_kind
+    kind: contract.binding
+    meta:
+      events:
+        read: false
+        input: [{type: "kickside.threads:message.created"}]
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: "kickside.core.threads:thread_status"}
+  - name: number_kind
+    kind: contract.binding
+    meta:
+      events:
+        read: 1
+        input: [{type: "kickside.threads:message.created"}]
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: "kickside.core.threads:thread_status"}
+  - name: reader_events
+    kind: function.lua
+    source: file://event_read_list_events.lua
+    method: handler
+    modules: [http, json]
+    security:
+      actor: {id: event-read-reader}
+      policies: [app:test_scope_policy]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+      http_errors: kickside.contract:http_errors
+      http_params: kickside.contract:http_params
+      threads_contract: kickside.core.threads:contract_events
+  - name: reader_events.endpoint
+    kind: http.endpoint
+    meta: {router: "app:api", scope: "app:user"}
+    method: GET
+    path: /event-read/reader/{id}/events
+    func: reader_events
+  - name: reader_messages
+    kind: function.lua
+    source: file://event_read_post_message.lua
+    method: handler
+    modules: [http, json]
+    security:
+      actor: {id: event-read-reader}
+      policies: [app:test_scope_policy]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+      http_errors: kickside.contract:http_errors
+      http_params: kickside.contract:http_params
+      threads_contract: kickside.core.threads:contract_events
+  - name: reader_messages.endpoint
+    kind: http.endpoint
+    meta: {router: "app:api", scope: "app:user"}
+    method: POST
+    path: /event-read/reader/{id}/messages
+    func: reader_messages
+  - name: writer_messages
+    kind: function.lua
+    source: file://event_read_post_message.lua
+    method: handler
+    modules: [http, json]
+    security:
+      actor: {id: event-read-writer}
+      policies: [app:test_scope_policy]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+      http_errors: kickside.contract:http_errors
+      http_params: kickside.contract:http_params
+      threads_contract: kickside.core.threads:contract_events
+  - name: writer_messages.endpoint
+    kind: http.endpoint
+    meta: {router: "app:api", scope: "app:user"}
+    method: POST
+    path: /event-read/writer/{id}/messages
+    func: writer_messages
+  - name: admin_events
+    kind: function.lua
+    source: file://event_read_list_events.lua
+    method: handler
+    modules: [http, json]
+    security:
+      actor: {id: event-read-only-admin}
+      policies: [app:test_scope_policy]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+      http_errors: kickside.contract:http_errors
+      http_params: kickside.contract:http_params
+      threads_contract: kickside.core.threads:contract_events
+  - name: admin_events.endpoint
+    kind: http.endpoint
+    meta: {router: "app:api", scope: "app:user"}
+    method: GET
+    path: /event-read/admin/{id}/events
+    func: admin_events
+  - name: admin_messages
+    kind: function.lua
+    source: file://event_read_post_message.lua
+    method: handler
+    modules: [http, json]
+    security:
+      actor: {id: event-read-admin}
+      policies: [app:test_scope_policy]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
+      http_errors: kickside.contract:http_errors
+      http_params: kickside.contract:http_params
+      threads_contract: kickside.core.threads:contract_events
+  - name: admin_messages.endpoint
+    kind: http.endpoint
+    meta: {router: "app:api", scope: "app:user"}
+    method: POST
+    path: /event-read/admin/{id}/messages
+    func: admin_messages
+  - name: reader_scope
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: [contract.get, contract.open, contract.call, contract.security, funcs.call, funcs.security, security.policy.get, security.scope.create, db.get]
+      effect: allow
+  - name: reader_config
+    kind: security.policy
+    policy:
+      resources: ["kickside.component:db_config", "kickside.core:db_config"]
+      actions: registry.get
+      effect: allow
+  - name: component_read_access
+    kind: function.lua
+    source: file://event_read_component_access.lua
+    method: read
+    modules: [contract, security]
+  - name: empty_kind
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: "kickside.core.threads:thread_status"}
+  - name: reader_projections
+    kind: function.lua
+    source: file://event_read_projection_cursors.lua
+    method: handler
+    modules: [http, sql]
+    security:
+      actor: {id: event-read-reader}
+      policies: [app:test_scope_policy]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      http_params: kickside.contract:http_params
+      core_db: kickside.core:db
+      page_cursor: kickside.core.projections.persist:page_cursor
+      thread_access: kickside.core.threads.api:thread_access
+      reader: kickside.core.projections.persist:reader
+  - name: reader_projections.endpoint
+    kind: http.endpoint
+    meta: {router: "app:api", scope: "app:user"}
+    method: GET
+    path: /event-read/reader/{id}/projections
+    func: reader_projections
+  - name: admin_projections
+    kind: function.lua
+    source: file://event_read_projection_cursors.lua
+    method: handler
+    modules: [http, sql]
+    security:
+      actor: {id: event-read-only-admin}
+      policies: [app:test_scope_policy]
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+      http_params: kickside.contract:http_params
+      core_db: kickside.core:db
+      page_cursor: kickside.core.projections.persist:page_cursor
+      thread_access: kickside.core.threads.api:thread_access
+      reader: kickside.core.projections.persist:reader
+  - name: admin_projections.endpoint
+    kind: http.endpoint
+    meta: {router: "app:api", scope: "app:user"}
+    method: GET
+    path: /event-read/admin/{id}/projections
+    func: admin_projections
+  - name: legacy_impl
+    kind: registry.entry
+    meta:
+      events:
+        input: [{type: "kickside.threads:message.created"}]
+
+  - name: admin_update
+    kind: function.lua
+    source: file://event_read_update_thread.lua
+    method: handler
+    modules: [http, json]
+    security:
+      actor: {id: event-read-admin}
+      policies: [app:test_scope_policy]
+    imports:
+      threads_contract: kickside.core.threads:contract_resource_crud
+      error_envelope: kickside.contract:error_envelope
+      http_errors: kickside.contract:http_errors
+  - name: admin_update.endpoint
+    kind: http.endpoint
+    meta: {router: "app:api", scope: "app:user"}
+    method: PATCH
+    path: /event-read/admin/{id}
+    func: admin_update
+
+  - name: provision_kind
+    kind: contract.binding
+    meta:
+      class: [event_read_provision]
+      provision: {scope: user}
+      events:
+        read: admin
+        input: [{type: "kickside.threads:message.created"}]
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: "kickside.core.threads:thread_status"}
+  - name: create_compat_test
+    kind: function.lua
+    source: file://event_read_create_compat_test.lua
+    method: run
+    meta: {type: test, suite: event_read_create_compat}
+    modules: [sql, uuid, security]
+    imports:
+      test: wippy.test:test
+      crud: kickside.core.threads.persist:thread_crud
+      event_declaration: kickside.core.threads:event_declaration
+
+  - name: narrow_bind
+    kind: function.lua
+    source: file://event_read_narrow_bind.lua
+    method: bind
+    modules: [contract, security, sql]
+    imports:
+      crud: kickside.core.threads.persist:thread_crud
+      event_declaration: kickside.core.threads:event_declaration
+  - name: narrow_test
+    kind: function.lua
+    source: file://event_read_narrow_test.lua
+    method: run
+    meta: {type: test, suite: event_read_narrow}
+    modules: [security, funcs, sql, uuid]
+    imports:
+      test: wippy.test:test
+      component_client: kickside.component:component
+  - name: binding_runtime
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: [contract.get, contract.open, contract.call, contract.security, registry.find]
+      effect: allow
+  - name: binding_calls
+    kind: security.policy
+    policy:
+      resources: ["event.read.test:narrow_bind", "kickside.component.binding:register_component_func", "kickside.component.binding:get_access_context_func", "kickside.component.binding:set_meta_component_func", "kickside.core.jobs.persist:pool_nudge", "kickside.core.retention:notify", "kickside.component:notify_access"]
+      actions: [funcs.call, funcs.security]
+      effect: allow
+  - name: binding_config
+    kind: security.policy
+    policy:
+      resources: ["app:db", "kickside.component:db_config", "kickside.core:db_config", "kickside.component:policy", "kickside.core:policy", "kickside.core.jobs:policy", "kickside.core.jobs:db_config"]
+      actions: [db.get, registry.get]
+      effect: allow
+  - name: binding_kind
+    kind: security.policy
+    policy:
+      resources: "event.read.test:public_kind"
+      actions: [registry.get, component.own.maintenance]
+      effect: allow
+  - name: order_fixture
+    kind: library.lua
+    source: file://event_read_order_fixture.lua
+  - name: order_models
+    kind: library.lua
+    source: file://event_read_order_models.lua
+    modules: [json]
+    imports:
+      sql: event.read.test:order_sql
+      component: event.read.test:order_fixture
+      read_access: event.read.test:order_access
+      core_db: kickside.core:db
+      core_types: kickside.core:types
+  - name: order_access
+    kind: library.lua
+    source: file://event_read_order_access.lua
+    modules: [sql]
+    imports:
+      component: event.read.test:order_fixture
+      core_types: kickside.core:types
+  - name: order_test
+    kind: function.lua
+    source: file://event_read_order_test.lua
+    method: run
+    meta: {type: test, suite: event_read_order}
+    imports:
+      test: wippy.test:test
+      models: event.read.test:order_models
+      fixture: event.read.test:order_fixture
+
+  - name: order_sql
+    kind: library.lua
+    source: file://event_read_order_sql.lua
+    imports:
+      fixture: event.read.test:order_fixture

@@ -176,7 +176,7 @@ function M.created(args: any): (any?, error?)
             row = prepared
         end
         if row ~= nil then
-            local thread_err = thread_row.insert(req.tx, trim(req.dbtype), trim(req.component_id), row)
+            local thread_err = thread_row.insert(req.tx, trim(req.dbtype), trim(req.component_id), row, trim(req.impl_id))
             if thread_err then return nil, thread_err end
             if declared then
                 local _, _, meta_err = component_meta.set_public_meta(req.tx, trim(req.component_id),

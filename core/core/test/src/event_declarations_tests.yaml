@@ -16,6 +16,8 @@ entries:
     component_client: app:event_declarations_component
     core_types: kickside.core:types
     contract_common: app:event_declarations_common
+    threads_consts: kickside.core.threads:consts
+    event_declaration: app:event_declarations_lookup
     registry: app:event_declarations_registry
     security: app:event_declarations_security
     error_envelope: kickside.contract:error_envelope
@@ -57,4 +59,12 @@ entries:
     fixture: app:event_declarations_fixture
     api: app:event_declarations_source
     canonical_json: kickside.contract:canonical_json
+    error_envelope: kickside.contract:error_envelope
+
+- name: event_declarations_lookup
+  kind: library.lua
+  source: file://event_read_declaration.lua
+  imports:
+    threads_consts: kickside.core.threads:consts
+    registry: app:event_declarations_registry
     error_envelope: kickside.contract:error_envelope

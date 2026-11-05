@@ -1,0 +1,36 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+local test = require("test")
+local models = require("models")
+local fixture = require("fixture")
+local OWNER = "00000000-0000-4000-8000-000000000123"
+return {run = test.run_cases(function()
+    test.describe("Read-model attachment order", function()
+        for _, admin in ipairs({false, true}) do
+            test.it("reads the committed level after the body/" .. tostring(admin), function()
+                fixture.reset("admin", admin)
+                local value, err = models.get({owner_id = OWNER, kind = "count"})
+                if admin then test.is_nil(err); test.eq(value.body.secret, "committed")
+                else test.is_nil(value); test.is_true(errors.is(err, errors.PERMISSION_DENIED)) end
+                test.eq(table.concat(fixture.order, ","), "1:" .. OWNER .. ",body,level,8:component,release")
+            end)
+        end
+        test.it("checks the level for a legacy owner id after its body exists", function()
+            fixture.reset("admin", false)
+            local value, err = models.get({owner_id = "legacy-owner", kind = "count"})
+            test.is_nil(value); test.is_true(errors.is(err, errors.PERMISSION_DENIED))
+            test.eq(table.concat(fixture.order, ","), "1:legacy-owner,body,level,8:component,release")
+        end)
+        test.it("keeps READ for an empty stored level", function()
+            fixture.reset("", false)
+            local value, err = models.get({owner_id = OWNER, kind = "count"})
+            test.is_nil(err); test.eq(value.body.secret, "committed")
+            test.eq(table.concat(fixture.order, ","), "1:" .. OWNER .. ",body,level,release")
+        end)
+        test.it("checks base READ before loading a body", function()
+            fixture.reset("admin", true, false)
+            local value, err = models.get({owner_id = OWNER, kind = "count"})
+            test.is_nil(value); test.is_true(errors.is(err, errors.PERMISSION_DENIED))
+            test.eq(table.concat(fixture.order, ","), "1:" .. OWNER)
+        end)
+    end)
+end)}

@@ -19,6 +19,7 @@ entries:
     threads_consts: kickside.core.threads:consts
     threads_normalize: kickside.core.threads.persist:normalize
     threads_component: app:create_transactions_component
+    component_client: kickside.component:component
     core_types: kickside.core:types
     autoinit: kickside.component:autoinit
     proj_writer: kickside.core.projections.persist:writer
