@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.9](https://github.com/kicksideai/kickside/compare/uploads-v0.3.8...uploads-v0.3.9) (2026-11-05)
+
+
+### Features
+
+* **uploads:** add trusted_reader library ([8c001b7](https://github.com/kicksideai/kickside/commit/8c001b705f54a5181452a67a3d85be673bbab8f8))
+* **uploads:** keep caller metadata and fetched file facts on attachment ingest ([3993702](https://github.com/kicksideai/kickside/commit/39937029dfcc671f9b85fad1515372dcfb197685))
+* **uploads:** trusted reader and caller metadata on attachment ingest (ATN-98) ([3f7a958](https://github.com/kicksideai/kickside/commit/3f7a958ccfdd28170e1f39fa356445254478b83c))
+
+
+### Bug Fixes
+
+* **uploads:** find the original image of an image upload in trusted_reader ([d685224](https://github.com/kicksideai/kickside/commit/d685224889e493f882fe90d0d9a298fa0473effc))
+* **uploads:** harden attachment metadata, text limits and token replay ([d387676](https://github.com/kicksideai/kickside/commit/d38767697056d3144181c80f0bff797022aa222f))
+* **uploads:** isolate concurrent blob writes and keep typed ingest errors ([f5e7b12](https://github.com/kicksideai/kickside/commit/f5e7b12b3d65bb27fc8254b1c43dfaecd4b4acb7))
+* **uploads:** isolate concurrent blob writes and preserve ingest errors ([ded65bc](https://github.com/kicksideai/kickside/commit/ded65bc25fb852d4d0bea8c1c9c7491e4f658499))
+* **uploads:** return the uploader's metadata from trusted_reader provenance ([94e7b08](https://github.com/kicksideai/kickside/commit/94e7b082208c571e47e1de944e78e1f59f1e12aa))
+* **uploads:** trim whitespace without the anchored pattern on large text ([e8abea7](https://github.com/kicksideai/kickside/commit/e8abea7527af8e4210936e29d0a4c584d5f7cba0))
+
 ## [0.3.8](https://github.com/kicksideai/kickside/compare/uploads-v0.3.7...uploads-v0.3.8) (2026-10-30)
 
 
