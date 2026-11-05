@@ -38,7 +38,7 @@ return {run = test.run_cases(function()
                         ids[#ids + 1] = id
                     end
                     local _, key_err = db:execute("UPDATE kickside_job SET concurrency_key=$1 WHERE id IN ($2,$3)", {key, ids[1], ids[2]}); test.is_nil(key_err)
-                    local _, mark_err = db:execute("UPDATE kickside_job SET status='running' WHERE id=$1", {ids[1]}); test.is_nil(mark_err)
+                    local held, mark_err = job_fixture.lease_own(db, dbtype, ids[1]); test.is_nil(mark_err); test.not_nil(held)
                     local tx, begin_err = db:begin(); test.is_nil(begin_err)
                     if not tx then error(errors.new({kind = errors.INTERNAL, retryable = false, message = "claim exclusion transaction is missing"})) end
                     local leased, lease_err = claim.lease_row(tx, dbtype, ids[2], "token", "2026-10-11 00:00:00", "2026-10-10 00:00:00")

@@ -1,5 +1,6 @@
 local worker_dispatch = require("worker_dispatch")
 local jobs_lifecycle = require("jobs_lifecycle")
+local jobs_claim = require("jobs_claim")
 local test = require("test")
 local registry = require("registry")
 local funcs = require("funcs")
@@ -34,6 +35,17 @@ local upload_response = require("upload_response")
 local processor = require("processor")
 local file_provider = require("file_provider")
 local IDENTITY_META_KEY = assert(execution_identity.CONTEXT_KEY, "execution_identity.CONTEXT_KEY is required")
+
+local function admit_job(db: sql.DB, id: string, attempts: integer): table
+    local dbtype = tostring(db:type())
+    local tx = assert(db:begin())
+    assert(tx:execute("UPDATE kickside_job SET attempts=$1 WHERE id=$2", {attempts - 1, id}))
+    local leased, err = jobs_claim.lease_row(tx, dbtype, id, uuid_v4(),
+        jobs_lifecycle.future_string(dbtype, 60), jobs_lifecycle.now_string(dbtype))
+    if err or not leased then tx:rollback(); error(err or "fixture job is not pending") end
+    assert(tx:commit())
+    return assert(db:query("SELECT * FROM kickside_job WHERE id=$1", {id}))[1]
+end
 
 local function field(value: any, key: string): any
 	if type(value) ~= "table" then
@@ -458,15 +470,7 @@ local function define_tests()
 
 					local queued = assert(process_worker.enqueue_upload_job(upload, true))
 					local db = assert(sql.get("app:db"))
-					local token = uuid_v4()
-					assert(
-						db:execute(
-							[[UPDATE kickside_job SET status='running',lease_token=$1,
-                    execution_seq=1,attempts=1,lease_until=$2 WHERE id=$3]],
-							{ token, jobs_lifecycle.future_string(tostring(db:type()), 60), queued.job_id }
-						)
-					)
-					local job = assert(db:query("SELECT * FROM kickside_job WHERE id=$1", { queued.job_id }))[1]
+					local job = admit_job(db, queued.job_id, 1)
 					local input, _, input_err = worker_dispatch.build_worker_input(job)
 					test.is_nil(input_err)
 					pipeline_lib.apply_relocation = function()
@@ -539,15 +543,7 @@ local function define_tests()
 			local queued, queue_err = process_worker.enqueue_upload_job(upload, true)
 			test.is_nil(queue_err)
 			local db = assert(sql.get("app:db"))
-			local token = uuid_v4()
-			local leased, lease_err = db:execute(
-				[[UPDATE kickside_job SET status='running',lease_token=$1,
-                execution_seq=1,attempts=5,lease_until=$2 WHERE id=$3]],
-				{ token, jobs_lifecycle.future_string(tostring(db:type()), 60), queued.job_id }
-			)
-			test.is_nil(lease_err)
-			test.eq(tonumber(leased.rows_affected), 1)
-			local job = assert(db:query("SELECT * FROM kickside_job WHERE id=$1", { queued.job_id }))[1]
+			local job = admit_job(db, queued.job_id, 5)
 			local input, _, input_err = worker_dispatch.build_worker_input(job)
 			test.is_nil(input_err)
 			local result, run_err = process_job.run(input)
@@ -790,14 +786,7 @@ local function define_tests()
 				)
 			)
 			test.eq(#jobs_rows, 1)
-			local token = uuid_v4()
-			local _, lease_err = db:execute(
-				[[UPDATE kickside_job SET status='running',lease_token=$1,
-                execution_seq=1,attempts=1,lease_until=$2 WHERE id=$3]],
-				{ token, jobs_lifecycle.future_string(tostring(db:type()), 60), jobs_rows[1].id }
-			)
-			test.is_nil(lease_err)
-			local job = assert(db:query("SELECT * FROM kickside_job WHERE id=$1", { jobs_rows[1].id }))[1]
+			local job = admit_job(db, jobs_rows[1].id, 1)
 			db:release()
 			local input, _, input_err = worker_dispatch.build_worker_input(job)
 			test.is_nil(input_err)
@@ -909,15 +898,7 @@ local function define_tests()
 			local queued, queue_err = process_worker.enqueue_upload_job(upload, true)
 			test.is_nil(queue_err)
 			local db = assert(sql.get("app:db"))
-			local token = uuid_v4()
-			local leased, lease_err = db:execute(
-				[[UPDATE kickside_job SET status='running',lease_token=$1,
-                execution_seq=1,attempts=5,lease_until=$2 WHERE id=$3]],
-				{ token, jobs_lifecycle.future_string(tostring(db:type()), 60), queued.job_id }
-			)
-			test.is_nil(lease_err)
-			test.eq(tonumber(leased.rows_affected), 1)
-			local job = assert(db:query("SELECT * FROM kickside_job WHERE id=$1", { queued.job_id }))[1]
+			local job = admit_job(db, queued.job_id, 5)
 			local input, _, input_err = worker_dispatch.build_worker_input(job)
 			test.is_nil(input_err)
 			local result, run_err = process_job.run(input)
@@ -1116,18 +1097,7 @@ local function define_tests()
 			}))
 			local queued = assert(process_worker.enqueue_upload_job(upload, true))
 			local db = assert(sql.get("app:db"))
-			local token = uuid_v4()
-			test.is_nil(
-				select(
-					2,
-					db:execute(
-						[[UPDATE kickside_job SET status='running',lease_token=$1,
-                execution_seq=1,attempts=5,lease_until=$2 WHERE id=$3]],
-						{ token, jobs_lifecycle.future_string(tostring(db:type()), 60), queued.job_id }
-					)
-				)
-			)
-			local job = assert(db:query("SELECT * FROM kickside_job WHERE id=$1", { queued.job_id }))[1]
+			local job = admit_job(db, queued.job_id, 5)
 			local input, _, input_err = worker_dispatch.build_worker_input(job)
 			test.is_nil(input_err)
 			local result, run_err = process_job.run(input)

@@ -130,6 +130,8 @@ entries:
   - sql
   - uuid
   - process
+  - time
+  - channel
   imports:
     test: wippy.test:test
     job_types: kickside.core.jobs:types
@@ -137,8 +139,30 @@ entries:
     reclaim: kickside.core.jobs.persist:reclaim
     claim_execution: kickside.core.jobs.persist:claim_execution
     lifecycle: kickside.core.jobs.persist:lifecycle
+    lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
     proc_supervisor: kickside.core.jobs:proc_supervisor
     job_fixture: app:job_fixture
+    row_bytes: kickside.core.jobs.persist:row_bytes
+    config: kickside.core.jobs:config
+    lease_status: kickside.core.jobs.persist:lease_status
+- name: termination_recovery_child
+  kind: process.lua
+  source: file://termination_recovery_test.lua
+  method: child
+  modules: [process, time, channel, sql, uuid]
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    claim: kickside.core.jobs.persist:claim
+    reclaim: kickside.core.jobs.persist:reclaim
+    claim_execution: kickside.core.jobs.persist:claim_execution
+    lifecycle: kickside.core.jobs.persist:lifecycle
+    lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+    job_fixture: app:job_fixture
+    row_bytes: kickside.core.jobs.persist:row_bytes
+    config: kickside.core.jobs:config
+    lease_status: kickside.core.jobs.persist:lease_status
 - name: run_history_reclaim_test
   kind: function.lua
   meta:

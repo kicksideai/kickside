@@ -13,6 +13,7 @@ entries:
   - uuid
   - registry
   imports:
+    round_harness: kickside.automation:round_harness
     test: wippy.test:test
     drive: kickside.automation:drive
     slot: kickside.automation:slot

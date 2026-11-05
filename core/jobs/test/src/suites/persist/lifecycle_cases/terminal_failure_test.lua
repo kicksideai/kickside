@@ -6,6 +6,7 @@ local lifecycle = require("lifecycle")
 local dispatch = require("worker_dispatch")
 local worker_completion = require("worker_completion")
 local job_fixture = require("job_fixture")
+local jobs = require("jobs")
 
 local function with_db(fn: (sql.DB, string) -> ())
     local db, err = sql.get("app:db")
@@ -34,6 +35,52 @@ end
 
 local function define_tests()
     test.describe("jobs terminal failure", function()
+        test.it("ends a one-shot invalid worker tier dead immediately", function()
+            with_db(function(db, dbtype)
+                local job = leased(db, dbtype, {max_attempts = 5})
+                local err = worker_completion.complete_job(db, dbtype, job, {tier = "invalid"}, nil)
+                test.is_true(errors.is(err, errors.INVALID))
+                local row = row_of(db, job.id)
+                test.eq(row.status, job_types.JOB_STATE.DEAD)
+                test.not_nil(row.finished_at)
+                test.is_nil(row.scheduled_at)
+                test.is_true(string.find(row.last_error, "worker tier is invalid", 1, true) ~= nil)
+            end)
+        end)
+
+        test.it("reports only erroneous unscheduled pending one-shots as stranded", function()
+            with_db(function(db, dbtype)
+                local ids = {}
+                for _, spec in ipairs({{slot = false, parked = true}, {slot = false, parked = true},
+                    {slot = false}, {slot = true, parked = true}, {slot = false, parked = true}}) do
+                    local key = uuid.v7()
+                    ids[#ids + 1] = assert(lifecycle.enqueue_job(db, dbtype, {
+                        owner_locator = {kind = "test", id = key}, job_type = "test.health_stranded",
+                        job_identity = {namespace = "test", scope = key, key = "health"},
+                        slot = spec.slot, parked = spec.parked,
+                    }))
+                end
+                for index = 1, 4 do
+                    assert(db:execute("UPDATE kickside_job SET last_error=$1 WHERE id=$2", {"worker output invalid", ids[index]}))
+                end
+                local health = assert(jobs.health())
+                local found = nil
+                for _, issue in ipairs(health.issues) do
+                    if issue.code == "stranded_jobs" then found = issue end
+                end
+                test.not_nil(found)
+                test.is_false(health.healthy)
+                local named = {}
+                for _, id in ipairs(found.job_ids) do named[id] = true end
+                test.is_true(named[ids[1]] == true)
+                test.is_true(named[ids[2]] == true)
+                for index = 3, 5 do test.is_nil(named[ids[index]]) end
+                for _, id in ipairs(ids) do assert(jobs.cancel(id)) end
+                local cleared = assert(jobs.health())
+                for _, issue in ipairs(cleared.issues) do test.is_true(issue.code ~= "stranded_jobs") end
+            end)
+        end)
+
         test.it("retries a one-shot infrastructure failure until max_attempts, then ends it dead", function()
             with_db(function(db, dbtype)
                 local job = leased(db, dbtype, { max_attempts = 2 })

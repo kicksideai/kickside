@@ -49,6 +49,26 @@ all resolve that config, so runtime SQL always follows the host's database mappi
 
 `jobs.enqueue` and `jobs.enqueue_tx` accept optional `demand = true` with `slot = true`. Enrollment and control demand commit together: parked work becomes due, and a running attempt retains a follow-up. Reusing an active one-shot identity with demand returns a conflict. Omitting demand retains the existing enqueue behavior.
 
+`jobs.enqueue` and `jobs.enqueue_tx` accept optional boolean `replace`. Identical
+immutable inputs return the existing job. With `replace = true`, different inputs
+for a pending job owned by the same owner cancel the predecessor and insert its
+successor in one transaction. The result retains `{id, job_identity, existing}`
+and adds optional `replaced_job_id`; a replacement has `existing = false`.
+A running predecessor retains its identity and returns a retryable `CONFLICT`
+with `details.job_id`; no successor is accepted. A different owner returns the
+existing non-retryable conflict. Omitting `replace` preserves immutable-input
+conflicts. Caller-owned transactions roll back when enqueue returns an error.
+
+Lease expiry fences the prior execution before requesting revocation. Recovery
+makes the job claimable only after its registered execution child has ended.
+A gone child recovers in the same pass; a live child retains the termination fence.
+Heartbeats renew only matching, unexpired executions without a termination fence.
+
+`jobs.health()` reports `stranded_jobs` with `job_ids` for erroneous pending
+one-shot jobs without a schedule. This invariant is unhealthy immediately; the
+existing `health.overdue_grace` bounds due-work diagnostics only. Scheduled retry
+errors remain part of `degraded_jobs` without creating a stranded-job issue.
+
 After committing a transaction containing `jobs.enqueue_tx(tx, dbtype, params)`,
 call `jobs.nudge_workers(): (integer, error?)`. Never nudge before commit or after
 rollback. The result counts notified pools (`1` when delivered, `0` when no pool

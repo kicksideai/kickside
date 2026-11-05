@@ -5,6 +5,7 @@ local lifecycle = require("lifecycle")
 local worker_marker = require("worker_marker")
 local sql_boundary = require("sql_boundary")
 local thread_fence = require("thread_fence")
+local reclaim = require("reclaim")
 
 local claim_execution = {}
 
@@ -14,8 +15,8 @@ local function response_error(field: string): error
 end
 
 -- The execution child changes the claim-created run's owner before it can do
--- work, and never starts an execution fenced for termination. The job row is locked first in both this path and release_unstarted,
--- so an exiting slot cannot requeue a child that has begun execution.
+-- work, and never starts an execution fenced for termination. The job update
+-- serializes with release_unstarted before either changes the run owner.
 function claim_execution.mark_started(db: sql.DB, job: table, worker_id: string, run_id: string,
         child_id: string): (boolean, error?)
     local tx, begin_err = sql_boundary.begin(db, "start fence begin failed", "start.transaction", response_error)
@@ -70,6 +71,29 @@ function claim_execution.release_unstarted(db: sql.DB, job: table, worker_id: st
         if type(fence) ~= "table" then return false, sql_boundary.rollback(tx,
             response_error("release.fence"), "job start fence rollback failed") end
     end
+    local lock = dbtype == sql.type.POSTGRES and " FOR UPDATE" or ""
+    local held, hold_err = tx:query([[SELECT id FROM kickside_job WHERE id=$1
+        AND status=$2 AND lease_token=$3 AND execution_seq=$4]] .. lock,
+        {job.id, job_types.JOB_STATE.RUNNING, job.lease_token, job.execution_seq})
+    if hold_err then return false, sql_boundary.rollback(tx,
+        errors.wrap(hold_err, "unstarted release read failed"), "job start fence rollback failed") end
+    if type(held) ~= "table" then return false, sql_boundary.rollback(tx,
+        response_error("release.rows"), "job start fence rollback failed") end
+    if not held[1] then return false, sql_boundary.rollback(tx, nil, "job start fence rollback failed") end
+    local rows, read_err = tx:query([[SELECT j.last_error FROM kickside_job j
+        WHERE j.id=$1 AND EXISTS (SELECT 1 FROM kickside_job_run r WHERE r.id=$2
+            AND r.job_id=j.id AND r.lease_token=$3 AND r.execution_seq=$4 AND r.worker_pid=$5)]],
+        {job.id, run_id, job.lease_token, job.execution_seq, worker_id})
+    if read_err then return false, sql_boundary.rollback(tx,
+        errors.wrap(read_err, "unstarted release proof failed"), "job start fence rollback failed") end
+    if type(rows) ~= "table" then return false, sql_boundary.rollback(tx,
+        response_error("release.rows"), "job start fence rollback failed") end
+    if rows[1] and rows[1].last_error == job_types.TERMINATION_PENDING_PREFIX .. tostring(job.lease_token) then
+        local rollback_err = sql_boundary.rollback(tx, nil, "job start fence rollback failed")
+        if rollback_err then return false, rollback_err end
+        return reclaim.settle_confirmed(db, dbtype,
+            {id = job.id, token = job.lease_token, execution_seq = job.execution_seq})
+    end
     local now = lifecycle.now_string(dbtype)
     local ts = dbtype == sql.type.POSTGRES and "CAST(? AS TIMESTAMPTZ)" or "?"
     local released, update_err = sql.builder.update("kickside_job")
@@ -83,6 +107,7 @@ function claim_execution.release_unstarted(db: sql.DB, job: table, worker_id: st
         :set("wake_control_pending", false)
         :where(sql.builder.eq({ id = job.id, status = job_types.JOB_STATE.RUNNING,
             lease_token = job.lease_token, execution_seq = job.execution_seq }))
+        :where("(last_error IS NULL OR last_error <> ?)", job_types.TERMINATION_PENDING_PREFIX .. tostring(job.lease_token))
         :where("EXISTS (SELECT 1 FROM kickside_job_run r WHERE r.id = ? AND r.job_id = kickside_job.id"
             .. " AND r.lease_token = ? AND r.execution_seq = ? AND r.worker_pid = ? AND r.status = 'running')",
             run_id, job.lease_token, job.execution_seq, worker_id)

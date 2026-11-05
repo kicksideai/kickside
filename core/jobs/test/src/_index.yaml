@@ -1523,6 +1523,7 @@ entries:
     kind: library.lua
     source: file://start_fence_native_source.lua
     imports:
+      reclaim: kickside.core.jobs.persist:reclaim
       sql: app:start_fence_native_sql_adapter
       job_types: kickside.core.jobs:types
       lifecycle: kickside.core.jobs.persist:lifecycle
@@ -2135,6 +2136,7 @@ entries:
     modules: [sql]
     imports:
       json: app:row_bytes_native_fixture
+      job_types: kickside.core.jobs:types
 
   - name: row_bytes_native_test
     kind: function.lua
@@ -2196,6 +2198,7 @@ entries:
       row_bytes: app:enqueue_native_row_bytes_adapter
       listing: kickside.core.jobs.persist:listing
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
       capacity: app:capacity_native_adapter
 
   - name: enqueue_native_test
@@ -3608,6 +3611,7 @@ entries:
     kind: library.lua
     source: file://worker_fence_native_source.lua
     imports:
+      reclaim: kickside.core.jobs.persist:reclaim
       execution_policy: app:worker_fence_native_execution_policy
       sql: app:worker_fence_native_sql
       job_types: kickside.core.jobs:types

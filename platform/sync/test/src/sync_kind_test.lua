@@ -191,24 +191,12 @@ local function define_tests()
         end)
 
         test.it("applies installed LLM settings through the native LLM owner and preserves poll bounds", function()
-            local original_models, original_providers = llm._models, llm._providers
+            local original_generate = llm.generate
             local requests = {}
-            local function model(name)
-                return { name = name, providers = { { id = "fixture:llm", provider_model = name, sampling = true } } }
+            llm.generate = function(prompt_input, options)
+                requests[#requests + 1] = { messages = prompt_input:get_messages(), options = options }
+                return { result = "bounded output", tokens = {} }, nil
             end
-            llm._models = {
-                get_by_name = function(name) return model(name), nil end,
-                get_by_class = function(name) return { model("class:" .. name) }, nil end,
-            }
-            llm._providers = {
-                driver_declares_legacy_reasoning_flag = function() return false, nil end,
-                open = function()
-                    return { generate = function(_, request)
-                        requests[#requests + 1] = request
-                        return { result = "bounded output", tokens = {} }, nil
-                    end }, nil
-                end,
-            }
             local ok, failure = pcall(function()
                 local cases = {
                     { config = {kind = "llm"}, model = "class:fast", temperature = 0,
@@ -236,13 +224,13 @@ local function define_tests()
                     test.is_nil(err, tostring(err))
                     test.eq(result, "bounded output")
                     local request = requests[#requests]
-                    test.eq(request.model, case.model)
+                    test.eq(request.options.model, case.model)
                     test.eq(request.options.temperature, case.temperature)
                     test.eq(request.options.max_tokens, case.max_tokens)
                     test.eq(request.messages[1].content[1].text, case.prompt)
                 end
             end)
-            llm._models, llm._providers = original_models, original_providers
+            llm.generate = original_generate
             if not ok then error(failure) end
         end)
 

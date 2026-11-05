@@ -13,6 +13,7 @@ local row_bytes = require("row_bytes")
 local listing = require("listing")
 local sql_boundary = require("sql_boundary")
 local capacity = require("capacity")
+local lifecycle_cancel = require("lifecycle_cancel")
 
 local enqueue = {}
 type Executor = sql.DB | sql.Transaction
@@ -107,6 +108,7 @@ type EnqueueParams = {
     wake_key: string?,
     parked: boolean?,
     demand: boolean?,
+    replace: boolean?,
 }
 enqueue.EnqueueParams = EnqueueParams
 
@@ -185,21 +187,16 @@ local function owner_locator_error(params: any): error?
 end
 enqueue.owner_locator_error = owner_locator_error
 
-local function matching_existing(existing: table, params: EnqueueParams, payload: table): error?
-    if params.demand == true and existing.slot ~= true and existing.slot ~= 1 then
-        return (errors.new({ message = "reusable demand conflicts with a one-shot job identity",
-            kind = errors.CONFLICT, retryable = false }) :: error)
-    end
+local function matching_existing(existing: table, params: EnqueueParams, payload: table): (boolean, error?)
     local existing_payload, decode_err = decode_payload(existing.payload)
-    if decode_err then return decode_err end
+    if decode_err then return false, decode_err end
     if existing.owner_kind ~= params.owner_locator.kind or existing.owner_id ~= params.owner_locator.id
         or existing.job_type ~= params.job_type
         or (existing.worker_ref or nil) ~= (params.worker_ref or nil)
         or not same_value(immutable_payload(existing_payload :: table), immutable_payload(payload)) then
-        return (errors.new({ message = "active job identity has different owner or immutable inputs",
-            kind = errors.CONFLICT, retryable = false }) :: error)
+        return false, nil
     end
-    return nil
+    return true, nil
 end
 
 -- An active slot identity converges on the requested wake key in place, so its
@@ -236,7 +233,52 @@ local function converge_capacity_group(exec: Executor, existing: table, descript
     return nil
 end
 
-local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: EnqueueParams): (string?, error?, boolean?)
+local function resolve_existing(exec: Executor, dbtype: string, existing: table,
+        params: EnqueueParams, payload: table, max_row_bytes: integer): (string?, error?, string?)
+    if params.demand == true and existing.slot ~= true and existing.slot ~= 1 then
+        return nil, errors.new({ message = "reusable demand conflicts with a one-shot job identity",
+            kind = errors.CONFLICT, retryable = false })
+    end
+    local matches, match_err = matching_existing(existing, params, payload)
+    if match_err then return nil, match_err end
+    if not matches then
+        local mismatch = errors.new({message = "active job identity has different owner or immutable inputs",
+            kind = errors.CONFLICT, retryable = false})
+        if params.replace ~= true or existing.owner_kind ~= params.owner_locator.kind
+            or existing.owner_id ~= params.owner_locator.id then return nil, mismatch end
+        if existing.status == job_types.JOB_STATE.RUNNING then
+            return nil, errors.new({message = "active job execution is busy", kind = errors.CONFLICT,
+                retryable = true, details = {job_id = tostring(existing.id)}})
+        end
+        if existing.status ~= job_types.JOB_STATE.PENDING then return nil, mismatch end
+        local canceled, cancel_err = lifecycle_cancel.cancel_job_tx(exec :: sql.Transaction, dbtype,
+            {id = tostring(existing.id)})
+        if cancel_err then return nil, cancel_err end
+        if not canceled then return nil, mismatch end
+        return nil, nil, tostring(existing.id)
+    end
+    local descriptor, descriptor_err = capacity.group(existing)
+    if descriptor_err then return nil, descriptor_err end
+    local capacity_err = converge_capacity_group(exec, existing, descriptor, max_row_bytes)
+    if capacity_err then return nil, capacity_err end
+    local key_err = converge_wake_key(exec, existing, params, max_row_bytes)
+    if key_err then return nil, key_err end
+    return tostring(existing.id), nil, nil
+end
+
+local function active_identity(exec: Executor, dbtype: string, identity: string, lock: boolean?): (table[]?, error?)
+    local query = sql.builder.select("id", "status", "job_type", "worker_ref", "payload", "owner_kind", "owner_id",
+        "slot", "wake_key", "concurrency_key", "capacity_group")
+        :from("kickside_job"):where(sql.builder.eq({job_identity = identity}))
+        :where("status IN ('pending','running')"):limit(1)
+    if lock and dbtype == sql.type.POSTGRES then query = query:suffix("FOR UPDATE") end
+    return query:run_with(exec):query()
+end
+
+local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: EnqueueParams): (string?, error?, boolean?, string?)
+    if params.replace ~= nil and type(params.replace) ~= "boolean" then
+        return nil, errors.new({message = "enqueue replace must be a boolean", kind = errors.INVALID, retryable = false})
+    end
     local carried_err = carried_identity_error(params)
     if carried_err then return nil, carried_err end
     local owner_err = owner_locator_error(params)
@@ -264,28 +306,33 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
     local id = uuid.v7()
     local job_identity, identity_err = identity_parts(params, id)
     if identity_err then return nil, identity_err end
-    local owner = params.owner_locator
-    local existing_rows, existing_err = sql.builder.select("id", "job_type", "worker_ref", "payload", "owner_kind", "owner_id", "slot", "wake_key", "concurrency_key", "capacity_group")
-        :from("kickside_job")
-        :where(sql.builder.eq({ job_identity = job_identity }))
-        :where("status IN ('pending','running')")
-        :limit(1)
-        :run_with(db_or_tx):query()
+    local owner = params.owner_locator :: table
+    local existing_rows, existing_err = active_identity(db_or_tx, dbtype, job_identity :: string)
     if existing_err then
         return nil, errors.wrap(existing_err, "enqueue identity lookup failed")
     end
     if type(existing_rows) ~= "table" then return nil, response_error("identity.rows") end
+    local replaced_job_id: string? = nil
     local already = existing_rows[1]
+    if already and params.replace == true then
+        local matches, match_err = matching_existing(already, params, payload :: table)
+        if match_err then return nil, match_err end
+        if not matches and already.status == job_types.JOB_STATE.PENDING
+            and already.owner_kind == owner.kind and already.owner_id == owner.id then
+            local fence_err = thread_fence.admit(db_or_tx :: sql.Transaction, owner, "enqueue_job")
+            if fence_err then return nil, fence_err end
+            local locked, lock_err = active_identity(db_or_tx, dbtype, job_identity :: string, true)
+            if lock_err then return nil, errors.wrap(lock_err, "enqueue replacement lookup failed") end
+            if type(locked) ~= "table" then return nil, response_error("replace.rows") end
+            already = locked[1]
+        end
+    end
     if already then
-        local mismatch = matching_existing(already, params, payload :: table)
-        if mismatch then return nil, mismatch end
-        local descriptor, descriptor_err = capacity.group(already)
-        if descriptor_err then return nil, descriptor_err end
-        local capacity_err = converge_capacity_group(db_or_tx, already, descriptor, (policy :: any).max_row_bytes)
-        if capacity_err then return nil, capacity_err end
-        local key_err = converge_wake_key(db_or_tx, already, params, (policy :: any).max_row_bytes)
-        if key_err then return nil, key_err end
-        return tostring(already.id), nil, false
+        local existing_id, resolve_err, replaced = resolve_existing(db_or_tx, dbtype, already,
+            params, payload :: table, (policy :: any).max_row_bytes)
+        if resolve_err then return nil, resolve_err end
+        if existing_id then return existing_id, nil, false end
+        replaced_job_id = replaced
     end
     -- An empty concurrency key normalizes to NULL at the boundary so later
     -- claims never meet a value the dedupe logic treats differently.
@@ -330,16 +377,17 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
     local size_err = row_bytes.check_job_insert(db_or_tx, dbtype, row, (policy :: any).max_row_bytes,
         owner.kind .. ":" .. owner.id, "enqueue_job")
     if size_err then return nil, size_err end
+
     local fence_err = thread_fence.admit(db_or_tx :: sql.Transaction, owner, "enqueue_job")
     if fence_err then return nil, fence_err end
 
     -- ON CONFLICT DO NOTHING keeps a duplicate idempotency_key from raising:
     -- inside a transaction a failed INSERT aborts the whole tx on postgres.
-    local insert_result, insert_err = sql.builder.insert("kickside_job")
+    local insert = sql.builder.insert("kickside_job")
         :set_map(row)
         :suffix("ON CONFLICT DO NOTHING")
         :run_with(db_or_tx)
-        :exec()
+    local insert_result, insert_err = insert:exec()
     if insert_err then
         return nil, errors.wrap(insert_err, "failed to enqueue job")
     end
@@ -348,12 +396,7 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
     if proof_err then return nil, proof_err end
     if inserted_count == nil then return nil, response_error("insert.count") end
     if inserted_count < 1 then
-        local rows, lookup_err = sql.builder.select("id", "job_type", "worker_ref", "payload", "owner_kind", "owner_id", "slot", "wake_key", "concurrency_key", "capacity_group")
-            :from("kickside_job")
-            :where(sql.builder.eq({ job_identity = job_identity }))
-            :where("status IN ('pending','running')")
-            :limit(1)
-            :run_with(db_or_tx):query()
+        local rows, lookup_err = active_identity(db_or_tx, dbtype, job_identity :: string, params.replace == true)
         if lookup_err then
             return nil, errors.wrap(lookup_err, "enqueue conflict lookup failed")
         end
@@ -362,19 +405,20 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
         if not existing then
             return nil, (errors.new({ message = "enqueue conflict has no active identity", kind = errors.CONFLICT }) :: error)
         end
-        local mismatch = matching_existing(existing, params, payload :: table)
-        if mismatch then return nil, mismatch end
-        local descriptor, descriptor_err = capacity.group(existing)
-        if descriptor_err then return nil, descriptor_err end
-        local capacity_err = converge_capacity_group(db_or_tx, existing, descriptor, (policy :: any).max_row_bytes)
-        if capacity_err then return nil, capacity_err end
-        local key_err = converge_wake_key(db_or_tx, existing, params, (policy :: any).max_row_bytes)
-        if key_err then return nil, key_err end
-        return tostring(existing.id), nil, false
+        local existing_id, resolve_err, replaced = resolve_existing(db_or_tx, dbtype, existing,
+            params, payload :: table, (policy :: any).max_row_bytes)
+        if resolve_err then return nil, resolve_err end
+        if existing_id then return existing_id, nil, false end
+        replaced_job_id = replaced
+        local replacement, replacement_err = insert:exec()
+        local count, count_err = sql_boundary.single_row_count(replacement, replacement_err,
+            "failed to enqueue replacement", "replace.insert.count", response_error)
+        if count_err then return nil, count_err end
+        if count ~= 1 then return nil, response_error("replace.insert.count") end
     end
-    return id, nil, true
+    return id, nil, true, replaced_job_id
 end
-local function enqueue_job(db_or_tx: Executor, dbtype: string, params: EnqueueParams): (string?, error?, boolean?)
+local function enqueue_job(db_or_tx: Executor, dbtype: string, params: EnqueueParams): (string?, error?, boolean?, string?)
     if type((db_or_tx :: any).db_type) == "function" then
         return enqueue_job_tx(db_or_tx, dbtype, params)
     end
@@ -382,7 +426,7 @@ local function enqueue_job(db_or_tx: Executor, dbtype: string, params: EnqueuePa
         "job enqueue transaction failed", "transaction", response_error)
     if begin_err then return nil, begin_err end
     if not tx then return nil, response_error("transaction") end
-    local id, err, inserted = enqueue_job_tx(tx, dbtype, params)
+    local id, err, inserted, replaced_job_id = enqueue_job_tx(tx, dbtype, params)
     if err then
         return nil, sql_boundary.rollback(tx, err, "job enqueue rollback failed")
     end
@@ -390,7 +434,7 @@ local function enqueue_job(db_or_tx: Executor, dbtype: string, params: EnqueuePa
     if commit_err then
         return nil, errors.wrap(commit_err, "job enqueue commit failed")
     end
-    return id, nil, inserted
+    return id, nil, inserted, replaced_job_id
 end
 enqueue.enqueue_job = enqueue_job
 

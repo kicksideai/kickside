@@ -1,5 +1,5 @@
 -- Lease and termination-fence recovery of running jobs. reclaim_expired
--- returns running jobs whose lease elapsed (a crashed worker) back to pending;
+-- fences running jobs whose lease elapsed before checking child termination;
 -- reclaim_terminated settles termination fences whose execution child has
 -- ended; settle_confirmed settles one fence whose supervisor observed the exit.
 
@@ -22,8 +22,8 @@ local function response_error(field: string): error
         retryable = false, details = {code = "job_reclaim_response", field = field}})
 end
 
--- Recovery scopes. EXPIRED selects crashed executions: the lease elapsed and no
--- termination fence holds the row. TERMINATED selects termination-fenced rows
+-- Recovery scopes. EXPIRED selects elapsed leases without a termination fence
+-- and establishes that fence. TERMINATED selects termination-fenced rows
 -- whose recheck time (lease_until) passed and settles each one whose execution
 -- child no longer exists; the runtime drops a process's registered names when
 -- it completes, so an absent name proves the child ended. A child still alive
@@ -34,7 +34,7 @@ local TERMINATED = "terminated"
 local CONFIRMED = "confirmed"
 -- A settled fence replaces its marker, which would otherwise read as a held
 -- execution and refuse cancellation of the pending row.
-local TERMINATION_SETTLED = "termination settled: execution ended"
+local TERMINATION_SETTLED = job_types.TERMINATION_SETTLED
 
 local PREFIX = job_types.TERMINATION_PENDING_PREFIX
 local FENCED_SQL = "substr(last_error, 1, " .. tostring(#PREFIX) .. ") = ?"
@@ -59,22 +59,60 @@ local function fenced_token(last_error: any): string
     return string.sub(last_error, #PREFIX + 1)
 end
 
-local function finalize_fenced_run(tx: sql.Transaction, dbtype: string, row: table): error?
+local function read_fenced_run(tx: sql.Transaction, dbtype: string, row: table): (table?, error?)
     local epoch = dbtype == sql.type.POSTGRES and "EXTRACT(EPOCH FROM started_at)"
         or "CAST(strftime('%s',started_at) AS INTEGER)"
     local runs, read_err = tx:query("SELECT id,lease_token,status," .. epoch .. " AS started_at_unix"
         .. " FROM kickside_job_run WHERE job_id=$1 AND execution_seq=$2",
         { row.id, row.execution_seq })
-    if read_err then return errors.wrap(read_err, "termination history read failed") end
-    if type(runs) ~= "table" then return response_error("termination_history.rows") end
+    if read_err then return nil, errors.wrap(read_err, "termination history read failed") end
+    if type(runs) ~= "table" then return nil, response_error("termination_history.rows") end
     local run = runs[1]
-    if not run or run.status ~= job_types.RUN_STATE.RUNNING then return nil end
-    if tostring(run.lease_token or "") ~= fenced_token(row.last_error) then
-        return (errors.new({ message = "termination history belongs to another lease", kind = errors.CONFLICT }) :: error)
+    if run and run.status == job_types.RUN_STATE.RUNNING
+        and tostring(run.lease_token or "") ~= fenced_token(row.last_error) then
+        return nil, (errors.new({ message = "termination history belongs to another lease", kind = errors.CONFLICT }) :: error)
     end
+    return run, nil
+end
+
+local function finalize_fenced_run(tx: sql.Transaction, dbtype: string, row: table): error?
+    local run, read_err = read_fenced_run(tx, dbtype, row)
+    if read_err then return read_err end
+    if not run or run.status ~= job_types.RUN_STATE.RUNNING then return nil end
     return lifecycle.finalize_job_run(tx, dbtype,
         { id = run.id, started_at_unix = tonumber(run.started_at_unix) },
         job_types.RUN_STATE.FAILED, {}, {}, TERMINATION_SETTLED)
+end
+
+-- A supervisor's own stop has a running history row; expiry closes it as
+-- lease_lost before revocation. Only the former accepts the confirmed outcome.
+local function fail_confirmed(tx: sql.Transaction, dbtype: string, row: table, failure: table?): (boolean, error?)
+    if not failure or row.heartbeat_at == nil then return false, nil end
+    local run, read_err = read_fenced_run(tx, dbtype, row)
+    if read_err then return false, read_err end
+    if not run or run.status ~= job_types.RUN_STATE.RUNNING then return false, nil end
+    if failure.cause and job_types.is_lease_lost_error(failure.cause) then
+        local close_err = M.close_lost_run(tx, dbtype, tostring(row.id),
+            tonumber(row.execution_seq) :: integer, tostring(row.lease_token), lifecycle.now_string(dbtype))
+        return false, close_err
+    end
+    local jobs, job_err = tx:query("SELECT * FROM kickside_job WHERE id=$1", {row.id})
+    if job_err then return false, errors.wrap(job_err, "confirmed failure job read failed") end
+    if type(jobs) ~= "table" or not jobs[1] then return false, response_error("failure.job") end
+    local job = jobs[1]
+    local cleared, clear_err = sql.builder.update("kickside_job"):set("last_error", nil)
+        :where(sql.builder.eq({id = row.id, lease_token = row.lease_token, last_error = row.last_error,
+            status = job_types.JOB_STATE.RUNNING})):run_with(tx):exec()
+    local count, count_err = sql_boundary.single_row_count(cleared, clear_err,
+        "confirmed failure fence release failed", "failure.fence", response_error)
+    if count_err then return false, count_err end
+    if count ~= 1 then return false, job_types.lease_lost_error("confirmed failure lease changed") end
+    local fail_err = lifecycle.fail_tx(tx, job, dbtype, failure.error_text, failure.failure_class, failure.retry_floor)
+    if fail_err then return false, fail_err end
+    local history_err = lifecycle.finalize_job_run(tx, dbtype,
+        {id = run.id, started_at_unix = tonumber(run.started_at_unix)},
+        job_types.RUN_STATE.FAILED, {}, {}, failure.error_text)
+    return history_err == nil, history_err
 end
 
 local LEASE_ENDED = "lease ended: execution lease reclaimed"
@@ -157,53 +195,57 @@ end
 
 type ReclaimPlan = { scope: string, execution: table?, alive: ((string, string) -> (boolean, error?))? }
 
-local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, plan: ReclaimPlan): (integer, error?)
+local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, plan: ReclaimPlan): (integer, error?, integer)
+    local scanned = 0
     local scope = plan.scope
     local policy, policy_err = cfg.policy()
-    if policy_err then return 0, policy_err end
-    if type(policy) ~= "table" then return 0, response_error("policy") end
+    if policy_err then return 0, policy_err, scanned end
+    if type(policy) ~= "table" then return 0, response_error("policy"), scanned end
     if requested_limit == nil then
         local current, err = committed_policy.resolve()
-        if err then return 0, err end
+        if err then return 0, err, scanned end
         requested_limit = current.worker_claim_batch
     end
     local reclaim_limit = requested_limit
     if type(reclaim_limit) ~= "number" or reclaim_limit < 1
         or reclaim_limit > job_types.MAX_WORKERS or reclaim_limit ~= math.floor(reclaim_limit) then
         return 0, (errors.new({ message = "reclaim limit exceeds worker.claim_batch policy",
-            kind = errors.INVALID }) :: error)
+            kind = errors.INVALID }) :: error), scanned
     end
     local now = lifecycle.now_string(dbtype)
-    local query = scope_rows(sql.builder.select("id", "lease_token", "execution_seq", "last_error", "owner_kind", "owner_id", "lease_policy")
+    local query = scope_rows(sql.builder.select("id", "lease_token", "execution_seq", "last_error", "owner_kind", "owner_id", "lease_policy", "lease_until", "heartbeat_at")
         :from("kickside_job")
         :where(sql.builder.eq({ status = job_types.JOB_STATE.RUNNING })), scope, now, plan.execution, dbtype)
         :order_by("id ASC")
         :limit(reclaim_limit)
     local observations: { [string]: table } = {}
-    if scope == TERMINATED then
+    if scope == TERMINATED or scope == EXPIRED then
         local statement, args, build_err = query:placeholder_format(sql.builder.dollar):to_sql()
-        if build_err then return 0, errors.wrap(build_err, "reclaim select build failed") end
+        if build_err then return 0, errors.wrap(build_err, "reclaim select build failed"), scanned end
         local candidates, read_err = db:query(statement, args)
-        if read_err then return 0, errors.wrap(read_err, "reclaim select failed") end
-        if type(candidates) ~= "table" then return 0, response_error("reclaim.rows") end
-        if #candidates == 0 then return 0, nil end
+        if read_err then return 0, errors.wrap(read_err, "reclaim select failed"), scanned end
+        if type(candidates) ~= "table" then return 0, response_error("reclaim.rows"), scanned end
+        scanned = #candidates
+        if #candidates == 0 then return 0, nil, 0 end
         local ids: string[] = {}
         local marks: string[] = {}
         for _, row in ipairs(candidates) do
-            local live, live_err = (plan.alive :: (string, string) -> (boolean, error?))(
-                tostring(row.id), fenced_token(row.last_error))
-            if live_err then return 0, live_err end
-            if type(live) ~= "boolean" then return 0, response_error("termination.alive") end
-            observations[tostring(row.id)] = { lease_token = row.lease_token, execution_seq = row.execution_seq,
-                last_error = row.last_error, alive = live }
+            if scope == TERMINATED then
+                local live, live_err = (plan.alive :: (string, string) -> (boolean, error?))(
+                    tostring(row.id), fenced_token(row.last_error))
+                if live_err then return 0, live_err, scanned end
+                if type(live) ~= "boolean" then return 0, response_error("termination.alive"), scanned end
+                observations[tostring(row.id)] = { lease_token = row.lease_token, execution_seq = row.execution_seq,
+                    last_error = row.last_error, lease_until = row.lease_until, alive = live }
+            end
             ids[#ids + 1] = tostring(row.id)
             marks[#marks + 1] = "?"
         end
         query = query:where("id IN (" .. table.concat(marks, ",") .. ")", table.unpack(ids))
     end
     local tx, begin_err = sql_boundary.begin(db, "reclaim begin failed", "transaction", response_error)
-    if begin_err then return 0, begin_err end
-    if not tx then return 0, response_error("transaction") end
+    if begin_err then return 0, begin_err, scanned end
+    if not tx then return 0, response_error("transaction"), scanned end
     -- Unlike competing claimers, the recovery owner must not skip an expired
     -- row locked by renewal. PostgreSQL waits, then rechecks lease_until against
     -- the committed value; a renewed lease is therefore omitted authoritatively.
@@ -212,16 +254,16 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
     if dbtype == sql.type.POSTGRES then query = query:suffix("FOR UPDATE") end
     local rows, select_err = query:run_with(tx):query()
     if select_err then return 0, sql_boundary.rollback(tx,
-        errors.wrap(select_err, "reclaim select failed"), "reclaim rollback failed") end
+        errors.wrap(select_err, "reclaim select failed"), "reclaim rollback failed"), scanned end
     if type(rows) ~= "table" then return 0, sql_boundary.rollback(tx,
-        response_error("reclaim.rows"), "reclaim rollback failed") end
+        response_error("reclaim.rows"), "reclaim rollback failed"), scanned end
     if scope == TERMINATED then
         local retained: table[] = {}
         for _, row in ipairs(rows) do
             local observed = observations[tostring(row.id)]
             if observed and observed.lease_token == row.lease_token
                 and tonumber(observed.execution_seq) == tonumber(row.execution_seq)
-                and observed.last_error == row.last_error then
+                and observed.last_error == row.last_error and observed.lease_until == row.lease_until then
                 retained[#retained + 1] = row
             end
         end
@@ -231,103 +273,133 @@ local function reclaim(db: sql.DB, dbtype: string, requested_limit: integer?, pl
     local revoked: table[] = {}
     local released: table[] = {}
     local ts = dbtype == sql.type.POSTGRES and "CAST(? AS TIMESTAMPTZ)" or "?"
-    local settles_fence = scope ~= EXPIRED
     for _, row in ipairs(rows) do
         local alive = false
         if scope == TERMINATED then
             alive = observations[tostring(row.id)].alive
         end
-        if alive then
+        if scope == EXPIRED then
+            local marker = PREFIX .. tostring(row.lease_token or "")
+            local size_err = row_bytes.check_update(tx, "kickside_job", row.id,
+                { last_error = marker }, (policy :: any).max_row_bytes, "fence_expired_job")
+            if size_err then return 0, sql_boundary.rollback(tx, size_err, "reclaim rollback failed"), scanned end
+            local result, err = scope_rows(sql.builder.update("kickside_job"):set("last_error", marker)
+                :where(sql.builder.eq({ id = row.id, status = job_types.JOB_STATE.RUNNING })),
+                scope, now, plan.execution, dbtype):run_with(tx):exec()
+            local changed, proof_err = sql_boundary.bounded_row_count(result, err,
+                "reclaim fence failed", "reclaim.update", 1, response_error)
+            if proof_err then return 0, sql_boundary.rollback(tx, proof_err, "reclaim rollback failed"), scanned end
+            if changed == 1 then
+                local history_err = M.close_lost_run(tx, dbtype, tostring(row.id),
+                    tonumber(row.execution_seq) :: integer, tostring(row.lease_token or ""), now)
+                if history_err then return 0, sql_boundary.rollback(tx, history_err, "reclaim rollback failed"), scanned end
+                revoked[#revoked + 1] = { id = tostring(row.id), token = tostring(row.lease_token or ""),
+                    execution_seq = tonumber(row.execution_seq) }
+                n = n + 1
+            end
+        elseif alive then
             local captured, capture_err = execution_policy.read(row)
-            if capture_err then return 0, sql_boundary.rollback(tx, capture_err, "reclaim rollback failed") end
+            if capture_err then return 0, sql_boundary.rollback(tx, capture_err, "reclaim rollback failed"), scanned end
             local recheck = lifecycle.future_string(dbtype, captured.lease_timeout_seconds)
             local size_err = row_bytes.check_update(tx, "kickside_job", row.id, { lease_until = recheck },
                 (policy :: any).max_row_bytes, "recheck_termination")
-            if size_err then return 0, sql_boundary.rollback(tx, size_err, "reclaim rollback failed") end
+            if size_err then return 0, sql_boundary.rollback(tx, size_err, "reclaim rollback failed"), scanned end
             local rechecked, recheck_err = sql.builder.update("kickside_job"):set("lease_until", recheck)
                 :where(sql.builder.eq({ id = row.id, status = job_types.JOB_STATE.RUNNING, last_error = row.last_error }))
                 :run_with(tx):exec()
             local _, proof_err = sql_boundary.bounded_row_count(rechecked, recheck_err,
                 "termination recheck failed", "termination.update", 1, response_error)
-            if proof_err then return 0, sql_boundary.rollback(tx, proof_err, "reclaim rollback failed") end
+            if proof_err then return 0, sql_boundary.rollback(tx, proof_err, "reclaim rollback failed"), scanned end
         else
-            local size_err = row_bytes.check_update(tx, "kickside_job", row.id, function(current)
-                local control = current.wake_control_pending == true
-                    or tonumber(current.wake_control_pending) == 1
-                return { status = job_types.JOB_STATE.PENDING,
-                    lease_token = row_bytes.NULL, lease_until = row_bytes.NULL,
-                    heartbeat_at = row_bytes.NULL,
-                    scheduled_at = control and now or (current.scheduled_at or row_bytes.NULL),
-                    wake_enabled = control and true or current.wake_enabled,
-                    attempts = control and 0 or current.attempts,
-                    wake_control_pending = false,
-                    last_error = settles_fence and TERMINATION_SETTLED or current.last_error }
-            end, (policy :: any).max_row_bytes, "reclaim_job")
-            if size_err then return 0, sql_boundary.rollback(tx, size_err, "reclaim rollback failed") end
-            local update = sql.builder.update("kickside_job")
-                :set("status", job_types.JOB_STATE.PENDING)
-                :set("lease_token", nil)
-                :set("lease_until", nil)
-                :set("heartbeat_at", nil)
-                :set("scheduled_at", sql.builder.expr("CASE WHEN wake_control_pending THEN " .. ts .. " ELSE scheduled_at END", now))
-                :set("wake_enabled", sql.builder.expr("CASE WHEN wake_control_pending THEN TRUE ELSE wake_enabled END"))
-                :set("attempts", sql.builder.expr("CASE WHEN wake_control_pending THEN 0 ELSE attempts END"))
-                :set("wake_control_pending", false)
-            if settles_fence then update = update:set("last_error", TERMINATION_SETTLED) end
-            local result, err = scope_rows(update:where(sql.builder.eq({ id = row.id, status = job_types.JOB_STATE.RUNNING })),
-                scope, now, plan.execution, dbtype):run_with(tx):exec()
-            local changed, proof_err = sql_boundary.bounded_row_count(result, err,
-                "reclaim update failed", "reclaim.update", 1, response_error)
-            if proof_err then return 0, sql_boundary.rollback(tx, proof_err, "reclaim rollback failed") end
-            if changed == 1 then
-                local marker_err = worker_marker.clear(tx, row.id)
-                if marker_err then return 0, sql_boundary.rollback(tx, marker_err, "reclaim rollback failed") end
-                if settles_fence then
-                    local history_err = finalize_fenced_run(tx, dbtype, row)
-                    if history_err then return 0, sql_boundary.rollback(tx, history_err, "reclaim rollback failed") end
-                    released[#released + 1] = row
-                end
+            local failure = scope == CONFIRMED and plan.execution and plan.execution.failure or nil
+            local failed, failure_err = fail_confirmed(tx, dbtype, row, failure)
+            if failure_err then return 0, sql_boundary.rollback(tx, failure_err, "reclaim rollback failed"), scanned end
+            if failed then
+                released[#released + 1] = row
                 n = n + 1
-                if scope == EXPIRED then
-                    local history_err = M.close_lost_run(tx, dbtype, tostring(row.id),
-                        tonumber(row.execution_seq) :: integer, tostring(row.lease_token or ""), now)
-                    if history_err then return 0, sql_boundary.rollback(tx, history_err, "reclaim rollback failed") end
-                    revoked[#revoked + 1] = { id = tostring(row.id), token = tostring(row.lease_token or ""),
-                        execution_seq = tonumber(row.execution_seq) }
+            else
+                -- Cancellation clears heartbeat_at; termination rechecks preserve it.
+                -- Unlike lease_until, this intent survives older recheck writes.
+                local cancelled = row.heartbeat_at == nil
+                local settled_error = cancelled and "cancelled" or TERMINATION_SETTLED
+                local settled_status = cancelled and job_types.JOB_STATE.CANCELLED or job_types.JOB_STATE.PENDING
+                local size_err = row_bytes.check_update(tx, "kickside_job", row.id, function(current)
+                    local control = current.wake_control_pending == true
+                        or tonumber(current.wake_control_pending) == 1
+                    return { status = settled_status,
+                        lease_token = row_bytes.NULL, lease_until = row_bytes.NULL,
+                        heartbeat_at = row_bytes.NULL,
+                        scheduled_at = control and now or (current.scheduled_at or row_bytes.NULL),
+                        wake_enabled = control and true or current.wake_enabled,
+                        attempts = control and 0 or current.attempts,
+                        wake_control_pending = false,
+                        last_error = settled_error,
+                        finished_at = cancelled and now or (current.finished_at or row_bytes.NULL) }
+                end, (policy :: any).max_row_bytes, "reclaim_job")
+                if size_err then return 0, sql_boundary.rollback(tx, size_err, "reclaim rollback failed"), scanned end
+                local update = sql.builder.update("kickside_job")
+                    :set("status", settled_status)
+                    :set("lease_token", nil)
+                    :set("lease_until", nil)
+                    :set("heartbeat_at", nil)
+                    :set("scheduled_at", sql.builder.expr("CASE WHEN wake_control_pending THEN " .. ts .. " ELSE scheduled_at END", now))
+                    :set("wake_enabled", sql.builder.expr("CASE WHEN wake_control_pending THEN TRUE ELSE wake_enabled END"))
+                    :set("attempts", sql.builder.expr("CASE WHEN wake_control_pending THEN 0 ELSE attempts END"))
+                    :set("wake_control_pending", false)
+                if cancelled then update = update:set("finished_at", now) end
+                update = update:set("last_error", settled_error)
+                local result, err = scope_rows(update:where(sql.builder.eq({ id = row.id, status = job_types.JOB_STATE.RUNNING })),
+                    scope, now, plan.execution, dbtype):run_with(tx):exec()
+                local changed, proof_err = sql_boundary.bounded_row_count(result, err,
+                    "reclaim update failed", "reclaim.update", 1, response_error)
+                if proof_err then return 0, sql_boundary.rollback(tx, proof_err, "reclaim rollback failed"), scanned end
+                if changed == 1 then
+                    local marker_err = worker_marker.clear(tx, row.id)
+                    if marker_err then return 0, sql_boundary.rollback(tx, marker_err, "reclaim rollback failed"), scanned end
+                    local history_err = finalize_fenced_run(tx, dbtype, row)
+                    if history_err then return 0, sql_boundary.rollback(tx, history_err, "reclaim rollback failed"), scanned end
+                    released[#released + 1] = row
+                    n = n + 1
                 end
             end
         end
     end
     local _, commit_err = tx:commit()
-    if commit_err then return 0, errors.wrap(commit_err, "reclaim commit failed") end
+    if commit_err then return 0, errors.wrap(commit_err, "reclaim commit failed"), scanned end
     for _, row in ipairs(released) do
         local notify_err = lease_release.notify(tostring(row.id), tonumber(row.execution_seq),
             { kind = row.owner_kind, id = row.owner_id })
-        if notify_err then return n, notify_err end
+        if notify_err then return n, notify_err, scanned end
     end
     for _, old in ipairs(revoked) do
         if old.token ~= "" and type(old.execution_seq) == "number" then
             local _, notify_err = proc_supervisor.notify(old.id, old.token, old.execution_seq, "revoked", nil)
-            if notify_err then return n, notify_err end
+            if notify_err then return n, notify_err, scanned end
         end
     end
-    return n, nil
+    return n, nil, scanned
 end
 
--- Return running jobs whose lease has elapsed to pending so they can be
--- reclaimed. Used to recover work owned by a crashed worker. Returns the count
--- of jobs reclaimed.
+-- Fence elapsed leases before revocation, then settle only executions whose
+-- registered child has ended. Gone executions recover in the same pass.
 function M.reclaim_expired(db: sql.DB, dbtype: string, requested_limit: integer?): (integer, error?)
-    return reclaim(db, dbtype, requested_limit, { scope = EXPIRED })
+    local fenced, fence_err, scanned = reclaim(db, dbtype, requested_limit, { scope = EXPIRED })
+    if fence_err then return 0, fence_err end
+    if fenced == 0 then return scanned, nil end
+    local _, settle_err = M.reclaim_terminated(db, dbtype, requested_limit)
+    return scanned, settle_err
 end
 
 -- Settle termination-fenced executions whose child has ended, wherever the
 -- fence came from: a supervisor that stopped before recording the exit, a held
 -- child that exited later, or a runtime process that is gone. alive(job_id,
 -- token) defaults to the runtime's registration of the execution child.
+-- The third result counts the preliminary candidate page, before revalidation.
 function M.reclaim_terminated(db: sql.DB, dbtype: string, requested_limit: integer?,
-        alive: ((string, string) -> (boolean, error?))?): (integer, error?)
-    return reclaim(db, dbtype, requested_limit, { scope = TERMINATED, alive = alive or proc_supervisor.child_alive })
+        alive: ((string, string) -> (boolean, error?))?): (integer, error?, integer)
+    local settled, err, scanned = reclaim(db, dbtype, requested_limit,
+        { scope = TERMINATED, alive = alive or proc_supervisor.child_alive })
+    return settled, err, scanned
 end
 
 -- Settle one fenced execution after its supervisor observed the child's exit.
@@ -339,7 +411,7 @@ function M.settle_confirmed(db: sql.DB, dbtype: string, execution: table): (bool
         return false, (errors.new({ message = "confirmed settlement requires a fenced execution", kind = errors.INVALID }) :: error)
     end
     local n, err = reclaim(db, dbtype, 1, { scope = CONFIRMED,
-        execution = { id = execution.id, token = token, execution_seq = sequence } })
+        execution = { id = execution.id, token = token, execution_seq = sequence, failure = execution.failure } })
     return n == 1, err
 end
 
