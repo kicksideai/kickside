@@ -11,6 +11,5 @@ entries:
   modules:
   - registry
   - security
-  - funcs
   imports:
     test: wippy.test:test

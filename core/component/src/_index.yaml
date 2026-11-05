@@ -34,7 +34,7 @@ entries:
     method: run
     security:
       actor: { id: system:kickside.component.retention }
-      policies: [kickside.component:retention_db_access, kickside.component:notification_dispatch]
+      policies: [kickside.component:retention_db_access]
     imports:
       component_command: kickside.component:component_command
       teardown: kickside.component.persist:teardown
@@ -219,16 +219,6 @@ entries:
       actions: realtime.notify
       effect: allow
 
-  - name: notification_dispatch
-    kind: security.policy
-    meta:
-      private: true
-      comment: Lets authorized component mutations dispatch their owned notifications.
-    policy:
-      resources: kickside.component:notify_access
-      actions: [funcs.call, funcs.security]
-      effect: allow
-
   - name: notification_contracts
     kind: security.policy
     meta:
@@ -392,7 +382,6 @@ entries:
       actor: {id: system:kickside.component.retention}
       policies:
         - kickside.component:retention_db_access
-        - kickside.component:notification_dispatch
         - kickside.component:notification_contracts
         - kickside.component:notification_implementations
         - kickside.component:notification_methods

@@ -8,8 +8,6 @@ modules:
       version: 0.0.0
     - name: kickside/execution
       version: 0.0.0
-    - name: kickside/jobs
-      version: 0.0.0
     - name: kickside/realtime-dispatch
       version: 0.0.0
     - name: wippy/bootloader
