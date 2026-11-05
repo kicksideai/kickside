@@ -152,6 +152,7 @@ async function askDelete(row: WebhookRow) {
   if (!ok) return
   try {
     await deleteWebhook(row.webhook_id)
+    acceptDeletion(row.webhook_id)
     host.toast({ severity: 'success', summary: 'Deletion accepted', detail: row.label || row.webhook_id })
     if (editing.value?.webhook_id === row.webhook_id) closeEdit()
     await load()
@@ -162,7 +163,7 @@ async function askDelete(row: WebhookRow) {
 }
 
 useHostVisibilityRefresh(load)
-useComponentDeletion(rows, row => row.webhook_id)
+const {acceptDeletion} = useComponentDeletion(rows, row => row.webhook_id)
 </script>
 
 <template>

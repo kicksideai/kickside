@@ -8,11 +8,15 @@ const emit = vi.fn()
 vi.mock('@iconify/vue', () => ({Icon: {template: '<span />'}}))
 vi.mock('../constants.ts', () => ({useComponentProps: () => props, useComponentEvents: () => emit}))
 vi.mock('@wippy-fe/proxy', () => ({api: {get: vi.fn(), delete: vi.fn()}, on: vi.fn(() => vi.fn()), host: {handleError: vi.fn()}}))
-it('retains the selected row and disables actions until deletion completes', async () => {
+for (const unavailable of [false, true]) it(`retains accepted deletion with refresh unavailable=${unavailable}`, async () => {
+  props.value.value = '{"thread_id":"selected"}'
   let accepted = false
-  vi.mocked(api.get).mockImplementation(async (url: string) => ({data: String(url).includes('/components/')
+  vi.mocked(api.get).mockImplementation(async (url: string) => {
+    if (accepted && unavailable) throw new Error('Read unavailable')
+    return ({data: String(url).includes('/components/')
     ? {success: true, deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'pending', attempts: 0}}
-    : {success: true, items: [{id: 'selected', label: 'Selected webhook', ...(accepted ? {deleting_at: 'marked', deletion_job_id: 'job'} : {})}]}}) as never)
+    : {success: true, items: [{id: 'selected', label: 'Selected webhook', ...(accepted ? {deleting_at: 'marked', deletion_job_id: 'job'} : {})}]}}) as never
+  })
   vi.mocked(api.delete).mockImplementation(async () => {accepted = true; return {data: {success: true, deleted: false, in_progress: true, job_id: 'job'}} as never})
   const wrapper = mount(ComponentPicker, {global: {stubs: {AnchoredPanel: {props: ['open'], template: '<div v-if="open"><slot /></div>'}}}})
   await flushPromises()

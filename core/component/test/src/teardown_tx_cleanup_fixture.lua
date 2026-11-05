@@ -3,7 +3,7 @@ M.ACCESS, M.COMMAND_TYPES = {DELETE = 8}, {DELETE_COMPONENT = "delete"}
 function M.reset(operation, stage, source)
     M.event, M.event_commits, M.audience_commits, M.recipients = nil, nil, nil, nil
     M.audiences, M.event_effects = 0, nil
-    M.absent, M.row_locks, M.pending = false, 0, false
+    M.absent, M.row_locks, M.pending, M.parent_id = false, 0, false, nil
     M.operation, M.stage, M.source = operation, stage, source
     M.release_source, M.rollback_source = nil, nil
     M.opens, M.releases, M.rollbacks, M.commits, M.effects, M.notifications, M.purges = 0, 0, 0, 0, 0, 0, 0
@@ -47,7 +47,7 @@ function M.lock_tree() return select(2, M.result("tree", true)) end
 function M.check_user_access() return M.result("access", true) end
 function M.validate_delete_tx() return M.result("validate", true) end
 function M.mark_deleting_tx() return select(2, M.result("mark", true)) end
-function M.component_summary_tx() return M.result("summary", {impl_id = "fixture:implementation"}) end
+function M.component_summary_tx() return M.result("summary", {impl_id = "fixture:implementation", parent_id = M.parent_id}) end
 function M.dispatch()
     M.effects = M.effects + 1
     return M.result("dispatch", {changes_made = not M.pending, pending = M.pending})

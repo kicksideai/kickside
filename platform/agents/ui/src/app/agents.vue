@@ -120,6 +120,7 @@ async function askRemove(a: Agent) {
   try {
     const { data } = await api.delete(`/api/v1/user-agents/${a.id}`)
     if (!data?.success) throw new Error(data?.error || 'delete failed')
+    acceptDeletion(a.id, data)
     await load()
   } catch (e) {
     error.value = errMsg(e, 'delete failed')
@@ -162,7 +163,7 @@ watch([shareOpen, shareHost], async () => {
 useHostVisibilityRefresh(async () => {
   await Promise.all([load(), loadOptions()])
 })
-useComponentDeletion(agents, row => row.id)
+const {acceptDeletion} = useComponentDeletion(agents, row => row.id)
 </script>
 
 <template>

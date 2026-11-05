@@ -326,6 +326,7 @@ async function doDelete(item: Item) {
       deleteError.value = deleteErrText(data, null)
       return
     }
+    acceptDeletion(item.id, data)
     confirmDeleteId.value = ''
     loaded.value = false
     await load()
@@ -398,7 +399,7 @@ function toggleOpen() {
   open.value = !open.value
   if (open.value && !loaded.value) load()
 }
-useComponentDeletion(items, row => row.id, id => {
+const {acceptDeletion} = useComponentDeletion(items, row => row.id, id => {
   if (id === selectedId.value) selectedId.value = ''
 })
 </script>

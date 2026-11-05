@@ -4,7 +4,7 @@ import Webhooks from './Webhooks.vue'
 import { host } from '@wippy-fe/proxy'
 vi.mock('@wippy-fe/proxy', () => ({host: {confirm: vi.fn(), toast: vi.fn()}, api: {get: vi.fn()}, on: vi.fn()}))
 vi.mock('@iconify/vue', () => ({Icon: {template: '<span />'}}))
-vi.mock('@widgets/app/useComponentDeletion', () => ({useComponentDeletion: vi.fn()}))
+vi.mock('@widgets/app/useComponentDeletion', () => ({useComponentDeletion: vi.fn(() => ({acceptDeletion: vi.fn()}))}))
 vi.mock('@wippy-fe/webcomponent-vue', () => ({useHostVisibilityRefresh: (load: () => void) => load()}))
 vi.mock('../api', () => ({
   fetchWebhooks: vi.fn(async () => [{webhook_id: 'deleting', label: 'Deleting webhook', status: 'active', deleting_at: 'marked', subscriber_count: 0}]),

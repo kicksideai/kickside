@@ -9,11 +9,28 @@ local channel = require("channel")
 local funcs = require("funcs")
 local deletion_worker = require("deletion_worker")
 local component = require("component")
+local registry = require("registry")
 local M = {}
 local function service(owner: string): any
     local scope = assert(security.named_scope("wippy.security:process"))
     return assert(assert(contract.get("kickside.component:component_service"))
         :with_actor(security.new_actor(owner, {})):with_scope(scope):open())
+end
+local function member_scope()
+    local policies, seen = {}, {}
+    local function include(policy_id)
+        if seen[policy_id] then return end
+        seen[policy_id] = true
+        local entry = assert(registry.get(policy_id))
+        policies[#policies + 1] = assert(security.policy(policy_id))
+        for _, child in ipairs(entry.meta.includes or {}) do include(child) end
+    end
+    include("kickside.component.security:module_access")
+    include("kickside.core.jobs.security:module_access")
+    policies[#policies + 1] = assert(security.policy("kickside.component:retention_db_access"))
+    policies[#policies + 1] = assert(security.policy("app:deletion_member_binding"))
+    local scope = assert(security.new_scope(policies))
+    return scope
 end
 function M.request(args: any): any
     return service(args.owner):delete({component_id = args.id, delete_options = args.options})
@@ -186,6 +203,52 @@ M.run = test.run_cases(function()
             test.not_nil(rows[1].deleting_at); test.eq(rows[1].deletion_job_id, accepted.job_id)
             local hidden = service("other-" .. uuid.v4()):get({component_id = id})
             test.is_false(hidden.success); test.is_nil(hidden.deletion_job)
+            pool_until(id)
+        end)
+        for _, method in ipairs({"set_meta", "update", "delete"}) do
+            test.it("preserves owned notification authority for member " .. method, function()
+                local owner = "delete-job-" .. uuid.v4()
+                local id = seed("retention", owner)
+                local svc = assert(assert(contract.get("kickside.component:component_service"))
+                    :with_actor(security.new_actor(owner, {})):with_scope(member_scope()):open())
+                local request = {component_id = id}
+                if method == "set_meta" then request.fields = {title = "Updated"}
+                elseif method == "update" then request.commands = {{type = "SET_META", payload = {fields = {title = "Updated"}}}} end
+                local result, err = svc[method](svc, request)
+                test.is_nil(err, tostring(err)); test.is_true(result.success, tostring(result.error))
+                test.is_nil(result.notification_error, tostring(result.notification_error))
+                if method ~= "delete" then test.is_true(service(owner):delete({component_id = id}).success) end
+                pool_until(id)
+            end)
+        end
+        test.it("exposes deletion progress to members only with component READ", function()
+            local owner = "delete-job-" .. uuid.v4()
+            local reader = "delete-reader-" .. uuid.v4()
+            local writer = "delete-writer-" .. uuid.v4()
+            local id = seed("retention", owner)
+            local db = assert(sql.get("app:db"))
+            for _, grant in ipairs({{reader, 1}, {writer, 2}}) do
+                assert(db:execute("INSERT INTO kickside_component_access (access_id,component_id,source_component_id,subject_id,subject_type,access_mask,created_at) VALUES ($1,$2,$3,$4,'user',$5,0)",
+                    {uuid.v7(), id, id, grant[1], grant[2]}))
+            end
+            assert(db:release())
+            local accepted = service(owner):delete({component_id = id})
+            local scope = member_scope()
+            local function get(actor)
+                local svc = assert(assert(contract.get("kickside.component:component_service"))
+                    :with_actor(security.new_actor(actor, {})):with_scope(scope):open())
+                local result, err = svc:get({component_id = id})
+                test.is_nil(err, tostring(err))
+                return result
+            end
+            local visible = get(reader)
+            test.is_true(visible.success, tostring(visible.error))
+            test.eq(visible.deletion_job_id, accepted.job_id)
+            test.eq(visible.deletion_job.status, "pending")
+            for _, actor in ipairs({writer, "ungranted-" .. uuid.v4()}) do
+                local hidden = get(actor)
+                test.is_false(hidden.success); test.is_nil(hidden.deletion_job_id); test.is_nil(hidden.deletion_job)
+            end
             pool_until(id)
         end)
         test.it("preserves terminal failure until an authorized explicit retry", function()

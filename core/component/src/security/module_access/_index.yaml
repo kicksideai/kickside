@@ -65,6 +65,7 @@ entries:
       operator: nin
       value:
       - kickside.component:delete_worker
+      - kickside.component:notify_access
 - name: user_security_scope
   kind: ns.requirement
   default: kickside.security.groups:members

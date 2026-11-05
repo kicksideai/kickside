@@ -299,6 +299,7 @@ async function askRemove(s: Skill) {
   try {
     const { data } = await api.delete(`/api/v1/skills/${s.skill_id}`)
     if (!data?.success) throw new Error(data?.error || 'delete failed')
+    acceptDeletion(s.skill_id, data)
     host.toast({ severity: 'success', summary: 'Deletion accepted', detail: s.name || 'skill' })
     await load()
   } catch (e) {
@@ -317,7 +318,7 @@ function fileIcon(kind?: string) {
 // trapping, initial focus, and Escape-to-close. The share popup is a self-contained
 // web component that handles its own backdrop, Escape, and close.
 useHostVisibilityRefresh(load)
-useComponentDeletion(skills, row => row.skill_id)
+const {acceptDeletion} = useComponentDeletion(skills, row => row.skill_id)
 </script>
 
 <template>

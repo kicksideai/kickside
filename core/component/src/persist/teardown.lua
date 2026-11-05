@@ -368,7 +368,7 @@ function M.unregister(component_id: string, child_policy: string?): (any, string
             err_tx, "release component teardown database")
     end
 
-    if child_policy == "reparent_root" then
+    if child_policy == "reparent_root" or (summary and summary.parent_id ~= nil) then
         local tree_err = placement.lock_tree(tx)
         if tree_err then return nil, "delete", abort_transaction(db, tx, tree_err) end
     end

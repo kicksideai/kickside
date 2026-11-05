@@ -56,6 +56,8 @@ entries:
   # kickside.component.binding:delete_component_func
   - name: delete_component_func
     kind: function.lua
+    security:
+      policies: [kickside.component:notification_dispatch]
     meta:
       comment: Delete a component with deletable contract support
       tags:
@@ -261,6 +263,8 @@ entries:
   # kickside.component.binding:update_component_func
   - name: update_component_func
     kind: function.lua
+    security:
+      policies: [kickside.component:notification_dispatch]
     meta:
       comment: Update component private context
       tags:
@@ -285,6 +289,8 @@ entries:
   # kickside.component.binding:set_meta_component_func
   - name: set_meta_component_func
     kind: function.lua
+    security:
+      policies: [kickside.component:notification_dispatch]
     meta:
       comment: Set/delete public component metadata
       tags:

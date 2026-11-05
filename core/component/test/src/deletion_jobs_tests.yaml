@@ -6,13 +6,13 @@ entries:
     meta: {type: test, suite: component_deletion_jobs, timeout: 60s}
     source: file://deletion_jobs_test.lua
     method: run
-    modules: [sql, uuid, security, contract, process, time, channel, funcs]
+    modules: [sql, uuid, security, contract, process, time, channel, funcs, registry]
     imports: {test: 'wippy.test:test', deletion_worker: 'app:deletion_test_worker', component: 'kickside.component:component'}
   - name: deletion_jobs_request
     kind: process.lua
     source: file://deletion_jobs_test.lua
     method: request
-    modules: [sql, uuid, security, contract, process, time, channel, funcs]
+    modules: [sql, uuid, security, contract, process, time, channel, funcs, registry]
     imports: {test: 'wippy.test:test', deletion_worker: 'app:deletion_test_worker', component: 'kickside.component:component'}
   - name: deletion_jobs_binding
     kind: contract.binding
@@ -89,3 +89,10 @@ entries:
       envelope: kickside.component:envelope
       http_errors: kickside.contract:http_errors
       http_context: kickside.component.api:http_context
+
+  - name: deletion_member_binding
+    kind: security.policy
+    policy:
+      resources: [app:deletion_jobs_binding]
+      actions: registry.get
+      effect: allow

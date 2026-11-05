@@ -130,6 +130,7 @@ function shareConfig(a: Automation | null) {
 // Route a menu/drawer action to the flow that owns it: the shell operations open
 // their dialogs; every declared method posts through the generic action endpoint.
 function dispatchAction(a: Automation, method: string) {
+  if (a.deleting_at) return
   switch (method) {
     case 'reconfigure': askEdit(a); break
     case 'share': askShare(a); break
@@ -139,6 +140,7 @@ function dispatchAction(a: Automation, method: string) {
   }
 }
 function dispatchRecover(a: Automation) {
+  if (a.deleting_at) return
   const method = recoverFor(a)
   if (method) void runAction(a, method)
 }
@@ -162,7 +164,7 @@ function onDrawerRecover() {
 
 // ─── Controls (pause / resume / trigger) ───────────────────────────────
 async function runAction(a: Automation, method: string) {
-  if (busyId.value) return
+  if (a.deleting_at || busyId.value) return
   busyId.value = a.id
   error.value = ''
   const control = typeFor(a)?.controls?.some(c => c.name === method) === true
@@ -241,6 +243,7 @@ async function doRemove() {
     const body = opts.length ? { options: { ...deleteChoices.value } } : {}
     const { data } = await api.delete(`/api/v1/automations/${a.id}`, { data: body })
     if (data?.success) {
+      acceptDeletion(a.id, data)
       confirmTarget.value = null
       await fetchAutomations()
     } else {
@@ -277,7 +280,7 @@ onBeforeUnmount(() => {
   install.unmountCustomInstallUi()
   clearRealtimeSubscriptions()
 })
-useComponentDeletion(automations, row => row.id)
+const {acceptDeletion} = useComponentDeletion(automations, row => row.id)
 </script>
 
 <template>

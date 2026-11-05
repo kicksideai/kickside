@@ -232,6 +232,7 @@ async function confirmDelete() {
   error.value = ''
   try {
     await deleteWorkflow(row.id)
+    acceptDeletion(row.id)
     await load()
     focusAfterDelete.value = true
     deleteTarget.value = null
@@ -256,7 +257,7 @@ function closeShare() {
 }
 
 useHostVisibilityRefresh(load)
-useComponentDeletion(rows, row => row.id)
+const {acceptDeletion} = useComponentDeletion(rows, row => row.id)
 </script>
 
 <template>

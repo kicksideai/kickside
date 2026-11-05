@@ -123,6 +123,7 @@ async function askRemove(k: KnowledgeBase) {
   try {
     const { data } = await api.delete(`/api/v1/knowledge/${k.id}`)
     if (!data?.success) throw new Error(data?.error || 'delete failed')
+    acceptDeletion(k.id, data)
     if (detail.value?.id === k.id) closeDetail()
     await load()
   } catch (e) {
@@ -196,7 +197,7 @@ useHostVisibilityRefresh(async () => {
     error.value = errMsg(e, 'host API unavailable')
   }
 })
-useComponentDeletion(kbs, row => row.id, id => { if (detail.value?.id === id) closeDetail() })
+const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (detail.value?.id === id) closeDetail() })
 </script>
 
 <template>

@@ -141,11 +141,12 @@ watch(() => props.automation.id, () => { tab.value = 'overview' })
           size="small"
           :aria-label="`${paused ? 'Resume' : 'Pause'} ${name}`"
           :title="paused ? 'Resume' : 'Pause'"
-          @click="emit('action', paused ? 'resume' : 'pause')"
+          :disabled="!!automation.deleting_at"
+          @click="!automation.deleting_at && emit('action', paused ? 'resume' : 'pause')"
         >
           <template #icon="{ class: iconClass }"><Icon :icon="paused ? 'tabler:player-play-filled' : 'tabler:player-pause'" aria-hidden="true" :class="iconClass" /></template>
         </Button>
-        <ActionMenu :items="actions" :name="name" @select="(m) => emit('action', m)" />
+        <ActionMenu :items="actions" :name="name" :disabled="!!automation.deleting_at" @select="(m) => !automation.deleting_at && emit('action', m)" />
         <Button
           type="button"
           severity="secondary"
@@ -194,7 +195,8 @@ watch(() => props.automation.id, () => { tab.value = 'overview' })
             :aria-label="`Recover ${name}`"
             data-testid="drawer-recover"
             label="Recover"
-            @click="emit('recover')"
+            :disabled="!!automation.deleting_at"
+            @click="!automation.deleting_at && emit('recover')"
           >
             <template #icon="{ class: iconClass }"><Icon icon="tabler:rotate-clockwise-2" aria-hidden="true" :class="iconClass" /></template>
           </Button>
@@ -232,10 +234,10 @@ watch(() => props.automation.id, () => { tab.value = 'overview' })
 
       <!-- Config -->
       <section v-else-if="tab === 'config'" class="kx-dsec" data-testid="drawer-config">
-        <WcMount v-if="!automation.availability && ((automation.access_level || 0) & 8) !== 0" tag="wc-execution-identity-editor" :attrs="{ root: automation.id }"
+        <WcMount v-if="!automation.deleting_at && !automation.availability && ((automation.access_level || 0) & 8) !== 0" tag="wc-execution-identity-editor" :attrs="{ root: automation.id }"
           @change="emit('changed')" />
         <WcMount
-          v-if="manageTag"
+          v-if="manageTag && !automation.deleting_at"
           class="kx-manage-host"
           :tag="manageTag"
           :config="manageConfig"

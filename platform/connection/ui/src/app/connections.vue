@@ -251,6 +251,7 @@ async function remove(c: Connection) {
   try {
     const { data } = await api.delete(`/api/v1/connections/${encodeURIComponent(c.component_id)}`)
     if (!data?.success) throw new Error(data?.error || 'delete failed')
+    acceptDeletion(c.component_id, data)
     await load()
   } catch (e) {
     error.value = apiError(e)
@@ -259,7 +260,7 @@ async function remove(c: Connection) {
 
 useHostVisibilityRefresh(load)
 onBeforeUnmount(clearComponentSubscriptions)
-useComponentDeletion(connections, row => row.component_id)
+const {acceptDeletion} = useComponentDeletion(connections, row => row.component_id)
 </script>
 
 <template>
