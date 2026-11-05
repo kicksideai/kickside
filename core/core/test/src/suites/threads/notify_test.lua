@@ -10,7 +10,7 @@ local consts = require("consts")
 -- Stored thread attrs keyed by thread id, standing in for kickside_thread rows.
 local function stored(attrs_by_thread: { [string]: any }): (string) -> (any?, error?)
     return function(thread_id: string): (any?, error?)
-        return attrs_by_thread[thread_id], nil
+        return {attrs = attrs_by_thread[thread_id], event_read = ""}, nil
     end
 end
 
@@ -19,7 +19,7 @@ end
 local function hub_stub(present_hubs: { [string]: boolean }, attrs_by_thread: { [string]: any }): (any, { { pid: string, topic: string } })
     local sent: { { pid: string, topic: string } } = {}
     local instance = notify.new({
-        load_attrs = stored(attrs_by_thread),
+        load_thread = stored(attrs_by_thread),
         lookup = function(name: string): (any?, error?)
             if present_hubs[name] then return "pid:" .. name, nil end
             return nil, nil
@@ -226,7 +226,7 @@ local function define_tests()
 
         test.it("counts a hub whose name does not resolve as an absent recipient", function()
             local instance = notify.new({
-                load_attrs = stored({ t1 = { user_ids = { "ghost" } } }),
+                load_thread = stored({ t1 = { user_ids = { "ghost" } } }),
                 lookup = function(_name: string): (any?, error?)
                     return nil, (errors.new({ message = "no such name", kind = errors.NOT_FOUND }) :: error)
                 end,
@@ -242,7 +242,7 @@ local function define_tests()
 
         test.it("returns a refused hub delivery instead of dropping it", function()
             local instance = notify.new({
-                load_attrs = stored({ t1 = { user_ids = { "alice" } } }),
+                load_thread = stored({ t1 = { user_ids = { "alice" } } }),
                 lookup = function(name: string): (any?, error?) return "pid:" .. name, nil end,
                 send = function(_pid: any, _topic: string, _payload: any): (any?, error?)
                     return nil, (errors.new({ message = "not allowed to send", kind = errors.PERMISSION_DENIED }) :: error)

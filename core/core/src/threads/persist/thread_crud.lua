@@ -14,6 +14,7 @@ local clock = require("clock")
 local consts = require("threads_consts")
 local normalize = require("threads_normalize")
 local component = require("threads_component")
+local component_client = require("component_client")
 local masks = require("core_types")
 local autoinit = require("autoinit")
 local proj_writer = require("proj_writer")
@@ -316,10 +317,20 @@ function M.create(db: DB, params: table, actor_id: string?, identity: { [string]
         return nil, dbtype_err
     end
 
+    -- Checked and maintenance attachments resolve the stored component kind.
+    -- A trusted_audit caller supplies the kind from its preceding component owner read.
+    local binding_impl = impl_id
+    if params.trusted_audit ~= true then
+        local components, binding_err = component_client.list_system({component_ids = {component_id},
+            include = {meta = false}, limit = 1})
+        if binding_err then return nil, binding_err end
+        if components and components[1] then binding_impl = trim(components[1].impl_id) end
+    end
+
     local tx, tx_err = begin_transaction(db, "begin thread create", "thread_create_transaction_response")
     if tx_err then return nil, tx_err end
     local transaction = tx :: sql.Transaction
-    local insert_err = thread_row.insert(transaction, dbtype :: string, thread_id, row)
+    local insert_err = thread_row.insert(transaction, dbtype :: string, thread_id, row, binding_impl)
     if insert_err then
         return nil, rollback_transaction(transaction, insert_err, "rollback thread create", create_transaction_response)
     end
@@ -362,6 +373,7 @@ local function complete_thread(db: DB, thread_id: string, params: table, actor_i
     end
     thread, rows_err = error_envelope.binding(thread, nil, nil, "read created thread row", "created_thread_row_invalid")
     if rows_err then return nil, rows_err end
+    thread.event_read = nil
 
     local decl_err = M.apply_thread_declaration(db, thread_id, declaration_impl_id, identity)
     if decl_err then
@@ -505,6 +517,7 @@ function M.update(db: DB, thread_id: string, params: table, actor_id: string?): 
         return nil, errors.new({message = "thread not found", kind = errors.NOT_FOUND, retryable = false,
             details = {code = "thread_update_not_found"}})
     end
+    if type(rows[1]) == "table" then rows[1].event_read = nil end
     return rows[1], nil
 end
 

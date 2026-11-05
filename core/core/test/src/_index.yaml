@@ -2500,6 +2500,7 @@ entries:
       sql: app:read_model_native_sql_adapter
       json: app:read_model_native_json_adapter
       component: app:read_model_native_component_adapter
+      read_access: app:read_model_native_event_access_adapter
       core_db: kickside.core:db
       core_types: kickside.core:types
 
@@ -3029,6 +3030,7 @@ entries:
     source: file://thread_row_native_source.lua
     modules: [uuid]
     imports:
+      event_declaration: kickside.core.threads:event_declaration
       sql: app:thread_row_native_sql_adapter
       json: app:thread_row_native_json_adapter
       clock: kickside.core.jobs:clock
@@ -4313,3 +4315,7 @@ entries:
       repair: app:projection_pin_repair
       pin: kickside.core.retention:pin
       prune: kickside.core.retention:prune
+
+  - name: read_model_native_event_access_adapter
+    kind: library.lua
+    source: file://read_model_native_event_access_adapter.lua

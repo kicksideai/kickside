@@ -55,8 +55,8 @@ local function handler(): ()
         return
     end
 
-    -- Gate the thread before reading: READ access required.
-    local allowed, _status, gate_msg, _component_id, gate_err = thread_access.gate_thread_access(db, thread_id, thread_access.READ)
+    -- The stored event read level selects the component access mask.
+    local allowed, _status, gate_msg, _component_id, gate_err = thread_access.gate_thread_access(db, thread_id, thread_access.READ, true)
     if not allowed then
         local status, payload = thread_access.failure_response(db, gate_err :: error, gate_msg)
         res:set_status(status)

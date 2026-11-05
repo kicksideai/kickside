@@ -83,7 +83,7 @@ end
 -- load_thread_row reads a single thread row (no access check). Returns
 -- (row, nil), (nil, nil) when absent, or (nil, error) on a db failure.
 local function load_thread_row(db_or_tx: Executor, thread_id: string): (table?, error?)
-    local rows, err = sql.builder.select(table.unpack(THREAD_COLUMNS))
+    local rows, err = sql.builder.select("event_read", table.unpack(THREAD_COLUMNS))
         :from("kickside_thread")
         :where(sql.builder.eq({ id = thread_id }))
         :limit(1)
@@ -97,12 +97,13 @@ local function load_thread_row(db_or_tx: Executor, thread_id: string): (table?, 
     return rows[1], nil
 end
 
-local function authorize_thread(thread: table, required_mask: integer): (table?, error?)
+local function authorize_thread(thread: table, required_mask: integer, event_payload: boolean?): (table?, error?)
     local component_id = trim(thread.component_id)
     if component_id == "" then
         return nil, (errors.new({ message = "thread has no component", kind = errors.NOT_FOUND }) :: error)
     end
-    local allowed, access_err = component.has_access(component_id, required_mask)
+    local allowed, access_err = component.has_access(component_id, event_payload and thread.event_read == "admin"
+        and (masks.ACCESS.ADMIN :: integer) or required_mask)
     if access_err then
         return nil, access_err
     end
@@ -112,10 +113,10 @@ local function authorize_thread(thread: table, required_mask: integer): (table?,
     return thread, nil
 end
 
--- gate_read resolves a thread's component_id and checks the actor's READ access
--- through the component contract. Returns the thread row on success, a NOT_FOUND
--- when the thread or its access is missing, or a PERMISSION_DENIED otherwise.
-local function gate_read(db_or_tx: Executor, thread_id: string, required_mask: integer): (table?, error?, boolean)
+-- gate_read resolves component_id and applies the requested component access.
+-- Payload reads use the thread's stored event read level. The third result records
+-- whether the thread row exists.
+local function gate_read(db_or_tx: Executor, thread_id: string, required_mask: integer, event_payload: boolean?): (table?, error?, boolean)
     local thread, load_err = load_thread_row(db_or_tx, thread_id)
     if load_err then
         return nil, load_err, false
@@ -123,7 +124,8 @@ local function gate_read(db_or_tx: Executor, thread_id: string, required_mask: i
     if not thread then
         return nil, (errors.new({ message = "thread not found", kind = errors.NOT_FOUND }) :: error), false
     end
-    local authorized, access_err = authorize_thread(thread, required_mask)
+    local authorized, access_err = authorize_thread(thread, required_mask, event_payload)
+    thread.event_read = nil
     return authorized, access_err, true
 end
 
@@ -156,8 +158,8 @@ end
 -- get_component_id returns the component_id for a thread, or nil when the
 -- thread is absent or has an empty component_id. Returns (nil, error) on a
 -- db failure.
-function reader.get_component_id(db_or_tx: Executor, thread_id: string): (string?, error?)
-    local rows, err = sql.builder.select("component_id")
+function reader.get_component_id(db_or_tx: Executor, thread_id: string): (string?, error?, string?)
+    local rows, err = sql.builder.select("component_id", "event_read")
         :from("kickside_thread")
         :where(sql.builder.eq({ id = thread_id }))
         :limit(1)
@@ -172,7 +174,7 @@ function reader.get_component_id(db_or_tx: Executor, thread_id: string): (string
     if type(component_id) ~= "string" or component_id == "" then
         return nil, nil
     end
-    return component_id :: string, nil
+    return component_id :: string, nil, rows[1].event_read
 end
 
 local function hydrate_thread(thread: table): error?
@@ -313,7 +315,7 @@ local function int_of(value: any): integer
     return math.floor(tonumber(value) or 0) :: integer
 end
 
--- list_events returns one page of a thread's events after a READ access check,
+-- list_events returns one page after the component kind's event access check,
 -- applying the seq window, type filter, and ordering. window is a loose options
 -- table (the fields below, each optional) coerced internally: before/from_seq/to_seq
 -- are mutually compatible — a range wins, then from, then to, then before, else
@@ -331,7 +333,7 @@ function reader.list_events(db_or_tx: Executor, thread_id: string, window: table
     if id == "" then
         return nil, (errors.new({ message = "thread_id is required", kind = errors.INVALID }) :: error)
     end
-    local _, gate_err = gate_read(db_or_tx, id, (masks.ACCESS.READ :: integer))
+    local _, gate_err = gate_read(db_or_tx, id, (masks.ACCESS.READ :: integer), true)
     if gate_err then
         return nil, gate_err
     end
@@ -421,7 +423,7 @@ function reader.find_event_by_external(
     if id == "" or kind == "" or source == "" or external_key == "" then
         return nil, (errors.new({ message = "thread_id, event_type, external_source, and external_id are required", kind = errors.INVALID }) :: error)
     end
-    local _, gate_err = gate_read(db_or_tx, id, (masks.ACCESS.READ :: integer))
+    local _, gate_err = gate_read(db_or_tx, id, (masks.ACCESS.READ :: integer), true)
     if gate_err then return nil, gate_err end
 
     local query = sql.builder.select(table.unpack(EVENT_COLUMNS))

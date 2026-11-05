@@ -5,6 +5,7 @@
 -- which attaches a thread to a component that already exists.
 
 local sql = require("sql")
+local event_declaration = require("event_declaration")
 local uuid = require("uuid")
 local json = require("json")
 local clock = require("clock")
@@ -120,11 +121,13 @@ end
 
 -- insert writes the thread row under thread_id (== its component id) and its parent
 -- edge on tx. A row already present under that id is a CONFLICT.
-function M.insert(tx: sql.Transaction, dbtype: string, thread_id: string, row: any): error?
+function M.insert(tx: sql.Transaction, dbtype: string, thread_id: string, row: any, impl_id: string?): error?
     if type(thread_id) ~= "string" or thread_id == "" then return invalid("thread_id is required") end
     if dbtype == "" then return invalid("dbtype is required") end
     local checked, check_err = M.check(row)
     if check_err or not checked then return check_err end
+    local events, declaration_err = event_declaration.load(trim(impl_id))
+    if declaration_err then return declaration_err end
     local now = clock.now(dbtype)
 
     local inserted, insert_err = sql.builder.insert("kickside_thread")
@@ -136,6 +139,7 @@ function M.insert(tx: sql.Transaction, dbtype: string, thread_id: string, row: a
             event_count = 0,
             last_event_ts = now,
             component_id = thread_id,
+            event_read = events.read == "admin" and "admin" or "",
             created_at = now,
             updated_at = now,
         })

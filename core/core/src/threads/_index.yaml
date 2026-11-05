@@ -132,6 +132,14 @@ entries:
       - funcs
       - contract
 
+  - name: event_declaration
+    kind: library.lua
+    source: file://event_declaration.lua
+    modules: [registry]
+    imports:
+      threads_consts: kickside.core.threads:consts
+      error_envelope: kickside.contract:error_envelope
+
   - name: component
     kind: library.lua
     meta:
@@ -378,6 +386,8 @@ entries:
     source: file://contract/event_authorization.lua
     modules: [sql, security, registry, uuid, json]
     imports:
+      threads_consts: kickside.core.threads:consts
+      event_declaration: kickside.core.threads:event_declaration
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       error_envelope: kickside.contract:error_envelope
       threads_writer: kickside.core.threads.persist:writer
@@ -938,6 +948,8 @@ entries:
     method: authorize_writes
     modules: [sql, security, registry, uuid, json]
     imports:
+      threads_consts: kickside.core.threads:consts
+      event_declaration: kickside.core.threads:event_declaration
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       error_envelope: kickside.contract:error_envelope
       threads_writer: kickside.core.threads.persist:writer

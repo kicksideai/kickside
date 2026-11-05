@@ -108,6 +108,7 @@ function M.ensure(db: Executor, component_id: string, component_class: string?):
             id = tid,
             thread_class = class_for(component_class),
             component_id = "",
+            event_read = "",
             state = masks.THREAD_STATE.OPEN,
             event_count = 0,
             attrs = attrs,
