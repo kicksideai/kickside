@@ -305,7 +305,9 @@ entries:
     meta:
       comment: Executes upload admission under a named test user through the real Users resolver.
     source: file://admit_upload.lua
+    modules: [channel]
     imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
       upload_lib: kickside.uploads:uploads
       attachment_ingest: kickside.uploads:attachment_ingest
     method: run

@@ -133,7 +133,7 @@ local function upload_metadata(a: any): { [string]: any }
     return metadata
 end
 
-function M.ingest(att: any): (any?, string?)
+function M.ingest(att: any): (any?, any?)
     local ok, reason = M.should_ingest(att, M.MAX_BYTES)
     if not ok then return nil, reason end
     local a: any = att
@@ -153,7 +153,10 @@ function M.ingest(att: any): (any?, string?)
         nil,
         upload_metadata(a)
     )
-    if uerr or not upload then return nil, "upload failed: " .. tostring(uerr) end
+    if uerr then return nil, uerr end
+    if not upload then
+        return nil, errors.new({ message = "upload returned no record", kind = errors.INTERNAL })
+    end
     return upload
 end
 
