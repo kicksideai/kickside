@@ -155,6 +155,7 @@ entries:
     method: run
     modules: [sql, uuid, funcs, security]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
 
   - name: reply_providers_test
@@ -574,3 +575,12 @@ entries:
     modules: [uuid, security, contract, funcs]
     imports:
       test: wippy.test:test
+
+  - name: deletion_test_worker
+    kind: library.lua
+    source: file://deletion_test_worker.lua
+    modules: [funcs, sql, time, uuid, process]
+    imports:
+      claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      completion: kickside.core.jobs.service:worker_completion

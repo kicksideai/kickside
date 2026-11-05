@@ -25,6 +25,7 @@ entries:
       - app:user
   modules: [sql, funcs, uuid, json]
   imports:
+    deletion_worker: app:deletion_test_worker
     test: wippy.test:test
     command: kickside.automation:command
     drive: kickside.automation:drive

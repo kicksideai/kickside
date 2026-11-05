@@ -296,7 +296,7 @@ local function define_tests()
                 local _, cerr = sql.builder.insert("kickside_components")
                     :set_map({
                         component_id = id,
-                        impl_id = "kickside.core:thread",
+                        impl_id = "kickside.webhooks:webhook_kind",
                         private_context = "{}",
                         path = component_path(d, id),
                     })

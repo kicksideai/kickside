@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 -- End-to-end test of the agent-facing Skill tool.
 --
 -- This is exactly what an agent does at runtime when it uses the skills trait:
@@ -241,6 +242,9 @@ local function define_tests()
             test.is_nil(err, "delete error: " .. tostring(err))
             test.eq(result.skill_id, skill_id)
             test.contains(result.message, "Deleted skill")
+            local finished, finish_err = deletion_worker.await(skill_id)
+            test.is_nil(finish_err, tostring(finish_err))
+            test.is_true(finished)
             local listed, list_err = exec:call(TOOL, { action = "list", limit = 100 })
             test.is_nil(list_err, tostring(list_err))
             for _, row in ipairs(listed.skills) do

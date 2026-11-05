@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 -- The real trusted writer reads a reserved command and refuses forged
 -- references, inaccessible resources, invalid subjects and missing pin receipts.
 local test = require("test")
@@ -78,14 +79,18 @@ local function reconfigured(schema: any, before: any, after: any, same_subject: 
     local request = reserved(command_input, "reconfigure", id)
     local receipt, err = verify(request)
     local context, read_err = component.get_private_context(id)
-    local _, delete_err = service:delete({ component_id = id })
+    local deleted, delete_err = component.system_delete(id)
     test.is_nil(read_err, tostring(read_err))
     local actual_json, actual_err = json.encode(context._portable_input)
     local expected_json, expected_err = json.encode(before)
     test.is_nil(actual_err, tostring(actual_err))
     test.is_nil(expected_err, tostring(expected_err))
     test.eq(actual_json, expected_json)
-    test.is_nil(delete_err, tostring(delete_err))
+    test.is_false(deleted)
+    test.is_true(errors.is(delete_err, errors.CONFLICT), tostring(delete_err))
+    local finished, finish_err = deletion_worker.run(id)
+    test.is_nil(finish_err, tostring(finish_err))
+    test.is_true(finished.deleted)
     return receipt, err
 end
 
@@ -198,8 +203,12 @@ local function define_tests(): ()
                     test.contains(tostring(err), "operator lacks")
                 end
                 for _, component_id in ipairs({ id, target }) do
-                    local _, delete_err = service:delete({ component_id = component_id })
-                    test.is_nil(delete_err, tostring(delete_err))
+                    local deleted, delete_err = component.system_delete(component_id)
+                    test.is_false(deleted)
+                    test.is_true(errors.is(delete_err, errors.CONFLICT), tostring(delete_err))
+                    local finished, finish_err = deletion_worker.run(component_id)
+                    test.is_nil(finish_err, tostring(finish_err))
+                    test.is_true(finished.deleted)
                 end
             end)
         end
@@ -258,8 +267,12 @@ local function define_tests(): ()
             test.is_nil(receipt)
             test.not_nil(err)
             test.contains(tostring(err), "execution subject lacks")
-            local _, delete_err = service:delete({ component_id = target })
-            test.is_nil(delete_err, tostring(delete_err))
+            local deleted, delete_err = component.system_delete(target)
+            test.is_false(deleted)
+            test.is_true(errors.is(delete_err, errors.CONFLICT), tostring(delete_err))
+            local finished, finish_err = deletion_worker.run(target)
+            test.is_nil(finish_err, tostring(finish_err))
+            test.is_true(finished.deleted)
         end)
 
         test.it("rejects a pin target without a durable receipt", function()

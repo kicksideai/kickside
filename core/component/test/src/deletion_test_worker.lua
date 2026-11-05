@@ -33,4 +33,17 @@ function M.run(id: string): (any?, error?)
     if settle_err then error(settle_err) end
     return result, err
 end
+
+function M.await(id: string): (boolean, error?)
+    for _ = 1, 1000 do
+        local db = assert(sql.get("app:db"))
+        local rows, read_err = db:query("SELECT component_id FROM kickside_components WHERE component_id=$1", {id})
+        assert(db:release())
+        if read_err then return false, read_err end
+        if #rows == 0 then return true, nil end
+        time.sleep("10ms")
+    end
+    return false, errors.new({kind = errors.TIMEOUT, message = "component deletion does not finish"})
+end
+
 return M

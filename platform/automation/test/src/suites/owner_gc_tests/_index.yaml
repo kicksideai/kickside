@@ -19,6 +19,7 @@ entries:
   - contract
   - funcs
   imports:
+    deletion_worker: app:deletion_test_worker
     test: wippy.test:test
     drive: kickside.automation:drive
     slot: kickside.automation:slot
@@ -46,6 +47,7 @@ entries:
   - contract
   - funcs
   imports:
+    deletion_worker: app:deletion_test_worker
     test: wippy.test:test
     drive: kickside.automation:drive
     slot: kickside.automation:slot
@@ -74,6 +76,7 @@ entries:
   - contract
   - funcs
   imports:
+    deletion_worker: app:deletion_test_worker
     test: wippy.test:test
     drive: kickside.automation:drive
     slot: kickside.automation:slot
@@ -101,6 +104,7 @@ entries:
   - contract
   - funcs
   imports:
+    deletion_worker: app:deletion_test_worker
     test: wippy.test:test
     drive: kickside.automation:drive
     slot: kickside.automation:slot
@@ -125,6 +129,7 @@ entries:
   - sql
   - uuid
   imports:
+    deletion_worker: app:deletion_test_worker
     test: wippy.test:test
     owner_gc: kickside.automation:owner_gc
     component: kickside.component:component
@@ -141,6 +146,7 @@ entries:
   - sql
   - uuid
   imports:
+    deletion_worker: app:deletion_test_worker
     test: wippy.test:test
     owner_gc: kickside.automation:owner_gc
     component: kickside.component:component
@@ -157,6 +163,7 @@ entries:
   - sql
   - uuid
   imports:
+    deletion_worker: app:deletion_test_worker
     test: wippy.test:test
     owner_gc: kickside.automation:owner_gc
     component: kickside.component:component

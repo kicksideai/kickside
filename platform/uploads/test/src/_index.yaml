@@ -581,6 +581,7 @@ entries:
     - security
     - fs
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       provision: kickside.core.threads:provision
       component: kickside.component:component
@@ -1000,3 +1001,12 @@ entries:
   - name: navigation_upload_query_repo_fixture
     kind: library.lua
     source: file://navigation_api_fixture.lua
+
+  - name: deletion_test_worker
+    kind: library.lua
+    source: file://deletion_test_worker.lua
+    modules: [funcs, sql, time, uuid, process]
+    imports:
+      claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      completion: kickside.core.jobs.service:worker_completion

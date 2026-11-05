@@ -15,6 +15,7 @@ entries:
   - channel
   - uuid
   imports:
+    deletion_worker: app:deletion_test_worker
     test: wippy.test:test
   method: run
 - name: automations_read_test
@@ -29,6 +30,7 @@ entries:
   - security
   - uuid
   imports:
+    deletion_worker: app:deletion_test_worker
     test: wippy.test:test
   method: run
 - name: automations_read_error_stub
@@ -64,5 +66,6 @@ entries:
   - security
   - uuid
   imports:
+    deletion_worker: app:deletion_test_worker
     test: wippy.test:test
   method: run
