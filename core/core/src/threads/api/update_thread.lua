@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- PATCH /threads/{id} — patch state / thread_class / attrs. Body carries any of
 -- { state, thread_class, attrs }. Response: { success, thread }.
 

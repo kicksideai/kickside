@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- POST /threads/{id}/messages — append a message event. Body: { text, role?,
 -- content?, external?, created_at?, body_table? }. Response: { success, event,
 -- duplicate? }. A scheduler nudge + thread update fire after a real insert.

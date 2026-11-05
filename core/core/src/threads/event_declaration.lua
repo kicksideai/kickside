@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Binding event declarations shared by binding and write authorization.
 local registry = require("registry")
 local consts = require("threads_consts")

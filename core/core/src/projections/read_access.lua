@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Projection bodies use the thread's committed event read level.
 local sql = require("sql")
 local component = require("component")

@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local M = {order = {}, admin = false, level = "", base_allowed = true, component_id = "component"}
 function M.reset(level: string, admin: boolean, base_allowed: boolean?)
     M.order, M.admin, M.level, M.base_allowed = {}, admin, level, base_allowed ~= false

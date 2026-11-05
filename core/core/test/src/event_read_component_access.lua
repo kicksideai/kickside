@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local contract = require("contract")
 local security = require("security")
 local function read(args: {component_id: string}): (table?, error?)

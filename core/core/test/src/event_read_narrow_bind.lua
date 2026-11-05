@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local contract = require("contract")
 local security = require("security")
 local sql = require("sql")

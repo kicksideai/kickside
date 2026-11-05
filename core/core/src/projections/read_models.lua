@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Read-only boundary for committed materialized views. It exposes projection
 -- bodies only: no event log, cursor, lag, catch-up, replay, or worker controls.
 

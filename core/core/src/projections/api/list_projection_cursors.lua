@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- GET /threads/{id}/projections — list a thread's projections and their cursors.
 -- Response shape: { success, projections, cursors, count }.
 
