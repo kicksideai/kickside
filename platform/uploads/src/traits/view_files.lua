@@ -3,6 +3,7 @@ local security = require("security")
 local contract = require("contract")
 local base64 = require("base64")
 local artifact_content_repo = require("artifact_content_repo")
+local trim = require("text_trim").trim
 local artifact_parts_repo = require("artifact_parts_repo")
 
 local DEFAULT_ARTIFACT_LIST_LIMIT = 20
@@ -37,11 +38,6 @@ local function image_artifact_summary(artifact: any): any
         occurrence_count = artifact.occurrence_count,
         duplicate_count = artifact.duplicate_count,
     }
-end
-
-local function trim(value: any): string
-    if type(value) ~= "string" then return "" end
-    return (value:gsub("^%s*(.-)%s*$", "%1"))
 end
 
 local function list_image_artifacts(upload_id: string, args: any): (any?, integer?, ArtifactError?)

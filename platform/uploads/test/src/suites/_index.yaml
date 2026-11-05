@@ -12,3 +12,28 @@ entries:
     imports:
       test: wippy.test:test
       attachment_ingest: kickside.uploads:attachment_ingest
+
+  - name: text_trim_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: text_trim
+      comment: Whitespace trim on large and whitespace-only text, and the OCR text decision on ~100 KB of text.
+    source: file://text_trim_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      text_trim: kickside.uploads:text_trim
+      page_images: kickside.uploads.rasterize:page_images
+
+  - name: trusted_reader_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: trusted_reader
+      comment: trusted_reader facts, provenance, UTF-8 safe text cut and image-only source access on stubbed repositories.
+    source: file://trusted_reader_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      trusted_reader: kickside.uploads:trusted_reader

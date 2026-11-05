@@ -232,6 +232,7 @@ entries:
     imports:
       artifact_content_repo: kickside.uploads.persist:artifact_content_repo
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+      text_trim: kickside.uploads:text_trim
 
   # kickside.uploads.traits:fetch_url
   - name: fetch_url

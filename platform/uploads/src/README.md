@@ -132,6 +132,29 @@ not guarantee the record's filename; the UI download action supplies its name.
 Consumers using these capabilities must require Uploads >=0.3.2. An older
 installed package satisfying a wildcard dependency does not provide them.
 
+## Trusted reader and provider attachments
+
+`kickside.uploads:trusted_reader` is a read-only library over any upload,
+regardless of its owner: `info`, `provenance` (the upload's metadata as the
+uploader wrote it, without the private keys the upload API also hides, such as
+`__upload_token`), `primary_text` (converted text, cut UTF-8 safely at
+`max_chars` bytes), `source_image` (the original artifact of an image upload,
+`nil` for documents) and `image_bytes` (one image artifact of that upload). Like
+`delivery_url`, it does not authorize the caller: the importing module must
+check its own access rule and the upload's provenance (for example a key it
+wrote into `att.metadata` when it ingested the file) before calling it.
+
+`kickside.uploads:attachment_ingest.ingest(att)` accepts optional
+`att.metadata`; it is stored on the upload, for example `__upload_token` (which
+binds the upload UUID and its completion callback) and provenance keys. The
+module's own `source`, `thread_id` and `external_message_id` always win. The
+filename and content type come from `att`, else from the provider fetcher's
+answer.
+
+Both are available starting with Uploads 0.3.9. Consumers using them must
+require Uploads >=0.3.9: an older installed package satisfying a wildcard
+dependency has no `trusted_reader` entry and drops `att.metadata`.
+
 ## Upload artifact contract
 
 The `upload.type` entries in [types/_index.yaml](types/_index.yaml),
