@@ -3,7 +3,7 @@ local sql = require("sql")
 local reclaim = require("reclaim")
 local fixture = require("fixture")
 local routes: {{name: string, stages: {string}}} = {
-    {name = "expired", stages = {"policy", "begin", "lookup", "size", "update", "marker", "history", "history_update", "commit", "notify"}},
+    {name = "expired", stages = {"policy", "begin", "lookup", "size", "update", "marker", "history", "history_update", "commit", "notify", "build", "alive", "locked", "finalize"}},
     {name = "terminated", stages = {"policy", "begin", "build", "lookup", "alive", "locked", "size", "update", "marker", "history", "finalize", "commit", "notify"}},
     {name = "live", stages = {"begin", "build", "lookup", "alive", "locked", "size", "update", "commit"}},
     {name = "confirmed", stages = {"begin", "lookup", "size", "update", "marker", "history", "finalize", "commit", "notify"}},
@@ -95,7 +95,7 @@ local function group(index: integer)
             end
             test.it("valid recovery", function()
                 fixture.reset(route.name, "", nil); test.is_nil(invoke(route.name))
-                test.eq(fixture.commits, route.name == "one" and 0 or 1)
+                test.eq(fixture.commits, route.name == "one" and 0 or (route.name == "expired" and 2 or 1))
                 test.eq(fixture.rollbacks, 0)
             end)
         end)

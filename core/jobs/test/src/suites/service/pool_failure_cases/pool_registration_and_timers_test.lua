@@ -26,7 +26,7 @@ end
 local function empty_reclaim()
     return {
         reclaim_expired = function() return 0, nil end,
-        reclaim_terminated = function() return 0, nil end,
+        reclaim_terminated = function() return 0, nil, 0 end,
         close_lost_runs = function() return 0, nil end,
     }
 end
@@ -84,7 +84,7 @@ local function run_deadline_case(kind: string): (integer, integer, { string })
                 if kind == "lease" and now_ms >= deadline_ms then reclaimed_job = true; return 1, nil end
                 return 0, nil
             end,
-            reclaim_terminated = function() return 0, nil end,
+            reclaim_terminated = function() return 0, nil, 0 end,
             close_lost_runs = function() return 0, nil end,
         },
         claim = {
@@ -440,7 +440,7 @@ local function define_tests()
                     worker_count_postgres = 1 }), nil end,
                 reclaim = {
                     reclaim_expired = function() return 0, nil end,
-                    reclaim_terminated = function() return 0, nil end,
+                    reclaim_terminated = function() return 0, nil, 0 end,
                     close_lost_runs = function() return 0, nil end,
                 },
                 claim = {

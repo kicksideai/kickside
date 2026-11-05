@@ -4,12 +4,12 @@ type DB = native.DB
 type Transaction = native.Transaction
 local function builder(table_name, operation)
     local query = {}
-    function query:set(...) return self end
+    function query:set(key, value) if key == "status" then self.changes_status = true end; return self end
     function query:where(...) return self end
     function query:run_with(tx) self.tx = tx; return self end
     function query:exec(): (any, error?)
         local stage = operation == "delete" and "delete" or
-            (table_name == "kickside_job" and (fixture.mode == "mark" and "lock" or "update") or "update")
+            (table_name == "kickside_job" and not self.changes_status and "lock" or "update")
         return self.tx:execute(stage)
     end
     return query

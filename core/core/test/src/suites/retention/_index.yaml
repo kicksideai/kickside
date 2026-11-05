@@ -28,6 +28,8 @@ entries:
     method: run
     modules: [sql, uuid]
     imports:
+      claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
       test: wippy.test:test
       sweeper: kickside.core.retention:sweeper
       threads_writer: kickside.core.threads.persist:writer

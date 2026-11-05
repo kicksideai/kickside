@@ -5,6 +5,8 @@ local time = require("time")
 local json = require("json")
 local funcs = require("funcs")
 local jobs = require("jobs")
+local jobs_claim = require("jobs_claim")
+local lifecycle = require("lifecycle")
 local support = require("oauth_repo_support")
 local oauth_repo = require("oauth_repo")
 local oauth_read_repo = require("oauth_read_repo")
@@ -34,8 +36,14 @@ local function execute(statement: string, params: { any }): ()
 end
 local function claim_slot(job_id: string?): Map
     if type(job_id) ~= "string" then error("refresh slot id is required") end
-    execute("UPDATE kickside_job SET status='running',lease_token=$1,lease_until=$2,execution_seq=execution_seq+1 WHERE id=$3",
-        { uuid.v7(), time.now():utc():add(60*time.SECOND):format(time.RFC3339), job_id })
+    local db = assert(sql.get("app:db"))
+    local dbtype = tostring(db:type())
+    local tx = assert(db:begin())
+    local leased, err = jobs_claim.lease_row(tx, dbtype, job_id, uuid.v7(),
+        lifecycle.future_string(dbtype, 60), lifecycle.now_string(dbtype))
+    if err or not leased then tx:rollback(); db:release(); error(err or "fixture slot is not pending") end
+    assert(tx:commit())
+    assert(db:release())
     return query("SELECT * FROM kickside_job WHERE id=$1", { job_id })[1]
 end
 type CreatedConnection = { created_at: string }
@@ -208,7 +216,8 @@ local function define_tests()
             execute("INSERT INTO oauth_refresh_behavior (connection_id,behavior) VALUES ($1,'temporarily_unavailable')", { id })
             local job_id, arm_err = refresh_schedule.arm(id)
             test.is_nil(arm_err)
-            local result, err = funcs.call("kickside.oauth:refresh_connection", { job = claim_slot(job_id), payload = { component_id = id } })
+            local first_job = claim_slot(job_id)
+            local result, err = funcs.call("kickside.oauth:refresh_connection", { job = first_job, payload = { component_id = id } })
             local row = query("SELECT connection_state,refresh_enabled,schedule_id FROM kickside_oauth_connections WHERE component_id=$1", { id })[1]
             test.eq(row.connection_state, "connected")
             test.is_true(row.refresh_enabled == true or row.refresh_enabled == 1)
@@ -218,6 +227,10 @@ local function define_tests()
             test.is_true(err:retryable())
             -- A later definitive rejection still requires reconnect and parks
             -- this same slot; a transient failure must not erase that distinction.
+            local db = assert(sql.get("app:db"))
+            local failure_err = lifecycle.fail_job(db, first_job, tostring(db:type()), tostring(err), "infrastructure")
+            assert(db:release())
+            test.is_nil(failure_err)
             execute("UPDATE oauth_refresh_behavior SET behavior='invalid_grant' WHERE connection_id=$1", { id })
             result, err = funcs.call("kickside.oauth:refresh_connection", { job = claim_slot(job_id), payload = { component_id = id } })
             test.is_nil(err, tostring(err)); test.is_true(result.self_completed)

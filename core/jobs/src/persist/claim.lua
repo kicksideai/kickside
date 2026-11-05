@@ -150,9 +150,9 @@ function claim.lease_row(tx: sql.Transaction, dbtype: string, id: string, token:
     local rows, err = tx:query("UPDATE kickside_job SET status=$1, attempts=attempts+1, execution_seq="
         .. greatest .. "(execution_seq, COALESCE((SELECT MAX(r.execution_seq) FROM kickside_job_run r"
         .. " WHERE r.job_id=kickside_job.id), 0)) + 1, lease_token=$2, lease_until=$3, heartbeat_at=$4,"
-        .. " wake_demand_at=NULL, lease_policy=$5 WHERE id=$6 AND status=$7"
+        .. " wake_demand_at=NULL, lease_policy=$5, last_error=CASE WHEN last_error=$6 THEN NULL ELSE last_error END WHERE id=$7 AND status=$8"
         .. " AND " .. available_concurrency_key("$1") .. " RETURNING attempts, execution_seq",
-        { job_types.JOB_STATE.RUNNING, token, lease_until, now, captured, id, job_types.JOB_STATE.PENDING })
+        { job_types.JOB_STATE.RUNNING, token, lease_until, now, captured, job_types.TERMINATION_SETTLED, id, job_types.JOB_STATE.PENDING })
     rows, err = boundary.bounded_rows(rows, err, "claim lease failed", "lease", 0, 1, response_error)
     if err then return nil, err end
     local row = rows[1]
@@ -221,7 +221,8 @@ function claim.claim_job(db: sql.DB, dbtype: string): (table?, error?)
             message = "invalid claim counters", kind = errors.INTERNAL }) :: error) end
         return { status = job_types.JOB_STATE.RUNNING,
             attempts = attempts + 1, execution_seq = sequence + 1,
-            lease_token = lease_token, lease_until = lease_until, heartbeat_at = now, lease_policy = captured, wake_demand_at = row_bytes.NULL }
+            lease_token = lease_token, lease_until = lease_until, heartbeat_at = now, lease_policy = captured, wake_demand_at = row_bytes.NULL,
+                last_error = row.last_error == job_types.TERMINATION_SETTLED and row_bytes.NULL or row.last_error }
     end, (policy :: any).max_row_bytes, "claim_job")
     if size_err then return nil, boundary.rollback(tx, size_err, "claim rollback failed") end
     local leased, update_err = claim.lease_row(tx, dbtype, tostring(job.id), lease_token, lease_until, now, captured)
@@ -237,6 +238,7 @@ function claim.claim_job(db: sql.DB, dbtype: string): (table?, error?)
     local _, commit_err = tx:commit()
     if commit_err then return nil, errors.wrap(commit_err, "claim commit failed") end
     job.wake_demand_at = nil
+    if job.last_error == job_types.TERMINATION_SETTLED then job.last_error = nil end
     job.lease_token = lease_token
     job.lease_policy = cfg.capture(policy)
     job.lease_until = lease_until
@@ -732,7 +734,8 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
                 message = "invalid claim counters", kind = errors.INTERNAL }) :: error) end
             return { status = job_types.JOB_STATE.RUNNING,
                 attempts = attempts + 1, execution_seq = sequence + 1,
-                lease_token = token, lease_until = lease_until, heartbeat_at = now, lease_policy = captured, wake_demand_at = row_bytes.NULL }
+                lease_token = token, lease_until = lease_until, heartbeat_at = now, lease_policy = captured, wake_demand_at = row_bytes.NULL,
+                last_error = row.last_error == job_types.TERMINATION_SETTLED and row_bytes.NULL or row.last_error }
         end, (policy :: any).max_row_bytes, "claim_job", retained[tostring(job.id)])
         local leased: table? = nil
         if not refusal then
@@ -744,6 +747,7 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
         end
         if leased then
             job.wake_demand_at = nil
+            if job.last_error == job_types.TERMINATION_SETTLED then job.last_error = nil end
             job.lease_token = token
             job.lease_policy = cfg.capture(policy)
             job.lease_until = lease_until

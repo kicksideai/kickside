@@ -1,4 +1,6 @@
 -- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+local jobs_claim = require("jobs_claim")
+local lifecycle = require("lifecycle")
 local test = require("test")
 local funcs = require("funcs")
 local security = require("security")
@@ -81,12 +83,15 @@ local function define_tests()
                 local rows, read_err = db:query("SELECT job_id FROM kickside_automation_drive WHERE automation_id=$1 AND drive_key='main'", {env.automation_id})
                 test.is_nil(read_err, tostring(read_err))
                 test.eq(#rows, 1)
-                local job = {id=rows[1].job_id, lease_token=uuid.v7(), execution_seq=1,
-                    lease_until=time.now():utc():add(60*time.SECOND):format(time.RFC3339)}
-                job.deadline = job.lease_until
-                local _, lease_err = db:execute("UPDATE kickside_job SET status='running', lease_token=$1, lease_until=$2, execution_seq=$3 WHERE id=$4",
-                    {job.lease_token, job.lease_until, job.execution_seq, job.id})
-                test.is_nil(lease_err, tostring(lease_err))
+                local job_id = rows[1].job_id
+                local dbtype = tostring(db:type())
+                local tx = assert(db:begin())
+                local leased, lease_err = jobs_claim.lease_row(tx, dbtype, job_id, uuid.v7(),
+                    lifecycle.future_string(dbtype, 60), lifecycle.now_string(dbtype))
+                if lease_err or not leased then tx:rollback(); db:release(); error(lease_err or "fixture job is not pending") end
+                assert(tx:commit())
+                local job = assert(db:query("SELECT * FROM kickside_job WHERE id=$1", {job_id}))[1]
+                job.deadline = time.now():utc():add(60*time.SECOND):format(time.RFC3339)
                 local _, round_err = caller:call("kickside.automation:round", {
                     job=job, payload={automation_id=env.automation_id, drive_key="main"},
                 })
