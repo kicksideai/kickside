@@ -111,6 +111,43 @@ return { run = function(options)
                 assert(db:release())
             end)
 
+            for _, intent in ipairs({"expiry", "cancel"}) do
+                test.it("commits supervisor lease-loss history before concurrent recovery: " .. intent, function()
+                    local db = assert(sql.get("app:db"))
+                    local dbtype = tostring(db:type())
+                    local leased = assert(job_fixture.enqueue_leased(db, dbtype, {
+                        job_type = "test.loss.recovery", worker_ref = "proc://app:job_sleep_proc", max_attempts = 1,
+                        job_identity = {namespace = "loss", scope = uuid.v7(), key = "recovery"},
+                    }))
+                    local run = assert(lifecycle.start_job_run(db, dbtype, leased, tostring(process.pid()), 1))
+                    local past = dbtype == sql.type.SQLITE and "2000-01-01 00:00:00" or "2000-01-01T00:00:00Z"
+                    assert(db:execute("UPDATE kickside_job SET lease_until=$1 WHERE id=$2", {past, leased.id}))
+                    local child_err, control = worker_child.supervise_job_child(leased, run.id)
+                    test.is_true(job_types.is_lease_lost_error(child_err))
+                    if intent == "cancel" then test.is_true(assert(lifecycle_cancel.cancel_job(db, dbtype, {id = leased.id}))) end
+                    local recovered = false
+                    local recovery_err: error? = nil
+                    local finish = lifecycle_cancel.finish_cancellation
+                    lifecycle_cancel.finish_cancellation = function(...)
+                        recovered = true
+                        local _, err = reclaim.reclaim_terminated(db, dbtype, job_types.MAX_WORKERS)
+                        recovery_err = err
+                        return finish(...)
+                    end
+                    local settle_err = worker.settle_child_exit(db, dbtype, leased, run, child_err, control)
+                    lifecycle_cancel.finish_cancellation = finish
+                    local row = assert(db:query("SELECT status,lease_token FROM kickside_job WHERE id=$1", {leased.id}))[1]
+                    local history = assert(db:query("SELECT status FROM kickside_job_run WHERE id=$1", {run.id}))[1]
+                    assert(db:release())
+                    test.is_nil(settle_err)
+                    test.is_nil(recovery_err)
+                    test.is_true(recovered)
+                    test.eq(row.status, intent == "cancel" and "cancelled" or "pending")
+                    test.is_nil(row.lease_token)
+                    test.eq(history.status, intent == "cancel" and "failed" or "lease_lost")
+                end)
+            end
+
             test.it("recovers a supervisor-confirmed lease loss without treating it as an execution failure", function()
                 local db = assert(sql.get("app:db"))
                 local dbtype = tostring(db:type())

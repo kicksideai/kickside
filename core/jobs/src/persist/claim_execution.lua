@@ -71,8 +71,9 @@ function claim_execution.release_unstarted(db: sql.DB, job: table, worker_id: st
         if type(fence) ~= "table" then return false, sql_boundary.rollback(tx,
             response_error("release.fence"), "job start fence rollback failed") end
     end
+    local lock = dbtype == sql.type.POSTGRES and " FOR UPDATE" or ""
     local held, hold_err = tx:query([[SELECT id FROM kickside_job WHERE id=$1
-        AND status=$2 AND lease_token=$3 AND execution_seq=$4]],
+        AND status=$2 AND lease_token=$3 AND execution_seq=$4]] .. lock,
         {job.id, job_types.JOB_STATE.RUNNING, job.lease_token, job.execution_seq})
     if hold_err then return false, sql_boundary.rollback(tx,
         errors.wrap(hold_err, "unstarted release read failed"), "job start fence rollback failed") end

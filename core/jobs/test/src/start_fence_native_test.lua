@@ -111,6 +111,13 @@ local function release_boundaries()
 end
 local function proofs()
     release_boundaries()
+    test.it("serializes release with the child start on PostgreSQL", function()
+        fixture.reset("release", "", nil, sql.type.POSTGRES)
+        local value, err = call("release")
+        test.is_nil(err)
+        test.is_true(value)
+        test.contains(fixture.hold_statement, "FOR UPDATE")
+    end)
     test.it("release fences the stored thread owner before requeueing a partial assignment", function()
         fixture.reset("release", "", nil, sql.type.POSTGRES)
         fixture.owner_rows = {{owner_kind = "thread", owner_id = "stored-thread"}}

@@ -76,7 +76,7 @@ local function settle_child_exit(db: sql.DB, dbtype: string, job: table, run_ctx
     if control == "termination_unconfirmed" then
         return worker_fence.hold_unconfirmed_execution(db, job)
     elseif control ~= "revoked" and child_err and job_types.is_lease_lost_error(child_err) then
-        local fence_err = worker_fence.prepare_termination(db, job)
+        local fence_err = worker_fence.prepare_termination(db, job, child_err)
         if fence_err then return fence_err end
         return settle_child_exit(db, dbtype, job, run_ctx, child_err, "revoked")
     elseif control == "revoked" then

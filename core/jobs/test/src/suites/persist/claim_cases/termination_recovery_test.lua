@@ -485,6 +485,44 @@ local function define_tests()
             db:release()
         end)
 
+        test.it("serializes child admission racing an unstarted release without aborting the drain", function()
+            local db = assert(job_fixture.private_queue("app:private_queue_termination_recovery_test"))
+            local dbtype = tostring(db:type())
+            local job = leased(db, dbtype)
+            local run = assert(lifecycle.start_job_run(db, dbtype, job, "test-slot", 1))
+            local other = assert(sql.get("app:private_queue_termination_recovery_test"))
+            local done = channel.new(2)
+            coroutine.spawn(function()
+                local started, err = claim_execution.mark_started(other, job, "test-slot", run.id, "test-child")
+                done:send({kind = "start", changed = started, err = err})
+            end)
+            coroutine.spawn(function()
+                local released, err = claim_execution.release_unstarted(db, job, "test-slot", run.id)
+                done:send({kind = "release", changed = released, err = err})
+            end)
+            local results: { [string]: any } = {}
+            for _ = 1, 2 do
+                local selected = channel.select({done:case_receive(), time.after("15s"):case_receive()})
+                test.eq(selected.channel, done)
+                results[selected.value.kind] = selected.value
+            end
+            local row = read(db, job.id)
+            local runs = assert(db:query("SELECT worker_pid FROM kickside_job_run WHERE id=$1", {run.id}))
+            assert(other:release())
+            assert(db:release())
+            test.is_nil(results.start.err)
+            test.is_nil(results.release.err)
+            test.is_true(results.start.changed ~= results.release.changed)
+            if results.start.changed then
+                test.is_false(results.release.changed)
+                test.eq(row.status, "running")
+                test.eq(runs[1].worker_pid, "test-child")
+            else
+                test.eq(row.status, "pending")
+                test.eq(#runs, 0)
+            end
+        end)
+
         test.it("never starts an execution fenced for termination", function()
             local db, _, queue_err = job_fixture.private_queue("app:private_queue_termination_recovery_test")
             if not db or not _ then error("test queue unavailable: " .. tostring(queue_err)) end

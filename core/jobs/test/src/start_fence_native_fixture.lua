@@ -2,6 +2,7 @@ local M: any = {}
 function M.reset(mode, stage, source, dialect)
     M.mode, M.stage, M.source, M.dialect = mode, stage, source, dialect
     M.missing, M.proof, M.secondary, M.writes, M.rollbacks, M.commits = false, nil, nil, 0, 0, 0
+    M.hold_statement = nil
     M.owner_rows = {{owner_kind = "test", owner_id = "owner"}}
     M.fence_calls, M.writes_at_fence, M.fence_id = 0, nil, nil
 end
@@ -22,6 +23,7 @@ end
 function M.transaction(): any
     return {
         query = function(self, statement)
+            if string.find(statement, "SELECT id", 1, true) == 1 then M.hold_statement = statement end
             return M.result(string.find(statement, "SELECT id", 1, true) == 1 and "lock" or "proof", {{}})
         end,
         execute = function(self, stage)

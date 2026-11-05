@@ -3611,6 +3611,7 @@ entries:
     kind: library.lua
     source: file://worker_fence_native_source.lua
     imports:
+      reclaim: kickside.core.jobs.persist:reclaim
       execution_policy: app:worker_fence_native_execution_policy
       sql: app:worker_fence_native_sql
       job_types: kickside.core.jobs:types
