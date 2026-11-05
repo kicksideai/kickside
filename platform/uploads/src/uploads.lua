@@ -219,6 +219,14 @@ local function persist_file(actor_id: string, file_data: string | stream.Stream,
         if rebind_err then return nil, rebind_err end
     end
 
+    local existing, lookup_err = upload_query_repo.get(upload_uuid)
+    if lookup_err and not errors.is(lookup_err, errors.NOT_FOUND) then
+        return nil, lookup_err
+    end
+    if existing then
+        return nil, failure("upload already exists", errors.CONFLICT, "declaration")
+    end
+
     local storage, err = resources.get_storage(storage_id)
     if err then
         return nil, typed(err, errors.UNAVAILABLE, "infrastructure", "")

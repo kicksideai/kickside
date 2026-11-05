@@ -71,6 +71,9 @@ entries:
       - sql
       - store
       - time
+      - events
+      - channel
+      - system
     imports:
       test: wippy.test:test
       settings_writer: kickside.settings.persist:settings_writer

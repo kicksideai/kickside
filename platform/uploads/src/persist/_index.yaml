@@ -82,6 +82,7 @@ entries:
       binding_errors: kickside.uploads.binding:binding_errors
       uploads_resources: kickside.uploads.binding:uploads_resources
       persisted_json: kickside.contract:persisted_json
+      text_trim: kickside.uploads:text_trim
 
   - name: upload_tokens
     kind: library.lua
@@ -101,6 +102,7 @@ entries:
       types: kickside.uploads:types
       persisted_json: kickside.contract:persisted_json
       upload_type: kickside.uploads:upload_type
+      text_trim: kickside.uploads:text_trim
 
       read_model_owner_delete: kickside.uploads.persist:read_model_owner_delete
   # Foreground user-operation appends. Durable
