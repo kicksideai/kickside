@@ -24,6 +24,7 @@ local jobs_config = require("jobs_config")
 local migration_runner = require("migration_runner")
 local jobs_claim = require("jobs_claim")
 local lifecycle = require("lifecycle")
+local clock = require("clock")
 
 type Map = { [string]: any }
 
@@ -228,7 +229,11 @@ function M.running_job(lease_seconds: integer?): Map
     M.exec("INSERT INTO kickside_job (id, job_type, job_identity, status, owner_kind, owner_id)"
         .. " VALUES ($1, 'kickside.automation:round', $2, 'pending', 'test', $3)",
         { id, "test:" .. id, id })
-    return M.lease_job(id, lease_seconds)
+    local job = M.lease_job(id, lease_seconds)
+    local deadline, deadline_err = clock.parse(job.lease_until)
+    if deadline_err or not deadline then error(tostring(deadline_err)) end
+    job.lease_until = deadline:utc():format(time.RFC3339)
+    return job
 end
 
 function M.read_drive(automation_id: string, drive_key: string): Map

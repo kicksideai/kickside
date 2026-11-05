@@ -291,6 +291,7 @@ entries:
   source: file://round/harness.lua
   modules: [sql, json, uuid, time, funcs, contract, security, logger, process, channel]
   imports:
+    clock: kickside.core.jobs:clock
     jobs_claim: kickside.core.jobs.persist:claim
     lifecycle: kickside.core.jobs.persist:lifecycle
     drive: kickside.automation:drive

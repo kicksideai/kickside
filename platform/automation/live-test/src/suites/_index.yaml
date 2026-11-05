@@ -84,6 +84,9 @@ entries:
   - channel
   - events
   imports:
+    clock: kickside.core.jobs:clock
+    jobs_claim: kickside.core.jobs.persist:claim
+    lifecycle: kickside.core.jobs.persist:lifecycle
     drive: kickside.automation:drive
     round_runner: kickside.automation:round_runner
     runtime_policy: kickside.automation:runtime_policy
