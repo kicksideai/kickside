@@ -180,6 +180,19 @@ local function define_tests()
             test.eq(attachment.external_message_id, "msg-1")
         end)
 
+        test.it("records typed upload conflicts and keeps the message turn", function()
+            test_state.state.attachment_ingest_error = errors.new({
+                kind = errors.CONFLICT, message = "upload already exists", retryable = false,
+            })
+            local turn, err = prepare({ attachments = { { ref = "opaque-file" } } })
+            test.is_nil(err)
+            test.not_nil(turn)
+            test.eq(#turn.attachments, 1)
+            test.eq(turn.attachments[1].ingest_error, "upload already exists")
+            test.is_nil(turn.attachments[1].upload_id)
+            test.eq(#turn.file_uuids, 0)
+        end)
+
         test.it("does not invent a component when the validated inbound has none", function()
             local turn = prepare({ reply_component_id = "", attachments = { { ref = "opaque", upload_id = "upload-2" } } })
             test.not_nil(turn)

@@ -233,7 +233,7 @@ local function persist_file(actor_id: string, file_data: string | stream.Stream,
     end
 
     local ext = get_file_extension(filename)
-    local storage_path = upload_uuid
+    local storage_path = uuid.v4()
     if ext and ext ~= "" then
         storage_path = storage_path .. "." .. ext
     end
