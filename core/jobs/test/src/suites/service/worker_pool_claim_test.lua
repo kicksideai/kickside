@@ -56,7 +56,7 @@ local function run_pool(claim_batch: (integer) -> (table[]?, error?), queued_wak
             worker_count_postgres = 1 }), nil end,
         reclaim = {
             reclaim_expired = function() return 0, nil end,
-            reclaim_terminated = function() return 0, nil end,
+            reclaim_terminated = function() return 0, nil, 0 end,
             close_lost_runs = function() return 0, nil end,
         },
         claim = {

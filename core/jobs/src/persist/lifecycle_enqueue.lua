@@ -254,7 +254,7 @@ local function resolve_existing(exec: Executor, dbtype: string, existing: table,
         local canceled, cancel_err = lifecycle_cancel.cancel_job_tx(exec :: sql.Transaction, dbtype,
             {id = tostring(existing.id)})
         if cancel_err then return nil, cancel_err end
-        if not canceled then return nil, response_error("replace.cancelled") end
+        if not canceled then return nil, mismatch end
         return nil, nil, tostring(existing.id)
     end
     local descriptor, descriptor_err = capacity.group(existing)

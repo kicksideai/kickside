@@ -179,6 +179,8 @@ entries:
     method: run
     modules: [sql, json, uuid, time, security, funcs]
     imports:
+      jobs_claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
       test: wippy.test:test
       refresh_schedule: kickside.oauth:refresh_schedule
       jobs: kickside.core.jobs:jobs

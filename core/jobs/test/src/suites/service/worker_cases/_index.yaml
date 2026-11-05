@@ -15,6 +15,12 @@ entries:
     worker_child: kickside.core.jobs.service:worker_child
     worker: kickside.core.jobs.service:loop
     proc_supervisor: kickside.core.jobs:proc_supervisor
+    reclaim: kickside.core.jobs.persist:reclaim
+    claim: kickside.core.jobs.persist:claim
+    job_types: kickside.core.jobs:types
+    worker_fence: kickside.core.jobs.service:worker_fence
+    worker_pool: kickside.core.jobs.service:worker_pool
+    lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
 - name: dispatch_context_test
   kind: function.lua
   meta:

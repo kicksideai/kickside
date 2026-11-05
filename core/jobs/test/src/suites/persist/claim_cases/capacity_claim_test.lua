@@ -368,7 +368,8 @@ local function define_tests()
                     local dbtype = tostring(db:type())
                     for ordinal, key in ipairs({ "existing-a", "existing-b" }) do
                         local id = enqueue(db, dbtype, "app:capacity_worker_a", key, ordinal)
-                        local _, err = db:execute("UPDATE kickside_job SET status='running',capacity_group=NULL"
+                        assert(job_fixture.lease_own(db, dbtype, id))
+                        local _, err = db:execute("UPDATE kickside_job SET capacity_group=NULL"
                             .. existing.columns .. " WHERE id=$1", { id })
                         test.is_nil(err, tostring(err))
                     end

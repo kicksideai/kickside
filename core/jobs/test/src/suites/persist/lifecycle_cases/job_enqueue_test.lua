@@ -89,6 +89,24 @@ end
 
 local function define_tests()
     test.describe("jobs.lifecycle enqueue", function()
+        test.it("refuses replacement of a tokenless termination quarantine as an input conflict", function()
+            with_db(function(db)
+                local params = {namespace = "replace", scope = uuid.v7(), key = "quarantine",
+                    owner_locator = {kind = "test", id = "replace"}, job_type = "test.replace",
+                    immutable_payload = {revision = 1}}
+                local first = assert(jobs.enqueue(params))
+                assert(db:execute("UPDATE kickside_job SET last_error=$1 WHERE id=$2",
+                    {job_types.TERMINATION_PENDING_PREFIX .. uuid.v7(), first.id}))
+                params.replace, params.immutable_payload = true, {revision = 2}
+                local result, err = jobs.enqueue(params)
+                test.is_nil(result)
+                test.not_nil(err)
+                test.is_true(errors.is(err, errors.CONFLICT))
+                test.is_false(err:retryable())
+                test.eq(job_status(db, first.id), "pending")
+            end)
+        end)
+
         test.it("atomically replaces a pending predecessor and preserves identical input dedupe", function()
             with_db(function(db)
                 local params = {namespace = "replace", scope = uuid.v7(), key = "job",

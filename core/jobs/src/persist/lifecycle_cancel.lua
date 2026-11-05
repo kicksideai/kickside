@@ -181,6 +181,7 @@ function cancel.finish_cancellation(db: sql.DB, dbtype: string, execution: table
         :set("finished_at", clock.now(dbtype))
         :where(sql.builder.eq({ id = id, status = job_types.JOB_STATE.RUNNING,
             lease_token = token, execution_seq = sequence, last_error = marker }))
+        :where("heartbeat_at IS NULL")
         :run_with(tx):exec()
     local count, count_err = sql_boundary.single_row_count(result, update_err,
         "cancel completion update failed", "update.count", response_error)

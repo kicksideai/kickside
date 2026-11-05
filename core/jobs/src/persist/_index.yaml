@@ -110,6 +110,8 @@ entries:
     kind: library.lua
     source: file://row_bytes.lua
     modules: [json, sql]
+    imports:
+      job_types: kickside.core.jobs:types
 
   - name: row_mutations
     kind: library.lua
@@ -186,6 +188,7 @@ entries:
     source: file://claim_execution.lua
     modules: [sql]
     imports:
+      reclaim: kickside.core.jobs.persist:reclaim
       job_types: kickside.core.jobs:types
       lifecycle: kickside.core.jobs.persist:lifecycle
       worker_marker: kickside.core.jobs.persist:worker_marker

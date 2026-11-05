@@ -31,6 +31,7 @@ entries:
     source: file://worker_fence.lua
     modules: [sql]
     imports:
+      reclaim: kickside.core.jobs.persist:reclaim
       execution_policy: kickside.core.jobs.policy:execution
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config

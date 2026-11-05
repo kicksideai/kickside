@@ -177,7 +177,7 @@ local function complete_tx_impl(tx: sql.Transaction, id: string, lease: table, o
         return nil, job_types.lease_lost_error("lease lost while completing job")
     end
     if row.last_error == job_types.TERMINATION_PENDING_PREFIX .. lease.token then
-        return nil, (errors.new({ message = "lease is fenced for child termination", kind = errors.CONFLICT }) :: error)
+        return nil, job_types.lease_lost_error("lease is fenced for child termination")
     end
 
     local now = clock.now(dbtype)

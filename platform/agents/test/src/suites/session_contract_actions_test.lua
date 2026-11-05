@@ -24,6 +24,9 @@ local function fake_reader()
         get_context = function()
             return nil
         end,
+        list_pending_inputs = function()
+            return {}, nil
+        end,
         messages = function()
             return {
                 from_checkpoint = function(self)
@@ -295,13 +298,11 @@ local function install_tool_mocks(wrapper_calls)
             function executor:with_context(context)
                 return {
                     async = function(self, registry_id, args)
+                        local response = channel.new(1)
+                        response:send(true)
                         return {
                             response = function()
-                                return {
-                                    receive = function()
-                                        return {}, true
-                                    end,
-                                }
+                                return response
                             end,
                             is_canceled = function()
                                 return false

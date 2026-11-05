@@ -58,6 +58,34 @@ its bounded cleanup continuation errors. Both operations use the public
 [dependency interface](src/README.md#dependency-interface) for return values,
 authorization, and retry semantics.
 
+
+Termination recovery keeps the active identity until the execution ends. A
+termination marker invalidates the lease even when a future deadline schedules
+another liveness check. Cancellation clears the heartbeat timestamp, which
+persists as its intent while the lease deadline schedules termination rechecks.
+Expiry settlement returns the job to pending, while cancellation settlement
+makes it cancelled. Completion, failure, and unstarted-assignment release all
+honor the fence; confirmed child exits settle by that durable intent. Committed
+`lease_lost` history remains immutable. A finalizer leaves a fenced running run
+for confirmed settlement. The supervisor's own stop can apply its failure
+outcome to that running run; an expiry's committed `lease_lost` takes priority.
+
+`reclaim_expired` returns the preliminary candidate page size, so callers drain
+all pages even when a renewal wins locked revalidation. `reclaim_terminated`
+retains its settled count and returns the preliminary candidate page size as its
+third result, including candidates settled concurrently before revalidation.
+The pool drains on this progress.
+
+The row data budget reserves separate bounded space for safety control values:
+a running job's termination marker (prefix plus at most 36 token bytes) and its
+two deadline timestamps (at most 40 bytes each), or a lost run's status, finish
+timestamp (at most 40 bytes), and diagnostic (at most 256 bytes). These values
+can exceed `max_row_bytes` by their bounded encoded size during termination;
+application data remains subject to the configured limit. This also permits
+termination of existing rows admitted before this reserve applies, without
+rewriting or truncating their data. Both claim paths clear the settlement-only
+diagnostic atomically and exclude it from their admission size projection.
+
 ## Reference
 
 - [Module reference](src/README.md)
