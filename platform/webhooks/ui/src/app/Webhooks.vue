@@ -151,8 +151,8 @@ async function askDelete(row: WebhookRow) {
   })
   if (!ok) return
   try {
-    await deleteWebhook(row.webhook_id)
-    acceptDeletion(row.webhook_id)
+    const result = await deleteWebhook(row.webhook_id)
+    acceptDeletion(row.webhook_id, result)
     host.toast({ severity: 'success', summary: 'Deletion accepted', detail: row.label || row.webhook_id })
     if (editing.value?.webhook_id === row.webhook_id) closeEdit()
     await load()

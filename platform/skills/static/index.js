@@ -4220,38 +4220,47 @@ function an(t, e) {
 }
 function yl(t, e, n) {
   let o = !0;
-  const r = /* @__PURE__ */ new Set();
-  function i(u, d) {
-    const c = t.value.find((p) => e(p) === u);
-    c && (c.deleting_at = c.deleting_at || (/* @__PURE__ */ new Date()).toISOString(), c.deletion_job_id = d?.job_id || c.deletion_job_id, c.deletion_job = void 0);
+  const r = /* @__PURE__ */ new Set(), i = /* @__PURE__ */ new Map();
+  function l(d, c) {
+    const p = t.value.find((x) => e(x) === d), f = i.get(d), m = {
+      deleting_at: f?.deleting_at || p?.deleting_at || (/* @__PURE__ */ new Date()).toISOString(),
+      deletion_job_id: c?.job_id || f?.deletion_job_id || p?.deletion_job_id
+    };
+    i.set(d, m), p && (Object.assign(p, m), p.deletion_job = void 0);
   }
-  async function l(u) {
-    u.deletion_job = void 0;
+  async function s(d) {
+    const c = e(d), p = i.get(c), f = () => o && t.value.includes(d) && i.get(c) === p;
     try {
-      const { data: d } = await je.get(`/api/v1/components/${encodeURIComponent(e(u))}`);
-      if (!d?.success) throw new Error(an(d, "Could not read deletion progress"));
-      o && t.value.includes(u) && (u.deleting_at = d.deleting_at, u.deletion_job_id = d.deletion_job_id, u.deletion_job = d.deletion_job ?? null);
-    } catch (d) {
-      o && t.value.includes(u) && Me.handleError("other", { message: an(d, "Could not read deletion progress") });
+      const { data: m } = await je.get(`/api/v1/components/${encodeURIComponent(c)}`);
+      if (!m?.success) throw new Error(an(m, "Could not read deletion progress"));
+      f() && (d.deleting_at = p?.deleting_at || m.deleting_at, d.deletion_job_id = p?.deletion_job_id || m.deletion_job_id, p && (p.deletion_job_id = d.deletion_job_id), d.deletion_job = m.deletion_job ?? null);
+    } catch (m) {
+      f() && Me.handleError("other", { message: an(m, "Could not read deletion progress") });
     }
   }
-  const s = Ee(() => t.value, (u, d = []) => {
-    const c = u.filter((p) => !r.has(e(p)));
-    for (const p of d) !r.has(e(p)) && c.some((f) => e(f) === e(p));
-    if (c.length !== u.length) {
-      t.value = c;
+  const a = Ee(() => t.value, (d, c = []) => {
+    const p = d.filter((f) => !r.has(e(f)));
+    for (const f of c) !r.has(e(f)) && p.some((m) => e(m) === e(f));
+    for (const f of i.keys()) p.some((m) => e(m) === f) || i.delete(f);
+    if (p.length !== d.length) {
+      t.value = p;
       return;
     }
-    for (const p of u) p.deleting_at && l(p);
-  }, { immediate: !0 }), a = Pr("@message", (u) => {
-    const d = vl(u);
-    if (!d) return;
-    const c = t.value.find((p) => e(p) === d.component_id);
-    d.event === "component.deleted" ? (c && r.has(d.component_id), r.add(d.component_id), t.value = t.value.filter((p) => e(p) !== d.component_id)) : c && (i(d.component_id), l(c));
+    for (const f of d) {
+      const m = i.get(e(f));
+      m && Object.assign(f, m);
+      const x = c.find((v) => e(v) === e(f));
+      f.deletion_job === void 0 && x?.deletion_job_id === f.deletion_job_id && (f.deletion_job = x?.deletion_job), f.deleting_at && s(f);
+    }
+  }, { immediate: !0 }), u = Pr("@message", (d) => {
+    const c = vl(d);
+    if (!c) return;
+    const p = t.value.find((f) => e(f) === c.component_id);
+    c.event === "component.deleted" ? (p && r.has(c.component_id), r.add(c.component_id), i.delete(c.component_id), t.value = t.value.filter((f) => e(f) !== c.component_id)) : p && (l(c.component_id), s(p));
   });
   return xo(() => {
-    o = !1, s(), typeof a == "function" && a();
-  }), { acceptDeletion: i };
+    o = !1, a(), typeof u == "function" && u();
+  }), { acceptDeletion: l };
 }
 var $n = {
   name: "TimesIcon",

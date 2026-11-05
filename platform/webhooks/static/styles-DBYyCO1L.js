@@ -635,6 +635,7 @@ async function ee(r) {
   try {
     const { data: e } = await b.delete("/api/v1/webhooks/" + encodeURIComponent(r));
     if (!e?.success) throw new Error(e?.error || "delete failed");
+    return { job_id: e.job_id };
   } catch (e) {
     throw new Error(Lr(x(e, "could not delete webhook")));
   }
@@ -760,4 +761,4 @@ export {
   Kr as u,
   Qr as w
 };
-//# sourceMappingURL=styles-CJNXuerT.js.map
+//# sourceMappingURL=styles-DBYyCO1L.js.map

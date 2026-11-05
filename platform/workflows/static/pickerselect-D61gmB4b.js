@@ -1265,6 +1265,7 @@ async function In(t) {
   if (!t) return;
   const { data: n } = await B.delete(`/api/v1/workflows/${encodeURIComponent(t)}`);
   if (n && n.success === !1) throw new Error(String(n.error || "delete failed"));
+  return { job_id: n?.job_id };
 }
 async function jn(t) {
   const n = await X(`/api/v1/workflows/${encodeURIComponent(t)}/state`), o = n.state;

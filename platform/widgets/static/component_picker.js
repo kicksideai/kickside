@@ -1,14 +1,14 @@
 import { u as rt, a as et, W as at } from "./index-C70m2Vvt.js";
-import { openBlock as p, createElementBlock as d, mergeProps as z, renderSlot as oo, createTextVNode as ho, toDisplayString as L, resolveComponent as Ao, resolveDirective as it, withDirectives as ct, createBlock as lo, resolveDynamicComponent as lt, withCtx as Oo, createCommentVNode as B, normalizeClass as q, createElementVNode as x, defineComponent as To, computed as g, withModifiers as N, Fragment as M, createVNode as w, unref as _, watch as so, onBeforeUnmount as st, ref as S, withKeys as Do, renderList as pt } from "vue";
-import { Icon as P } from "@iconify/vue";
-import { on as dt, api as po, host as ut, define as bt } from "@wippy-fe/proxy";
+import { openBlock as d, createElementBlock as g, mergeProps as $, renderSlot as to, createTextVNode as mo, toDisplayString as L, resolveComponent as Ao, resolveDirective as it, withDirectives as ct, createBlock as po, resolveDynamicComponent as lt, withCtx as No, createCommentVNode as E, normalizeClass as G, createElementVNode as k, defineComponent as To, computed as f, withModifiers as N, Fragment as K, createVNode as x, unref as z, watch as uo, onBeforeUnmount as st, ref as S, withKeys as Oo, renderList as pt } from "vue";
+import { Icon as I } from "@iconify/vue";
+import { on as dt, api as bo, host as ut, define as bt } from "@wippy-fe/proxy";
 import { p as gt } from "./pickerValue-SPnnNBeX.js";
 import { _ as vt, W as ft } from "./WcMount-N7EOK1cC.js";
-import { B as mo, l as Uo, s as ht, a as yo, f as uo, R as mt, b as yt } from "./index-nfQnU_Pv.js";
-import { e as Lo } from "./errMsg-CxKGcp1F.js";
+import { B as yo, l as Uo, s as ht, a as wo, f as go, R as mt, b as yt } from "./index-nfQnU_Pv.js";
+import { e as Do } from "./errMsg-CxKGcp1F.js";
 import { _ as wt } from "./AnchoredPanel.vue_vue_type_style_index_0_lang-DSLnUKFT.js";
 const xt = () => rt(), kt = () => et();
-var St = `
+var _t = `
     .p-badge {
         display: inline-flex;
         border-radius: dt('badge.border.radius');
@@ -83,7 +83,7 @@ var St = `
         min-width: dt('badge.xl.min.width');
         height: dt('badge.xl.height');
     }
-`, _t = {
+`, St = {
   root: function(t) {
     var a = t.props, r = t.instance;
     return ["p-badge p-component", {
@@ -100,13 +100,13 @@ var St = `
       "p-badge-contrast": a.severity === "contrast"
     }];
   }
-}, zt = mo.extend({
+}, zt = yo.extend({
   name: "badge",
-  style: St,
-  classes: _t
+  style: _t,
+  classes: St
 }), $t = {
   name: "BaseBadge",
-  extends: yo,
+  extends: wo,
   props: {
     value: {
       type: [String, Number],
@@ -129,27 +129,27 @@ var St = `
     };
   }
 };
-function to(o) {
+function no(o) {
   "@babel/helpers - typeof";
-  return to = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(t) {
+  return no = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(t) {
     return typeof t;
   } : function(t) {
     return t && typeof Symbol == "function" && t.constructor === Symbol && t !== Symbol.prototype ? "symbol" : typeof t;
-  }, to(o);
+  }, no(o);
 }
-function No(o, t, a) {
-  return (t = Ct(t)) in o ? Object.defineProperty(o, t, { value: a, enumerable: !0, configurable: !0, writable: !0 }) : o[t] = a, o;
+function Lo(o, t, a) {
+  return (t = jt(t)) in o ? Object.defineProperty(o, t, { value: a, enumerable: !0, configurable: !0, writable: !0 }) : o[t] = a, o;
 }
-function Ct(o) {
-  var t = jt(o, "string");
-  return to(t) == "symbol" ? t : t + "";
+function jt(o) {
+  var t = Ct(o, "string");
+  return no(t) == "symbol" ? t : t + "";
 }
-function jt(o, t) {
-  if (to(o) != "object" || !o) return o;
+function Ct(o, t) {
+  if (no(o) != "object" || !o) return o;
   var a = o[Symbol.toPrimitive];
   if (a !== void 0) {
     var r = a.call(o, t);
-    if (to(r) != "object") return r;
+    if (no(r) != "object") return r;
     throw new TypeError("@@toPrimitive must return a primitive value.");
   }
   return (t === "string" ? String : Number)(o);
@@ -160,19 +160,19 @@ var Fo = {
   inheritAttrs: !1,
   computed: {
     dataP: function() {
-      return uo(No(No({
+      return go(Lo(Lo({
         circle: this.value != null && String(this.value).length === 1,
         empty: this.value == null && !this.$slots.default
       }, this.severity, this.severity), this.size, this.size));
     }
   }
 }, Pt = ["data-p"];
-function It(o, t, a, r, c, s) {
-  return p(), d("span", z({
+function It(o, t, a, r, s, c) {
+  return d(), g("span", $({
     class: o.cx("root"),
-    "data-p": s.dataP
-  }, o.ptmi("root")), [oo(o.$slots, "default", {}, function() {
-    return [ho(L(o.value), 1)];
+    "data-p": c.dataP
+  }, o.ptmi("root")), [to(o.$slots, "default", {}, function() {
+    return [mo(L(o.value), 1)];
   })], 16, Pt);
 }
 Fo.render = It;
@@ -827,35 +827,35 @@ var Bt = `
         color: dt('button.link.active.color');
     }
 `;
-function no(o) {
+function ro(o) {
   "@babel/helpers - typeof";
-  return no = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(t) {
+  return ro = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(t) {
     return typeof t;
   } : function(t) {
     return t && typeof Symbol == "function" && t.constructor === Symbol && t !== Symbol.prototype ? "symbol" : typeof t;
-  }, no(o);
+  }, ro(o);
 }
-function I(o, t, a) {
+function B(o, t, a) {
   return (t = Et(t)) in o ? Object.defineProperty(o, t, { value: a, enumerable: !0, configurable: !0, writable: !0 }) : o[t] = a, o;
 }
 function Et(o) {
   var t = At(o, "string");
-  return no(t) == "symbol" ? t : t + "";
+  return ro(t) == "symbol" ? t : t + "";
 }
 function At(o, t) {
-  if (no(o) != "object" || !o) return o;
+  if (ro(o) != "object" || !o) return o;
   var a = o[Symbol.toPrimitive];
   if (a !== void 0) {
     var r = a.call(o, t);
-    if (no(r) != "object") return r;
+    if (ro(r) != "object") return r;
     throw new TypeError("@@toPrimitive must return a primitive value.");
   }
   return (t === "string" ? String : Number)(o);
 }
-var Dt = {
+var Ot = {
   root: function(t) {
     var a = t.instance, r = t.props;
-    return ["p-button p-component", I(I(I(I(I(I(I(I(I({
+    return ["p-button p-component", B(B(B(B(B(B(B(B(B({
       "p-button-icon-only": a.hasIcon && !r.label && !r.badge,
       "p-button-vertical": (r.iconPos === "top" || r.iconPos === "bottom") && r.label,
       "p-button-loading": r.loading,
@@ -865,16 +865,16 @@ var Dt = {
   loadingIcon: "p-button-loading-icon",
   icon: function(t) {
     var a = t.props;
-    return ["p-button-icon", I({}, "p-button-icon-".concat(a.iconPos), a.label)];
+    return ["p-button-icon", B({}, "p-button-icon-".concat(a.iconPos), a.label)];
   },
   label: "p-button-label"
-}, Lt = mo.extend({
+}, Dt = yo.extend({
   name: "button",
   style: Bt,
-  classes: Dt
-}), Nt = {
+  classes: Ot
+}), Lt = {
   name: "BaseButton",
-  extends: yo,
+  extends: wo,
   props: {
     label: {
       type: String,
@@ -961,7 +961,7 @@ var Dt = {
       default: null
     }
   },
-  style: Lt,
+  style: Dt,
   provide: function() {
     return {
       $pcButton: this,
@@ -969,34 +969,34 @@ var Dt = {
     };
   }
 };
-function ro(o) {
+function eo(o) {
   "@babel/helpers - typeof";
-  return ro = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(t) {
+  return eo = typeof Symbol == "function" && typeof Symbol.iterator == "symbol" ? function(t) {
     return typeof t;
   } : function(t) {
     return t && typeof Symbol == "function" && t.constructor === Symbol && t !== Symbol.prototype ? "symbol" : typeof t;
-  }, ro(o);
+  }, eo(o);
 }
-function y(o, t, a) {
-  return (t = Ot(t)) in o ? Object.defineProperty(o, t, { value: a, enumerable: !0, configurable: !0, writable: !0 }) : o[t] = a, o;
+function w(o, t, a) {
+  return (t = Nt(t)) in o ? Object.defineProperty(o, t, { value: a, enumerable: !0, configurable: !0, writable: !0 }) : o[t] = a, o;
 }
-function Ot(o) {
+function Nt(o) {
   var t = Tt(o, "string");
-  return ro(t) == "symbol" ? t : t + "";
+  return eo(t) == "symbol" ? t : t + "";
 }
 function Tt(o, t) {
-  if (ro(o) != "object" || !o) return o;
+  if (eo(o) != "object" || !o) return o;
   var a = o[Symbol.toPrimitive];
   if (a !== void 0) {
     var r = a.call(o, t);
-    if (ro(r) != "object") return r;
+    if (eo(r) != "object") return r;
     throw new TypeError("@@toPrimitive must return a primitive value.");
   }
   return (t === "string" ? String : Number)(o);
 }
 var Ro = {
   name: "Button",
-  extends: Nt,
+  extends: Lt,
   inheritAttrs: !1,
   inject: {
     $pcFluid: {
@@ -1024,7 +1024,7 @@ var Ro = {
       return this.icon || this.$slots.icon;
     },
     attrs: function() {
-      return z(this.asAttrs, this.a11yAttrs, this.getPTOptions("root"));
+      return $(this.asAttrs, this.a11yAttrs, this.getPTOptions("root"));
     },
     asAttrs: function() {
       return this.as === "BUTTON" ? {
@@ -1044,13 +1044,13 @@ var Ro = {
       return Uo(this.fluid) ? !!this.$pcFluid : this.fluid;
     },
     dataP: function() {
-      return uo(y(y(y(y(y(y(y(y(y(y({}, this.size, this.size), "icon-only", this.hasIcon && !this.label && !this.badge), "loading", this.loading), "fluid", this.hasFluid), "rounded", this.rounded), "raised", this.raised), "outlined", this.outlined || this.variant === "outlined"), "text", this.text || this.variant === "text"), "link", this.link || this.variant === "link"), "vertical", (this.iconPos === "top" || this.iconPos === "bottom") && this.label));
+      return go(w(w(w(w(w(w(w(w(w(w({}, this.size, this.size), "icon-only", this.hasIcon && !this.label && !this.badge), "loading", this.loading), "fluid", this.hasFluid), "rounded", this.rounded), "raised", this.raised), "outlined", this.outlined || this.variant === "outlined"), "text", this.text || this.variant === "text"), "link", this.link || this.variant === "link"), "vertical", (this.iconPos === "top" || this.iconPos === "bottom") && this.label));
     },
     dataIconP: function() {
-      return uo(y(y({}, this.iconPos, this.iconPos), this.size, this.size));
+      return go(w(w({}, this.iconPos, this.iconPos), this.size, this.size));
     },
     dataLabelP: function() {
-      return uo(y(y({}, this.size, this.size), "icon-only", this.hasIcon && !this.label && !this.badge));
+      return go(w(w({}, this.size, this.size), "icon-only", this.hasIcon && !this.label && !this.badge));
     }
   },
   components: {
@@ -1061,57 +1061,57 @@ var Ro = {
     ripple: mt
   }
 }, Ut = ["data-p"], Ft = ["data-p"];
-function Rt(o, t, a, r, c, s) {
-  var E = Ao("SpinnerIcon"), A = Ao("Badge"), C = it("ripple");
-  return o.asChild ? oo(o.$slots, "default", {
+function Rt(o, t, a, r, s, c) {
+  var A = Ao("SpinnerIcon"), C = Ao("Badge"), O = it("ripple");
+  return o.asChild ? to(o.$slots, "default", {
     key: 1,
-    class: q(o.cx("root")),
-    a11yAttrs: s.a11yAttrs
-  }) : ct((p(), lo(lt(o.as), z({
+    class: G(o.cx("root")),
+    a11yAttrs: c.a11yAttrs
+  }) : ct((d(), po(lt(o.as), $({
     key: 0,
     class: o.cx("root"),
-    "data-p": s.dataP
-  }, s.attrs), {
-    default: Oo(function() {
-      return [oo(o.$slots, "default", {}, function() {
-        return [o.loading ? oo(o.$slots, "loadingicon", z({
+    "data-p": c.dataP
+  }, c.attrs), {
+    default: No(function() {
+      return [to(o.$slots, "default", {}, function() {
+        return [o.loading ? to(o.$slots, "loadingicon", $({
           key: 0,
           class: [o.cx("loadingIcon"), o.cx("icon")]
         }, o.ptm("loadingIcon")), function() {
-          return [o.loadingIcon ? (p(), d("span", z({
+          return [o.loadingIcon ? (d(), g("span", $({
             key: 0,
             class: [o.cx("loadingIcon"), o.cx("icon"), o.loadingIcon]
-          }, o.ptm("loadingIcon")), null, 16)) : (p(), lo(E, z({
+          }, o.ptm("loadingIcon")), null, 16)) : (d(), po(A, $({
             key: 1,
             class: [o.cx("loadingIcon"), o.cx("icon")],
             spin: ""
           }, o.ptm("loadingIcon")), null, 16, ["class"]))];
-        }) : oo(o.$slots, "icon", z({
+        }) : to(o.$slots, "icon", $({
           key: 1,
           class: [o.cx("icon")]
         }, o.ptm("icon")), function() {
-          return [o.icon ? (p(), d("span", z({
+          return [o.icon ? (d(), g("span", $({
             key: 0,
             class: [o.cx("icon"), o.icon, o.iconClass],
-            "data-p": s.dataIconP
-          }, o.ptm("icon")), null, 16, Ut)) : B("", !0)];
-        }), o.label ? (p(), d("span", z({
+            "data-p": c.dataIconP
+          }, o.ptm("icon")), null, 16, Ut)) : E("", !0)];
+        }), o.label ? (d(), g("span", $({
           key: 2,
           class: o.cx("label")
         }, o.ptm("label"), {
-          "data-p": s.dataLabelP
-        }), L(o.label), 17, Ft)) : B("", !0), o.badge ? (p(), lo(A, {
+          "data-p": c.dataLabelP
+        }), L(o.label), 17, Ft)) : E("", !0), o.badge ? (d(), po(C, {
           key: 3,
           value: o.badge,
-          class: q(o.badgeClass),
+          class: G(o.badgeClass),
           severity: o.badgeSeverity,
           unstyled: o.unstyled,
           pt: o.ptm("pcBadge")
-        }, null, 8, ["value", "class", "severity", "unstyled", "pt"])) : B("", !0)];
+        }, null, 8, ["value", "class", "severity", "unstyled", "pt"])) : E("", !0)];
       })];
     }),
     _: 3
-  }, 16, ["class", "data-p"])), [[C]]);
+  }, 16, ["class", "data-p"])), [[O]]);
 }
 Ro.render = Rt;
 var Mt = `
@@ -1191,13 +1191,13 @@ var Mt = `
   root: "p-progressspinner",
   spin: "p-progressspinner-spin",
   circle: "p-progressspinner-circle"
-}, Kt = mo.extend({
+}, Kt = yo.extend({
   name: "progressspinner",
   style: Mt,
   classes: Wt
 }), Vt = {
   name: "BaseProgressSpinner",
-  extends: yo,
+  extends: wo,
   props: {
     strokeWidth: {
       type: String,
@@ -1231,15 +1231,15 @@ var Mt = `
     }
   }
 }, Jt = ["fill", "stroke-width"];
-function qt(o, t, a, r, c, s) {
-  return p(), d("div", z({
+function qt(o, t, a, r, s, c) {
+  return d(), g("div", $({
     class: o.cx("root"),
     role: "progressbar"
-  }, o.ptmi("root")), [(p(), d("svg", z({
+  }, o.ptmi("root")), [(d(), g("svg", $({
     class: o.cx("spin"),
     viewBox: "25 25 50 50",
-    style: s.svgStyle
-  }, o.ptm("spin")), [x("circle", z({
+    style: c.svgStyle
+  }, o.ptm("spin")), [k("circle", $({
     class: o.cx("circle"),
     cx: "50",
     cy: "50",
@@ -1257,61 +1257,61 @@ const Ht = { key: 0 }, Gt = /* @__PURE__ */ To({
   },
   emits: ["retry"],
   setup(o) {
-    const t = o, a = g(() => t.state.deletion_job === null || ["dead", "cancelled"].includes(t.state.deletion_job?.status || ""));
-    return (r, c) => o.state.deleting_at ? (p(), d("span", {
+    const t = o, a = f(() => t.state.deletion_job === null || ["dead", "cancelled"].includes(t.state.deletion_job?.status || ""));
+    return (r, s) => o.state.deleting_at ? (d(), g("span", {
       key: 0,
       class: "component-deletion",
       role: "status",
-      onClick: c[1] || (c[1] = N(() => {
+      onClick: s[1] || (s[1] = N(() => {
       }, ["stop"])),
-      onKeydown: c[2] || (c[2] = N(() => {
+      onKeydown: s[2] || (s[2] = N(() => {
       }, ["stop"]))
     }, [
-      a.value ? (p(), d(M, { key: 0 }, [
-        x("span", null, [
-          c[3] || (c[3] = ho("Deletion failed", -1)),
-          o.state.deletion_job?.last_error ? (p(), d("span", Ht, ": " + L(o.state.deletion_job.last_error), 1)) : B("", !0)
+      a.value ? (d(), g(K, { key: 0 }, [
+        k("span", null, [
+          s[3] || (s[3] = mo("Deletion failed", -1)),
+          o.state.deletion_job?.last_error ? (d(), g("span", Ht, ": " + L(o.state.deletion_job.last_error), 1)) : E("", !0)
         ]),
-        w(_(Ro), {
+        x(z(Ro), {
           label: "Retry deletion",
           severity: "secondary",
           size: "small",
           outlined: "",
-          onClick: c[0] || (c[0] = N((s) => r.$emit("retry"), ["stop"]))
+          onClick: s[0] || (s[0] = N((c) => r.$emit("retry"), ["stop"]))
         })
-      ], 64)) : (p(), d(M, { key: 1 }, [
-        w(_(Mo), {
+      ], 64)) : (d(), g(K, { key: 1 }, [
+        x(z(Mo), {
           class: "component-deletion-spinner",
           "aria-label": "Deletion in progress"
         }),
-        c[4] || (c[4] = x("span", null, "Deleting…", -1))
+        s[4] || (s[4] = k("span", null, "Deleting…", -1))
       ], 64))
-    ], 32)) : B("", !0);
+    ], 32)) : E("", !0);
   }
 }), Qt = /* @__PURE__ */ vt(Gt, [["__scopeId", "data-v-a0b9fdf9"]]);
-function Z(o) {
+function oo(o) {
   return !!o && typeof o == "object" && !Array.isArray(o);
 }
 function Xt(o, t) {
   return o;
 }
 function Yt(o, t, a) {
-  const r = Z(o) ? o : {}, c = [
+  const r = oo(o) ? o : {}, s = [
     r,
-    Z(r.data) ? r.data : null,
-    Z(r.payload) ? r.payload : null,
-    Z(r.detail) ? r.detail : null
+    oo(r.data) ? r.data : null,
+    oo(r.payload) ? r.payload : null,
+    oo(r.detail) ? r.detail : null
   ].filter(Boolean);
-  for (const s of c) {
-    if (s.event !== "component.meta.changed" && s.event !== "component.deleting" && s.event !== "component.deleted") continue;
-    const E = String(s.component_id || ""), A = String(r.topic || s.topic || "");
-    if (!E && (!A.startsWith("component.") || A === "component.")) continue;
-    const C = E || t || A.slice(10);
-    return s.event !== "component.meta.changed" ? { event: s.event, component_id: C } : {
+  for (const c of s) {
+    if (c.event !== "component.meta.changed" && c.event !== "component.deleting" && c.event !== "component.deleted") continue;
+    const A = String(c.component_id || ""), C = String(r.topic || c.topic || "");
+    if (!A && (!C.startsWith("component.") || C === "component.")) continue;
+    const O = A || t || C.slice(10);
+    return c.event !== "component.meta.changed" ? { event: c.event, component_id: O } : {
       event: "component.meta.changed",
-      component_id: C,
-      meta: Xt(Z(s.meta) ? s.meta : {}),
-      deleted: Array.isArray(s.deleted) ? s.deleted.map(String) : []
+      component_id: O,
+      meta: Xt(oo(c.meta) ? c.meta : {}),
+      deleted: Array.isArray(c.deleted) ? c.deleted.map(String) : []
     };
   }
   return null;
@@ -1322,38 +1322,47 @@ function Zt(o, t) {
 }
 function on(o, t, a) {
   let r = !0;
-  const c = /* @__PURE__ */ new Set();
-  function s(b, u) {
-    const f = o.value.find((v) => t(v) === b);
-    f && (f.deleting_at = f.deleting_at || (/* @__PURE__ */ new Date()).toISOString(), f.deletion_job_id = u?.job_id || f.deletion_job_id, f.deletion_job = void 0);
+  const s = /* @__PURE__ */ new Set(), c = /* @__PURE__ */ new Map();
+  function A(h, v) {
+    const u = o.value.find((T) => t(T) === h), l = c.get(h), b = {
+      deleting_at: l?.deleting_at || u?.deleting_at || (/* @__PURE__ */ new Date()).toISOString(),
+      deletion_job_id: v?.job_id || l?.deletion_job_id || u?.deletion_job_id
+    };
+    c.set(h, b), u && (Object.assign(u, b), u.deletion_job = void 0);
   }
-  async function E(b) {
-    b.deletion_job = void 0;
+  async function C(h) {
+    const v = t(h), u = c.get(v), l = () => r && o.value.includes(h) && c.get(v) === u;
     try {
-      const { data: u } = await po.get(`/api/v1/components/${encodeURIComponent(t(b))}`);
-      if (!u?.success) throw new Error(Lo(u, "Could not read deletion progress"));
-      r && o.value.includes(b) && (b.deleting_at = u.deleting_at, b.deletion_job_id = u.deletion_job_id, b.deletion_job = u.deletion_job ?? null);
-    } catch (u) {
-      r && o.value.includes(b) && ut.handleError("other", { message: Lo(u, "Could not read deletion progress") });
+      const { data: b } = await bo.get(`/api/v1/components/${encodeURIComponent(v)}`);
+      if (!b?.success) throw new Error(Do(b, "Could not read deletion progress"));
+      l() && (h.deleting_at = u?.deleting_at || b.deleting_at, h.deletion_job_id = u?.deletion_job_id || b.deletion_job_id, u && (u.deletion_job_id = h.deletion_job_id), h.deletion_job = b.deletion_job ?? null);
+    } catch (b) {
+      l() && ut.handleError("other", { message: Do(b, "Could not read deletion progress") });
     }
   }
-  const A = so(() => o.value, (b, u = []) => {
-    const f = b.filter((v) => !c.has(t(v)));
-    for (const v of u) !c.has(t(v)) && !f.some((W) => t(W) === t(v)) && a?.(t(v));
-    if (f.length !== b.length) {
-      o.value = f;
+  const O = uo(() => o.value, (h, v = []) => {
+    const u = h.filter((l) => !s.has(t(l)));
+    for (const l of v) !s.has(t(l)) && !u.some((b) => t(b) === t(l)) && a?.(t(l));
+    for (const l of c.keys()) u.some((b) => t(b) === l) || c.delete(l);
+    if (u.length !== h.length) {
+      o.value = u;
       return;
     }
-    for (const v of b) v.deleting_at && E(v);
-  }, { immediate: !0 }), C = dt("@message", (b) => {
-    const u = Zt(b);
-    if (!u) return;
-    const f = o.value.find((v) => t(v) === u.component_id);
-    u.event === "component.deleted" ? (f && !c.has(u.component_id) && a?.(u.component_id), c.add(u.component_id), o.value = o.value.filter((v) => t(v) !== u.component_id)) : f && (s(u.component_id), E(f));
+    for (const l of h) {
+      const b = c.get(t(l));
+      b && Object.assign(l, b);
+      const T = v.find((ao) => t(ao) === t(l));
+      l.deletion_job === void 0 && T?.deletion_job_id === l.deletion_job_id && (l.deletion_job = T?.deletion_job), l.deleting_at && C(l);
+    }
+  }, { immediate: !0 }), V = dt("@message", (h) => {
+    const v = Zt(h);
+    if (!v) return;
+    const u = o.value.find((l) => t(l) === v.component_id);
+    v.event === "component.deleted" ? (u && !s.has(v.component_id) && a?.(v.component_id), s.add(v.component_id), c.delete(v.component_id), o.value = o.value.filter((l) => t(l) !== v.component_id)) : u && (A(v.component_id), C(u));
   });
   return st(() => {
-    r = !1, A(), typeof C == "function" && C();
-  }), { acceptDeletion: s };
+    r = !1, O(), typeof V == "function" && V();
+  }), { acceptDeletion: A };
 }
 const tn = ["aria-expanded", "onKeydown"], nn = { class: "cp-pop" }, rn = {
   key: 0,
@@ -1375,7 +1384,7 @@ const tn = ["aria-expanded", "onKeydown"], nn = { class: "cp-pop" }, rn = {
     function r(n) {
       return typeof n == "string" ? n : n == null ? "" : String(n);
     }
-    function c(n) {
+    function s(n) {
       if (n && typeof n == "object") return n;
       if (typeof n == "string" && n.trim().startsWith("{"))
         try {
@@ -1386,54 +1395,54 @@ const tn = ["aria-expanded", "onKeydown"], nn = { class: "cp-pop" }, rn = {
         }
       return null;
     }
-    function s(n) {
+    function c(n) {
       return r(n.id || n.thread_id || n.component_id || n.webhook_id).trim();
     }
-    function E(n) {
-      const e = c(n.attrs);
+    function A(n) {
+      const e = s(n.attrs);
       return r(
         n.label || n.title || n.name || n.component_title || e && (e.label || e.title || e.name)
       ).trim();
     }
-    function A(n) {
+    function C(n) {
       return r(n.icon || n.component_icon).trim() || "tabler:message-circle";
     }
-    function C(n, e) {
-      const i = c(n);
+    function O(n, e) {
+      const i = s(n);
       if (!i) return "";
-      const l = r(i[e]).trim();
-      if (l) return l;
-      const m = c(i.properties);
-      if (!m) return "";
-      for (const co of Object.values(m)) {
-        const X = c(co), Y = r(X?.[e]).trim();
-        if (Y) return Y;
+      const p = r(i[e]).trim();
+      if (p) return p;
+      const y = s(i.properties);
+      if (!y) return "";
+      for (const so of Object.values(y)) {
+        const Y = s(so), Z = r(Y?.[e]).trim();
+        if (Z) return Z;
       }
       return "";
     }
-    const b = g(() => {
-      const n = c(c(t.value?.schema)?.properties);
+    const V = f(() => {
+      const n = s(s(t.value?.schema)?.properties);
       for (const [e, i] of Object.entries(n || {})) {
-        const l = c(i);
-        if (typeof l?.value_field == "string" && l.value_field) return { key: e, valueField: l.value_field };
+        const p = s(i);
+        if (typeof p?.value_field == "string" && p.value_field) return { key: e, valueField: p.value_field };
       }
       return null;
     });
-    function u(n, e) {
-      const i = b.value;
+    function h(n, e) {
+      const i = V.value;
       if (!i) return { thread_id: e };
       if (!(i.valueField in n)) throw new Error("Catalog item is missing its declared selection value.");
       return { [i.key]: n[i.valueField] };
     }
-    function f(n) {
-      const e = b.value;
+    function v(n) {
+      const e = V.value;
       if (!e) return gt(n, "thread_id");
-      const i = c(n)?.[e.key];
+      const i = s(n)?.[e.key];
       if (typeof i == "string") return i;
-      const l = c(i);
-      return typeof l?.id == "string" ? l.id : "";
+      const p = s(i);
+      return typeof p?.id == "string" ? p.id : "";
     }
-    const v = g(() => r(t.value?.source).trim() || C(t.value?.schema, "source") || "/api/v1/threads"), W = g(() => v.value.split("?")[0] === "/api/v1/threads"), H = g(() => {
+    const u = f(() => r(t.value?.source).trim() || O(t.value?.schema, "source") || "/api/v1/threads"), l = f(() => u.value.split("?")[0] === "/api/v1/threads"), b = f(() => {
       const n = r(t.value?.meta).trim();
       if (n.startsWith("{"))
         try {
@@ -1442,125 +1451,125 @@ const tn = ["aria-expanded", "onKeydown"], nn = { class: "cp-pop" }, rn = {
           return {};
         }
       return {};
-    }), bo = g(() => r(t.value?.threadClass).trim() || r(H.value.thread_class).trim()), wo = g(() => r(t.value?.implId).trim() || r(H.value.impl_id).trim() || C(t.value?.schema, "impl_id")), xo = g(() => r(t.value?.deleteEndpoint).trim() || r(H.value.delete_endpoint).trim()), go = g(() => {
-      if (!W.value) return null;
-      const n = H.value?.component?.create_ui;
+    }), T = f(() => r(t.value?.threadClass).trim() || r(b.value.thread_class).trim()), ao = f(() => r(t.value?.implId).trim() || r(b.value.impl_id).trim() || O(t.value?.schema, "impl_id")), xo = f(() => r(t.value?.deleteEndpoint).trim() || r(b.value.delete_endpoint).trim()), vo = f(() => {
+      if (!l.value) return null;
+      const n = b.value?.component?.create_ui;
       return n && typeof n == "object" ? n : null;
-    }), O = S(null), eo = g(() => r(go.value?.tag_name).trim() || r(O.value?.tag_name).trim()), Wo = g(() => r(go.value?.title).trim() || r(O.value?.title).trim()), F = g(() => (r(t.value?.title).trim() || r(H.value.title).trim()).toLowerCase()), ko = g(() => t.value?.placeholder || (F.value ? `Select a ${F.value}…` : "Select…")), Ko = g(() => F.value || Wo.value.toLowerCase() || "one"), So = g(() => `Create new ${Ko.value}`), vo = g(() => F.value ? `Untitled ${F.value}` : "Untitled"), Vo = g(() => F.value ? `No ${F.value} available yet — create one first, then return here.` : "Nothing available yet — create one first, then return here."), $ = S([]), K = S(!1), V = S(!1), j = S(!1), ao = S(!1), k = S(""), G = S(""), J = S(""), T = S(""), _o = S(null);
+    }), U = S(null), io = f(() => r(vo.value?.tag_name).trim() || r(U.value?.tag_name).trim()), Wo = f(() => r(vo.value?.title).trim() || r(U.value?.title).trim()), M = f(() => (r(t.value?.title).trim() || r(b.value.title).trim()).toLowerCase()), ko = f(() => t.value?.placeholder || (M.value ? `Select a ${M.value}…` : "Select…")), Ko = f(() => M.value || Wo.value.toLowerCase() || "one"), _o = f(() => `Create new ${Ko.value}`), fo = f(() => M.value ? `Untitled ${M.value}` : "Untitled"), Vo = f(() => M.value ? `No ${M.value} available yet — create one first, then return here.` : "Nothing available yet — create one first, then return here."), j = S([]), J = S(!1), q = S(!1), P = S(!1), co = S(!1), _ = S(""), Q = S(""), H = S(""), F = S(""), So = S(null);
     async function Jo() {
-      if (!W.value) {
-        O.value = null;
+      if (!l.value) {
+        U.value = null;
         return;
       }
-      if (go.value) {
-        O.value = null;
+      if (vo.value) {
+        U.value = null;
         return;
       }
-      const n = bo.value;
+      const n = T.value;
       if (!n) {
-        O.value = null;
+        U.value = null;
         return;
       }
       try {
-        const { data: e } = await po.get(`/api/v1/component-kinds/create-view?class=${encodeURIComponent(n)}`), i = e?.create_view;
-        O.value = i && r(i.tag_name).trim() ? i : null;
+        const { data: e } = await bo.get(`/api/v1/component-kinds/create-view?class=${encodeURIComponent(n)}`), i = e?.create_view;
+        U.value = i && r(i.tag_name).trim() ? i : null;
       } catch {
-        O.value = null;
+        U.value = null;
       }
     }
-    async function Q() {
-      if (!V.value) {
-        V.value = !0;
+    async function X() {
+      if (!q.value) {
+        q.value = !0;
         try {
-          const [n, e = ""] = v.value.split("?"), i = new URLSearchParams(e);
-          W.value && (bo.value && i.set("thread_class", bo.value), wo.value && i.set("impl_id", wo.value), i.set("limit", "100"));
-          const l = W.value ? `${n}?${i}` : v.value, m = [];
-          let co = l, X = 0;
+          const [n, e = ""] = u.value.split("?"), i = new URLSearchParams(e);
+          l.value && (T.value && i.set("thread_class", T.value), ao.value && i.set("impl_id", ao.value), i.set("limit", "100"));
+          const p = l.value ? `${n}?${i}` : u.value, y = [];
+          let so = p, Y = 0;
           for (; ; ) {
-            const { data: h } = await po.get(co);
-            if (h?.success === !1) throw new Error(String(h.error || "Could not load components"));
-            const U = Array.isArray(h?.items) ? h.items : Array.isArray(h?.threads) ? h.threads : [];
-            m.push(...U);
-            const D = h?.next_offset;
+            const { data: m } = await bo.get(so);
+            if (m?.success === !1) throw new Error(String(m.error || "Could not load components"));
+            const R = Array.isArray(m?.items) ? m.items : Array.isArray(m?.threads) ? m.threads : [];
+            y.push(...R);
+            const D = m?.next_offset;
             if (D == null) break;
-            if (typeof D != "number" || !Number.isSafeInteger(D) || D <= X)
+            if (typeof D != "number" || !Number.isSafeInteger(D) || D <= Y)
               throw new Error("The server returns an invalid component offset.");
-            X = D;
-            const [tt, nt = ""] = l.split("?"), Eo = new URLSearchParams(nt);
-            Eo.set("offset", String(X)), co = `${tt}?${Eo}`;
+            Y = D;
+            const [tt, nt = ""] = p.split("?"), Eo = new URLSearchParams(nt);
+            Eo.set("offset", String(Y)), so = `${tt}?${Eo}`;
           }
-          const Y = /* @__PURE__ */ new Set(), Bo = [];
-          for (const h of m) {
-            const U = s(h);
-            if (!U || Y.has(U)) continue;
-            Y.add(U);
-            const D = E(h);
+          const Z = /* @__PURE__ */ new Set(), Bo = [];
+          for (const m of y) {
+            const R = c(m);
+            if (!R || Z.has(R)) continue;
+            Z.add(R);
+            const D = A(m);
             Bo.push({
-              id: U,
-              label: D && D !== U ? D : vo.value,
-              icon: A(h),
-              selection: u(h, U),
-              deleting_at: typeof h.deleting_at == "string" ? h.deleting_at : void 0,
-              deletion_job_id: typeof h.deletion_job_id == "string" ? h.deletion_job_id : void 0
+              id: R,
+              label: D && D !== R ? D : fo.value,
+              icon: C(m),
+              selection: h(m, R),
+              deleting_at: typeof m.deleting_at == "string" ? m.deleting_at : void 0,
+              deletion_job_id: typeof m.deletion_job_id == "string" ? m.deletion_job_id : void 0
             });
           }
-          $.value = Bo, K.value = !0, a("load", void 0);
+          j.value = Bo, J.value = !0, a("load", void 0);
         } catch (n) {
           a("error", { message: "failed to list options", error: n });
         } finally {
-          V.value = !1;
+          q.value = !1;
         }
         Jo();
       }
     }
-    const io = g(() => $.value.find((n) => n.id === k.value) || null), R = S(null);
+    const lo = f(() => j.value.find((n) => n.id === _.value) || null), W = S(null);
     function zo(n, e) {
-      n && e && (R.value = { id: n, label: e });
+      n && e && (W.value = { id: n, label: e });
     }
-    const qo = g(() => {
-      const n = io.value;
-      return n ? n.label : R.value && R.value.id === k.value ? R.value.label : V.value || !K.value ? ko.value : vo.value;
+    const qo = f(() => {
+      const n = lo.value;
+      return n ? n.label : W.value && W.value.id === _.value ? W.value.label : q.value || !J.value ? ko.value : fo.value;
     });
-    so([io, k], ([n, e]) => {
-      n ? zo(e, n.label) : R.value && R.value.id !== e && (R.value = null);
+    uo([lo, _], ([n, e]) => {
+      n ? zo(e, n.label) : W.value && W.value.id !== e && (W.value = null);
     }, { immediate: !0 });
     async function Ho() {
-      !k.value || io.value || V.value || await Q();
+      !_.value || lo.value || q.value || await X();
     }
     function $o(n) {
-      k.value = n.id, zo(n.id, n.label), a("change", n.selection), a("config-changed", n.selection), j.value = !1;
+      _.value = n.id, zo(n.id, n.label), a("change", n.selection), a("config-changed", n.selection), P.value = !1;
     }
     function Go(n) {
-      T.value = "", G.value = n.id;
+      F.value = "", Q.value = n.id;
     }
     function Qo() {
-      G.value = "", T.value = "";
+      Q.value = "", F.value = "";
     }
-    function Co(n, e) {
+    function jo(n, e) {
       const i = n && typeof n == "object" ? n : e && typeof e == "object" && e.response?.data && typeof e.response.data == "object" ? e.response.data : null;
       if (i) {
-        const l = r(i.error).trim();
-        if (l) return l;
-        const m = Number(i.subscriber_count);
-        if (m > 0) return `In use by ${m} — remove those first.`;
+        const p = r(i.error).trim();
+        if (p) return p;
+        const y = Number(i.subscriber_count);
+        if (y > 0) return `In use by ${y} — remove those first.`;
       }
       return e instanceof Error && e.message ? e.message : "Could not delete.";
     }
-    async function jo(n) {
+    async function Co(n) {
       const e = xo.value;
-      if (!(!e || J.value)) {
-        J.value = n.id, T.value = "";
+      if (!(!e || H.value)) {
+        H.value = n.id, F.value = "";
         try {
-          const i = `${e.replace(/\/+$/, "")}/${encodeURIComponent(n.id)}`, { data: l } = await po.delete(i);
-          if (l && typeof l == "object" && l.success === !1) {
-            T.value = Co(l, null);
+          const i = `${e.replace(/\/+$/, "")}/${encodeURIComponent(n.id)}`, { data: p } = await bo.delete(i);
+          if (p && typeof p == "object" && p.success === !1) {
+            F.value = jo(p, null);
             return;
           }
-          ot(n.id, l), G.value = "", K.value = !1, await Q();
+          ot(n.id, p), Q.value = "", J.value = !1, await X();
         } catch (i) {
-          T.value = Co(null, i);
+          F.value = jo(null, i);
         } finally {
-          J.value = "";
+          H.value = "";
         }
       }
     }
@@ -1576,189 +1585,189 @@ const tn = ["aria-expanded", "onKeydown"], nn = { class: "cp-pop" }, rn = {
       return r(e.label || e.title || e.name).trim();
     }
     function Po() {
-      eo.value && (ao.value = !0);
+      io.value && (co.value = !0);
     }
     function Io() {
-      ao.value = !1;
+      co.value = !1;
     }
     async function Zo(n) {
       const e = Xo(n);
-      if (ao.value = !1, K.value = !1, await Q(), e) {
-        const i = $.value.find((m) => m.id === e);
-        if (!i && b.value) {
-          const m = "The created item has no published selection value in the catalog.";
-          a("error", { message: m, error: new Error(m) });
+      if (co.value = !1, J.value = !1, await X(), e) {
+        const i = j.value.find((y) => y.id === e);
+        if (!i && V.value) {
+          const y = "The created item has no published selection value in the catalog.";
+          a("error", { message: y, error: new Error(y) });
           return;
         }
-        const l = i || { id: e, label: Yo(n) || vo.value, icon: "tabler:components", selection: { thread_id: e } };
-        $.value.find((m) => m.id === e) || ($.value = [l, ...$.value]), $o(l), a("created", { thread_id: e });
+        const p = i || { id: e, label: Yo(n) || fo.value, icon: "tabler:components", selection: { thread_id: e } };
+        j.value.find((y) => y.id === e) || (j.value = [p, ...j.value]), $o(p), a("created", { thread_id: e });
       }
     }
-    so(() => [t.value?.value, t.value?.config, t.value?.schema], () => {
-      k.value = f(t.value?.config) || f(t.value?.value), Ho();
-    }, { immediate: !0 }), so(() => [t.value?.threadClass, t.value?.implId, t.value?.meta, t.value?.source, t.value?.schema], () => {
-      K.value = !1, $.value = [], O.value = null, G.value = "", T.value = "", Io(), j.value && Q();
+    uo(() => [t.value?.value, t.value?.config, t.value?.schema], () => {
+      _.value = v(t.value?.config) || v(t.value?.value), Ho();
+    }, { immediate: !0 }), uo(() => [t.value?.threadClass, t.value?.implId, t.value?.meta, t.value?.source, t.value?.schema], () => {
+      J.value = !1, j.value = [], U.value = null, Q.value = "", F.value = "", Io(), P.value && X();
     });
-    function fo() {
-      j.value = !j.value, j.value && !K.value && Q();
+    function ho() {
+      P.value = !P.value, P.value && !J.value && X();
     }
-    const { acceptDeletion: ot } = on($, (n) => n.id, (n) => {
-      n === k.value && (k.value = "");
+    const { acceptDeletion: ot } = on(j, (n) => n.id, (n) => {
+      n === _.value && (_.value = "");
     });
-    return (n, e) => (p(), d(M, null, [
-      x("div", {
+    return (n, e) => (d(), g(K, null, [
+      k("div", {
         ref_key: "ctrl",
-        ref: _o,
-        class: q(["cp", j.value && "cp-open"]),
+        ref: So,
+        class: G(["cp", P.value && "cp-open"]),
         role: "button",
         tabindex: "0",
-        "aria-expanded": j.value,
-        onClick: fo,
+        "aria-expanded": P.value,
+        onClick: ho,
         onKeydown: [
-          Do(fo, ["enter"]),
-          Do(N(fo, ["prevent"]), ["space"])
+          Oo(ho, ["enter"]),
+          Oo(N(ho, ["prevent"]), ["space"])
         ]
       }, [
-        w(_(P), {
-          icon: io.value?.icon || "tabler:message-circle",
+        x(z(I), {
+          icon: lo.value?.icon || "tabler:message-circle",
           class: "cp-lead",
           "aria-hidden": "true"
         }, null, 8, ["icon"]),
-        x("span", {
-          class: q(["cp-value", !k.value && "cp-ph"])
-        }, L(k.value ? qo.value : ko.value), 3),
-        w(_(P), {
-          icon: j.value ? "tabler:chevron-up" : "tabler:chevron-down",
+        k("span", {
+          class: G(["cp-value", !_.value && "cp-ph"])
+        }, L(_.value ? qo.value : ko.value), 3),
+        x(z(I), {
+          icon: P.value ? "tabler:chevron-up" : "tabler:chevron-down",
           class: "cp-caret",
           "aria-hidden": "true"
         }, null, 8, ["icon"])
       ], 42, tn),
-      w(wt, {
-        open: j.value,
-        "onUpdate:open": e[0] || (e[0] = (i) => j.value = i),
-        anchor: _o.value,
+      x(wt, {
+        open: P.value,
+        "onUpdate:open": e[0] || (e[0] = (i) => P.value = i),
+        anchor: So.value,
         "min-width": 260,
         "max-height": 320
       }, {
-        default: Oo(() => [
-          x("div", nn, [
-            V.value && !$.value.length ? (p(), d("div", rn, [
-              w(_(P), {
+        default: No(() => [
+          k("div", nn, [
+            q.value && !j.value.length ? (d(), g("div", rn, [
+              x(z(I), {
                 icon: "tabler:loader-2",
                 class: "spin",
                 "aria-hidden": "true"
               }),
-              e[1] || (e[1] = ho(" Loading…", -1))
-            ])) : ao.value ? (p(), d("div", en, [
-              w(ft, {
-                tag: eo.value,
+              e[1] || (e[1] = mo(" Loading…", -1))
+            ])) : co.value ? (d(), g("div", en, [
+              x(ft, {
+                tag: io.value,
                 onCreated: Zo,
                 onClose: Io
               }, null, 8, ["tag"])
-            ])) : $.value.length ? (p(), d(M, { key: 3 }, [
-              x("div", cn, [
-                (p(!0), d(M, null, pt($.value, (i) => (p(), d("div", {
+            ])) : j.value.length ? (d(), g(K, { key: 3 }, [
+              k("div", cn, [
+                (d(!0), g(K, null, pt(j.value, (i) => (d(), g("div", {
                   key: i.id,
-                  class: q(["cp-row cp-row--compound", i.id === k.value && "cp-row-on"])
+                  class: G(["cp-row cp-row--compound", i.id === _.value && "cp-row-on"])
                 }, [
-                  x("button", {
+                  k("button", {
                     type: "button",
                     class: "cp-row-main",
                     disabled: !!i.deleting_at,
-                    onClick: (l) => $o(i)
+                    onClick: (p) => $o(i)
                   }, [
-                    w(_(P), {
+                    x(z(I), {
                       icon: i.icon,
                       class: "cp-ico",
                       "aria-hidden": "true"
                     }, null, 8, ["icon"]),
-                    x("span", sn, L(i.label), 1),
-                    i.id === k.value ? (p(), lo(_(P), {
+                    k("span", sn, L(i.label), 1),
+                    i.id === _.value ? (d(), po(z(I), {
                       key: 0,
                       icon: "tabler:check",
                       class: "cp-check",
                       "aria-hidden": "true"
-                    })) : B("", !0)
+                    })) : E("", !0)
                   ], 8, ln),
-                  w(Qt, {
+                  x(Qt, {
                     state: i,
-                    onRetry: (l) => jo(i)
+                    onRetry: (p) => Co(i)
                   }, null, 8, ["state", "onRetry"]),
-                  xo.value && !i.deleting_at ? (p(), d(M, { key: 0 }, [
-                    G.value === i.id ? (p(), d(M, { key: 0 }, [
-                      x("button", {
+                  xo.value && !i.deleting_at ? (d(), g(K, { key: 0 }, [
+                    Q.value === i.id ? (d(), g(K, { key: 0 }, [
+                      k("button", {
                         type: "button",
                         class: "cp-row-del cp-row-del-yes",
-                        disabled: J.value === i.id,
+                        disabled: H.value === i.id,
                         title: "Confirm delete",
                         "aria-label": "Confirm delete",
                         "data-test": "cp-del-confirm",
-                        onClick: N((l) => jo(i), ["stop"])
+                        onClick: N((p) => Co(i), ["stop"])
                       }, [
-                        w(_(P), {
-                          icon: J.value === i.id ? "tabler:loader-2" : "tabler:check",
-                          class: q(J.value === i.id && "spin"),
+                        x(z(I), {
+                          icon: H.value === i.id ? "tabler:loader-2" : "tabler:check",
+                          class: G(H.value === i.id && "spin"),
                           "aria-hidden": "true"
                         }, null, 8, ["icon", "class"])
                       ], 8, pn),
-                      x("button", {
+                      k("button", {
                         type: "button",
                         class: "cp-row-del",
                         title: "Cancel",
                         "aria-label": "Cancel delete",
                         onClick: N(Qo, ["stop"])
                       }, [
-                        w(_(P), {
+                        x(z(I), {
                           icon: "tabler:x",
                           "aria-hidden": "true"
                         })
                       ])
-                    ], 64)) : (p(), d("button", {
+                    ], 64)) : (d(), g("button", {
                       key: 1,
                       type: "button",
                       class: "cp-row-del",
                       title: "Delete",
                       "aria-label": "Delete",
                       "data-test": "cp-del",
-                      onClick: N((l) => Go(i), ["stop"])
+                      onClick: N((p) => Go(i), ["stop"])
                     }, [
-                      w(_(P), {
+                      x(z(I), {
                         icon: "tabler:trash",
                         "aria-hidden": "true"
                       })
                     ], 8, dn))
-                  ], 64)) : B("", !0)
+                  ], 64)) : E("", !0)
                 ], 2))), 128)),
-                T.value ? (p(), d("div", un, L(T.value), 1)) : B("", !0)
+                F.value ? (d(), g("div", un, L(F.value), 1)) : E("", !0)
               ]),
-              eo.value ? (p(), d("button", {
+              io.value ? (d(), g("button", {
                 key: 0,
                 type: "button",
                 class: "cp-create-foot",
                 "data-test": "cp-create-foot",
                 onClick: N(Po, ["stop"])
               }, [
-                w(_(P), {
+                x(z(I), {
                   icon: "tabler:plus",
                   "aria-hidden": "true"
                 }),
-                x("span", null, L(So.value), 1)
-              ])) : B("", !0)
-            ], 64)) : (p(), d("div", an, [
-              x("span", null, L(Vo.value), 1),
-              eo.value ? (p(), d("button", {
+                k("span", null, L(_o.value), 1)
+              ])) : E("", !0)
+            ], 64)) : (d(), g("div", an, [
+              k("span", null, L(Vo.value), 1),
+              io.value ? (d(), g("button", {
                 key: 0,
                 type: "button",
                 class: "cp-create-btn",
                 "data-test": "cp-create",
                 onClick: N(Po, ["stop"])
               }, [
-                w(_(P), {
+                x(z(I), {
                   icon: "tabler:plus",
                   "aria-hidden": "true"
                 }),
-                x("span", null, L(So.value), 1)
-              ])) : B("", !0)
+                k("span", null, L(_o.value), 1)
+              ])) : E("", !0)
             ]))
           ])
         ]),

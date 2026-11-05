@@ -124,3 +124,79 @@ it('reports other omitted rows when a list replacement also contains a deleted i
   expect(rows.value.map(row => row.id)).toEqual(['live'])
   expect(removed.mock.calls).toEqual([['deleted'], ['omitted']])
 })
+
+it('keeps accepted deletion when an older list arrives after a failed refresh', async () => {
+  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected'}])
+  let acceptDeletion!: ReturnType<typeof useComponentDeletion>['acceptDeletion']
+  mounted.push(mount(defineComponent({setup() {({acceptDeletion} = useComponentDeletion(rows, row => row.id)); return () => null}})))
+  let resolveList!: (rows: (ComponentDeletionState & {id: string})[]) => void
+  const list = new Promise<(ComponentDeletionState & {id: string})[]>(resolve => {resolveList = resolve}).then(list => {rows.value = list})
+  acceptDeletion('selected', {job_id: 'accepted-job'})
+  const markedAt = rows.value[0].deleting_at
+  const refresh = vi.fn().mockRejectedValue(new Error('Refresh unavailable'))
+  await expect(refresh()).rejects.toThrow('Refresh unavailable')
+  vi.mocked(api.get).mockRejectedValue(new Error('Progress unavailable'))
+  resolveList([{id: 'selected'}])
+  await list
+  await flushPromises()
+  expect(rows.value[0].deleting_at).toBe(markedAt)
+  expect(rows.value[0].deletion_job_id).toBe('accepted-job')
+  expect(rows.value[0].deletion_job).toBeUndefined()
+  const indicator = mount(ComponentDeletion, {props: {state: rows.value[0]}}); mounted.push(indicator)
+  expect(indicator.find('[role="progressbar"]').exists()).toBe(true)
+  expect(indicator.find('button').exists()).toBe(false)
+})
+
+it('ignores an old progress response after an accepted retry', async () => {
+  let resolve!: (value: unknown) => void
+  vi.mocked(api.get).mockImplementation(() => new Promise(done => {resolve = done}) as never)
+  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked', deletion_job_id: 'old-job'}])
+  let acceptDeletion!: ReturnType<typeof useComponentDeletion>['acceptDeletion']
+  mounted.push(mount(defineComponent({setup() {({acceptDeletion} = useComponentDeletion(rows, row => row.id)); return () => null}})))
+  acceptDeletion('selected', {job_id: 'retry-job'})
+  resolve({data: {success: true, deleting_at: 'marked', deletion_job_id: 'old-job', deletion_job: {status: 'dead', attempts: 3}}})
+  await flushPromises()
+  expect(rows.value[0].deletion_job_id).toBe('retry-job')
+  expect(rows.value[0].deletion_job).toBeUndefined()
+  const indicator = mount(ComponentDeletion, {props: {state: rows.value[0]}}); mounted.push(indicator)
+  expect(indicator.find('[role="progressbar"]').exists()).toBe(true)
+  expect(indicator.find('button').exists()).toBe(false)
+})
+
+for (const job of [null, {status: 'dead', attempts: 3}, {status: 'cancelled', attempts: 1}]) {
+  it(`keeps confirmed ${job?.status ?? 'missing'} progress and retry during list refresh`, async () => {
+    vi.mocked(api.get).mockResolvedValue({data: {success: true, deleting_at: 'marked', deletion_job_id: 'job', deletion_job: job}} as never)
+    const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job'}])
+    mounted.push(mount(defineComponent({setup() {useComponentDeletion(rows, row => row.id); return () => null}})))
+    await flushPromises()
+    let reject!: (error: Error) => void
+    vi.mocked(api.get).mockImplementation(() => new Promise((_, fail) => {reject = fail}) as never)
+    rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job'}]
+    await flushPromises()
+    const indicator = mount(ComponentDeletion, {props: {state: rows.value[0]}}); mounted.push(indicator)
+    expect(rows.value[0].deletion_job).toEqual(job)
+    expect(indicator.text()).toContain('Deletion failed')
+    expect(indicator.find('[role="progressbar"]').exists()).toBe(false)
+    expect(indicator.find('button').exists()).toBe(true)
+    reject(new Error('Progress unavailable'))
+    await flushPromises()
+    expect(rows.value[0].deletion_job).toEqual(job)
+    expect(indicator.find('button').exists()).toBe(true)
+    expect(host.handleError).toHaveBeenCalled()
+    vi.mocked(api.get).mockResolvedValue({data: {success: true, deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'running', attempts: 1}}} as never)
+    rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job'}]
+    await flushPromises()
+    expect(rows.value[0].deletion_job?.status).toBe('running')
+  })
+}
+
+it('does not carry resolved failure to a different job on list refresh', async () => {
+  vi.mocked(api.get).mockResolvedValue({data: {success: true, deleting_at: 'marked', deletion_job_id: 'old-job', deletion_job: {status: 'dead', attempts: 3}}} as never)
+  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked', deletion_job_id: 'old-job'}])
+  mounted.push(mount(defineComponent({setup() {useComponentDeletion(rows, row => row.id); return () => null}})))
+  await flushPromises()
+  vi.mocked(api.get).mockRejectedValue(new Error('Progress unavailable'))
+  rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'new-job'}]
+  await flushPromises()
+  expect(rows.value[0].deletion_job).toBeUndefined()
+})

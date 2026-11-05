@@ -1,5 +1,5 @@
-import { W as e, s } from "./styles-CJNXuerT.js";
-import { p as t, P as i, _ as r } from "./package-3RNWCFJe.js";
+import { W as e, s } from "./styles-DBYyCO1L.js";
+import { p as t, P as i, _ as r } from "./package-BFUJJDif.js";
 import "@iconify/vue";
 import { define as o } from "@wippy-fe/proxy";
 class p extends e {
