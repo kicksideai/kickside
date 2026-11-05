@@ -1,6 +1,7 @@
--- Whitespace trim that holds on large text. The anchored pattern
--- "^%s*(.-)%s*$" gives up on strings over roughly 45 KB in the Wippy runtime:
--- match returns nil and gsub returns the input untouched. This scans instead.
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+-- The runtime pattern matcher stops at MaxBacktracks = 100000 (wippyai/go-lua
+-- pm.go) and reports no match, so "^%s*(.-)%s*$" fails on large text.
+-- The linear scan avoids backtracking.
 local M = {}
 
 -- trim(value) -> value without leading and trailing whitespace; "" for a

@@ -293,7 +293,7 @@ entries:
   - name: text_trim
     kind: library.lua
     meta:
-      comment: Whitespace trim that holds on large text (the anchored Lua pattern gives up past ~45 KB).
+      comment: Whitespace trim uses a linear scan to avoid backtracking; the runtime matcher stops at MaxBacktracks = 100000 (wippyai/go-lua pm.go) and reports no match, so the anchored pattern fails on large text.
     source: file://text_trim.lua
 
   - name: metadata_sanitizer

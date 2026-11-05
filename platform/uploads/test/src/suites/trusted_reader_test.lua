@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
 local reader = require("trusted_reader")
 
@@ -80,6 +81,15 @@ local function define_tests()
             test.eq(cut.truncated, true)
             test.eq(cut.chars, #"# Brief\nпривет")
         end)
+
+        for _, limit in ipairs({ -1, 0, 1.5, math.huge, -math.huge, 0 / 0 }) do
+            test.it("rejects an invalid primary text limit " .. tostring(limit), function()
+                stub()
+                local data, err = reader.primary_text("up-1", limit)
+                test.is_nil(data)
+                test.is_true(errors.is(err, errors.INVALID))
+            end)
+        end
 
         test.it("gives the source image only for image uploads", function()
             stub()

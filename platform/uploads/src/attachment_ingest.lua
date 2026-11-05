@@ -11,6 +11,7 @@ local funcs = require("funcs")
 local http_client = require("http_client")
 local registry = require("registry")
 local upload_lib = require("upload_lib")
+local metadata_sanitizer = require("metadata_sanitizer")
 
 local M = {}
 
@@ -118,12 +119,13 @@ local function non_empty(value: any): string?
     return nil
 end
 
--- Caller metadata (for example an upload completion token) is kept; the thread
--- routing keys this module owns are set last and cannot be overridden.
+-- Caller metadata excludes private operational keys except completion tokens.
+-- The owned thread routing keys are set last.
 local function upload_metadata(a: any): { [string]: any }
-    local metadata: { [string]: any } = {}
+    local metadata: { [string]: any } = metadata_sanitizer.public_locator(a.metadata)
     if type(a.metadata) == "table" then
-        for key, value in pairs(a.metadata) do metadata[key] = value end
+        metadata.__upload_token = a.metadata.__upload_token
+        metadata.__upload_tokens = a.metadata.__upload_tokens
     end
     metadata.source = a.source
     metadata.thread_id = a.thread_id

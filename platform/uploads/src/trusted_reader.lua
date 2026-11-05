@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Read-only access to any upload for a trusted caller module.
 --
 -- The functions here do NOT check who is calling. A module that imports this
@@ -72,13 +73,16 @@ end
 -- document, OCR for an image), cut at max_chars bytes (UTF-8 safe); chars is
 -- the full length in bytes. (nil, NOT_FOUND) when there is no text.
 function M.primary_text(upload_id: string, max_chars: number?): (PrimaryText?, any?)
+    local limit = max_chars or M.DEFAULT_MAX_CHARS
+    if type(limit) ~= "number" or limit <= 0 or limit >= math.huge or limit ~= math.floor(limit) then
+        return nil, errors.new({ kind = errors.INVALID, message = "max_chars must be a positive finite integer" })
+    end
     local primary, err = M.deps.parts.read_primary_content(upload_id)
     if err or not primary then return nil, err end
     local text = type(primary.content) == "string" and primary.content or ""
-    local limit = math.floor(tonumber(max_chars) or M.DEFAULT_MAX_CHARS)
     local chars = #text
     local truncated = chars > limit
-    if truncated then text = cut_utf8(text, limit) end
+    if truncated then text = cut_utf8(text, limit :: integer) end
     return {
         text = text,
         chars = chars,

@@ -47,6 +47,7 @@ entries:
     modules: [funcs, http_client, registry]
     imports:
       upload_lib: kickside.uploads:uploads
+      metadata_sanitizer: kickside.uploads:metadata_sanitizer
 
   - name: trusted_reader
     kind: library.lua
