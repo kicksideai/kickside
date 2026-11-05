@@ -130,6 +130,8 @@ local function handler()
 
         table.insert(items, {
             id = cid,
+            deleting_at = comp.deleting_at,
+            deletion_job_id = comp.deletion_job_id,
             name = meta.title or "",
             description = meta.comment or "",
             icon = meta.icon or "tabler:brain",

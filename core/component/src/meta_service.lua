@@ -12,9 +12,11 @@ local component_command = require("component_command")
 local committed_error = require("committed_error")
 local envelope = require("envelope")
 local funcs = require("funcs")
+local execution_identity = require("execution_identity")
 
 local function construct(dependencies: any?): any
 local deps = dependencies or {}
+local security = deps.security or security
 local contract = deps.contract or contract
 local ops = deps.ops or ops
 local M = {}
@@ -77,7 +79,7 @@ end
 -- is expanded once per notification; service subjects never
 -- receive realtime. Nothing is cached: a revoked grant or membership stops
 -- notifications on the next event.
-local function resolve_recipients(component_id: string, required_access: integer): ({ string }?, error?)
+function M.resolve_recipients(component_id: string, required_access: integer): ({ string }?, error?)
     local grants, grants_err = ops.reaching_grants(component_id)
     if grants_err then return nil, grants_err end
 
@@ -153,7 +155,27 @@ function M.fanout(component_id: string, topic: string?, data: component_types.Js
         required_access = normalized
     end
 
-    local recipients, recip_err = resolve_recipients(component_id, required_access)
+    local recipients = type(opts) == "table" and opts.recipients or nil
+    local recip_err: error? = nil
+    if recipients ~= nil then
+        local actor, actor_err = security.actor()
+        if actor_err then return nil, actor_err end
+        local actor_id, id_err
+        if actor then actor_id, id_err = actor:id() end
+        if id_err then return nil, id_err end
+        if not execution_identity.is_maintenance_key(actor_id) then
+            return nil, errors.new({kind = errors.PERMISSION_DENIED, message = "captured notification audiences require a maintenance actor"})
+        end
+    end
+    if recipients == nil then recipients, recip_err = M.resolve_recipients(component_id, required_access) end
+    if type(recipients) ~= "table" then
+        return nil, recip_err or errors.new({kind = errors.INVALID, message = "notification recipients must be an array"})
+    end
+    for _, recipient in ipairs(recipients) do
+        if type(recipient) ~= "string" or recipient == "" then
+            return nil, errors.new({kind = errors.INVALID, message = "notification recipient must be a non-empty user id"})
+        end
+    end
     if recip_err then return nil, recip_err end
     if #recipients == 0 then return { success = true, notified = 0, topic = resolved_topic }, nil end
 

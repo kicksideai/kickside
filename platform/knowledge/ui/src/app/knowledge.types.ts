@@ -1,10 +1,11 @@
+import type { ComponentDeletionState } from '@widgets/app/useComponentDeletion'
 export type KbType = string
 
 export interface StatItem { icon?: string; value: number; label: string }
 export interface StatSpec { path?: string; icon?: string; singular?: string; plural?: string; min?: number }
 export interface Badge { label: string; icon: string; tone: string }
 
-export interface KnowledgeBase {
+export interface KnowledgeBase extends ComponentDeletionState {
   id: string
   name?: string
   description?: string

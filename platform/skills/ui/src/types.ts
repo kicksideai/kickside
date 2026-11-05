@@ -1,3 +1,4 @@
+import type { ComponentDeletionState } from '@widgets/app/useComponentDeletion'
 // No host-driven props: the skills surface fetches its own data.
 export interface ComponentProps {}
 
@@ -11,7 +12,7 @@ export interface SkillFile {
 
 // A skill record as returned by GET /api/v1/skills. Shared by the management
 // surface and the trait picker so both read the same shape.
-export interface Skill {
+export interface Skill extends ComponentDeletionState {
   skill_id: string
   name?: string
   description?: string

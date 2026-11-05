@@ -6,6 +6,13 @@ local kinds = {errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.P
 local id = "11111111-1111-4111-8111-111111111111"
 return {run = test.run_cases(function()
     test.describe("notification required-access native failures", function()
+        test.it("refuses a request actor supplying arbitrary explicit recipients", function()
+            fixture.reset(nil)
+            local scoped = metadata.new({security = {actor = function() return {id = function() return "request-user" end} end}})
+            local result, err = scoped.fanout(id, nil, {event = "component.deleted"}, {recipients = {"unrelated-user"}})
+            test.is_nil(result); test.eq(err:kind(), errors.PERMISSION_DENIED)
+            test.eq(fixture.grants, 0)
+        end)
         for _, kind in ipairs(kinds) do
             for _, options in ipairs({{}, {retryable = false}, {retryable = true}}) do
                 for _, detail in ipairs({{}, {details = {code = "notification_access", nested = {marker = "kept"}}}}) do

@@ -7,6 +7,8 @@ entries:
       value_kind: http.router
       comment: HTTP router the component share endpoints attach to. Must enforce auth + endpoint_firewall.
     targets:
+      - entry: kickside.component.api:get_component.endpoint
+        path: .meta.router
       - entry: kickside.component.api:access_model.endpoint
         path: .meta.router
       - entry: kickside.component.api:list_component_access.endpoint

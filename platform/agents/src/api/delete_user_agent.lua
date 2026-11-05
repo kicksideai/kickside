@@ -63,6 +63,7 @@ local function handler()
     res:write_json({
         success = true,
         deleted = result.deleted or false,
+        in_progress = result.in_progress, job_id = result.job_id, notification_error = result.notification_error,
     })
 end
 

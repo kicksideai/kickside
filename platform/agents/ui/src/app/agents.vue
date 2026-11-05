@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import ComponentDeletion from '@widgets/app/ComponentDeletion.vue'
+import { useComponentDeletion } from '@widgets/app/useComponentDeletion'
+import type { ComponentDeletionState } from '@widgets/app/useComponentDeletion'
 import { ref, computed, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import Button from 'primevue/button'
@@ -12,7 +15,7 @@ import { loadToolCatalog } from './toolCatalog.ts'
 // Canonical WC: the authenticated client comes from @wippy-fe/proxy; in-component
 // modals replace window.confirm; the universal --p-* theme vocabulary renders it
 // in any host's shadow DOM.
-interface Agent {
+interface Agent extends ComponentDeletionState {
   id: string
   title?: string
   description?: string
@@ -67,7 +70,6 @@ async function load() {
     if (!data?.success) throw new Error(data?.error || 'failed to load agents')
     agents.value = (data.agents || []) as Agent[]
   } catch (e) {
-    agents.value = []
     error.value = errMsg(e, 'could not load agents')
   } finally {
     loading.value = false
@@ -118,6 +120,7 @@ async function askRemove(a: Agent) {
   try {
     const { data } = await api.delete(`/api/v1/user-agents/${a.id}`)
     if (!data?.success) throw new Error(data?.error || 'delete failed')
+    acceptDeletion(a.id, data)
     await load()
   } catch (e) {
     error.value = errMsg(e, 'delete failed')
@@ -160,6 +163,7 @@ watch([shareOpen, shareHost], async () => {
 useHostVisibilityRefresh(async () => {
   await Promise.all([load(), loadOptions()])
 })
+const {acceptDeletion} = useComponentDeletion(agents, row => row.id)
 </script>
 
 <template>
@@ -214,10 +218,11 @@ useHostVisibilityRefresh(async () => {
           :key="a.id"
           class="kx-card kx-focus-halo"
           tabindex="0"
-          @click="openEdit(a)"
-          @keydown.enter="openEdit(a)"
-          @keydown.space.prevent="openEdit(a)"
+          @click="!a.deleting_at && openEdit(a)"
+          @keydown.enter="!a.deleting_at && openEdit(a)"
+          @keydown.space.prevent="!a.deleting_at && openEdit(a)"
         >
+          <ComponentDeletion :state="a" @retry="askRemove(a)" />
           <div class="kx-card-head">
             <span class="kx-ficon"><Icon :icon="a.icon || 'tabler:robot'" aria-hidden="true" /></span>
             <div class="kx-card-id">
@@ -230,19 +235,19 @@ useHostVisibilityRefresh(async () => {
               </div>
             </div>
             <div class="kx-card-actions" @click.stop>
-              <Button type="button" severity="secondary" outlined size="small" title="Edit" :aria-label="`Edit ${a.title}`" @click="openEdit(a)">
+              <Button type="button" severity="secondary" outlined size="small" title="Edit" :aria-label="`Edit ${a.title}`" @click="!a.deleting_at && openEdit(a)" :disabled="!!a.deleting_at">
                 <template #icon="{ class: iconClass }"><Icon icon="tabler:pencil" :class="iconClass" aria-hidden="true" /></template>
               </Button>
-              <Button type="button" severity="secondary" outlined size="small" title="Share" :aria-label="`Share ${a.title}`" @click="openShare(a)">
+              <Button type="button" severity="secondary" outlined size="small" title="Share" :aria-label="`Share ${a.title}`" @click="openShare(a)" :disabled="!!a.deleting_at">
                 <template #icon="{ class: iconClass }"><Icon icon="tabler:share" :class="iconClass" aria-hidden="true" /></template>
               </Button>
-              <Button type="button" severity="danger" outlined size="small" title="Delete" :aria-label="`Delete ${a.title}`" @click="askRemove(a)">
+              <Button type="button" severity="danger" outlined size="small" title="Delete" :aria-label="`Delete ${a.title}`" @click="askRemove(a)" :disabled="!!a.deleting_at">
                 <template #icon="{ class: iconClass }"><Icon icon="tabler:trash" :class="iconClass" aria-hidden="true" /></template>
               </Button>
             </div>
           </div>
           <div class="kx-card-desc">{{ a.description || 'No description' }}</div>
-          <button class="kx-card-chat" :disabled="!a.start_token" @click.stop="startChat(a)" :title="a.start_token ? 'Chat with this agent' : 'Chat unavailable'">
+          <button class="kx-card-chat" :disabled="!!a.deleting_at || (!a.start_token)" @click.stop="startChat(a)" :title="a.start_token ? 'Chat with this agent' : 'Chat unavailable'">
             <Icon icon="tabler:message" aria-hidden="true" /> Chat
           </button>
         </div>

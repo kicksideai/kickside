@@ -27,10 +27,10 @@ export function useAutomationData({ automations, types, loading, error, parentId
     error.value = ''
     try {
       const { data } = await api.get('/api/v1/automations', { params: { class: 'automation', parent_id: parentId() } })
-      automations.value = data?.success ? (data.automations || []) : []
+      if (!data?.success) throw new Error(errMsg(data?.error, 'failed to load automations'))
+      automations.value = data.automations || []
       syncRealtimeSubscriptions()
     } catch (e) {
-      automations.value = []
       syncRealtimeSubscriptions()
       error.value = errMsg(e, 'failed to load automations')
     } finally {

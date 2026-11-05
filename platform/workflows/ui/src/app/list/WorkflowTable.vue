@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ComponentDeletion from '@widgets/app/ComponentDeletion.vue'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import ProgressSpinner from 'primevue/progressspinner'
@@ -226,13 +227,14 @@ const rowMenuItems = computed<RowMenuEntry[]>(() => {
         class="kx-row wf-row"
         role="row"
         tabindex="0"
-        @click="emit('open', item.row.id)"
-        @keydown.enter="emit('open', item.row.id)"
-        @keydown.space.prevent="emit('open', item.row.id)"
+        @click="!item.row.deleting_at && emit('open', item.row.id)"
+        @keydown.enter="!item.row.deleting_at && emit('open', item.row.id)"
+        @keydown.space.prevent="!item.row.deleting_at && emit('open', item.row.id)"
       >
         <span class="wf-row-main" role="cell">
           <span class="wf-row-icon"><Icon icon="tabler:route" aria-hidden="true" /></span>
           <span class="wf-row-text">
+            <ComponentDeletion :state="item.row" @retry="onAskDelete(item.row)" />
             <span class="wf-row-name">
               <strong>{{ item.row.title }}</strong>
             </span>
@@ -242,7 +244,7 @@ const rowMenuItems = computed<RowMenuEntry[]>(() => {
         <span class="wf-labels-cell" role="cell" data-label="Labels" @click.stop>
           <span v-for="l in item.row.labels" :key="l" class="wf-label-chip">
             <span class="wf-label-chip-text">{{ l }}</span>
-            <Button class="wf-label-x" text rounded severity="secondary" :aria-label="`Remove label ${l}`" :disabled="labelBusy === item.row.id" @click.stop="removeRowLabel(item.row, l, $event)">
+            <Button class="wf-label-x" text rounded severity="secondary" :aria-label="`Remove label ${l}`" :disabled="!!item.row.deleting_at || labelBusy === item.row.id" @click.stop="removeRowLabel(item.row, l, $event)">
               <Icon icon="tabler:x" aria-hidden="true" />
             </Button>
           </span>
@@ -266,7 +268,7 @@ const rowMenuItems = computed<RowMenuEntry[]>(() => {
             text
             severity="secondary"
             :aria-label="`Add a label to ${item.row.title}`"
-            :disabled="labelBusy === item.row.id"
+            :disabled="!!item.row.deleting_at || labelBusy === item.row.id"
             :loading="labelBusy === item.row.id"
             @click.stop="openLabelEditor(item.row.id, $event)"
           >
@@ -307,6 +309,7 @@ const rowMenuItems = computed<RowMenuEntry[]>(() => {
         <span class="wf-row-actions" role="cell" @click.stop>
           <Button
             class="wf-row-menu-btn"
+            :disabled="!!item.row.deleting_at"
             text
             rounded
             severity="secondary"

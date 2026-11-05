@@ -5,6 +5,8 @@ import { api } from '@wippy-fe/proxy'
 import { useComponentProps, useComponentEvents } from '../constants.ts'
 import { parseSelectedId } from '../../app/pickerValue'
 import WcMount from '../../app/WcMount.vue'
+import ComponentDeletion from '../../app/ComponentDeletion.vue'
+import { useComponentDeletion, type ComponentDeletionState } from '../../app/useComponentDeletion'
 import AnchoredPanel from '../../app/AnchoredPanel.vue'
 
 // Single-instance picker over the threads API (GET source). A component class owns
@@ -27,7 +29,7 @@ const props = useComponentProps()
 const emit = useComponentEvents()
 
 interface Row { [k: string]: unknown }
-interface Item { id: string; label: string; icon: string; selection: Record<string, unknown> }
+interface Item extends ComponentDeletionState { id: string; label: string; icon: string; selection: Record<string, unknown> }
 interface ViewComponentRef { tag_name?: unknown; title?: unknown }
 
 function str(v: unknown): string { return typeof v === 'string' ? v : (v == null ? '' : String(v)) }
@@ -225,7 +227,9 @@ async function load() {
       if (!id || seen.has(id)) continue
       seen.add(id)
       const lbl = rowLabel(r)
-      out.push({ id, label: (lbl && lbl !== id) ? lbl : untitledLabel.value, icon: rowIcon(r), selection: selectionFor(r, id) })
+      out.push({id, label: (lbl && lbl !== id) ? lbl : untitledLabel.value, icon: rowIcon(r), selection: selectionFor(r, id),
+        deleting_at: typeof r.deleting_at === 'string' ? r.deleting_at : undefined,
+        deletion_job_id: typeof r.deletion_job_id === 'string' ? r.deletion_job_id : undefined})
     }
     items.value = out
     loaded.value = true
@@ -309,9 +313,7 @@ function deleteErrText(data: unknown, err: unknown): string {
   if (err instanceof Error && err.message) return err.message
   return 'Could not delete.'
 }
-// Delete a listed component through the host-declared endpoint. On success the row is
-// dropped and the list refreshed; on a gate failure (409) the error is surfaced inline
-// and nothing is removed.
+// The host endpoint accepts deletion; reads and component events own removal.
 async function doDelete(item: Item) {
   const base = deleteEndpoint.value
   if (!base || deletingId.value) return
@@ -324,8 +326,8 @@ async function doDelete(item: Item) {
       deleteError.value = deleteErrText(data, null)
       return
     }
+    acceptDeletion(item.id, data)
     confirmDeleteId.value = ''
-    if (item.id === selectedId.value) selectedId.value = ''
     loaded.value = false
     await load()
   } catch (e) {
@@ -397,6 +399,9 @@ function toggleOpen() {
   open.value = !open.value
   if (open.value && !loaded.value) load()
 }
+const {acceptDeletion} = useComponentDeletion(items, row => row.id, id => {
+  if (id === selectedId.value) selectedId.value = ''
+})
 </script>
 
 <template>
@@ -408,7 +413,7 @@ function toggleOpen() {
 
   <AnchoredPanel v-model:open="open" :anchor="ctrl" :min-width="260" :max-height="320">
     <div class="cp-pop">
-    <div v-if="loading" class="cp-state"><Icon icon="tabler:loader-2" class="spin" aria-hidden="true" /> Loading…</div>
+    <div v-if="loading && !items.length" class="cp-state"><Icon icon="tabler:loader-2" class="spin" aria-hidden="true" /> Loading…</div>
     <div v-else-if="creating" class="cp-create"><WcMount :tag="createTag" @created="onCreated" @close="closeCreate" /></div>
     <div v-else-if="!items.length" class="cp-state cp-state--stack">
       <span>{{ emptyText }}</span>
@@ -425,12 +430,13 @@ function toggleOpen() {
           class="cp-row cp-row--compound"
           :class="item.id === selectedId && 'cp-row-on'"
         >
-          <button type="button" class="cp-row-main" @click="pick(item)">
+          <button type="button" class="cp-row-main" :disabled="!!item.deleting_at" @click="pick(item)">
             <Icon :icon="item.icon" class="cp-ico" aria-hidden="true" />
             <span class="cp-label">{{ item.label }}</span>
             <Icon v-if="item.id === selectedId" icon="tabler:check" class="cp-check" aria-hidden="true" />
           </button>
-          <template v-if="deleteEndpoint">
+          <ComponentDeletion :state="item" @retry="doDelete(item)" />
+          <template v-if="deleteEndpoint && !item.deleting_at">
             <template v-if="confirmDeleteId === item.id">
               <button type="button" class="cp-row-del cp-row-del-yes" :disabled="deletingId === item.id" title="Confirm delete" aria-label="Confirm delete" data-test="cp-del-confirm" @click.stop="doDelete(item)">
                 <Icon :icon="deletingId === item.id ? 'tabler:loader-2' : 'tabler:check'" :class="deletingId === item.id && 'spin'" aria-hidden="true" />

@@ -9,6 +9,7 @@ entries:
     modules: [funcs, security, json, registry, channel, time, uuid, process]
     imports:
       test: wippy.test:test
+      deletion_worker: app:deletion_test_worker
       canonical_json: kickside.contract:canonical_json
       component: kickside.component:component
       round_harness: kickside.automation:round_harness
@@ -84,6 +85,7 @@ entries:
     method: run
     modules: [uuid, json]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       canonical_json: kickside.contract:canonical_json
       round_harness: kickside.automation:round_harness

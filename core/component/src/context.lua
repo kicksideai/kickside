@@ -121,6 +121,8 @@ local function response(component: any, include_context: boolean): any
         context_included = include_context,
         access_level = mask,
         impl_id = component.impl_id,
+        deleting_at = component.deleting_at,
+        deletion_job_id = component.deletion_job_id,
         success = true,
     }
     if include_context then out.context_revision = component.context_revision end

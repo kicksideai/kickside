@@ -30,6 +30,8 @@ export async function listWorkflows(options: { filter?: 'published' } = {}): Pro
     return {
       id: String(r.id || ''),
       title: String(r.title || 'Untitled Workflow'),
+      deleting_at: r.deleting_at == null ? undefined : String(r.deleting_at),
+      deletion_job_id: r.deletion_job_id == null ? undefined : String(r.deletion_job_id),
       status: r.status != null ? String(r.status) : undefined,
       labels: normalizeLabels(r.labels),
       updated_at: r.updated_at != null ? String(r.updated_at) : undefined,

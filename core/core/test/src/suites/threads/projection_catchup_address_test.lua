@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 local test = require("test")
 local uuid = require("uuid")
 local sql = require("sql")
@@ -50,8 +51,17 @@ return { run = test.run_cases(function()
             test.is_nil(db_err)
             for _, id in ipairs(owned) do
                 local released, release_err = component.system_delete(id)
-                test.is_true(released)
-                if release_err then test.is_true(release_err:details().cleanup_pending) end
+                test.is_false(released)
+                test.is_true(release_err:details().cleanup_pending)
+                local removed, remove_err = deletion_worker.run(id)
+                if remove_err then test.is_true(remove_err:details().cleanup_pending)
+                else
+                    test.is_true(removed.deleted or type(removed.rearm) == "string")
+                    if removed.rearm then
+                        local completed, complete_err = deletion_worker.run(id)
+                        test.is_nil(complete_err, tostring(complete_err)); test.is_true(completed.deleted)
+                    end
+                end
                 local finished = false
                 for _ = 1, 40 do
                     local result, err = teardown.purge_thread(db, id, nil)

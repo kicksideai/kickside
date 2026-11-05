@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ComponentDeletion from '@widgets/app/ComponentDeletion.vue'
+import { useComponentDeletion } from '@widgets/app/useComponentDeletion'
 import { ref, computed, watch } from 'vue'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import { Icon } from '@iconify/vue'
@@ -46,7 +48,6 @@ async function load() {
   try {
     skills.value = await fetchSkills()
   } catch (e) {
-    skills.value = []
     error.value = errMsg(e, 'could not load skills')
   } finally {
     loading.value = false
@@ -298,7 +299,8 @@ async function askRemove(s: Skill) {
   try {
     const { data } = await api.delete(`/api/v1/skills/${s.skill_id}`)
     if (!data?.success) throw new Error(data?.error || 'delete failed')
-    host.toast({ severity: 'success', summary: 'Deleted', detail: s.name || 'skill' })
+    acceptDeletion(s.skill_id, data)
+    host.toast({ severity: 'success', summary: 'Deletion accepted', detail: s.name || 'skill' })
     await load()
   } catch (e) {
     error.value = errMsg(e, 'delete failed')
@@ -316,6 +318,7 @@ function fileIcon(kind?: string) {
 // trapping, initial focus, and Escape-to-close. The share popup is a self-contained
 // web component that handles its own backdrop, Escape, and close.
 useHostVisibilityRefresh(load)
+const {acceptDeletion} = useComponentDeletion(skills, row => row.skill_id)
 </script>
 
 <template>
@@ -367,7 +370,8 @@ useHostVisibilityRefresh(load)
       </div>
 
       <div v-else class="kx-grid">
-        <div v-for="s in filtered" :key="s.skill_id" class="kx-card" tabindex="0" role="button" :aria-label="`Open ${s.name || 'skill'}`" @click="openEdit(s)" @keydown.enter="openEdit(s)" @keydown.space.prevent="openEdit(s)">
+        <div v-for="s in filtered" :key="s.skill_id" class="kx-card" tabindex="0" role="button" :aria-label="`Open ${s.name || 'skill'}`" @click="!s.deleting_at && openEdit(s)" @keydown.enter="!s.deleting_at && openEdit(s)" @keydown.space.prevent="!s.deleting_at && openEdit(s)">
+          <ComponentDeletion :state="s" @retry="askRemove(s)" />
           <div class="kx-card-head">
             <span class="kx-ficon"><Icon :icon="s.icon || 'tabler:bulb'" aria-hidden="true" /></span>
             <div class="kx-card-id">
@@ -380,13 +384,13 @@ useHostVisibilityRefresh(load)
               </div>
             </div>
             <div class="kx-card-actions" @click.stop>
-              <Button type="button" severity="secondary" outlined size="small" title="Edit / refine" :aria-label="`Edit ${s.name}`" @click="openEdit(s)">
+              <Button type="button" severity="secondary" outlined size="small" title="Edit / refine" :aria-label="`Edit ${s.name}`" @click="!s.deleting_at && openEdit(s)" :disabled="!!s.deleting_at">
                 <template #icon="{ class: iconClass }"><Icon icon="tabler:pencil" :class="iconClass" aria-hidden="true" /></template>
               </Button>
-              <Button type="button" severity="secondary" outlined size="small" title="Share" :aria-label="`Share ${s.name}`" @click="openShare(s)">
+              <Button type="button" severity="secondary" outlined size="small" title="Share" :aria-label="`Share ${s.name}`" @click="openShare(s)" :disabled="!!s.deleting_at">
                 <template #icon="{ class: iconClass }"><Icon icon="tabler:share" :class="iconClass" aria-hidden="true" /></template>
               </Button>
-              <Button type="button" severity="danger" outlined size="small" title="Delete" :aria-label="`Delete ${s.name}`" @click="askRemove(s)">
+              <Button type="button" severity="danger" outlined size="small" title="Delete" :aria-label="`Delete ${s.name}`" @click="askRemove(s)" :disabled="!!s.deleting_at">
                 <template #icon="{ class: iconClass }"><Icon icon="tabler:trash" :class="iconClass" aria-hidden="true" /></template>
               </Button>
             </div>

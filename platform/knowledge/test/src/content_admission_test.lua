@@ -152,8 +152,7 @@ local function define_tests()
             end
             upload_ids = {}
             for _, id in ipairs(users) do
-                local _, err = component.system_delete(assert(upload_types.component_id_for_owner(id)))
-                test.is_nil(err, tostring(err))
+                cleanup.cleanup(assert(upload_types.component_id_for_owner(id)))
                 execute("DELETE FROM app_user_groups WHERE user_id = $1", { id })
                 execute("DELETE FROM app_users WHERE user_id = $1", { id })
             end

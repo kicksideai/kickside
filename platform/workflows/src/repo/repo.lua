@@ -150,7 +150,7 @@ local function enrich_rows(rows: { any }): (boolean, error?)
     for _, item in ipairs(rows) do
         local target: any = item
         local id = tostring(target.id or "")
-        if id ~= "" then
+        if id ~= "" and target.deleting_at == nil then
             local current, cerr = store.params_and_head(db, id)
             if cerr then db:release(); return false, cerr end
             local published, perr = store.latest_published_interface(db, id)
@@ -308,6 +308,8 @@ function M.list(options: any?): (any?, error?, integer?)
         if id ~= "" then
             local item = {
                 id = id,
+                deleting_at = r.deleting_at,
+                deletion_job_id = r.deletion_job_id,
                 title = display_title(meta.title),
                 created_at = r.created_at,
                 updated_at = r.updated_at,

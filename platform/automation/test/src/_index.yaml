@@ -463,3 +463,12 @@ entries:
       cleanup: app:drive_repair_cleanup
       drive: kickside.automation:drive
       types: kickside.automation:types
+
+  - name: deletion_test_worker
+    kind: library.lua
+    source: file://deletion_test_worker.lua
+    modules: [funcs, sql, time, uuid, process]
+    imports:
+      claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      completion: kickside.core.jobs.service:worker_completion

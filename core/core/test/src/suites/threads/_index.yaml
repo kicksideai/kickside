@@ -61,6 +61,7 @@ entries:
       - contract
       - json
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       fixture: kickside.core.threads:contract_fixture
       cursor_waiters: kickside.core.threads:cursor_waiters
@@ -83,6 +84,7 @@ entries:
       - contract
       - json
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       fixture: kickside.core.threads:contract_fixture
 
@@ -152,6 +154,7 @@ entries:
     method: run
     modules: [uuid, sql, time]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       fixture: kickside.core.threads:contract_fixture
       component: kickside.component:component
@@ -164,6 +167,7 @@ entries:
     method: run
     modules: [sql, uuid, funcs]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       fixture: kickside.core.threads:contract_fixture
 

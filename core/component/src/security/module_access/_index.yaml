@@ -31,6 +31,7 @@ entries:
   groups: []
   policy:
     resources:
+    - kickside.component.api:get_component.endpoint
     - kickside.component.api:access_model.endpoint
     - kickside.component.api:list_component_access.endpoint
     - kickside.component.api:share_component.endpoint
@@ -59,6 +60,11 @@ entries:
     - funcs.call
     - funcs.security
     effect: allow
+    conditions:
+    - field: resource
+      operator: nin
+      value:
+      - kickside.component:delete_worker
 - name: user_security_scope
   kind: ns.requirement
   default: kickside.security.groups:members

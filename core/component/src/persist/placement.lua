@@ -146,6 +146,7 @@ function M.read_node(tx: Executor, component_id: string, for_write: boolean?): (
         :where("component_id = ?", component_id)
         :limit(1)
     if for_write then
+        query = query:where("deleting_at IS NULL")
         local dialect, dialect_err = (tx :: sql.Transaction):db_type()
         if dialect_err then return nil, dialect_err end
         if dialect == sql.type.POSTGRES then query = query:suffix("FOR UPDATE") end

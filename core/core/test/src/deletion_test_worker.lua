@@ -1,0 +1,1 @@
+../../../component/test/src/deletion_test_worker.lua

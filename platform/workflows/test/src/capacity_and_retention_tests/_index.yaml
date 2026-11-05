@@ -12,6 +12,7 @@ entries:
     method: run
     modules: [uuid, security, funcs]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       store: kickside.workflows.store:store
       workflow: kickside.workflows:workflow

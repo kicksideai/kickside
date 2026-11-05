@@ -14,6 +14,7 @@ entries:
     method: run
     modules: [sql, json, funcs, uuid, time, security]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       workflow: kickside.workflows:workflow
       version_publish: kickside.workflows.repo:version_publish

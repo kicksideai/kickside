@@ -36,6 +36,7 @@ entries:
     method: run
     modules: [sql, fs, hash]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       test_identity: app:test_identity
       skill_storage: kickside.skills:storage
@@ -191,6 +192,7 @@ entries:
     method: run
     modules: [funcs, security, uuid, time]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       test_identity: app:test_identity
 
@@ -477,3 +479,12 @@ entries:
     parameters:
     - name: kickside.contract.http:user_security_scope
       value: app.security:user
+
+  - name: deletion_test_worker
+    kind: library.lua
+    source: file://deletion_test_worker.lua
+    modules: [funcs, sql, time, uuid, process]
+    imports:
+      claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      completion: kickside.core.jobs.service:worker_completion

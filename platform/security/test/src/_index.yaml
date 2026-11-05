@@ -389,6 +389,18 @@ entries:
       - name: kickside.component:api_router
         value: app:api
 
+  - name: dep.kickside.jobs
+    kind: ns.dependency
+    version: '*'
+    component: kickside/jobs
+    parameters:
+      - name: target_db
+        value: app:db
+      - name: process_host
+        value: app:processes
+      - name: api_router
+        value: app:api
+
   - name: dep.kickside.contract
     kind: ns.dependency
     version: "*"

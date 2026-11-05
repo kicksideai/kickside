@@ -239,7 +239,9 @@ entries:
         description: |
           Cleanup component resources only - service handles unregistering.
           Component should clean up files, connections, external resources, etc.
-          Component service will unregister component after successful cleanup.
+          Cleanup must tolerate replay after partial success or a worker crash.
+          Treat already-absent owned resources as success and finish all owned work
+          before returning success. The service unregisters only after successful cleanup.
           Calling: delete(request_dto)
         input_schemas:
           - definition: |

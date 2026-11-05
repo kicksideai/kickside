@@ -5,6 +5,7 @@
 -- pagination. Runs on SQLite and PostgreSQL.
 
 local test = require("test")
+local deletion_worker = require("deletion_worker")
 local sql = require("sql")
 local uuid = require("uuid")
 local time = require("time")
@@ -270,7 +271,10 @@ local function define_tests()
 
                 local del = as_owner(DELETE, { component_id = cid })
                 test.not_nil(del)
-                test.is_true(del.success, "delete must succeed")
+                test.is_true(del.in_progress, "delete must enqueue")
+                local finished, finish_err = deletion_worker.run(cid)
+                test.is_nil(finish_err, tostring(finish_err))
+                test.is_true(finished.deleted)
 
                 test.eq(count_rows("kickside_component_meta", cid), 0, "meta rows must be gone after delete")
                 test.eq(count_rows("kickside_component_access", cid), 0, "access rows must be gone after delete")

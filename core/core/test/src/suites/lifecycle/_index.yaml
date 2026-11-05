@@ -92,6 +92,7 @@ entries:
     method: run
     modules: [sql, uuid, security, contract, funcs]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       component: kickside.component:component
       provision: kickside.core.threads:provision
@@ -110,6 +111,7 @@ entries:
     method: run
     modules: [sql, uuid, security, contract, time, channel, process]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       component_lifecycle_log: kickside.core.threads.persist:lifecycle
       audit_publisher: kickside.core.lifecycle:component_lifecycle_impl

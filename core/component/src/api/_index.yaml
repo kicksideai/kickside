@@ -91,3 +91,21 @@ entries:
     method: POST
     func: adopt_component
     path: /component-access/adopt/{id}
+
+  - name: get_component
+    kind: function.lua
+    source: file://get_component.lua
+    method: handler
+    modules: [http, security]
+    imports:
+      component: kickside.component:component
+      envelope: kickside.component:envelope
+      http_errors: kickside.contract:http_errors
+      http_context: kickside.component.api:http_context
+
+  - name: get_component.endpoint
+    kind: http.endpoint
+    meta: {router: ""}
+    method: GET
+    func: get_component
+    path: /components/{id}

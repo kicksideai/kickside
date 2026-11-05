@@ -533,7 +533,7 @@ entries:
   - name: fixture_cleanup
     kind: library.lua
     source: file://fixture_cleanup.lua
-    modules: [sql]
+    modules: [sql, time]
     imports:
       component: kickside.component:component
       teardown: kickside.core.threads.persist:teardown

@@ -130,3 +130,15 @@ entries:
     imports:
       migration: wippy.migration:migration
     method: migrate
+
+  - name: 15_delete_intent
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-11-04T00:00:00Z"
+    source: file://15_delete_intent.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

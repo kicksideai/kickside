@@ -6,6 +6,7 @@
 -- kickside.channel:receive reads it back via runtime_reader at the execution
 -- boundary. Receive routes using the connection and channel IDs in state.
 local automations_lib = require("automations_lib")
+local owner_gc = require("owner_gc")
 local component = require("component")
 local ctx = require("ctx")
 local contract = require("contract")
@@ -302,11 +303,12 @@ function M.install(input: any): (any, any)
     return result, nil
 end
 
--- delete() -> deletable.delete handler (the post-uninstall component unregister
--- hook). The conversation session this responder owns is torn down by the install
--- rollback step (CLEANUP_TARGET), which the engine replays before this runs.
-function M.delete(_args: any): any
-    return { success = true }
+function M.delete(args: any): any
+    local id = ctx.get("component_id")
+    local rollback = ctx.get("_rollback")
+    local result, err = owner_gc.delete(id, rollback, type(args) == "table" and args.options or nil)
+    if err then return {success = false, error = err} end
+    return {success = true, replayed = result.replayed, removed = result.removed, discarded = result.discarded}
 end
 
 function M.status(args: any): (any, any)

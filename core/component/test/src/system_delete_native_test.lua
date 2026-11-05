@@ -1,6 +1,7 @@
 local test = require("test")
 local component = require("component")
 local fixture = require("fixture")
+local worker = require("worker")
 local kinds = {errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.PERMISSION_DENIED, errors.UNAVAILABLE,
     errors.INTERNAL, errors.CANCELED, errors.CONFLICT, errors.TIMEOUT, errors.RATE_LIMITED, errors.UNKNOWN}
 local function native(actual: error?, source: error)
@@ -16,8 +17,16 @@ return {run = test.run_cases(function()
                     test.it(stage .. "/" .. kind .. "/" .. tostring(options.retryable), function()
                         local source = errors.new({kind = kind, message = "system teardown refusal", retryable = options.retryable,
                             details = {code = "system_delete_dependency", nested = {marker = "kept"}}})
-                        fixture.reset(stage, source); local ok, err = component.system_delete("component", "reparent_root")
-                        test.eq(ok, stage == "purge"); native(err, source)
+                        fixture.reset(stage, source)
+                        local ok, err
+                        if stage == "read" or stage == "preflight" then
+                            ok, err = component.system_delete("component", "reparent_root")
+                            test.is_false(ok)
+                        else
+                            ok, err = worker.run({payload = {component_id = "component"}})
+                            test.is_nil(ok)
+                        end
+                        native(err, source)
                         test.eq(fixture.cleanups, (stage == "read" or stage == "preflight") and 0 or 1)
                         test.eq(fixture.unregisters, (stage == "read" or stage == "preflight" or stage == "cleanup") and 0 or 1)
                     end)
@@ -26,28 +35,55 @@ return {run = test.run_cases(function()
         end
         for _, kind in ipairs(kinds) do
             for _, options in ipairs({{}, {retryable = false}, {retryable = true}}) do
-                test.it("abandon/" .. kind .. "/" .. tostring(options.retryable), function()
-                    local primary = errors.new({kind = errors.INVALID, retryable = false, message = "cleanup refused",
-                        details = {code = "cleanup_primary", nested = {marker = "primary"}}})
-                    local source = errors.new({kind = kind, retryable = options.retryable, message = "abandon refused",
+                test.it("failed replay keeps the mark/" .. kind .. "/" .. tostring(options.retryable), function()
+                    local source = errors.new({kind = kind, retryable = options.retryable, message = "cleanup replay refused",
                         details = {code = "system_delete_dependency", nested = {marker = "kept"}}})
-                    fixture.reset("cleanup", primary); fixture.abandon_source = source
-                    local ok, err = component.system_delete("component", "reparent_root")
-                    test.is_false(ok); native(err, source)
-                    test.eq(err:details().operation_error.kind, primary:kind()); test.is_false(err:details().operation_error.retryable)
-                    test.eq(err:details().operation_error.details.code, "cleanup_primary")
-                    test.eq(err:details().operation_error.details.nested.marker, "primary")
-                    test.eq(fixture.abandons, 1); test.eq(fixture.unregisters, 0)
+                    fixture.reset("cleanup_replay", source)
+                    local result, err = worker.run({payload = {component_id = "component"}})
+                    test.is_nil(result); native(err, source)
+                    test.eq(fixture.abandons, 0); test.eq(fixture.unregisters, 0)
                 end)
             end
         end
+        for _, wait_for in ipairs({false, "children"}) do
+            test.it("returns a committed notification error through rearm/" .. tostring(wait_for), function()
+                fixture.reset("pending", errors.new({kind = errors.CONFLICT, message = "bounded progress", details = {
+                    cleanup_pending = true, needs_continue = true, wait_for = wait_for or nil,
+                    notification_error = {kind = errors.UNAVAILABLE, retryable = false, details = {code = "delivery"}},
+                }}))
+                local result, err = worker.run({payload = {component_id = "component"}})
+                test.is_nil(err); test.eq(type(result.rearm), "string")
+                test.not_nil(result.notification_error); test.eq(result.notification_error.details.code, "delivery")
+                test.is_false(result.notification_error.retryable)
+            end)
+        end
+        test.it("preserves delivery diagnostics when remaining cleanup fails", function()
+            local source = errors.new({kind = errors.UNAVAILABLE, message = "thread purge refuses", retryable = true})
+            fixture.reset("purge", source)
+            fixture.notification_error = {kind = errors.UNAVAILABLE, retryable = false, details = {code = "delivery"}}
+            local result, err = worker.run({payload = {component_id = "component"}})
+            test.is_nil(result); test.eq(err:kind(), source:kind()); test.eq(err:retryable(), source:retryable())
+            test.not_nil(err:details()); test.not_nil(err:details().notification_error)
+            test.eq(err:details().notification_error.details.code, "delivery")
+        end)
+        test.it("concurrent final removal remains an idempotent system delete", function()
+            fixture.reset("removed_during_acceptance", errors.new({kind = errors.NOT_FOUND, message = "component is absent"}))
+            local ok, err = component.system_delete("component", "reparent_root")
+            test.is_true(ok); test.is_nil(err)
+            test.eq(fixture.begins, 1); test.eq(fixture.cleanups, 0)
+        end)
         test.it("absent component remains an idempotent no-op", function()
             fixture.reset("", nil); fixture.absent = true; local ok, err = component.system_delete("component", "reparent_root")
             test.is_true(ok); test.is_nil(err); test.eq(fixture.begins, 0); test.eq(fixture.cleanups, 0); test.eq(fixture.unregisters, 0)
         end)
         test.it("healthy cleanup unregisters once under the trusted gate", function()
             fixture.reset("", nil); local ok, err = component.system_delete("component", "reparent_root")
-            test.is_true(ok); test.is_nil(err); test.eq(fixture.cleanups, 1); test.eq(fixture.unregisters, 1)
+            test.is_false(ok); test.is_true(err:details().cleanup_pending)
+            test.eq(err:details().wait_for, "deletion_job")
+            test.eq(fixture.cleanups, 0); test.eq(fixture.unregisters, 0)
+            local finished, finish_err = worker.run({payload = {component_id = "component"}})
+            test.is_nil(finish_err); test.is_true(finished.deleted)
+            test.eq(fixture.cleanups, 1); test.eq(fixture.unregisters, 1)
             test.is_nil(fixture.user); test.eq(fixture.policy, "reparent_root")
         end)
     end)
