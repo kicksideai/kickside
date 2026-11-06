@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.7](https://github.com/kicksideai/kickside/compare/channel-v0.2.6...channel-v0.2.7) (2026-11-05)
+
+
+### Bug Fixes
+
+* **channel:** finish responder-owned cleanup before unregister ([f34d810](https://github.com/kicksideai/kickside/commit/f34d810df66481ce1a0ca2aecc9ff00f2e37f87f))
+* **component:** run deletion cleanup through Jobs ([da3f7ae](https://github.com/kicksideai/kickside/commit/da3f7aee8dce4136a65d1c94bda6604820bc8355))
+
 ## [0.2.6](https://github.com/kicksideai/kickside/compare/channel-v0.2.5...channel-v0.2.6) (2026-10-28)
 
 

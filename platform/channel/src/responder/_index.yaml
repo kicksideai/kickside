@@ -23,6 +23,7 @@ entries:
     source: file://responder.lua
     modules: [ctx, contract, security]
     imports:
+      owner_gc: kickside.automation:owner_gc
       automations_lib: kickside.automation:automation
       component: kickside.component:component
       channel_consts: kickside.channel:consts
@@ -35,6 +36,7 @@ entries:
     method: install
     modules: [ctx, contract, security]
     imports:
+      owner_gc: kickside.automation:owner_gc
       automations_lib: kickside.automation:automation
       component: kickside.component:component
       channel_consts: kickside.channel:consts
@@ -47,6 +49,7 @@ entries:
     method: delete
     modules: [ctx, contract, security]
     imports:
+      owner_gc: kickside.automation:owner_gc
       automations_lib: kickside.automation:automation
       component: kickside.component:component
       channel_consts: kickside.channel:consts
@@ -59,6 +62,7 @@ entries:
     method: status
     modules: [ctx, contract, security]
     imports:
+      owner_gc: kickside.automation:owner_gc
       automations_lib: kickside.automation:automation
       component: kickside.component:component
       channel_consts: kickside.channel:consts
@@ -71,6 +75,7 @@ entries:
     method: read_config
     modules: [ctx, contract, security]
     imports:
+      owner_gc: kickside.automation:owner_gc
       automations_lib: kickside.automation:automation
       component: kickside.component:component
       channel_consts: kickside.channel:consts
@@ -83,6 +88,7 @@ entries:
     method: configure
     modules: [ctx, contract, security]
     imports:
+      owner_gc: kickside.automation:owner_gc
       automations_lib: kickside.automation:automation
       component: kickside.component:component
       channel_consts: kickside.channel:consts
@@ -98,6 +104,7 @@ entries:
     method: pause
     modules: [ctx, contract, security]
     imports:
+      owner_gc: kickside.automation:owner_gc
       automations_lib: kickside.automation:automation
       component: kickside.component:component
       channel_consts: kickside.channel:consts
@@ -113,6 +120,7 @@ entries:
     method: resume
     modules: [ctx, contract, security]
     imports:
+      owner_gc: kickside.automation:owner_gc
       automations_lib: kickside.automation:automation
       component: kickside.component:component
       channel_consts: kickside.channel:consts

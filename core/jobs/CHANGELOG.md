@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.1.72](https://github.com/kicksideai/kickside/compare/jobs-v0.1.71...jobs-v0.1.72) (2026-11-06)
+
+
+### Bug Fixes
+
+* **component:** authorize deletion dependencies and continue cleanup across error kinds ([f48c782](https://github.com/kicksideai/kickside/commit/f48c78267a60800793a40c46f8416c6ae8bb27f5))
+* **jobs:** authorize Settings binding opens in policy readers ([7418606](https://github.com/kicksideai/kickside/commit/7418606521668f59cd3bb0a67b368c7f64ac0212))
+* **jobs:** authorize Settings reads by method name ([a002d20](https://github.com/kicksideai/kickside/commit/a002d2045f7f28eec77c5c0f4c7b528cc0da87f5))
+
+## [0.1.71](https://github.com/kicksideai/kickside/compare/jobs-v0.1.70...jobs-v0.1.71) (2026-11-05)
+
+
+### Bug Fixes
+
+* **jobs:** commit lease-loss history with the termination fence ([4a07c37](https://github.com/kicksideai/kickside/commit/4a07c372c1992449b39af4379952052483a9bc26))
+* **jobs:** fence lease expiry and replace pending jobs atomically ([7304b94](https://github.com/kicksideai/kickside/commit/7304b94654503e4f566faf1dcad5ff261a2c4692))
+* **jobs:** fence lease expiry and replace pending jobs atomically ([09fe7b8](https://github.com/kicksideai/kickside/commit/09fe7b830c5804c61a2139a0aa8193d0270abd3f))
+* **jobs:** preserve termination intent and fenced lease ownership ([6ce13a2](https://github.com/kicksideai/kickside/commit/6ce13a2772d0bfb733524da5ffdff0877ac63bbe))
+* **jobs:** preserve termination intent through worker failures ([caca58c](https://github.com/kicksideai/kickside/commit/caca58c3d337ef20fcfc6491914af456f9d5486b))
+* **jobs:** settle supervisor lease loss before failure ([72bf2c4](https://github.com/kicksideai/kickside/commit/72bf2c4fe30a77aa133c02e0ba27c8a8313c97ab))
+
+## [0.1.70](https://github.com/kicksideai/kickside/compare/jobs-v0.1.69...jobs-v0.1.70) (2026-11-03)
+
+
+### Features
+
+* **jobs:** apply live policy from Settings through the Jobs owner ([#215](https://github.com/kicksideai/kickside/issues/215)) ([879dad8](https://github.com/kicksideai/kickside/commit/879dad8215c9740fd0c8dcf782df9f7a01beea6c))
+
+## [0.1.69](https://github.com/kicksideai/kickside/compare/jobs-v0.1.68...jobs-v0.1.69) (2026-11-03)
+
+
+### Bug Fixes
+
+* **jobs:** resume claims after registry-driven schema admission ([#290](https://github.com/kicksideai/kickside/issues/290)) ([86d3056](https://github.com/kicksideai/kickside/commit/86d30561c480b50b21e6e7e65947c5dd21bd45a7))
+
+## [0.1.68](https://github.com/kicksideai/kickside/compare/jobs-v0.1.67...jobs-v0.1.68) (2026-11-02)
+
+
+### Bug Fixes
+
+* **jobs:** wait for schema before admitting upgraded claims ([1c030c0](https://github.com/kicksideai/kickside/commit/1c030c02e83c6fdf34ca6fb6b5aa674cd20f2fdc))
+
 ## [0.1.67](https://github.com/kicksideai/kickside/compare/jobs-v0.1.66...jobs-v0.1.67) (2026-10-30)
 
 

@@ -1,7 +1,7 @@
 local test = require("test")
 local jobs = require("jobs")
 local fixture = require("fixture")
-local phases = {"policy", "workers", "fresh", "expired", "wake", "backlog", "failed", "degraded", "control"}
+local phases = {"policy", "workers", "fresh", "expired", "wake", "backlog", "failed", "degraded", "stranded", "control"}
 local function required(err: error?): error
     if not err then error(errors.new({kind = errors.INTERNAL, retryable = false, message = "health guard requires an error"})) end
     return err
@@ -73,6 +73,25 @@ return {run = test.run_cases(function()
             test.eq(result.degraded_jobs, 0); test.eq(result.oldest_undelivered_control_wake_age_ms, 0)
             test.eq(result.due_unclaimed_count, 0); test.eq(result.due_unclaimed_oldest_age_ms, 0); test.eq(result.overdue_unclaimed_count, 0)
             test.eq(fixture.releases, 1)
+        end)
+        test.it("degraded scheduled jobs do not create a health issue", function()
+            fixture.reset("degraded", nil); fixture.missing, fixture.value = true, {{n = 3}}
+            local result, err = jobs.health()
+            test.is_nil(err)
+            test.is_true(result.healthy)
+            test.eq(result.degraded_jobs, 3)
+        end)
+        test.it("names stranded job ids in its issue", function()
+            fixture.reset("stranded", nil); fixture.missing, fixture.value = true, {{id = "job-one"}, {id = "job-two"}}
+            local result, err = jobs.health()
+            test.is_nil(err)
+            test.is_false(result.healthy)
+            test.eq(#result.issues, 1)
+            test.eq(result.issues[1].code, "stranded_jobs")
+            test.eq(result.issues[1].count, 2)
+            test.eq(#result.issues[1].job_ids, 2)
+            test.eq(result.issues[1].job_ids[1], "job-one")
+            test.eq(result.issues[1].job_ids[2], "job-two")
         end)
         test.it("aggregate driver numeric strings retain their values", function()
             fixture.reset("expired", nil); fixture.missing, fixture.value = true, {{n = "2"}}

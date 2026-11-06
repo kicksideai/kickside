@@ -15,6 +15,7 @@ workspace:
     kickside/contract: ../../../core/contract
     kickside/execution: ../../../core/execution
     kickside/component: ../../../core/component
+    kickside/jobs: ../../../core/jobs
     kickside/realtime-dispatch: ../../../core/realtime-dispatch
 vars:
   sqlite_path: ":memory:"

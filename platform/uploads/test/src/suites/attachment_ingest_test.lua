@@ -136,6 +136,31 @@ local function define_tests()
             end)
         end)
 
+        test.it("preserves upload error kind, message and details", function()
+            local conflict = errors.new({kind = errors.CONFLICT, message = "upload already exists",
+                retryable = false, details = {error_kind = "declaration"}})
+            local set = deps({ uploads = { upload_file = function() return nil, conflict end } })
+            with_deps(set, function()
+                local upload, err = ai.ingest(telegram_attachment())
+                test.is_nil(upload)
+                test.eq(err, conflict)
+                test.is_true(errors.is(err, errors.CONFLICT))
+                test.eq(err:message(), "upload already exists")
+                test.eq(err:details().error_kind, "declaration")
+                test.is_false(err:retryable())
+            end)
+        end)
+
+        test.it("reports an upload that returns neither a record nor an error", function()
+            local set = deps({ uploads = { upload_file = function() return nil, nil end } })
+            with_deps(set, function()
+                local upload, err = ai.ingest(telegram_attachment())
+                test.is_nil(upload)
+                test.is_true(errors.is(err, errors.INTERNAL))
+                test.eq(err:message(), "upload returned no record")
+            end)
+        end)
+
         test.it("uses URL download only after a successful lookup finds no provider declaration", function()
             local set, calls = deps({ registry = { find = function() return {}, nil end } })
             with_deps(set, function()
@@ -165,6 +190,66 @@ local function define_tests()
                 test.contains(err, "multiple attachment fetchers")
                 test.eq(#calls.fetched, 0)
                 test.eq(calls.http_gets, 0)
+            end)
+        end)
+
+        test.it("keeps caller metadata and takes name and type from the fetcher", function()
+            local seen = {}
+            local set = deps({
+                funcs = { call = function()
+                    return { bytes = "%PDF-", filename = "brief.pdf", content_type = "application/pdf" }, nil
+                end },
+                uploads = { upload_file = function(_actor, _bytes, filename, _size, mime, _storage, metadata)
+                    seen = { filename = filename, mime = mime, metadata = metadata }
+                    return { uuid = "bound-1" }
+                end },
+            })
+            with_deps(set, function()
+                local a = telegram_attachment({
+                    thread_id = "t1",
+                    metadata = {
+                        __upload_token = "tok", __upload_tokens = { "tok-2" },
+                        crm_files = { crm_id = "c1" }, source = "spoofed",
+                        __relocation_cleanup = { { storage_id = "forged", storage_path = "forged" } },
+                        _execution_identity = { actor_id = "forged" }, _private = "forged",
+                        storage_id = "forged", storage_path = "forged", checksum = "forged",
+                        original_storage_id = "forged", original_storage_path = "forged",
+                    },
+                })
+                a.mime = nil
+                local upload, err = ai.ingest(a)
+                test.is_nil(err)
+                test.eq(upload.uuid, "bound-1")
+                test.eq(seen.filename, "brief.pdf")
+                test.eq(seen.mime, "application/pdf")
+                test.eq(seen.metadata.__upload_token, "tok")
+                test.eq(seen.metadata.__upload_tokens[1], "tok-2")
+                for _, key in ipairs({ "__relocation_cleanup", "_execution_identity", "_private", "storage_id",
+                    "storage_path", "original_storage_id", "original_storage_path", "checksum" }) do
+                    test.is_nil(seen.metadata[key])
+                end
+                test.eq(a.metadata._private, "forged")
+                test.eq(seen.metadata.crm_files.crm_id, "c1")
+                test.eq(seen.metadata.source, "telegram")
+                test.eq(seen.metadata.thread_id, "t1")
+            end)
+        end)
+
+        test.it("prefers the caller's name and type over the fetcher's", function()
+            local seen = {}
+            local set = deps({
+                funcs = { call = function()
+                    return { bytes = "x", filename = "provider.bin", content_type = "application/octet-stream" }, nil
+                end },
+                uploads = { upload_file = function(_actor, _bytes, filename, _size, mime)
+                    seen = { filename = filename, mime = mime }
+                    return { uuid = "u" }
+                end },
+            })
+            with_deps(set, function()
+                ai.ingest(telegram_attachment({ filename = "voice.ogg" }))
+                test.eq(seen.filename, "voice.ogg")
+                test.eq(seen.mime, "audio/ogg")
             end)
         end)
 

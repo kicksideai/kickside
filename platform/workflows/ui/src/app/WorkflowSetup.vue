@@ -8,7 +8,7 @@ import { errMsg } from '@widgets/app/errMsg'
 import { useParentId } from '@widgets/app/useParentId'
 import { useSubmitNonce } from '@widgets/app/useSubmitNonce'
 
-const props = useProps<{ parentId?: string; submitNonce?: string }>()
+const props = useProps<{ parentId?: string; submitNonce?: string; sourceContext?: string }>()
 const emit = useEvents<{
   'submit-state': { saving: boolean }
   created: { id?: string }
@@ -34,15 +34,15 @@ async function create() {
   saving.value = true
   error.value = ''
   try {
-    const { data } = await api.post<{ success?: boolean; id?: string; error?: string | { message?: string } }>(
+    const { data } = await api.post<{ success?: boolean; flow_id?: string; error?: string | { message?: string } }>(
       '/api/v1/workflows',
-      { title: title.value.trim(), parent_id: parentId.value || undefined },
+      { title: title.value.trim(), parent_id: parentId.value || undefined, source_context: props.value.sourceContext ? JSON.parse(props.value.sourceContext) : undefined },
     )
-    if (!data?.success || !data.id) {
+    if (!data?.success || !data.flow_id) {
       const apiError = typeof data?.error === 'string' ? data.error : data?.error?.message
       throw new Error(apiError || 'Workflow creation failed')
     }
-    emit('created', { id: data.id })
+    emit('created', { id: data.flow_id })
   } catch (cause) {
     error.value = errMsg(cause, 'Workflow creation failed')
   } finally {

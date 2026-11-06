@@ -7,6 +7,12 @@ export interface ComponentMetaEvent {
   deleted: string[]
 }
 
+export interface ComponentDeletionEvent {
+  event: 'component.deleting' | 'component.deleted'
+  component_id: string
+}
+export type ComponentEvent = ComponentMetaEvent | ComponentDeletionEvent
+
 // Declared type per public-meta field key, e.g. { accepted_count: 'integer' }.
 export type MetaFieldTypes = Record<string, string>
 
@@ -60,11 +66,11 @@ function coerceMeta(meta: Record<string, unknown>, fieldTypes?: MetaFieldTypes):
   return out
 }
 
-export function componentMetaEvent(
+export function componentEvent(
   msg: unknown,
   componentId?: string,
   fieldTypes?: MetaFieldTypes,
-): ComponentMetaEvent | null {
+): ComponentEvent | null {
   if (componentId !== undefined && !componentId) return null
   const root = isRecord(msg) ? msg : {}
   const candidates = [
@@ -75,7 +81,7 @@ export function componentMetaEvent(
   ].filter(Boolean) as Record<string, unknown>[]
 
   for (const item of candidates) {
-    if (item.event !== 'component.meta.changed') continue
+    if (item.event !== 'component.meta.changed' && item.event !== 'component.deleting' && item.event !== 'component.deleted') continue
     const id = String(item.component_id || '')
     const topic = String(root.topic || item.topic || '')
     if (componentId === undefined) {
@@ -84,14 +90,26 @@ export function componentMetaEvent(
       if (id && id !== componentId) continue
       if (!id && topic !== `component.${componentId}`) continue
     }
+    const component_id = id || componentId || topic.slice('component.'.length)
+    if (item.event !== 'component.meta.changed') return {event: item.event, component_id}
     return {
       event: 'component.meta.changed',
-      component_id: id || componentId || topic.slice('component.'.length),
+      component_id,
       meta: coerceMeta(isRecord(item.meta) ? item.meta : {}, fieldTypes),
       deleted: Array.isArray(item.deleted) ? item.deleted.map(String) : [],
     }
   }
   return null
+}
+
+export function componentMetaEvent(msg: unknown, componentId?: string, fieldTypes?: MetaFieldTypes): ComponentMetaEvent | null {
+  const event = componentEvent(msg, componentId, fieldTypes)
+  return event?.event === 'component.meta.changed' ? event : null
+}
+
+export function componentDeletionEvent(msg: unknown, componentId?: string): ComponentDeletionEvent | null {
+  const event = componentEvent(msg, componentId)
+  return event && event.event !== 'component.meta.changed' ? event : null
 }
 
 export function subscribeComponentMeta(

@@ -58,11 +58,14 @@ const f = props.form
       :config-schema="f.sinkConfigSchema.value"
       :picker-meta="f.sinkPickerMeta.value"
       :config="f.sinkConfig.value"
+      :source-context="f.sourceContext.value"
+      :source-schema="f.assistSourceSchema.value"
       :has-options="f.sinkHasOptions.value"
       :options-schema="f.sinkOptionsSchema.value"
       :locked-hint="props.destinationLocked ? 'Selected by the owning component.' : LOCKED_HINT"
       @update:sink-id="(v: string) => { f.sinkId.value = v; f.onSinkChange() }"
       @update:config="(cfg: Record<string, unknown>) => { f.sinkConfig.value = { ...f.sinkConfig.value, ...cfg } }"
+      @binding="f.onSinkBinding"
     />
   </div>
 

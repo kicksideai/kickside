@@ -17,6 +17,7 @@ local purge = require("slot_purge")
 local owner_gc = require("owner_gc")
 local teardown = require("thread_teardown")
 local reclaim = require("reclaim")
+local h = require("round_harness")
 
 local function db()
     local opened, err = sql.get("app:db")
@@ -56,12 +57,9 @@ local function state(owner, id)
 end
 local function running(id, attempts)
     local opened = db()
-    local token = uuid.v7()
-    exec(opened, [[UPDATE kickside_job SET status='running', lease_token=$1, execution_seq=1,
-        attempts=$2,max_attempts=1,lease_until=$3 WHERE id=$4]], {token, attempts or 1, lifecycle.future_string(tostring(opened:type()), 60),id})
-    local j = query(opened, "SELECT * FROM kickside_job WHERE id=$1", {id})[1]
+    exec(opened, "UPDATE kickside_job SET attempts=$1,max_attempts=1 WHERE id=$2", {(attempts or 1) - 1, id})
     opened:release()
-    return j
+    return h.lease_job(id)
 end
 local function active(owner, id)
     local d, j = state(owner,id)

@@ -1,3 +1,4 @@
+import type { ComponentDeletionState } from '@widgets/app/useComponentDeletion'
 // The shapes the Automations manager reads off the generic API. Every field here
 // is server-declared: the manager renders engine controls and type actions and never invents
 // a descriptor for one.
@@ -104,7 +105,7 @@ export interface AutomationStatus {
 
 export interface AutomationAvailability { code: 'unavailable'; message: string; details?: Record<string, unknown> }
 
-export interface Automation {
+export interface Automation extends ComponentDeletionState {
   id: string
   access_level?: number
   type?: string

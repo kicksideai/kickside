@@ -7,7 +7,7 @@ entries:
     readme: file://README.md
     meta:
       title: KickSide Settings
-      description: Runtime, admin-editable, DB-backed settings. Modules declare typed kickside.settings:definition entries; the DB stores only admin overrides; a store.memory cache (warmed at boot) serves reads; all writes go through one canonical writer. Exposed as the kickside.settings:settings contract.
+      description: Runtime, admin-editable, DB-backed settings. Modules declare typed kickside.settings:definition entries; the DB stores only admin overrides; a per-node store.memory cache (warmed at boot, refreshed on every committed change across the cluster) serves reads; all writes go through one canonical writer. Exposed as the kickside.settings:settings contract.
 
   # ─── Dependency interface (ns.requirement) ───────────────────────────
   - name: target_db
@@ -16,6 +16,8 @@ entries:
       description: SQL database resource backing kickside_settings.
     targets:
       - entry: kickside.settings.migrations:01_settings
+        path: .meta.target_db
+      - entry: kickside.settings.migrations:02_settings_revision
         path: .meta.target_db
       - entry: kickside.settings:db_config
         path: .meta.db_id
@@ -42,6 +44,57 @@ entries:
         path: .meta.router
       - entry: kickside.settings.api:get_about.endpoint
         path: .meta.router
+
+  - name: process_host
+    kind: ns.requirement
+    # Hosts that installed Settings before the keeper existed keep booting on
+    # update; an explicit binding takes precedence.
+    default: app:processes
+    meta:
+      value_kind: process.host
+      description: Process host the per-node settings change keeper runs on.
+    targets:
+      - entry: kickside.settings.service:keeper.service
+        path: .host
+
+  # ─── Change propagation (process groups) ─────────────────────────────
+  - name: changes
+    kind: pg.scope
+    meta:
+      comment: Process-group scope that carries committed settings revisions to every node.
+    lifecycle:
+      auto_start: true
+
+  - name: settings_changes
+    kind: library.lua
+    meta: { comment: Publish committed settings revisions and subscribe to changes on this node. }
+    source: file://changes.lua
+    modules: [pg, process]
+
+  - name: change_publisher
+    kind: security.policy
+    meta: { comment: Settings write functions publish the committed revision to every node's keeper. }
+    policy:
+      resources:
+        - kickside.settings:changes
+        - kickside.settings.keepers
+      actions:
+        - pg.open
+        - pg.broadcast
+      effect: allow
+
+  - name: change_subscriber
+    kind: security.policy
+    meta: { comment: Grants a consumer process the right to join this node's settings change subscribers. }
+    policy:
+      resources:
+        - kickside.settings:changes
+        - kickside.settings.subscribers
+      actions:
+        - pg.open
+        - pg.join
+        - pg.leave
+      effect: allow
 
   # ─── Override cache (store.memory) ───────────────────────────────────
   - name: cache
@@ -151,6 +204,9 @@ entries:
       settings_cache: kickside.settings:settings_cache
       settings_writer: kickside.settings.persist:settings_writer
       settings_types: kickside.settings:settings_types
+    security:
+      policies:
+        - kickside.settings:change_publisher
 
   - name: unset
     kind: function.lua
@@ -163,6 +219,9 @@ entries:
       settings_cache: kickside.settings:settings_cache
       settings_writer: kickside.settings.persist:settings_writer
       settings_types: kickside.settings:settings_types
+    security:
+      policies:
+        - kickside.settings:change_publisher
 
   - name: list
     kind: function.lua
@@ -397,7 +456,7 @@ entries:
                 "required": ["success"] }
             format: application/schema+json
       - name: get_namespace
-        description: get_namespace({ namespace }) -> { success, values }. All key->value pairs in a namespace (defaults applied).
+        description: get_namespace({ namespace }) -> { success, values, overridden }. All key->value pairs in a namespace (defaults applied); overridden lists the keys whose value comes from a stored override.
         input_schemas:
           - definition: |
               { "type": "object", "properties": { "namespace": { "type": "string" } }, "required": ["namespace"] }
@@ -405,7 +464,7 @@ entries:
         output_schemas:
           - definition: |
               { "type": "object",
-                "properties": { "success": { "type": "boolean" }, "values": { "type": "object", "description": "key -> value map" }, "error": { "type": "string" } },
+                "properties": { "success": { "type": "boolean" }, "values": { "type": "object", "description": "key -> value map" }, "overridden": { "type": "array", "items": { "type": "string" }, "description": "keys whose value comes from a stored override" }, "error": { "type": "string" } },
                 "required": ["success"] }
             format: application/schema+json
 

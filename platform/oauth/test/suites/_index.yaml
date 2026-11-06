@@ -179,6 +179,8 @@ entries:
     method: run
     modules: [sql, json, uuid, time, security, funcs]
     imports:
+      jobs_claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
       test: wippy.test:test
       refresh_schedule: kickside.oauth:refresh_schedule
       jobs: kickside.core.jobs:jobs
@@ -186,6 +188,54 @@ entries:
       oauth_repo: kickside.oauth.persist:oauth_repo
       oauth_read_repo: kickside.oauth.persist:oauth_read_repo
       oauth_token_repo: kickside.oauth.persist:oauth_token_repo
+
+  - name: authorized_delete_provider
+    kind: registry.entry
+    meta: { oauth_provider: authorized-delete-test }
+    data: {}
+  - name: authorized_connection_seed
+    kind: function.lua
+    source: file://authorized_connection_delete_test.lua
+    method: seed
+    modules: [sql, uuid, security, funcs, contract]
+    imports:
+      test: wippy.test:test
+      connection_manager: kickside.oauth:connection_manager
+      teardown: kickside.component.persist:teardown
+      interleave: app:authorized_delete_interleave
+      delete_binding: app:interleaved_delete_binding
+      deletion_worker: app:deletion_test_worker
+  - name: authorized_delete_interleave
+    kind: library.lua
+    source: file://authorized_delete_interleave.lua
+    imports:
+      refresh_schedule: kickside.oauth:refresh_schedule
+      pending_delete: kickside.component.persist:pending_delete
+  - name: authorized_delete_context
+    kind: library.lua
+    source: file://authorized_delete_context.lua
+    imports:
+      interleave: app:authorized_delete_interleave
+  - name: interleaved_delete_binding
+    kind: library.lua
+    source: file://../src_link/binding/delete_connection_func.lua
+    imports:
+      ctx: app:authorized_delete_context
+      refresh_schedule: app:authorized_delete_interleave
+      oauth_repo: kickside.oauth.persist:oauth_repo
+  - name: authorized_connection_delete_test
+    kind: function.lua
+    source: file://authorized_connection_delete_test.lua
+    method: run
+    meta: { type: test, suite: kickside_oauth }
+    modules: [sql, uuid, security, funcs, contract]
+    imports:
+      test: wippy.test:test
+      connection_manager: kickside.oauth:connection_manager
+      teardown: kickside.component.persist:teardown
+      interleave: app:authorized_delete_interleave
+      delete_binding: app:interleaved_delete_binding
+      deletion_worker: app:deletion_test_worker
 
   - name: connection_manager_test
     kind: function.lua
@@ -585,6 +635,7 @@ entries:
     method: run
     modules: [sql, uuid, json, contract, security]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       oauth_repo: kickside.oauth.persist:oauth_repo
       jobs: kickside.core.jobs:jobs
@@ -657,3 +708,12 @@ entries:
     modules: [funcs, registry]
     imports:
       test: wippy.test:test
+
+  - name: deletion_test_worker
+    kind: library.lua
+    source: file://deletion_test_worker.lua
+    modules: [funcs, sql, time, uuid, process]
+    imports:
+      claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      completion: kickside.core.jobs.service:worker_completion

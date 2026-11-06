@@ -178,6 +178,8 @@ entries:
       value: app:db
     - name: kickside.core.lifecycle:process_host
       value: app:processes
+    - name: kickside.settings:process_host
+      value: app:processes
     - name: kickside.core.lifecycle:user_lifecycle_grant
       value:
         subject_id: app:user
@@ -442,3 +444,12 @@ entries:
     modules: [sql, funcs, uuid]
     imports:
       test: wippy.test:test
+
+  - name: deletion_test_worker
+    kind: library.lua
+    source: file://deletion_test_worker.lua
+    modules: [funcs, sql, time, uuid, process]
+    imports:
+      claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      completion: kickside.core.jobs.service:worker_completion

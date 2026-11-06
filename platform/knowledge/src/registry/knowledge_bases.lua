@@ -339,7 +339,7 @@ function M.delete(args: any): (kb_types.ComponentRef?, error?)
     local result_err = envelope.error_of(result, "delete_component")
     if result_err then return nil, result_err end
     return ({ component_id = component_id, deleted = result.deleted == true,
-        in_progress = result.in_progress == true, status = result.status, cleanup_pending = result.cleanup_pending,
+        job_id = result.job_id, notification_error = result.notification_error, in_progress = result.in_progress == true, status = result.status, cleanup_pending = result.cleanup_pending,
         kind = result.kind, retryable = result.retryable, details = result.details, discarded = result.discarded }) :: kb_types.ComponentRef, nil
 end
 

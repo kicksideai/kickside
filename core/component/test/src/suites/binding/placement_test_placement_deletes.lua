@@ -4,6 +4,7 @@
 -- plain register/list. Runs on SQLite and PostgreSQL.
 
 local test = require("test")
+local deletion_worker = require("deletion_worker")
 local sql = require("sql")
 local uuid = require("uuid")
 local time = require("time")
@@ -122,7 +123,8 @@ local function define_tests()
             local grandkid = register(kid, nil)
 
             local del = as_owner("delete", { component_id = parent, child_policy = "reparent_root" })
-            test.is_true(del.success)
+            test.is_true(del.in_progress)
+            test.not_nil((deletion_worker.run(del.component_id)))
 
             -- kid is orphaned to root: parent_id NULL, path re-rooted.
             local kid_row = read_row(kid)
@@ -142,7 +144,8 @@ local function define_tests()
         test.it("deletes a childless component without child_policy", function()
             local lone = register(nil, nil)
             local del = as_owner("delete", { component_id = lone })
-            test.is_true(del.success)
+            test.is_true(del.in_progress)
+            test.not_nil((deletion_worker.run(del.component_id)))
             test.is_nil(read_row(lone))
         end)
 
@@ -164,7 +167,8 @@ local function define_tests()
 
             -- Delete root: mid re-roots; root's grant no longer reaches the subtree.
             local del = as_owner("delete", { component_id = root, child_policy = "reparent_root" })
-            test.is_true(del.success)
+            test.is_true(del.in_progress)
+            test.not_nil((deletion_worker.run(del.component_id)))
 
             -- The inherited grant sourced from the deleted root must be gone.
             test.is_false(run_as(viewer, {}, GET_ACCESS, { component_id = mid }).success == true)

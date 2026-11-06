@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 import { expect, it, vi } from 'vitest'
-import { componentMetaEvent, subscribeComponentMeta } from './componentRealtime'
+import { componentMetaEvent, subscribeComponentMeta, componentDeletionEvent } from './componentRealtime'
 import { on } from '@wippy-fe/proxy'
 
 vi.mock('@wippy-fe/proxy', () => ({ on: vi.fn(() => vi.fn()) }))
@@ -37,4 +37,17 @@ it('preserves addressed subscriptions and delivers the typed component identity'
   receive({ event: 'component.meta.changed', component_id: 'selected', meta: { count: '2' } })
   expect(callback).toHaveBeenCalledWith(expect.objectContaining({ component_id: 'selected', meta: { count: 2 } }))
   expect(off).toEqual(expect.any(Function))
+})
+
+it('delivers deleting and deleted with addressed identity filtering', () => {
+  for (const event of ['component.deleting', 'component.deleted'] as const) {
+    for (const message of [
+      { event, component_id: 'selected' },
+      { topic: 'component.selected', data: { event } },
+      { payload: { event, component_id: 'selected' } },
+    ]) expect(componentDeletionEvent(message, 'selected')).toEqual({event, component_id: 'selected'})
+    expect(componentDeletionEvent({event, component_id: 'other'}, 'selected')).toBeNull()
+    expect(componentMetaEvent({event, component_id: 'selected'}, 'selected')).toBeNull()
+  }
+  expect(componentDeletionEvent({event: 'component.deleted'})).toBeNull()
 })

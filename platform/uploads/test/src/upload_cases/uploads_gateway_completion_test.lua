@@ -256,6 +256,94 @@ end
 local function define_tests()
     test.describe("kickside.uploads packaging", function()
         test.before_all(require_integration_schema)
+        for _, token_key in ipairs({ "__upload_token", "__upload_tokens" }) do
+            test.it("preserves original bytes when " .. token_key .. " is replayed", function()
+                local user_id, upload_id = "token-replay-" .. uuid_v4(), uuid_v4()
+                local identity = upload_metadata(user_id, "original.txt")[IDENTITY_META_KEY]
+                local token, token_err = upload_tokens.pack({
+                    upload_id = upload_id, function_id = "app:callback_probe",
+                    actor_id = identity.actor_id, actor_context = identity.actor_context,
+                })
+                test.is_nil(token_err)
+                local function metadata()
+                    return { [token_key] = token_key == "__upload_tokens" and { token } or token }
+                end
+                local bytes = "original upload bytes"
+                local original, original_err = upload_as(user_id, bytes, "original.txt", #bytes,
+                    "text/plain", nil, metadata())
+                test.is_nil(original_err)
+                test.not_nil(original)
+                test.eq(original.uuid, upload_id)
+                local storage = assert(fs.get("app:uploads"))
+                for _, filename in ipairs({ "replacement.txt", "replacement.bin" }) do
+                    local replay, replay_err = upload_as(user_id, "replacement", filename, 11,
+                        "text/plain", nil, metadata())
+                    local stored, read_err = storage:readfile(original.storage_path)
+                    test.is_nil(read_err)
+                    test.eq(stored, bytes)
+                    test.is_nil(replay)
+                    test.not_nil(replay_err)
+                    test.eq(replay_err:kind(), errors.CONFLICT)
+                    test.contains(tostring(replay_err), "upload already exists")
+                end
+                local attachment, attachment_err = executor(user_id):call("app:admit_upload", {
+                    action = "attachment", bytes = "replacement",
+                    attachment = {
+                        actor_id = user_id, filename = "replacement.txt", content_type = "text/plain",
+                        url = "https://example.com/attachment.txt", metadata = metadata(),
+                    },
+                })
+                test.eq(storage:readfile(original.storage_path), bytes)
+                test.is_nil(attachment)
+                test.not_nil(attachment_err)
+                test.eq(attachment_err:kind(), errors.CONFLICT)
+                test.contains(tostring(attachment_err), "upload already exists")
+                local unexpected = storage:stat(upload_id .. ".bin")
+                test.is_nil(unexpected)
+                local unchanged = assert(upload_query_repo.get(upload_id))
+                test.eq(unchanged.size, #bytes)
+                test.eq(unchanged.metadata.filename, "original.txt")
+                test.eq(unchanged.processing_job_id, original.processing_job_id)
+            end)
+        end
+
+        test.it("keeps the winning blob readable after concurrent same-id writes", function()
+            local user_id, upload_id = "concurrent-upload-" .. uuid_v4(), uuid_v4()
+            local identity = upload_metadata(user_id, "original.txt")[IDENTITY_META_KEY]
+            local token = assert(upload_tokens.pack({
+                upload_id = upload_id, function_id = "app:callback_probe",
+                actor_id = identity.actor_id, actor_context = identity.actor_context,
+            }))
+            local result, err = executor(user_id):call("app:admit_upload", {
+                action = "concurrent", actor_id = user_id, token = token,
+                bytes = { "first upload bytes", "second upload bytes" },
+                filename = "original.txt", mime_type = "text/plain",
+            })
+            test.is_nil(err, tostring(err))
+            test.not_nil(result)
+            test.is_nil(result.winner.kind)
+            test.eq(result.winner.upload.uuid, upload_id)
+            test.is_nil(result.loser.upload)
+            test.eq(result.loser.kind, errors.CONFLICT)
+            test.contains(result.loser.message, "upload already exists")
+            test.is_nil(result.read_error)
+            test.eq(result.bytes, "first upload bytes")
+            local row = assert(upload_query_repo.get(upload_id))
+            test.eq(row.storage_path, result.winner.upload.storage_path)
+            local artifact, artifact_err = artifact_content_repo.create_artifact({
+                upload_id = upload_id, role = "primary", kind = "text", mime_type = "text/plain",
+                locator = { type = "upload.original" },
+            })
+            test.is_nil(artifact_err, tostring(artifact_err))
+            local original, read_err = artifact_content_repo.read_artifact_content(upload_id, artifact.artifact_id)
+            test.is_nil(read_err, tostring(read_err))
+            test.eq(original, result.bytes)
+            local db = assert(sql.get("app:db"))
+            local rows = assert(db:query("SELECT COUNT(*) AS n FROM kickside_uploads WHERE uuid=$1", {upload_id}))
+            db:release()
+            test.eq(tonumber(rows[1].n), 1)
+        end)
+
         test.it("rolls presigned completion back with enqueue and preserves retried metadata", function()
             local user_id = "presigned-outage-" .. uuid_v4()
             local upload_id = uuid_v4()

@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 local test = require("test")
 local h = require("round_harness")
 local uuid = require("uuid")
@@ -36,6 +37,9 @@ return {run = test.run_cases(function()
                 local result, err = env.caller:call(TOOL, {action = "uninstall", id = id})
                 test.is_nil(err, tostring(err))
                 test.not_nil(result)
+                local finished, finish_err = deletion_worker.run(id)
+                test.is_nil(finish_err, tostring(finish_err))
+                test.is_true(finished.deleted)
             end
             ids = {}
         end)

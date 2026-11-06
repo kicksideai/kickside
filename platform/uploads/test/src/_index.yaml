@@ -305,8 +305,11 @@ entries:
     meta:
       comment: Executes upload admission under a named test user through the real Users resolver.
     source: file://admit_upload.lua
+    modules: [channel]
     imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
       upload_lib: kickside.uploads:uploads
+      attachment_ingest: kickside.uploads:attachment_ingest
     method: run
 
   - name: failing_stage
@@ -416,6 +419,8 @@ entries:
     - name: kickside.core:target_db
       value: app:db
     - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.settings:process_host
       value: app:processes
     - name: kickside.core.lifecycle:user_lifecycle_grant
       value:
@@ -578,6 +583,7 @@ entries:
     - security
     - fs
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       provision: kickside.core.threads:provision
       component: kickside.component:component
@@ -997,3 +1003,12 @@ entries:
   - name: navigation_upload_query_repo_fixture
     kind: library.lua
     source: file://navigation_api_fixture.lua
+
+  - name: deletion_test_worker
+    kind: library.lua
+    source: file://deletion_test_worker.lua
+    modules: [funcs, sql, time, uuid, process]
+    imports:
+      claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      completion: kickside.core.jobs.service:worker_completion

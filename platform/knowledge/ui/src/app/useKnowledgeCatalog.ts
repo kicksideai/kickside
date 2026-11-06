@@ -42,7 +42,7 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
       || m.includes('not found') && m.includes('binding')
   }
 
-  async function load({ preserve = false }: { preserve?: boolean } = {}): Promise<boolean> {
+  async function load(): Promise<boolean> {
     if (!catalogActive) return false
     const generation = ++catalogLoadGeneration
     loading.value = true
@@ -54,7 +54,6 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
         const msg = data?.error || 'failed to load knowledge bases'
         if (isEngineMissing(msg)) {
           if (generation === catalogLoadGeneration && catalogActive) {
-            if (!preserve) kbs.value = []
             notice.value = ENGINE_NOTICE
           }
           return false
@@ -68,7 +67,6 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
     } catch (e) {
       const msg = errMsg(e, 'could not load knowledge bases')
       if (generation === catalogLoadGeneration && catalogActive) {
-        if (!preserve) kbs.value = []
         if (isEngineMissing(msg)) notice.value = ENGINE_NOTICE
         else error.value = msg
       }
@@ -238,7 +236,7 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
     try {
       do {
         discoveryPending = false
-        await load({ preserve: true })
+        await load()
       } while (catalogActive && discoveryPending)
     } finally {
       discoveryLoading = false

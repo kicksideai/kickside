@@ -108,6 +108,8 @@ local function handler()
     res:write_json({
         success = true,
         id = kb_id,
+        deleting_at = comp.deleting_at,
+        deletion_job_id = comp.deletion_job_id,
         name = meta.title or "",
         description = meta.comment or "",
         icon = meta.icon or "tabler:brain",

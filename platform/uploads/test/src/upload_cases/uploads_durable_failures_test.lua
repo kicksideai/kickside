@@ -1,5 +1,6 @@
 local worker_dispatch = require("worker_dispatch")
 local jobs_lifecycle = require("jobs_lifecycle")
+local jobs_claim = require("jobs_claim")
 local test = require("test")
 local registry = require("registry")
 local funcs = require("funcs")
@@ -34,6 +35,17 @@ local upload_response = require("upload_response")
 local processor = require("processor")
 local file_provider = require("file_provider")
 local IDENTITY_META_KEY = assert(execution_identity.CONTEXT_KEY, "execution_identity.CONTEXT_KEY is required")
+
+local function admit_job(db: sql.DB, id: string, attempts: integer): table
+    local dbtype = tostring(db:type())
+    local tx = assert(db:begin())
+    assert(tx:execute("UPDATE kickside_job SET attempts=$1 WHERE id=$2", {attempts - 1, id}))
+    local leased, err = jobs_claim.lease_row(tx, dbtype, id, uuid_v4(),
+        jobs_lifecycle.future_string(dbtype, 60), jobs_lifecycle.now_string(dbtype))
+    if err or not leased then tx:rollback(); error(err or "fixture job is not pending") end
+    assert(tx:commit())
+    return assert(db:query("SELECT * FROM kickside_job WHERE id=$1", {id}))[1]
+end
 
 local function field(value: any, key: string): any
 	if type(value) ~= "table" then
@@ -349,6 +361,64 @@ end
 local function define_tests()
 	test.describe("kickside.uploads packaging", function()
 		test.before_all(require_integration_schema)
+		test.it("excludes forged attachment cleanup state from admission and worker processing", function()
+			local user_id = "attachment-user-" .. uuid_v4()
+			ensure_uploads_component(user_id)
+			local storage = assert(fs.get("app:uploads"))
+			local victim = "unreferenced-" .. uuid_v4() .. ".txt"
+			test.is_nil(select(2, storage:writefile(victim, "retained bytes")))
+			local upload, ingest_err = executor(user_id):call("app:admit_upload", {
+				action = "attachment", bytes = "attachment text " .. uuid_v4(),
+				attachment = {
+					url = "https://attachment.test/source", actor_id = user_id,
+					filename = "attachment.txt", mime = "text/plain",
+					thread_id = "attachment-thread", external_message_id = "attachment-message",
+					metadata = {
+						__relocation_cleanup = { { storage_id = "app:uploads", storage_path = victim } },
+						_private = "forged", storage_id = "forged", storage_path = "forged",
+						original_storage_id = "forged", original_storage_path = "forged", checksum = "forged",
+						ticket = { id = "ticket-1" }, thread_id = "forged",
+					},
+				},
+			})
+			test.is_nil(ingest_err)
+			test.not_nil(upload)
+			local admitted = assert(upload_query_repo.get(upload.uuid))
+
+			local db = assert(sql.get("app:db"))
+			local rows = assert(db:query([[SELECT * FROM kickside_job
+                WHERE job_type = 'kickside.uploads.service:process_job_proc' AND CAST(payload AS TEXT) LIKE $1]],
+				{ "%" .. upload.uuid .. "%" }))
+			test.eq(#rows, 1)
+			local token = uuid_v4()
+			test.is_nil(select(2, db:execute([[UPDATE kickside_job SET status='running',lease_token=$1,
+                execution_seq=1,attempts=1,lease_until=$2 WHERE id=$3]],
+				{ token, jobs_lifecycle.future_string(tostring(db:type()), 60), rows[1].id })))
+			local job = assert(db:query("SELECT * FROM kickside_job WHERE id=$1", { rows[1].id }))[1]
+			db:release()
+			local input, _, input_err = worker_dispatch.build_worker_input(job)
+			test.is_nil(input_err)
+			local result, run_err = process_job.run(input)
+			test.is_nil(run_err)
+			test.is_true(result.success)
+			test.is_nil(admitted.metadata.__relocation_cleanup)
+			test.is_nil(admitted.metadata._private)
+			for _, key in ipairs({ "storage_id", "storage_path", "original_storage_id", "original_storage_path", "checksum" }) do
+				test.is_nil(admitted.metadata[key])
+			end
+			test.eq(admitted.metadata[IDENTITY_META_KEY].actor_id, user_id)
+			test.eq(admitted.metadata.ticket.id, "ticket-1")
+			test.eq(admitted.metadata.thread_id, "attachment-thread")
+
+			local stored = assert(upload_query_repo.get(upload.uuid))
+			test.eq(stored.storage_state, "completed")
+			test.is_nil(stored.metadata.__relocation_cleanup)
+			local retained, read_err = storage:readfile(victim)
+			test.is_nil(read_err)
+			test.eq(retained, "retained bytes")
+			test.is_nil(select(2, storage:remove(victim)))
+		end)
+
 		test.it("terminal upload failures retain stored bytes and artifacts", function()
 			local storage = fs.get("app:uploads")
 			test.not_nil(storage)
@@ -458,15 +528,7 @@ local function define_tests()
 
 					local queued = assert(process_worker.enqueue_upload_job(upload, true))
 					local db = assert(sql.get("app:db"))
-					local token = uuid_v4()
-					assert(
-						db:execute(
-							[[UPDATE kickside_job SET status='running',lease_token=$1,
-                    execution_seq=1,attempts=1,lease_until=$2 WHERE id=$3]],
-							{ token, jobs_lifecycle.future_string(tostring(db:type()), 60), queued.job_id }
-						)
-					)
-					local job = assert(db:query("SELECT * FROM kickside_job WHERE id=$1", { queued.job_id }))[1]
+					local job = admit_job(db, queued.job_id, 1)
 					local input, _, input_err = worker_dispatch.build_worker_input(job)
 					test.is_nil(input_err)
 					pipeline_lib.apply_relocation = function()
@@ -539,15 +601,7 @@ local function define_tests()
 			local queued, queue_err = process_worker.enqueue_upload_job(upload, true)
 			test.is_nil(queue_err)
 			local db = assert(sql.get("app:db"))
-			local token = uuid_v4()
-			local leased, lease_err = db:execute(
-				[[UPDATE kickside_job SET status='running',lease_token=$1,
-                execution_seq=1,attempts=5,lease_until=$2 WHERE id=$3]],
-				{ token, jobs_lifecycle.future_string(tostring(db:type()), 60), queued.job_id }
-			)
-			test.is_nil(lease_err)
-			test.eq(tonumber(leased.rows_affected), 1)
-			local job = assert(db:query("SELECT * FROM kickside_job WHERE id=$1", { queued.job_id }))[1]
+			local job = admit_job(db, queued.job_id, 5)
 			local input, _, input_err = worker_dispatch.build_worker_input(job)
 			test.is_nil(input_err)
 			local result, run_err = process_job.run(input)
@@ -790,14 +844,7 @@ local function define_tests()
 				)
 			)
 			test.eq(#jobs_rows, 1)
-			local token = uuid_v4()
-			local _, lease_err = db:execute(
-				[[UPDATE kickside_job SET status='running',lease_token=$1,
-                execution_seq=1,attempts=1,lease_until=$2 WHERE id=$3]],
-				{ token, jobs_lifecycle.future_string(tostring(db:type()), 60), jobs_rows[1].id }
-			)
-			test.is_nil(lease_err)
-			local job = assert(db:query("SELECT * FROM kickside_job WHERE id=$1", { jobs_rows[1].id }))[1]
+			local job = admit_job(db, jobs_rows[1].id, 1)
 			db:release()
 			local input, _, input_err = worker_dispatch.build_worker_input(job)
 			test.is_nil(input_err)
@@ -909,15 +956,7 @@ local function define_tests()
 			local queued, queue_err = process_worker.enqueue_upload_job(upload, true)
 			test.is_nil(queue_err)
 			local db = assert(sql.get("app:db"))
-			local token = uuid_v4()
-			local leased, lease_err = db:execute(
-				[[UPDATE kickside_job SET status='running',lease_token=$1,
-                execution_seq=1,attempts=5,lease_until=$2 WHERE id=$3]],
-				{ token, jobs_lifecycle.future_string(tostring(db:type()), 60), queued.job_id }
-			)
-			test.is_nil(lease_err)
-			test.eq(tonumber(leased.rows_affected), 1)
-			local job = assert(db:query("SELECT * FROM kickside_job WHERE id=$1", { queued.job_id }))[1]
+			local job = admit_job(db, queued.job_id, 5)
 			local input, _, input_err = worker_dispatch.build_worker_input(job)
 			test.is_nil(input_err)
 			local result, run_err = process_job.run(input)
@@ -1116,18 +1155,7 @@ local function define_tests()
 			}))
 			local queued = assert(process_worker.enqueue_upload_job(upload, true))
 			local db = assert(sql.get("app:db"))
-			local token = uuid_v4()
-			test.is_nil(
-				select(
-					2,
-					db:execute(
-						[[UPDATE kickside_job SET status='running',lease_token=$1,
-                execution_seq=1,attempts=5,lease_until=$2 WHERE id=$3]],
-						{ token, jobs_lifecycle.future_string(tostring(db:type()), 60), queued.job_id }
-					)
-				)
-			)
-			local job = assert(db:query("SELECT * FROM kickside_job WHERE id=$1", { queued.job_id }))[1]
+			local job = admit_job(db, queued.job_id, 5)
 			local input, _, input_err = worker_dispatch.build_worker_input(job)
 			test.is_nil(input_err)
 			local result, run_err = process_job.run(input)

@@ -141,6 +141,7 @@ entries:
     method: run
     modules: [sql, uuid, time, contract, security]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
 
   - name: last_admin_guard_test
@@ -167,6 +168,7 @@ entries:
     method: run
     modules: [sql, uuid, json, contract, security, funcs]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       read_port: kickside.component.persist:read_port
 
@@ -181,4 +183,5 @@ entries:
     method: run
     modules: [sql, uuid, json, contract, security, registry]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test

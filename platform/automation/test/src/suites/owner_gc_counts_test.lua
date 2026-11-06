@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 local test = require("test")
 local sql = require("sql")
 local uuid = require("uuid")
@@ -21,15 +22,13 @@ end
 local function finish_component_delete(id: string, limit: integer): ()
     local finished = false
     for _ = 1, limit do
-        local deleted, delete_err = component.system_delete(id, "reparent_root")
-        if deleted then
-            test.is_nil(delete_err, tostring(delete_err))
+        local result, run_err = deletion_worker.run(id)
+        test.is_nil(run_err, tostring(run_err))
+        if result.deleted then
             finished = true
             break
         end
-        test.not_nil(delete_err)
-        test.is_true(errors.is(delete_err, errors.CONFLICT), tostring(delete_err))
-        test.is_true((delete_err :: any):details().cleanup_pending, tostring(delete_err))
+        test.not_nil(result.rearm)
     end
     test.is_true(finished, "durable component continuation must finish owner cleanup")
 end
@@ -93,8 +92,13 @@ local function define_tests(group: integer)
             test.eq(partial.status, "in_progress")
             test.is_false(partial.deleted)
             test.is_true(partial.cleanup_pending)
-            test.eq(partial.discarded.ledger_unresolved, 100)
-            test.is_true(partial.retryable)
+            test.eq(count("kickside_trigger_item_ledger", "owner_id", id), 101)
+            local page, page_err = deletion_worker.run(id)
+            test.is_nil(page_err, tostring(page_err))
+            test.is_false(page.deleted)
+            test.not_nil(page.rearm)
+            test.eq(page.discarded.ledger_unresolved, 100)
+            test.eq(count("kickside_trigger_item_ledger", "owner_id", id), 1)
             finish_component_delete(id, 3)
             test.eq(count("kickside_trigger_item_ledger", "owner_id", id), 0)
             test.eq(count("kickside_components", "component_id", id), 0)

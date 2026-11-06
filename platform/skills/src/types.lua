@@ -249,6 +249,8 @@ type ComponentMeta = Map & {
 
 type ComponentRow = {
     component_id: string,
+    deleting_at: string?,
+    deletion_job_id: string?,
     meta: ComponentMeta?,
 }
 

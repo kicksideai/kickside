@@ -55,6 +55,10 @@ local function perform(db: sql.DB, pid: string, change: table?): (PassResult?, e
 
     local deadline_ms, deadline_err = sweeper.next_deadline_ms(db)
     if deadline_err then return nil, deadline_err end
+    local owner_deadline = (owners :: table).deadline_ms
+    if owner_deadline ~= nil then
+        deadline_ms = deadline_ms == nil and owner_deadline or math.min(deadline_ms, owner_deadline)
+    end
     return { stats = s, deadline_ms = deadline_ms, owner_failures = (owners :: table).failures, owner_blocked = (owners :: table).blocked }, nil
 end
 

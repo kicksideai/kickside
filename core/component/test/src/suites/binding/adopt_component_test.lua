@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 -- Orphan adoption: a component that only framework maintenance actors hold
 -- access to is adopted by an instance operator through the component service.
 -- The adopter gains full access and becomes its execution principal, the
@@ -93,7 +94,8 @@ local function define_tests()
             local got = svc:get({ component_id = orphan })
             test.is_true(got.success, tostring(got.error))
 
-            local deleted, delete_err = svc:delete({ component_id = orphan })
+            test.is_true(svc:delete({ component_id = orphan }).in_progress)
+            local deleted, delete_err = deletion_worker.run(orphan)
             test.is_nil(delete_err, tostring(delete_err))
             test.is_true(deleted.success, tostring(deleted.error))
             test.eq(#query("SELECT component_id FROM kickside_components WHERE component_id = $1", { orphan }), 0)

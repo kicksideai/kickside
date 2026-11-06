@@ -3,6 +3,7 @@ local sql = require("sql")
 
 local resources = require("uploads_resources")
 local persisted_json = require("persisted_json")
+local trim = require("text_trim").trim
 
 local upload_query_repo = {}
 
@@ -167,7 +168,7 @@ local function apply_list_filters(query, opts)
     end
     local q = opts.q
     if type(q) == "string" then
-        q = q:gsub("^%s*(.-)%s*$", "%1")
+        q = trim(q)
         if q ~= "" then
             local like = "%" .. q .. "%"
             query = query:where("(mime_type LIKE ? OR metadata LIKE ?)", like, like)

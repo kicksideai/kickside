@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 -- A thread created by a framework maintenance actor is owned by no principal:
 -- an operator cannot read or delete it. After the operator adopts it through
 -- the component service, the normal threads read and delete paths apply.
@@ -53,6 +54,7 @@ local function define_tests()
             local deleted, delete_err = threads:delete({ thread_id = thread_id })
             test.is_nil(delete_err, tostring(delete_err))
             test.not_nil(deleted)
+            test.not_nil((deletion_worker.run(thread_id)))
             local gone, gone_err = threads:find({ thread_id = thread_id })
             test.is_nil(gone_err, tostring(gone_err))
             test.is_nil(gone)

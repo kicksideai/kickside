@@ -56,6 +56,13 @@ local function group(route: string, phases: {string})
                 if route == "start" then test.eq(result, "lease-process") else test.is_true(result) end
             end)
             if route == "extend" then
+                test.it("renews with the active execution lease snapshot after a live edit", function()
+                    fixture.reset(route, "", nil)
+                    local alive, err = lease.extend_lease(fixture.database(), sql.type.SQLITE, "job", "token", 1, 60)
+                    test.is_nil(err)
+                    test.is_true(alive)
+                    test.eq(fixture.future_seconds, 60)
+                end)
                 for _, phase in ipairs({"size", "update", "lost"}) do
                     for _, kind in ipairs({errors.INVALID, errors.UNAVAILABLE, errors.CONFLICT}) do
                         for _, retryable in ipairs({false, true}) do
@@ -77,6 +84,16 @@ local function group(route: string, phases: {string})
                 test.it("valid lost lease remains false without an error", function()
                     fixture.reset(route, "", nil); fixture.count = 0; local result, err = invoke(route)
                     test.is_false(result); test.is_nil(err); test.eq(fixture.rollbacks, 1); test.eq(fixture.commits, 0)
+                end)
+            elseif route == "start" then
+                test.it("starts heartbeat with claim-time timing rather than a newer policy", function()
+                    fixture.reset(route, "", nil)
+                    local pid, err = lease.start({id = "job", lease_token = "token", execution_seq = 1,
+                        lease_until = "2026-10-10 00:00:30", lease_policy = {lease_timeout_seconds = 60, lease_heartbeat_ms = 4500}})
+                    test.is_nil(err)
+                    test.eq(pid, "lease-process")
+                    test.eq(fixture.spawn_args.interval_ms, 4500)
+                    test.eq(fixture.spawn_args.lease_timeout_seconds, 60)
                 end)
             elseif route == "dispatch" then
                 for _, value in ipairs({false, -1, 0.5, 2, "bad"}) do

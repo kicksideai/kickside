@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 -- Every component_service method classifies every failure it returns: a malformed
 -- request is INVALID, an access refusal is PERMISSION_DENIED (a "not found or access
 -- denied" answer keeps concealing existence), a known absence or conflict keeps its
@@ -248,7 +249,7 @@ local function define_tests()
             { name = "list_access when the owner read fails", method = "list_access", hide = { META }, request = function(f) return { component_id = f.cid } end, kind = errors.INTERNAL, native_sql = true },
             { name = "delete when the read fails", method = "delete", hide = { COMPONENTS }, request = function(f) return { component_id = f.cid } end, kind = errors.INTERNAL, native_sql = true },
             { name = "export when the envelope cannot be encoded", method = "export", request = function(f) return { component_id = f.unencodable } end, kind = errors.INTERNAL },
-            { name = "delete when the lifecycle record fails", method = "delete", request = function(f) return { component_id = f.failing_delete } end, kind = errors.INTERNAL },
+            { name = "delete when the lifecycle record fails", worker = true, method = "delete", request = function(f) return { component_id = f.failing_delete } end, kind = errors.INTERNAL },
             { name = "set_meta when the meta write fails", method = "set_meta", hide = { META }, request = function(f) return { component_id = f.cid, fields = { title = "x" } } end, kind = errors.INTERNAL, native_sql = true },
             { name = "set_placement when the placement write fails", method = "set_placement", hide = { COMPONENTS }, request = function(f) return { component_id = f.cid, parent_id = false } end, kind = errors.INTERNAL, native_sql = true },
             { name = "grant_subtree when the subtree read fails", method = "grant_subtree", hide = { COMPONENTS }, request = function(f) return { root_component_id = f.cid, subject = { subject_id = users.reader, subject_type = "user" }, access_mask = 1 } end, kind = errors.INTERNAL, native_sql = true },
@@ -259,6 +260,7 @@ local function define_tests()
         for _, kind in ipairs({ errors.TIMEOUT, errors.CANCELED, errors.RATE_LIMITED, errors.UNAVAILABLE }) do
             table.insert(cases, {
                 name = "delete when the deletable cleanup fails with " .. kind,
+                worker = true,
                 method = "delete",
                 request = function(f) return { component_id = f["typed_" .. kind] } end,
                 kind = kind,
@@ -272,6 +274,13 @@ local function define_tests()
                 for _, tbl in ipairs(case.hide or {}) do hide(tbl) end
                 local source = case.native_sql and native_sql_failure(case.hide[1], case.method == "set_meta") or nil
                 local res = inst[case.method](inst, request)
+                if case.worker == true then
+                    test.is_true(res.in_progress)
+                    local finished, worker_err = deletion_worker.run(tostring(request.component_id))
+                    test.is_nil(finished)
+                    test.not_nil(worker_err)
+                    res = {success = false, kind = worker_err:kind(), error = tostring(worker_err)}
+                end
                 restore_hidden()
                 test.not_nil(res)
                 test.eq(res.success, false, "expected a failure")
@@ -286,6 +295,16 @@ local function define_tests()
                 end
                 if case.error then
                     test.eq(res.error, case.error)
+                end
+                if case.worker then
+                    local db = assert(sql.get(DB))
+                    local _, cleanup_err = db:execute("UPDATE kickside_components SET impl_id=$1 WHERE component_id=$2", {IMPL, request.component_id})
+                    db:release()
+                    test.is_nil(cleanup_err, tostring(cleanup_err))
+                    test.is_true(inst:delete({component_id = request.component_id}).in_progress)
+                    local finished, finish_err = deletion_worker.run(tostring(request.component_id))
+                    test.is_nil(finish_err, tostring(finish_err))
+                    test.is_true(finished.deleted)
                 end
             end)
         end

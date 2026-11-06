@@ -25,6 +25,7 @@ entries:
               "enum": ["list", "types", "type", "catalog", "catalog_entry", "read_config", "export", "status", "health"]
             },
             "id": { "type": "string", "description": "Automation component id, type id, or catalog entry id, according to action. Required for type, catalog_entry, read_config, export and status." },
+            "config": { "type": "object", "description": "catalog_entry with direction=source: selected source configuration, including thread_id when required, to resolve its actual output_schema." },
             "direction": { "type": "string", "enum": ["source", "sink"], "description": "catalog_entry: the direction returned by catalog." },
             "class": { "type": "string", "description": "Optional meta.class filter for list (e.g. automation)." },
             "limit": { "type": "integer", "minimum": 1, "maximum": 100, "description": "list, types, catalog and health delivery failures: records per page; default 25." },
@@ -96,7 +97,7 @@ entries:
           "required": ["success"]
         }
       llm_alias: AutomationsRead
-      llm_description: "Read automations: list compact installed automation, type, source/sink, and health delivery-failure summaries in pages of 25 by default (limit at most 100); pass next_cursor as cursor for the next page. Use type or catalog_entry with the selected id for schemas and controls; use read_config, export, or status for one automation's full detail. For recurring tasks use RecurringTasks action=list for summaries or action=get for schedules, targets, runs and errors. Read-only. Failures return no result and a typed tool error with a clear message."
+      llm_description: "Read automations: list compact installed automation, type, source/sink, and health delivery-failure summaries in pages of 25 by default (limit at most 100); pass next_cursor as cursor for the next page. Use type or catalog_entry with the selected id for schemas and controls; catalog_entry with direction=source and config returns the selected source output_schema. To run a Workflow for its items, create with WorkflowsManage source_context {source, config, filter}, build and publish, then install Data Sync with the same trigger and Run Workflow sink_config.flow_ref; use read_config, export, or status for one automation's full detail. For recurring tasks use RecurringTasks action=list for summaries or action=get for schedules, targets, runs and errors. Read-only. Failures return no result and a typed tool error with a clear message."
     source: file://automations_read.lua
     modules: [security]
     imports:

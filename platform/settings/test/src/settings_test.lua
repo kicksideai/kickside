@@ -6,6 +6,9 @@ local security = require("security")
 local sql = require("sql")
 local time = require("time")
 local store = require("store")
+local events = require("events")
+local channel = require("channel")
+local system = require("system")
 local writer = require("settings_writer")
 
 -- The harness declares fixture settings in this namespace
@@ -34,6 +37,26 @@ end
 
 local function open_settings(): any
     return open_settings_as("admin", "app:settings_admin_policy")
+end
+
+local function change_keeper_state(action: string, status: string)
+    local id = "kickside.settings.service:keeper.service"
+    local updates = assert(events.subscribe("supervisor", "service.update"))
+    local inbox = updates:channel()
+    local deadline = time.after("5s")
+    local ok, err = pcall(function()
+        assert(events.send("supervisor", "service." .. action, id))
+        while true do
+            local state = assert(system.supervisor.state(id))
+            local reached = state.status == status or (status == "stopped" and state.status == "exited")
+            if reached and state.desired == status then return end
+            test.is_true(state.status ~= "failed", tostring(state.details))
+            local result = channel.select({ inbox:case_receive(), deadline:case_receive() })
+            test.is_true(result.ok and result.channel == inbox, "settings keeper does not reach " .. status .. ": " .. state.status .. "/" .. state.desired)
+        end
+    end)
+    updates:close()
+    if not ok then error(err, 0) end
 end
 
 local function define_tests()
@@ -71,6 +94,18 @@ local function define_tests()
             test.eq(sr.success, true)
             test.eq(s:get({ namespace = NS, key = "max_items" }).value, 7)
             s:unset({ namespace = NS, key = "max_items" })
+        end)
+
+        test.it("get_namespace names the keys whose value comes from a stored override", function()
+            local s = open_settings()
+            test.eq(#s:get_namespace({ namespace = NS }).overridden, 0)
+            test.eq(s:set({ namespace = NS, key = "max_items", value = 50 }).success, true)
+            local r = s:get_namespace({ namespace = NS })
+            test.eq(r.values.max_items, 50)
+            test.eq(#r.overridden, 1)
+            test.eq(r.overridden[1], "max_items")
+            s:unset({ namespace = NS, key = "max_items" })
+            test.eq(#s:get_namespace({ namespace = NS }).overridden, 0)
         end)
 
         test.it("unset reverts to the declared default", function()
@@ -176,7 +211,7 @@ local function define_tests()
                     elseif row.key == "max_items" then test.eq(row.value, 7) end
                 end
                 local handle = store.get("kickside.settings:cache")
-                handle:set("overrides", "null", 0)
+                handle:set("snapshot", "null", 0)
                 handle:release()
                 test.eq(s:set({ namespace = NS, key = "max_items", value = 8 }).success, true)
                 test.eq(s:get({ namespace = NS, key = "max_items" }).value, 8)
@@ -185,7 +220,7 @@ local function define_tests()
                 test.eq(same_key.success, false)
                 test.eq(same_key.error, expected)
                 handle = store.get("kickside.settings:cache")
-                handle:set("overrides", "null", 0)
+                handle:set("snapshot", "null", 0)
                 handle:release()
                 test.eq(s:unset({ namespace = NS, key = "max_items" }).success, true)
                 test.eq(s:get({ namespace = NS, key = "max_items" }).value, 50)
@@ -321,21 +356,27 @@ local function define_tests()
         end)
 
         test.it("a read before the cache is warmed surfaces an error, never a silent DB reload", function()
-            -- Boot is the sole cache owner; a read must never provision the cache.
-            -- Force the cache cold and confirm the read fails loudly instead of
-            -- silently reloading from the DB and returning a value.
-            local s = store.get("kickside.settings:cache")
-            test.not_nil(s)
-            local sh = s :: any
-            sh:set("overrides", "null", 0)
-            sh:release()
+            -- Queued change notifications can warm a cold snapshot independently
+            -- of reads. Await the keeper's stop before testing read ownership.
+            local ok, err = pcall(function()
+                change_keeper_state("stop", "stopped")
+                local s = assert(store.get("kickside.settings:cache"))
+                assert(s:set("snapshot", "null", 0))
+                s:release()
 
-            local r = open_settings():get({ namespace = NS, key = "max_items" })
-            test.eq(r.success, false)
-            test.not_nil(r.error)
+                local r = open_settings():get({ namespace = NS, key = "max_items" })
+                test.eq(r.success, false)
+                test.eq(r.error, "settings cache is not warmed")
+            end)
 
-            -- Re-warm the cache from the DB so the remaining suite reads served state.
-            writer.reload()
+            local reload_ok, reload_err = pcall(function()
+                local _, err = writer.reload()
+                test.is_nil(err)
+            end)
+            local restart_ok, restart_err = pcall(change_keeper_state, "start", "running")
+            if not ok then error(err, 0) end
+            if not reload_ok then error(reload_err, 0) end
+            if not restart_ok then error(restart_err, 0) end
             test.eq(open_settings():get({ namespace = NS, key = "max_items" }).success, true)
         end)
 

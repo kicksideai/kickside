@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 local test = require("test")
 local fixture = require("fixture")
 local sql = require("sql")
@@ -24,15 +25,18 @@ return { run = test.run_cases(function()
             test.is_true(result.in_progress)
             test.is_false(result.deleted)
             test.is_true(result.cleanup_pending)
-            test.is_true(result.details.needs_continue)
-            local discarded = result.details.discarded
+            test.eq(f.projection_count(id), 305, "the request commits intent before any cleanup")
+            local finished, finish_err = deletion_worker.run(id)
+            test.is_nil(finish_err, tostring(finish_err))
+            test.eq(type(finished.rearm), "string")
+            local discarded = finished.discarded
             local removed = 0
             for _, table_name in ipairs({ "kickside_event", "kickside_thread_subject", "kickside_projection_cursor",
                 "kickside_retention_policy", "kickside_retention_pin", "kickside_retention_pin_tombstone",
                 "kickside_projection", "kickside_thread_edge" }) do
                 removed = removed + (discarded[table_name] or 0)
             end
-            test.eq(removed, 100, "one request consumes exactly one bounded dependent-row page")
+            test.eq(removed, 100, "one worker execution consumes exactly one bounded dependent-row page")
             test.eq(f.projection_count(id), 305 - (discarded.kickside_projection or 0))
             local rows, read_err = db:query("SELECT component_id FROM kickside_component_thread_reap WHERE component_id=$1", { id })
             test.is_nil(read_err)

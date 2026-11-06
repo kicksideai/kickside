@@ -498,8 +498,10 @@ entries:
   - name: responder
     kind: library.lua
     source: file://src_link/responder/responder.lua
-    modules: [ctx, funcs, security, contract]
+    modules: [funcs, security, contract]
     imports:
+      owner_gc: app:responder_owner_gc
+      ctx: app:responder_delete_fixture
       automations_lib: app:automations_lib_stub
       component: app:component_fixture
       channel_consts: app:channel_consts
@@ -738,3 +740,13 @@ entries:
     kind: library.lua
     source: file://bridge_timer_fixture.lua
     modules: [time]
+
+  - name: responder_delete_fixture
+    kind: library.lua
+    source: file://responder_delete_fixture.lua
+    imports: {test_state: app:test_state}
+
+  - name: responder_owner_gc
+    kind: library.lua
+    source: file://responder_delete_fixture.lua
+    imports: {test_state: app:test_state}

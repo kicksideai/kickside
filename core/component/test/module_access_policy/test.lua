@@ -24,6 +24,7 @@ local function define_tests()
             test.not_nil(declaration)
             test.is_nil(declaration.data.policy.conditions)
             local expected = {
+                ["kickside.component.api:get_component.endpoint"] = true,
                 ["kickside.component.api:access_model.endpoint"] = true,
                 ["kickside.component.api:list_component_access.endpoint"] = true,
                 ["kickside.component.api:share_component.endpoint"] = true,
@@ -81,6 +82,12 @@ local function define_tests()
             for _, id in ipairs({ "unrelated.module:list.endpoint", "kickside.component_extension:list.endpoint" }) do
                 test.eq(policy:evaluate(actor, "access", id), "undefined", id)
             end
+        end)
+        test.it("keeps maintenance deletion execution out of the member call scope", function()
+            local scope = composed_scope("kickside.component.security:module_access")
+            local actor = security.new_actor("module-member", {})
+            test.eq(scope:evaluate(actor, "funcs.call", "kickside.component:delete_worker"), "undefined")
+            test.eq(scope:evaluate(actor, "funcs.security", "kickside.component:delete_worker"), "undefined")
         end)
         test.it("includes module discovery without an application blanket grant", function()
             local declaration = registry.get("kickside.component.security:module_access")

@@ -1,4 +1,5 @@
 local artifact_parts_repo = require("artifact_parts_repo")
+local trim = require("text_trim").trim
 
 -- Single source of truth for "what is a page image" of a document, shared by the
 -- rasterize stage (which decides whether to skip rendering) and the OCR stage (which
@@ -10,11 +11,6 @@ M.DEFAULT_MIN_PAGE_BYTES = 51200
 M.DEFAULT_MAX_TEXT_BYTES_PER_PAGE = 800
 M.DEFAULT_CONFIDENT_TEXT_BYTES_PER_PAGE = 1600
 M.DEFAULT_MIN_TEXT_SOURCE_RATIO = 0.02
-
-local function trim(s: any): string
-    if type(s) ~= "string" then return "" end
-    return (s :: string):match("^%s*(.-)%s*$") or ""
-end
 
 local function sorted_by_ordinal(list: { any }): { any }
     table.sort(list, function(a, b) return (tonumber(a.ordinal) or 0) < (tonumber(b.ordinal) or 0) end)

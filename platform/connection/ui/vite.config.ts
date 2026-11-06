@@ -4,7 +4,7 @@ import { wippyComponentPlugin } from '@wippy-fe/vite-plugin'
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  resolve: { alias: { '@widgets': resolve(__dirname, '../../widgets/ui/src') } },
+  resolve: { dedupe: ['vue', 'primevue', '@wippy-fe/proxy'], alias: { '@widgets': resolve(__dirname, '../../widgets/ui/src') } },
   plugins: [vue(), wippyComponentPlugin()],
   base: '',
   // Lib builds don't auto-replace process.env; provide it so deps that read

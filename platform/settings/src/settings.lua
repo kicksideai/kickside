@@ -85,14 +85,21 @@ function M.get_namespace(args: any): settings_types.NamespaceResponse
     local map, oerr = overrides()
     if not map then return { success = false, error = oerr } end
     local values: { [string]: any } = {}
+    -- Keys whose value comes from a stored override rather than the declared
+    -- default, for consumers whose defaults are supplied elsewhere.
+    local overridden: { string } = {}
     for key, def in pairs(declared) do
         if can_read(def) then
             local value, err = effective_value(def, map)
             if err then return { success = false, error = err } end
             values[key] = value
+            if map[tostring(def.namespace) .. "\0" .. tostring(def.key)] ~= nil then
+                overridden[#overridden + 1] = key
+            end
         end
     end
-    return { success = true, values = values }
+    table.sort(overridden)
+    return { success = true, values = values, overridden = overridden }
 end
 
 -- set({ namespace, key, value }) -> { success, error? }. Delegates to

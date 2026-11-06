@@ -186,11 +186,13 @@ function M.expr(raw: any): (string, string?)
     return "", nil
 end
 
-function M.engine_expr(raw: any): (string?, string?)
+function M.engine_expr(raw: any, source_root: string?): (string?, string?)
+    local root = source_root or "output"
+    if not root:match("^[%a_][%w_]*$") then return nil, "source root must be an expression identifier" end
     local expr, err = M.expr(raw)
     if err then return nil, err end
     if expr == "" then return nil, nil end
-    return rebase_array_subscripts(M.input_to_output(expr)), nil
+    return rebase_array_subscripts(replace_ident(expr, "input", root)), nil
 end
 
 -- Failed-edge transforms use the same public authoring grammar as ordinary
@@ -198,10 +200,7 @@ end
 -- compiler must bridge the public `output` root to `error` instead of leaking a
 -- second mapping language into the canvas.
 function M.engine_error_expr(raw: any): (string?, string?)
-    local expr, err = M.expr(raw)
-    if err then return nil, err end
-    if expr == "" then return nil, nil end
-    return rebase_array_subscripts(replace_ident(expr, "input", "error")), nil
+    return M.engine_expr(raw, "error")
 end
 
 return M

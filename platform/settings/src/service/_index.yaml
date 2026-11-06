@@ -8,3 +8,34 @@ entries:
     modules: [store]
     imports:
       settings_writer: kickside.settings.persist:settings_writer
+
+  # Keeps this node's override cache at the committed revision and tells local
+  # subscribers after each change. The .host on keeper.service is injected by the
+  # kickside.settings:process_host requirement.
+  - name: keeper
+    kind: process.lua
+    meta:
+      comment: Per-node settings change keeper.
+    source: file://keeper.lua
+    method: main
+    modules: [pg, process, channel, logger]
+    imports:
+      settings_cache: kickside.settings:settings_cache
+      settings_writer: kickside.settings.persist:settings_writer
+      settings_changes: kickside.settings:settings_changes
+
+  - name: keeper.service
+    kind: process.service
+    meta:
+      comment: Supervised settings change keeper, one per node.
+    process: kickside.settings.service:keeper
+    host: ""
+    lifecycle:
+      depends_on: [wippy.bootloader:bootloader.service]
+      auto_start: true
+      restart:
+        max_delay: 60s
+        max_attempts: 10
+      security:
+        groups:
+          - wippy.security:process

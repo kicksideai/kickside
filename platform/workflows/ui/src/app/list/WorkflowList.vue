@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useComponentDeletion } from '@widgets/app/useComponentDeletion'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
@@ -231,7 +232,8 @@ async function confirmDelete() {
   error.value = ''
   try {
     await deleteWorkflow(row.id)
-    rows.value = rows.value.filter((r) => r.id !== row.id)
+    acceptDeletion(row.id)
+    await load()
     focusAfterDelete.value = true
     deleteTarget.value = null
   } catch (e) {
@@ -255,6 +257,7 @@ function closeShare() {
 }
 
 useHostVisibilityRefresh(load)
+const {acceptDeletion} = useComponentDeletion(rows, row => row.id)
 </script>
 
 <template>
@@ -362,7 +365,7 @@ useHostVisibilityRefresh(load)
     </Dialog>
 
     <main class="kx-body">
-      <div v-if="loading" class="kx-list wf-runs-loading">
+      <div v-if="loading && !rows.length" class="kx-list wf-runs-loading">
         <ProgressSpinner class="wf-status-spinner" stroke-width="4" aria-label="Loading Workflows" />
         <span>Loading Workflows…</span>
       </div>

@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 -- A component whose kind DECLARES the deletable contract but whose delete binding
 -- cannot be opened must not be silently unregistered. The declared deletable never ran,
 -- so its backing data was never released; releasing the component row would orphan it.
@@ -73,11 +74,20 @@ local function define_tests()
 
             local res, err = service():delete({ component_id = cid })
             test.is_nil(err)
-            test.is_false((res :: any).success)
+            test.is_true(res.in_progress)
+            local cleanup, cleanup_err = deletion_worker.run(cid)
+            test.is_nil(cleanup)
+            test.not_nil(cleanup_err)
 
             -- The declared-but-unopenable deletable never released its side data, so the
             -- component row must survive rather than becoming an orphan tombstone.
             test.is_true(exists(cid))
+            local db = assert(sql.get(DB))
+            local _, update_err = db:execute("UPDATE kickside_components SET impl_id=$1 WHERE component_id=$2", {OPENABLE_IMPL, cid})
+            db:release()
+            test.is_nil(update_err, tostring(update_err))
+            test.is_true(service():delete({component_id = cid}).in_progress)
+            test.not_nil((deletion_worker.run(cid)))
         end)
 
         test.it("deletes the component when a declared deletable opens and cleans up", function()
@@ -88,6 +98,9 @@ local function define_tests()
             test.is_nil(err)
             test.is_true((res :: any).success, tostring((res :: any).error))
 
+            local cleanup, cleanup_err = deletion_worker.run(cid)
+            test.is_nil(cleanup_err, tostring(cleanup_err))
+            test.is_true(cleanup.deleted)
             -- The declared deletable ran its cleanup, so the row is fully released.
             test.is_false(exists(cid))
         end)
@@ -114,6 +127,9 @@ local function define_tests()
             })
             test.is_nil(retry_err)
             test.is_true((retried :: any).success, tostring((retried :: any).error))
+            local finished, finish_err = deletion_worker.run(parent)
+            test.is_nil(finish_err, tostring(finish_err))
+            test.is_true(finished.deleted)
             test.eq(cleanup_calls(), before + 1)
             test.is_false(exists(parent))
             test.is_true(exists(child))
@@ -121,6 +137,7 @@ local function define_tests()
             local child_deleted, child_err = service():delete({ component_id = child })
             test.is_nil(child_err)
             test.is_true((child_deleted :: any).success, tostring((child_deleted :: any).error))
+            test.not_nil((deletion_worker.run(child)))
         end)
     end)
 end

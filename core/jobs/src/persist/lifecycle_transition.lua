@@ -4,6 +4,7 @@ local time = require("time")
 local clock = require("clock")
 local job_types = require("job_types")
 local cfg = require("config")
+local execution_policy = require("execution_policy")
 local enqueue = require("lifecycle_enqueue")
 local row_bytes = require("row_bytes")
 local row_mutations = require("row_mutations")
@@ -151,8 +152,11 @@ local function finalize_job_run(
     local duration_ms = math.max(0, math.floor((time.now():unix() - started_unix) * 1000))
     local finished_at = clock.now(dbtype)
     local size_err = row_bytes.check_update(db_or_tx, "kickside_job_run", run_ctx.id,
-        { status = status, finished_at = finished_at, duration_ms = duration_ms,
-            error_text = error_text or row_bytes.NULL, result_json = result_json, actions_json = actions_json },
+        function(current)
+            if current.status == job_types.RUN_STATE.LEASE_LOST then return {} end
+            return { status = status, finished_at = finished_at, duration_ms = duration_ms,
+                error_text = error_text or row_bytes.NULL, result_json = result_json, actions_json = actions_json }
+        end,
         (policy :: any).max_row_bytes, "finalize_job_run")
     if size_err then return size_err end
     local result, update_err = sql.builder.update("kickside_job_run")
@@ -163,11 +167,22 @@ local function finalize_job_run(
         :set("result_json", result_json)
         :set("actions_json", actions_json)
         :where(sql.builder.eq({ id = run_ctx.id }))
+        :where("status <> ?", job_types.RUN_STATE.LEASE_LOST)
+        :where("NOT EXISTS (SELECT 1 FROM kickside_job j WHERE j.id=kickside_job_run.job_id"
+            .. " AND j.status='running' AND j.lease_token=kickside_job_run.lease_token"
+            .. " AND j.last_error=? || kickside_job_run.lease_token)", job_types.TERMINATION_PENDING_PREFIX)
         :run_with(db_or_tx)
         :exec()
     local count, count_err = sql_boundary.single_row_count(result, update_err, "failed to finalize job run", "finalize.rows_affected", response_error)
     if count_err then return count_err end
     if count == 0 then
+        local rows, read_err = db_or_tx:query("SELECT r.status, EXISTS (SELECT 1 FROM kickside_job j WHERE j.id=r.job_id"
+            .. " AND j.status='running' AND j.lease_token=r.lease_token AND j.last_error=$1 || r.lease_token)"
+            .. " AS termination_pending FROM kickside_job_run r WHERE r.id=$2", {job_types.TERMINATION_PENDING_PREFIX, run_ctx.id})
+        if read_err then return errors.wrap(read_err, "job run finalization status failed") end
+        if type(rows) ~= "table" then return response_error("finalize.rows") end
+        if rows[1] and (rows[1].status == job_types.RUN_STATE.LEASE_LOST
+            or rows[1].termination_pending == true or tonumber(rows[1].termination_pending) == 1) then return nil end
         return (errors.new({ message = "job run row not found during finalize", kind = errors.NOT_FOUND }) :: error)
     end
     return nil
@@ -181,11 +196,13 @@ local function heartbeat_job(db_or_tx: Executor, job: table, dbtype: string): er
     if lease_token == "" then
         return (errors.new({ message = "missing lease_token for heartbeat", kind = errors.INVALID }) :: error)
     end
+    local captured, capture_err = execution_policy.load_from(db_or_tx, job)
+    if capture_err then return capture_err end
     local policy, policy_err = cfg.policy()
     if policy_err then return policy_err end
     if type(policy) ~= "table" then return response_error("policy") end
     local heartbeat_at = now_string(dbtype)
-    local lease_until = future_string(dbtype, (policy :: any).lease_timeout_seconds)
+    local lease_until = future_string(dbtype, captured.lease_timeout_seconds)
     local size_err = row_mutations.heartbeat(db_or_tx, job.id, heartbeat_at,
         lease_until, (policy :: any).max_row_bytes)
     if size_err then return size_err end
@@ -193,6 +210,8 @@ local function heartbeat_job(db_or_tx: Executor, job: table, dbtype: string): er
         :set("heartbeat_at", heartbeat_at)
         :set("lease_until", lease_until)
         :where(sql.builder.eq({ id = job.id, status = job_types.JOB_STATE.RUNNING, lease_token = lease_token }))
+        :where("(last_error IS NULL OR substr(last_error, 1, ?) <> ?)",
+            #job_types.TERMINATION_PENDING_PREFIX, job_types.TERMINATION_PENDING_PREFIX)
         :run_with(db_or_tx)
         :exec()
     local count, count_err = sql_boundary.single_row_count(result, err, "heartbeat update failed", "heartbeat.rows_affected", response_error)
@@ -286,6 +305,8 @@ local function fail_in_tx(db_or_tx: Executor, job: table, dbtype: string, error_
         or retry_floor.retry_after_ms == math.huge) then
         return errors.new({kind = errors.INVALID, message = "retry floor requires nonnegative integer retry_after_ms"})
     end
+    local captured, capture_err = execution_policy.load_from(db_or_tx, job)
+    if capture_err then return capture_err end
     local policy, policy_err = cfg.policy()
     if policy_err then return policy_err end
     if type(policy) ~= "table" then return response_error("policy") end
@@ -298,8 +319,8 @@ local function fail_in_tx(db_or_tx: Executor, job: table, dbtype: string, error_
         local override, decode_err = resolve_max_backoff(job)
         if decode_err then return decode_err end
         local slot = job.slot == true or tonumber(job.slot) == 1
-        local base_ms = slot and (policy :: any).slot_retry_after_ms or (policy :: any).retry_after_ms
-        local cap_ms = slot and (policy :: any).slot_retry_max_delay_ms or (policy :: any).retry_max_delay_ms
+        local base_ms = slot and (policy :: any).slot_retry_after_ms or captured.retry_after_ms
+        local cap_ms = slot and (policy :: any).slot_retry_max_delay_ms or captured.retry_max_delay_ms
         local cap = (override and override >= 1) and override or math.floor(cap_ms / 1000)
         local base = math.max(1, math.ceil(base_ms / 1000))
         local ceiling = math.max(base, retry_delay_seconds(attempts, base, math.floor(cap) :: integer))
@@ -337,6 +358,7 @@ local function fail_in_tx(db_or_tx: Executor, job: table, dbtype: string, error_
         :set("wake_demand_at", nil)
         :set("wake_control_pending", false)
         :where(sql.builder.eq({ id = job.id, status = job_types.JOB_STATE.RUNNING, lease_token = lease_token }))
+        :where("(last_error IS NULL OR last_error <> ?)", job_types.TERMINATION_PENDING_PREFIX .. lease_token)
         :run_with(db_or_tx)
         :exec()
     local count, count_err = sql_boundary.single_row_count(result, err, "fail update failed", "fail.rows_affected", response_error)

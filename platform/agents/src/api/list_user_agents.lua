@@ -29,6 +29,8 @@ local function agent_payload(comp, include_token: boolean): any
 
     local agent = {
         id = id,
+        deleting_at = comp.deleting_at,
+        deletion_job_id = comp.deletion_job_id,
         title = meta.title or "",
         description = meta.comment or "",
         icon = meta.icon or "tabler:robot",

@@ -16,6 +16,32 @@ local function define_tests()
             }
         end)
 
+        test.it("finishes owned cleanup and tolerates a replay before returning success", function()
+            local rollback = {{target = "test:owned_resource", args = {}}}
+            test_state.state.delete_context = {component_id = "responder", _rollback = rollback}
+            test_state.state.delete_owned = {resource = true}
+            local options = {remove_owned = true}
+            local result = responder.delete({options = options})
+            test.is_true(result.success)
+            test.is_nil(test_state.state.delete_owned)
+            test.eq(test_state.state.delete_call.id, "responder")
+            test.eq(test_state.state.delete_call.rollback, rollback)
+            test.eq(test_state.state.delete_call.options, options)
+            test.is_true(responder.delete({options = options}).success)
+        end)
+
+        test.it("retains ownership when cleanup fails with a native cause", function()
+            local source = errors.new({message = "owned cleanup is pending", kind = errors.CONFLICT, retryable = true,
+                details = {cleanup_pending = true}})
+            test_state.state.delete_context = {component_id = "responder"}
+            test_state.state.delete_owned = {resource = true}
+            test_state.state.delete_error = source
+            local result = responder.delete({})
+            test.is_false(result.success)
+            test.eq(result.error, source)
+            test.not_nil(test_state.state.delete_owned)
+        end)
+
         local function install_input(overrides)
             local input = {
                 connection_id = "conn-1",

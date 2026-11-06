@@ -83,6 +83,9 @@ entries:
       comment: Test API router.
       server: gateway
     prefix: /api
+    middleware: [token_auth]
+    options:
+      token_store: kickside.users.security:tokens
 
   - name: test_engine_wiki
     kind: registry.entry
@@ -196,6 +199,7 @@ entries:
       comment: Permissive scope the knowledge suites run their scoped actors under.
     groups:
       - kb_test
+      - app:user
     policy:
       resources: '*'
       actions: '*'
@@ -255,6 +259,8 @@ entries:
       - name: kickside.security:ui_server
         value: app:gateway
       - name: kickside.security:process_host
+        value: app:processes
+      - name: kickside.settings:process_host
         value: app:processes
       - name: kickside.users:env_storage
         value: app:env_storage
@@ -460,6 +466,7 @@ entries:
       fetch_url: app:kb_fetch_url_fixture
       http_stub: app:kb_fetch_url_http_stub
       llm_stub: app:kb_fetch_url_llm_stub
+      component_stub: app:kb_fetch_url_component_stub
 
   - name: kb_fetch_url_http_stub
     kind: library.lua
@@ -488,7 +495,6 @@ entries:
       llm: app:kb_fetch_url_llm_stub
       prompt: wippy.llm:prompt
       net_safety: kickside.uploads:net_safety
-      thread_ingest: kickside.knowledge.injection:thread_ingest
 
   - name: planner_llm_stub
     kind: library.lua
@@ -527,7 +533,7 @@ entries:
   - name: fixture_cleanup
     kind: library.lua
     source: file://fixture_cleanup.lua
-    modules: [sql]
+    modules: [sql, time]
     imports:
       component: kickside.component:component
       teardown: kickside.core.threads.persist:teardown

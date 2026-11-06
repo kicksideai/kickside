@@ -1,4 +1,5 @@
-export interface Connection {
+import type { ComponentDeletionState } from '@widgets/app/useComponentDeletion'
+export interface Connection extends ComponentDeletionState {
   component_id: string
   name?: string
   provider?: string

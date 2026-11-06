@@ -46,12 +46,38 @@ settings are edited by an admin at runtime and persist in the database.
     (`funcs.call(validate_func, { key, value, old_value, definition })`) before
     persisting any change; it returns `(ok, err)` or `{ valid, error }` and can
     reject the write. The returned message surfaces on the field in the UI.
-- The **DB stores only overrides.** Reads fall back to the declared default, so a
+- The **DB stores only overrides** and a revision counted per committed change. Reads fall back to the declared default, so a
   default change in a module upgrade propagates immediately, and "reset to
   default" is just deleting the override row.
 - Declarations are **registry-discovered** (`registry.find`), so the admin UI
   renders every declared setting with its current value, default, and
   provenance — no central list to maintain.
+
+## Change propagation
+
+Every node keeps its own override cache. Each write commits the override and a
+revision bump (`kickside_settings_revision`) in one transaction, updates the
+writing node's cache, and broadcasts the revision over the
+`kickside.settings:changes` process-group scope to the change keeper
+(`kickside.settings.service:keeper.service`) on every node. A keeper reloads
+its node's cache when the revision is newer than the one it holds, and rechecks
+the stored revision when another keeper joins, which covers node starts and
+healed partitions. The keeper runs on `kickside.settings:process_host`, which
+defaults to `app:processes`.
+
+A process that reacts to settings changes subscribes on its node:
+
+```lua
+local changes = require("settings_changes") -- kickside.settings:settings_changes
+local inbox = assert(changes.subscribe())
+-- inbox receives { revision = <number> } once this node's cache holds that
+-- revision; read the values it needs through the settings contract.
+```
+
+The process needs the `kickside.settings:change_subscriber` policy and the `pg`
+and `process` modules. A subscriber hears each revision once. Delivery between
+nodes is best-effort: a node that misses a broadcast catches up on the next
+change or when a keeper joins.
 
 ## Contract `kickside.settings:settings`
 
@@ -59,7 +85,7 @@ settings are edited by an admin at runtime and persist in the database.
 - `set({ namespace, key, value, actor_id }) -> { success }` (validates against the declared type)
 - `unset({ namespace, key }) -> { success }` (revert to default)
 - `list({ namespace? }) -> { success, settings[] }` (declarations merged with overrides + provenance)
-- `get_namespace({ namespace }) -> { success, values }`
+- `get_namespace({ namespace }) -> { success, values, overridden }` (`overridden` lists the keys with a stored override)
 
 A consumer reads a setting through the contract; e.g. a retention sweeper reads
 `get({ namespace = "kickside.vacuum", key = "global_retention_days" })`.

@@ -13,7 +13,7 @@ const entries = {
 }
 
 export default defineConfig({
-  resolve: { dedupe: ['vue', 'primevue'], alias: { '@widgets': resolve(__dirname, '../../widgets/ui/src') } },
+  resolve: { dedupe: ['vue', 'primevue', '@wippy-fe/proxy'], alias: { '@widgets': resolve(__dirname, '../../widgets/ui/src') } },
   plugins: [
     vue({ template: { compilerOptions: { isCustomElement: (t) => t.startsWith('wc-') || t.startsWith('kickside-') } } }),
     wippyComponentPlugin(),

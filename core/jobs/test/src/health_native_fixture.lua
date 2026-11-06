@@ -1,6 +1,6 @@
 local sql = require("sql")
 local M: any = {}
-local phases = {"workers", "fresh", "expired", "wake", "failed", "degraded", "control"}
+local phases = {"workers", "fresh", "expired", "wake", "failed", "degraded", "stranded", "control"}
 function M.reset(stage, source)
     M.stage, M.source = stage, source
     M.missing, M.value, M.reads, M.releases = false, nil, 0, 0
@@ -26,9 +26,11 @@ function M.get(...): any
         local value: any = {{n = 0}}
         if phase == "workers" then value = {{id = "worker"}} end
         if phase == "fresh" then value = {{worker_id = "worker"}} end
+        if phase == "stranded" then value = {} end
         if phase == "control" then value = {{}} end
         return result(phase, value)
     end
     return db, nil
 end
+function M.resolve() return M.policy() end
 return M

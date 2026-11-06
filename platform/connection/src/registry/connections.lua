@@ -208,7 +208,8 @@ function M.delete(args: any): (conn_types.ComponentRef?, error?)
     local result_err = envelope.error_of(result, "delete_component")
     if result_err then return nil, result_err end
 
-    return ({ component_id = args.component_id }) :: conn_types.ComponentRef, nil
+    return ({ component_id = args.component_id, deleted = result.deleted, in_progress = result.in_progress,
+        job_id = result.job_id, notification_error = result.notification_error }) :: conn_types.ComponentRef, nil
 end
 
 -- list: one offset page of connections, newest first by default. Filters:

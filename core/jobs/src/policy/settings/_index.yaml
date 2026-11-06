@@ -1,0 +1,204 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: kickside.core.jobs.policy.settings
+# Editable Jobs policy values. Settings stores only administrator overrides;
+# a value without one comes from the Jobs policy entry and its host assignments.
+entries:
+- name: worker_count_postgres
+  kind: registry.entry
+  meta:
+    type: kickside.settings:definition
+  namespace: kickside.core.jobs
+  key: worker.count_postgres
+  value_type: int
+  default: 4
+  title: "PostgreSQL workers"
+  description: "General workers on PostgreSQL. A smaller pool lets busy workers finish, then retires them."
+  scope: global
+  editable: true
+  visible: true
+  category: Workers
+  order: 10
+  owner: Jobs
+  schema: {"type": "integer", "minimum": 1, "maximum": 256}
+  validate_func: kickside.core.jobs.policy:validate
+- name: worker_count_sqlite
+  kind: registry.entry
+  meta:
+    type: kickside.settings:definition
+  namespace: kickside.core.jobs
+  key: worker.count_sqlite
+  value_type: int
+  default: 2
+  title: "SQLite workers"
+  description: "General workers on SQLite."
+  scope: global
+  editable: true
+  visible: true
+  category: Workers
+  order: 20
+  owner: Jobs
+  schema: {"type": "integer", "minimum": 1, "maximum": 2}
+  validate_func: kickside.core.jobs.policy:validate
+- name: worker_awaited_slots
+  kind: registry.entry
+  meta:
+    type: kickside.settings:definition
+  namespace: kickside.core.jobs
+  key: worker.awaited_slots
+  value_type: int
+  default: 1
+  title: "Awaited slots"
+  description: "Extra workers reserved for job types other work waits on."
+  scope: global
+  editable: true
+  visible: true
+  category: Workers
+  order: 30
+  owner: Jobs
+  schema: {"type": "integer", "minimum": 1, "maximum": 256}
+  validate_func: kickside.core.jobs.policy:validate
+- name: worker_claim_batch
+  kind: registry.entry
+  meta:
+    type: kickside.settings:definition
+  namespace: kickside.core.jobs
+  key: worker.claim_batch
+  value_type: int
+  default: 16
+  title: "Claim batch"
+  description: "Jobs a worker pool claims per scan."
+  scope: global
+  editable: true
+  visible: true
+  category: Workers
+  order: 40
+  owner: Jobs
+  schema: {"type": "integer", "minimum": 1, "maximum": 256}
+  validate_func: kickside.core.jobs.policy:validate
+- name: fairness_shares
+  kind: registry.entry
+  meta:
+    type: kickside.settings:definition
+  namespace: kickside.core.jobs
+  key: fairness.shares
+  value_type: json
+  default: {"live": 6, "backfill": 2, "maintenance": 2}
+  title: "Tier shares"
+  description: "Relative share of free workers per queue tier; the total must be above zero."
+  scope: global
+  editable: true
+  visible: true
+  category: Workers
+  order: 50
+  owner: Jobs
+  schema: {"type": "object", "additionalProperties": false, "required": ["live", "backfill", "maintenance"], "properties": {"live": {"type": "integer", "minimum": 0, "maximum": 1000}, "backfill": {"type": "integer", "minimum": 0, "maximum": 1000}, "maintenance": {"type": "integer", "minimum": 0, "maximum": 1000}}}
+  validate_func: kickside.core.jobs.policy:validate
+- name: lease_timeout
+  kind: registry.entry
+  meta:
+    type: kickside.settings:definition
+  namespace: kickside.core.jobs
+  key: lease.timeout
+  value_type: duration
+  default: "45s"
+  title: "Lease timeout"
+  description: "How long a claimed job holds its lease without a heartbeat. Whole seconds, at least 1s."
+  scope: global
+  editable: true
+  visible: true
+  category: Leases
+  order: 10
+  owner: Jobs
+  schema: {"type": "string"}
+  validate_func: kickside.core.jobs.policy:validate
+- name: lease_heartbeat
+  kind: registry.entry
+  meta:
+    type: kickside.settings:definition
+  namespace: kickside.core.jobs
+  key: lease.heartbeat
+  value_type: duration
+  default: "10s"
+  title: "Lease heartbeat"
+  description: "How often a running job renews its lease. Shorter than the lease timeout."
+  scope: global
+  editable: true
+  visible: true
+  category: Leases
+  order: 20
+  owner: Jobs
+  schema: {"type": "string"}
+  validate_func: kickside.core.jobs.policy:validate
+- name: proc_max_execution
+  kind: registry.entry
+  meta:
+    type: kickside.settings:definition
+  namespace: kickside.core.jobs
+  key: proc.max_execution
+  value_type: duration
+  default: "10m"
+  title: "Execution limit"
+  description: "Longest a single job execution may run."
+  scope: global
+  editable: true
+  visible: true
+  category: Leases
+  order: 30
+  owner: Jobs
+  schema: {"type": "string"}
+  validate_func: kickside.core.jobs.policy:validate
+- name: retry_max_attempts
+  kind: registry.entry
+  meta:
+    type: kickside.settings:definition
+  namespace: kickside.core.jobs
+  key: retry.max_attempts
+  value_type: int
+  default: 3
+  title: "Attempts"
+  description: "Attempts for a one-shot job without its own limit."
+  scope: global
+  editable: true
+  visible: true
+  category: Retries
+  order: 10
+  owner: Jobs
+  schema: {"type": "integer", "minimum": 1, "maximum": 1000000}
+  validate_func: kickside.core.jobs.policy:validate
+- name: retry_retry_after_ms
+  kind: registry.entry
+  meta:
+    type: kickside.settings:definition
+  namespace: kickside.core.jobs
+  key: retry.retry_after_ms
+  value_type: int
+  default: 1000
+  title: "Retry delay (ms)"
+  description: "First retry delay; later retries back off."
+  scope: global
+  editable: true
+  visible: true
+  category: Retries
+  order: 20
+  owner: Jobs
+  schema: {"type": "integer", "minimum": 1, "maximum": 86400000}
+  validate_func: kickside.core.jobs.policy:validate
+- name: retry_max_delay_ms
+  kind: registry.entry
+  meta:
+    type: kickside.settings:definition
+  namespace: kickside.core.jobs
+  key: retry.max_delay_ms
+  value_type: int
+  default: 900000
+  title: "Maximum retry delay (ms)"
+  description: "Upper bound for retry backoff."
+  scope: global
+  editable: true
+  visible: true
+  category: Retries
+  order: 30
+  owner: Jobs
+  schema: {"type": "integer", "minimum": 1000, "maximum": 86400000}
+  validate_func: kickside.core.jobs.policy:validate

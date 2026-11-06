@@ -21,6 +21,11 @@ entries:
     kind: fs.directory
     directory: ..
 
+  - name: project_fs
+    kind: fs.directory
+    base: project
+    directory: .
+
   - name: api.auth
     kind: http.router
     meta:
@@ -225,6 +230,8 @@ entries:
     parameters:
     - name: kickside.users:env_storage
       value: app:env_storage
+    - name: kickside.settings:process_host
+      value: app:processes
     - name: kickside.users:public_router
       value: app:api.public
     - name: kickside.users:api_router

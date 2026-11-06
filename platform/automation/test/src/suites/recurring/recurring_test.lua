@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 local test = require("test")
 local funcs = require("funcs")
 local security = require("security")
@@ -23,6 +24,15 @@ local worker_fence = require("worker_fence")
 local TOOL = "kickside.automation.agent:recurring_tasks"
 local KIND = "kickside.automation.recurring:task"
 local PORT = "kickside.automation.recurring.fixture:action"
+
+local function release_for(mailbox, job_id, deadline)
+    while true do
+        local cases = { mailbox:case_receive() }
+        if deadline then cases[#cases + 1] = deadline:case_receive() else cases.default = true end
+        local selected = channel.select(cases)
+        if selected.channel ~= mailbox or selected.value.job_id == job_id then return selected end
+    end
+end
 
 return { run = test.run_cases(function()
     test.describe("Component-shared recurring tasks", function()
@@ -59,7 +69,16 @@ return { run = test.run_cases(function()
         end)
         local function cleanup()
             if worker then h.stop_worker(worker); worker = nil end
-            for _, id in ipairs(ids) do call({ action = "delete", id = id }, task_callers[id]) end
+            for _, id in ipairs(ids) do
+                if #h.query("SELECT component_id FROM kickside_components WHERE component_id=$1", { id }) > 0 then
+                    local accepted, accept_err = call({ action = "delete", id = id }, task_callers[id])
+                    test.is_nil(accept_err, tostring(accept_err))
+                    test.not_nil(accepted)
+                    local finished, finish_err = deletion_worker.run(id)
+                    test.is_nil(finish_err, tostring(finish_err))
+                    test.is_true(finished.deleted)
+                end
+            end
             ids = {}
             task_callers = {}
         end
@@ -254,8 +273,12 @@ return { run = test.run_cases(function()
                 { id, time.now():utc():format(time.RFC3339) })
             local deleted, delete_err = call({ action = "delete", id = id })
             test.is_nil(delete_err, tostring(delete_err))
-            test.is_true(deleted.result.deleted)
-            test.eq(deleted.result.discarded.receipt_mapped, 1)
+            test.is_false(deleted.result.deleted)
+            test.not_nil(deleted.result.job_id)
+            local finished, finish_err = deletion_worker.run(id)
+            test.is_nil(finish_err, tostring(finish_err))
+            test.is_true(finished.deleted)
+            test.eq(finished.discarded.receipt_mapped, 1)
             test.eq(#h.query("SELECT owner_id FROM kickside_automation_receipt WHERE owner_id=$1", { id }), 0)
             test.eq(#h.query("SELECT component_id FROM kickside_components WHERE component_id=$1", { id }), 0)
         end)
@@ -273,7 +296,10 @@ return { run = test.run_cases(function()
                 local deleted, delete_err = call({ action = "delete", id = id })
                 test.is_nil(delete_err, tostring(delete_err))
                 test.is_true(deleted.result.cleanup_pending)
-                test.eq(deleted.result.details.wait_for, "run_history_settlement")
+                local blocked, blocked_err = deletion_worker.run(id)
+                test.is_nil(blocked)
+                test.is_true(errors.is(blocked_err, errors.CONFLICT), tostring(blocked_err))
+                test.eq(blocked_err:details().wait_for, "run_history_settlement")
                 for _ = 1, 2 do
                     local pass, pass_err = retention_runner.on_wake(db, tostring(process.pid()), {
                         kind = "unsettled_history_probe", owner_locator = { kind = "automation", id = id } })
@@ -284,9 +310,7 @@ return { run = test.run_cases(function()
                     test.not_nil(h.query("SELECT deleting_at FROM kickside_components WHERE component_id=$1", { id })[1].deleting_at)
                     test.is_false(pass.stats.needs_continue, "unchanged running history requests immediate continuation")
                     test.is_true(channel.select({ mailbox:case_receive(), default = true }).default)
-                    test.eq(#pass.owner_blocked, 1)
-                    test.is_true(errors.is(pass.owner_blocked[1].error, errors.CONFLICT))
-                    test.eq(pass.owner_blocked[1].error:details().wait_for, "run_history_settlement")
+                    test.eq(#pass.owner_blocked, 0, "intent-bearing marks belong to Jobs")
                 end
             end)
             db:release()
@@ -302,14 +326,10 @@ return { run = test.run_cases(function()
             test.not_nil(paused)
             -- Lease this task's exact slot, then execute the production worker.
             -- The resident pool is disabled so no unrelated job can overtake it.
-            local token = uuid.v7()
-            local now = time.now():utc()
-            h.exec("UPDATE kickside_job SET status='running',execution_seq=execution_seq+1,lease_token=$1,"
-                .. "lease_until=$2,scheduled_at=$3 WHERE id=$4 AND status='pending'",
-                { token, now:add(60 * time.SECOND):format(time.RFC3339), now:format(time.RFC3339), job_id })
-            local job = h.query("SELECT * FROM kickside_job WHERE id=$1", { job_id })[1]
+            local job = h.lease_job(job_id)
             job.deadline = time.now():utc():add(h.execution_ceiling_ms() * time.MILLISECOND):format(time.RFC3339)
-            test.eq(job.lease_token, token)
+            test.not_nil(job.lease_token)
+            test.not_nil(job.heartbeat_at)
             local completed, complete_err = env.caller:call("kickside.automation:round", {
                 job = job, payload = { automation_id = id, drive_key = "main" } })
             test.is_nil(complete_err, tostring(complete_err))
@@ -321,7 +341,10 @@ return { run = test.run_cases(function()
             test.not_nil(resumed)
             local deleted, delete_err = call({ action = "delete", id = id })
             test.is_nil(delete_err, tostring(delete_err))
-            test.is_true(deleted.result.deleted)
+            test.is_false(deleted.result.deleted)
+            local finished, finish_err = deletion_worker.run(id)
+            test.is_nil(finish_err, tostring(finish_err))
+            test.is_true(finished.deleted)
             test.eq(#h.query("SELECT component_id FROM kickside_components WHERE component_id=$1", { id }), 0)
             test.eq(#h.query("SELECT id FROM kickside_job WHERE id=$1", { job_id }), 0)
             test.eq(#h.query("SELECT id FROM kickside_job_run WHERE job_id=$1", { job_id }), 0)
@@ -347,14 +370,11 @@ return { run = test.run_cases(function()
                     cleanup_id = id
                     local job_id = h.read_drive(id, "main").job_id
                     cleanup_job_id = job_id
-                    local token = uuid.v7()
-                    local now = time.now():utc()
-                    h.exec("UPDATE kickside_job SET status='running',execution_seq=execution_seq+1,lease_token=$1,"
-                        .. "lease_until=$2,scheduled_at=$3 WHERE id=$4 AND status='pending'",
-                        { token, now:add(60 * time.SECOND):format(time.RFC3339), now:format(time.RFC3339), job_id })
-                    local job = h.query("SELECT * FROM kickside_job WHERE id=$1", { job_id })[1]
+                    local job = h.lease_job(job_id)
+                    local token = job.lease_token
                     job.deadline = time.now():utc():add(h.execution_ceiling_ms() * time.MILLISECOND):format(time.RFC3339)
-                    test.eq(job.lease_token, token)
+                    test.not_nil(job.lease_token)
+                    test.not_nil(job.heartbeat_at)
                     if mode == "paged" then
                         -- Retained history larger than one bounded Jobs purge page.
                         h.exec("UPDATE kickside_job SET execution_seq=102 WHERE id=$1", { job_id })
@@ -421,7 +441,7 @@ return { run = test.run_cases(function()
                             test.eq(still_running.status, "running")
                             test.eq(still_running.lease_token, token)
                             test.eq(h.query("SELECT status FROM kickside_job_run WHERE id=$1", { job.run_id })[1].status, "running")
-                            test.is_true(channel.select({ mailbox:case_receive(), default = true }).default,
+                            test.is_true(release_for(mailbox, job_id).default,
                                 "rolled-back settlement emits a release wake")
                         end
                         local settle_err = settle()
@@ -442,25 +462,26 @@ return { run = test.run_cases(function()
                         test.is_nil(complete_err, tostring(complete_err))
                         test.is_true(completed.self_completed)
                     end
-                    local released = channel.select({ mailbox:case_receive(), time.after(5 * time.SECOND):case_receive() })
+                    local released = release_for(mailbox, job_id, time.after(5 * time.SECOND))
                     test.eq(released.channel, mailbox, "lease release did not hand off pending owner cleanup")
                     test.eq(released.value.job_id, job_id)
                     test.eq(released.value.execution_seq, job.execution_seq)
                     test.eq(released.value.owner_locator.id, id)
-                    -- The production retention runner consumes the real post-commit
-                    -- message; there is no second delete request or polling.
                     local resumed, resume_err = retention_runner.on_wake(db, tostring(process.pid()), released.value)
                     test.is_nil(resume_err, tostring(resume_err))
-                    test.not_nil(resumed)
+                    test.is_false(resumed.stats.needs_continue)
+                    test.is_true(channel.select({ continuation:case_receive(), default = true }).default)
+                    local finished, finish_err = deletion_worker.run(id)
+                    test.is_nil(finish_err, tostring(finish_err))
                     if mode == "paged" then
-                        test.is_true(resumed.stats.needs_continue)
+                        test.is_false(finished.deleted)
+                        test.not_nil(finished.rearm)
                         test.not_nil(h.query("SELECT id FROM kickside_job WHERE id=$1", { job_id })[1])
-                        local more = channel.select({ continuation:case_receive(), time.after(5 * time.SECOND):case_receive() })
-                        test.eq(more.channel, continuation, "bounded purge page lost its continuation")
-                        local finished, finish_err = retention_runner.on_wake(db, tostring(process.pid()), more.value)
-                        test.is_nil(finish_err, tostring(finish_err))
-                        test.is_false(finished.stats.needs_continue)
-                    else test.is_false(resumed.stats.needs_continue) end
+                        local next_page, next_err = deletion_worker.run(id)
+                        test.is_nil(next_err, tostring(next_err))
+                        finished = next_page
+                    end
+                    test.is_true(finished.deleted)
                     db:release()
                     held_db = nil
                     for _, query in ipairs({
@@ -480,25 +501,22 @@ return { run = test.run_cases(function()
                 process.unlisten(continuation)
                 if not ok and cleanup_job_id then
                     h.exec("UPDATE kickside_job_run SET status='failed' WHERE job_id=$1 AND status='running'", { cleanup_job_id })
-                    local _, cleanup_err = component.system_delete(cleanup_id, "reparent_root")
+                    local _, cleanup_err = deletion_worker.run(cleanup_id)
                     if cleanup_err then error(tostring(failure) .. "; cleanup: " .. tostring(cleanup_err)) end
                 end
                 if not ok then error(failure) end
             end)
         end
-        test.it("the resident retention consumer resumes delete after the round releases its lease", function()
+        test.it("the resident Jobs worker completes deletion after the round releases its lease", function()
             local observed = process.listen("recurring.cleanup.observed")
             local _, register_err = process.registry.register("kickside.automation.recurring.fixture:delete_observer")
             test.is_nil(register_err, tostring(register_err))
-            local sweeper_pid
+            local sweeper_pid, releases
             local ok, failure = pcall(function()
                 h.exec("CREATE TABLE recurring_cleanup_watch (component_id TEXT PRIMARY KEY, phase TEXT NOT NULL)")
                 local id = create()
                 local job_id = h.read_drive(id, "main").job_id
-                local now = time.now():utc()
-                h.exec("UPDATE kickside_job SET status='running',execution_seq=execution_seq+1,lease_token=$1,"
-                    .. "lease_until=$2 WHERE id=$3", { uuid.v7(), now:add(60 * time.SECOND):format(time.RFC3339), job_id })
-                local job = h.query("SELECT * FROM kickside_job WHERE id=$1", { job_id })[1]
+                local job = h.lease_job(job_id)
                 job.deadline = time.now():utc():add(h.execution_ceiling_ms() * time.MILLISECOND):format(time.RFC3339)
                 local deleted, delete_err = call({ action = "delete", id = id })
                 test.is_nil(delete_err, tostring(delete_err))
@@ -516,19 +534,36 @@ return { run = test.run_cases(function()
                 end
                 test.eq(held.value.phase, "held")
                 test.eq(held.value.id, id)
+                h.stop_worker(sweeper_pid)
+                sweeper_pid = nil
+                releases = process.listen(lease_release.TOPIC)
+                local registered, listener_err = process.registry.register(lease_release.NAME, nil, process.registry.CONSISTENT)
+                test.is_nil(listener_err, tostring(listener_err))
+                test.is_true(registered)
                 local completed, complete_err = env.caller:call("kickside.automation:round", {
                     job = job, payload = { automation_id = id, drive_key = "main" } })
                 test.is_nil(complete_err, tostring(complete_err))
                 test.is_true(completed.self_completed)
-                local removed = channel.select({ observed:case_receive(), time.after(5 * time.SECOND):case_receive() })
-                test.eq(removed.channel, observed, "retention lost the lease-release wake")
-                test.eq(removed.value.phase, "removed")
+                worker = h.start_worker()
+                local removed = release_for(releases, deleted.result.job_id, time.after(5 * time.SECOND))
+                test.eq(removed.channel, releases, "resident deletion job did not finish: " .. tostring(json.encode({
+                    job = h.query("SELECT status,last_error,attempts,scheduled_at FROM kickside_job WHERE id=$1", { deleted.result.job_id })[1],
+                    listener = tostring(process.registry.lookup(lease_release.NAME, process.registry.CONSISTENT)),
+                    observer = tostring(process.pid()),
+                    queued = h.query("SELECT job_type,status,COUNT(*) AS n FROM kickside_job GROUP BY job_type,status"),
+                })))
+                test.eq(removed.value.owner_locator.id, id)
+                test.eq(h.query("SELECT status FROM kickside_job WHERE id=$1", { deleted.result.job_id })[1].status, "done")
                 test.eq(#h.query("SELECT component_id FROM kickside_components WHERE component_id=$1", { id }), 0)
                 test.eq(#h.query("SELECT automation_id FROM kickside_automation_drive WHERE automation_id=$1", { id }), 0)
                 test.eq(#h.query("SELECT id FROM kickside_job WHERE id=$1", { job_id }), 0)
                 test.eq(#h.query("SELECT id FROM kickside_job_run WHERE job_id=$1", { job_id }), 0)
             end)
             if sweeper_pid and process.registry.lookup(lease_release.NAME, process.registry.CONSISTENT) == sweeper_pid then h.stop_worker(sweeper_pid) end
+            if releases then
+                process.registry.unregister(lease_release.NAME, process.registry.CONSISTENT)
+                process.unlisten(releases)
+            end
             process.registry.unregister("kickside.automation.recurring.fixture:delete_observer")
             process.unlisten(observed)
             h.exec("DROP TABLE IF EXISTS recurring_cleanup_watch")
@@ -747,6 +782,9 @@ return { run = test.run_cases(function()
                 else answer, err = call({ action = "delete", id = id }, other) end
                 test.is_nil(err, tostring(err))
                 test.not_nil(answer)
+                local finished, finish_err = deletion_worker.run(id)
+                test.is_nil(finish_err, tostring(finish_err))
+                test.is_true(finished.deleted)
                 test.is_nil(listed(id, other))
             end
         end)
@@ -798,6 +836,9 @@ return { run = test.run_cases(function()
             test.not_nil(select(1, call({ action = "resume", id = id })))
             test.is_true(h.read_drive(id, "main").enabled)
             test.not_nil(select(1, call({ action = "delete", id = id })))
+            local finished, finish_err = deletion_worker.run(id)
+            test.is_nil(finish_err, tostring(finish_err))
+            test.is_true(finished.deleted)
             test.is_nil(select(1, call({ action = "get", id = id })))
         end)
         test.it("refuses undelegated group selection and leaves the task paused under its creator", function()

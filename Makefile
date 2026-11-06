@@ -13,6 +13,7 @@
 
 WIPPY_BIN ?= wippy
 TEST_ARGS ?= --maxWorkers=2
+TEST_IF_PRESENT ?=
 
 # Resolve a module name to its FE package dir; app-main is the page app.
 define fe_dir
@@ -35,7 +36,7 @@ WIDGET_SOURCE_CONSUMERS := agents automation channel connection hub identity inb
 
 FE_MODULES := app-main plugin-template $(patsubst platform/%/ui/package.json,%,$(wildcard platform/*/ui/package.json))
 
-.PHONY: help install build watch cleaninstall lockrefresh typecheck typecheck-shared ui-kit facade-css facade-css-check facade-css-watch install-all build-all cleaninstall-all lockrefresh-all typecheck-all test-all
+.PHONY: help install build watch cleaninstall lockrefresh typecheck typecheck-shared test ui-kit facade-css facade-css-check facade-css-watch install-all build-all cleaninstall-all lockrefresh-all typecheck-all test-all
 
 help:
 	@echo "kickside FE build interface"
@@ -51,8 +52,6 @@ help:
 	@echo "  make facade-css-check      verify generated facade CSS is current"
 	@echo "  make facade-css-watch      rebuild facade CSS when facade-src changes"
 	@echo "  make {install,build,cleaninstall,typecheck,test}-all"
-	@echo "  make module-lifecycle-e2e WIPPY_BIN=/path/to/wippy"
-	@echo "  make workflow-system-e2e WIPPY_BIN=/path/to/wippy"
 	@echo "  MOD names: app-main, plugin-template, or any platform/<name>"
 
 install:
@@ -93,6 +92,11 @@ typecheck:
 # Vue/TypeScript source alias and does not need the CSS-only ui-kit package.
 typecheck-shared:
 	cd platform/widgets/ui && { [ -d node_modules ] || npm ci --no-audit --no-fund; }
+
+test:
+	@test -n "$(MOD)" || { echo "test needs MOD=<module> (or use test-all)"; exit 1; }
+	@case " $(UI_KIT_CONSUMERS) " in *" $(MOD) "*) $(MAKE) ui-kit MOD=$(MOD) || exit 1;; esac
+	cd $(call fe_dir,$(MOD)) && { [ -d node_modules ] || npm ci --no-audit --no-fund; } && npm test $(TEST_IF_PRESENT) -- $(TEST_ARGS)
 
 ui-kit:
 	@test -n "$(MOD)" || { echo "ui-kit needs MOD=<module>"; exit 1; }

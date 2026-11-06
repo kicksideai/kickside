@@ -25,6 +25,7 @@ entries:
       policies: [app:test_scope_policy]
     modules: [sql, uuid, contract, security, channel, time, json]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       ops: kickside.component.persist:component_ops
       command: kickside.component:component_command

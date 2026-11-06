@@ -13,6 +13,7 @@ local function run_drain(stop_kind: string, timeout: boolean, stop_during_drain:
     local outcome = { cancels = {}, exits = {}, assignments = 0, upgrades = 0, closed = false,
         released = 0, selections = 0 }
     local spawned = 0
+    local termination_pages = 0
     local desired = 2
     local retired = "drain-slot-2"
     local function closed(): ()
@@ -30,7 +31,10 @@ local function run_drain(stop_kind: string, timeout: boolean, stop_during_drain:
         policy = function() return job_fixture.pool_policy({ worker_count_sqlite = desired,
             worker_count_postgres = desired, worker_awaited_slots = 0 }), nil end,
         reclaim = { reclaim_expired = function() return 0, nil end,
-            reclaim_terminated = function() return 0, nil end,
+            reclaim_terminated = function(_, _, limit)
+                termination_pages = termination_pages + 1
+                return 0, nil, termination_pages < 3 and limit or 0
+            end,
             close_lost_runs = function() return 0, nil end },
         claim = { due_backlog = function() return { count = 0, oldest_age_ms = 0, overdue = 0 }, nil end,
             claim_batch = function(_, _, _, _, _, ids)
@@ -97,6 +101,7 @@ local function run_drain(stop_kind: string, timeout: boolean, stop_during_drain:
     })
     local _, err = pool.main()
     outcome.err = err
+    test.eq(termination_pages, 3, "the pool drains live-child pages independently of settlements")
     return outcome
 end
 
@@ -115,6 +120,7 @@ local function pool_driver(script: any, options: table?): (any, table)
         channels = { events = events_ch, registry = registry_ch, idle = idle_ch, wake = wake_ch, timer = timer_ch } }
     local spawned = 0
     local pool = worker_pool.new({
+        schema_ready = opts.schema_ready,
         retention_schedule = job_fixture.no_retention_schedule,
         sql_get = function() return {
             type = function() return sql.type.SQLITE end,
@@ -124,7 +130,7 @@ local function pool_driver(script: any, options: table?): (any, table)
         policy = function() return job_fixture.pool_policy({ worker_count_sqlite = outcome.desired,
             worker_count_postgres = outcome.desired, worker_awaited_slots = 0 }), nil end,
         reclaim = { reclaim_expired = function() return 0, nil end,
-            reclaim_terminated = function() return 0, nil end,
+            reclaim_terminated = function() return 0, nil, 0 end,
             close_lost_runs = function() return 0, nil end },
         claim = { due_backlog = function() return { count = 0, oldest_age_ms = 0, overdue = 0 }, nil end,
             claim_batch = function(_, _, _, _, _, ids)
@@ -224,6 +230,100 @@ local function define_tests()
     end)
 
     test.describe("jobs pool in-place upgrade", function()
+        test.it("holds claims and preserves busy handover while Jobs migrations are pending", function()
+            local reads = 0
+            local pool, outcome = pool_driver(function(n: integer, state: table): table
+                test.eq(#state.spawned, 0)
+                test.eq(#state.assignments, 0)
+                test.eq(#state.released, 0)
+                test.is_nil(next(state.cancels))
+                if n == 1 then return { channel = state.channels.registry } end
+                if n == 2 then return { channel = state.channels.wake } end
+                return { channel = state.channels.events, value = { kind = process.event.OUTDATED } }
+            end, { desired = 1, name_held = true, version = "v2", schema_ready = function()
+                reads = reads + 1
+                return false, nil
+            end })
+            local _, err = pool.main({ size = 1, slots = {{ slot = 1, pid = "busy-slot", epoch = 1,
+                assignment = { job = { id = "busy-job" }, run_id = "busy-run", epoch = 1 } }},
+                due = {{ slot = 2, at = 0 }} })
+            test.is_nil(err)
+            test.eq(reads, 1, "registry and wake notices respect the pending readiness retry")
+            test.eq(outcome.unregistered, 0)
+            test.eq(outcome.upgrades[1].handover.slots[1].assignment.job.id, "busy-job")
+            test.eq(outcome.upgrades[1].handover.due[1].slot, 2)
+        end)
+
+        test.it("resumes handed-over idle capacity after migrations and stops checking readiness", function()
+            local reads = 0
+            local pool, outcome = pool_driver(function(n: integer, state: table): table
+                local c = state.channels
+                if n <= 2 then
+                    test.eq(#state.assignments, 0)
+                    test.eq(#state.spawned, 0)
+                    test.is_nil(next(state.cancels))
+                    if n == 1 then return { channel = c.wake } end
+                    state.now = 1e9
+                    return { channel = c.timer }
+                elseif n == 3 then
+                    test.eq(#state.assignments, 1, "the readiness retry recovers work without a fresh wake")
+                    return { channel = c.registry }
+                elseif n == 4 then
+                    return { channel = c.wake }
+                elseif n == 5 then
+                    return { channel = c.events, value = { kind = process.event.CANCEL } }
+                end
+                return { channel = c.events, value = { kind = process.event.EXIT, from = "idle-slot" } }
+            end, { desired = 1, name_held = true, version = "v2", claim_once = true, schema_ready = function()
+                reads = reads + 1
+                return reads >= 2, nil
+            end })
+            local _, err = pool.main({ size = 1, slots = {{ slot = 1, pid = "idle-slot", epoch = 0, idle_version = "v2" }} })
+            test.is_nil(err)
+            test.eq(reads, 2, "ready pools do not query the migration ledger on wakes or registry commits")
+            test.eq(#outcome.spawned, 0)
+            test.eq(#outcome.assignments, 1)
+            test.is_true(outcome.cancels["idle-slot"] == true)
+            test.eq(outcome.unregistered, 1)
+        end)
+
+        test.it("recovers idle handover when schema becomes ready on a same-version registry notice", function()
+            local reads = 0
+            local pool, outcome = pool_driver(function(n: integer, state: table): table
+                if n == 1 then
+                    state.now = 1e9
+                    return { channel = state.channels.registry }
+                end
+                test.eq(#state.assignments, 1, "admission recovers work even when the registry version is unchanged")
+                return { channel = state.channels.events, value = { kind = process.event.OUTDATED } }
+            end, { desired = 1, name_held = true, version = "v2", claim_once = true, schema_ready = function()
+                reads = reads + 1
+                return reads >= 2, nil
+            end })
+            local _, err = pool.main({ size = 1, slots = {{ slot = 1, pid = "idle-slot", epoch = 0, idle_version = "v2" }} })
+            test.is_nil(err)
+            test.eq(reads, 2)
+            test.eq(#outcome.assignments, 1)
+            test.eq(#outcome.spawned, 0)
+            test.is_nil(next(outcome.cancels))
+        end)
+
+        test.it("remains cancellable with no new slots when migration status cannot be read", function()
+            local reads = 0
+            local pool, outcome = pool_driver(function(_, state: table): table
+                return { channel = state.channels.events, value = { kind = process.event.CANCEL } }
+            end, { schema_ready = function()
+                reads = reads + 1
+                return false, errors.new({ kind = errors.UNAVAILABLE, message = "migration ledger unavailable" })
+            end })
+            local _, err = pool.main()
+            test.is_nil(err)
+            test.eq(reads, 1)
+            test.eq(#outcome.spawned, 0)
+            test.eq(#outcome.assignments, 0)
+            test.eq(outcome.unregistered, 1)
+        end)
+
         test.it("upgrades on OUTDATED without cancelling a busy slot and hands its assignment to the new code", function()
             local pool, outcome = pool_driver(busy_then_outdated, { claim_once = true })
             local _, err = pool.main()
@@ -243,7 +343,7 @@ local function define_tests()
             test.eq(handover.slots[1].assignment.job.id, "drain-job")
             test.eq(handover.slots[1].assignment.run_id, "drain-run")
             test.eq(#handover.retired, 1)
-            test.eq(handover.retired[1], "drain-slot-2")
+            test.eq(handover.retired[1].pid, "drain-slot-2")
         end)
 
         test.it("adopts handed-over slots: an adopted slot's exit settles its assignment and respawns it", function()

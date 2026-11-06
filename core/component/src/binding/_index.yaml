@@ -62,10 +62,14 @@ entries:
         - components
         - delete
     source: file://delete_component_func.lua
+    security:
+      policies:
+        - kickside.component:deletion_jobs_policy
+        - kickside.component:deletion_worker_lookup
     modules:
       - security
     imports:
-      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
       envelope: kickside.component:envelope
       component_reader: kickside.component.persist:component_reader
       component_ops: kickside.component.persist:component_ops
@@ -132,6 +136,7 @@ entries:
     modules:
       - security
     imports:
+      jobs: kickside.core.jobs:jobs
       envelope: kickside.component:envelope
       component_reader: kickside.component.persist:component_reader
       component_ops: kickside.component.persist:component_ops

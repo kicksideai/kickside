@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 -- The MCP tool surface (kickside.workflows.agent:flows_read / flows_manage) runs
 -- the full lifecycle an environment clone needs: create → apply → publish →
 -- export → import → publish, with per-row access enforced for strangers. The
@@ -482,6 +483,9 @@ local function define_tests()
             local deleted = call_tool(owner, MANAGE_TOOL, { action = "delete", id = id })
             test.is_true(deleted.success, tostring(deleted.error))
 
+            local finished, finish_err = deletion_worker.run(id)
+            test.is_nil(finish_err, tostring(finish_err))
+            test.is_true(finished.deleted)
             local gone = call_error(owner, READ_TOOL, { action = "read", id = id })
             test.not_nil(gone)
         end)

@@ -1,0 +1,117 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: app
+entries:
+  - name: deletion_jobs_test
+    kind: function.lua
+    meta: {type: test, suite: component_deletion_jobs, timeout: 60s}
+    source: file://deletion_jobs_test.lua
+    method: run
+    modules: [sql, uuid, security, contract, process, time, channel, funcs, registry]
+    imports: {test: 'wippy.test:test', deletion_worker: 'app:deletion_test_worker', component: 'kickside.component:component'}
+  - name: deletion_jobs_request
+    kind: process.lua
+    source: file://deletion_jobs_test.lua
+    method: request
+    modules: [sql, uuid, security, contract, process, time, channel, funcs, registry]
+    imports: {test: 'wippy.test:test', deletion_worker: 'app:deletion_test_worker', component: 'kickside.component:component'}
+  - name: deletion_jobs_binding
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: 'app:autoinit_test_status'}
+      - contract: kickside.contract:deletable
+        methods: {delete: 'app:deletion_jobs_cleanup'}
+  - name: deletion_jobs_cleanup
+    kind: function.lua
+    source: file://deletion_jobs_cleanup.lua
+    method: handle
+    modules: [sql, ctx, security, funcs, process, time, channel]
+  - name: deletion_test_worker
+    kind: library.lua
+    source: file://deletion_test_worker.lua
+    modules: [funcs, sql, time, uuid, process]
+    imports:
+      claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      completion: kickside.core.jobs.service:worker_completion
+
+  - name: system_delete_worker_sql
+    kind: library.lua
+    source: file://delete_worker_native_sql.lua
+    imports: {fixture: app:system_delete_fixture}
+  - name: system_delete_worker_native
+    kind: library.lua
+    source: file://delete_worker_native_source.lua
+    modules: [security, time]
+    imports:
+      jobs_policy: kickside.core.jobs.policy:runtime
+      sql: app:system_delete_worker_sql
+      component_types: kickside.component:types
+      persisted_json: kickside.contract:persisted_json
+      teardown: app:system_delete_teardown
+      error_envelope: kickside.contract:error_envelope
+
+  - name: gated_delete_worker_sql
+    kind: library.lua
+    source: file://delete_worker_native_sql.lua
+    imports: {fixture: app:gated_delete_fixture}
+  - name: gated_delete_worker_native
+    kind: library.lua
+    source: file://delete_worker_native_source.lua
+    modules: [security, time]
+    imports:
+      jobs_policy: kickside.core.jobs.policy:runtime
+      sql: app:gated_delete_worker_sql
+      component_types: kickside.component:types
+      persisted_json: kickside.contract:persisted_json
+      teardown: app:gated_delete_teardown
+      error_envelope: kickside.contract:error_envelope
+
+  - name: teardown_tx_cleanup_jobs
+    kind: library.lua
+    source: file://teardown_tx_cleanup_jobs.lua
+    imports: {fixture: app:teardown_tx_cleanup_fixture}
+
+  - name: component_get_api_test
+    kind: function.lua
+    source: file://component_get_api_test.lua
+    method: run
+    meta: {type: test, suite: component_get_api}
+    modules: [http]
+    imports: {test: 'wippy.test:test', api: 'app:component_get_api_source'}
+
+  - name: component_get_api_source
+    kind: library.lua
+    source: file://component_get_api_source.lua
+    modules: [http, security]
+    imports:
+      component: kickside.component:component
+      envelope: kickside.component:envelope
+      http_errors: kickside.contract:http_errors
+      http_context: kickside.component.api:http_context
+
+  - name: deletion_member_binding
+    kind: security.policy
+    policy:
+      resources: [app:deletion_jobs_binding]
+      actions: registry.get
+      effect: allow
+
+  - name: deletion_member_jobs
+    kind: security.policy
+    policy:
+      resources: kickside.core.jobs:*
+      actions: funcs.call
+      effect: allow
+
+  - name: deletion_member_components
+    kind: security.policy
+    policy:
+      resources: ['kickside.component:*', 'kickside.component.*']
+      actions: [registry.get, registry.find]
+      effect: allow
+      conditions:
+        - field: resource
+          operator: nin
+          value: [kickside.component:delete_worker]
