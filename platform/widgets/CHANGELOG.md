@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.57](https://github.com/kicksideai/kickside/compare/widgets-v0.1.56...widgets-v0.1.57) (2026-11-06)
+
+
+### Features
+
+* **inbox:** support file references with inline previews ([#173](https://github.com/kicksideai/kickside/issues/173)) ([2a19510](https://github.com/kicksideai/kickside/commit/2a195101fdf84e9246c5a39495d8fdbd3917c490))
+
 ## [0.1.56](https://github.com/kicksideai/kickside/compare/widgets-v0.1.55...widgets-v0.1.56) (2026-11-05)
 
 
