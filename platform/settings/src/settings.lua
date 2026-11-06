@@ -1,10 +1,6 @@
--- The settings service. Each contract method maps to one of these functions via
--- the kickside.settings:settings binding. Reads merge the declared defaults with
--- the override cache (store.memory, warmed once at boot by the cache bootloader)
--- and never touch the DB; the boot warm is the sole cache owner, so a read never
--- provisions the cache. A read that finds a cold cache means boot warming did not
--- run: it surfaces as an error rather than a silent DB reload. Every write
--- delegates to the canonical writer (the single mutation path).
+-- Settings reads merge declared defaults with the override snapshot. A cold
+-- cache reloads through the canonical writer before serving any values. Every
+-- write delegates to that same writer.
 
 local defs = require("settings_defs")
 local cache = require("settings_cache")
@@ -15,13 +11,15 @@ local M = {}
 local ADMIN_LIST_RESOURCE = "kickside.settings.api:list_settings.endpoint"
 local ADMIN_WRITE_RESOURCE = "kickside.settings.api:put_settings.endpoint"
 
--- The current override map, served from the boot-warmed cache. A cold cache is an
--- infrastructure failure (boot warming did not run), surfaced as an error; a read
--- never reloads it from the DB.
+-- A cold cache is normal during a module update: a new version can read a
+-- snapshot its predecessor never wrote, before any boot warmer runs.
+-- Return only a complete snapshot, or a typed response error from the caller.
 local function overrides(): (settings_types.OverrideMap?, string?)
     local map = cache.read()
     if map then return map, nil end
-    return nil, "settings cache is not warmed"
+    local loaded, err = writer.warm()
+    if not loaded then return nil, "settings cache reload failed: " .. tostring(err) end
+    return loaded, nil
 end
 
 -- Effective value for one declared key: a coerced override, else the default.
@@ -58,7 +56,7 @@ local function require_admin_write(): string?
 end
 
 -- Read restrictions are declared independently from UI visibility. The read
--- functions retain the caller's actor/scope and add only cache/registry access.
+-- functions retain the caller's actor/scope and add only the access for a reload.
 local function can_read(def: settings_types.Definition): boolean
     if def.read_access == nil then return true end
     if def.read_access == "admin" then return can_access(ADMIN_LIST_RESOURCE) end

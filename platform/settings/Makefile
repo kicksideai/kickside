@@ -13,7 +13,9 @@ dev:
 lint:
 	cd test && wippy lint $(WIPPY_LINT_ARGS) --ns 'kickside.$(subst -,_,$(MODULE))' --ns 'kickside.$(subst -,_,$(MODULE)).*'
 test:
-	@output="$$( cd test && wippy test $(WIPPY_TEST_ARGS) 2>&1 )"; status=$$?; \
+	@database="$$(mktemp "$${TMPDIR:-$$(pwd)/test}/settings-test.XXXXXXXX.sqlite")" || exit $$?; \
+	trap 'rm -f "$$database" "$$database-wal" "$$database-shm"' EXIT; \
+	output="$$( cd test && wippy test --set "vars.sqlite_path=$$database" $(WIPPY_TEST_ARGS) 2>&1 )"; status=$$?; \
 	printf '%s\n' "$$output"; \
 	if [ $$status -ne 0 ] || printf '%s\n' "$$output" | grep -qE 'FAILED|No tests found' || \
 		! printf '%s\n' "$$output" | grep -q 'PASSED' || \

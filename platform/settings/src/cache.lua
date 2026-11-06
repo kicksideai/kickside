@@ -1,7 +1,7 @@
--- In-memory override cache (store.memory). The whole override set lives under one
--- key with the revision it was read at, so a read is a single store hit + decode
--- and never touches the DB. The canonical writer and the change keeper are the
--- only things that replace it.
+-- In-memory override snapshots. A snapshot holds the complete override map and
+-- its stored revision; a missing or unreadable snapshot is cold. Readers reload
+-- cold snapshots through the canonical writer, which also replaces them after
+-- writes and change propagation.
 
 local store = require("store")
 local json = require("json")
@@ -41,13 +41,32 @@ function M.revision(): number?
     return current and current.revision or nil
 end
 
--- replace overwrites the whole map and the revision it reflects.
-function M.replace(map: any, revision: number): ()
+-- replace publishes the complete map and revision, or returns (false, error).
+-- Callers must report a failed replacement instead of claiming the cache is warm.
+function M.replace(map: any, revision: number): (boolean, any?)
+    local encoded, eerr = json.encode({ revision = revision, overrides = map })
+    if eerr then return false, eerr end
     local s, err = store.get(STORE_ID)
-    if err or not s then return end
-    -- ttl 0 = never expire; settings persist until the next write.
-    s:set(SNAPSHOT_KEY, json.encode({ revision = revision, overrides = map }), 0)
+    if err or not s then return false, err or "settings cache unavailable" end
+    -- ttl 0 = never expire; settings persist until the next replacement.
+    local _, serr = s:set(SNAPSHOT_KEY, encoded, 0)
     s:release()
+    if serr then return false, serr end
+    return true, nil
+end
+
+-- fill publishes a snapshot only into a cold cache. A cold read holds a revision
+-- that may already be old, so it never overwrites a snapshot another reader,
+-- writer or keeper published meanwhile. Returns true on a stored or kept snapshot.
+function M.fill(map: any, revision: number): (boolean, any?)
+    local encoded, eerr = json.encode({ revision = revision, overrides = map })
+    if eerr then return false, eerr end
+    local s, err = store.get(STORE_ID)
+    if err or not s then return false, err or "settings cache unavailable" end
+    local _, perr = s:put(SNAPSHOT_KEY, encoded, { only_if_absent = true })
+    s:release()
+    if perr and not errors.is(perr, errors.ALREADY_EXISTS) then return false, perr end
+    return true, nil
 end
 
 return M

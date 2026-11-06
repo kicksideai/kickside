@@ -21,6 +21,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.settings:db_config
         path: .meta.db_id
+      - entry: kickside.settings:reader_db
+        path: ".policy.resources +="
 
   # Resolved DB id for the writer. The target_db requirement rewrites .meta.db_id
   # here; settings_types.db_id() reads it back so the writer binds the
@@ -100,7 +102,7 @@ entries:
   - name: cache
     kind: store.memory
     meta:
-      comment: In-memory override cache. Warmed from the DB at boot; reads are served from here, not the DB.
+      comment: In-memory override cache. Warmed at boot and reloaded from the DB on cold reads.
     cleanup_interval: 30m
     lifecycle:
       auto_start: true
@@ -153,17 +155,18 @@ entries:
   # contract method. The import set is the transitive closure of settings.lua's
   # libraries (Wippy resolves a library's require() against the leaf entry).
   # Reads retain the caller identity so declarative read_access can check the
-  # admin capability. Their narrow policies add internal cache/registry reads
-  # only for the function invocation; callers never gain direct cache access.
+  # admin capability. Their narrow policies add cache/registry access and the
+  # configured DB and encryption key only for the function invocation.
   - name: reader_cache
     kind: security.policy
-    meta: { comment: Settings read functions may read the warmed override cache. }
+    meta: { comment: Settings read functions may read and warm the override cache. }
     policy:
       resources:
         - kickside.settings:cache
       actions:
         - store.get
         - store.key.get
+        - store.key.set
       effect: allow
 
   - name: reader_registry
@@ -175,6 +178,22 @@ entries:
       actions:
         - registry.find
         - registry.get
+      effect: allow
+
+  - name: reader_db
+    kind: security.policy
+    meta: { comment: Settings read functions may reload from the configured settings database. }
+    policy:
+      resources: []
+      actions: [db.get]
+      effect: allow
+
+  - name: reader_secrets
+    kind: security.policy
+    meta: { comment: Settings read functions may decrypt stored secret overrides. }
+    policy:
+      resources: [ENCRYPTION_KEY]
+      actions: [env.get]
       effect: allow
 
   - name: get
@@ -192,6 +211,8 @@ entries:
       policies:
         - kickside.settings:reader_cache
         - kickside.settings:reader_registry
+        - kickside.settings:reader_db
+        - kickside.settings:reader_secrets
 
   - name: set
     kind: function.lua
@@ -207,6 +228,7 @@ entries:
     security:
       policies:
         - kickside.settings:change_publisher
+        - kickside.settings:reader_cache
 
   - name: unset
     kind: function.lua
@@ -222,6 +244,7 @@ entries:
     security:
       policies:
         - kickside.settings:change_publisher
+        - kickside.settings:reader_cache
 
   - name: list
     kind: function.lua
@@ -234,6 +257,12 @@ entries:
       settings_cache: kickside.settings:settings_cache
       settings_writer: kickside.settings.persist:settings_writer
       settings_types: kickside.settings:settings_types
+    security:
+      policies:
+        - kickside.settings:reader_cache
+        - kickside.settings:reader_registry
+        - kickside.settings:reader_db
+        - kickside.settings:reader_secrets
 
   - name: get_namespace
     kind: function.lua
@@ -250,6 +279,8 @@ entries:
       policies:
         - kickside.settings:reader_cache
         - kickside.settings:reader_registry
+        - kickside.settings:reader_db
+        - kickside.settings:reader_secrets
 
   # ─── Boot warmer ─────────────────────────────────────────────────────
   - name: cache_bootloader
