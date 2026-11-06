@@ -73,15 +73,8 @@ local function prepare(held: Map, key: string): (any?, any)
     if admit_err or not admitted then return nil,admit_err end
     local _,identity_err=provenance.identity(admitted.deliveries[key])
     if identity_err then return nil,identity_err end
-    return round_write.prepare({drive=held,key=key,hash="payload-hash",prepared=true},
+    return round_write.prepare({drive=held,key=key,hash="record:",prepared=true},
         function(): (any?, any) return {title="original prepared value"},nil end)
-end
-
--- admitted_principal(held, key) -> the principal a round delivers the key under.
-local function admitted_principal(held: Map, key: string): string
-    local admitted,admit_err=provenance.admit(held,{key})
-    test.is_nil(admit_err,tostring(admit_err))
-    return admitted.deliveries[key].identity.principal.id
 end
 
 local function writes(key: string): { Map }
@@ -93,6 +86,31 @@ local function run(env: Map, key: string): ()
         return execution_identity.run_as(identity,target,args,opts)
     end)
     test.is_nil(run_err,tostring(run_err))
+end
+
+local PREPARED_PORT = "kickside.automation.round.fixture:records"
+
+-- legacy_delivery(env) -> the delivery key of the one record a sink drive
+-- delivers, for a legacy prepared row to carry.
+local function legacy_delivery(env: Map): string
+    h.new_drive({automation_id=env.automation_id,drive_key="prepared_sink",source_kind="collection",
+        applied={sink_port=STORE,replay_safe=false},
+        action={source_ref=PREPARED_PORT,config={items={{key="record"}}},schedule={type="interval",expression="30m"}}})
+    return round_write.keys({automation_id=env.automation_id,source_port=PREPARED_PORT,delivery_revision=1},
+        {item_key="record",dedup_key="record"}).idempotency_key
+end
+
+-- deliver_prepared(env, actor) runs the sink drive's round: the sink writes the
+-- legacy prepared output once, under actor, and the record gets its receipt.
+local function deliver_prepared(env: Map, actor: string): ()
+    h.set_drive(env.automation_id,"prepared_sink","next_run_at=$1",{h.PAST})
+    run(env,"prepared_sink")
+    test.eq(#h.query("SELECT id FROM round_fixture_log WHERE automation_id=$1 AND drive_key='transform' AND item_key='record'",{env.automation_id}),0,
+        "the round delivers the stored prepared output")
+    local sent=writes(round_write.keys({automation_id=env.automation_id,source_port=PREPARED_PORT},{item_key="record"}).identity_key)
+    test.eq(#sent,1)
+    test.eq(json.decode(sent[1].detail_json).actor_id,actor)
+    test.eq(#h.query("SELECT item_key FROM kickside_automation_receipt WHERE owner_id=$1 AND item_key='record'",{env.automation_id}),1)
 end
 
 local function sends(env: Map): { Map }
@@ -259,7 +277,7 @@ return test.run_cases(function()
             local env=h.setup("preparation_crash_provenance")
             local held=stamp(env)
             local key=uuid.v7()
-            local _,first_err=round_write.prepare({drive=held,key=key,hash="payload-hash",prepared=true},
+            local _,first_err=round_write.prepare({drive=held,key=key,hash="record:",prepared=true},
                 function(): (any?,any) return nil,errors.new({kind=errors.UNAVAILABLE,retryable=true,message="preparation stops"}) end)
             test.not_nil(first_err)
             test.eq(#h.query("SELECT idempotency_key FROM kickside_automation_prepared WHERE automation_id=$1",{env.automation_id}),0)
@@ -268,7 +286,7 @@ return test.run_cases(function()
             local admitted,readmit_err=provenance.admit(held,{key})
             test.is_nil(readmit_err,tostring(readmit_err))
             test.eq(admitted.deliveries[key].identity.principal.id,env.owner)
-            local _,retry_err=round_write.prepare({drive=held,key=key,hash="payload-hash",prepared=true},
+            local _,retry_err=round_write.prepare({drive=held,key=key,hash="record:",prepared=true},
                 function(): (any?, any) return {title="original prepared value"},nil end)
             test.is_nil(retry_err,tostring(retry_err))
             local stored=h.query("SELECT execution_identity_json FROM kickside_automation_prepared WHERE automation_id=$1 AND idempotency_key=$2",{env.automation_id,key})
@@ -357,8 +375,8 @@ return test.run_cases(function()
         test.it("resolves only unproven legacy preparation through explicit ADMIN replay",function()
             local env=h.setup("legacy_prepared_resolution")
             local held=stamp(env)
-            local key=uuid.v7()
-            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'payload-hash',$3,$4)",
+            local key=legacy_delivery(env)
+            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'record:',$3,$4)",
                 {env.automation_id,key,json.encode({title="legacy prepared value"}),h.PAST})
             local replacement,caller=select_replacement(env)
             held=stamp(env)
@@ -375,19 +393,19 @@ return test.run_cases(function()
             local value,value_err=prepare(held,key)
             test.is_nil(value_err,tostring(value_err))
             test.eq(value.title,"legacy prepared value")
-            test.eq(admitted_principal(held,key),replacement)
             local _,forbidden_err=caller:call("kickside.automation.agent:automations_manage",
                 {action="call",id=env.automation_id,method="replay",args={drive_key="main",request_id=uuid.v7(),
                     resolve_identity={identity_generation=current.identity_generation,delivery_keys={key}}}})
             test.not_nil(forbidden_err)
             test.is_true(errors.is(forbidden_err,errors.CONFLICT))
+            deliver_prepared(env,replacement)
         end)
 
         test.it("keeps inferred legacy admission immutable across drive controls",function()
             local env=h.setup("legacy_cross_drive_admission")
             local held=stamp(env)
             local key=uuid.v7()
-            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'payload-hash',$3,$4)",
+            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'record:',$3,$4)",
                 {env.automation_id,key,json.encode({title="legacy prepared value"}),h.PAST})
             local value,value_err=prepare(held,key)
             test.is_nil(value_err,tostring(value_err))
@@ -407,8 +425,8 @@ return test.run_cases(function()
 
         test.it("applies authorized legacy resolution to every retained drive journal",function()
             local env=h.setup("legacy_cross_drive_resolution")
-            local key=uuid.v7()
-            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'payload-hash',$3,$4)",
+            local key=legacy_delivery(env)
+            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'record:',$3,$4)",
                 {env.automation_id,key,json.encode({title="legacy prepared value"}),h.PAST})
             h.new_drive({automation_id=env.automation_id,drive_key="other",source_kind="collection",
                 action={source_ref="kickside.automation.round.fixture:records",config={items={}},
@@ -428,7 +446,7 @@ return test.run_cases(function()
             local value,value_err=prepare(held,key)
             test.is_nil(value_err,tostring(value_err))
             test.eq(value.title,"legacy prepared value")
-            test.eq(admitted_principal(held,key),replacement)
+            deliver_prepared(env,replacement)
         end)
 
         test.it("resolves a legacy preparation and its waiting ledger as one delivery",function()
@@ -436,7 +454,7 @@ return test.run_cases(function()
             legacy_ledger(env,"legacy")
             local prior=h.query("SELECT identity_key FROM kickside_trigger_item_ledger WHERE owner_id=$1 AND item_key='legacy'",{env.automation_id})
             local key=prior[1].identity_key
-            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'payload-hash',$3,$4)",
+            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'record:',$3,$4)",
                 {env.automation_id,key,json.encode({title="legacy prepared value"}),h.PAST})
             local replacement,caller=select_replacement(env)
             run(env,"legacy")
@@ -529,18 +547,18 @@ return test.run_cases(function()
             legacy_ledger(env,"legacy")
             h.exec("UPDATE kickside_trigger_item_ledger SET created_at=$1 WHERE owner_id=$2",{created,env.automation_id})
             local held=stamp(env)
-            local key=uuid.v7()
-            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'payload-hash',$3,$4)",
+            local key=legacy_delivery(env)
+            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'record:',$3,$4)",
                 {env.automation_id,key,json.encode({title="legacy prepared value"}),created})
             local value,value_err=prepare(held,key)
             test.is_nil(value_err,tostring(value_err))
             test.eq(value.title,"legacy prepared value")
-            test.eq(admitted_principal(held,key),replacement)
             run(env,"legacy")
             test.eq(h.ledger_row(env.automation_id,"legacy").state,"resolved")
             local rows=h.log_rows(env.automation_id,"legacy")
             test.eq(#rows,2)
             test.eq(json.decode(rows[1].detail_json).actor_id,replacement)
+            deliver_prepared(env,replacement)
         end)
 
         for _, mode in ipairs({"equal", "missing"}) do
@@ -553,8 +571,8 @@ return test.run_cases(function()
                 test.not_nil(created)
                 legacy_ledger(env,"legacy")
                 h.exec("UPDATE kickside_trigger_item_ledger SET created_at=$1 WHERE owner_id=$2",{created,env.automation_id})
-                local key=uuid.v7()
-                h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'payload-hash',$3,$4)",
+                local key=legacy_delivery(env)
+                h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'record:',$3,$4)",
                     {env.automation_id,key,json.encode({title="legacy prepared value"}),created})
                 if mode == "missing" then
                     h.exec("DELETE FROM kickside_execution_identity_audit WHERE component_id=$1 AND identity_generation=$2",
@@ -571,7 +589,6 @@ return test.run_cases(function()
                 test.eq(evidence.generation,current.identity_generation)
                 test.eq(evidence.inferred.created_at,created)
                 test.eq(evidence.inferred.reason,mode == "equal" and "selection_not_after_admission" or "selection_audit_missing")
-                test.eq(admitted_principal(held,key),replacement)
                 run(env,"legacy")
                 test.eq(h.ledger_row(env.automation_id,"legacy").state,"resolved")
                 local retained=h.query("SELECT execution_identity_json FROM kickside_trigger_item_ledger WHERE owner_id=$1 AND item_key='legacy'",{env.automation_id})
@@ -583,6 +600,7 @@ return test.run_cases(function()
                 local rows=h.log_rows(env.automation_id,"legacy")
                 test.eq(#rows,2)
                 test.eq(json.decode(rows[1].detail_json).actor_id,replacement)
+                deliver_prepared(env,replacement)
             end)
         end
 
@@ -601,7 +619,7 @@ return test.run_cases(function()
             h.exec("UPDATE kickside_trigger_item_ledger SET created_at=$1 WHERE owner_id=$2",{created,env.automation_id})
             local held=stamp(env)
             local key=uuid.v7()
-            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'payload-hash',$3,$4)",
+            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'record:',$3,$4)",
                 {env.automation_id,key,json.encode({title="legacy prepared value"}),created})
             local _,prepare_err=prepare(held,key)
             test.not_nil(prepare_err)
@@ -624,7 +642,7 @@ return test.run_cases(function()
             local retained=h.query("SELECT identity_key FROM kickside_trigger_item_ledger WHERE owner_id=$1",{env.automation_id})
             test.eq(#retained,1)
             local key=retained[1].identity_key
-            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'payload-hash',$3,$4)",
+            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'record:',$3,$4)",
                 {env.automation_id,key,json.encode({title="legacy paired value"}),selected:add(time.SECOND):utc():format(time.RFC3339)})
             local held=stamp(env)
             held.source_port="kickside.automation.round.fixture:records"
@@ -679,20 +697,20 @@ return test.run_cases(function()
         test.it("continues legacy preparation when the identity generation stays unchanged",function()
             local env=h.setup("legacy_prepared_unchanged")
             local held=stamp(env)
-            local key=uuid.v7()
-            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'payload-hash',$3,$4)",
+            local key=legacy_delivery(env)
+            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'record:',$3,$4)",
                 {env.automation_id,key,json.encode({title="legacy prepared value"}),h.PAST})
             local value,value_err=prepare(held,key)
             test.is_nil(value_err,tostring(value_err))
             test.eq(value.title,"legacy prepared value")
-            test.eq(admitted_principal(held,key),env.owner)
+            deliver_prepared(env,env.owner)
         end)
 
         test.it("blocks legacy preparation when identity changes after its creation",function()
             local env=h.setup("legacy_prepared_changed")
             local held=stamp(env)
             local key=uuid.v7()
-            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'payload-hash',$3,$4)",
+            h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at) VALUES ($1,$2,'record:',$3,$4)",
                 {env.automation_id,key,json.encode({title="legacy prepared value"}),h.PAST})
             select_replacement(env)
             held=stamp(env)
