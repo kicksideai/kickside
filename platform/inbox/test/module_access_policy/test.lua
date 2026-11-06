@@ -37,6 +37,7 @@ local function define_tests()
             test.is_nil(declaration.data.policy.conditions)
             local expected = {
                 ["kickside.inbox.api:create_item.endpoint"] = true,
+                ["kickside.inbox.api:file_content.endpoint"] = true,
                 ["kickside.inbox.api:delete_item.endpoint"] = true,
                 ["kickside.inbox.api:list_inbox.endpoint"] = true,
                 ["kickside.inbox.api:list_item_types.endpoint"] = true,
@@ -83,6 +84,7 @@ local function define_tests()
             local bundle = composed_scope("kickside.inbox.security:module_access")
             for _, id in ipairs({
                 "kickside.inbox.api:list_inbox.endpoint",
+                "kickside.inbox.api:file_content.endpoint",
                 "kickside.inbox.api:list_item_types.endpoint",
                 "kickside.inbox.api:create_item.endpoint",
                 "kickside.inbox.api:resolve_item.endpoint",

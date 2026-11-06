@@ -64,6 +64,9 @@ local function handler()
         return
     end
 
+    -- The decision is committed. File-provider reads belong to the list API;
+    -- an unavailable preview must not turn this outcome into a failed action.
+    data.files = nil
     res:set_status(h.STATUS.OK)
     res:write_json({ success = true, item = data })
 end

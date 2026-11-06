@@ -39,12 +39,13 @@ local function handle(args)
         item_type = item_type,
         title = args.title,
         content = args.content,
+        files = args.files,
         priority = priority or "normal",
         metadata = args.metadata,
         trace_context = args.trace_context,
     })
     if err then
-        return nil, errors.new({ message = tostring(err), kind = errors.INTERNAL })
+        return nil, err
     end
     return { success = true, id = data and data.id or nil }
 end

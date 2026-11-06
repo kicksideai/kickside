@@ -67,6 +67,7 @@ entries:
       { "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
+          "files": {"type": "array", "description": "File references resolved by content_provider under the viewer identity.", "items": {"type": "object", "additionalProperties": false, "properties": {"component_id": {"type": "string", "minLength": 1}, "context": {"type": "object"}, "title": {"type": "string"}}, "required": ["component_id"]}},
           "content": { "type": "string", "description": "Item body. Falls back to the destination's content config when absent." },
           "content_type": { "type": "string", "description": "MIME type of the body, copied onto the item metadata. Any value accepted." },
           "item_type": { "type": "string", "description": "Overrides the configured item type." },

@@ -1,3 +1,5 @@
+export { typeIcon, formatSize } from '@widgets/app/fileMetadata'
+import { formatSize } from '@widgets/app/fileMetadata'
 import type { Upload, UploadArtifact } from './uploads.types.ts'
 
 export function normStatus(status: string): string {
@@ -31,18 +33,6 @@ export function uploadLabel(upload: Upload): string {
   return (upload.filename || '').trim() || 'Untitled upload'
 }
 
-export function typeIcon(mime: string): string {
-  const value = mime || ''
-  if (value.startsWith('image/')) return 'tabler:photo'
-  if (value === 'application/pdf') return 'tabler:file-type-pdf'
-  if (value.includes('word') || value.includes('opendocument.text') || value === 'application/rtf') return 'tabler:file-type-doc'
-  if (value.includes('sheet') || value.includes('excel') || value.includes('spreadsheet') || value === 'text/csv') return 'tabler:file-type-xls'
-  if (value.includes('presentation') || value.includes('powerpoint')) return 'tabler:file-type-ppt'
-  if (value === 'application/epub+zip') return 'tabler:book'
-  if (value.startsWith('text/') || value === 'application/json' || value === 'application/xml') return 'tabler:file-text'
-  return 'tabler:file'
-}
-
 // Short, human label instead of the raw mime (e.g. the very long
 // application/vnd.openxmlformats-...wordprocessingml.document).
 export function typeLabel(upload: Upload): string {
@@ -60,13 +50,6 @@ export function typeLabel(upload: Upload): string {
   if (mime.startsWith('text/')) return 'Text'
   const extension = (upload.filename || '').split('.').pop()
   return extension && extension !== upload.filename ? extension.toUpperCase() : (mime || 'File')
-}
-
-export function formatSize(bytes: number): string {
-  if (!bytes) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB']
-  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1)
-  return `${(bytes / Math.pow(1024, index)).toFixed(index ? 1 : 0)} ${units[index]}`
 }
 
 // Present a pipeline error to the user: drop the internal "namespace:entry:line:"

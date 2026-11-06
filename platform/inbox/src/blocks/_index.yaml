@@ -24,6 +24,7 @@ entries:
           additionalProperties: false
           required: [prompt]
           properties:
+            files: {"type": "array", "description": "File references resolved by content_provider under the viewer identity.", "items": {"type": "object", "additionalProperties": false, "properties": {"component_id": {"type": "string", "minLength": 1}, "context": {"type": "object"}, "title": {"type": "string"}}, "required": ["component_id"]}}
             prompt: { type: string, minLength: 1, title: Prompt, format: textarea }
             title_expr:
               type: string
@@ -90,6 +91,7 @@ entries:
     modules: [security, contract, expr]
     imports:
       decision_content: kickside.inbox:decision_content
+      inbox_files: kickside.inbox:inbox_files
       inbox_writer: kickside.inbox.persist:inbox_writer
       inbox_reader: kickside.inbox.persist:inbox_reader
       component: kickside.component:component
@@ -108,6 +110,7 @@ entries:
     modules: [security, contract, expr]
     imports:
       decision_content: kickside.inbox:decision_content
+      inbox_files: kickside.inbox:inbox_files
       inbox_writer: kickside.inbox.persist:inbox_writer
       inbox_reader: kickside.inbox.persist:inbox_reader
       component: kickside.component:component
@@ -123,6 +126,7 @@ entries:
     modules: [security, contract, expr]
     imports:
       decision_content: kickside.inbox:decision_content
+      inbox_files: kickside.inbox:inbox_files
       inbox_writer: kickside.inbox.persist:inbox_writer
       inbox_reader: kickside.inbox.persist:inbox_reader
       component: kickside.component:component
@@ -135,6 +139,7 @@ entries:
     modules: [security, contract, expr]
     imports:
       decision_content: kickside.inbox:decision_content
+      inbox_files: kickside.inbox:inbox_files
       inbox_writer: kickside.inbox.persist:inbox_writer
       inbox_reader: kickside.inbox.persist:inbox_reader
       component: kickside.component:component
