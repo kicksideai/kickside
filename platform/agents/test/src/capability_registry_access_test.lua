@@ -4,7 +4,7 @@ local security = require("security")
 local funcs = require("funcs")
 local composition = require("policy_composition")
 
-local CAPABILITY = "kickside.memory:knowledge_based_memory"
+local CAPABILITY = "kickside.memory:memory"
 local PROBE = "kickside.agents:capability_registry_probe"
 
 local function scope(roots)
@@ -62,7 +62,7 @@ local function define_tests()
             local actor = security.new_actor("capability-member", {})
             local member_scope = scope({"kickside.agents.security:module_access", "kickside.memory.security:module_access"})
             test.eq(member_scope:evaluate(actor, "registry.get", CAPABILITY), "allow")
-            local result, err = funcs.new():with_actor(actor):with_scope(member_scope):call(PROBE, {id = CAPABILITY})
+            local result, err = funcs.new():with_actor(actor):with_scope(member_scope):call(PROBE, {id = CAPABILITY, contexts = {[CAPABILITY] = {memory_id = "probe-memory"}}})
             test.is_nil(err, tostring(err))
             test.is_true(result.ok)
         end)
