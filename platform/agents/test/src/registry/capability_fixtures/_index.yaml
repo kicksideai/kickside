@@ -288,7 +288,7 @@ entries:
     version: '*'
     kind: ns.dependency
     meta:
-      comment: Test-only provider fixture for memory_runtime_test; Agents itself does not depend on a concrete memory provider.
+      comment: Test-only provider fixture for capability_registry_access_test; Agents itself does not depend on a concrete memory provider.
     component: kickside/memory
     parameters:
     - name: kickside.memory:ui_server

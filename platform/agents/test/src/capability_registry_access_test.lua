@@ -4,7 +4,7 @@ local security = require("security")
 local funcs = require("funcs")
 local composition = require("policy_composition")
 
-local CAPABILITY = "kickside.memory:knowledge_based_memory"
+local CAPABILITY = "kickside.memory:memory"
 local PROBE = "kickside.agents:capability_registry_probe"
 
 local function scope(roots)
