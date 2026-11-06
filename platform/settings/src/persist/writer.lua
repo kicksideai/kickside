@@ -69,7 +69,7 @@ end
 function M.stored_revision(): (number?, any?)
     local db, err = sql.get(settings_types.db_id())
     if err then return nil, err end
-    if not db then return nil, "settings db unavailable" end
+    if not db then return nil, nil, "settings db unavailable" end
     local dbh = db :: sql.DB
     local revision, rerr = read_revision(dbh)
     dbh:release()
@@ -84,7 +84,7 @@ end
 local function load_overrides(): (settings_types.OverrideMap?, number?, any?)
     local db, err = sql.get(settings_types.db_id())
     if err then return nil, nil, err end
-    if not db then return nil, "settings db unavailable" end
+    if not db then return nil, nil, "settings db unavailable" end
     local dbh = db :: sql.DB
     local revision, rerr = read_revision(dbh)
     if rerr then
