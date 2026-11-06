@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local cache = require("settings_cache")
 local writer = require("settings_writer")
 
