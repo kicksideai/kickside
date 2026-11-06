@@ -4,6 +4,9 @@ local registry = require("registry")
 local config = require("config")
 local runtime_policy = require("runtime_policy")
 local admin = require("policy_settings_fixture")
+local security = require("security")
+local funcs = require("funcs")
+local sql = require("sql")
 
 local function update_entry(entry: any, meta: any): ()
     local changes = assert(registry.snapshot()):changes()
@@ -27,7 +30,43 @@ end
 return { run = test.run_cases(function()
     test.describe("Jobs policy through Settings", function()
         test.after_each(function()
-            admin.reset({"worker.count_postgres", "lease.timeout", "lease.heartbeat", "proc.max_execution"})
+            admin.reset({"worker.count_postgres", "lease.timeout", "lease.heartbeat", "proc.max_execution", "retry.max_attempts"})
+        end)
+
+        local function restricted(): any
+            local actor = security.new_actor("jobs-policy-reader", {})
+            local scope = security.new_scope({assert(security.policy("app:policy_settings_scope")),
+                assert(security.policy("app:policy_settings_binding"))})
+            for _, resource in ipairs({"get_namespace", "set", "kickside.settings:settings"}) do
+                test.eq(scope:evaluate(actor, "contract.call", resource), "undefined")
+            end
+            test.eq(scope:evaluate(actor, "registry.get", "kickside.settings:settings"), "undefined")
+            return funcs.new():with_actor(actor):with_scope(scope)
+        end
+
+        test.it("reads committed overrides without caller method authority", function()
+            test.is_nil(admin.set({["worker.count_postgres"] = 37}))
+            local values, err = restricted():call("kickside.core.jobs.policy:settings_overrides")
+            test.is_nil(err, tostring(err))
+            test.eq(values["worker.count_postgres"], 37)
+        end)
+
+        test.it("resolves committed policy without caller method authority", function()
+            test.is_nil(admin.set({["worker.count_postgres"] = 37}))
+            local policy, err = restricted():call("app:policy_settings_resolve")
+            test.is_nil(err, tostring(err))
+            test.eq(policy.worker_count_postgres, 37)
+        end)
+
+        test.it("enqueues with committed policy without caller method authority", function()
+            test.is_nil(admin.set({["retry.max_attempts"] = 7}))
+            local queued, err = restricted():call("app:policy_settings_enqueue")
+            test.is_nil(err, tostring(err))
+            local db = assert(sql.get("app:db"))
+            local rows, read_err = db:query("SELECT max_attempts FROM kickside_job WHERE id=$1", {queued.id})
+            db:release()
+            test.is_nil(read_err)
+            test.eq(tonumber(rows[1].max_attempts), 7)
         end)
 
         test.it("keeps the shipped defaults", function()

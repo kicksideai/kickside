@@ -4081,7 +4081,7 @@ entries:
     meta: {type: test, suite: jobs_policy_settings, comment: Resolves Settings overrides over host and shipped policy and refuses invalid values.}
     source: file://policy_settings_test.lua
     method: run
-    modules: [registry]
+    modules: [registry, security, funcs, sql]
     imports:
       test: wippy.test:test
       config: kickside.core.jobs:config
@@ -4132,3 +4132,33 @@ entries:
     description: Harness keyed per-key capacity limit.
     scope: global
     editable: true
+
+  - name: policy_settings_binding
+    kind: security.policy
+    policy:
+      resources: kickside.settings:settings_binding
+      actions: contract.open
+      effect: allow
+
+  - name: policy_settings_scope
+    kind: security.policy
+    policy:
+      resources: [app:policy_settings_resolve, app:policy_settings_enqueue, app:generic_job_target, 'kickside.core.jobs:*', 'kickside.core.jobs.policy:*', app:db]
+      actions: [funcs.call, registry.get, db.get]
+      effect: allow
+
+  - name: policy_settings_resolve
+    kind: function.lua
+    source: file://policy_settings_probe.lua
+    method: resolve
+    imports:
+      runtime_policy: kickside.core.jobs.policy:runtime
+      jobs: kickside.core.jobs:jobs
+
+  - name: policy_settings_enqueue
+    kind: function.lua
+    source: file://policy_settings_probe.lua
+    method: enqueue
+    imports:
+      runtime_policy: kickside.core.jobs.policy:runtime
+      jobs: kickside.core.jobs:jobs
