@@ -25,15 +25,11 @@ end
 function M.resolve(groups: any): (any?, error?)
     local input_err = list_error(groups, "groups")
     if input_err then return nil, input_err end
-    local snap, snapshot_err = registry.snapshot()
-    if snapshot_err then return nil, snapshot_err end
-    local declared, declaration_err = composition.group_compositions(snap)
+    local declarations, declaration_err = composition.composition_index(registry.find)
     if declaration_err then return nil, declaration_err end
-    local native_sources, native_err = composition.native_runtime_group_policies(snap)
-    if native_err then return nil, native_err end
     local native, policies, authored, source_policies, slugs, visited, active, live = {}, {}, {}, {}, {}, {}, {}, {}
     local function read(id)
-        local entry, err = snap:get(id)
+        local entry, err = registry.get(id)
         if err and not errors.is(err, errors.NOT_FOUND) then return nil, err end
         return entry, nil
     end
@@ -51,16 +47,20 @@ function M.resolve(groups: any): (any?, error?)
         end
         local entry, read_err = read(group)
         if read_err then return read_err end
-        local composed = declared.policies[group] ~= nil
+        local native_sources, native_err = composition.native_runtime_policies(group)
+        if native_err then return native_err end
+        local composed = declarations[group] ~= nil
         local authored_scope = entry and entry.kind == consts.SCOPE_KIND
             and (entry.meta or {}).managed_by ~= consts.MANAGED_BY
-        if composed or native_sources[group] then live[group] = true end
+        if composed or native_sources then live[group] = true end
         if composed or projected then
-            for policy in pairs(native_sources[group] or {}) do source_policies[policy] = true end
+            for policy in pairs(native_sources or {}) do source_policies[policy] = true end
         end
         if composed then
-            for _, policy in ipairs(declared.policies[group]) do policies[policy] = true end
-            for _, source in ipairs(declared.groups[group] or {}) do
+            local sources, composed_policies, expand_err = composition.expand_composition(declarations[group], registry.find)
+            if expand_err then return expand_err end
+            for _, policy in ipairs(composed_policies) do policies[policy] = true end
+            for _, source in ipairs(sources) do
                 local err = visit(source, depth + 1)
                 if err then return err end
             end
@@ -79,7 +79,7 @@ function M.resolve(groups: any): (any?, error?)
                     local err = visit(source, depth + 1)
                     if err then return err end
                 end
-            elseif not composed and not projected and native_sources[group] then
+            elseif not composed and not projected and native_sources then
                 native[group] = true
             end
         elseif not projected and not composed then
@@ -133,10 +133,9 @@ function M.resolve(groups: any): (any?, error?)
         table.sort(out)
         return out
     end
-    local function snapshot_get(id: string): (any?, any?) return snap:get(id) end
-    local expanded, expand_err = composition.expand_available(ids(policies), snapshot_get)
+    local expanded, expand_err = composition.expand_available(ids(policies))
     if expand_err then return nil, expand_err end
-    local selected, selection_err = composition.expand(ids(authored), snapshot_get)
+    local selected, selection_err = composition.expand(ids(authored))
     if selection_err then return nil, selection_err end
     for _, id in ipairs(expanded) do authored[id] = true end
     for _, id in ipairs(selected) do authored[id] = true end

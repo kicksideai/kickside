@@ -118,83 +118,116 @@ function M.authorize_mutation(ids: any, gate: string, retained: boolean?): (any?
     end, retained)
 end
 
-local function native_group_policies_for(snap, kinds)
+-- Plain rule policies are the only source kind whose bodies flow into
+-- policy_groups and scope_projection. Security's delegation declarations are
+-- source grants too, so only derived entries are excluded.
+local function derived(policy: any): boolean
+    local meta = policy.meta or {}
+    return meta.managed_by == consts.MANAGED_BY
+        and (meta.scope_metadata == true or meta.scope_projection_policy ~= nil)
+end
+
+function M.native_group_policies(snap)
     local effective = {}
-    for _, kind in ipairs(kinds) do
-        local native, read_err = snap:find({[".kind"] = kind})
-        if read_err then return nil, read_err end
-        for _, policy in ipairs(native) do
-            local meta = policy.meta or {}
-            -- Security's delegation declarations are source grants too. Exclude
-            -- only derived entries, using the same ownership markers as policy_groups.
-            local projected = meta.managed_by == consts.MANAGED_BY
-                and (meta.scope_metadata == true or meta.scope_projection_policy ~= nil)
-            if not projected then
-                local namespace = registry.parse_id(tostring(policy.id)).ns
-                for _, group in ipairs((policy.data or {}).groups or {}) do
-                    local id = registry.parse_id(group)
-                    group = (id.ns ~= "" and id.ns or namespace) .. ":" .. id.name
-                    effective[group] = effective[group] or {}
-                    effective[group][tostring(policy.id)] = true
-                end
+    local native, read_err = snap:find({[".kind"] = consts.POLICY_KIND})
+    if read_err then return nil, read_err end
+    for _, policy in ipairs(native) do
+        if not derived(policy) then
+            local namespace = registry.parse_id(tostring(policy.id)).ns
+            for _, group in ipairs((policy.data or {}).groups or {}) do
+                local id = registry.parse_id(group)
+                group = (id.ns ~= "" and id.ns or namespace) .. ":" .. id.name
+                effective[group] = effective[group] or {}
+                effective[group][tostring(policy.id)] = true
             end
         end
     end
     return effective, nil
 end
 
--- Plain rule policies are the only source kind whose bodies flow into
--- policy_groups and scope_projection.
-function M.native_group_policies(snap)
-    return native_group_policies_for(snap, {consts.POLICY_KIND})
+-- native_runtime_policies(group) -> the source policy IDs of both native kinds
+-- naming the group in the Runtime's own group index, or nil for a group no
+-- policy names. Expression bodies never enter the rule-only projection paths.
+function M.native_runtime_policies(group: string): (any?, error?)
+    local scope, scope_err = security.named_scope(group)
+    if scope_err then
+        if errors.is(scope_err, errors.NOT_FOUND) then return nil, nil end
+        return nil, scope_err
+    end
+    local effective
+    for _, policy in ipairs(scope:policies()) do
+        local id = policy:id()
+        local entry, entry_err = registry.get(id)
+        if entry_err and not errors.is(entry_err, errors.NOT_FOUND) then return nil, entry_err end
+        if entry and not derived(entry) then
+            effective = effective or {}
+            effective[id] = true
+        end
+    end
+    return effective, nil
 end
 
--- Runtime validation accepts both native kinds, but returns IDs only. Expression
--- bodies never enter the rule-only projection and coverage paths.
-function M.native_runtime_group_policies(snap)
-    return native_group_policies_for(snap, {consts.POLICY_KIND, consts.EXPRESSION_POLICY_KIND})
-end
-
-function M.group_compositions(snap)
-    local sources, policies_by_group = {}, {}
-    local declarations, declarations_err = snap:find({
+-- composition_index(find) -> group -> the declarations composing it, unexpanded.
+function M.composition_index(find: (any) -> (any?, any?)): (any?, error?)
+    local index = {}
+    local declarations, declarations_err = find({
         [".kind"] = "registry.entry", ["meta.type"] = "kickside.security.group_composition",
     })
     if declarations_err then return nil, declarations_err end
     for _, declaration in ipairs(declarations or {}) do
-        local data = declaration.data
-        local targets, target_err = M.group_ids(data, tostring(declaration.id))
+        local targets, target_err = M.group_ids(declaration.data, tostring(declaration.id))
         if target_err then return nil, target_err end
+        for _, group in ipairs(targets) do
+            index[group] = index[group] or {}
+            index[group][#index[group] + 1] = declaration
+        end
+    end
+    return index, nil
+end
+
+-- expand_composition(declarations, find, get?) -> the source groups and policies
+-- one group's declarations compose; get defaults to the live registry.
+function M.expand_composition(declarations: any, find: (any) -> (any?, any?), get: ((string) -> (any?, any?))?): (any?, any?, error?)
+    local sources, included, policies = {}, {}, {}
+    for _, declaration in ipairs(declarations) do
+        local data = declaration.data
         local selected = {}
         for _, id in ipairs(data.policies or {}) do selected[#selected + 1] = id end
         if data.select ~= nil then
             if type(data.select) ~= "table" then
-                return nil, (errors.new({kind = errors.INVALID, retryable = false, message = "group composition select must be a registry filter: " .. tostring(declaration.id)}) :: error)
+                return nil, nil, (errors.new({kind = errors.INVALID, retryable = false, message = "group composition select must be a registry filter: " .. tostring(declaration.id)}) :: error)
             end
             local filter = {}
             for key, value in pairs(data.select) do filter[key] = value end
             filter[".kind"] = consts.POLICY_KIND
-            local matches, matches_err = snap:find(filter)
-            if matches_err then return nil, matches_err end
+            local matches, matches_err = find(filter)
+            if matches_err then return nil, nil, matches_err end
             for _, policy in ipairs(matches or {}) do selected[#selected + 1] = tostring(policy.id) end
         end
-        local policies, policy_err = M.expand_available(selected, function(id: string): (any?, any?) return snap:get(id) end)
-        if policy_err then return nil, policy_err end
-        for _, group in ipairs(targets) do
-            sources[group] = sources[group] or {}
-            local included = {}
-            for _, source in ipairs(sources[group]) do included[source] = true end
-            for _, source in ipairs(data.groups or {}) do
-                if not included[source] then
-                    sources[group][#sources[group] + 1] = source
-                    included[source] = true
-                end
+        local expanded, policy_err = M.expand_available(selected, get)
+        if policy_err then return nil, nil, policy_err end
+        for _, id in ipairs(expanded) do policies[#policies + 1] = id end
+        for _, source in ipairs(data.groups or {}) do
+            if not included[source] then
+                sources[#sources + 1] = source
+                included[source] = true
             end
-            policies_by_group[group] = policies_by_group[group] or {}
-            for _, id in ipairs(policies) do policies_by_group[group][#policies_by_group[group] + 1] = id end
         end
     end
+    return sources, policies, nil
+end
 
+function M.group_compositions(snap)
+    local function find(filter: any): (any?, any?) return snap:find(filter) end
+    local function get(id: string): (any?, any?) return snap:get(id) end
+    local index, index_err = M.composition_index(find)
+    if index_err then return nil, index_err end
+    local sources, policies_by_group = {}, {}
+    for group, declarations in pairs(index) do
+        local groups, policies, expand_err = M.expand_composition(declarations, find, get)
+        if expand_err then return nil, expand_err end
+        sources[group], policies_by_group[group] = groups, policies
+    end
     return {groups = sources, policies = policies_by_group}, nil
 end
 
