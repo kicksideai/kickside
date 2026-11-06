@@ -37,3 +37,38 @@ for (const unavailable of [false, true]) it(`retains accepted deletion with refr
   expect(wrapper.get('.cp-value').text()).not.toBe('Selected webhook')
   wrapper.unmount()
 })
+
+async function openWithSelected(listed: () => Record<string, unknown>[]) {
+  props.value.value = '{"thread_id":"selected"}'
+  vi.mocked(api.get).mockImplementation(async () => ({data: {success: true, items: listed()}}) as never)
+  const wrapper = mount(ComponentPicker, {global: {stubs: {AnchoredPanel: {props: ['open'], template: '<div v-if="open"><slot /></div>'}}}})
+  await flushPromises()
+  await wrapper.get('.cp').trigger('click')
+  await flushPromises()
+  return wrapper
+}
+
+it('keeps the selection when a reload omits a row that is not being deleted', async () => {
+  const selected = {id: 'selected', label: 'Selected webhook'}
+  const other = {id: 'other', label: 'Other webhook'}
+  let listed = [selected, other]
+  vi.mocked(api.delete).mockImplementation(async () => {listed = []; return {data: {success: true, deleted: true}} as never})
+  const wrapper = await openWithSelected(() => listed)
+  await wrapper.findAll('.cp-row')[1].get('[data-test="cp-del"]').trigger('click')
+  await wrapper.findAll('.cp-row')[1].get('[data-test="cp-del-confirm"]').trigger('click')
+  await flushPromises()
+  expect(wrapper.get('.cp-value').text()).toBe('Selected webhook')
+  expect(wrapper.get('.cp-value').classes()).not.toContain('cp-ph')
+  wrapper.unmount()
+})
+
+it('clears the selection when a reload omits the selected row after its deletion is accepted', async () => {
+  let listed: Record<string, unknown>[] = [{id: 'selected', label: 'Selected webhook'}]
+  vi.mocked(api.delete).mockImplementation(async () => {listed = []; return {data: {success: true, deleted: true}} as never})
+  const wrapper = await openWithSelected(() => listed)
+  await wrapper.get('[data-test="cp-del"]').trigger('click')
+  await wrapper.get('[data-test="cp-del-confirm"]').trigger('click')
+  await flushPromises()
+  expect(wrapper.get('.cp-value').classes()).toContain('cp-ph')
+  wrapper.unmount()
+})

@@ -399,7 +399,7 @@ function toggleOpen() {
   open.value = !open.value
   if (open.value && !loaded.value) load()
 }
-const {acceptDeletion} = useComponentDeletion(items, row => row.id, id => {
+const {acceptDeletion} = useComponentDeletion(items, row => row.id, undefined, id => {
   if (id === selectedId.value) selectedId.value = ''
 })
 </script>

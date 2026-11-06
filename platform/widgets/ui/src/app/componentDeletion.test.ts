@@ -241,3 +241,17 @@ it('takes the server retry handle and progress together and retains only matchin
   expect(rows.value[0].deletion_job_id).toBe('attempt-b')
   expect(rows.value[0].deletion_job).toBeUndefined()
 })
+
+it('finishes a deletion only for a marked row that leaves the list or a deletion event', async () => {
+  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'plain'}, {id: 'marked', deleting_at: 'marked'}, {id: 'event'}])
+  const finished = vi.fn()
+  mounted.push(mount(defineComponent({setup() {useComponentDeletion(rows, row => row.id, undefined, finished); return () => null}})))
+  await flushPromises()
+  rows.value = [rows.value[2]]
+  await flushPromises()
+  expect(finished.mock.calls).toEqual([['marked']])
+  const receive = vi.mocked(on).mock.calls.at(-1)?.[1] as (message: unknown) => void
+  receive({event: 'component.deleted', component_id: 'event'})
+  await flushPromises()
+  expect(finished.mock.calls).toEqual([['marked'], ['event']])
+})

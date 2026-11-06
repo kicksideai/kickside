@@ -10,8 +10,10 @@ export interface ComponentDeletionState {
   deletion_job?: {status: string; attempts: number; last_error?: string | null} | null
 }
 
+// onDeleted reports every row that leaves the list. onDeletionFinished reports only a
+// known deletion: a marked row that leaves the list, or a component.deleted event.
 export function useComponentDeletion<T extends ComponentDeletionState>(
-  rows: Ref<T[]>, id: (row: T) => string, onDeleted?: (id: string) => void,
+  rows: Ref<T[]>, id: (row: T) => string, onDeleted?: (id: string) => void, onDeletionFinished?: (id: string) => void,
 ) {
   let active = true
   const deleted = new Set<string>()
@@ -46,7 +48,11 @@ export function useComponentDeletion<T extends ComponentDeletionState>(
   }
   const stop = watch(() => rows.value, (list, previous = []) => {
     const remaining = list.filter(row => !deleted.has(id(row)))
-    for (const row of previous) if (!deleted.has(id(row)) && !remaining.some(current => id(current) === id(row))) onDeleted?.(id(row))
+    for (const row of previous) {
+      if (deleted.has(id(row)) || remaining.some(current => id(current) === id(row))) continue
+      onDeleted?.(id(row))
+      if (row.deleting_at) onDeletionFinished?.(id(row))
+    }
     if (remaining.length !== list.length) { rows.value = remaining; return }
     for (const row of list) {
       const state = accepted.get(id(row))
@@ -64,7 +70,10 @@ export function useComponentDeletion<T extends ComponentDeletionState>(
     if (!event) return
     const row = rows.value.find(row => id(row) === event.component_id)
     if (event.event === 'component.deleted') {
-      if (row && !deleted.has(event.component_id)) onDeleted?.(event.component_id)
+      if (row && !deleted.has(event.component_id)) {
+        onDeleted?.(event.component_id)
+        onDeletionFinished?.(event.component_id)
+      }
       deleted.add(event.component_id)
       accepted.delete(event.component_id)
       rows.value = rows.value.filter(row => id(row) !== event.component_id)
