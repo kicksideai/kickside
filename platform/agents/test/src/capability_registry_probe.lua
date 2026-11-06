@@ -21,7 +21,7 @@ return {run = function(args)
         return {result = result, writes = writes, kind = err and err:kind(),
             message = err and tostring(err)}, nil
     end
-    local validation, err = capability_context.validate_trait_contexts({args.id}, {}, registry.get)
+    local validation, err = capability_context.validate_trait_contexts({args.id}, args.contexts or {}, registry.get)
     if err then return nil, err end
     return validation, nil
 end}
