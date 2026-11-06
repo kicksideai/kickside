@@ -2,6 +2,7 @@
 local M: { [string]: any } = {}
 function M.open(_ref: any): (any?, any?)
     M.calls = M.calls + 1
+    if M.open_err then return nil, M.open_err end
     return { get_info = function(_self: any, args: any): (any?, any?)
         M.info_calls = M.info_calls + 1
         M.info_format = args.format
@@ -9,6 +10,7 @@ function M.open(_ref: any): (any?, any?)
         return { size = M.size }, nil
     end, get_content = function(_self: any, _args: any): (any?, any?)
         M.content_calls = M.content_calls + 1
+        if M.content_err then return nil, M.content_err end
         if M.denied then return nil, errors.new({ kind = errors.PERMISSION_DENIED, message = "private filename" }) end
         return { content = "file bytes", content_type = "text/plain" }, nil
     end }, nil

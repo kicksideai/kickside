@@ -103,7 +103,7 @@ function M.list(refs: any): (any?, any?)
 	for _, ref in ipairs(refs) do
 		local info, err = M.info(ref)
 		if err then
-			if not M.locked(err) then
+			if not M.locked(err) and not errors.is(err, errors.INVALID) then
 				return nil, err
 			end
 			out[#out + 1] = { locked = true }

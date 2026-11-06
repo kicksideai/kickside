@@ -14,6 +14,7 @@ return { run = test.run_cases(function()
             provider.denied, provider.calls = false, 0
             provider.info_calls, provider.content_calls = 0, 0
             provider.size, provider.info_err, provider.info_format = nil, nil, nil
+            provider.open_err, provider.content_err = nil, nil
         end)
         test.after_each(function()
             files.open = original_open
@@ -58,6 +59,18 @@ return { run = test.run_cases(function()
             test.eq(context.output.error, "file access denied")
             test.eq(provider.info_calls, 1)
             test.eq(provider.content_calls, 0)
+        end)
+        test.it("returns a typed client error without bytes for invalid references", function()
+            reader.item = { files = { { component_id = "example:content", context = {} } } }
+            for _, stage in ipairs({ "open_err", "info_err", "content_err" }) do
+                provider[stage] = errors.new({ kind = errors.INVALID, message = "file_id required" })
+                handler.handler()
+                provider[stage] = nil
+                test.eq(context.status, 400)
+                test.eq(context.output.kind, errors.INVALID)
+                test.eq(context.output.error, "file_id required")
+                test.is_nil(context.body)
+            end
         end)
         test.it("checks access again after a preview and never returns bytes after revocation", function()
             reader.item = { files = { { component_id = "example:content", context = {} } } }

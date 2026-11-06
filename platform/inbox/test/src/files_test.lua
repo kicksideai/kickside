@@ -76,16 +76,47 @@ local function run()
 			test.is_nil(rows[2].title)
 			test.is_nil(rows[2].context)
 		end)
+        test.it("locks invalid references without hiding healthy attachments", function()
+            local original = files.open
+            for _, stage in ipairs({ "open", "info" }) do
+                files.open = function(ref: any): (any?, any?)
+                    local failure = errors.new({ kind = errors.INVALID, message = "file_id required" })
+                    if stage == "open" and ref.context.file_id == nil then return nil, failure end
+                    return {
+                        get_info = function(): (any?, any?)
+                            if ref.context.file_id == nil then return nil, failure end
+                            return { filename = "report.txt", content_type = "text/plain", size = 12 }, nil
+                        end,
+                    }, nil
+                end
+                local rows, err = files.list({
+                    { component_id = "example:content", context = { file_id = "first" } },
+                    { component_id = "example:content", context = {}, title = "private title" },
+                    { component_id = "example:content", context = { file_id = "last" } },
+                })
+                files.open = original
+                test.is_nil(err)
+                test.eq(#rows, 3)
+                test.eq(rows[1].filename, "report.txt")
+                test.is_true(rows[2].locked)
+                test.eq(next(rows[2]), "locked")
+                test.eq(rows[3].filename, "report.txt")
+            end
+        end)
 		test.it("propagates provider failures instead of disguising them as denied access", function()
-			local failure = errors.new({ kind = errors.UNAVAILABLE, message = "provider unavailable" })
-			local original = files.open
-			files.open = function(): (any?, any?)
-				return nil, failure
-			end
-			local rows, err = files.list({ { component_id = "example:provider" } })
-			files.open = original
-			test.is_nil(rows)
-			test.is_true(err == failure)
+            local failure = errors.new({ kind = errors.UNAVAILABLE, message = "provider unavailable", retryable = true })
+            local original = files.open
+            for _, stage in ipairs({ "open", "info" }) do
+                files.open = function(): (any?, any?)
+                    if stage == "open" then return nil, failure end
+                    return { get_info = function(): (any?, any?) return nil, failure end }, nil
+                end
+                local rows, err = files.list({ { component_id = "example:provider" } })
+                files.open = original
+                test.is_nil(rows)
+                test.is_true(err == failure)
+                test.is_true(err:retryable())
+            end
 		end)
 	end)
 end
