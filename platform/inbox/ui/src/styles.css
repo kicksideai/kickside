@@ -76,7 +76,7 @@
 .kx-item-title.pending { font-weight: 700; color: var(--p-text-color); }
 .kx-time { flex: none; font-size: 10.5px; color: var(--p-text-muted-color); }
 .kx-preview {
-  margin: 3px 0 0; font-size: 12px; color: var(--p-text-muted-color);
+  display: block; height: 20px; margin: 3px 0 0; font-size: 12px; color: var(--p-text-muted-color);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* Sizing is .kx-tag-sm. What is left is where the marker sits in the row, and
@@ -103,7 +103,6 @@
 /* Sizing is .kx-tag-sm; the priority and status strings arrive lowercase. */
 .kx-pill { text-transform: capitalize; }
 .kx-detail-body { flex: 1; min-height: 0; overflow-y: auto; }
-.kx-wc-host { min-height: 180px; }
 .kx-native-body { display: flex; flex-direction: column; gap: 16px; }
 .kx-content { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--p-text-color); }
 /* Shared markdown renderer element: it self-styles its shadow tree; the host
@@ -153,4 +152,23 @@
   .kx-detail-foot { flex-wrap: wrap; }
   .kx-detail-action { flex: 1; min-width: 0; }
   .kx-resolved { flex-basis: 100%; }
+}
+
+.kx-files { margin-top: 16px; }
+.kx-files h3 { margin: 0 0 8px; font-size: 12px; color: var(--p-text-muted-color); }
+.kx-file-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--p-content-border-color); border-radius: 8px; }
+.kx-file-list > li + li { border-top: 1px solid var(--p-content-border-color); }
+.kx-file-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; }
+.kx-file-row > svg { flex: none; font-size: 20px; color: var(--p-text-muted-color); }
+.kx-file-row .p-button { flex: none; white-space: nowrap; word-spacing: .125em; }
+.kx-file-label { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 3px; }
+.kx-file-name { overflow-wrap: anywhere; color: var(--p-text-color); }
+.kx-file-size, .kx-file-locked { color: var(--p-text-muted-color); }
+.kx-file-row a { flex: none; color: var(--p-text-color); text-decoration: underline; text-underline-offset: 2px; }
+.kx-file-preview { padding: 12px; border-top: 1px solid var(--p-content-border-color); }
+.kx-file-preview wc-resource-view { display: block; min-height: 180px; }
+.kx-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 420px) {
+  .kx-file-row { flex-wrap: wrap; }
+  .kx-file-label { flex-basis: calc(100% - 40px); }
 }

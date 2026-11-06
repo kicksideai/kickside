@@ -1,4 +1,5 @@
 local decision_content = require("decision_content")
+local files = require("inbox_files")
 local expr = require("expr")
 local security = require("security")
 local contract = require("contract")
@@ -113,12 +114,15 @@ local function decision_params(args: Map): (Map?, string?)
         end
         title = value
     end
+    local file_refs, files_err = files.normalize(emit.files)
+    if files_err then return nil, tostring(files_err) end
     local item_id = "workflow-decision:" .. dataflow_id .. ":" .. signal_id
     return {
         id = item_id,
         item_type = ITEM_TYPE,
         title = title,
         content = content,
+        files = file_refs,
         priority = str(emit.priority) ~= "" and str(emit.priority) or "normal",
         metadata = metadata,
         source_id = item_id,
@@ -199,7 +203,7 @@ function M.arm_decision(args: any): (any?, string?)
         type = "kickside.inbox.events:item.created",
         body = {
             id = params.id, item_type = params.item_type, title = params.title,
-            content = params.content, metadata = metadata, source_id = params.source_id,
+            content = params.content, files = params.files, metadata = metadata, source_id = params.source_id,
             priority = params.priority, actor_id = assignee, created_at = os.time(),
         },
         trace_context = params.trace_context,

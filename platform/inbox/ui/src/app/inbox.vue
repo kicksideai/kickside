@@ -300,7 +300,7 @@ onUnmounted(() => {
               </span>
               <span class="kx-time" :title="absoluteTime(item.created_at)">{{ relativeTime(item.created_at) }}</span>
             </div>
-            <p v-if="item.content" class="kx-preview">{{ item.content }}</p>
+            <wc-render-markdown v-if="item.content" class="kx-preview" :source="item.content" inert />
             <Tag
               v-if="item.status !== 'pending'"
               severity="secondary"

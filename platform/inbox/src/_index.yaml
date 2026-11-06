@@ -2,6 +2,14 @@ version: "1.0"
 namespace: kickside.inbox
 
 entries:
+  - name: inbox_files
+    kind: library.lua
+    meta: { private: true, comment: Generic content provider references resolved under the viewer identity. }
+    source: file://files.lua
+    modules: [contract, security]
+    imports:
+      object_fields: kickside.inbox.persist:object_fields
+
   - name: definition
     kind: ns.definition
     readme: file://README.md
@@ -29,6 +37,8 @@ entries:
       comment: Authenticated HTTP router the inbox endpoints attach to. Must enforce auth + endpoint_firewall.
       description: Authenticated HTTP router the inbox endpoints attach to. Must enforce auth + endpoint_firewall.
     targets:
+      - entry: kickside.inbox.api:file_content.endpoint
+        path: .meta.router
       - entry: kickside.inbox.api:list_inbox.endpoint
         path: .meta.router
       - entry: kickside.inbox.api:list_item_types.endpoint
