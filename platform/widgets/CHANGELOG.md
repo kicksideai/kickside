@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.58](https://github.com/kicksideai/kickside/compare/widgets-v0.1.57...widgets-v0.1.58) (2026-11-06)
+
+
+### Bug Fixes
+
+* **widgets:** keep a picker selection when a reload omits its row ([#320](https://github.com/kicksideai/kickside/issues/320)) ([62e865c](https://github.com/kicksideai/kickside/commit/62e865ccb26f3a42c1b4aadc237b34101442e206))
+
 ## [0.1.57](https://github.com/kicksideai/kickside/compare/widgets-v0.1.56...widgets-v0.1.57) (2026-11-06)
 
 
