@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.72](https://github.com/kicksideai/kickside/compare/jobs-v0.1.71...jobs-v0.1.72) (2026-11-06)
+
+
+### Bug Fixes
+
+* **component:** authorize deletion dependencies and continue cleanup across error kinds ([f48c782](https://github.com/kicksideai/kickside/commit/f48c78267a60800793a40c46f8416c6ae8bb27f5))
+* **jobs:** authorize Settings binding opens in policy readers ([7418606](https://github.com/kicksideai/kickside/commit/7418606521668f59cd3bb0a67b368c7f64ac0212))
+* **jobs:** authorize Settings reads by method name ([a002d20](https://github.com/kicksideai/kickside/commit/a002d2045f7f28eec77c5c0f4c7b528cc0da87f5))
+
 ## [0.1.71](https://github.com/kicksideai/kickside/compare/jobs-v0.1.70...jobs-v0.1.71) (2026-11-05)
 
 
