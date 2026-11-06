@@ -2,23 +2,43 @@ local test = require("test")
 local json = require("json")
 local errors = require("errors")
 local h = require("round_harness")
+local execution_identity = require("execution_identity")
 
 type Map = { [string]: any }
 
+local function sent(id: string): integer
+    return #h.query("SELECT detail_json FROM round_fixture_log WHERE drive_key='sink' AND detail_json LIKE $1",{"%" .. id .. "%"})
+end
+
+local function run(env: Map, drive_key: string): ()
+    h.set_drive(env.automation_id,drive_key,"next_run_at=$1",{h.PAST})
+    local _,err=env.run(env.automation_id,drive_key,execution_identity.run_as)
+    test.is_nil(err,tostring(err))
+end
+
+local function resolves(principal_id: string): integer
+    return #h.query("SELECT principal_id FROM round_resolver_call WHERE principal_id=$1",{principal_id})
+end
+
 return test.run_cases(function()
-    test.describe("live authority at effect boundaries", function()
+    test.describe("authority at round start", function()
         for _, error_kind in ipairs({"subject", "access", "scope"}) do
-            test.it("parks after the first effect when " .. error_kind .. " authority changes", function()
+            test.it("finishes the page and parks the next round when " .. error_kind .. " authority changes", function()
                 local env = h.setup("authority_boundary")
                 local id = env.automation_id
                 h.new_drive({automation_id=id, drive_key="effects", source_kind="collection",
                     applied={sink_port="kickside.automation.round.fixture:store"},
+                    policy={round={page_size=2}},
                     action={source_ref="kickside.automation.round.fixture:records",
-                        config={items={{key="first",directive="revoke_authority",principal_id=env.owner,error_kind=error_kind}, {key="second"}}},
+                        config={items={{key="first",directive="revoke_authority",principal_id=env.owner,error_kind=error_kind},
+                            {key="retried",directive="timeout"},{key="third"}}},
                         schedule={type="interval",expression="30m"}}})
-                h.set_drive(id,"effects","next_run_at=$1",{h.PAST})
-                local _, err = env.run(id,"effects")
-                test.is_nil(err,tostring(err))
+                run(env,"effects")
+                test.eq(h.read_drive(id,"effects").phase,"active")
+                test.eq(sent(id),2)
+                test.eq(h.ledger_row(id,"retried").state,"retrying")
+                h.exec("UPDATE kickside_trigger_item_ledger SET next_attempt_at=$1 WHERE owner_id=$2 AND item_key='retried'",{h.PAST,id})
+                run(env,"effects")
                 local d = h.read_drive(id,"effects")
                 test.eq(d.phase,error_kind == "subject" and "blocked_identity" or "blocked_access")
                 local failure = json.decode(d.last_error_json)
@@ -27,9 +47,9 @@ return test.run_cases(function()
                 local receipts = h.query("SELECT item_key FROM kickside_automation_receipt WHERE owner_id=$1",{id})
                 test.eq(#receipts,1)
                 test.eq(receipts[1].item_key,"first")
-                local sent = h.query("SELECT detail_json FROM round_fixture_log WHERE drive_key='sink' AND detail_json LIKE $1",{"%" .. id .. "%"})
-                test.eq(#sent,1)
-                test.eq(h.ledger_row(id,"second").state,"parked")
+                test.eq(sent(id),2)
+                test.eq(h.ledger_row(id,"retried").state,"parked")
+                test.eq(#h.query("SELECT item_key FROM kickside_automation_receipt WHERE owner_id=$1 AND item_key='third'",{id}),0)
                 test.not_nil(env.last_completion().options.record)
                 h.exec("DELETE FROM round_authority_revocation WHERE principal_id=$1",{env.owner})
                 local resumed,resume_err=env.caller:call("kickside.automation.agent:automations_manage",{action="resume",id=id})
@@ -40,14 +60,12 @@ return test.run_cases(function()
                 test.is_true(resumed_drive.enabled)
                 test.eq(resumed_drive.cursor,d.cursor)
                 test.eq(resumed_drive.event_seq,d.event_seq)
-                local _,retry_err=env.run(id,"effects")
-                test.is_nil(retry_err,tostring(retry_err))
+                run(env,"effects")
                 test.eq(#h.query("SELECT item_key FROM kickside_automation_receipt WHERE owner_id=$1",{id}),2)
-                test.eq(h.ledger_row(id,"second").state,"resolved")
-                test.eq(#h.query("SELECT detail_json FROM round_fixture_log WHERE drive_key='sink' AND detail_json LIKE $1",{"%" .. id .. "%"}),2)
+                test.eq(#h.query("SELECT item_key FROM kickside_automation_receipt WHERE owner_id=$1 AND item_key='third'",{id}),1)
             end)
         end
-        test.it("keeps a completed destination slot when the next slot loses authority",function()
+        test.it("writes every destination slot of the page and blocks the next round after a revocation",function()
             local env=h.setup("slot_authority")
             local id=env.automation_id
             h.new_drive({automation_id=id,drive_key="slots",source_kind="collection",
@@ -57,14 +75,22 @@ return test.run_cases(function()
                 h.exec("INSERT INTO kickside_automation_receipt (owner_id,source_port,item_key,map_slot,identity_key,dest_ref_json,updated_at) VALUES ($1,$2,'record',$3,$4,$5,$6)",
                     {id,"kickside.automation.round.fixture:records",slot,"slot:"..slot,json.encode({id=slot,revoke_authority=slot == "a" and env.owner or nil}),h.PAST})
             end
-            h.set_drive(id,"slots","next_run_at=$1",{h.PAST})
-            local _,err=env.run(id,"slots")
-            test.is_nil(err,tostring(err))
+            run(env,"slots")
+            test.eq(h.read_drive(id,"slots").phase,"active")
+            test.eq(#h.query("SELECT map_slot FROM kickside_automation_receipt WHERE owner_id=$1",{id}),0)
+            run(env,"slots")
             test.eq(h.read_drive(id,"slots").phase,"blocked_access")
-            local receipts=h.query("SELECT map_slot FROM kickside_automation_receipt WHERE owner_id=$1 ORDER BY map_slot",{id})
-            test.eq(#receipts,1)
-            test.eq(receipts[1].map_slot,"b")
-            test.eq(h.ledger_row(id,"record").state,"parked")
+        end)
+        test.it("resolves one identity once per acquisition and once per delivery, whatever the page holds",function()
+            local env=h.setup("authority_count")
+            local id=env.automation_id
+            h.new_drive({automation_id=id,drive_key="effects",source_kind="collection",
+                applied={sink_port="kickside.automation.round.fixture:store"},
+                action={source_ref="kickside.automation.round.fixture:records",config={items={{key="a"},{key="b"},{key="c"},{key="d"},{key="e"}}},schedule={type="interval",expression="30m"}}})
+            h.exec("DELETE FROM round_resolver_call WHERE principal_id=$1",{env.owner})
+            run(env,"effects")
+            test.eq(#h.query("SELECT item_key FROM kickside_automation_receipt WHERE owner_id=$1",{id}),5)
+            test.eq(resolves(env.owner),2)
         end)
         test.it("runs both effects when authority stays live",function()
             local env = h.setup("authority_unchanged")

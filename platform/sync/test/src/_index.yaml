@@ -85,6 +85,7 @@ entries:
       round_outcome: kickside.automation:round_outcome
       round_commit: kickside.automation:round_commit
       round_write: kickside.automation:round_write
+      round_provenance: kickside.automation:round_provenance
       test: wippy.test:test
       drive: kickside.automation:drive
       user_repo: kickside.users.persist:user_repo
@@ -105,6 +106,7 @@ entries:
       round_outcome: kickside.automation:round_outcome
       round_commit: kickside.automation:round_commit
       round_write: kickside.automation:round_write
+      round_provenance: kickside.automation:round_provenance
       test: wippy.test:test
       drive: kickside.automation:drive
       user_repo: kickside.users.persist:user_repo
@@ -125,6 +127,7 @@ entries:
       round_outcome: kickside.automation:round_outcome
       round_commit: kickside.automation:round_commit
       round_write: kickside.automation:round_write
+      round_provenance: kickside.automation:round_provenance
       test: wippy.test:test
       drive: kickside.automation:drive
       user_repo: kickside.users.persist:user_repo

@@ -18,4 +18,5 @@ entries:
       ledger: kickside.automation:round_ledger
       slot: kickside.automation:slot
       drive: kickside.automation:drive
+      round_provenance: kickside.automation:round_provenance
       scope_resolver: app:scope_resolver_stub

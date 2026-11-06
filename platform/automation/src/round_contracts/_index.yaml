@@ -58,6 +58,7 @@ entries:
       round_ledger: kickside.automation:round_ledger
       round_commit: kickside.automation:round_commit
       round_prepared: kickside.automation:round_prepared
+      round_provenance: kickside.automation:round_provenance
       runtime_policy: kickside.automation:runtime_policy
       canonical_json: kickside.contract:canonical_json
 
@@ -193,84 +194,14 @@ entries:
     imports:
       round_outcome: kickside.automation:round_outcome
 
-  - name: round_authority
-    kind: function.lua
-    meta:
-      private: true
-    source: file://../round/authority.lua
-    modules: [registry]
-    method: check
-    security:
-      actor:
-        id: system:kickside.automation.round
-      policies:
-        - kickside.automation.security:round_worker_defer
-        - kickside.automation.security:round_worker_actor
-        - kickside.automation.security:execution_scope
-    imports:
-      automations_lib: kickside.automation:automation
-      execution_identity: kickside.execution:execution_identity
-      round_write: kickside.automation:round_write
-      component: kickside.component:component
-      round_provenance: kickside.automation:round_provenance
-      failure_classification: kickside.automation:failure_classification
-  - name: round_authority_write
-    kind: function.lua
-    meta:
-      private: true
-    source: file://../round/authority.lua
-    modules: [registry]
-    method: write
-    security:
-      actor:
-        id: system:kickside.automation.round
-      policies:
-        - kickside.automation.security:round_worker_defer
-        - kickside.automation.security:round_worker_actor
-        - kickside.automation.security:execution_scope
-    imports:
-      automations_lib: kickside.automation:automation
-      execution_identity: kickside.execution:execution_identity
-      round_write: kickside.automation:round_write
-      component: kickside.component:component
-      round_provenance: kickside.automation:round_provenance
-      failure_classification: kickside.automation:failure_classification
-  - name: round_authority_compute
-    kind: function.lua
-    meta:
-      private: true
-    source: file://../round/authority.lua
-    modules: [registry]
-    method: compute
-    security:
-      actor:
-        id: system:kickside.automation.round
-      policies:
-        - kickside.automation.security:round_worker_defer
-        - kickside.automation.security:round_worker_actor
-        - kickside.automation.security:execution_scope
-    imports:
-      automations_lib: kickside.automation:automation
-      execution_identity: kickside.execution:execution_identity
-      round_write: kickside.automation:round_write
-      component: kickside.component:component
-      round_provenance: kickside.automation:round_provenance
-      failure_classification: kickside.automation:failure_classification
-
   - name: round_sink_effect
     kind: function.lua
     meta:
       private: true
-    source: file://../round/authority.lua
+    source: file://../round/sink_effect.lua
     method: sink
-    modules: [registry]
     imports:
       automations_lib: kickside.automation:automation
-      execution_identity: kickside.execution:execution_identity
-      round_write: kickside.automation:round_write
-      component: kickside.component:component
-      round_provenance: kickside.automation:round_provenance
-      failure_classification: kickside.automation:failure_classification
 
   - name: round_provenance
     kind: library.lua

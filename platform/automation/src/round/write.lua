@@ -40,6 +40,7 @@ local ledger = require("round_ledger")
 local commit = require("round_commit")
 local jobs = require("jobs")
 local prepared_output = require("round_prepared")
+local provenance = require("round_provenance")
 local runtime_policy = require("runtime_policy")
 
 local identity = require("delivery_identity")
@@ -208,16 +209,11 @@ function M.prepare(spec: Map, compute: () -> (any?, any)): (any?, any)
     local d = spec.drive :: Map
     local fence_err = M.check_fence(d)
     if fence_err then return nil, fence_err end
-    local allowed, authority_err = funcs.call("kickside.automation:round_authority", {drive=d,key=spec.key,prepared_lookup=true})
-    if authority_err or not allowed then return nil, authority_err end
-    local function compute_effect(): (any?, any)
-        if type(spec.effect) == "table" then
-            return funcs.call("kickside.automation:round_authority_compute",{drive=d,key=spec.key,target=spec.effect.target,args=spec.effect.args})
-        end
-        return compute()
-    end
-    if spec.prepared ~= true then return compute_effect() end
-    local original_key=type(allowed) == "table" and allowed.prepared_key or spec.key
+    if spec.prepared ~= true then return compute() end
+    local evidence, evidence_err = provenance.load_evidence(d, spec.key)
+    if evidence_err or not evidence then return nil, evidence_err end
+    -- A replayed delivery keeps the prepared output of the key it was admitted under.
+    local original_key = evidence.prepared_key or spec.key
     local stored, stored_err = prepared_rows(tostring(d.automation_id), { tostring(original_key),tostring(spec.key) })
     if stored_err or not stored then return nil, stored_err end
     local prior = (stored :: Map)[tostring(original_key)] or (stored :: Map)[tostring(spec.key)]
@@ -227,7 +223,7 @@ function M.prepare(spec: Map, compute: () -> (any?, any)): (any?, any)
         if decode_err then return nil, internal("stored prepared output is not JSON", decode_err) end
         return value, nil
     end
-    local value, compute_err = compute_effect()
+    local value, compute_err = compute()
     if compute_err ~= nil then return nil, compute_err end
     local encoded, encode_err = json.encode(value)
     if encode_err or type(encoded) ~= "string" then
@@ -344,11 +340,8 @@ function M.write(sink: Map, request: Map, d: Map, item: Map): Map
                 error = failure, retry_after_ms = failure.retry_after_ms}
         end
     end
-    local admission_key=item.delivery_key or request.idempotency_key
-    local allowed,authority_err=funcs.call("kickside.automation:round_authority",{drive=d,key=request.idempotency_key,delivery_key=admission_key})
-    if authority_err or not allowed then return {state="failed",error=failure_classification.classify(authority_err)} end
     if sink.delivery == M.DELIVERY.AT_MOST_ONCE then
-        local decision, reserve_err = reserve_uncertain(d, item, request,admission_key)
+        local decision, reserve_err = reserve_uncertain(d, item, request, item.delivery_key or request.idempotency_key)
         if reserve_err then return { state = "failed", error = failure_classification.classify(reserve_err) } end
         if not decision.send then return { state = decision.state, receipts = {} } end
     end
@@ -361,9 +354,10 @@ function M.write(sink: Map, request: Map, d: Map, item: Map): Map
             revision = math.floor(tonumber(d.automation_revision) or 1) },
     }
     if type(request.map_slot) == "string" and request.map_slot ~= "" then body.map_slot = request.map_slot end
-    local packet,send_err=funcs.call("kickside.automation:round_authority_write",{
-        drive=d,key=request.idempotency_key,delivery_key=admission_key,binding=sink.binding,config=type(request.config) == "table" and request.config or {},body=body})
-    if packet and packet.refused ~= nil then return {state="failed",error=failure_classification.classify(packet.refused)} end
+    local fence_err = M.check_fence(d)
+    if fence_err then return { state = "failed", error = failure_classification.classify(fence_err) } end
+    local packet,send_err=funcs.call("kickside.automation:round_sink_effect",{
+        drive=d,binding=sink.binding,config=type(request.config) == "table" and request.config or {},body=body})
     if send_err or not packet then
         local failure = failure_classification.classify(send_err)
         -- The call may fail after the destination received the request, so an

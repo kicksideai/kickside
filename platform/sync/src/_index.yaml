@@ -390,20 +390,3 @@ entries:
     meta:
       comment: Applies the shared transform (none/expr/llm/code/func) to synced items.
     component: kickside/transform
-
-  - name: round_transform_effect
-    kind: function.lua
-    meta:
-      type: kickside.automation.round.effect
-      private: true
-    source: file://round/plan.lua
-    method: compute
-    modules: [expr]
-    imports:
-      failure_classification: kickside.automation:failure_classification
-      transform_apply: kickside.transform:apply
-      transform_strategies: kickside.transform:strategies
-      strategy_reference: kickside.transform:strategy_reference
-      component: kickside.component:component
-      round_write: kickside.automation:round_write
-      canonical_json: kickside.contract:canonical_json

@@ -49,7 +49,6 @@ entries:
   source: file://../round/write_test.lua
   method: run
   modules:
-  - funcs
   - sql
   - json
   - uuid
@@ -59,6 +58,7 @@ entries:
   imports:
     test: wippy.test:test
     round_write: kickside.automation:round_write
+    round_provenance: kickside.automation:round_provenance
     drive: kickside.automation:drive
     round_harness: kickside.automation:round_harness
 - name: round_batch_test
