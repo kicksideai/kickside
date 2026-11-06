@@ -39,7 +39,7 @@ entries:
     imports:
       http: kickside.inbox:file_context
       inbox_reader: kickside.inbox:file_reader_context
-      inbox_files: kickside.inbox:file_provider_context
+      inbox_files: kickside.inbox:inbox_files
       http_errors: kickside.contract:http_errors
   - name: file_content_test
     kind: function.lua
@@ -51,4 +51,5 @@ entries:
       context: kickside.inbox:file_context
       reader: kickside.inbox:file_reader_context
       provider: kickside.inbox:file_provider_context
+      files: kickside.inbox:inbox_files
       handler: kickside.inbox:file_content_subject

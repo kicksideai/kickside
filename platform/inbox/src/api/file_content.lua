@@ -4,6 +4,8 @@ local reader = require("inbox_reader")
 local files = require("inbox_files")
 local http_errors = require("http_errors")
 
+local MAX_PREVIEW_BYTES = 25 * 1024 * 1024
+
 local function handler()
     local req, res = http.request(), http.response()
     if not req or not res then return nil, "no http context" end
@@ -26,8 +28,11 @@ local function handler()
     if not ref then
         return fail(errors.new({ kind = errors.NOT_FOUND, message = "file not found" }))
     end
-    local provider, open_err = files.open(ref)
-    if open_err then return fail(open_err) end
+    local info, info_err, provider = files.info(ref)
+    if info_err then return fail(info_err) end
+    if type(info.size) == "number" and info.size > MAX_PREVIEW_BYTES then
+        return fail(errors.new({ kind = errors.INVALID, message = "file exceeds the 25 MiB preview limit" }))
+    end
     -- The content provider checks the current viewer on every byte request.
     local content, err = provider:get_content({ format = "raw" })
     if err then return fail(err) end

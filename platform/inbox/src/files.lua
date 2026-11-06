@@ -67,7 +67,7 @@ function M.locked(err: any): boolean
 	return errors.is(err, errors.PERMISSION_DENIED) or errors.is(err, errors.NOT_FOUND)
 end
 
-function M.info(ref: any): (any?, any?)
+function M.info(ref: any): (any?, any?, any?)
 	local provider, open_err = M.open(ref)
 	if open_err then
 		return nil, open_err
@@ -86,7 +86,8 @@ function M.info(ref: any): (any?, any?)
 		size = info.size,
 		view_url = info.view_url,
 	},
-		nil
+		nil,
+		provider
 end
 
 function M.list(refs: any): (any?, any?)
