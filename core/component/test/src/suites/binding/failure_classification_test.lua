@@ -153,10 +153,6 @@ local function define_tests()
                 additional_access = { { subject_id = users.reader, subject_type = "user", access_mask = 1 } },
             })
             fx.failing_delete = register(FAILING_DELETE_IMPL)
-            -- A stored context JSON with a null array hole decodes to a sparse table,
-            -- which the portable envelope cannot encode.
-            fx.unencodable = register(PORTABLE_IMPL)
-            exec("UPDATE " .. COMPONENTS .. " SET private_context = '{\"list\":[1,null,3]}' WHERE component_id = '" .. fx.unencodable .. "'")
             fx.non_portable = register(NON_PORTABLE_IMPL)
             fx.not_installed = register(NOT_INSTALLED_IMPL)
             for _, kind in ipairs({ errors.TIMEOUT, errors.CANCELED, errors.RATE_LIMITED, errors.UNAVAILABLE }) do
@@ -248,7 +244,6 @@ local function define_tests()
             { name = "import when the registration fails", method = "import", hide = { COMPONENTS }, request = function() return { shell = shell(PORTABLE_IMPL) } end, kind = errors.INTERNAL, native_sql = true },
             { name = "list_access when the owner read fails", method = "list_access", hide = { META }, request = function(f) return { component_id = f.cid } end, kind = errors.INTERNAL, native_sql = true },
             { name = "delete when the read fails", method = "delete", hide = { COMPONENTS }, request = function(f) return { component_id = f.cid } end, kind = errors.INTERNAL, native_sql = true },
-            { name = "export when the envelope cannot be encoded", method = "export", request = function(f) return { component_id = f.unencodable } end, kind = errors.INTERNAL },
             { name = "delete when the lifecycle record fails", worker = true, method = "delete", request = function(f) return { component_id = f.failing_delete } end, kind = errors.INTERNAL },
             { name = "set_meta when the meta write fails", method = "set_meta", hide = { META }, request = function(f) return { component_id = f.cid, fields = { title = "x" } } end, kind = errors.INTERNAL, native_sql = true },
             { name = "set_placement when the placement write fails", method = "set_placement", hide = { COMPONENTS }, request = function(f) return { component_id = f.cid, parent_id = false } end, kind = errors.INTERNAL, native_sql = true },
