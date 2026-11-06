@@ -25,6 +25,24 @@ entries:
       retention:
         identity_audits: 30d
 
+  - name: deletion_jobs_policy
+    kind: security.policy
+    meta:
+      private: true
+    policy:
+      resources: kickside.core.jobs.policy:settings_overrides
+      actions: funcs.call
+      effect: allow
+
+  - name: deletion_worker_lookup
+    kind: security.policy
+    meta:
+      private: true
+    policy:
+      resources: kickside.component:delete_worker
+      actions: registry.get
+      effect: allow
+
   - name: retention
     kind: function.lua
     meta:
@@ -34,7 +52,7 @@ entries:
     method: run
     security:
       actor: { id: system:kickside.component.retention }
-      policies: [kickside.component:retention_db_access]
+      policies: [kickside.component:retention_db_access, kickside.component:deletion_jobs_policy, kickside.component:deletion_worker_lookup]
     imports:
       component_command: kickside.component:component_command
       teardown: kickside.component.persist:teardown

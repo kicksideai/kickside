@@ -62,6 +62,10 @@ entries:
         - components
         - delete
     source: file://delete_component_func.lua
+    security:
+      policies:
+        - kickside.component:deletion_jobs_policy
+        - kickside.component:deletion_worker_lookup
     modules:
       - security
     imports:
