@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.69](https://github.com/kicksideai/kickside/compare/inbox-v0.1.68...inbox-v0.1.69) (2026-11-06)
+
+
+### Features
+
+* **inbox:** support file references with inline previews ([#173](https://github.com/kicksideai/kickside/issues/173)) ([2a19510](https://github.com/kicksideai/kickside/commit/2a195101fdf84e9246c5a39495d8fdbd3917c490))
+
 ## [0.1.68](https://github.com/kicksideai/kickside/compare/inbox-v0.1.67...inbox-v0.1.68) (2026-10-29)
 
 

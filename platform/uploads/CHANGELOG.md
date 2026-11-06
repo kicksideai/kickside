@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.10](https://github.com/kicksideai/kickside/compare/uploads-v0.3.9...uploads-v0.3.10) (2026-11-06)
+
+
+### Features
+
+* **inbox:** support file references with inline previews ([#173](https://github.com/kicksideai/kickside/issues/173)) ([2a19510](https://github.com/kicksideai/kickside/commit/2a195101fdf84e9246c5a39495d8fdbd3917c490))
+
 ## [0.3.9](https://github.com/kicksideai/kickside/compare/uploads-v0.3.8...uploads-v0.3.9) (2026-11-05)
 
 

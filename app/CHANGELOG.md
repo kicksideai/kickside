@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.32](https://github.com/kicksideai/kickside/compare/kickside-v0.2.31...kickside-v0.2.32) (2026-11-06)
+
+
+### Bug Fixes
+
+* **settings:** reload cold snapshots on reads ([#315](https://github.com/kicksideai/kickside/issues/315)) ([687e773](https://github.com/kicksideai/kickside/commit/687e7735155e61cc0d15767b709d32e137a49a48))
+
 ## [0.2.31](https://github.com/kicksideai/kickside/compare/kickside-v0.2.30...kickside-v0.2.31) (2026-11-03)
 
 
