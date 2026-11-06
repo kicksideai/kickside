@@ -98,6 +98,32 @@ local function run()
             test.is_true(result.same)
         end)
 
+        test.it("rejects more than 50 file references before writing an item", function()
+            local refs = {}
+            for index = 1, 51 do
+                refs[index] = { component_id = "example:content", context = {} }
+            end
+            local framed = executor("inbox-file-limit-user")
+            local created, create_err = framed:call(WRITE_ID, {
+                origin = ORIGIN,
+                input = { title = "Review", content = "Initial item" },
+                idempotency_key = "inbox-file-limit-control",
+            })
+            test.is_nil(create_err)
+            test.is_true(created.success)
+            local res, err = framed:call(WRITE_ID, {
+                origin = ORIGIN,
+                config = { item_type = "notice" },
+                input = { title = "Review files", files = refs },
+                idempotency_key = "inbox-file-limit-item",
+            })
+            test.is_nil(err)
+            test.is_false(res.success)
+            test.eq(res.error.code, "invalid_request")
+            test.eq(res.error.retriable, false)
+            wait_item("inbox-file-limit-user", "inbox-file-limit-item", false)
+        end)
+
         test.it("rejects unregistered item types before creating an item", function()
             local created, create_err = executor("inbox-sink-invalid-user"):call(WRITE_ID, {
                 origin = ORIGIN,

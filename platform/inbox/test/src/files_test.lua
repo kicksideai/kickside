@@ -16,6 +16,19 @@ local function run()
 				test.is_true(errors.is(err, errors.INVALID))
 			end
 		end)
+		test.it("admits at most 50 file references per item", function()
+            local refs = {}
+            for index = 1, 50 do
+                refs[index] = { component_id = "example:content", context = { file_id = tostring(index) } }
+            end
+            local accepted, accepted_err = files.normalize(refs)
+            test.is_nil(accepted_err)
+            test.eq(#accepted, 50)
+            refs[51] = { component_id = "example:content", context = {} }
+            local rejected, rejected_err = files.normalize(refs)
+            test.is_nil(rejected)
+            test.is_true(errors.is(rejected_err, errors.INVALID))
+        end)
 		test.it("keeps provider context generic and preserves omission", function()
 			local value, err = files.normalize({
 				{ component_id = "example:provider", context = { document_id = "doc" }, title = "Read this" },

@@ -77,6 +77,17 @@ local function define_tests()
             test.eq(params.files[1].context.document_id, "document")
         end)
 
+        test.it("rejects review items with more than 50 file references", function()
+            local input = args("reviewer")
+            input.config.files = {}
+            for index = 1, 51 do
+                input.config.files[index] = { component_id = "example:content", context = {} }
+            end
+            local params, err = arm.preview_decision(input)
+            test.is_nil(params)
+            test.not_nil(err)
+        end)
+
         test.it("renders mixed string and number keys without losing their values", function()
             local rendered, err = decision_content.render({ [2] = "numeric", named = "string" }, {})
             test.is_nil(err)

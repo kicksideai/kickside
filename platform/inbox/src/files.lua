@@ -5,6 +5,8 @@ local object_fields = require("object_fields")
 
 local M = {}
 
+local MAX_FILE_REFERENCES = 50
+
 function M.normalize(value: any): (any?, any?)
 	if value == nil then
 		return nil, nil
@@ -25,6 +27,9 @@ function M.normalize(value: any): (any?, any?)
 			return invalid()
 		end
 		count = count + 1
+		if count > MAX_FILE_REFERENCES then
+			return invalid()
+		end
 	end
 	if count ~= #value then
 		return invalid()
