@@ -122,7 +122,8 @@ function M.reload(): (settings_types.OverrideMap?, any?)
         }
         map[combine(r.namespace, r.key)] = rec
     end
-    cache.replace(map, revision :: number)
+    local replaced, cerr = cache.replace(map, revision :: number)
+    if not replaced then return nil, cerr end
     return map
 end
 
@@ -159,7 +160,8 @@ end
 -- cache reloads every row. Every node then learns the revision.
 local function apply(map: settings_types.OverrideMap, cached_revision: number?, revision: number): (boolean, any?)
     if cached_revision == revision - 1 then
-        cache.replace(map, revision)
+        local replaced, cerr = cache.replace(map, revision)
+        if not replaced then return false, cerr end
     else
         local reloaded, rerr = M.reload()
         if not reloaded then return false, rerr end
