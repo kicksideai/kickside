@@ -11,7 +11,8 @@ local M = {}
 local ADMIN_LIST_RESOURCE = "kickside.settings.api:list_settings.endpoint"
 local ADMIN_WRITE_RESOURCE = "kickside.settings.api:put_settings.endpoint"
 
--- A cold cache is normal after a store replacement during a module update.
+-- A cold cache is normal during a module update: a new version can read a
+-- snapshot its predecessor never wrote, before any boot warmer runs.
 -- Return only a complete snapshot, or a typed response error from the caller.
 local function overrides(): (settings_types.OverrideMap?, string?)
     local map = cache.read()
