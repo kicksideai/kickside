@@ -106,13 +106,14 @@ entries:
         groups:
           - kickside.security.service:scope_projection_writer
 
-  # Security reads registry entries independent of the caller's registry access:
-  # a login reads its projected group set, and the assignable catalog reads policies.
+  # Security reads registry entries and the Runtime's policy group index independent
+  # of the caller's registry access: a login reads its group set and its native
+  # contributors, and the assignable catalog reads policies.
   - name: group_set_registry_read
     kind: security.policy
     meta: {private: true, service_only: true}
     policy:
-      actions: registry.get
+      actions: [registry.get, security.policy_group.get]
       resources: '*'
       effect: allow
 

@@ -302,6 +302,31 @@ local function run()
             projector = writer.start_projector()
             if not ok then error(failure) end
         end)
+        test.it("reads only what the requested groups reach", function()
+            local original = assert(registry.current_version())
+            writer.stop_projector(projector)
+            local changes = assert(registry.snapshot()):changes()
+            changes:create({id = "app.resolver_reach:requested", kind = "security.policy",
+                data = {groups = {"members"}, policy = {actions = "read", resources = "app:reach", effect = "allow"}}})
+            changes:create({id = "app.resolver_reach:unreachable", kind = "registry.entry",
+                meta = {type = "kickside.security.group_composition"},
+                data = {group_id = "app.resolver_reach:unrelated", policies = {"app.resolver_reach:not_a_policy"}}})
+            changes:create({id = "app.resolver_reach:not_a_policy", kind = "registry.entry", data = {}})
+            assert(changes:apply())
+            local ok, failure = pcall(function()
+                local scope, err = source_scope.resolve("app.resolver_reach:members")
+                test.is_nil(err, tostring(err))
+                local found = false
+                for _, policy in ipairs(scope:policies()) do if policy:id() == "app.resolver_reach:requested" then found = true end end
+                test.is_true(found)
+                local _, unrelated_err = source_scope.resolve("app.resolver_reach:unrelated")
+                test.not_nil(unrelated_err, "a composition stays validated when a request reaches it")
+            end)
+            test.is_true(assert(registry.apply_version(original)))
+            projector = writer.start_projector()
+            if not ok then error(failure) end
+        end)
+
         test.it("keeps a pending registry plan valid while resolving live authority", function()
             writer.stop_projector(projector)
             local original = assert(registry.current_version())
