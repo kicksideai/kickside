@@ -11,7 +11,6 @@ local jobs_policy = require("jobs_policy")
 local M = {}
 
 local function continue_page(id: string, err: any): any?
-    if type(err) ~= "userdata" or not errors.is(err, errors.CONFLICT) then return nil end
     local pending, continuation = teardown.cleanup_pending(err)
     if not pending or not continuation then return nil end
     return {success = true, component_id = id, deleted = false,

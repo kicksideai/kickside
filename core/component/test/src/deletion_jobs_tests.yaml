@@ -97,3 +97,21 @@ entries:
       resources: [app:deletion_jobs_binding]
       actions: registry.get
       effect: allow
+
+  - name: deletion_member_jobs
+    kind: security.policy
+    policy:
+      resources: kickside.core.jobs:*
+      actions: funcs.call
+      effect: allow
+
+  - name: deletion_member_components
+    kind: security.policy
+    policy:
+      resources: ['kickside.component:*', 'kickside.component.*']
+      actions: [registry.get, registry.find]
+      effect: allow
+      conditions:
+        - field: resource
+          operator: nin
+          value: [kickside.component:delete_worker]

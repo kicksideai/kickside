@@ -17,7 +17,7 @@ local function service(owner: string): any
     return assert(assert(contract.get("kickside.component:component_service"))
         :with_actor(security.new_actor(owner, {})):with_scope(scope):open())
 end
-local function member_scope()
+local function member_scope(no_reader: boolean?)
     local policies, seen = {}, {}
     local function include(policy_id)
         if seen[policy_id] then return end
@@ -26,8 +26,15 @@ local function member_scope()
         policies[#policies + 1] = assert(security.policy(policy_id))
         for _, child in ipairs(entry.meta.includes or {}) do include(child) end
     end
-    include("kickside.component.security:module_access")
-    include("kickside.core.jobs.security:module_access")
+    if no_reader then
+        policies[#policies + 1] = assert(security.policy("app:deletion_member_components"))
+        include("kickside.component.security:module_runtime")
+        policies[#policies + 1] = assert(security.policy("kickside.core.jobs.security:module_access"))
+        policies[#policies + 1] = assert(security.policy("app:deletion_member_jobs"))
+    else
+        include("kickside.component.security:module_access")
+        include("kickside.core.jobs.security:module_access")
+    end
     policies[#policies + 1] = assert(security.policy("kickside.component:retention_db_access"))
     policies[#policies + 1] = assert(security.policy("app:deletion_member_binding"))
     local scope = assert(security.new_scope(policies))
@@ -88,6 +95,54 @@ local function seed(mode: string, owner: string, parent: string?): string
 end
 M.run = test.run_cases(function()
     test.describe("Jobs component deletion", function()
+        test.it("accepts DELETE grants without caller policy reader authority", function()
+            local owner = "delete-job-" .. uuid.v4()
+            local member = "delete-member-" .. uuid.v4()
+            local id = seed("retention", owner)
+            local actor = security.new_actor(member, {})
+            local scope = member_scope(true)
+            test.eq(scope:evaluate(actor, "funcs.call", "kickside.core.jobs.policy:settings_overrides"), "undefined")
+            for _, resource in ipairs({"kickside.settings:settings", "kickside.settings:settings_binding", "get_namespace"}) do
+                for _, action in ipairs({"registry.get", "contract.get", "contract.open", "contract.call"}) do
+                    test.eq(scope:evaluate(actor, action, resource), "undefined")
+                end
+            end
+            test.eq(scope:evaluate(actor, "registry.get", "kickside.component:delete_worker"), "undefined")
+            local caller = funcs.new():with_actor(actor):with_scope(scope)
+            local denied, deny_err = caller:call("kickside.component.binding:delete_component_func", {component_id = id})
+            test.is_nil(deny_err, tostring(deny_err))
+            test.is_false(denied.success)
+            test.eq(denied.kind, errors.PERMISSION_DENIED)
+            test.eq(#jobs(id), 0)
+            local db = assert(sql.get("app:db"))
+            assert(db:execute("INSERT INTO kickside_component_access (access_id,component_id,source_component_id,subject_id,subject_type,access_mask,created_at) VALUES ($1,$2,$3,$4,'user',$5,0)",
+                {uuid.v7(), id, id, member, 4}))
+            assert(db:release())
+            local accepted, accept_err = caller:call("kickside.component.binding:delete_component_func", {component_id = id})
+            test.is_nil(accept_err, tostring(accept_err))
+            test.is_true(accepted.success, tostring(accepted.error))
+            test.is_true(accepted.in_progress)
+            test.is_nil(accepted.notification_error, tostring(accepted.notification_error))
+            test.eq(accepted.job_id, jobs(id)[1].id)
+            test.eq(scope:evaluate(actor, "registry.get", "kickside.component:delete_worker"), "undefined")
+            test.eq(scope:evaluate(actor, "funcs.call", "kickside.core.jobs.policy:settings_overrides"), "undefined")
+            pool_until(id)
+        end)
+        test.it("enrolls legacy deletion marks without caller policy reader authority", function()
+            local owner = "delete-job-" .. uuid.v4()
+            local id = seed("retention", owner)
+            local db = assert(sql.get("app:db"))
+            assert(db:execute("UPDATE kickside_components SET deleting_at=$1 WHERE component_id=$2", {time.now():utc():format_rfc3339(), id}))
+            assert(db:release())
+            local actor = security.new_actor(owner, {})
+            local scope = member_scope(true)
+            test.eq(scope:evaluate(actor, "funcs.call", "kickside.core.jobs.policy:settings_overrides"), "undefined")
+            local result, err = funcs.new():with_actor(actor):with_scope(scope):call("kickside.component:retention", {change = {owner_locator = {id = id}}})
+            test.is_nil(err, tostring(err))
+            test.is_true(result.success, tostring(result.error))
+            test.eq(#jobs(id), 1)
+            pool_until(id)
+        end)
         for _, mode in ipairs({"retention", "crash"}) do
             test.it("completes exclusive cleanup after " .. mode, function()
                 local owner = "delete-job-" .. uuid.v4()

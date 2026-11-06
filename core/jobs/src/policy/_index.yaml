@@ -30,8 +30,22 @@ entries:
     actions:
     - registry.get
     - contract.get
-    - contract.open
-    - contract.call
+    effect: allow
+- name: settings_read_binding
+  kind: security.policy
+  meta:
+    private: true
+  policy:
+    resources: kickside.settings:settings_binding
+    actions: contract.open
+    effect: allow
+- name: settings_read_method
+  kind: security.policy
+  meta:
+    private: true
+  policy:
+    resources: get_namespace
+    actions: contract.call
     effect: allow
 - name: settings_overrides
   kind: function.lua
@@ -47,6 +61,8 @@ entries:
   security:
     policies:
     - kickside.core.jobs.policy:settings_reader
+    - kickside.core.jobs.policy:settings_read_binding
+    - kickside.core.jobs.policy:settings_read_method
 - name: settings_overrides_lib
   kind: library.lua
   meta:
@@ -69,6 +85,8 @@ entries:
   security:
     policies:
     - kickside.core.jobs.policy:settings_reader
+    - kickside.core.jobs.policy:settings_read_binding
+    - kickside.core.jobs.policy:settings_read_method
 - name: execution
   kind: library.lua
   meta:

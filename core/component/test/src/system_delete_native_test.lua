@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
 local component = require("component")
 local fixture = require("fixture")
@@ -43,6 +44,29 @@ return {run = test.run_cases(function()
                     test.is_nil(result); native(err, source)
                     test.eq(fixture.abandons, 0); test.eq(fixture.unregisters, 0)
                 end)
+            end
+        end
+        for _, stage in ipairs({"cleanup", "pending"}) do
+            for _, kind in ipairs(kinds) do
+                for _, exclusion in ipairs({"none", "wait_for", "blocked_operation"}) do
+                    test.it("classifies structured page progress/" .. stage .. "/" .. kind .. "/" .. exclusion, function()
+                        local details: any = {cleanup_pending = true, needs_continue = true, discarded = true}
+                        if exclusion ~= "none" then details[exclusion] = "dependency" end
+                        local source = errors.new({kind = kind, message = "bounded cleanup page", details = details})
+                        fixture.reset(stage, source)
+                        local result, err = worker.run({payload = {component_id = "component"}})
+                        if exclusion == "none" then
+                            test.is_nil(err, tostring(err)); test.is_true(result.success)
+                            test.is_false(result.deleted); test.eq(type(result.rearm), "string")
+                            test.is_true(result.discarded)
+                        else
+                            test.is_nil(result); test.eq(err:kind(), kind)
+                            test.eq(err:details()[exclusion], "dependency")
+                        end
+                        test.eq(fixture.cleanups, 1)
+                        test.eq(fixture.unregisters, stage == "pending" and 1 or 0)
+                    end)
+                end
             end
         end
         for _, wait_for in ipairs({false, "children"}) do
