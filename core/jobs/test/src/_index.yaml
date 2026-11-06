@@ -4133,13 +4133,6 @@ entries:
     scope: global
     editable: true
 
-  - name: policy_settings_binding
-    kind: security.policy
-    policy:
-      resources: kickside.settings:settings_binding
-      actions: contract.open
-      effect: allow
-
   - name: policy_settings_scope
     kind: security.policy
     policy:

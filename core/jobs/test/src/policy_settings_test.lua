@@ -35,30 +35,33 @@ return { run = test.run_cases(function()
 
         local function restricted(): any
             local actor = security.new_actor("jobs-policy-reader", {})
-            local scope = security.new_scope({assert(security.policy("app:policy_settings_scope")),
-                assert(security.policy("app:policy_settings_binding"))})
+            local scope = security.new_scope({assert(security.policy("app:policy_settings_scope"))})
             for _, resource in ipairs({"get_namespace", "set", "kickside.settings:settings"}) do
                 test.eq(scope:evaluate(actor, "contract.call", resource), "undefined")
             end
-            test.eq(scope:evaluate(actor, "registry.get", "kickside.settings:settings"), "undefined")
+            for _, resource in ipairs({"kickside.settings:settings", "kickside.settings:settings_binding"}) do
+                for _, action in ipairs({"registry.get", "contract.get", "contract.open"}) do
+                    test.eq(scope:evaluate(actor, action, resource), "undefined")
+                end
+            end
             return funcs.new():with_actor(actor):with_scope(scope)
         end
 
-        test.it("reads committed overrides without caller method authority", function()
+        test.it("reads committed overrides without caller Settings authority", function()
             test.is_nil(admin.set({["worker.count_postgres"] = 37}))
             local values, err = restricted():call("kickside.core.jobs.policy:settings_overrides")
             test.is_nil(err, tostring(err))
             test.eq(values["worker.count_postgres"], 37)
         end)
 
-        test.it("resolves committed policy without caller method authority", function()
+        test.it("resolves committed policy without caller Settings authority", function()
             test.is_nil(admin.set({["worker.count_postgres"] = 37}))
             local policy, err = restricted():call("app:policy_settings_resolve")
             test.is_nil(err, tostring(err))
             test.eq(policy.worker_count_postgres, 37)
         end)
 
-        test.it("enqueues with committed policy without caller method authority", function()
+        test.it("enqueues with committed policy without caller Settings authority", function()
             test.is_nil(admin.set({["retry.max_attempts"] = 7}))
             local queued, err = restricted():call("app:policy_settings_enqueue")
             test.is_nil(err, tostring(err))
