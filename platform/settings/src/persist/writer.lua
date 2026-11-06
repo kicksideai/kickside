@@ -81,20 +81,20 @@ end
 -- and the change keeper calls it when another node commits a newer revision.
 -- The revision is read before the rows, so the cache never claims a revision
 -- newer than the rows it holds.
-function M.reload(): (settings_types.OverrideMap?, any?)
+local function load_overrides(): (settings_types.OverrideMap?, number?, any?)
     local db, err = sql.get(settings_types.db_id())
-    if err then return nil, err end
+    if err then return nil, nil, err end
     if not db then return nil, "settings db unavailable" end
     local dbh = db :: sql.DB
     local revision, rerr = read_revision(dbh)
     if rerr then
         dbh:release()
-        return nil, rerr
+        return nil, nil, rerr
     end
     local rows, qerr = dbh:query(
         "SELECT namespace, key, value, value_type, updated_by, updated_at FROM kickside_settings", {})
     dbh:release()
-    if qerr then return nil, qerr end
+    if qerr then return nil, nil, qerr end
 
     local map: settings_types.OverrideMap = {}
     for _, row in ipairs(rows or {}) do
@@ -122,9 +122,25 @@ function M.reload(): (settings_types.OverrideMap?, any?)
         }
         map[combine(r.namespace, r.key)] = rec
     end
+    return map, revision, nil
+end
+
+function M.reload(): (settings_types.OverrideMap?, any?)
+    local map, revision, err = load_overrides()
+    if not map then return nil, err end
     local replaced, cerr = cache.replace(map, revision :: number)
     if not replaced then return nil, cerr end
     return map
+end
+
+-- warm serves a cold read. It fills only an empty cache, so a slow read never
+-- replaces a newer snapshot, and returns the snapshot the cache then holds.
+function M.warm(): (settings_types.OverrideMap?, any?)
+    local map, revision, err = load_overrides()
+    if not map then return nil, err end
+    local filled, cerr = cache.fill(map, revision :: number)
+    if not filled then return nil, cerr end
+    return cache.read() or map
 end
 
 -- commit runs one override mutation and the revision bump in a transaction and
@@ -159,12 +175,12 @@ end
 -- applies in place only when no other write committed in between; otherwise the
 -- cache reloads every row. Every node then learns the revision.
 local function apply(map: settings_types.OverrideMap, cached_revision: number?, revision: number): (boolean, any?)
+    local updated, cerr = false, nil
     if cached_revision == revision - 1 then
-        local replaced, cerr = cache.replace(map, revision)
-        if not replaced then return false, cerr end
+        updated, cerr = cache.replace(map, revision)
     else
         local reloaded, rerr = M.reload()
-        if not reloaded then return false, rerr end
+        updated, cerr = reloaded ~= nil, rerr
     end
     local _, perr = changes.publish(revision)
     if perr then
@@ -172,6 +188,7 @@ local function apply(map: settings_types.OverrideMap, cached_revision: number?, 
         -- change or when cluster membership changes.
         log:error("settings change publication failed", { revision = revision, error = tostring(perr) })
     end
+    if not updated then return false, cerr end
     return true
 end
 

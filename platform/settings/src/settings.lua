@@ -16,7 +16,7 @@ local ADMIN_WRITE_RESOURCE = "kickside.settings.api:put_settings.endpoint"
 local function overrides(): (settings_types.OverrideMap?, string?)
     local map = cache.read()
     if map then return map, nil end
-    local loaded, err = writer.reload()
+    local loaded, err = writer.warm()
     if not loaded then return nil, "settings cache reload failed: " .. tostring(err) end
     return loaded, nil
 end

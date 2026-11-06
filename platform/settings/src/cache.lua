@@ -55,4 +55,18 @@ function M.replace(map: any, revision: number): (boolean, any?)
     return true, nil
 end
 
+-- fill publishes a snapshot only into a cold cache. A cold read holds a revision
+-- that may already be old, so it never overwrites a snapshot another reader,
+-- writer or keeper published meanwhile. Returns true on a stored or kept snapshot.
+function M.fill(map: any, revision: number): (boolean, any?)
+    local encoded, eerr = json.encode({ revision = revision, overrides = map })
+    if eerr then return false, eerr end
+    local s, err = store.get(STORE_ID)
+    if err or not s then return false, err or "settings cache unavailable" end
+    local _, perr = s:put(SNAPSHOT_KEY, encoded, { only_if_absent = true })
+    s:release()
+    if perr and not errors.is(perr, errors.ALREADY_EXISTS) then return false, perr end
+    return true, nil
+end
+
 return M

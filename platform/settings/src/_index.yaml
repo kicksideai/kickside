@@ -228,6 +228,7 @@ entries:
     security:
       policies:
         - kickside.settings:change_publisher
+        - kickside.settings:reader_cache
 
   - name: unset
     kind: function.lua
@@ -243,6 +244,7 @@ entries:
     security:
       policies:
         - kickside.settings:change_publisher
+        - kickside.settings:reader_cache
 
   - name: list
     kind: function.lua

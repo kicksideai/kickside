@@ -59,6 +59,12 @@ local function define_tests()
             test.eq(cache.revision(), before + 2)
         end)
 
+        test.it("a cold fill keeps a newer snapshot", function()
+            local current = assert(cache.revision())
+            test.is_true(cache.fill({}, current - 1))
+            test.eq(cache.revision(), current)
+        end)
+
         test.it("the keeper process scope permits a complete reload", function()
             local service = assert(registry.get("kickside.settings.service:keeper.service"))
             local group = assert(security.named_scope(service.data.lifecycle.security.groups[1]))
