@@ -71,9 +71,9 @@ Attach the token as the `upload_token` multipart field of `POST /uploads`, as
 `metadata.__upload_token` for `upload_file`. Several tokens may be attached as
 `metadata.__upload_tokens`.
 
-Uploads runs each callback as a durable Jobs job under the identity frozen in
-the token, with up to eight attempts, once per upload, token and outcome. The
-function receives:
+Uploads admits a durable Jobs job under the identity frozen in the token once
+per upload, token and outcome. The job may retry up to eight attempts, so the
+callback must be idempotent. The function receives:
 
 | Field | Value |
 | --- | --- |
@@ -90,11 +90,11 @@ Read derived content from the upload's artifacts (the primary artifact for
 text) with the same authority. A failed upload without `on_error_id` runs no
 callback.
 
-Identical bytes from the same owner reuse an existing upload. A callback
-attached to such an upload runs at once with that upload's settled outcome, or
-waits until it settles. An archive runs no callback itself: each extracted
-member carries the archive's tokens, rebound to that member, and runs them when
-it settles.
+A completion token binds the upload ID and disables content deduplication.
+Identical bytes with a fresh token create a new upload and run processing again;
+reusing an existing upload ID returns `CONFLICT`. An archive runs no callback
+itself: each extracted member carries the archive's tokens, rebound to that
+member, and runs them when it settles.
 
 Knowledge ingestion uses this flow: `kickside.knowledge.api:upload_token` mints
 a token for `kickside.knowledge.injection:on_upload_complete`, and the
@@ -176,6 +176,6 @@ artifacts. The upload metadata exposes `primary_artifact_id`; the artifact raw e
 serves the original SVG image under that ID.
 The `ai_upload_svg` smoke scenario verifies the exact original image bytes and markup.
 
-Upload records deduplicate identical bytes within one owner's standalone uploads or
-within one parent archive. Separate archives retain separate child records and parent
+Without a completion token, upload records deduplicate identical bytes within one
+owner's standalone uploads or within one parent archive. Separate archives retain separate child records and parent
 provenance. Artifact blobs continue to share identical bytes independently of these records.
