@@ -62,9 +62,10 @@ local function define_tests()
             local actor = security.new_actor("capability-member", {})
             local member_scope = scope({"kickside.agents.security:module_access", "kickside.memory.security:module_access"})
             test.eq(member_scope:evaluate(actor, "registry.get", CAPABILITY), "allow")
-            local result, err = funcs.new():with_actor(actor):with_scope(member_scope):call(PROBE, {id = CAPABILITY})
+            local result, err = funcs.new():with_actor(actor):with_scope(member_scope):call(PROBE,
+                {id = CAPABILITY, contexts = {[CAPABILITY] = {memory_id = "memory-probe"}}})
             test.is_nil(err, tostring(err))
-            test.is_true(result.ok)
+            test.is_true(result.ok, tostring(result.message or result.error))
         end)
     end)
 end
