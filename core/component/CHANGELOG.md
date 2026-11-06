@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.7](https://github.com/kicksideai/kickside/compare/component-v0.3.6...component-v0.3.7) (2026-11-06)
+
+
+### Bug Fixes
+
+* **component:** authorize deletion dependencies and continue cleanup across error kinds ([f48c782](https://github.com/kicksideai/kickside/commit/f48c78267a60800793a40c46f8416c6ae8bb27f5))
+* **component:** authorize deletion-owned job dependencies ([416f3ab](https://github.com/kicksideai/kickside/commit/416f3abd48e5a140885ccd3d042ee1dd4a2f8c1d))
+* **component:** continue structured cleanup across error kinds ([784f8c4](https://github.com/kicksideai/kickside/commit/784f8c4502656381f588b6d040717d5935e31bc2))
+
 ## [0.3.6](https://github.com/kicksideai/kickside/compare/component-v0.3.5...component-v0.3.6) (2026-11-05)
 
 
