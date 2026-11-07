@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.9](https://github.com/kicksideai/kickside/compare/component-v0.3.8...component-v0.3.9) (2026-11-07)
+
+
+### Performance Improvements
+
+* **component:** read only the execution identity key for the identity receipt ([#334](https://github.com/kicksideai/kickside/issues/334)) ([d3e7670](https://github.com/kicksideai/kickside/commit/d3e767080d239d902359cf88440f9ed7628fae0d))
+
 ## [0.3.8](https://github.com/kicksideai/kickside/compare/component-v0.3.7...component-v0.3.8) (2026-11-07)
 
 
