@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local process = require("process")
 local function claim(args): (any?, error?)
     local registered, err = process.registry.register(args.name, nil, process.registry.CONSISTENT)

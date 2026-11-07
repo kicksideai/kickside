@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local channel_sink = require("channel_sink")
 local reply_sender = require("reply_sender")
 
