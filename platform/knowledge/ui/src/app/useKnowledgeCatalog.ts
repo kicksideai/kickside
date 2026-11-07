@@ -2,6 +2,7 @@ import { computed, onBeforeUnmount, ref, type Ref } from 'vue'
 import { api, on } from '@wippy-fe/proxy'
 import { componentMetaEvent, type ComponentMetaEvent } from '@widgets/app/componentRealtime'
 import { errMsg } from '@widgets/app/errMsg'
+import { latestRequest } from '@widgets/app/latestRequest'
 import { KNOWLEDGE_META_FIELD_TYPES, KNOWLEDGE_COUNT_KEYS } from './meta'
 import type { EmbeddingModel, Engine, KbDetail, KnowledgeBase, StatItem, StatSpec } from './knowledge.types.ts'
 
@@ -21,7 +22,7 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
   const engines = ref<Engine[]>([])
   const dialogLoadError = ref('')
   let catalogActive = true
-  let catalogLoadGeneration = 0
+  const beginCatalogLoad = latestRequest()
   let discoveryLoading = false
   let discoveryPending = false
 
@@ -44,7 +45,7 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
 
   async function load(): Promise<boolean> {
     if (!catalogActive) return false
-    const generation = ++catalogLoadGeneration
+    const current = beginCatalogLoad()
     loading.value = true
     error.value = ''
     notice.value = ''
@@ -53,26 +54,26 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
       if (!data?.success) {
         const msg = data?.error || 'failed to load knowledge bases'
         if (isEngineMissing(msg)) {
-          if (generation === catalogLoadGeneration && catalogActive) {
+          if (current() && catalogActive) {
             notice.value = ENGINE_NOTICE
           }
           return false
         }
         throw new Error(msg)
       }
-      if (generation === catalogLoadGeneration && catalogActive) {
+      if (current() && catalogActive) {
         kbs.value = (data.items || []) as KnowledgeBase[]
       }
       return true
     } catch (e) {
       const msg = errMsg(e, 'could not load knowledge bases')
-      if (generation === catalogLoadGeneration && catalogActive) {
+      if (current() && catalogActive) {
         if (isEngineMissing(msg)) notice.value = ENGINE_NOTICE
         else error.value = msg
       }
       return false
     } finally {
-      if (generation === catalogLoadGeneration) {
+      if (current()) {
         loading.value = false
         if (catalogActive && discoveryPending && !discoveryLoading) void refreshDiscoveredCatalog()
       }

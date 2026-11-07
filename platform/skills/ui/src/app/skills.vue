@@ -11,6 +11,7 @@ import type { Skill, SkillFile, SkillVersion } from '../types.ts'
 import { fetchSkills, fetchSkill, fetchVersions, fetchSkillFile, errMsg } from '../api.ts'
 import { skillStatusLabel, fileKindLabel } from './labels.ts'
 import IconField from '@widgets/app/IconField.vue'
+import { latestRequest } from '@widgets/app/latestRequest'
 import SelectField from './SelectField.vue'
 
 const DIALOG_PT = {
@@ -42,15 +43,18 @@ const filtered = computed(() => {
     (s.description || '').toLowerCase().includes(q))
 })
 
+const beginLoad = latestRequest()
 async function load() {
+  const current = beginLoad()
   loading.value = true
   error.value = ''
   try {
-    skills.value = await fetchSkills()
+    const rows = await fetchSkills()
+    if (current()) skills.value = rows
   } catch (e) {
-    error.value = errMsg(e, 'could not load skills')
+    if (current()) error.value = errMsg(e, 'could not load skills')
   } finally {
-    loading.value = false
+    if (current()) loading.value = false
   }
 }
 

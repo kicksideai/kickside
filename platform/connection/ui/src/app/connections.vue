@@ -9,6 +9,7 @@ import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import { apiError } from '../constants'
 import ConnectionPicker from './ConnectionPicker.vue'
 import { subscribeComponentMeta, type ComponentMetaEvent } from '@widgets/app/componentRealtime'
+import { latestRequest } from '@widgets/app/latestRequest'
 import { CONNECTION_META_FIELD_TYPES } from '../status'
 import type { Connection } from './connections.types.ts'
 import type { Provider } from './connection-picker.types.ts'
@@ -65,7 +66,9 @@ async function fetchConnections(offset: number) {
   return data
 }
 
+const beginLoad = latestRequest()
 async function load() {
+  const current = beginLoad()
   loading.value = true
   error.value = ''
   loadError.value = ''
@@ -77,6 +80,7 @@ async function load() {
       api.get('/api/v1/oauth/providers/discover'),
       api.get('/api/v1/connections/providers/discover'),
     ])
+    if (!current()) return
     connections.value = (conns.connections ?? []) as Connection[]
     connectionsTotal.value = Number(conns.total_count ?? connections.value.length)
     connectionsHasMore.value = Boolean(conns.has_more)
@@ -86,11 +90,12 @@ async function load() {
       ...((credentialProvs.data?.providers ?? []) as Provider[]),
     ])
   } catch (e) {
+    if (!current()) return
     if (connections.value.length) error.value = apiError(e)
     else loadError.value = apiError(e)
     syncComponentSubscriptions()
   } finally {
-    loading.value = false
+    if (current()) loading.value = false
   }
 }
 

@@ -8,6 +8,7 @@ import Dialog from 'primevue/dialog'
 import { host } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import { relativeTime } from '@widgets/app/datetime'
+import { latestRequest } from '@widgets/app/latestRequest'
 import WebhookCreate from './WebhookCreate.vue'
 import WebhookSchema from './WebhookSchema.vue'
 import { webhookStatusLabel } from './labels'
@@ -52,15 +53,18 @@ const previewSchema = computed(() => {
   return (parsed.schema as Record<string, unknown>) || (editing.value?.schema ?? {})
 })
 
+const beginLoad = latestRequest()
 async function load() {
+  const current = beginLoad()
   loading.value = true
   error.value = ''
   try {
-    rows.value = await fetchWebhooks()
+    const fetched = await fetchWebhooks()
+    if (current()) rows.value = fetched
   } catch (e) {
-    error.value = errMsg(e, 'could not load webhooks')
+    if (current()) error.value = errMsg(e, 'could not load webhooks')
   } finally {
-    loading.value = false
+    if (current()) loading.value = false
   }
 }
 
