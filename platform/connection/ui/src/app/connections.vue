@@ -59,7 +59,10 @@ function connectionUrl(offset: number): string {
 
 async function fetchConnections(offset: number) {
   const { data } = await api.get(connectionUrl(offset))
-  return data ?? { connections: [], total_count: 0, has_more: false }
+  // A failed read answers with the same shape as a non-2xx response, so apiError
+  // reports the server's message for both.
+  if (!data?.success) throw Object.assign(new Error('Could not load connections.'), { response: { data } })
+  return data
 }
 
 async function load() {

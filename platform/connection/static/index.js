@@ -1,6 +1,6 @@
-import { B as Ne, C as Pe, c as Me, r as Te, d as De, b as Y, e as Oe, W as Ae, s as Le, P as Re } from "./styles-BaObeLq2.js";
+import { B as Ne, C as Pe, c as Me, r as Te, d as Oe, b as Y, e as De, W as Ae, s as Le, P as Re } from "./styles-Bx2Y_Hv8.js";
 import { openBlock as _, createElementBlock as m, mergeProps as ne, createElementVNode as i, defineComponent as ue, computed as Z, withModifiers as oe, Fragment as F, createTextVNode as se, toDisplayString as E, createCommentVNode as N, createVNode as b, unref as c, watch as Be, onBeforeUnmount as pe, ref as w, withDirectives as Ie, vModelText as Ue, withCtx as le, renderList as ce, normalizeClass as q, createBlock as Ve, nextTick as Ke } from "vue";
-import { s as ze, a as re, _ as He } from "./ConnectionPicker.vue_vue_type_script_setup_true_lang-B7Mrf5Y8.js";
+import { s as ze, a as re, _ as He } from "./ConnectionPicker.vue_vue_type_script_setup_true_lang-BySRXbJq.js";
 import { on as fe, api as W, host as We, loadByTagName as Fe, define as Ge } from "@wippy-fe/proxy";
 import { Icon as $ } from "@iconify/vue";
 var Je = `
@@ -270,8 +270,8 @@ function at(r, n, u, p) {
   let f = !0;
   const l = /* @__PURE__ */ new Set(), S = /* @__PURE__ */ new Map();
   function x(y, g) {
-    const v = r.value.find((L) => n(L) === y), d = S.get(y), k = g?.job_id || d?.deletion_job_id || v?.deletion_job_id, D = d ? d.deletion_job_id : v?.deleting_at ? v.deletion_job_id : void 0;
-    if ((d || v?.deleting_at) && k === D) return;
+    const v = r.value.find((L) => n(L) === y), d = S.get(y), k = g?.job_id || d?.deletion_job_id || v?.deletion_job_id, O = d ? d.deletion_job_id : v?.deleting_at ? v.deletion_job_id : void 0;
+    if ((d || v?.deleting_at) && k === O) return;
     const M = {
       deleting_at: d?.deleting_at || v?.deleting_at || (/* @__PURE__ */ new Date()).toISOString(),
       deletion_job_id: k
@@ -300,8 +300,8 @@ function at(r, n, u, p) {
     for (const d of y) {
       const k = S.get(n(d));
       k && (d.deletion_job_id !== k.deletion_job_id && (d.deletion_job = void 0), Object.assign(d, k));
-      const D = g.find((M) => n(M) === n(d));
-      d.deletion_job === void 0 && D?.deletion_job_id === d.deletion_job_id && (d.deletion_job = D?.deletion_job), d.deleting_at && !A.includes(d) && j(d);
+      const O = g.find((M) => n(M) === n(d));
+      d.deletion_job === void 0 && O?.deletion_job_id === d.deletion_job_id && (d.deletion_job = O?.deletion_job), d.deleting_at && !A.includes(d) && j(d);
     }
     A = y;
   }, { immediate: !0 }), T = fe("@message", (y) => {
@@ -359,7 +359,7 @@ function lt({ providers: r, connections: n, search: u, confirmId: p }) {
     const a = d(o);
     return a === "connected" && v(o) ? "warn" : Me[a];
   }
-  function D(o) {
+  function O(o) {
     const a = d(o);
     return a === "connected" && v(o) ? "Limited access" : Pe[a];
   }
@@ -383,11 +383,11 @@ function lt({ providers: r, connections: n, search: u, confirmId: p }) {
     const a = d(o);
     return a === "expired" ? "The stored access token is expired; reconnect or wait for refresh." : a === "needs_reauth" ? `Reauthorize this connection to restore access.${o.reauth_reason ? " " + o.reauth_reason : ""}` : a === "disabled" ? "This connection is disabled and will not be used." : v(o) ? "Reauthorize this connection to grant service scopes." : o.oauth ? "OAuth connection available for agents and automations." : "Connection available for agents and automations.";
   }
-  function O(o) {
+  function D(o) {
     const a = u.value.trim().toLowerCase();
     return !a || o.toLowerCase().includes(a);
   }
-  const I = Z(() => r.value.filter((o) => O(`${l(o)} ${o.description ?? ""} ${(o.classes ?? []).join(" ")}`))), G = Z(() => n.value.filter((o) => O(`${o.name ?? ""} ${o.provider ?? ""}`)));
+  const I = Z(() => r.value.filter((o) => D(`${l(o)} ${o.description ?? ""} ${(o.classes ?? []).join(" ")}`))), G = Z(() => n.value.filter((o) => D(`${o.name ?? ""} ${o.provider ?? ""}`)));
   return {
     providerKey: f,
     providerLabel: l,
@@ -401,7 +401,7 @@ function lt({ providers: r, connections: n, search: u, confirmId: p }) {
     hasSignInOnlyScopes: v,
     connectionState: d,
     statusClass: k,
-    statusLabel: D,
+    statusLabel: O,
     expiryText: M,
     statusDetail: L,
     connectionDescription: R,
@@ -430,7 +430,7 @@ const ct = { class: "conn-page" }, dt = { class: "kx-head" }, ut = { class: "kx-
 }, Tt = {
   key: 0,
   class: "list-foot"
-}, Dt = ["disabled"], Ot = {
+}, Ot = ["disabled"], Dt = {
   key: 2,
   class: "conn-empty au d1"
 }, At = { class: "lt-empty-hero is-success" }, Lt = {
@@ -453,10 +453,10 @@ const ct = { class: "conn-page" }, dt = { class: "kx-head" }, ut = { class: "kx-
       statusClass: v,
       statusLabel: d,
       statusDetail: k,
-      connectionDescription: D,
+      connectionDescription: O,
       filteredProviders: M,
       filteredConnections: L
-    } = A, R = w(0), O = w(!1), I = w(!1), G = w(void 0), o = w(void 0), a = w(!1), C = w(null), B = w(null);
+    } = A, R = w(0), D = w(!1), I = w(!1), G = w(void 0), o = w(void 0), a = w(!1), C = w(null), B = w(null);
     function Q(s) {
       return `/api/v1/connections?${new URLSearchParams({
         limit: String(qt),
@@ -465,7 +465,8 @@ const ct = { class: "conn-page" }, dt = { class: "kx-head" }, ut = { class: "kx-
     }
     async function ie(s) {
       const { data: e } = await W.get(Q(s));
-      return e ?? { connections: [], total_count: 0, has_more: !1 };
+      if (!e?.success) throw Object.assign(new Error("Could not load connections."), { response: { data: e } });
+      return e;
     }
     async function K() {
       p.value = !0, l.value = "", S.value = "";
@@ -475,7 +476,7 @@ const ct = { class: "conn-page" }, dt = { class: "kx-head" }, ut = { class: "kx-
           W.get("/api/v1/oauth/providers/discover"),
           W.get("/api/v1/connections/providers/discover")
         ]);
-        n.value = s.connections ?? [], R.value = Number(s.total_count ?? n.value.length), O.value = !!s.has_more, ee(), u.value = me([
+        n.value = s.connections ?? [], R.value = Number(s.total_count ?? n.value.length), D.value = !!s.has_more, ee(), u.value = me([
           ...e.data?.providers ?? [],
           ...t.data?.providers ?? []
         ]);
@@ -486,11 +487,11 @@ const ct = { class: "conn-page" }, dt = { class: "kx-head" }, ut = { class: "kx-
       }
     }
     async function _e() {
-      if (!(f.value || !O.value)) {
+      if (!(f.value || !D.value)) {
         f.value = !0, l.value = "";
         try {
           const s = await ie(n.value.length), e = s.connections ?? [];
-          n.value = [...n.value, ...e], R.value = Number(s.total_count ?? R.value), O.value = !!s.has_more, ee();
+          n.value = [...n.value, ...e], R.value = Number(s.total_count ?? R.value), D.value = !!s.has_more, ee();
         } catch (s) {
           l.value = Y(s);
         } finally {
@@ -541,7 +542,7 @@ const ct = { class: "conn-page" }, dt = { class: "kx-head" }, ut = { class: "kx-
       for (const t of s) {
         if (U.has(t) || J.has(t)) continue;
         J.add(t);
-        const h = it(t, (V) => be(t, V), Oe);
+        const h = it(t, (V) => be(t, V), De);
         if (J.delete(t), !!h) {
           if (e !== X || !n.value.some((V) => V.component_id === t)) {
             h();
@@ -598,7 +599,7 @@ const ct = { class: "conn-page" }, dt = { class: "kx-head" }, ut = { class: "kx-
         l.value = Y(e);
       }
     }
-    De(K), pe(ke);
+    Oe(K), pe(ke);
     const { acceptDeletion: we } = at(n, (s) => s.component_id, void 0, K);
     return (s, e) => (_(), m("div", ct, [
       i("header", dt, [
@@ -734,7 +735,7 @@ const ct = { class: "conn-page" }, dt = { class: "kx-head" }, ut = { class: "kx-
                   ])
                 ]),
                 i("div", Et, E(t.name || t.provider || "Connection"), 1),
-                i("div", Nt, E(c(D)(t)), 1),
+                i("div", Nt, E(c(O)(t)), 1),
                 i("div", {
                   class: q(["lc-status", `state-${c(v)(t)}`])
                 }, [
@@ -744,9 +745,9 @@ const ct = { class: "conn-page" }, dt = { class: "kx-head" }, ut = { class: "kx-
                 ], 2)
               ], 2))), 128))
             ]),
-            R.value || O.value ? (_(), m("div", Tt, [
+            R.value || D.value ? (_(), m("div", Tt, [
               i("span", null, E(n.value.length) + " of " + E(R.value || n.value.length) + " loaded", 1),
-              O.value ? (_(), m("button", {
+              D.value ? (_(), m("button", {
                 key: 0,
                 class: "ghost-action",
                 disabled: f.value,
@@ -757,9 +758,9 @@ const ct = { class: "conn-page" }, dt = { class: "kx-head" }, ut = { class: "kx-
                   class: q(f.value && "spin")
                 }, null, 8, ["icon", "class"]),
                 e[7] || (e[7] = se(" Load more ", -1))
-              ], 8, Dt)) : N("", !0)
+              ], 8, Ot)) : N("", !0)
             ])) : N("", !0)
-          ])) : !j.value && u.value.length ? (_(), m("section", Ot, [
+          ])) : !j.value && u.value.length ? (_(), m("section", Dt, [
             i("div", At, [
               b(c($), { icon: "tabler:plug-connected" })
             ]),

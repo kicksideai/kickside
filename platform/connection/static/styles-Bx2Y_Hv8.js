@@ -2280,6 +2280,8 @@ function qn(e) {
   const t = e?.response?.data;
   if (t && typeof t == "object") {
     if (typeof t.error == "string" && t.error) return t.error;
+    const r = t.error;
+    if (r && typeof r == "object" && typeof r.message == "string" && r.message) return r.message;
     if (typeof t.message == "string" && t.message) return t.message;
   }
   return e instanceof Error ? e.message : String(e);
@@ -2368,4 +2370,4 @@ export {
   At as y,
   yo as z
 };
-//# sourceMappingURL=styles-BaObeLq2.js.map
+//# sourceMappingURL=styles-Bx2Y_Hv8.js.map
