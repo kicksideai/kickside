@@ -1,0 +1,10 @@
+/* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
+@import "@wippy-fe/theme/theme-config.css";
+@import "@kickside/ui-kit/spin.css";
+@tailwind base;
+:host { display: block; }
+/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
+:host > div:empty, :host > div:has(> [role=status]) { min-height: 114px; }
+*, *::before, *::after { box-sizing: border-box; }
+.kx-manual-launcher { display: grid; gap: 0.75rem; }
+.kx-manual-launcher p { margin: 0; }

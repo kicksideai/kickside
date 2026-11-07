@@ -1,6 +1,6 @@
-import { W as a } from "./index-DoQuo6nY.js";
-import { define as c, loadByTagName as d } from "@wippy-fe/proxy";
-const p = `
+import { a as c } from "./wc-runtime-B-1gP9Y_.js";
+import { define as d, loadByTagName as p } from "@wippy-fe/proxy";
+const m = `
   :host { display: block; color: inherit; font-family: inherit; }
   .notice { display: flex; flex-direction: column; gap: 14px; }
   .content { display: block; margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--p-text-color, currentColor); }
@@ -19,7 +19,7 @@ function i(t) {
     "'": "&#39;"
   })[e] || e);
 }
-function m(t) {
+function f(t) {
   if (!t) return [];
   try {
     const n = JSON.parse(t)?.fields;
@@ -29,10 +29,10 @@ function m(t) {
   }
 }
 function l(t) {
-  const e = t.content ?? "", n = m(t.dataMeta ?? ""), o = e ? `<wc-render-markdown class="content" source="${i(e)}"></wc-render-markdown>` : "", r = n.length ? `<div class="fields">${n.map((s) => `<div class="field"><span class="label">${i(s.label)}</span><span class="value">${i(s.value)}</span></div>`).join("")}</div>` : "";
+  const e = t.content ?? "", n = f(t.dataMeta ?? ""), o = e ? `<wc-render-markdown class="content" source="${i(e)}"></wc-render-markdown>` : "", r = n.length ? `<div class="fields">${n.map((s) => `<div class="field"><span class="label">${i(s.label)}</span><span class="value">${i(s.value)}</span></div>`).join("")}</div>` : "";
   return `<div class="notice">${o}${r}</div>`;
 }
-class f extends a {
+class a extends c {
   // Return type is the base's un-parameterized config: the static getter on
   // WippyElement is declared as WippyElementConfig<Record<string, unknown>>, and
   // a narrower WippyElementConfig<NoticeProps> would break static-side variance
@@ -48,12 +48,12 @@ class f extends a {
       },
       // Self-styled fallback body; no host CSS needed (theme vars have fallbacks).
       hostCssKeys: [],
-      inlineCss: p
+      inlineCss: m
     };
   }
   container = null;
   onMount(e, n, o) {
-    this.container = n, n.innerHTML = l(o), d("wc-render-markdown", { timeoutMs: 8e3 }).catch((r) => this.onError(r));
+    this.container = n, n.innerHTML = l(o), p("wc-render-markdown", { timeoutMs: 8e3 }).catch((r) => this.onError(r));
   }
   onPropsChanged(e) {
     this.container && (this.container.innerHTML = l(e));
@@ -62,5 +62,11 @@ class f extends a {
     this.container = null;
   }
 }
-c(import.meta.url, f);
+async function x() {
+  return a;
+}
+d(import.meta.url, a);
+export {
+  x as webComponent
+};
 //# sourceMappingURL=notice.js.map

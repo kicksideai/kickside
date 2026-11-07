@@ -1,9 +1,19 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import type { ComponentProps } from './types.ts'
 import type { Events } from './constants.ts'
-import ChannelPicker from './app/ChannelPicker.vue'
+import { lazyControl } from '../lazy'
 import stylesText from './styles.css?inline'
+
+const ChannelPicker = lazyControl(
+  () => import('./app/ChannelPicker.vue'),
+  {
+    loading: 'Loading channel picker…',
+    failed: 'Could not load the channel picker. Reload the page to try again.',
+    iconOnly: true,
+  },
+  useEvents,
+)
 
 const PROPS_SCHEMA: WippyPropsSchema = {
   type: 'object',

@@ -11,6 +11,8 @@
 @tailwind base;
 
 :host { display: block; font-size: 13px; color: var(--p-text-color); }
+/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
+:host > div:empty, :host > div:has(> [role=status]) { min-height: 60px; }
 *, *::before, *::after { box-sizing: border-box; }
 
 .kx-tc { display: flex; flex-direction: column; gap: 16px; min-width: 0; }

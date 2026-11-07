@@ -11,6 +11,8 @@
   display: inline-block;
   position: relative;
 }
+/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
+:host > div:empty, :host > div:has(> [role=status]) { min-width: 103px; min-height: 35px; }
 
 /* Local stacking workaround REMOVED — the platform overlay portal now promotes the
    overlay into the browser top layer (see @wippy-fe/theme primevue-plugin), so the

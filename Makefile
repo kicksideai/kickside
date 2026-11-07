@@ -32,7 +32,7 @@ UI_KIT_CONSUMERS := app-main agents automation channel connection hub inbox know
 # @widgets path alias. TypeScript resolves that source's bare imports from the
 # widgets package directory, so its local dependencies must exist before any
 # consumer runs vue-tsc.
-WIDGET_SOURCE_CONSUMERS := agents automation channel connection hub identity inbox knowledge mcp models security settings skills sync transform ui uploads users webhooks workflows
+WIDGET_SOURCE_CONSUMERS := agents automation channel connection hub identity inbox knowledge mcp models renderers security sessions settings skills sync transform ui uploads users webhooks workflows
 
 FE_MODULES := app-main plugin-template $(patsubst platform/%/ui/package.json,%,$(wildcard platform/*/ui/package.json))
 

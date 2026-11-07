@@ -1,3 +1,4 @@
+@import "@kickside/ui-kit/spin.css";
 
 /* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
    preflight; without it PrimeVue controls keep UA defaults the theme never
@@ -20,3 +21,5 @@
 .cw-spinner { width: 18px; height: 18px; }
 .cw-feedback { margin: 0 24px 10px; }
 @media (max-width: 640px) { .cw-head { padding: 16px 16px 12px; } .cw-feedback { margin-inline: 16px; } }
+/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
+:host > div:empty, :host > div:has(> [role=status]) { min-height: 301px; }

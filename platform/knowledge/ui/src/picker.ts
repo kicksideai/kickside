@@ -1,6 +1,6 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
-import KbPicker from './app/kb-picker.vue'
+import { lazyControl } from '@widgets/lazy'
 import stylesText from './picker.css?inline'
 
 // The reusable Knowledge config component. Trait contexts use `config.kb_ids`;
@@ -15,6 +15,12 @@ interface PickerEvents {
   load: undefined
   error: { message: string; error: unknown }
 }
+
+const Root = lazyControl(
+  () => import('./app/kb-picker.vue'),
+  { loading: 'Loading the knowledge base picker…', failed: 'Could not load the knowledge base picker. Reload the page to try again.' },
+  useEvents,
+)
 
 const PROPS_SCHEMA = {
   type: 'object',
@@ -34,7 +40,7 @@ class KbPickerElement extends WippyVueElement<PickerProps, PickerEvents> {
   }
 
   static get vueConfig() {
-    return { rootComponent: KbPicker }
+    return { rootComponent: Root }
   }
 }
 

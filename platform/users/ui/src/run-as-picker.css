@@ -1,5 +1,8 @@
 @import "@wippy-fe/theme/theme-config.css";
 @import "@widgets/app/pickerselect.css";
+@import "@kickside/ui-kit/spin.css";
 @tailwind base;
 :host { display: block; }
+/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
+:host > div:empty, :host > div:has(> [role=status]) { min-height: 36px; }
 *, *::before, *::after { box-sizing: border-box; }

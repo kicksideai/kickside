@@ -8,6 +8,8 @@
 @tailwind base;
 
 :host { display: block; }
+/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
+:host > div:empty, :host > div:has(> [role=status]) { min-height: 38px; }
 *, *::before, *::after { box-sizing: border-box; }
 
 /* The control: a field-like box holding the selected chips and the inline

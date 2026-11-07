@@ -1,68 +1,10 @@
-import { u as y, g as C, W as h, P as _ } from "./primevue-plugin-Dn0ACs8V.js";
-import { computed as p, defineComponent as I, ref as s, onMounted as P, openBlock as w, createBlock as E, unref as S } from "vue";
-import { api as u, define as b } from "@wippy-fe/proxy";
-import { _ as k, l as x } from "./toolCatalog-BlyBDd4C.js";
-import { s as A } from "./styles-CN0_5BM1.js";
+import { W as e, u as o } from "./wc-runtime-KO3cNuNo.js";
+import { P as i } from "./primevue-plugin-CaP7wV_M.js";
+import { l as n } from "./lazy-CHftQ23z.js";
+import { s as r } from "./styles-CWcqMiwK.js";
 import "@iconify/vue";
-function V(o) {
-  return p(() => {
-    const t = o.value;
-    return t ? (typeof t.parentId == "string" ? t.parentId : "").trim() : "";
-  });
-}
-const B = /* @__PURE__ */ I({
-  __name: "AgentEdit",
-  setup(o) {
-    const t = y(), a = C(), d = p(() => {
-      const e = t.value;
-      return e.componentId || e.entryId || (e.parentId ? "" : e.route || "");
-    }), n = p(() => d.value || null), m = V(t), r = s([]), i = s([]), c = s([]), l = s([]);
-    async function g() {
-      try {
-        const { data: e } = await u.get("/api/v1/agents/traits");
-        r.value = e?.success ? e.traits || [] : [];
-      } catch {
-        r.value = [];
-      }
-      try {
-        i.value = await x();
-      } catch {
-        i.value = [];
-      }
-      try {
-        const { data: e } = await u.get("/api/v1/models/list?capability=generate", { headers: { "Cache-Control": "no-cache", Pragma: "no-cache" } });
-        c.value = e?.success ? e.models || [] : [];
-      } catch {
-        c.value = [];
-      }
-      try {
-        const { data: e } = await u.get("/api/v1/user-agents");
-        l.value = e?.success ? e.agents || [] : [];
-      } catch {
-        l.value = [];
-      }
-    }
-    P(g);
-    function v(e) {
-      n.value ? a("saved", { id: e || n.value }) : a("created", { id: e || "" });
-    }
-    function f() {
-      a("close", { id: n.value || "" });
-    }
-    return (e, O) => (w(), E(k, {
-      open: !0,
-      embedded: !0,
-      "agent-id": n.value,
-      "parent-id": S(m).value,
-      traits: r.value,
-      tools: i.value,
-      models: c.value,
-      agents: l.value,
-      onSaved: v,
-      onClose: f
-    }, null, 8, ["agent-id", "parent-id", "traits", "tools", "models", "agents"]));
-  }
-}), K = {
+import { define as s } from "@wippy-fe/proxy";
+const p = {
   type: "object",
   properties: {
     route: { type: "string" },
@@ -71,18 +13,28 @@ const B = /* @__PURE__ */ I({
     "entry-id": { type: "string" },
     mode: { type: "string" }
   }
-};
-class M extends h {
+}, m = n(
+  () => import("./AgentEdit-BcWvnDm4.js"),
+  { loading: "Loading agent editor…", failed: "Could not load the agent editor. Reload the page to try again." },
+  o
+);
+class t extends e {
   static get wippyConfig() {
     return {
-      propsSchema: K,
+      propsSchema: p,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: A
+      inlineCss: r
     };
   }
   static get vueConfig() {
-    return { rootComponent: B, plugins: [_] };
+    return { rootComponent: m, plugins: [i] };
   }
 }
-b(import.meta.url, M);
+async function f() {
+  return t;
+}
+s(import.meta.url, t);
+export {
+  f as webComponent
+};
 //# sourceMappingURL=agent_edit.js.map

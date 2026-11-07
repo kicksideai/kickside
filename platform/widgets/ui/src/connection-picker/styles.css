@@ -7,6 +7,8 @@
 @tailwind base;
 
 :host { display: block; }
+/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
+:host > div:empty, :host > div:has(> [role=status]) { min-height: 36px; }
 *, *::before, *::after { box-sizing: border-box; }
 
 /* The control is PrimeVue's Select — trigger, overlay, option rows and filter box
