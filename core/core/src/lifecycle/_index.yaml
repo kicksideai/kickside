@@ -238,14 +238,46 @@ entries:
   - name: boot_process
     kind: process.lua
     meta:
-      comment: Provisions the system lifecycle singleton and converges declared component state as system:lifecycle, then stays resident and upgradable — on the OUTDATED code-change event it process.upgrade()s in place, re-running convergence at install time.
+      comment: Provisions the system lifecycle singleton and converges declared component state as system:lifecycle once the migrations owning the tables it reads are applied (on start or upgrade when current; otherwise on the migrations-applied message or the parked ledger retry), then stays resident and upgradable — on the OUTDATED code-change event it process.upgrade()s in place.
     source: file://boot.lua
     method: main
-    modules: [security, logger, process]
+    modules: [security, logger, process, channel, time]
     imports:
       provision: kickside.core.threads:provision
       lifecycle_consts: kickside.core.lifecycle:consts
       error_envelope: kickside.contract:error_envelope
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      migration_runner: wippy.migration:runner
+      core_db: kickside.core:db
+
+  - name: migrations_applied_transport
+    kind: security.policy
+    meta:
+      private: true
+      comment: Lets the migrations-applied bootloader message the registered lifecycle boot process.
+    policy:
+      resources: '*'
+      actions: process.send
+      effect: allow
+
+  - name: migrations_applied
+    kind: function.lua
+    meta:
+      type: bootloader
+      order: 40
+      requires:
+        - wippy.migration:migration_bootloader
+      comment: Runs after each install's migrations and asks the resident lifecycle boot process to converge declared state against the migrated schema.
+    source: file://migrations_applied.lua
+    method: run
+    modules: [process]
+    security:
+      actor:
+        id: kickside.core.lifecycle:migrations_applied
+      policies:
+        - kickside.core.lifecycle:migrations_applied_transport
+    imports:
+      lifecycle_consts: kickside.core.lifecycle:consts
 
   - name: boot.service
     kind: process.service

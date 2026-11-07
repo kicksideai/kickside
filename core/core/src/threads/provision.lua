@@ -184,9 +184,8 @@ end
 -- missing thread row is recreated (thread-declaring kinds), a missing declared
 -- projection or cursor is registered (any kind declaring projections). Declared state thereby survives anything — a partial
 -- delete, a lost row, a module uninstall/reinstall — because the next service
--- start reasserts the declaration. Boot runs it on service start and on a
--- code-changing in-place upgrade; an identical-source reinstall does not
--- trigger convergence. Each component converges under its own
+-- start reasserts the declaration. Boot runs it on service start and after
+-- each install's migrations are applied. Each component converges under its own
 -- stored execution identity (converge_executor), so projections keep running as
 -- whoever owns them and the opener's framework frame never stands in for a user.
 -- Components already matching their declaration are not touched at all.
