@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- The sync's round consumer (kickside.trigger:round_consumer.deliver; design
 -- v5 §3.2, §4.6). An automation round calls it under the automation's live
 -- execution identity with one page of a drive's items and the drive's applied
