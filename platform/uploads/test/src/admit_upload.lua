@@ -17,7 +17,7 @@ local function run(args)
                 writefile = function(_, path, bytes)
                     local ok, err = storage:writefile(path, bytes)
                     arrived:send(index)
-                    release[index]:receive()
+                    assert(release[index], "admission writes more than two uploads"):receive()
                     return ok, err
                 end,
                 remove = function(_, path) return storage:remove(path) end,

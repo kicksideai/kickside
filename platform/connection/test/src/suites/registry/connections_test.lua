@@ -215,6 +215,7 @@ local function define_tests()
                 test.is_nil(mark_err)
                 test.not_nil(marked.deleting_at)
                 test.not_nil(marked.deletion_job_id)
+                if not connection_id then error("registered connection ID is missing") end
                 local finished, finish_err = deletion_worker.run(connection_id)
                 test.is_nil(finish_err, tostring(finish_err))
                 test.is_true(finished.deleted)

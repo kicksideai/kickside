@@ -4,7 +4,7 @@ local funcs = require("funcs")
 
 local M = {}
 
-function M.arm(args: any): (any?, string?)
+function M.arm(args: any): (any?, string | error | nil)
     local a = type(args) == "table" and args or {}
     local actor = security.actor()
     local actor_id = actor and actor:id() or ""

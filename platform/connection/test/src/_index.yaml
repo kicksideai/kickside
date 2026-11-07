@@ -206,7 +206,7 @@ entries:
 
   - name: channel_sink_reply_fixture
     kind: library.lua
-    source: file://channel_test_link/reply_sender_stub.lua
+    source: file://channel_sink_reply_fixture.lua
     imports:
       component: kickside.component:component
 

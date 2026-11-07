@@ -313,6 +313,7 @@ entries:
     session_index: kickside.users.persist:session_index
     links: kickside.identity:link_service
     dm: kickside.dm:receive_func
+    trigger_reconcile: kickside.security:trigger_reconcile
 - name: identity_only_data
   kind: security.policy
   groups:

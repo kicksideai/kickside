@@ -205,17 +205,15 @@ local function define_tests()
                 end },
             })
             with_deps(set, function()
-                local a = telegram_attachment({
-                    thread_id = "t1",
-                    metadata = {
-                        __upload_token = "tok", __upload_tokens = { "tok-2" },
-                        crm_files = { crm_id = "c1" }, source = "spoofed",
-                        __relocation_cleanup = { { storage_id = "forged", storage_path = "forged" } },
-                        _execution_identity = { actor_id = "forged" }, _private = "forged",
-                        storage_id = "forged", storage_path = "forged", checksum = "forged",
-                        original_storage_id = "forged", original_storage_path = "forged",
-                    },
-                })
+                local caller_metadata = {
+                    __upload_token = "tok", __upload_tokens = { "tok-2" },
+                    crm_files = { crm_id = "c1" }, source = "spoofed",
+                    __relocation_cleanup = { { storage_id = "forged", storage_path = "forged" } },
+                    _execution_identity = { actor_id = "forged" }, _private = "forged",
+                    storage_id = "forged", storage_path = "forged", checksum = "forged",
+                    original_storage_id = "forged", original_storage_path = "forged",
+                }
+                local a = telegram_attachment({ thread_id = "t1", metadata = caller_metadata })
                 a.mime = nil
                 local upload, err = ai.ingest(a)
                 test.is_nil(err)
@@ -228,7 +226,7 @@ local function define_tests()
                     "storage_path", "original_storage_id", "original_storage_path", "checksum" }) do
                     test.is_nil(seen.metadata[key])
                 end
-                test.eq(a.metadata._private, "forged")
+                test.eq(caller_metadata._private, "forged")
                 test.eq(seen.metadata.crm_files.crm_id, "c1")
                 test.eq(seen.metadata.source, "telegram")
                 test.eq(seen.metadata.thread_id, "t1")

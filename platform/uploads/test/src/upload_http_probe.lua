@@ -1,6 +1,7 @@
 local ctx = require("ctx")
 local M = { CONTENT = { JSON = "application/json" }, STATUS = {
-    OK = 200, BAD_REQUEST = 400, UNAUTHORIZED = 401, FORBIDDEN = 403, NOT_FOUND = 404, INTERNAL_ERROR = 500 } }
+    OK = 200, BAD_REQUEST = 400, UNAUTHORIZED = 401, FORBIDDEN = 403, NOT_FOUND = 404, INTERNAL_ERROR = 500 },
+    upload_id = nil :: string?, status = nil :: number?, body = nil :: any? }
 function M.request()
     return { param = function() return ctx.get("upload_id") or M.upload_id end,
         method = function() return ctx.get("storage_method") or "GET" end,
