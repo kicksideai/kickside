@@ -127,6 +127,35 @@ entries:
     - {name: kickside.oauth:public_api_router, value: app:endpoint_policy_public_router}
     - {name: kickside.oauth:process_host, value: app.security:processes}
 
+  - name: dep.kickside.knowledge
+    kind: ns.dependency
+    component: kickside/knowledge
+    version: '*'
+    meta:
+      comment: Knowledge's user grants compose into the application user scope.
+    parameters:
+    - {name: kickside.knowledge:api_router, value: app:endpoint_policy_router}
+    - {name: kickside.knowledge:ui_server, value: app:endpoint_policy_gateway}
+    - {name: kickside.models:target_db, value: app:db}
+    - {name: kickside.models:api_router, value: app:endpoint_policy_router}
+    - {name: kickside.models:ui_server, value: app:endpoint_policy_gateway}
+    - {name: kickside.models:process_host, value: app.security:processes}
+    - {name: kickside.uploads:api_router, value: app:endpoint_policy_router}
+    - {name: kickside.uploads:ui_server, value: app:endpoint_policy_gateway}
+    - {name: kickside.uploads:database_resource, value: app:db}
+    - {name: kickside.uploads:storage_id, value: app:knowledge_uploads}
+    - {name: kickside.uploads:env_storage, value: app:knowledge_env}
+
+  - name: knowledge_uploads
+    kind: fs.directory
+    directory: ./.wippy/uploads
+    auto_init: true
+
+  - name: knowledge_env
+    kind: env.storage.file
+    file_path: ./.wippy/knowledge.env
+    auto_create: true
+
   - name: dep.kickside.security
     kind: ns.dependency
     component: kickside/security
