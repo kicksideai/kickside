@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.13](https://github.com/kicksideai/kickside/compare/agents-v0.2.12...agents-v0.2.13) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
 ## [0.2.12](https://github.com/kicksideai/kickside/compare/agents-v0.2.11...agents-v0.2.12) (2026-11-07)
 
 
