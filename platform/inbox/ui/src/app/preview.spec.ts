@@ -37,7 +37,7 @@ describe('Inbox list preview text', () => {
 
   it('reads a leading table as its header cells', () => {
     expect(previewText('| amount | name |\n| ---: | :--- |\n| 61000 | Mobile \\| App |')).toBe('amount · name')
-    expect(previewText('| --- | --- |\n| Mobile \\| App | 61000 |')).toBe('Mobile | App · 61000')
+    expect(previewText('| Mobile \\| App | 61000 |\n| --- | --- |')).toBe('Mobile | App · 61000')
   })
 
   it('reads a leading code fence as its first code line', () => {
@@ -52,6 +52,29 @@ describe('Inbox list preview text', () => {
       .toBe('chart up down bold https://example.com')
     expect(previewText('Run `a * b` on snake_case_name')).toBe('Run a * b on snake_case_name')
     expect(previewText('Literal \\*stars\\* and `\\*code\\*`')).toBe('Literal *stars* and \\*code\\*')
+  })
+
+  it('reads lines that only resemble block syntax as text', () => {
+    expect(previewText('Press #')).toBe('Press #')
+    expect(previewText('# Issue #12')).toBe('Issue #12')
+    expect(previewText('--')).toBe('--')
+    expect(previewText('===\nnext')).toBe('===')
+    expect(previewText('a -- b === c')).toBe('a -- b === c')
+    expect(previewText('| --- | --- |\n| a | b |')).toBe('| --- | --- |')
+    expect(previewText('| a | b |\nplain')).toBe('| a | b |')
+    expect(previewText('Title\n=====')).toBe('Title')
+  })
+
+  it('keeps autolinked addresses', () => {
+    expect(previewText('Contact <support@example.com> now')).toBe('Contact support@example.com now')
+    expect(previewText('See <ftp://files.example.com/a> later')).toBe('See ftp://files.example.com/a later')
+  })
+
+  it('keeps code span contents literal', () => {
+    expect(previewText('`C:\\` is a path')).toBe('C:\\ is a path')
+    expect(previewText('`` a`b `` and `*x*`')).toBe('a`b and *x*')
+    expect(previewText('Use \\`not code\\` here')).toBe('Use `not code` here')
+    expect(previewText('An `unclosed span')).toBe('An `unclosed span')
   })
 
   it('collapses whitespace into one line', () => {
