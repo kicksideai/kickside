@@ -1,12 +1,9 @@
-import { WippyVueElement, define, useEvents, useProps } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
-import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
-import { defineComponent, h } from 'vue'
+import { lazyPage } from '@widgets/lazy'
 import type { ComponentProps, ProviderEditorProps } from './types.ts'
 import type { Events, ProviderEditorEvents } from './constants.ts'
-import Models from './app/models.vue'
-import ProviderProfileEditor from './app/ProviderProfileEditor.vue'
-import { EDITOR_TAGS } from './providerSpecs.ts'
+import { EDITOR_TAGS } from './providerTags.ts'
 import stylesText from './styles.css?inline'
 import pkg from '../package.json'
 
@@ -20,7 +17,13 @@ class KicksideModelsElement extends WippyVueElement<ComponentProps, Events> {
   }
 
   static get vueConfig() {
-    return { rootComponent: Models, plugins: [PrimeVuePlugin] }
+    return {
+      lazyConfig: lazyPage(
+        () => import('./lazy-mount').then((module) => module.mountConfig),
+        'Could not load Models. Reload the page to try again.',
+        useEvents,
+      ),
+    }
   }
 }
 
@@ -35,29 +38,7 @@ const providerEditorProps = {
   },
 }
 
-// Each declared provider_profile_editor tag mounts the shared spec-driven editor
-// pinned to its spec key. Host props/events cross the bridge via useProps/useEvents
-// (the bridge mounts the root with no Vue props), so the root reads props from the
-// host and re-emits the editor's save/cancel/test back to it.
-function editorRoot(specKey: string) {
-  return defineComponent({
-    name: `provider-editor-${specKey}`,
-    setup() {
-      const props = useProps<ProviderEditorProps>()
-      const emit = useEvents<ProviderEditorEvents>()
-      return () => h(ProviderProfileEditor, {
-        ...props.value,
-        specKey,
-        onSave: (payload: Record<string, unknown>) => emit('save', payload),
-        onCancel: () => emit('cancel', undefined),
-        onTest: () => emit('test', undefined),
-      })
-    },
-  })
-}
-
 function makeEditorElement(specKey: string) {
-  const rootComponent = editorRoot(specKey)
   return class extends WippyVueElement<ProviderEditorProps, ProviderEditorEvents> {
     static get wippyConfig(): WippyElementConfig<ProviderEditorProps> {
       return {
@@ -68,7 +49,13 @@ function makeEditorElement(specKey: string) {
     }
 
     static get vueConfig() {
-      return { rootComponent, plugins: [PrimeVuePlugin] }
+      return {
+        lazyConfig: lazyPage(
+          () => import('./provider-editor-mount').then((module) => module.editorMountConfig(specKey)),
+          'Could not load the provider editor. Reload the page to try again.',
+          useEvents,
+        ),
+      }
     }
   }
 }

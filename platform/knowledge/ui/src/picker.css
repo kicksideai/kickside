@@ -1,3 +1,4 @@
+@import "@kickside/ui-kit/spin.css";
 @import '@wippy-fe/theme';
 
 /* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
@@ -23,3 +24,6 @@
 
 /* Muted explanatory note under the picker. */
 .kp-hint { margin: 0; font-size: 12px; line-height: 1.5; color: var(--p-text-muted-color); }
+
+/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
+:host > div:empty, :host > div:has(> [role=status]) { min-height: 84px; }

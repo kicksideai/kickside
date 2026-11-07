@@ -1,4 +1,5 @@
 @import "@wippy-fe/theme/theme-config.css";
+@import "@kickside/ui-kit/spin.css";
 
 /* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
    preflight; without it PrimeVue controls keep UA defaults the theme never
@@ -25,3 +26,6 @@
 
 /* Muted explanatory note under the picker. */
 .sp-hint { margin: 0; font-size: 12px; line-height: 1.5; color: var(--p-text-muted-color); }
+
+/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
+:host > div:empty, :host > div:has(> [role=status]) { min-height: 66px; }

@@ -1,8 +1,8 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+// SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
-import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
+import { lazyPage } from '@widgets/lazy'
 import type { Events } from './constants.ts'
-import ArtifactsGallery from './app/ArtifactsGallery.vue'
 import stylesText from './styles.css?inline'
 
 class KicksideArtifactsElement extends WippyVueElement<Record<string, unknown>, Events> {
@@ -15,7 +15,13 @@ class KicksideArtifactsElement extends WippyVueElement<Record<string, unknown>, 
   }
 
   static get vueConfig() {
-    return { rootComponent: ArtifactsGallery, plugins: [PrimeVuePlugin] }
+    return {
+      lazyConfig: lazyPage(
+        () => import('./artifacts-mount').then((module) => module.mountConfig),
+        'Could not load the artifact gallery. Reload the page to try again.',
+        useEvents,
+      ),
+    }
   }
 }
 

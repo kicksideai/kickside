@@ -1,7 +1,13 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
-import SchemaForm from './app/SchemaForm.vue'
+import { lazyControl } from '../lazy'
 import stylesText from './styles.css?inline'
+
+const SchemaForm = lazyControl(
+  () => import('./app/SchemaForm.vue'),
+  { loading: 'Loading schema form…', failed: 'Could not load the schema form. Reload the page to try again.' },
+  useEvents,
+)
 
 interface SchemaFormProps {
   schema?: unknown

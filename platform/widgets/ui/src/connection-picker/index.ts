@@ -1,10 +1,20 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
 import type { ComponentProps } from './types.ts'
 import type { Events } from './constants.ts'
-import ConnectionPicker from './app/ConnectionPicker.vue'
+import { lazyControl } from '../lazy'
 import stylesText from './styles.css?inline'
+
+const ConnectionPicker = lazyControl(
+  () => import('./app/ConnectionPicker.vue'),
+  {
+    loading: 'Loading connection picker…',
+    failed: 'Could not load the connection picker. Reload the page to try again.',
+    iconOnly: true,
+  },
+  useEvents,
+)
 
 const PROPS_SCHEMA: WippyPropsSchema = {
   type: 'object',

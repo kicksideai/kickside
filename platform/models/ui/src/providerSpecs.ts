@@ -1,4 +1,5 @@
 import type { ProviderEditorSpec } from './types.ts'
+import { EDITOR_TAGS as editorTags } from './providerTags.ts'
 
 export const PROVIDER_SPECS: Record<string, ProviderEditorSpec> = {
   openai_compat: {
@@ -103,14 +104,7 @@ export const PROVIDER_SPECS: Record<string, ProviderEditorSpec> = {
 // (registry kind provider_profile_editor) to its spec. Drives spec resolution in
 // both surfaces and the web-component registration in index.ts. Unknown tags fall
 // back to the generic OpenAI-compatible editor.
-export const EDITOR_TAGS: Record<string, keyof typeof PROVIDER_SPECS> = {
-  'kickside-model-provider-openai-compatible': 'openai_compat',
-  'kickside-model-provider-openai': 'openai',
-  'kickside-model-provider-anthropic': 'anthropic',
-  'kickside-model-provider-google-generative-ai': 'google_genai',
-  'kickside-model-provider-google-vertex': 'google_vertex',
-  'kickside-model-provider-bedrock': 'bedrock',
-}
+export const EDITOR_TAGS = editorTags as Record<string, keyof typeof PROVIDER_SPECS>
 
 export function specKeyForTag(tag?: string): keyof typeof PROVIDER_SPECS {
   return (tag && EDITOR_TAGS[tag]) || 'openai_compat'

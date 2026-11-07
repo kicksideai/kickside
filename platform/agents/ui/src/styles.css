@@ -24,6 +24,14 @@
   display: block; height: 100%; min-height: 0;
 }
 :host > div { height: 100%; min-height: 0; }
+/* The wrapper's loader takes the viewport height as an only child, so it is held to this
+   surface. A reconnect during a pending import can leave a second loader until the mount. */
+wippy-loading, wippy-error { height: 100%; }
+wippy-loading ~ wippy-loading { display: none; }
+/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
+:host(wc-agent-picker) > div:empty, :host(wc-agent-picker) > div:has(> [role=status]) { min-height: 38px; }
+:host(kickside-master-namespace-picker) > div:empty, :host(kickside-master-namespace-picker) > div:has(> [role=status]) { min-height: 244px; }
+:host(wc-agent-edit) > div:empty, :host(wc-agent-edit) > div:has(> [role=status]) { min-height: 240px; }
 *, *::before, *::after { box-sizing: border-box; }
 
 /* Agents control surface. Styled only with the universal --p-* theme vocabulary

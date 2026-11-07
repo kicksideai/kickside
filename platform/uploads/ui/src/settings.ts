@@ -1,8 +1,14 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
-import Storage from './app/storage-settings.vue'
+import { lazyControl } from '@widgets/lazy'
 import stylesText from './settings-styles.css?inline'
+
+const Storage = lazyControl(
+  () => import('./app/storage-settings.vue'),
+  { loading: 'Loading Files & Uploads settings…', failed: 'Could not load the Files & Uploads settings. Reload the page to try again.' },
+  useEvents,
+)
 
 // kickside-settings-storage — the consolidated Files & Uploads settings panel.
 // A bespoke block editor: it gathers the several upload/document/rasterization

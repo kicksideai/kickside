@@ -33,6 +33,8 @@ platform/transform/eval/code_exec/run_code.lua
 **/*.tsbuildinfo
 **/vite.config.js
 **/vite.config.d.ts
+**/wc-build.js
+**/wc-build.d.ts
 
 # machine-local dev files (not part of the repo)
 /wippy.exe

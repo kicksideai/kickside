@@ -39,6 +39,26 @@ component chooses which of its elements receives `:focus-visible` and uses
 those values. Read `app/facade-src/README.md` “Focus canon” before editing
 focus CSS. The module must not hardcode focus colors or lengths.
 
+## Load the implementation on first use
+
+Keep the entry small, so a registered tag costs little at startup. The entry holds the element class, its schema, `webComponent()` and `define(import.meta.url, Element)`. The root component and its imports sit behind a dynamic `import()`. An entry imports only types from any module the lazy code also uses.
+
+Choose the loader for the surface:
+
+- A page or large panel returns its mount configuration from `vueConfig.lazyConfig`, with the root component and its plugins in a module beside the entry. The wrapper shows `wippy-loading` during the import. That loader takes the viewport height as an only child, so set `wippy-loading, wippy-error { height: 100%; }` in the component's stylesheet.
+- A compact control uses `defineAsyncComponent` as its `rootComponent`, with a small `role="status"` loading state. Reserve its normal size only while it loads, with `:host > div:empty, :host > div:has(> [role=status])`. A permanent minimum on `:host` leaves blank space on a loaded tag that renders shorter or empty. Leave out `:empty` for a tag that can render nothing after it loads, because Vue's comment placeholder still matches `:empty`.
+- A headless coordinator or a small component can stay eager. Record the measured reason.
+
+Keep the declared error contract. A `lazyConfig` rejection emits `error` with `{ message }` only, so a component that declares more fields catches the rejection and returns a mount configuration whose root emits the declared detail. The wrapper emits `load` right after connect, before a lazy implementation mounts, so `load` means the element is connected and not that its content exists.
+
+Build settings:
+
+- `external` comes from `Object.keys(hostImportMap.imports)`, read from a pinned snapshot of the Host's `import-map.json`. Browser import maps have no `primevue/*` wildcard, and PrimeVue CSS still comes from `hostCssKeys`.
+- `preserveEntrySignatures: 'strict'` keeps `webComponent()`, which the Host factory path requires.
+- `output.manualChunks` places `@wippy-fe/webcomponent-*` in its own chunk. Without it, a lazy chunk can import the entry back without the Host's `?declare-tag=` query, and a second copy of the entry runs.
+
+Inspect the emitted entry after building. It must contain its own `import.meta.url` and the `webComponent` export, and no chunk may import an entry file.
+
 ## Read and refresh state
 
 Use named exports from `@wippy-fe/proxy` for authenticated HTTP and host

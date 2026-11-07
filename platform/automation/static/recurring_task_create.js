@@ -1,18 +1,25 @@
-import { defineComponent as r, openBlock as t, createBlock as n } from "vue";
+import { defineComponent as t, openBlock as n, createBlock as o } from "vue";
 import "@iconify/vue";
-import { define as o } from "@wippy-fe/proxy";
-import { P as m } from "./AnchoredPanel.vue_vue_type_style_index_0_lang-DNnuyvEa.js";
-import { _ as i, T as a } from "./TaskCreate.vue_vue_type_script_setup_true_lang-CVpjt1q3.js";
-const s = /* @__PURE__ */ r({
+import { define as m } from "@wippy-fe/proxy";
+import "pinia";
+import { P as i } from "./primevue-plugin-CaP7wV_M.js";
+import { _ as a, T as s } from "./TaskCreate.vue_vue_type_script_setup_true_lang-bKVmUXdZ.js";
+const c = /* @__PURE__ */ t({
   __name: "RecurringTaskCreate",
-  setup(e) {
-    return (p, u) => (t(), n(i, { recurring: !0 }));
+  setup(r) {
+    return (p, u) => (n(), o(a, { recurring: !0 }));
   }
 });
-class c extends a {
+class e extends s {
   static get vueConfig() {
-    return { rootComponent: s, plugins: [m] };
+    return { rootComponent: c, plugins: [i] };
   }
 }
-o(import.meta.url, c);
+async function T() {
+  return e;
+}
+m(import.meta.url, e);
+export {
+  T as webComponent
+};
 //# sourceMappingURL=recurring_task_create.js.map

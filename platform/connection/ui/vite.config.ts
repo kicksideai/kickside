@@ -2,6 +2,7 @@ import { resolve } from 'node:path'
 import vue from '@vitejs/plugin-vue'
 import { wippyComponentPlugin } from '@wippy-fe/vite-plugin'
 import { defineConfig } from 'vite'
+import { hostExternals, wcRuntimeChunk } from '../../widgets/ui/wc-build'
 
 export default defineConfig({
   resolve: { dedupe: ['vue', 'primevue', '@wippy-fe/proxy'], alias: { '@widgets': resolve(__dirname, '../../widgets/ui/src') } },
@@ -29,14 +30,15 @@ export default defineConfig({
       formats: ['es'],
     },
     rollupOptions: {
-      preserveEntrySignatures: false,
+      preserveEntrySignatures: 'strict',
       input: {
         index: resolve(__dirname, 'src/index.ts'),
         connection_trait_picker: resolve(__dirname, 'src/connection_trait_picker.ts'),
         onboard: resolve(__dirname, 'src/onboard.ts'),
       },
-      external: ['vue', '@iconify/vue', '@wippy-fe/proxy'],
+      external: hostExternals,
       output: {
+        manualChunks: wcRuntimeChunk,
         entryFileNames: '[name].js',
         chunkFileNames: '[name]-[hash].js',
         assetFileNames: '[name]-[hash][extname]',

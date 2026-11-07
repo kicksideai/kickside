@@ -1,9 +1,15 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
-import TriggerConfig from './app/TriggerConfig.vue'
+import { lazyControl } from '@widgets/lazy'
 import stylesText from './styles.css?inline'
 import type { TriggerConfigEvents, TriggerConfigProps } from './types.ts'
+
+const TriggerConfig = lazyControl(
+  () => import('./app/TriggerConfig.vue'),
+  { loading: 'Loading trigger editor…', failed: 'Could not load the trigger editor. Reload the page to try again.' },
+  useEvents,
+)
 
 // kickside-trigger-config — the flagship Trigger Spec v2 editor, mounted by any
 // consumer that embeds inputs.trigger (registry entry

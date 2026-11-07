@@ -1,26 +1,27 @@
-import { u as M, W as T, s as E } from "./styles-C28Y9Spn.js";
-import { defineComponent as N, ref as v, onMounted as V, watch as L, onBeforeUnmount as B, openBlock as y, createElementBlock as d, createVNode as R, unref as p, createElementVNode as g, createTextVNode as k, toDisplayString as W, createCommentVNode as _, withDirectives as S, vShow as I } from "vue";
+import { u as T, W as E } from "./wc-runtime-h8e5VJvv.js";
+import { defineComponent as N, ref as v, onMounted as V, watch as L, onBeforeUnmount as B, openBlock as y, createElementBlock as d, createVNode as R, unref as p, createElementVNode as g, createTextVNode as k, toDisplayString as W, createCommentVNode as b, withDirectives as S, vShow as I } from "vue";
 import { Icon as D } from "@iconify/vue";
 import { loadByTagName as K, api as O, define as P } from "@wippy-fe/proxy";
-const j = { class: "rv" }, F = {
+import { s as j } from "./styles-HTuIrRec.js";
+const F = { class: "rv" }, q = {
   key: 0,
   class: "rv-fallback"
-}, q = ["href"], z = /* @__PURE__ */ N({
+}, z = ["href"], G = /* @__PURE__ */ N({
   __name: "ResourceView",
-  setup(b) {
-    const s = M(), h = [
+  setup(_) {
+    const s = T(), h = [
       { tag: "wc-render-pdf", types: ["application/pdf"], priority: 90 },
       { tag: "wc-render-image", types: ["image/*"], priority: 90 },
       { tag: "wc-render-markdown", types: ["text/markdown", "text/x-markdown", "application/markdown", "text/plain", ""], priority: 40 }
     ];
     let f = null;
-    async function x() {
+    async function C() {
       return f || (f = O.get("/api/v1/renderers").then((r) => {
         const n = (r?.data?.renderers || []).filter((t) => t.tag_name && Array.isArray(t.content_types)).map((t) => ({ tag: t.tag_name, types: t.content_types, priority: Number(t.priority) || 0, label: t.label }));
         return n.length ? n : h;
       }).catch(() => h)), f;
     }
-    function C(r, e) {
+    function A(r, e) {
       let n = -1;
       for (const t of r) {
         const i = (t || "").toLowerCase().trim();
@@ -28,25 +29,25 @@ const j = { class: "rv" }, F = {
       }
       return n;
     }
-    async function A(r) {
-      const e = (r || "").toLowerCase().split(";")[0].trim(), n = await x();
+    async function U(r) {
+      const e = (r || "").toLowerCase().split(";")[0].trim(), n = await C();
       let t = null, i = 0;
       for (const l of n) {
-        const u = C(l.types, e);
+        const u = A(l.types, e);
         u <= 0 || (u > i || u === i && (!t || l.priority > t.priority)) && (t = l, i = u);
       }
       return !t && (e === "" || e.startsWith("text/")) && (t = n.find((l) => l.tag === "wc-render-markdown") || null), t;
     }
     const a = v(null), c = v(!1);
     let o = null, m = 0;
-    function U(r) {
+    function M(r) {
       const e = s.value;
       e?.source && r.setAttribute("source", e.source), e?.sourceUrl && r.setAttribute("source-url", e.sourceUrl), e?.contentType && r.setAttribute("content-type", e.contentType), e?.alt && r.setAttribute("alt", e.alt), e?.filename && r.setAttribute("filename", e.filename);
     }
     async function w() {
       const r = ++m;
       if (c.value = !1, o && (o.remove(), o = null), !a.value) return;
-      const e = await A(s.value?.contentType || "");
+      const e = await U(s.value?.contentType || "");
       if (!(r !== m || !a.value)) {
         if (!e) {
           c.value = !0;
@@ -56,13 +57,13 @@ const j = { class: "rv" }, F = {
           customElements.get(e.tag) || await K(e.tag, { timeoutMs: 1e4 });
         } catch {
         }
-        r !== m || !a.value || (o = document.createElement(e.tag), U(o), o.style.display = "block", a.value.appendChild(o));
+        r !== m || !a.value || (o = document.createElement(e.tag), M(o), o.style.display = "block", a.value.appendChild(o));
       }
     }
     return V(w), L(() => [s.value?.contentType, s.value?.source, s.value?.sourceUrl], w), B(() => {
       o && o.remove();
-    }), (r, e) => (y(), d("div", j, [
-      c.value ? (y(), d("div", F, [
+    }), (r, e) => (y(), d("div", F, [
+      c.value ? (y(), d("div", q, [
         R(p(D), {
           icon: "tabler:file-unknown",
           "aria-hidden": "true"
@@ -77,8 +78,8 @@ const j = { class: "rv" }, F = {
           href: p(s).sourceUrl,
           target: "_blank",
           rel: "noopener noreferrer"
-        }, "Open ↗", 8, q)) : _("", !0)
-      ])) : _("", !0),
+        }, "Open ↗", 8, z)) : b("", !0)
+      ])) : b("", !0),
       S(g("div", {
         ref_key: "host",
         ref: a
@@ -87,7 +88,7 @@ const j = { class: "rv" }, F = {
       ])
     ]));
   }
-}), G = {
+}), H = {
   type: "object",
   properties: {
     "content-type": { type: "string", default: "", description: "MIME type of the resource (e.g. text/markdown, application/pdf, image/png)." },
@@ -97,17 +98,23 @@ const j = { class: "rv" }, F = {
     filename: { type: "string", default: "", description: "Original filename, forwarded to viewers that infer type from the extension." }
   }
 };
-class H extends T {
+class x extends E {
   static get wippyConfig() {
     return {
-      propsSchema: G,
+      propsSchema: H,
       hostCssKeys: ["themeConfigUrl"],
-      inlineCss: E
+      inlineCss: j
     };
   }
   static get vueConfig() {
-    return { rootComponent: z };
+    return { rootComponent: G };
   }
 }
-P(import.meta.url, H);
+async function $() {
+  return x;
+}
+P(import.meta.url, x);
+export {
+  $ as webComponent
+};
 //# sourceMappingURL=resource-view.js.map

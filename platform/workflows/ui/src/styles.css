@@ -17,3 +17,8 @@
    preflight; without it PrimeVue controls keep UA defaults the theme never
    overrides. */
 @tailwind base;
+
+/* The wrapper's loader takes the viewport height as an only child, so it is held to this
+   surface. A reconnect during a pending import can leave a second loader until the mount. */
+wippy-loading, wippy-error { height: 100%; }
+wippy-loading ~ wippy-loading { display: none; }

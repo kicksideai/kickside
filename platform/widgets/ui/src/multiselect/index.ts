@@ -1,9 +1,15 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import type { ComponentProps } from './types.ts'
 import type { Events } from './constants.ts'
-import MultiSelect from './app/MultiSelect.vue'
+import { lazyControl } from '../lazy'
 import stylesText from './styles.css?inline'
+
+const MultiSelect = lazyControl(
+  () => import('./app/MultiSelect.vue'),
+  { loading: 'Loading multiselect…', failed: 'Could not load the multiselect. Reload the page to try again.' },
+  useEvents,
+)
 
 const PROPS_SCHEMA: WippyPropsSchema = {
   type: 'object',

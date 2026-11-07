@@ -1,23 +1,24 @@
-import { u as y, W as _, s as h } from "./styles-C28Y9Spn.js";
-import { defineComponent as g, ref as l, watch as U, onBeforeUnmount as b, openBlock as r, createElementBlock as a, createVNode as u, unref as d, createElementVNode as p, toDisplayString as C, createCommentVNode as k } from "vue";
-import { Icon as v } from "@iconify/vue";
+import { u as _, W as h } from "./wc-runtime-h8e5VJvv.js";
+import { defineComponent as g, ref as i, watch as b, onBeforeUnmount as U, openBlock as r, createElementBlock as a, createVNode as u, unref as d, createElementVNode as p, toDisplayString as C, createCommentVNode as k } from "vue";
+import { Icon as m } from "@iconify/vue";
 import { api as R, define as L } from "@wippy-fe/proxy";
-const V = { class: "mediav" }, j = {
+import { s as V } from "./styles-HTuIrRec.js";
+const x = { class: "mediav" }, j = {
   key: 0,
   class: "rv-state"
-}, x = {
+}, w = {
   key: 1,
   class: "rv-state err"
-}, E = ["src"], w = /* @__PURE__ */ g({
+}, E = ["src"], B = /* @__PURE__ */ g({
   __name: "RenderVideo",
-  setup(m) {
-    const i = y(), s = l(!1), o = l(""), t = l("");
+  setup(f) {
+    const l = _(), s = i(!1), o = i(""), t = i("");
     function c() {
       t.value && (URL.revokeObjectURL(t.value), t.value = "");
     }
-    async function f() {
+    async function y() {
       o.value = "", c();
-      const n = i.value?.sourceUrl;
+      const n = l.value?.sourceUrl;
       if (n) {
         s.value = !0;
         try {
@@ -30,16 +31,16 @@ const V = { class: "mediav" }, j = {
         }
       }
     }
-    return U(() => i.value?.sourceUrl, f, { immediate: !0 }), b(c), (n, e) => (r(), a("div", V, [
+    return b(() => l.value?.sourceUrl, y, { immediate: !0 }), U(c), (n, e) => (r(), a("div", x, [
       s.value ? (r(), a("div", j, [
-        u(d(v), {
+        u(d(m), {
           icon: "tabler:loader-2",
           class: "spin",
           "aria-hidden": "true"
         }),
         e[0] || (e[0] = p("span", null, "Loading video…", -1))
-      ])) : o.value ? (r(), a("div", x, [
-        u(d(v), {
+      ])) : o.value ? (r(), a("div", w, [
+        u(d(m), {
           icon: "tabler:alert-circle",
           "aria-hidden": "true"
         }),
@@ -53,23 +54,29 @@ const V = { class: "mediav" }, j = {
       }, null, 8, E)) : k("", !0)
     ]));
   }
-}), B = {
+}), N = {
   type: "object",
   properties: {
     "source-url": { type: "string", default: "", description: "URL to fetch the video bytes from (auth via proxy)." }
   }
 };
-class N extends _ {
+class v extends h {
   static get wippyConfig() {
     return {
-      propsSchema: B,
+      propsSchema: N,
       hostCssKeys: ["themeConfigUrl"],
-      inlineCss: h
+      inlineCss: V
     };
   }
   static get vueConfig() {
-    return { rootComponent: w };
+    return { rootComponent: B };
   }
 }
-L(import.meta.url, N);
+async function I() {
+  return v;
+}
+L(import.meta.url, v);
+export {
+  I as webComponent
+};
 //# sourceMappingURL=render-video.js.map

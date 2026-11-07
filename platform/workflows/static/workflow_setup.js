@@ -1,20 +1,22 @@
-import { u as m, a as y, s as k, W as z, P as C } from "./index-BhiG6P-P.js";
+import { a as y, u as k, W as z } from "./wc-runtime-KO3cNuNo.js";
+import { P as C } from "./primevue-plugin-CaP7wV_M.js";
 import { computed as f, watch as g, defineComponent as S, ref as w, openBlock as u, createElementBlock as j, withModifiers as N, createElementVNode as l, createTextVNode as b, createVNode as E, unref as x, createBlock as I, withCtx as M, toDisplayString as V, createCommentVNode as _ } from "vue";
-import { s as q } from "./index-CghiLgVY.js";
-import { api as P, define as W } from "@wippy-fe/proxy";
-import { e as B } from "./errMsg-CxKGcp1F.js";
+import q from "primevue/inputtext";
+import P from "primevue/message";
+import { api as W, define as B } from "@wippy-fe/proxy";
+import { e as U } from "./errMsg-CxKGcp1F.js";
 import "@iconify/vue";
-function U(i) {
+function F(i) {
   return f(() => {
     const r = i.value;
     return r ? (typeof r.parentId == "string" ? r.parentId : "").trim() : "";
   });
 }
-function F(i, r, s) {
+function T(i, r, s) {
   g(
     () => i.value?.submitNonce,
-    (t, n) => {
-      t == null || t === "" || t === n || s?.value || r();
+    (t, a) => {
+      t == null || t === "" || t === a || s?.value || r();
     }
   );
 }
@@ -24,19 +26,19 @@ const A = {
 }, J = /* @__PURE__ */ S({
   __name: "WorkflowSetup",
   setup(i) {
-    const r = m(), s = y(), t = w(""), n = w(!1), a = w(""), h = U(r), v = f(() => t.value.trim() !== ""), p = f(() => a.value === "Name is required.");
-    g(n, (e) => s("submit-state", { saving: e })), F(r, c, n);
+    const r = y(), s = k(), t = w(""), a = w(!1), n = w(""), m = F(r), v = f(() => t.value.trim() !== ""), p = f(() => n.value === "Name is required.");
+    g(a, (e) => s("submit-state", { saving: e })), T(r, c, a);
     async function c() {
-      if (!n.value) {
+      if (!a.value) {
         if (!v.value) {
-          a.value = "Name is required.";
+          n.value = "Name is required.";
           return;
         }
-        n.value = !0, a.value = "";
+        a.value = !0, n.value = "";
         try {
-          const { data: e } = await P.post(
+          const { data: e } = await W.post(
             "/api/v1/workflows",
-            { title: t.value.trim(), parent_id: h.value || void 0, source_context: r.value.sourceContext ? JSON.parse(r.value.sourceContext) : void 0 }
+            { title: t.value.trim(), parent_id: m.value || void 0, source_context: r.value.sourceContext ? JSON.parse(r.value.sourceContext) : void 0 }
           );
           if (!e?.success || !e.flow_id) {
             const o = typeof e?.error == "string" ? e.error : e?.error?.message;
@@ -44,9 +46,9 @@ const A = {
           }
           s("created", { id: e.flow_id });
         } catch (e) {
-          a.value = B(e, "Workflow creation failed");
+          n.value = U(e, "Workflow creation failed");
         } finally {
-          n.value = !1;
+          a.value = !1;
         }
       }
     }
@@ -72,15 +74,15 @@ const A = {
           required: "",
           "aria-required": "true",
           invalid: p.value,
-          "aria-describedby": a.value ? "workflow-setup-hint workflow-setup-error" : "workflow-setup-hint",
-          onInput: o[1] || (o[1] = (d) => p.value && (a.value = ""))
+          "aria-describedby": n.value ? "workflow-setup-hint workflow-setup-error" : "workflow-setup-hint",
+          onInput: o[1] || (o[1] = (d) => p.value && (n.value = ""))
         }, null, 8, ["modelValue", "invalid", "aria-describedby"])
       ]),
       o[3] || (o[3] = l("p", {
         id: "workflow-setup-hint",
         class: "wf-setup-hint"
       }, "Create the Workflow first, then define and publish its Blocks in the editor.", -1)),
-      a.value ? (u(), I(x(k), {
+      n.value ? (u(), I(x(P), {
         key: 0,
         id: "workflow-setup-error",
         class: "wf-setup-error",
@@ -88,7 +90,7 @@ const A = {
         closable: !1
       }, {
         default: M(() => [
-          b(V(a.value), 1)
+          b(V(n.value), 1)
         ]),
         _: 1
       })) : _("", !0)
@@ -102,7 +104,7 @@ const A = {
     "source-context": { type: "string" }
   }
 };
-class R extends z {
+class h extends z {
   static get wippyConfig() {
     return {
       propsSchema: O,
@@ -114,4 +116,10 @@ class R extends z {
     return { rootComponent: J, plugins: [C] };
   }
 }
-W(import.meta.url, R);
+async function Y() {
+  return h;
+}
+B(import.meta.url, h);
+export {
+  Y as webComponent
+};

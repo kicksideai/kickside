@@ -1,18 +1,19 @@
-import { u as y, W as g, s as _ } from "./styles-C28Y9Spn.js";
-import { defineComponent as x, ref as a, onMounted as C, watch as b, onBeforeUnmount as k, openBlock as i, createElementBlock as l, createVNode as p, unref as m, createElementVNode as c, toDisplayString as w, createCommentVNode as U } from "vue";
+import { u as g, W as _ } from "./wc-runtime-h8e5VJvv.js";
+import { defineComponent as x, ref as a, onMounted as C, watch as b, onBeforeUnmount as k, openBlock as i, createElementBlock as l, createVNode as d, unref as m, createElementVNode as c, toDisplayString as w, createCommentVNode as U } from "vue";
 import { Icon as f } from "@iconify/vue";
 import { api as E, define as N } from "@wippy-fe/proxy";
-const R = { class: "docxv" }, T = {
+import { s as R } from "./styles-HTuIrRec.js";
+const T = { class: "docxv" }, V = {
   key: 0,
   class: "rv-state"
-}, V = {
+}, W = {
   key: 1,
   class: "rv-state err"
-}, W = /* @__PURE__ */ x({
+}, B = /* @__PURE__ */ x({
   __name: "RenderDocx",
-  setup(v) {
-    const u = y(), n = a(!1), t = a(""), r = a(null);
-    async function d() {
+  setup(y) {
+    const u = g(), n = a(!1), t = a(""), r = a(null);
+    async function p() {
       t.value = "";
       const s = u.value?.sourceUrl, e = r.value;
       if (e && (e.innerHTML = ""), !(!s || !e)) {
@@ -34,18 +35,18 @@ const R = { class: "docxv" }, T = {
         }
       }
     }
-    return C(d), b(() => u.value?.sourceUrl, d), k(() => {
+    return C(p), b(() => u.value?.sourceUrl, p), k(() => {
       r.value && (r.value.innerHTML = "");
-    }), (s, e) => (i(), l("div", R, [
-      n.value ? (i(), l("div", T, [
-        p(m(f), {
+    }), (s, e) => (i(), l("div", T, [
+      n.value ? (i(), l("div", V, [
+        d(m(f), {
           icon: "tabler:loader-2",
           class: "spin",
           "aria-hidden": "true"
         }),
         e[0] || (e[0] = c("span", null, "Rendering document…", -1))
-      ])) : t.value ? (i(), l("div", V, [
-        p(m(f), {
+      ])) : t.value ? (i(), l("div", W, [
+        d(m(f), {
           icon: "tabler:alert-circle",
           "aria-hidden": "true"
         }),
@@ -58,23 +59,29 @@ const R = { class: "docxv" }, T = {
       }, null, 512)
     ]));
   }
-}), B = {
+}), D = {
   type: "object",
   properties: {
     "source-url": { type: "string", default: "", description: "URL to fetch the .docx bytes from (auth via proxy)." }
   }
 };
-class D extends g {
+class v extends _ {
   static get wippyConfig() {
     return {
-      propsSchema: B,
+      propsSchema: D,
       hostCssKeys: ["themeConfigUrl"],
-      inlineCss: _
+      inlineCss: R
     };
   }
   static get vueConfig() {
-    return { rootComponent: W };
+    return { rootComponent: B };
   }
 }
-N(import.meta.url, D);
+async function j() {
+  return v;
+}
+N(import.meta.url, v);
+export {
+  j as webComponent
+};
 //# sourceMappingURL=render-docx.js.map

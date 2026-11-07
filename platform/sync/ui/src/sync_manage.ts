@@ -1,8 +1,14 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
-import SyncManage from './app/SyncManage.vue'
+import { lazyControl } from '@widgets/lazy'
 import stylesText from './styles.css?inline'
+
+const SyncManage = lazyControl(
+  () => import('./app/SyncManage.vue'),
+  { loading: 'Loading data sync…', failed: 'Could not load the data sync. Reload the page to try again.' },
+  useEvents,
+)
 
 interface SyncManageProps { config?: unknown; value?: unknown }
 

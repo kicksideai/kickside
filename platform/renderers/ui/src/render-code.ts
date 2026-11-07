@@ -1,7 +1,18 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+// SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
-import RenderCode from './app/RenderCode.vue'
+import { lazyControl } from '@widgets/lazy'
 import stylesText from './styles.css?inline'
+
+// highlight.js is most of this viewer's weight, so the implementation loads on first mount.
+const RenderCode = lazyControl(
+  () => import('./app/RenderCode.vue'),
+  { loading: 'Loading the code viewer…', failed: 'Could not load the code viewer. Reload the page to try again.' },
+  useEvents,
+)
+
+// Reserved only while the implementation loads, so a loaded viewer keeps its own size.
+const hostCss = ':host > div:empty, :host > div:has(> [role=status]) { min-height: 96px; }'
 
 // <wc-render-code> — isolated source/data viewer (highlight.js + CSV/TSV table).
 type Props = { source?: string; sourceUrl?: string; contentType?: string; filename?: string }
@@ -21,7 +32,7 @@ class RenderCodeElement extends WippyVueElement<Props> {
     return {
       propsSchema: propsSchema as WippyPropsSchema,
       hostCssKeys: ['themeConfigUrl'] as const,
-      inlineCss: stylesText,
+      inlineCss: `${stylesText}\n${hostCss}`,
     }
   }
   static get vueConfig() { return { rootComponent: RenderCode } }

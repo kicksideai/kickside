@@ -1,9 +1,19 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import type { ComponentProps } from './types.ts'
 import type { Events } from './constants.ts'
-import ComponentPicker from './app/ComponentPicker.vue'
+import { lazyControl } from '../lazy'
 import stylesText from './styles.css?inline'
+
+const ComponentPicker = lazyControl(
+  () => import('./app/ComponentPicker.vue'),
+  {
+    loading: 'Loading component picker…',
+    failed: 'Could not load the component picker. Reload the page to try again.',
+    iconOnly: true,
+  },
+  useEvents,
+)
 
 const PROPS_SCHEMA: WippyPropsSchema = {
   type: 'object',

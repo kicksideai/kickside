@@ -1,8 +1,14 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
-import SkillPicker from './app/skill-picker.vue'
+import { lazyControl } from '@widgets/lazy'
 import type { PickerProps, PickerEvents } from './picker-types.ts'
 import stylesText from './picker.css?inline'
+
+const Root = lazyControl(
+  () => import('./app/skill-picker.vue'),
+  { loading: 'Loading skill picker…', failed: 'Could not load the skill picker. Reload the page to try again.' },
+  useEvents,
+)
 
 // The Skills trait config component (kickside-skill-picker). A separate element
 // from the skills surface, built as its own bundle (picker.js) and registered as
@@ -27,7 +33,7 @@ class KicksideSkillPickerElement extends WippyVueElement<PickerProps, PickerEven
   }
 
   static get vueConfig() {
-    return { rootComponent: SkillPicker }
+    return { rootComponent: Root }
   }
 }
 

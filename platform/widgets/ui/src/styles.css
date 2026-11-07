@@ -8,6 +8,8 @@
 @tailwind base;
 
 :host { display: inline-block; }
+/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
+:host > div:empty, :host > div:has(> [role=status]) { min-width: 44px; min-height: 32px; }
 *, *::before, *::after { box-sizing: border-box; }
 
 /* Single component root, layout-transparent so the trigger sizes as before and
