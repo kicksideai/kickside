@@ -41,5 +41,16 @@ return {run = test.run_cases(function()
                 test.eq(result.declaration_hash, "declaration-hash"); test.eq(result.declaration_command_generation, 3); test.eq(fixture.releases, 1)
             end)
         end
+        for dialect, key in pairs({postgres = "-> '_execution_identity'", sqlite = "-> '$._execution_identity'"}) do
+            test.it("reads only the identity key/" .. dialect, function()
+                fixture.reset("receipt", nil, nil); fixture.dialect = dialect
+                local result, err = identity.get_identity_receipt(id); test.is_nil(err)
+                if type(result) ~= "table" then error("missing identity receipt") end
+                test.eq(result.principal.id, "user-1")
+                local statement = tostring(fixture.statement)
+                test.is_true(statement:find("c.private_context " .. key, 1, true) ~= nil)
+                test.is_true(statement:find("c.private_context,", 1, true) == nil)
+            end)
+        end
     end)
 end)}
