@@ -194,7 +194,6 @@ entries:
       conversation_gc: app:conversation_gc
       turn_recovery: app:turn_recovery
       test: wippy.test:test
-      link_service: app:identity_link_service
       cleanup_conversation: app:cleanup_conversation
       channel_cleanup_finalize: app:complete_unlink
       channel_conversation: app:channel_conversation

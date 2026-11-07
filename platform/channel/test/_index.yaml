@@ -664,28 +664,6 @@ entries:
       hub_policy: app:hub_policy
       real_hub: app:real_hub
 
-  - name: identity_consts
-    kind: library.lua
-    source: file://identity_consts_stub.lua
-
-  - name: identity_credential_eligibility
-    kind: library.lua
-    source: file://identity_src_link/credential_eligibility.lua
-    imports:
-      credential_eligibility: kickside.contract:credential_eligibility
-
-  - name: identity_link_service
-    kind: library.lua
-    source: file://identity_src_link/link_service.lua
-    modules: [sql, crypto, uuid, time]
-    imports:
-      component: app:component_fixture
-      channel_cleanup: app:cleanup_conversation
-      channel_cleanup_finalize: app:complete_unlink
-      identity_consts: app:identity_consts
-      credential_eligibility: app:identity_credential_eligibility
-      agent_ref: app:agent_ref
-
   - name: responder_health
     kind: library.lua
     source: file://src_link/responder/health.lua
