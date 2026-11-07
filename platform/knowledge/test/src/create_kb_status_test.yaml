@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: app.create_kb_status
+
+# An engine whose store lifecycle rejects the create config, reached through
+# POST /knowledge/create.
+
+entries:
+  - name: fixture
+    kind: library.lua
+    source: file://create_kb_status_fixture.lua
+
+  - name: refuse_config
+    kind: function.lua
+    source: file://create_kb_status_fixture.lua
+    method: refuse_config
+
+  - name: refusing_store
+    kind: contract.binding
+    contracts:
+      - contract: kickside.knowledge:kb_store_lifecycle
+        methods:
+          create_store: app.create_kb_status:refuse_config
+          get_store: app.store_binding:default_get
+          update_config: app.store_binding:accepted
+          delete_store: app.store_binding:accepted
+
+  - name: engine
+    kind: registry.entry
+    meta:
+      type: kickside.kb_engine
+      kb_type: config_refused
+      title: Config-refusing harness engine
+      impl_id: test.kb:config_refused
+      store_contract: kickside.knowledge:kb_store_lifecycle
+      store_binding: app.create_kb_status:refusing_store
+
+  - name: create_kb_status_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge_create_status }
+    source: file://create_kb_status_test.lua
+    method: run
+    security:
+      actor: { id: "system:knowledge-tests" }
+    modules: [sql, uuid, json, http_client, system]
+    imports:
+      test: wippy.test:test
+      session: kickside.users:session
+      groups: kickside.users.persist:user_groups_repo
+      fixture: app.create_kb_status:fixture

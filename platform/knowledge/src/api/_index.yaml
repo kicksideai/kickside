@@ -57,6 +57,7 @@ entries:
     modules: [http, json, security, contract]
     imports:
       engines: kickside.knowledge:engines
+      http_errors: kickside.contract:http_errors
     method: handler
 
   - name: create_kb.endpoint
