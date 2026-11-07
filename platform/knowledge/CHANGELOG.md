@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.77](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.76...knowledge-v0.1.77) (2026-11-07)
+
+
+### Bug Fixes
+
+* **knowledge:** answer create validation errors with their HTTP status ([#340](https://github.com/kicksideai/kickside/issues/340)) ([b78cf62](https://github.com/kicksideai/kickside/commit/b78cf62a6e8f544fb1f204ef8f4594b1ab35adb0))
+* **widgets:** follow deletion events without racing the delete job ([#337](https://github.com/kicksideai/kickside/issues/337)) ([fdd6984](https://github.com/kicksideai/kickside/commit/fdd6984188d6f35cdaf4e40cd0ac8b9cd08928bc))
+
 ## [0.1.76](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.75...knowledge-v0.1.76) (2026-11-05)
 
 

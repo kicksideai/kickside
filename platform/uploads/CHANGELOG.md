@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.11](https://github.com/kicksideai/kickside/compare/uploads-v0.3.10...uploads-v0.3.11) (2026-11-07)
+
+
+### Bug Fixes
+
+* **widgets:** follow deletion events without racing the delete job ([#337](https://github.com/kicksideai/kickside/issues/337)) ([fdd6984](https://github.com/kicksideai/kickside/commit/fdd6984188d6f35cdaf4e40cd0ac8b9cd08928bc))
+
 ## [0.3.10](https://github.com/kicksideai/kickside/compare/uploads-v0.3.9...uploads-v0.3.10) (2026-11-06)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.16](https://github.com/kicksideai/kickside/compare/automation-v0.2.15...automation-v0.2.16) (2026-11-07)
+
+
+### Bug Fixes
+
+* **widgets:** follow deletion events without racing the delete job ([#337](https://github.com/kicksideai/kickside/issues/337)) ([fdd6984](https://github.com/kicksideai/kickside/commit/fdd6984188d6f35cdaf4e40cd0ac8b9cd08928bc))
+
 ## [0.2.15](https://github.com/kicksideai/kickside/compare/automation-v0.2.14...automation-v0.2.15) (2026-11-07)
 
 

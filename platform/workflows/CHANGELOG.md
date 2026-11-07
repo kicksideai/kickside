@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.9](https://github.com/kicksideai/kickside/compare/workflows-v0.2.8...workflows-v0.2.9) (2026-11-07)
+
+
+### Bug Fixes
+
+* **widgets:** follow deletion events without racing the delete job ([#337](https://github.com/kicksideai/kickside/issues/337)) ([fdd6984](https://github.com/kicksideai/kickside/commit/fdd6984188d6f35cdaf4e40cd0ac8b9cd08928bc))
+
 ## [0.2.8](https://github.com/kicksideai/kickside/compare/workflows-v0.2.7...workflows-v0.2.8) (2026-11-05)
 
 

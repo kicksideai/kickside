@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.59](https://github.com/kicksideai/kickside/compare/widgets-v0.1.58...widgets-v0.1.59) (2026-11-07)
+
+
+### Bug Fixes
+
+* **widgets:** follow deletion events without racing the delete job ([#337](https://github.com/kicksideai/kickside/issues/337)) ([fdd6984](https://github.com/kicksideai/kickside/commit/fdd6984188d6f35cdaf4e40cd0ac8b9cd08928bc))
+
 ## [0.1.58](https://github.com/kicksideai/kickside/compare/widgets-v0.1.57...widgets-v0.1.58) (2026-11-06)
 
 
