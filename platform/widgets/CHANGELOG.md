@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.60](https://github.com/kicksideai/kickside/compare/widgets-v0.1.59...widgets-v0.1.60) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
 ## [0.1.59](https://github.com/kicksideai/kickside/compare/widgets-v0.1.58...widgets-v0.1.59) (2026-11-07)
 
 

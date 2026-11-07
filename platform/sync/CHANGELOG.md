@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.93](https://github.com/kicksideai/kickside/compare/sync-v0.1.92...sync-v0.1.93) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
 ## [0.1.92](https://github.com/kicksideai/kickside/compare/sync-v0.1.91...sync-v0.1.92) (2026-11-07)
 
 
