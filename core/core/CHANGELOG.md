@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.11](https://github.com/kicksideai/kickside/compare/core-v0.3.10...core-v0.3.11) (2026-11-07)
+
+
+### Performance Improvements
+
+* **automation:** resolve fixed registry entries once per round ([#335](https://github.com/kicksideai/kickside/issues/335)) ([cee0468](https://github.com/kicksideai/kickside/commit/cee0468266db65f6ee629082833e03afef87c387))
+
 ## [0.3.10](https://github.com/kicksideai/kickside/compare/core-v0.3.9...core-v0.3.10) (2026-11-05)
 
 

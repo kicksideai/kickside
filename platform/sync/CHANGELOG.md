@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.92](https://github.com/kicksideai/kickside/compare/sync-v0.1.91...sync-v0.1.92) (2026-11-07)
+
+
+### Performance Improvements
+
+* **automation:** resolve fixed registry entries once per round ([#335](https://github.com/kicksideai/kickside/issues/335)) ([cee0468](https://github.com/kicksideai/kickside/commit/cee0468266db65f6ee629082833e03afef87c387))
+
 ## [0.1.91](https://github.com/kicksideai/kickside/compare/sync-v0.1.90...sync-v0.1.91) (2026-11-07)
 
 

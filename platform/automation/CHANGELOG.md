@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.15](https://github.com/kicksideai/kickside/compare/automation-v0.2.14...automation-v0.2.15) (2026-11-07)
+
+
+### Performance Improvements
+
+* **automation:** resolve fixed registry entries once per round ([#335](https://github.com/kicksideai/kickside/issues/335)) ([cee0468](https://github.com/kicksideai/kickside/commit/cee0468266db65f6ee629082833e03afef87c387))
+
 ## [0.2.14](https://github.com/kicksideai/kickside/compare/automation-v0.2.13...automation-v0.2.14) (2026-11-07)
 
 
