@@ -23,7 +23,7 @@ entries:
     kind: ns.definition
     meta:
       title: KickSide UI Kit
-      comment: Shared frontend vocabulary consumed at build time as @kickside/ui-kit.
+      comment: Shared frontend vocabulary and component deletion tracking consumed at build time as @kickside/ui-kit.
 
   - name: package_fs
     kind: fs.directory

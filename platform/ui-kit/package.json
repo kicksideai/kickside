@@ -1,0 +1,22 @@
+{
+  "name": "@kickside/ui-kit-dev",
+  "private": true,
+  "description": "Test and typecheck harness for the @kickside/ui-kit package in package/; the package itself is the published deliverable.",
+  "license": "LicenseRef-KickSide-Community-1.0",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "@vue/test-utils": "^2.4.11",
+    "@wippy-fe/proxy": "*",
+    "happy-dom": "^20.10.6",
+    "primevue": "4.5.5",
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.9",
+    "vue": "^3.5.0",
+    "vue-tsc": "^3.3.8"
+  }
+}

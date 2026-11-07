@@ -1375,6 +1375,7 @@ jobs:
             mkdir -p "$TMPDIR"
             cd platform/ui-kit
             make test
+            make typecheck
             wippy update
             wippy lint
             cd "$source_root"
