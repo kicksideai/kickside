@@ -51,3 +51,10 @@ it('delivers deleting and deleted with addressed identity filtering', () => {
   }
   expect(componentDeletionEvent({event: 'component.deleted'})).toBeNull()
 })
+
+it('carries the accepted deletion job of a deleting event', () => {
+  expect(componentDeletionEvent({event: 'component.deleting', component_id: 'selected', deletion_job_id: 'job'}, 'selected'))
+    .toStrictEqual({event: 'component.deleting', component_id: 'selected', deletion_job_id: 'job'})
+  expect(componentDeletionEvent({topic: 'component.selected', data: {event: 'component.deleted', deletion_job_id: 'job'}}, 'selected'))
+    .toStrictEqual({event: 'component.deleted', component_id: 'selected'})
+})

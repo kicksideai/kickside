@@ -10,6 +10,8 @@ export interface ComponentMetaEvent {
 export interface ComponentDeletionEvent {
   event: 'component.deleting' | 'component.deleted'
   component_id: string
+  // The deletion job the server enqueued with the accepted deletion.
+  deletion_job_id?: string
 }
 export type ComponentEvent = ComponentMetaEvent | ComponentDeletionEvent
 
@@ -91,6 +93,9 @@ export function componentEvent(
       if (!id && topic !== `component.${componentId}`) continue
     }
     const component_id = id || componentId || topic.slice('component.'.length)
+    if (item.event === 'component.deleting' && typeof item.deletion_job_id === 'string' && item.deletion_job_id) {
+      return {event: item.event, component_id, deletion_job_id: item.deletion_job_id}
+    }
     if (item.event !== 'component.meta.changed') return {event: item.event, component_id}
     return {
       event: 'component.meta.changed',
