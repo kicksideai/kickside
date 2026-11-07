@@ -90,17 +90,20 @@ local function schema_ready(): (boolean, error?)
     return true, nil
 end
 
-local function converge_when_ready(): (integer?, error?)
+-- Converges when the ledger is current; a pending migration parks convergence
+-- until the next migrations-applied message, and parked reports no attempt.
+local function converge_when_ready(): (boolean, integer?, error?)
     local ready, ready_err = schema_ready()
     if ready_err then
         logger:error("system lifecycle convergence failed", { reason = tostring(ready_err), error_native = error_envelope.encode(ready_err) })
-        return nil, ready_err
+        return true, nil, ready_err
     end
     if not ready then
         logger:info("system lifecycle convergence awaits migrations")
-        return nil, nil
+        return false, nil, nil
     end
-    return converge_reported()
+    local count, converge_err = converge_reported()
+    return true, count, converge_err
 end
 
 local function main(_args: any): any
@@ -121,7 +124,7 @@ local function main(_args: any): any
     end
     if claimed ~= true then error(response_error("claim")) end
 
-    local count, converge_err = converge_when_ready()
+    local _, count, converge_err = converge_when_ready()
 
     -- Resident from here: upgradable, parked on the events channel and the
     -- migrations-applied listener. A clean return on CANCEL or channel closure
@@ -141,8 +144,13 @@ local function main(_args: any): any
             return { ok = true, count = count }
         end
         if selected.channel == applied then
-            count, converge_err = converge_reported()
-            logger:info("system lifecycle converged after migrations", { failed = converge_err ~= nil })
+            -- Bootloaders also run without migrations, so the message re-reads
+            -- the ledger rather than vouching for the schema.
+            local attempted, next_count, next_err = converge_when_ready()
+            if attempted then
+                count, converge_err = next_count, next_err
+                logger:info("system lifecycle converged after migrations", { failed = converge_err ~= nil })
+            end
         elseif ev and (ev :: any).kind == process.event.OUTDATED then
             process.upgrade()
         end
