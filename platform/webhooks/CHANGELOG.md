@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.42](https://github.com/kicksideai/kickside/compare/webhooks-v0.1.41...webhooks-v0.1.42) (2026-11-07)
+
+
+### Bug Fixes
+
+* carry the component deletion receipt through thread, skill, webhook, workflow and agent deletes ([#341](https://github.com/kicksideai/kickside/issues/341)) ([98e9d03](https://github.com/kicksideai/kickside/commit/98e9d03b522828d63b284dff4174ef7543bef2cb))
+
 ## [0.1.41](https://github.com/kicksideai/kickside/compare/webhooks-v0.1.40...webhooks-v0.1.41) (2026-11-07)
 
 

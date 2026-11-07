@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.10](https://github.com/kicksideai/kickside/compare/workflows-v0.2.9...workflows-v0.2.10) (2026-11-07)
+
+
+### Bug Fixes
+
+* carry the component deletion receipt through thread, skill, webhook, workflow and agent deletes ([#341](https://github.com/kicksideai/kickside/issues/341)) ([98e9d03](https://github.com/kicksideai/kickside/commit/98e9d03b522828d63b284dff4174ef7543bef2cb))
+
 ## [0.2.9](https://github.com/kicksideai/kickside/compare/workflows-v0.2.8...workflows-v0.2.9) (2026-11-07)
 
 
