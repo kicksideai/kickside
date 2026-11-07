@@ -34,14 +34,20 @@ function M.classify(err: any): (Map, string?)
     return classified, error_kind
 end
 
+-- error_kind(failure, error_kind) -> the error_kind a failure carries: the
+-- given one, else the failure's own, else the one its details carry.
+function M.error_kind(failure: Map, error_kind: string?): string?
+    return error_kind or failure.error_kind
+        or (type(failure.details) == "table" and failure.details.error_kind or nil)
+end
+
 -- failure_phase(failure, error_kind) -> the drive phase a failure leaves and
 -- whether it parks: deterministic declaration, access and identity failures
 -- block the drive; everything else degrades it.
 function M.failure_phase(failure: Map, error_kind: string?): (string, boolean)
     if failure_classification.capacity_floor(failure) ~= nil then return drive.PHASE.DEGRADED, false end
     if failure.retriable ~= false then return drive.PHASE.DEGRADED, false end
-    error_kind = error_kind or failure.error_kind
-        or (type(failure.details) == "table" and failure.details.error_kind or nil)
+    error_kind = M.error_kind(failure, error_kind)
     if error_kind == "infrastructure" then return drive.PHASE.DEGRADED, false end
     if error_kind == "subject" then return drive.PHASE.BLOCKED_IDENTITY, true end
     if error_kind == "access" or failure.kind == errors.PERMISSION_DENIED then return drive.PHASE.BLOCKED_ACCESS, true end

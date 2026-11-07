@@ -215,17 +215,6 @@ local DEFAULT_CONTRACT = "kickside.contract:component"
 -- Access level bitmask (re-exported so callers reference component.ACCESS.*).
 local ACCESS = component_types.ACCESS
 
-local function result_error(result: any, operation: string): error?
-    local err = envelope.error_of(result :: component_types.ServiceEnvelope, operation)
-    if err and type(result) == "table" and type(result.error_kind) == "string" then
-        local encoded = error_envelope.encode(err)
-        encoded.details = encoded.details or {}
-        encoded.details.error_kind = result.error_kind
-        return errors.new(encoded)
-    end
-    return err
-end
-
 local function normalize_required_access(value: any, default_value: integer?): (integer?, error?)
     local normalized, access_err = access_policy.normalize_access_mask(value, default_value)
     if access_err then return nil, errors.wrap(access_err, "Failed to normalize required component access") end
@@ -341,7 +330,7 @@ local function resolve_access_context(component_id: string, required_access: int
         return nil, envelope.call_error(access_err, "get_access_context")
     end
 
-    local result_err = result_error(access_result, "get_access_context")
+    local result_err = envelope.error_of(access_result :: component_types.ServiceEnvelope, "get_access_context")
     if result_err then
         return nil, result_err
     end
@@ -443,7 +432,7 @@ local function resolve_access_context_by_meta(meta_filters: component_types.Meta
         return nil, envelope.call_error(access_err, "get_access_context_by_meta")
     end
 
-    local result_err = result_error(access_result, "get_access_context_by_meta")
+    local result_err = envelope.error_of(access_result :: component_types.ServiceEnvelope, "get_access_context_by_meta")
     if result_err then
         return nil, result_err
     end
@@ -498,7 +487,6 @@ end
 M.get_component_service = get_component_service
 M.current_runtime_identity = current_runtime_identity
 M.open_contract_instance = open_contract_instance
-M.result_error = result_error
 M.open = open
 M.open_by_meta = open_by_meta
 M.validate_access = validate_access

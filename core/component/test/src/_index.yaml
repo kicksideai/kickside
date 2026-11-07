@@ -1303,16 +1303,16 @@ entries:
       test: wippy.test:test
       envelope: kickside.component:envelope
 
-  - name: context_result_native_test
+  - name: envelope_result_native_test
     kind: function.lua
-    source: file://context_result_native_test.lua
+    source: file://envelope_result_native_test.lua
     method: run
     meta:
       type: test
-      suite: component_context_result_native
+      suite: component_envelope_result_native
     imports:
       test: wippy.test:test
-      context: kickside.component:context_policy
+      envelope: kickside.component:envelope
 
   - name: command_cause_fixture
     kind: library.lua
