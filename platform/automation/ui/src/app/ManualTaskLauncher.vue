@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { api } from '@wippy-fe/proxy'
 import WcMount from '@widgets/app/WcMount.vue'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 
 const props = defineProps<{ target: string; parent: string; title: string }>()
 const emit = defineEmits<{ queued: [value: { id: string }]; error: [value: { message: string; error: unknown }] }>()

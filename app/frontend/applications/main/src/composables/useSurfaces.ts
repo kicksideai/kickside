@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue'
 import type { Component } from 'vue'
 import { useApi } from './useWippy'
-import { subscribeComponentMeta, type ComponentMetaEvent, type MetaFieldTypes } from '@widgets/app/componentRealtime'
+import { subscribeComponentMeta, type ComponentMetaEvent, type MetaFieldTypes } from '@kickside/ui-kit/componentRealtime'
 
 // A live badge bound to a component-meta field, resolved by the backend nav_badges
 // resolver and kept current over the ONE existing user websocket (no extra backend

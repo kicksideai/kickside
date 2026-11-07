@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import ComponentDeletion from '@widgets/app/ComponentDeletion.vue'
-import { useComponentDeletion } from '@widgets/app/useComponentDeletion'
+import ComponentDeletion from '@kickside/ui-kit/ComponentDeletion.vue'
+import { useComponentDeletion } from '@kickside/ui-kit/useComponentDeletion'
 import { ref, computed, watch } from 'vue'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import { Icon } from '@iconify/vue'
@@ -11,7 +11,7 @@ import type { Skill, SkillFile, SkillVersion } from '../types.ts'
 import { fetchSkills, fetchSkill, fetchVersions, fetchSkillFile, errMsg } from '../api.ts'
 import { skillStatusLabel, fileKindLabel } from './labels.ts'
 import IconField from '@widgets/app/IconField.vue'
-import { latestRequest } from '@widgets/app/latestRequest'
+import { latestRequest } from '@kickside/ui-kit/latestRequest'
 import SelectField from './SelectField.vue'
 
 const DIALOG_PT = {

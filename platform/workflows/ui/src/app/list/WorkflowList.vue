@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useComponentDeletion } from '@widgets/app/useComponentDeletion'
-import { latestRequest } from '@widgets/app/latestRequest'
+import { useComponentDeletion } from '@kickside/ui-kit/useComponentDeletion'
+import { latestRequest } from '@kickside/ui-kit/latestRequest'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import Message from 'primevue/message'

@@ -26,7 +26,7 @@ const entries = {
 }
 
 export default defineConfig({
-  // Shared widgets (ports.ts, WcMount, PickerSelect, componentRealtime) are
+  // Shared widgets (ports.ts, WcMount, PickerSelect) are
   // consumed straight from source through the same alias every module UI uses.
   resolve: {
     alias: {

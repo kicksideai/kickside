@@ -1,5 +1,5 @@
 @import "../picker/cp-base.css";
-@import "../app/component-deletion.css";
+@import "@kickside/ui-kit/component-deletion.css";
 @import "../app/wc-mount.css";
 @import "../app/anchored-panel.css";
 

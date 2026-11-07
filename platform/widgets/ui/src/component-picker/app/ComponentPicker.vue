@@ -5,8 +5,8 @@ import { api } from '@wippy-fe/proxy'
 import { useComponentProps, useComponentEvents } from '../constants.ts'
 import { parseSelectedId } from '../../app/pickerValue'
 import WcMount from '../../app/WcMount.vue'
-import ComponentDeletion from '../../app/ComponentDeletion.vue'
-import { useComponentDeletion, type ComponentDeletionState } from '../../app/useComponentDeletion'
+import ComponentDeletion from '@kickside/ui-kit/ComponentDeletion.vue'
+import { useComponentDeletion, type ComponentDeletionState } from '@kickside/ui-kit/useComponentDeletion'
 import AnchoredPanel from '../../app/AnchoredPanel.vue'
 
 // Single-instance picker over the threads API (GET source). A component class owns

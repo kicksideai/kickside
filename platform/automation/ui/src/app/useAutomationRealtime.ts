@@ -1,7 +1,7 @@
 import { host } from '@wippy-fe/proxy'
 import { readDriveStatus } from './read-drive-status'
 import type { Ref } from 'vue'
-import { subscribeComponentMeta, type ComponentMetaEvent } from '@widgets/app/componentRealtime'
+import { subscribeComponentMeta, type ComponentMetaEvent } from '@kickside/ui-kit/componentRealtime'
 import type { Automation, AutomationType } from './automation-types'
 
 export function useAutomationRealtime(

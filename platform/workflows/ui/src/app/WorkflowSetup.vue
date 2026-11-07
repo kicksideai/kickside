@@ -4,7 +4,7 @@ import Message from 'primevue/message'
 import { computed, ref, watch } from 'vue'
 import { api } from '@wippy-fe/proxy'
 import { useEvents, useProps } from '@wippy-fe/webcomponent-vue'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import { useParentId } from '@widgets/app/useParentId'
 import { useSubmitNonce } from '@widgets/app/useSubmitNonce'
 

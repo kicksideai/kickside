@@ -1,8 +1,8 @@
 import { computed, onBeforeUnmount, ref, type Ref } from 'vue'
 import { api, on } from '@wippy-fe/proxy'
-import { componentMetaEvent, type ComponentMetaEvent } from '@widgets/app/componentRealtime'
-import { errMsg } from '@widgets/app/errMsg'
-import { latestRequest } from '@widgets/app/latestRequest'
+import { componentMetaEvent, type ComponentMetaEvent } from '@kickside/ui-kit/componentRealtime'
+import { errMsg } from '@kickside/ui-kit/errMsg'
+import { latestRequest } from '@kickside/ui-kit/latestRequest'
 import { KNOWLEDGE_META_FIELD_TYPES, KNOWLEDGE_COUNT_KEYS } from './meta'
 import type { EmbeddingModel, Engine, KbDetail, KnowledgeBase, StatItem, StatSpec } from './knowledge.types.ts'
 
