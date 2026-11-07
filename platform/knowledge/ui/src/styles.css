@@ -1,10 +1,12 @@
 @import "@wippy-fe/theme/theme-config.css";
+@import "@widgets/app/component-deletion.css";
 @import "@kickside/ui-kit/spin.css";
 @import "@kickside/ui-kit/kx-card.css";
 @import "@kickside/ui-kit/kx-head.css";
 @import "@kickside/ui-kit/kx-modal-head.css";
 @import "@kickside/ui-kit/kx-state.css";
 @import "@kickside/ui-kit/kx-tag.css";
+@import "@widgets/app/anchored-panel.css";
 
 /* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
    preflight; without it PrimeVue controls keep UA defaults the theme never

@@ -177,34 +177,3 @@ onBeforeUnmount(() => { mountGeneration += 1; detach() })
     <div v-else ref="host"></div>
   </div>
 </template>
-
-<style scoped>
-.kx-wcmount {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  overflow-x: clip;
-  --p-border-radius: var(--wf-radius-sm, 8px);
-  --p-content-border-radius: var(--wf-radius-sm, 8px);
-}
-.kx-wcmount :deep(.kx-wcmount-surface) {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
-  color: inherit;
-}
-.kx-wcmount-fail {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
-  font-size: 12px; color: var(--p-danger-600, var(--p-danger-500));
-  padding: 9px 10px; border: 1px solid color-mix(in srgb, var(--p-danger-500) 32%, transparent);
-  border-radius: 10px; background: color-mix(in srgb, var(--p-danger-500) 7%, transparent);
-}
-.kx-wcmount-fail > span { min-width: 0; flex: 1; }
-.kx-wcmount-fail button {
-  border: 1px solid currentColor; border-radius: 8px; padding: 5px 9px;
-  background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer;
-}
-</style>

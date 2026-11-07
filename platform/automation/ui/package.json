@@ -80,6 +80,7 @@
   },
   "scripts": {
     "build": "vite build",
+    "test": "vitest run --environment happy-dom",
     "dev": "vite build --watch",
     "type-check": "vue-tsc --build --force"
   },

@@ -1,21 +1,21 @@
-import { e as k, W as x, u as V, a as B, b as D } from "./errMsg-BT807vrI.js";
-import { defineComponent as M, ref as v, computed as E, watch as I, onBeforeUnmount as L, openBlock as l, createElementBlock as h, createVNode as N, unref as c, createCommentVNode as y, createElementVNode as S, toDisplayString as q, createBlock as j } from "vue";
+import { e as _, _ as M, u as V, a as B, W as D } from "./errMsg-kIukmtcj.js";
+import { defineComponent as R, ref as v, computed as E, watch as I, onBeforeUnmount as L, openBlock as l, createElementBlock as h, createVNode as N, unref as c, createCommentVNode as k, createElementVNode as S, toDisplayString as q, createBlock as j } from "vue";
 import { api as U, define as A } from "@wippy-fe/proxy";
-import { s as Q } from "./execution-identity-editor-Cd9uOMxs.js";
+import { s as Q } from "./execution-identity-editor-DaljeKxW.js";
 import "@iconify/vue";
 const W = {
   "aria-label": "Launch task",
   class: "kx-manual-launcher"
-}, F = { key: 0 }, J = ["disabled"], K = {
+}, $ = { key: 0 }, F = ["disabled"], J = {
   key: 1,
   role: "alert"
-}, O = {
+}, K = {
   key: 2,
   role: "status"
-}, P = {
+}, O = {
   key: 3,
   role: "status"
-}, $ = /* @__PURE__ */ M({
+}, P = /* @__PURE__ */ R({
   __name: "ManualTaskLauncher",
   props: {
     target: {},
@@ -23,8 +23,8 @@ const W = {
     title: {}
   },
   emits: ["queued", "error"],
-  setup(g, { emit: p }) {
-    const n = g, _ = p, t = v(null), a = v(!1), u = v(!1), d = v(!1), o = v("");
+  setup(y, { emit: p }) {
+    const n = y, g = p, t = v(null), a = v(!1), u = v(!1), d = v(!1), o = v("");
     let m = null, s = 0;
     const f = E(() => {
       if (!n.parent) return { error: "Choose an existing parent for this task" };
@@ -32,17 +32,17 @@ const W = {
         const e = JSON.parse(n.target);
         return !e || typeof e != "object" || Array.isArray(e) ? { error: "Task target must be an object" } : { target: e, error: "" };
       } catch (e) {
-        return { error: k(e, "Could not read the task target") };
+        return { error: _(e, "Could not read the task target") };
       }
     }), w = E(() => !!t.value && !a.value && !u.value && !f.value.error);
     function C(e) {
-      o.value = k(e, "Could not queue the task"), _("error", { message: o.value, error: e });
+      o.value = _(e, "Could not queue the task"), g("error", { message: o.value, error: e });
     }
-    function R(e) {
+    function T(e) {
       const r = e;
       a.value || u.value || m || r?.principal?.kind !== "user" || !r.principal.id || (t.value = { kind: "user", id: r.principal.id }, o.value = "");
     }
-    async function T() {
+    async function x() {
       if (!w.value || !t.value || !f.value.target) return;
       const e = s;
       m ||= {
@@ -63,7 +63,7 @@ const W = {
         if (!r.installed) {
           const { data: b } = await U.post("/api/v1/automations/selected", r.body);
           if (e !== s) return;
-          if (!b.success) throw new Error(k(b.error, "Task installation is not confirmed"));
+          if (!b.success) throw new Error(_(b.error, "Task installation is not confirmed"));
           if (b.id !== r.body.component_id) throw new Error("Task installation receipt does not match the request");
           r.installed = !0;
         }
@@ -72,13 +72,13 @@ const W = {
           { request_id: r.wake }
         );
         if (e !== s) return;
-        if (!i.success) throw new Error(k(i.error, "Run admission is not confirmed"));
+        if (!i.success) throw new Error(_(i.error, "Run admission is not confirmed"));
         if (i.result?.state === "pending") {
           d.value = !0;
           return;
         }
         if (i.result?.state !== "succeeded") throw new Error("Run admission is not confirmed");
-        u.value = !0, _("queued", { id: r.body.component_id });
+        u.value = !0, g("queued", { id: r.body.component_id });
       } catch (i) {
         e === s && C(i);
       } finally {
@@ -90,29 +90,29 @@ const W = {
     }), L(() => {
       s += 1;
     }), (e, r) => (l(), h("section", W, [
-      N(x, {
+      N(M, {
         tag: "wc-run-as-picker",
         attrs: { root: "", value: t.value?.id, disabled: a.value || u.value || !!c(m) },
-        onChange: R,
+        onChange: T,
         onError: C
       }, null, 8, ["attrs"]),
-      t.value ? y("", !0) : (l(), h("p", F, "Select the account that runs this task.")),
+      t.value ? k("", !0) : (l(), h("p", $, "Select the account that runs this task.")),
       S("button", {
         type: "button",
         class: "p-button",
         disabled: !w.value,
-        onClick: T
-      }, q(a.value ? "Queuing…" : d.value ? "Check run admission" : o.value ? "Retry run" : "Queue run"), 9, J),
-      f.value.error || o.value ? (l(), h("p", K, q(f.value.error || o.value), 1)) : y("", !0),
-      d.value ? (l(), h("p", O, "Run admission is pending.")) : y("", !0),
-      u.value ? (l(), h("p", P, "Run queued. Follow the task in Automations.")) : y("", !0)
+        onClick: x
+      }, q(a.value ? "Queuing…" : d.value ? "Check run admission" : o.value ? "Retry run" : "Queue run"), 9, F),
+      f.value.error || o.value ? (l(), h("p", J, q(f.value.error || o.value), 1)) : k("", !0),
+      d.value ? (l(), h("p", K, "Run admission is pending.")) : k("", !0),
+      u.value ? (l(), h("p", O, "Run queued. Follow the task in Automations.")) : k("", !0)
     ]));
   }
-}), z = /* @__PURE__ */ M({
+}), z = /* @__PURE__ */ R({
   __name: "ManualTaskLauncherElement",
-  setup(g) {
+  setup(y) {
     const p = V(), n = B();
-    return (_, t) => (l(), j($, {
+    return (g, t) => (l(), j(P, {
       target: c(p).target || "",
       parent: c(p).parent || "",
       title: c(p).title || "Manual task",

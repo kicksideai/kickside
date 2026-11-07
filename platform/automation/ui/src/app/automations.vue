@@ -280,7 +280,7 @@ onBeforeUnmount(() => {
   install.unmountCustomInstallUi()
   clearRealtimeSubscriptions()
 })
-const {acceptDeletion} = useComponentDeletion(automations, row => row.id)
+const {acceptDeletion} = useComponentDeletion(automations, row => row.id, undefined, fetchAutomations)
 </script>
 
 <template>

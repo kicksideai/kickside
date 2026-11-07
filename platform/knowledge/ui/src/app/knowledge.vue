@@ -197,7 +197,7 @@ useHostVisibilityRefresh(async () => {
     error.value = errMsg(e, 'host API unavailable')
   }
 })
-const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (detail.value?.id === id) closeDetail() })
+const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (detail.value?.id === id) closeDetail() }, load)
 </script>
 
 <template>

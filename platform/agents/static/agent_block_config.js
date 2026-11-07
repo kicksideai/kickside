@@ -1,9 +1,9 @@
-import { A as tt, s as nt, B as W, k as je, z as Ke, e as me, R as Q, T as X, a as it, b as pe, F as rt, M as $e, c as ot, d as H, Y as at, I as st, v as lt, D as ct, S as dt, L as ut, f as pt, $ as ft, J as ht, p as J, u as mt, g as gt, W as bt, P as vt } from "./primevue-plugin-Dn0ACs8V.js";
-import { mergeProps as l, openBlock as c, createElementBlock as m, resolveComponent as B, resolveDirective as De, createBlock as M, Transition as Re, withCtx as D, createElementVNode as v, renderSlot as I, normalizeClass as te, resolveDynamicComponent as ke, createCommentVNode as $, withDirectives as He, Fragment as Z, renderList as xe, createVNode as L, createTextVNode as G, toDisplayString as E, normalizeProps as yt, createSlots as wt, withModifiers as kt, defineComponent as xt, ref as N, watch as Ot, computed as It, onMounted as St, unref as F } from "vue";
+import { A as tt, s as nt, B as W, k as je, z as Ke, e as me, R as Q, T as X, a as it, b as ue, F as rt, M as $e, c as ot, d as H, Y as at, I as st, v as lt, D as ct, S as dt, L as pt, f as ut, $ as ft, J as ht, p as J, u as mt, g as gt, W as bt, P as vt } from "./primevue-plugin-Dn0ACs8V.js";
+import { mergeProps as l, openBlock as c, createElementBlock as m, resolveComponent as B, resolveDirective as De, createBlock as A, Transition as Re, withCtx as D, createElementVNode as v, renderSlot as I, normalizeClass as te, resolveDynamicComponent as ke, createCommentVNode as $, withDirectives as He, Fragment as Z, renderList as xe, createVNode as L, createTextVNode as G, toDisplayString as E, normalizeProps as yt, createSlots as wt, withModifiers as kt, defineComponent as xt, ref as N, watch as Ot, computed as It, onMounted as St, unref as F } from "vue";
 import { loadByTagName as zt, define as Ct } from "@wippy-fe/proxy";
 import { s as be, f as U, a as Ne, R as Ge, b as ve, c as Le, d as Ue, e as Lt, x as we } from "./index-CAXh6BYi.js";
 import { s as Pt } from "./index-BvJc5yvO.js";
-import { M as $t } from "./MultiSelectField-CJKHhAnf.js";
+import { _ as $t } from "./MultiSelectField.vue_vue_type_script_setup_true_lang-NJY5V1IZ.js";
 import "@iconify/vue";
 function ne(t) {
   "@babel/helpers - typeof";
@@ -19,17 +19,17 @@ function Tt(t, e) {
 function Vt(t, e) {
   for (var n = 0; n < e.length; n++) {
     var r = e[n];
-    r.enumerable = r.enumerable || !1, r.configurable = !0, "value" in r && (r.writable = !0), Object.defineProperty(t, Mt(r.key), r);
+    r.enumerable = r.enumerable || !1, r.configurable = !0, "value" in r && (r.writable = !0), Object.defineProperty(t, At(r.key), r);
   }
 }
 function Ft(t, e, n) {
   return e && Vt(t.prototype, e), Object.defineProperty(t, "prototype", { writable: !1 }), t;
 }
-function Mt(t) {
-  var e = At(t, "string");
+function At(t) {
+  var e = Mt(t, "string");
   return ne(e) == "symbol" ? e : e + "";
 }
-function At(t, e) {
+function Mt(t, e) {
   if (ne(t) != "object" || !t) return t;
   var n = t[Symbol.toPrimitive];
   if (n !== void 0) {
@@ -731,7 +731,7 @@ function tn(t, e) {
 var nn = ["data-p"], rn = ["data-p"], on = ["data-p"], an = ["aria-label", "data-p"], sn = ["data-p"];
 function ln(t, e, n, r, o, i) {
   var s = B("TimesIcon"), d = De("ripple");
-  return c(), M(Re, l({
+  return c(), A(Re, l({
     name: "p-message",
     appear: ""
   }, t.ptmi("transition")), {
@@ -755,7 +755,7 @@ function ln(t, e, n, r, o, i) {
       }, t.ptm("content")), [I(t.$slots, "icon", {
         class: te(t.cx("icon"))
       }, function() {
-        return [(c(), M(ke(t.icon ? "span" : null), l({
+        return [(c(), A(ke(t.icon ? "span" : null), l({
           class: [t.cx("icon"), t.icon],
           "data-p": i.dataP
         }, t.ptm("icon")), null, 16, ["class", "data-p"]))];
@@ -768,8 +768,8 @@ function ln(t, e, n, r, o, i) {
         class: t.cx("closeButton"),
         "aria-label": i.closeAriaLabel,
         type: "button",
-        onClick: e[0] || (e[0] = function(p) {
-          return i.close(p);
+        onClick: e[0] || (e[0] = function(u) {
+          return i.close(u);
         }),
         "data-p": i.dataP
       }, Fe(Fe({}, t.closeButtonProps), t.ptm("closeButton"))), [I(t.$slots, "closeicon", {}, function() {
@@ -777,7 +777,7 @@ function ln(t, e, n, r, o, i) {
           key: 0,
           class: [t.cx("closeIcon"), t.closeIcon],
           "data-p": i.dataP
-        }, t.ptm("closeIcon")), null, 16, sn)) : (c(), M(s, l({
+        }, t.ptm("closeIcon")), null, 16, sn)) : (c(), A(s, l({
           key: 1,
           class: [t.cx("closeIcon"), t.closeIcon],
           "data-p": i.dataP
@@ -947,11 +947,11 @@ var cn = `
   box: "p-radiobutton-box",
   input: "p-radiobutton-input",
   icon: "p-radiobutton-icon"
-}, un = W.extend({
+}, pn = W.extend({
   name: "radiobutton",
   style: cn,
   classes: dn
-}), pn = {
+}), un = {
   name: "BaseRadioButton",
   extends: be,
   props: {
@@ -986,7 +986,7 @@ var cn = `
       default: null
     }
   },
-  style: un,
+  style: pn,
   provide: function() {
     return {
       $pcRadioButton: this,
@@ -1021,7 +1021,7 @@ function mn(t, e) {
 }
 var Oe = {
   name: "RadioButton",
-  extends: pn,
+  extends: un,
   inheritAttrs: !1,
   emits: ["change", "focus", "blur"],
   inject: {
@@ -1203,13 +1203,13 @@ var qe = {
   extends: Le
 };
 function Fn(t) {
-  return En(t) || Bn(t) || An(t) || Mn();
+  return En(t) || Bn(t) || Mn(t) || An();
 }
-function Mn() {
+function An() {
   throw new TypeError(`Invalid attempt to spread non-iterable instance.
 In order to be iterable, non-array objects must have a [Symbol.iterator]() method.`);
 }
-function An(t, e) {
+function Mn(t, e) {
   if (t) {
     if (typeof t == "string") return ze(t, e);
     var n = {}.toString.call(t).slice(8, -1);
@@ -1419,7 +1419,7 @@ var qn = `
     inset-block-start: 0;
     inset-inline-start: 0;
 }
-`, Me = W.extend({
+`, Ae = W.extend({
   name: "virtualscroller",
   css: Jn,
   style: qn
@@ -1508,7 +1508,7 @@ var qn = `
       default: !1
     }
   },
-  style: Me,
+  style: Ae,
   provide: function() {
     return {
       $pcVirtualScroller: this,
@@ -1517,7 +1517,7 @@ var qn = `
   },
   beforeMount: function() {
     var e;
-    Me.loadCSS({
+    Ae.loadCSS({
       nonce: (e = this.$primevueConfig) === null || e === void 0 || (e = e.csp) === null || e === void 0 ? void 0 : e.nonce
     });
   }
@@ -1530,7 +1530,7 @@ function se(t) {
     return e && typeof Symbol == "function" && e.constructor === Symbol && e !== Symbol.prototype ? "symbol" : typeof e;
   }, se(t);
 }
-function Ae(t, e) {
+function Me(t, e) {
   var n = Object.keys(t);
   if (Object.getOwnPropertySymbols) {
     var r = Object.getOwnPropertySymbols(t);
@@ -1543,9 +1543,9 @@ function Ae(t, e) {
 function ee(t) {
   for (var e = 1; e < arguments.length; e++) {
     var n = arguments[e] != null ? arguments[e] : {};
-    e % 2 ? Ae(Object(n), !0).forEach(function(r) {
+    e % 2 ? Me(Object(n), !0).forEach(function(r) {
       Ye(t, r, n[r]);
-    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(t, Object.getOwnPropertyDescriptors(n)) : Ae(Object(n)).forEach(function(r) {
+    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(t, Object.getOwnPropertyDescriptors(n)) : Me(Object(n)).forEach(function(r) {
       Object.defineProperty(t, r, Object.getOwnPropertyDescriptor(n, r));
     });
   }
@@ -1682,7 +1682,7 @@ var Qe = {
         return f > -1;
       }) : e > -1;
       if (s) {
-        var d = this.first, p = this.element, h = p.scrollTop, u = h === void 0 ? 0 : h, b = p.scrollLeft, O = b === void 0 ? 0 : b, P = this.calculateNumItems(), k = P.numToleratedItems, S = this.getContentPosition(), x = this.itemSize, z = function() {
+        var d = this.first, u = this.element, h = u.scrollTop, p = h === void 0 ? 0 : h, b = u.scrollLeft, O = b === void 0 ? 0 : b, P = this.calculateNumItems(), k = P.numToleratedItems, S = this.getContentPosition(), x = this.itemSize, z = function() {
           var y = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : 0, R = arguments.length > 1 ? arguments[1] : void 0;
           return y <= R ? 0 : y;
         }, T = function(y, R, j) {
@@ -1701,7 +1701,7 @@ var Qe = {
         o ? (w = {
           rows: z(e[0], k[0]),
           cols: z(e[1], k[1])
-        }, V(T(w.cols, x[1], S.left), T(w.rows, x[0], S.top)), a = this.lastScrollPos.top !== u || this.lastScrollPos.left !== O, g = w.rows !== d.rows || w.cols !== d.cols) : (w = z(e, k), i ? V(T(w, x, S.left), u) : V(O, T(w, x, S.top)), a = this.lastScrollPos !== (i ? O : u), g = w !== d), this.isRangeChanged = g, a && (this.first = w);
+        }, V(T(w.cols, x[1], S.left), T(w.rows, x[0], S.top)), a = this.lastScrollPos.top !== p || this.lastScrollPos.left !== O, g = w.rows !== d.rows || w.cols !== d.cols) : (w = z(e, k), i ? V(T(w, x, S.left), p) : V(O, T(w, x, S.top)), a = this.lastScrollPos !== (i ? O : p), g = w !== d), this.isRangeChanged = g, a && (this.first = w);
       }
     },
     scrollInView: function(e, n) {
@@ -1711,7 +1711,7 @@ var Qe = {
           return x > -1;
         }) : e > -1;
         if (d) {
-          var p = this.getRenderedRange(), h = p.first, u = p.viewport, b = function() {
+          var u = this.getRenderedRange(), h = u.first, p = u.viewport, b = function() {
             var z = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : 0, T = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : 0;
             return r.scrollTo({
               left: z,
@@ -1721,16 +1721,16 @@ var Qe = {
           }, O = n === "to-start", P = n === "to-end";
           if (O) {
             if (i)
-              u.first.rows - h.rows > e[0] ? b(u.first.cols * this.itemSize[1], (u.first.rows - 1) * this.itemSize[0]) : u.first.cols - h.cols > e[1] && b((u.first.cols - 1) * this.itemSize[1], u.first.rows * this.itemSize[0]);
-            else if (u.first - h > e) {
-              var k = (u.first - 1) * this.itemSize;
+              p.first.rows - h.rows > e[0] ? b(p.first.cols * this.itemSize[1], (p.first.rows - 1) * this.itemSize[0]) : p.first.cols - h.cols > e[1] && b((p.first.cols - 1) * this.itemSize[1], p.first.rows * this.itemSize[0]);
+            else if (p.first - h > e) {
+              var k = (p.first - 1) * this.itemSize;
               s ? b(k, 0) : b(0, k);
             }
           } else if (P) {
             if (i)
-              u.last.rows - h.rows <= e[0] + 1 ? b(u.first.cols * this.itemSize[1], (u.first.rows + 1) * this.itemSize[0]) : u.last.cols - h.cols <= e[1] + 1 && b((u.first.cols + 1) * this.itemSize[1], u.first.rows * this.itemSize[0]);
-            else if (u.last - h <= e + 1) {
-              var S = (u.first + 1) * this.itemSize;
+              p.last.rows - h.rows <= e[0] + 1 ? b(p.first.cols * this.itemSize[1], (p.first.rows + 1) * this.itemSize[0]) : p.last.cols - h.cols <= e[1] + 1 && b((p.first.cols + 1) * this.itemSize[1], p.first.rows * this.itemSize[0]);
+            else if (p.last - h <= e + 1) {
+              var S = (p.first + 1) * this.itemSize;
               s ? b(S, 0) : b(0, S);
             }
           }
@@ -1743,17 +1743,17 @@ var Qe = {
         return Math.floor(b / (O || b));
       }, n = this.first, r = 0;
       if (this.element) {
-        var o = this.isBoth(), i = this.isHorizontal(), s = this.element, d = s.scrollTop, p = s.scrollLeft;
+        var o = this.isBoth(), i = this.isHorizontal(), s = this.element, d = s.scrollTop, u = s.scrollLeft;
         if (o)
           n = {
             rows: e(d, this.itemSize[0]),
-            cols: e(p, this.itemSize[1])
+            cols: e(u, this.itemSize[1])
           }, r = {
             rows: n.rows + this.numItemsInViewport.rows,
             cols: n.cols + this.numItemsInViewport.cols
           };
         else {
-          var h = i ? p : d;
+          var h = i ? u : d;
           n = e(h, this.itemSize), r = n + this.numItemsInViewport;
         }
       }
@@ -1769,26 +1769,26 @@ var Qe = {
     calculateNumItems: function() {
       var e = this.isBoth(), n = this.isHorizontal(), r = this.itemSize, o = this.getContentPosition(), i = this.element ? this.element.offsetWidth - o.left : 0, s = this.element ? this.element.offsetHeight - o.top : 0, d = function(O, P) {
         return Math.ceil(O / (P || O));
-      }, p = function(O) {
+      }, u = function(O) {
         return Math.ceil(O / 2);
       }, h = e ? {
         rows: d(s, r[0]),
         cols: d(i, r[1])
-      } : d(n ? i : s, r), u = this.d_numToleratedItems || (e ? [p(h.rows), p(h.cols)] : p(h));
+      } : d(n ? i : s, r), p = this.d_numToleratedItems || (e ? [u(h.rows), u(h.cols)] : u(h));
       return {
         numItemsInViewport: h,
-        numToleratedItems: u
+        numToleratedItems: p
       };
     },
     calculateOptions: function() {
-      var e = this, n = this.isBoth(), r = this.first, o = this.calculateNumItems(), i = o.numItemsInViewport, s = o.numToleratedItems, d = function(u, b, O) {
+      var e = this, n = this.isBoth(), r = this.first, o = this.calculateNumItems(), i = o.numItemsInViewport, s = o.numToleratedItems, d = function(p, b, O) {
         var P = arguments.length > 3 && arguments[3] !== void 0 ? arguments[3] : !1;
-        return e.getLast(u + b + (u < O ? 2 : 3) * O, P);
-      }, p = n ? {
+        return e.getLast(p + b + (p < O ? 2 : 3) * O, P);
+      }, u = n ? {
         rows: d(r.rows, i.rows, s[0]),
         cols: d(r.cols, i.cols, s[1], !0)
       } : d(r, i, s);
-      this.last = p, this.numItemsInViewport = i, this.d_numToleratedItems = s, this.$emit("update:numToleratedItems", this.d_numToleratedItems), this.showLoader && (this.loaderArr = n ? Array.from({
+      this.last = u, this.numItemsInViewport = i, this.d_numToleratedItems = s, this.$emit("update:numToleratedItems", this.d_numToleratedItems), this.showLoader && (this.loaderArr = n ? Array.from({
         length: i.rows
       }).map(function() {
         return Array.from({
@@ -1803,7 +1803,7 @@ var Qe = {
             rows: 0,
             cols: r.cols
           } : 0 : r,
-          last: Math.min(e.step ? e.step : p, ((h = e.items) === null || h === void 0 ? void 0 : h.length) || 0)
+          last: Math.min(e.step ? e.step : u, ((h = e.items) === null || h === void 0 ? void 0 : h.length) || 0)
         }, e.$emit("lazy-load", e.lazyLoadState);
       });
     },
@@ -1846,8 +1846,8 @@ var Qe = {
     setSize: function() {
       var e = this;
       if (this.element) {
-        var n = this.isBoth(), r = this.isHorizontal(), o = this.element.parentElement, i = this.scrollWidth || "".concat(this.element.offsetWidth || o.offsetWidth, "px"), s = this.scrollHeight || "".concat(this.element.offsetHeight || o.offsetHeight, "px"), d = function(h, u) {
-          return e.element.style[h] = u;
+        var n = this.isBoth(), r = this.isHorizontal(), o = this.element.parentElement, i = this.scrollWidth || "".concat(this.element.offsetWidth || o.offsetWidth, "px"), s = this.scrollHeight || "".concat(this.element.offsetHeight || o.offsetHeight, "px"), d = function(h, p) {
+          return e.element.style[h] = p;
         };
         n || r ? (d("height", s), d("width", i)) : d("height", s);
       }
@@ -1855,9 +1855,9 @@ var Qe = {
     setSpacerSize: function() {
       var e = this, n = this.items;
       if (n) {
-        var r = this.isBoth(), o = this.isHorizontal(), i = this.getContentPosition(), s = function(p, h, u) {
+        var r = this.isBoth(), o = this.isHorizontal(), i = this.getContentPosition(), s = function(u, h, p) {
           var b = arguments.length > 3 && arguments[3] !== void 0 ? arguments[3] : 0;
-          return e.spacerStyle = ee(ee({}, e.spacerStyle), Ye({}, "".concat(p), (h || []).length * u + b + "px"));
+          return e.spacerStyle = ee(ee({}, e.spacerStyle), Ye({}, "".concat(u), (h || []).length * p + b + "px"));
         };
         r ? (s("height", n, this.itemSize[0], i.y), s("width", this.columns || n[1], this.itemSize[1], i.x)) : o ? s("width", this.columns || n, this.itemSize, i.x) : s("height", n, this.itemSize, i.y);
       }
@@ -1865,36 +1865,36 @@ var Qe = {
     setContentPosition: function(e) {
       var n = this;
       if (this.content && !this.appendOnly) {
-        var r = this.isBoth(), o = this.isHorizontal(), i = e ? e.first : this.first, s = function(u, b) {
-          return u * b;
+        var r = this.isBoth(), o = this.isHorizontal(), i = e ? e.first : this.first, s = function(p, b) {
+          return p * b;
         }, d = function() {
-          var u = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : 0, b = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : 0;
+          var p = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : 0, b = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : 0;
           return n.contentStyle = ee(ee({}, n.contentStyle), {
-            transform: "translate3d(".concat(u, "px, ").concat(b, "px, 0)")
+            transform: "translate3d(".concat(p, "px, ").concat(b, "px, 0)")
           });
         };
         if (r)
           d(s(i.cols, this.itemSize[1]), s(i.rows, this.itemSize[0]));
         else {
-          var p = s(i, this.itemSize);
-          o ? d(p, 0) : d(0, p);
+          var u = s(i, this.itemSize);
+          o ? d(u, 0) : d(0, u);
         }
       }
     },
     onScrollPositionChange: function(e) {
-      var n = this, r = e.target, o = this.isBoth(), i = this.isHorizontal(), s = this.getContentPosition(), d = function(C, A) {
-        return C ? C > A ? C - A : C : 0;
-      }, p = function(C, A) {
-        return Math.floor(C / (A || C));
-      }, h = function(C, A, Y, de, K, _) {
-        return C <= K ? K : _ ? Y - de - K : A + K - 1;
-      }, u = function(C, A, Y, de, K, _, ue, et) {
+      var n = this, r = e.target, o = this.isBoth(), i = this.isHorizontal(), s = this.getContentPosition(), d = function(C, M) {
+        return C ? C > M ? C - M : C : 0;
+      }, u = function(C, M) {
+        return Math.floor(C / (M || C));
+      }, h = function(C, M, Y, de, K, _) {
+        return C <= K ? K : _ ? Y - de - K : M + K - 1;
+      }, p = function(C, M, Y, de, K, _, pe, et) {
         if (C <= _) return 0;
-        var ye = Math.max(0, ue ? C < A ? Y : C - _ : C > A ? Y : C - 2 * _), Pe = n.getLast(ye, et);
+        var ye = Math.max(0, pe ? C < M ? Y : C - _ : C > M ? Y : C - 2 * _), Pe = n.getLast(ye, et);
         return ye > Pe ? Pe - K : ye;
-      }, b = function(C, A, Y, de, K, _) {
-        var ue = A + de + 2 * K;
-        return C >= K && (ue += K + 1), n.getLast(ue, _);
+      }, b = function(C, M, Y, de, K, _) {
+        var pe = M + de + 2 * K;
+        return C >= K && (pe += K + 1), n.getLast(pe, _);
       }, O = d(r.scrollTop, s.top), P = d(r.scrollLeft, s.left), k = o ? {
         rows: 0,
         cols: 0
@@ -1903,15 +1903,15 @@ var Qe = {
         var T = this.lastScrollPos.top <= O, V = this.lastScrollPos.left <= P;
         if (!this.appendOnly || this.appendOnly && (T || V)) {
           var w = {
-            rows: p(O, this.itemSize[0]),
-            cols: p(P, this.itemSize[1])
+            rows: u(O, this.itemSize[0]),
+            cols: u(P, this.itemSize[1])
           }, g = {
             rows: h(w.rows, this.first.rows, this.last.rows, this.numItemsInViewport.rows, this.d_numToleratedItems[0], T),
             cols: h(w.cols, this.first.cols, this.last.cols, this.numItemsInViewport.cols, this.d_numToleratedItems[1], V)
           };
           k = {
-            rows: u(w.rows, g.rows, this.first.rows, this.last.rows, this.numItemsInViewport.rows, this.d_numToleratedItems[0], T),
-            cols: u(w.cols, g.cols, this.first.cols, this.last.cols, this.numItemsInViewport.cols, this.d_numToleratedItems[1], V, !0)
+            rows: p(w.rows, g.rows, this.first.rows, this.last.rows, this.numItemsInViewport.rows, this.d_numToleratedItems[0], T),
+            cols: p(w.cols, g.cols, this.first.cols, this.last.cols, this.numItemsInViewport.cols, this.d_numToleratedItems[1], V, !0)
           }, S = {
             rows: b(w.rows, k.rows, this.last.rows, this.numItemsInViewport.rows, this.d_numToleratedItems[0]),
             cols: b(w.cols, k.cols, this.last.cols, this.numItemsInViewport.cols, this.d_numToleratedItems[1], !0)
@@ -1923,8 +1923,8 @@ var Qe = {
       } else {
         var a = i ? P : O, f = this.lastScrollPos <= a;
         if (!this.appendOnly || this.appendOnly && f) {
-          var y = p(a, this.itemSize), R = h(y, this.first, this.last, this.numItemsInViewport, this.d_numToleratedItems, f);
-          k = u(y, R, this.first, this.last, this.numItemsInViewport, this.d_numToleratedItems, f), S = b(y, k, this.last, this.numItemsInViewport, this.d_numToleratedItems), x = k !== this.first || S !== this.last || this.isRangeChanged, z = a;
+          var y = u(a, this.itemSize), R = h(y, this.first, this.last, this.numItemsInViewport, this.d_numToleratedItems, f);
+          k = p(y, R, this.first, this.last, this.numItemsInViewport, this.d_numToleratedItems, f), S = b(y, k, this.last, this.numItemsInViewport, this.d_numToleratedItems), x = k !== this.first || S !== this.last || this.isRangeChanged, z = a;
         }
       }
       return {
@@ -1942,11 +1942,11 @@ var Qe = {
           last: o
         };
         if (this.setContentPosition(d), this.first = r, this.last = o, this.lastScrollPos = s, this.$emit("scroll-index-change", d), this.lazy && this.isPageChanged(r)) {
-          var p, h, u = {
-            first: this.step ? Math.min(this.getPageByFirst(r) * this.step, (((p = this.items) === null || p === void 0 ? void 0 : p.length) || 0) - this.step) : r,
+          var u, h, p = {
+            first: this.step ? Math.min(this.getPageByFirst(r) * this.step, (((u = this.items) === null || u === void 0 ? void 0 : u.length) || 0) - this.step) : r,
             last: Math.min(this.step ? (this.getPageByFirst(r) + 1) * this.step : o, ((h = this.items) === null || h === void 0 ? void 0 : h.length) || 0)
-          }, b = this.lazyLoadState.first !== u.first || this.lazyLoadState.last !== u.last;
-          b && this.$emit("lazy-load", u), this.lazyLoadState = u;
+          }, b = this.lazyLoadState.first !== p.first || this.lazyLoadState.last !== p.last;
+          b && this.$emit("lazy-load", p), this.lazyLoadState = p;
         }
       }
     },
@@ -1969,8 +1969,8 @@ var Qe = {
       var e = this;
       this.resizeTimeout && clearTimeout(this.resizeTimeout), this.resizeTimeout = setTimeout(function() {
         if (me(e.element)) {
-          var n = e.isBoth(), r = e.isVertical(), o = e.isHorizontal(), i = [Q(e.element), X(e.element)], s = i[0], d = i[1], p = s !== e.defaultWidth, h = d !== e.defaultHeight, u = n ? p || h : o ? p : r ? h : !1;
-          u && (e.d_numToleratedItems = e.numToleratedItems, e.defaultWidth = s, e.defaultHeight = d, e.defaultContentWidth = Q(e.content), e.defaultContentHeight = X(e.content), e.init());
+          var n = e.isBoth(), r = e.isVertical(), o = e.isHorizontal(), i = [Q(e.element), X(e.element)], s = i[0], d = i[1], u = s !== e.defaultWidth, h = d !== e.defaultHeight, p = n ? u || h : o ? u : r ? h : !1;
+          p && (e.d_numToleratedItems = e.numToleratedItems, e.defaultWidth = s, e.defaultHeight = d, e.defaultContentWidth = Q(e.content), e.defaultContentHeight = X(e.content), e.init());
         }
       }, this.resizeDelay);
     },
@@ -2098,11 +2098,11 @@ function ei(t, e, n, r, o, i) {
       ref: i.contentRef,
       class: i.contentClass,
       style: o.contentStyle
-    }, t.ptm("content")), [(c(!0), m(Z, null, xe(i.loadedItems, function(d, p) {
+    }, t.ptm("content")), [(c(!0), m(Z, null, xe(i.loadedItems, function(d, u) {
       return I(t.$slots, "item", {
-        key: p,
+        key: u,
         item: d,
-        options: i.getOptions(p)
+        options: i.getOptions(u)
       });
     }), 128))], 16)];
   }), t.showSpacer ? (c(), m("div", l({
@@ -2114,10 +2114,10 @@ function ei(t, e, n, r, o, i) {
     class: i.loaderClass
   }, t.ptm("loader")), [t.$slots && t.$slots.loader ? (c(!0), m(Z, {
     key: 0
-  }, xe(o.loaderArr, function(d, p) {
+  }, xe(o.loaderArr, function(d, u) {
     return I(t.$slots, "loader", {
-      key: p,
-      options: i.getLoaderOptions(p, i.isBoth() && {
+      key: u,
+      options: i.getLoaderOptions(u, i.isBoth() && {
         numCols: t.d_numItemsInViewport.cols
       })
     });
@@ -2654,10 +2654,10 @@ function q(t, e, n) {
   return (e = di(e)) in t ? Object.defineProperty(t, e, { value: n, enumerable: !0, configurable: !0, writable: !0 }) : t[e] = n, t;
 }
 function di(t) {
-  var e = ui(t, "string");
+  var e = pi(t, "string");
   return le(e) == "symbol" ? e : e + "";
 }
-function ui(t, e) {
+function pi(t, e) {
   if (le(t) != "object" || !t) return t;
   var n = t[Symbol.toPrimitive];
   if (n !== void 0) {
@@ -2847,7 +2847,7 @@ var Xe = {
       var n = e.target.value;
       this.searchValue = "";
       var r = this.searchOptions(e, n);
-      !r && (this.focusedOptionIndex = -1), this.updateModel(e, n), !this.overlayVisible && pe(n) && this.show();
+      !r && (this.focusedOptionIndex = -1), this.updateModel(e, n), !this.overlayVisible && ue(n) && this.show();
     },
     onContainerClick: function(e) {
       this.disabled || this.loading || e.target.tagName === "INPUT" || e.target.getAttribute("data-pc-section") === "clearicon" || e.target.closest('[data-pc-section="clearicon"]') || ((!this.overlay || !this.overlay.contains(e.target)) && (this.overlayVisible ? this.hide(!0) : this.show(!0)), this.clicked = !0);
@@ -2856,11 +2856,11 @@ var Xe = {
       this.updateModel(e, null), this.resetFilterOnClear && (this.filterValue = null);
     },
     onFirstHiddenFocus: function(e) {
-      var n = e.relatedTarget === this.$refs.focusInput ? pt(this.overlay, ':not([data-p-hidden-focusable="true"])') : this.$refs.focusInput;
+      var n = e.relatedTarget === this.$refs.focusInput ? ut(this.overlay, ':not([data-p-hidden-focusable="true"])') : this.$refs.focusInput;
       H(n);
     },
     onLastHiddenFocus: function(e) {
-      var n = e.relatedTarget === this.$refs.focusInput ? ut(this.overlay, ':not([data-p-hidden-focusable="true"])') : this.$refs.focusInput;
+      var n = e.relatedTarget === this.$refs.focusInput ? pt(this.overlay, ':not([data-p-hidden-focusable="true"])') : this.$refs.focusInput;
       H(n);
     },
     onOptionSelect: function(e, n) {
@@ -3090,7 +3090,7 @@ var Xe = {
       return this.isValidOption(e) && typeof this.getOptionLabel(e) == "string" && ((n = this.getOptionLabel(e)) === null || n === void 0 ? void 0 : n.toLocaleLowerCase(this.filterLocale).startsWith(this.searchValue.toLocaleLowerCase(this.filterLocale)));
     },
     isValidOption: function(e) {
-      return pe(e) && !(this.isOptionDisabled(e) || this.isOptionGroup(e));
+      return ue(e) && !(this.isOptionDisabled(e) || this.isOptionGroup(e));
     },
     isValidSelectedOption: function(e) {
       return this.isValidOption(e) && this.isSelected(e);
@@ -3140,7 +3140,7 @@ var Xe = {
       var r = this;
       this.searchValue = (this.searchValue || "") + n;
       var o = -1, i = !1;
-      return pe(this.searchValue) && (o = this.visibleOptions.findIndex(function(s) {
+      return ue(this.searchValue) && (o = this.visibleOptions.findIndex(function(s) {
         return r.isOptionExactMatched(s);
       }), o === -1 && (o = this.visibleOptions.findIndex(function(s) {
         return r.isOptionStartsWith(s);
@@ -3202,10 +3202,10 @@ var Xe = {
         if (this.optionGroupLabel) {
           var o = this.options || [], i = [];
           return o.forEach(function(s) {
-            var d = e.getOptionGroupChildren(s), p = d.filter(function(h) {
+            var d = e.getOptionGroupChildren(s), u = d.filter(function(h) {
               return r.includes(h);
             });
-            p.length > 0 && i.push(Ee(Ee({}, s), {}, q({}, typeof e.optionGroupChildren == "string" ? e.optionGroupChildren : "items", oi(p))));
+            u.length > 0 && i.push(Ee(Ee({}, s), {}, q({}, typeof e.optionGroupChildren == "string" ? e.optionGroupChildren : "items", oi(u))));
           }), this.flatOptions(i);
         }
         return r;
@@ -3231,7 +3231,7 @@ var Xe = {
       return this.filterFields || [this.optionLabel];
     },
     filterResultMessageText: function() {
-      return pe(this.visibleOptions) ? this.filterMessageText.replaceAll("{0}", this.visibleOptions.length) : this.emptyFilterMessageText;
+      return ue(this.visibleOptions) ? this.filterMessageText.replaceAll("{0}", this.visibleOptions.length) : this.emptyFilterMessageText;
     },
     filterMessageText: function() {
       return this.filterMessage || this.$primevue.config.locale.searchMessage || "";
@@ -3306,9 +3306,9 @@ var Xe = {
     CheckIcon: Lt,
     BlankIcon: We
   }
-}, pi = ["id", "data-p"], fi = ["name", "id", "value", "placeholder", "tabindex", "disabled", "aria-label", "aria-labelledby", "aria-expanded", "aria-controls", "aria-activedescendant", "aria-invalid", "data-p"], hi = ["name", "id", "tabindex", "aria-label", "aria-labelledby", "aria-expanded", "aria-controls", "aria-activedescendant", "aria-invalid", "aria-disabled", "data-p"], mi = ["data-p"], gi = ["id"], bi = ["id"], vi = ["id", "aria-label", "aria-selected", "aria-disabled", "aria-setsize", "aria-posinset", "onMousedown", "onMousemove", "data-p-selected", "data-p-focused", "data-p-disabled"];
+}, ui = ["id", "data-p"], fi = ["name", "id", "value", "placeholder", "tabindex", "disabled", "aria-label", "aria-labelledby", "aria-expanded", "aria-controls", "aria-activedescendant", "aria-invalid", "data-p"], hi = ["name", "id", "tabindex", "aria-label", "aria-labelledby", "aria-expanded", "aria-controls", "aria-activedescendant", "aria-invalid", "aria-disabled", "data-p"], mi = ["data-p"], gi = ["id"], bi = ["id"], vi = ["id", "aria-label", "aria-selected", "aria-disabled", "aria-setsize", "aria-posinset", "onMousedown", "onMousemove", "data-p-selected", "data-p-focused", "data-p-disabled"];
 function yi(t, e, n, r, o, i) {
-  var s = B("SpinnerIcon"), d = B("InputText"), p = B("SearchIcon"), h = B("InputIcon"), u = B("IconField"), b = B("CheckIcon"), O = B("BlankIcon"), P = B("VirtualScroller"), k = B("Portal"), S = De("ripple");
+  var s = B("SpinnerIcon"), d = B("InputText"), u = B("SearchIcon"), h = B("InputIcon"), p = B("IconField"), b = B("CheckIcon"), O = B("BlankIcon"), P = B("VirtualScroller"), k = B("Portal"), S = De("ripple");
   return c(), m("div", l({
     ref: "container",
     id: t.$id,
@@ -3389,7 +3389,7 @@ function yi(t, e, n, r, o, i) {
     class: te(t.cx("clearIcon")),
     clearCallback: i.onClearClick
   }, function() {
-    return [(c(), M(ke(t.clearIcon ? "i" : "TimesIcon"), l({
+    return [(c(), A(ke(t.clearIcon ? "i" : "TimesIcon"), l({
       ref: "clearIcon",
       class: [t.cx("clearIcon"), t.clearIcon],
       onClick: i.onClearClick
@@ -3406,7 +3406,7 @@ function yi(t, e, n, r, o, i) {
       key: 0,
       class: [t.cx("loadingIcon"), "pi-spin", t.loadingIcon],
       "aria-hidden": "true"
-    }, t.ptm("loadingIcon")), null, 16)) : (c(), M(s, l({
+    }, t.ptm("loadingIcon")), null, 16)) : (c(), A(s, l({
       key: 1,
       class: t.cx("loadingIcon"),
       spin: "",
@@ -3416,7 +3416,7 @@ function yi(t, e, n, r, o, i) {
     key: 1,
     class: te(t.cx("dropdownIcon"))
   }, function() {
-    return [(c(), M(ke(t.dropdownIcon ? "span" : "ChevronDownIcon"), l({
+    return [(c(), A(ke(t.dropdownIcon ? "span" : "ChevronDownIcon"), l({
       class: [t.cx("dropdownIcon"), t.dropdownIcon],
       "aria-hidden": "true",
       "data-p": i.dropdownIconDataP
@@ -3463,7 +3463,7 @@ function yi(t, e, n, r, o, i) {
           }), t.filter ? (c(), m("div", l({
             key: 0,
             class: t.cx("header")
-          }, t.ptm("header")), [L(u, {
+          }, t.ptm("header")), [L(p, {
             unstyled: t.unstyled,
             pt: t.ptm("pcFilterContainer")
           }, {
@@ -3498,7 +3498,7 @@ function yi(t, e, n, r, o, i) {
                     return [t.filterIcon ? (c(), m("span", l({
                       key: 0,
                       class: t.filterIcon
-                    }, t.ptm("filterIcon")), null, 16)) : (c(), M(p, yt(l({
+                    }, t.ptm("filterIcon")), null, 16)) : (c(), A(u, yt(l({
                       key: 1
                     }, t.ptm("filterIcon"))), null, 16))];
                   })];
@@ -3592,12 +3592,12 @@ function yi(t, e, n, r, o, i) {
                   ref_for: !0
                 }, i.getPTItemOptions(f, w, y, "option")), [t.checkmark ? (c(), m(Z, {
                   key: 0
-                }, [i.isSelected(f) ? (c(), M(b, l({
+                }, [i.isSelected(f) ? (c(), A(b, l({
                   key: 0,
                   class: t.cx("optionCheckIcon")
                 }, {
                   ref_for: !0
-                }, t.ptm("optionCheckIcon")), null, 16, ["class"])) : (c(), M(O, l({
+                }, t.ptm("optionCheckIcon")), null, 16, ["class"])) : (c(), A(O, l({
                   key: 1,
                   class: t.cx("optionBlankIcon")
                 }, {
@@ -3675,7 +3675,7 @@ function yi(t, e, n, r, o, i) {
       }, 16, ["onEnter", "onAfterEnter", "onLeave", "onAfterLeave"])];
     }),
     _: 3
-  }, 8, ["appendTo"])], 16, pi);
+  }, 8, ["appendTo"])], 16, ui);
 }
 Xe.render = yi;
 var wi = `
@@ -3882,11 +3882,11 @@ he.render = Li;
 const Pi = { class: "kx-agent-block" }, $i = { class: "kx-agent-block__modes" }, Ti = { for: "agent-source-existing" }, Vi = { for: "agent-source-inline" }, Fi = {
   key: 0,
   class: "kx-agent-block__field"
-}, Mi = {
+}, Ai = {
   key: 1,
   class: "kx-agent-block__loading",
   role: "status"
-}, Ai = ["config"], Bi = { key: 3 }, Ei = {
+}, Mi = ["config"], Bi = { key: 3 }, Ei = {
   key: 1,
   class: "kx-agent-block__field"
 }, ji = { class: "kx-agent-block__field" }, Ki = { class: "kx-agent-block__field" }, Di = { class: "kx-agent-block__field" }, Ri = {
@@ -3895,7 +3895,7 @@ const Pi = { class: "kx-agent-block" }, $i = { class: "kx-agent-block__modes" },
 }, Hi = { class: "kx-agent-block__field" }, Ni = { class: "kx-agent-block__field" }, Gi = /* @__PURE__ */ xt({
   __name: "AgentBlockConfig",
   setup(t) {
-    const e = mt(), n = gt(), r = e.value.config, o = N(r?.agent_id ? "existing" : "inline"), i = N({ ...r || {} }), s = N(r?.exit_schema ? JSON.stringify(r.exit_schema, null, 2) : ""), d = N(r?.context ? JSON.stringify(r.context, null, 2) : ""), p = N(""), h = N(""), u = N(!1), b = N(""), O = [
+    const e = mt(), n = gt(), r = e.value.config, o = N(r?.agent_id ? "existing" : "inline"), i = N({ ...r || {} }), s = N(r?.exit_schema ? JSON.stringify(r.exit_schema, null, 2) : ""), d = N(r?.context ? JSON.stringify(r.context, null, 2) : ""), u = N(""), h = N(""), p = N(!1), b = N(""), O = [
       { label: "Auto", value: "auto" },
       { label: "Require a tool", value: "any" },
       { label: "No tools", value: "none" }
@@ -3925,14 +3925,14 @@ const Pi = { class: "kx-agent-block" }, $i = { class: "kx-agent-block__modes" },
       i.value[g] = a || "", k();
     }
     function T(g) {
-      i.value.tool_calling = g, i.value.tool_calling === "none" && (delete i.value.tools, delete i.value.exit_schema, s.value = "", p.value = ""), k();
+      i.value.tool_calling = g, i.value.tool_calling === "none" && (delete i.value.tools, delete i.value.exit_schema, s.value = "", u.value = ""), k();
     }
     function V(g) {
       i.value.tools = [...g], k();
     }
     function w(g, a) {
       a ||= "", g === "exit_schema" ? s.value = a : d.value = a;
-      const f = g === "exit_schema" ? p : h;
+      const f = g === "exit_schema" ? u : h;
       if (!a.trim()) {
         delete i.value[g], f.value = "", k();
         return;
@@ -3948,9 +3948,9 @@ const Pi = { class: "kx-agent-block" }, $i = { class: "kx-agent-block__modes" },
       }
     }
     return St(async () => {
-      u.value = !1, b.value = "";
+      p.value = !1, b.value = "";
       try {
-        await zt("wc-agent-picker", { timeoutMs: 8e3 }), u.value = !0;
+        await zt("wc-agent-picker", { timeoutMs: 8e3 }), p.value = !0;
       } catch {
         b.value = "Couldn’t load the Agent picker. Switch to inline instructions or try again.";
       }
@@ -3982,7 +3982,7 @@ const Pi = { class: "kx-agent-block" }, $i = { class: "kx-agent-block__modes" },
       ]),
       o.value === "existing" ? (c(), m("div", Fi, [
         a[13] || (a[13] = v("span", null, "Agent", -1)),
-        b.value ? (c(), M(F(fe), {
+        b.value ? (c(), A(F(fe), {
           key: 0,
           severity: "error",
           size: "small",
@@ -3992,11 +3992,11 @@ const Pi = { class: "kx-agent-block" }, $i = { class: "kx-agent-block__modes" },
             G(E(b.value), 1)
           ]),
           _: 1
-        })) : u.value ? (c(), m("wc-agent-picker", {
+        })) : p.value ? (c(), m("wc-agent-picker", {
           key: 2,
           config: P.value,
           onChange: x
-        }, null, 40, Ai)) : (c(), m("div", Mi, [
+        }, null, 40, Mi)) : (c(), m("div", Ai, [
           L(F(Pt), {
             class: "kx-agent-block__spinner",
             "stroke-width": "4",
@@ -4004,7 +4004,7 @@ const Pi = { class: "kx-agent-block" }, $i = { class: "kx-agent-block__modes" },
           }),
           a[12] || (a[12] = v("span", null, "Loading Agent picker…", -1))
         ])),
-        u.value ? (c(), m("small", Bi, "Select one exact installed Agent.")) : $("", !0)
+        p.value ? (c(), m("small", Bi, "Select one exact installed Agent.")) : $("", !0)
       ])) : (c(), m("label", Ei, [
         a[14] || (a[14] = v("span", null, "Instructions", -1)),
         L(F(he), {
@@ -4067,17 +4067,17 @@ const Pi = { class: "kx-agent-block" }, $i = { class: "kx-agent-block__modes" },
           "model-value": s.value,
           rows: "4",
           placeholder: "JSON Schema object",
-          invalid: !!p.value,
+          invalid: !!u.value,
           "onUpdate:modelValue": a[7] || (a[7] = (f) => w("exit_schema", f))
         }, null, 8, ["model-value", "invalid"]),
-        p.value ? (c(), M(F(fe), {
+        u.value ? (c(), A(F(fe), {
           key: 0,
           severity: "error",
           size: "small",
           closable: !1
         }, {
           default: D(() => [
-            G(E(p.value), 1)
+            G(E(u.value), 1)
           ]),
           _: 1
         })) : $("", !0)
@@ -4092,7 +4092,7 @@ const Pi = { class: "kx-agent-block" }, $i = { class: "kx-agent-block__modes" },
           invalid: !!h.value,
           "onUpdate:modelValue": a[8] || (a[8] = (f) => w("context", f))
         }, null, 8, ["model-value", "invalid"]),
-        h.value ? (c(), M(F(fe), {
+        h.value ? (c(), A(F(fe), {
           key: 0,
           severity: "error",
           size: "small",
@@ -4106,7 +4106,7 @@ const Pi = { class: "kx-agent-block" }, $i = { class: "kx-agent-block__modes" },
       ])
     ]));
   }
-}), Ui = ':root{--p-form-field-padding-x: .75rem;--p-form-field-padding-y: .5rem;--p-form-field-sm-padding-x: .625rem;--p-form-field-sm-padding-y: .375rem;--p-form-field-lg-padding-x: .875rem;--p-form-field-lg-padding-y: .625rem;--p-form-field-border-radius: .375rem;--p-form-field-transition-duration: .2s;--p-form-field-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), 0 1px 2px 0 rgba(18, 18, 23, .05);--p-focus-ring-width: 1px;--p-focus-ring-style: solid;--p-focus-ring-color: color-mix(in srgb, var(--p-primary-color) 100%, transparent);--p-focus-ring-offset: 2px;--p-toggleswitch-width: 2.5rem;--p-toggleswitch-height: 1.5rem;--p-toggleswitch-border-radius: 30px;--p-toggleswitch-gap: .25rem;--p-toggleswitch-border-width: 1px;--p-toggleswitch-transition-duration: .2s;--p-toggleswitch-slide-duration: .2s;--p-toggleswitch-handle-size: 1rem;--p-toggleswitch-handle-border-radius: 9999px}:root{color-scheme:light dark;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-secondary: #6f7385;--p-secondary-50: color-mix(in srgb, var(--p-secondary) 5%, white);--p-secondary-100: color-mix(in srgb, var(--p-secondary) 10%, white);--p-secondary-200: color-mix(in srgb, var(--p-secondary) 20%, white);--p-secondary-300: color-mix(in srgb, var(--p-secondary) 35%, white);--p-secondary-400: color-mix(in srgb, var(--p-secondary) 65%, white);--p-secondary-500: var(--p-secondary);--p-secondary-600: color-mix(in srgb, var(--p-secondary) 80%, black);--p-secondary-700: color-mix(in srgb, var(--p-secondary) 65%, black);--p-secondary-800: color-mix(in srgb, var(--p-secondary) 55%, black);--p-secondary-900: color-mix(in srgb, var(--p-secondary) 50%, black);--p-secondary-950: color-mix(in srgb, var(--p-secondary) 30%, black);--p-danger: rgb(239, 68, 68);--p-danger-50: color-mix(in srgb, var(--p-danger) 5%, white);--p-danger-100: color-mix(in srgb, var(--p-danger) 10%, white);--p-danger-200: color-mix(in srgb, var(--p-danger) 20%, white);--p-danger-300: color-mix(in srgb, var(--p-danger) 30%, white);--p-danger-400: color-mix(in srgb, var(--p-danger) 40%, white);--p-danger-500: var(--p-danger);--p-danger-600: color-mix(in srgb, var(--p-danger) 80%, black);--p-danger-700: color-mix(in srgb, var(--p-danger) 70%, black);--p-danger-800: color-mix(in srgb, var(--p-danger) 60%, black);--p-danger-900: color-mix(in srgb, var(--p-danger) 50%, black);--p-danger-950: color-mix(in srgb, var(--p-danger) 40%, black);--p-success: rgb(34, 197, 94);--p-success-50: color-mix(in srgb, var(--p-success) 5%, white);--p-success-100: color-mix(in srgb, var(--p-success) 10%, white);--p-success-200: color-mix(in srgb, var(--p-success) 20%, white);--p-success-300: color-mix(in srgb, var(--p-success) 30%, white);--p-success-400: color-mix(in srgb, var(--p-success) 40%, white);--p-success-500: var(--p-success);--p-success-600: color-mix(in srgb, var(--p-success) 80%, black);--p-success-700: color-mix(in srgb, var(--p-success) 70%, black);--p-success-800: color-mix(in srgb, var(--p-success) 60%, black);--p-success-900: color-mix(in srgb, var(--p-success) 50%, black);--p-success-950: color-mix(in srgb, var(--p-success) 40%, black);--p-warn: rgb(249, 115, 22);--p-warn-50: color-mix(in srgb, var(--p-warn) 5%, white);--p-warn-100: color-mix(in srgb, var(--p-warn) 10%, white);--p-warn-200: color-mix(in srgb, var(--p-warn) 20%, white);--p-warn-300: color-mix(in srgb, var(--p-warn) 30%, white);--p-warn-400: color-mix(in srgb, var(--p-warn) 40%, white);--p-warn-500: var(--p-warn);--p-warn-600: color-mix(in srgb, var(--p-warn) 80%, black);--p-warn-700: color-mix(in srgb, var(--p-warn) 70%, black);--p-warn-800: color-mix(in srgb, var(--p-warn) 60%, black);--p-warn-900: color-mix(in srgb, var(--p-warn) 50%, black);--p-warn-950: color-mix(in srgb, var(--p-warn) 40%, black);--p-info: rgb(14, 165, 233);--p-info-50: color-mix(in srgb, var(--p-info) 5%, white);--p-info-100: color-mix(in srgb, var(--p-info) 10%, white);--p-info-200: color-mix(in srgb, var(--p-info) 20%, white);--p-info-300: color-mix(in srgb, var(--p-info) 30%, white);--p-info-400: color-mix(in srgb, var(--p-info) 40%, white);--p-info-500: var(--p-info);--p-info-600: color-mix(in srgb, var(--p-info) 80%, black);--p-info-700: color-mix(in srgb, var(--p-info) 70%, black);--p-info-800: color-mix(in srgb, var(--p-info) 60%, black);--p-info-900: color-mix(in srgb, var(--p-info) 50%, black);--p-info-950: color-mix(in srgb, var(--p-info) 40%, black);--p-help: rgb(168, 85, 247);--p-help-50: color-mix(in srgb, var(--p-help) 5%, white);--p-help-100: color-mix(in srgb, var(--p-help) 10%, white);--p-help-200: color-mix(in srgb, var(--p-help) 20%, white);--p-help-300: color-mix(in srgb, var(--p-help) 30%, white);--p-help-400: color-mix(in srgb, var(--p-help) 40%, white);--p-help-500: var(--p-help);--p-help-600: color-mix(in srgb, var(--p-help) 80%, black);--p-help-700: color-mix(in srgb, var(--p-help) 70%, black);--p-help-800: color-mix(in srgb, var(--p-help) 60%, black);--p-help-900: color-mix(in srgb, var(--p-help) 50%, black);--p-help-950: color-mix(in srgb, var(--p-help) 40%, black);--p-accent: rgb(20, 184, 166);--p-accent-50: color-mix(in srgb, var(--p-accent) 5%, white);--p-accent-100: color-mix(in srgb, var(--p-accent) 10%, white);--p-accent-200: color-mix(in srgb, var(--p-accent) 20%, white);--p-accent-300: color-mix(in srgb, var(--p-accent) 30%, white);--p-accent-400: color-mix(in srgb, var(--p-accent) 40%, white);--p-accent-500: var(--p-accent);--p-accent-600: color-mix(in srgb, var(--p-accent) 80%, black);--p-accent-700: color-mix(in srgb, var(--p-accent) 70%, black);--p-accent-800: color-mix(in srgb, var(--p-accent) 60%, black);--p-accent-900: color-mix(in srgb, var(--p-accent) 50%, black);--p-accent-950: color-mix(in srgb, var(--p-accent) 40%, black);--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-content-border-radius: 6px;--p-font-heading-family: var(--v-font-family-head, Arial);--p-font-heading-scale: 1;--p-font-heading-line-height: 1.5;--p-font-heading-letter-spacing: normal;--p-font-heading-stretch: normal;--p-font-heading-variation-settings: normal;--p-font-body-scale: 1;--p-font-body-line-height: 1.5;--p-font-body-letter-spacing: normal;--p-font-body-stretch: normal;--p-font-body-variation-settings: normal;--p-font-mono-family: ui-monospace}:root{--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}@media(prefers-color-scheme:dark){:root:not(.w-theme-light){--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}}:root.w-theme-dark,.w-theme-dark{color-scheme:dark;--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}:root.w-theme-light,.w-theme-light{color-scheme:light;--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}:host{--kx-picker-shadow: var(--p-select-overlay-shadow);--kx-picker-option-icon-size: 17px;--kx-picker-option-icon-gap: 10px;--kx-picker-option-stack-gap: 1px;--kx-picker-option-title-size: 13px;--kx-picker-option-title-weight: 600;--kx-picker-option-subtitle-size: 11.5px;--kx-picker-option-subtitle-line-height: 1.4}*,:before,:after{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }*,:before,:after{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}:before,:after{--tw-content: ""}html,:host{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dl,dd,h1,h2,h3,h4,h5,h6,hr,figure,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}ol,ul,menu{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}button,[role=button]{cursor:pointer}:disabled{cursor:default}img,svg,video,canvas,audio,iframe,embed,object{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}@supports (-moz-appearance:none){*{scrollbar-color:initial;scrollbar-width:initial}}:host{display:block;color:var(--p-text-color)}*,*:before,*:after{box-sizing:border-box}.kx-agent-block{display:grid;gap:.8rem}.kx-agent-block__modes{display:flex;flex-wrap:wrap;gap:.75rem;margin:0;padding:0;border:0}.kx-agent-block__modes legend{margin-bottom:.45rem;color:var(--p-text-muted-color);font-size:.8rem}.kx-agent-block__modes label{display:inline-flex;align-items:center;gap:.4rem}.kx-agent-block__field{display:grid;gap:.3rem;font-size:.85rem}.kx-agent-block__field>span{font-weight:600}.kx-agent-block__field small{color:var(--p-text-muted-color)}.kx-agent-block__control{width:100%}.kx-agent-block__loading{display:flex;align-items:center;gap:.5rem;color:var(--p-text-muted-color)}.kx-agent-block__spinner{width:1rem;height:1rem}wc-agent-picker{display:block;min-width:0}', Wi = {
+}), Ui = ':root{--p-form-field-padding-x: .75rem;--p-form-field-padding-y: .5rem;--p-form-field-sm-padding-x: .625rem;--p-form-field-sm-padding-y: .375rem;--p-form-field-lg-padding-x: .875rem;--p-form-field-lg-padding-y: .625rem;--p-form-field-border-radius: .375rem;--p-form-field-transition-duration: .2s;--p-form-field-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), 0 1px 2px 0 rgba(18, 18, 23, .05);--p-focus-ring-width: 1px;--p-focus-ring-style: solid;--p-focus-ring-color: color-mix(in srgb, var(--p-primary-color) 100%, transparent);--p-focus-ring-offset: 2px;--p-toggleswitch-width: 2.5rem;--p-toggleswitch-height: 1.5rem;--p-toggleswitch-border-radius: 30px;--p-toggleswitch-gap: .25rem;--p-toggleswitch-border-width: 1px;--p-toggleswitch-transition-duration: .2s;--p-toggleswitch-slide-duration: .2s;--p-toggleswitch-handle-size: 1rem;--p-toggleswitch-handle-border-radius: 9999px}:root{color-scheme:light dark;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-secondary: #6f7385;--p-secondary-50: color-mix(in srgb, var(--p-secondary) 5%, white);--p-secondary-100: color-mix(in srgb, var(--p-secondary) 10%, white);--p-secondary-200: color-mix(in srgb, var(--p-secondary) 20%, white);--p-secondary-300: color-mix(in srgb, var(--p-secondary) 35%, white);--p-secondary-400: color-mix(in srgb, var(--p-secondary) 65%, white);--p-secondary-500: var(--p-secondary);--p-secondary-600: color-mix(in srgb, var(--p-secondary) 80%, black);--p-secondary-700: color-mix(in srgb, var(--p-secondary) 65%, black);--p-secondary-800: color-mix(in srgb, var(--p-secondary) 55%, black);--p-secondary-900: color-mix(in srgb, var(--p-secondary) 50%, black);--p-secondary-950: color-mix(in srgb, var(--p-secondary) 30%, black);--p-danger: rgb(239, 68, 68);--p-danger-50: color-mix(in srgb, var(--p-danger) 5%, white);--p-danger-100: color-mix(in srgb, var(--p-danger) 10%, white);--p-danger-200: color-mix(in srgb, var(--p-danger) 20%, white);--p-danger-300: color-mix(in srgb, var(--p-danger) 30%, white);--p-danger-400: color-mix(in srgb, var(--p-danger) 40%, white);--p-danger-500: var(--p-danger);--p-danger-600: color-mix(in srgb, var(--p-danger) 80%, black);--p-danger-700: color-mix(in srgb, var(--p-danger) 70%, black);--p-danger-800: color-mix(in srgb, var(--p-danger) 60%, black);--p-danger-900: color-mix(in srgb, var(--p-danger) 50%, black);--p-danger-950: color-mix(in srgb, var(--p-danger) 40%, black);--p-success: rgb(34, 197, 94);--p-success-50: color-mix(in srgb, var(--p-success) 5%, white);--p-success-100: color-mix(in srgb, var(--p-success) 10%, white);--p-success-200: color-mix(in srgb, var(--p-success) 20%, white);--p-success-300: color-mix(in srgb, var(--p-success) 30%, white);--p-success-400: color-mix(in srgb, var(--p-success) 40%, white);--p-success-500: var(--p-success);--p-success-600: color-mix(in srgb, var(--p-success) 80%, black);--p-success-700: color-mix(in srgb, var(--p-success) 70%, black);--p-success-800: color-mix(in srgb, var(--p-success) 60%, black);--p-success-900: color-mix(in srgb, var(--p-success) 50%, black);--p-success-950: color-mix(in srgb, var(--p-success) 40%, black);--p-warn: rgb(249, 115, 22);--p-warn-50: color-mix(in srgb, var(--p-warn) 5%, white);--p-warn-100: color-mix(in srgb, var(--p-warn) 10%, white);--p-warn-200: color-mix(in srgb, var(--p-warn) 20%, white);--p-warn-300: color-mix(in srgb, var(--p-warn) 30%, white);--p-warn-400: color-mix(in srgb, var(--p-warn) 40%, white);--p-warn-500: var(--p-warn);--p-warn-600: color-mix(in srgb, var(--p-warn) 80%, black);--p-warn-700: color-mix(in srgb, var(--p-warn) 70%, black);--p-warn-800: color-mix(in srgb, var(--p-warn) 60%, black);--p-warn-900: color-mix(in srgb, var(--p-warn) 50%, black);--p-warn-950: color-mix(in srgb, var(--p-warn) 40%, black);--p-info: rgb(14, 165, 233);--p-info-50: color-mix(in srgb, var(--p-info) 5%, white);--p-info-100: color-mix(in srgb, var(--p-info) 10%, white);--p-info-200: color-mix(in srgb, var(--p-info) 20%, white);--p-info-300: color-mix(in srgb, var(--p-info) 30%, white);--p-info-400: color-mix(in srgb, var(--p-info) 40%, white);--p-info-500: var(--p-info);--p-info-600: color-mix(in srgb, var(--p-info) 80%, black);--p-info-700: color-mix(in srgb, var(--p-info) 70%, black);--p-info-800: color-mix(in srgb, var(--p-info) 60%, black);--p-info-900: color-mix(in srgb, var(--p-info) 50%, black);--p-info-950: color-mix(in srgb, var(--p-info) 40%, black);--p-help: rgb(168, 85, 247);--p-help-50: color-mix(in srgb, var(--p-help) 5%, white);--p-help-100: color-mix(in srgb, var(--p-help) 10%, white);--p-help-200: color-mix(in srgb, var(--p-help) 20%, white);--p-help-300: color-mix(in srgb, var(--p-help) 30%, white);--p-help-400: color-mix(in srgb, var(--p-help) 40%, white);--p-help-500: var(--p-help);--p-help-600: color-mix(in srgb, var(--p-help) 80%, black);--p-help-700: color-mix(in srgb, var(--p-help) 70%, black);--p-help-800: color-mix(in srgb, var(--p-help) 60%, black);--p-help-900: color-mix(in srgb, var(--p-help) 50%, black);--p-help-950: color-mix(in srgb, var(--p-help) 40%, black);--p-accent: rgb(20, 184, 166);--p-accent-50: color-mix(in srgb, var(--p-accent) 5%, white);--p-accent-100: color-mix(in srgb, var(--p-accent) 10%, white);--p-accent-200: color-mix(in srgb, var(--p-accent) 20%, white);--p-accent-300: color-mix(in srgb, var(--p-accent) 30%, white);--p-accent-400: color-mix(in srgb, var(--p-accent) 40%, white);--p-accent-500: var(--p-accent);--p-accent-600: color-mix(in srgb, var(--p-accent) 80%, black);--p-accent-700: color-mix(in srgb, var(--p-accent) 70%, black);--p-accent-800: color-mix(in srgb, var(--p-accent) 60%, black);--p-accent-900: color-mix(in srgb, var(--p-accent) 50%, black);--p-accent-950: color-mix(in srgb, var(--p-accent) 40%, black);--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-content-border-radius: 6px;--p-font-heading-family: var(--v-font-family-head, Arial);--p-font-heading-scale: 1;--p-font-heading-line-height: 1.5;--p-font-heading-letter-spacing: normal;--p-font-heading-stretch: normal;--p-font-heading-variation-settings: normal;--p-font-body-scale: 1;--p-font-body-line-height: 1.5;--p-font-body-letter-spacing: normal;--p-font-body-stretch: normal;--p-font-body-variation-settings: normal;--p-font-mono-family: ui-monospace}:root{--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}@media(prefers-color-scheme:dark){:root:not(.w-theme-light){--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}}:root.w-theme-dark,.w-theme-dark{color-scheme:dark;--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}:root.w-theme-light,.w-theme-light{color-scheme:light;--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}:host{--kx-picker-shadow: var(--p-select-overlay-shadow);--kx-picker-option-icon-size: 17px;--kx-picker-option-icon-gap: 10px;--kx-picker-option-stack-gap: 1px;--kx-picker-option-title-size: 13px;--kx-picker-option-title-weight: 600;--kx-picker-option-subtitle-size: 11.5px;--kx-picker-option-subtitle-line-height: 1.4}.kx-msfield-fail{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:9px 10px;border:1px solid color-mix(in srgb,var(--p-danger-500) 32%,transparent);border-radius:10px;background:color-mix(in srgb,var(--p-danger-500) 7%,transparent);color:var(--p-danger-600, var(--p-danger-500));font-size:12px}.kx-msfield-fail>span{min-width:0;flex:1}.kx-msfield-fail button{border:1px solid currentColor;border-radius:8px;padding:5px 9px;background:transparent;color:inherit;font:inherit;font-weight:600;cursor:pointer}*,:before,:after{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }*,:before,:after{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}:before,:after{--tw-content: ""}html,:host{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dl,dd,h1,h2,h3,h4,h5,h6,hr,figure,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}ol,ul,menu{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}button,[role=button]{cursor:pointer}:disabled{cursor:default}img,svg,video,canvas,audio,iframe,embed,object{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}@supports (-moz-appearance:none){*{scrollbar-color:initial;scrollbar-width:initial}}:host{display:block;color:var(--p-text-color)}*,*:before,*:after{box-sizing:border-box}.kx-agent-block{display:grid;gap:.8rem}.kx-agent-block__modes{display:flex;flex-wrap:wrap;gap:.75rem;margin:0;padding:0;border:0}.kx-agent-block__modes legend{margin-bottom:.45rem;color:var(--p-text-muted-color);font-size:.8rem}.kx-agent-block__modes label{display:inline-flex;align-items:center;gap:.4rem}.kx-agent-block__field{display:grid;gap:.3rem;font-size:.85rem}.kx-agent-block__field>span{font-weight:600}.kx-agent-block__field small{color:var(--p-text-muted-color)}.kx-agent-block__control{width:100%}.kx-agent-block__loading{display:flex;align-items:center;gap:.5rem;color:var(--p-text-muted-color)}.kx-agent-block__spinner{width:1rem;height:1rem}wc-agent-picker{display:block;min-width:0}', Wi = {
   type: "object",
   properties: { config: { type: "object", description: "Canonical Agent Block instance configuration." } }
 };

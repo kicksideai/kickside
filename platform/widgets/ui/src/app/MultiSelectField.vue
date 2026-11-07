@@ -114,17 +114,3 @@ onBeforeUnmount(() => { if (el) el.removeEventListener('change', onChange) })
     <div v-else ref="host"></div>
   </div>
 </template>
-
-<style scoped>
-.kx-msfield-fail {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
-  padding: 9px 10px; border: 1px solid color-mix(in srgb, var(--p-danger-500) 32%, transparent);
-  border-radius: 10px; background: color-mix(in srgb, var(--p-danger-500) 7%, transparent);
-  color: var(--p-danger-600, var(--p-danger-500)); font-size: 12px;
-}
-.kx-msfield-fail > span { min-width: 0; flex: 1; }
-.kx-msfield-fail button {
-  border: 1px solid currentColor; border-radius: 8px; padding: 5px 9px;
-  background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer;
-}
-</style>

@@ -12,13 +12,16 @@ import vfMinimap from '@vue-flow/minimap/dist/style.css?inline'
 import vfResizer from '@vue-flow/node-resizer/dist/style.css?inline'
 import pickerCss from '@widgets/app/pickerselect.css?inline'
 import fieldMapperCss from '@widgets/app/field-mapper.css?inline'
+import componentDeletionCss from '@widgets/app/component-deletion.css?inline'
+import anchoredPanelCss from '@widgets/app/anchored-panel.css?inline'
+import wcMountCss from '@widgets/app/wc-mount.css?inline'
 import stylesText from './styles.css?inline'
 
 // VueFlow ships its base CSS as real stylesheets; the shadow root can't see the
 // document's, so they are concatenated into the element's own inline sheet (the
 // approach proven in chestor/graph). The shared PickerSelect stylesheet rides in the
 // same way. --wf styles ride last so they win the cascade.
-const SHADOW_CSS = [vfCore, vfTheme, vfControls, vfMinimap, vfResizer, pickerCss, fieldMapperCss, stylesText].join('\n')
+const SHADOW_CSS = [vfCore, vfTheme, vfControls, vfMinimap, vfResizer, pickerCss, fieldMapperCss, componentDeletionCss, anchoredPanelCss, wcMountCss, stylesText].join('\n')
 const WorkflowPrimeVueServices = {
   install(app: App) {
     app.use(ConfirmationService)

@@ -1,5 +1,6 @@
 @import "@wippy-fe/theme/theme-config.css";
 @import "@widgets/app/pickerselect.css";
+@import "@widgets/app/anchored-panel.css";
 @tailwind base;
 :host { display: block; }
 *, *::before, *::after { box-sizing: border-box; }

@@ -1,6 +1,8 @@
 @import "@wippy-fe/theme/theme-config.css";
 /* Shared PickerSelect (searchable grouped single-select) styles. */
 @import "@widgets/app/pickerselect.css";
+@import "@widgets/app/wc-mount.css";
+@import "@widgets/app/anchored-panel.css";
 
 /* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
    preflight; without it PrimeVue controls keep UA defaults the theme never

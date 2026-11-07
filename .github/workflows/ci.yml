@@ -255,6 +255,7 @@ jobs:
             make install MOD=agents
             make typecheck MOD=agents
             make build MOD=agents
+            make -C platform/agents test-ui
             make -C platform/agents lockrefresh
             cd platform/agents/test
             mkdir -p .wippy
@@ -300,6 +301,7 @@ jobs:
             make install MOD=automation
             make typecheck MOD=automation
             make build MOD=automation
+            make -C platform/automation test-ui
             make -C platform/automation lockrefresh
             cd platform/automation/test
             mkdir -p .wippy
@@ -444,6 +446,7 @@ jobs:
             mkdir -p "$TMPDIR"
             make install MOD=connection
             make build MOD=connection
+            make -C platform/connection test-ui
             make -C platform/connection lockrefresh
             cd platform/connection/test
             mkdir -p .wippy
@@ -616,6 +619,7 @@ jobs:
             mkdir -p "$TMPDIR"
             make install MOD=inbox
             make build MOD=inbox
+            make -C platform/inbox test-ui
             make -C platform/inbox lockrefresh
             cd platform/inbox/test
             mkdir -p .wippy
@@ -1140,6 +1144,7 @@ jobs:
             mkdir -p "$TMPDIR"
             make install MOD=skills
             make build MOD=skills
+            make -C platform/skills test-ui
             make -C platform/skills lockrefresh
             cd platform/skills/test
             mkdir -p .wippy
@@ -1457,6 +1462,7 @@ jobs:
             mkdir -p "$TMPDIR"
             make install MOD=webhooks
             make build MOD=webhooks
+            make -C platform/webhooks test-ui
             make -C platform/webhooks lockrefresh
             cd platform/webhooks/test
             mkdir -p .wippy

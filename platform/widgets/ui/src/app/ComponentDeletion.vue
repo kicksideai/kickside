@@ -21,8 +21,3 @@ const failed = computed(() => props.state.deletion_job === null || ['dead', 'can
     </template>
   </span>
 </template>
-
-<style scoped>
-.component-deletion { display: inline-flex; align-items: center; gap: .5rem; color: var(--p-text-muted-color); }
-.component-deletion-spinner { width: 1rem; height: 1rem; margin: 0; }
-</style>

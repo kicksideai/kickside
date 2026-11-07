@@ -3,12 +3,13 @@ import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponen
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
 import EmbedWorkflow from './app/embed/EmbedWorkflow.vue'
 import pickerCss from '@widgets/app/pickerselect.css?inline'
+import wcMountCss from '@widgets/app/wc-mount.css?inline'
 import stylesText from './workflow-embed.css?inline'
 
 // The embed shares the schema-form and markdown widgets (loaded by tag at runtime) and the
 // builder's own --wf token layer. The PickerSelect stylesheet rides in the shadow sheet the
 // same way the builder mounts it, since composed widgets may render into this root.
-const SHADOW_CSS = [pickerCss, stylesText].join('\n')
+const SHADOW_CSS = [pickerCss, wcMountCss, stylesText].join('\n')
 
 interface Props {
   'flow-id'?: string

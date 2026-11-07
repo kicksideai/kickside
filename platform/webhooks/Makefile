@@ -6,9 +6,11 @@ TYPE   := plugin
 VIS    := public
 EMBED  := --embed ui_fs
 
-.PHONY: build dev publish lint test
+.PHONY: build dev publish lint test test-ui
 build:
 	$(MAKE) -C ../.. build MOD=$(MODULE)
+test-ui:
+	cd ui && npm test -- $(UI_TEST_ARGS)
 dev:
 	cd ui && npm run dev
 lint:

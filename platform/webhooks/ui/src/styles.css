@@ -1,4 +1,5 @@
 @import "@wippy-fe/theme/theme-config.css";
+@import "@widgets/app/component-deletion.css";
 @import "@kickside/ui-kit/spin.css";
 @import "@kickside/ui-kit/kx-card.css";
 @import "@kickside/ui-kit/kx-modal-head.css";

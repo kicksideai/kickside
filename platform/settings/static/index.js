@@ -1,6 +1,6 @@
-import { a as ie, u as ue, W as ce, s as me } from "./styles-BCHHd4iE.js";
-import { W, s as pe, a as de, b as Q, P as fe } from "./WcMount-CXaiZg2f.js";
-import { defineComponent as ee, ref as S, computed as q, watch as ve, onMounted as ye, openBlock as o, createElementBlock as r, toDisplayString as b, createCommentVNode as _, Fragment as L, withDirectives as he, vModelText as ke, renderList as H, createElementVNode as m, createBlock as M, resolveDynamicComponent as I, normalizeClass as A, withCtx as V, createTextVNode as X, unref as N, createVNode as R } from "vue";
+import { a as ie, u as ue, W as ce, s as me } from "./styles-BiI2N5-W.js";
+import { _ as G, s as pe, a as de, b as Q, P as fe } from "./WcMount.vue_vue_type_script_setup_true_lang-tzS6C84E.js";
+import { defineComponent as ee, ref as S, computed as q, watch as ve, onMounted as ye, openBlock as l, createElementBlock as r, toDisplayString as b, createCommentVNode as _, Fragment as L, withDirectives as he, vModelText as ke, renderList as H, createElementVNode as m, createBlock as M, resolveDynamicComponent as I, normalizeClass as A, withCtx as V, createTextVNode as X, unref as N, createVNode as R } from "vue";
 import { Icon as K } from "@iconify/vue";
 import { api as F, define as ge } from "@wippy-fe/proxy";
 const _e = () => ie();
@@ -70,10 +70,10 @@ const we = { class: "ks-form" }, xe = {
 }, Pe = { key: 0 }, Be = { class: "ks-field" }, Ke = {
   key: 0,
   class: "ks-static"
-}, Fe = ["min", "max", "value", "onInput"], He = ["value", "onInput"], Je = ["placeholder", "value", "onInput"], We = ["minlength", "maxlength", "value", "onInput"], Ge = {
+}, Fe = ["min", "max", "value", "onInput"], He = ["value", "onInput"], Je = ["placeholder", "value", "onInput"], Ge = ["minlength", "maxlength", "value", "onInput"], Ye = {
   key: 7,
   class: "ks-saved"
-}, Ye = {
+}, ze = {
   key: 0,
   class: "ks-field-err"
 }, J = "General", Z = /* @__PURE__ */ ee({
@@ -87,9 +87,9 @@ const we = { class: "ks-form" }, xe = {
     const v = f, k = S([]), g = S(!0), w = S(""), $ = S(""), x = S(""), u = S({}), c = S({}), a = (e) => `${e.namespace} ${e.key}`;
     function D(e) {
       const n = e.split(/[._\-\s]+/).filter(Boolean);
-      return n.length ? n.map((l, t) => t === 0 ? l.charAt(0).toUpperCase() + l.slice(1) : l).join(" ") : e;
+      return n.length ? n.map((o, t) => t === 0 ? o.charAt(0).toUpperCase() + o.slice(1) : o).join(" ") : e;
     }
-    const C = (e) => e.title && e.title.length ? e.title : D(e.key), j = S(""), i = (e) => e.owner ? e.owner : v.blocks.find((l) => l.namespace === e.namespace || l.namespaces?.includes(e.namespace))?.title || e.namespace, p = q(() => {
+    const C = (e) => e.title && e.title.length ? e.title : D(e.key), j = S(""), i = (e) => e.owner ? e.owner : v.blocks.find((o) => o.namespace === e.namespace || o.namespaces?.includes(e.namespace))?.title || e.namespace, p = q(() => {
       if (v.all) {
         const t = j.value.trim().toLowerCase(), s = k.value.filter((y) => !t || [
           C(y),
@@ -105,13 +105,13 @@ const we = { class: "ks-form" }, xe = {
         const s = t.category && t.category.length ? t.category : J;
         e.has(s) || e.set(s, []), e.get(s).push(t);
       }
-      const n = (t) => typeof t.order == "number" ? t.order : 100, l = [];
+      const n = (t) => typeof t.order == "number" ? t.order : 100, o = [];
       for (const [t, s] of e)
-        s.sort((y, h) => n(y) - n(h) || C(y).localeCompare(C(h))), l.push({ name: t, items: s });
-      return l.sort((t, s) => {
+        s.sort((y, h) => n(y) - n(h) || C(y).localeCompare(C(h))), o.push({ name: t, items: s });
+      return o.sort((t, s) => {
         const y = Math.min(...t.items.map(n)), h = Math.min(...s.items.map(n));
         return y - h || t.name.localeCompare(s.name);
-      }), l;
+      }), o;
     }), d = q(() => p.value.length === 1 && p.value[0].name === J), O = (e) => Array.isArray(e.schema?.enum) ? e.schema.enum : null;
     function E(e) {
       return {
@@ -127,9 +127,9 @@ const we = { class: "ks-form" }, xe = {
         schema: e.schema ?? null
       };
     }
-    function P(e, n, l = "") {
+    function P(e, n, o = "") {
       if (!e) return "";
-      const t = (s) => l ? `${l}: ${s}` : s;
+      const t = (s) => o ? `${o}: ${s}` : s;
       if (e.type === "array" && !Array.isArray(n)) return t("Must be an array");
       if (e.type === "object" && (n === null || typeof n != "object" || Array.isArray(n))) return t("Must be an object");
       if (e.type === "boolean" && typeof n != "boolean") return t("Must be a boolean");
@@ -152,17 +152,17 @@ const we = { class: "ks-form" }, xe = {
         return t(`Must be one of: ${e.enum.join(", ")}`);
       if (Array.isArray(n) && e.items)
         for (let s = 0; s < n.length; s++) {
-          const y = P(e.items, n[s], `${l}[${s}]`);
+          const y = P(e.items, n[s], `${o}[${s}]`);
           if (y) return y;
         }
       if (n !== null && typeof n == "object" && !Array.isArray(n)) {
-        const s = n, y = (h) => l ? `${l}.${h}` : h;
+        const s = n, y = (h) => o ? `${o}.${h}` : h;
         for (const h of e.required ?? [])
           if (!Object.hasOwn(s, h)) return `${y(h)}: Required`;
         for (const [h, re] of Object.entries(e.properties ?? {})) {
           if (!Object.hasOwn(s, h)) continue;
-          const z = P(re, s[h], y(h));
-          if (z) return z;
+          const W = P(re, s[h], y(h));
+          if (W) return W;
         }
       }
       return "";
@@ -171,34 +171,34 @@ const we = { class: "ks-form" }, xe = {
       if (!e) return "";
       const n = [];
       if (e.type && n.push(e.type), typeof e.minimum == "number" || typeof e.maximum == "number") {
-        const l = typeof e.minimum == "number" ? e.minimum : "−∞", t = typeof e.maximum == "number" ? e.maximum : "∞";
-        n.push(`range ${l}–${t}`);
+        const o = typeof e.minimum == "number" ? e.minimum : "−∞", t = typeof e.maximum == "number" ? e.maximum : "∞";
+        n.push(`range ${o}–${t}`);
       }
       (typeof e.minLength == "number" || typeof e.maxLength == "number") && n.push(`length ${e.minLength ?? 0}–${e.maxLength ?? "∞"}`), e.pattern && n.push(`pattern ${e.pattern}`), Array.isArray(e.enum) && n.push(`one of ${e.enum.join(", ")}`), e.required?.length && n.push(`required: ${e.required.join(", ")}`), e.items && n.push(`items: ${B(e.items)}`);
-      for (const [l, t] of Object.entries(e.properties ?? {}))
-        n.push(`${l}: ${B(t)}`);
+      for (const [o, t] of Object.entries(e.properties ?? {}))
+        n.push(`${o}: ${B(t)}`);
       return n.join(" · ");
     }
     function U(e) {
       const n = a(e);
       if (e.value_type === "secret" && !String(u.value[n] ?? "").length)
         return delete c.value[n], "";
-      let l = u.value[n], t;
+      let o = u.value[n], t;
       try {
-        e.value_type === "json" ? l = JSON.parse(String(l)) : ((e.value_type === "int" || e.schema?.type === "integer" || e.schema?.type === "number") && (l = Number(l)), e.schema?.type === "string" && (l = String(l))), t = P(e.schema, l);
+        e.value_type === "json" ? o = JSON.parse(String(o)) : ((e.value_type === "int" || e.schema?.type === "integer" || e.schema?.type === "number") && (o = Number(o)), e.schema?.type === "string" && (o = String(o))), t = P(e.schema, o);
       } catch (s) {
         t = s instanceof Error ? s.message : String(s);
       }
       return t ? c.value[n] = t : delete c.value[n], t;
     }
-    function G(e, n) {
+    function Y(e, n) {
       u.value[a(e)] = e.value_type === "json" ? JSON.stringify(n, null, 2) : n;
     }
     function te(e) {
-      G(e, e.value_type === "secret" ? "" : e.value);
+      Y(e, e.value_type === "secret" ? "" : e.value);
     }
     function ne(e, n) {
-      G(e, n), U(e);
+      Y(e, n), U(e);
     }
     async function T() {
       g.value = !0, w.value = "";
@@ -206,14 +206,14 @@ const we = { class: "ks-form" }, xe = {
         const e = v.all ? "/api/v1/settings" : `/api/v1/settings?namespace=${encodeURIComponent(v.namespace)}`, { data: n } = await F.get(e);
         if (!n?.success) throw new Error(n?.error || "failed to load settings");
         k.value = Array.isArray(n.settings) ? n.settings : [];
-        for (const l of k.value) te(l);
+        for (const o of k.value) te(o);
       } catch (e) {
         w.value = e instanceof Error ? e.message : String(e);
       } finally {
         g.value = !1;
       }
     }
-    function Y(e, n) {
+    function z(e, n) {
       switch (e.value_type) {
         case "int":
           return Math.trunc(Number(n));
@@ -229,12 +229,12 @@ const we = { class: "ks-form" }, xe = {
       const n = u.value[a(e)];
       return e.value_type === "secret" ? String(n ?? "").length > 0 : e.value_type === "json" ? n !== JSON.stringify(e.value, null, 2) : n !== e.value;
     };
-    async function oe(e) {
+    async function le(e) {
       const n = a(e);
       if (!U(e)) {
         $.value = n, w.value = "";
         try {
-          const l = Y(e, u.value[n]), { data: t } = await F.put("/api/v1/settings", { namespace: e.namespace, key: e.key, value: l });
+          const o = z(e, u.value[n]), { data: t } = await F.put("/api/v1/settings", { namespace: e.namespace, key: e.key, value: o });
           if (!t?.success) {
             c.value[n] = t?.error || "save failed";
             return;
@@ -242,22 +242,22 @@ const we = { class: "ks-form" }, xe = {
           delete c.value[n], x.value = n, setTimeout(() => {
             x.value === n && (x.value = "");
           }, 2e3), await T();
-        } catch (l) {
-          c.value[n] = l instanceof Error ? l.message : String(l);
+        } catch (o) {
+          c.value[n] = o instanceof Error ? o.message : String(o);
         } finally {
           $.value = "";
         }
       }
     }
-    async function le(e) {
+    async function oe(e) {
       const n = a(e);
       $.value = n, w.value = "";
       try {
-        const { data: l } = await F.put("/api/v1/settings", { namespace: e.namespace, key: e.key, value: null });
-        if (!l?.success) throw new Error(l?.error || "reset failed");
+        const { data: o } = await F.put("/api/v1/settings", { namespace: e.namespace, key: e.key, value: null });
+        if (!o?.success) throw new Error(o?.error || "reset failed");
         await T();
-      } catch (l) {
-        w.value = l instanceof Error ? l.message : String(l);
+      } catch (o) {
+        w.value = o instanceof Error ? o.message : String(o);
       } finally {
         $.value = "";
       }
@@ -265,12 +265,12 @@ const we = { class: "ks-form" }, xe = {
     async function se() {
       await T();
     }
-    return ve(() => [v.namespace, v.all], T), ye(T), (e, n) => (o(), r("div", we, [
-      w.value ? (o(), r("div", xe, b(w.value), 1)) : _("", !0),
-      g.value ? (o(), r("div", Ce, "Loading…")) : k.value.length ? (o(), r(L, { key: 3 }, [
-        f.all ? he((o(), r("input", {
+    return ve(() => [v.namespace, v.all], T), ye(T), (e, n) => (l(), r("div", we, [
+      w.value ? (l(), r("div", xe, b(w.value), 1)) : _("", !0),
+      g.value ? (l(), r("div", Ce, "Loading…")) : k.value.length ? (l(), r(L, { key: 3 }, [
+        f.all ? he((l(), r("input", {
           key: 0,
-          "onUpdate:modelValue": n[0] || (n[0] = (l) => j.value = l),
+          "onUpdate:modelValue": n[0] || (n[0] = (o) => j.value = o),
           type: "search",
           class: "ks-input ks-all-search",
           "aria-label": "Search settings",
@@ -278,56 +278,56 @@ const we = { class: "ks-form" }, xe = {
         }, null, 512)), [
           [ke, j.value]
         ]) : _("", !0),
-        (o(!0), r(L, null, H(p.value, (l) => (o(), r("section", {
-          key: l.name,
+        (l(!0), r(L, null, H(p.value, (o) => (l(), r("section", {
+          key: o.name,
           class: "ks-group"
         }, [
-          d.value ? _("", !0) : (o(), r("div", Se, [
-            m("h2", Ae, b(l.name), 1),
-            m("span", je, b(l.items.length), 1)
+          d.value ? _("", !0) : (l(), r("div", Se, [
+            m("h2", Ae, b(o.name), 1),
+            m("span", je, b(o.items.length), 1)
           ])),
-          (o(), M(I(f.all ? "table" : "div"), {
+          (l(), M(I(f.all ? "table" : "div"), {
             class: A(["ks-list", { "ks-all-table": f.all }])
           }, {
             default: V(() => [
-              f.all ? (o(), r("thead", Ne, [...n[1] || (n[1] = [
+              f.all ? (l(), r("thead", Ne, [...n[1] || (n[1] = [
                 m("tr", null, [
                   m("th", { scope: "col" }, "Owner"),
                   m("th", { scope: "col" }, "Setting"),
                   m("th", { scope: "col" }, "Value")
                 ], -1)
               ])])) : _("", !0),
-              (o(), M(I(f.all ? "tbody" : "div"), null, {
+              (l(), M(I(f.all ? "tbody" : "div"), null, {
                 default: V(() => [
-                  (o(!0), r(L, null, H(l.items, (t) => (o(), M(I(f.all ? "tr" : "div"), {
+                  (l(!0), r(L, null, H(o.items, (t) => (l(), M(I(f.all ? "tr" : "div"), {
                     key: a(t),
                     class: A(["ks-row", { "ks-row-invalid": t.error || c.value[a(t)], "ks-row-wc": t.ui }])
                   }, {
                     default: V(() => [
-                      f.all ? (o(), r("td", Le, b(i(t)), 1)) : _("", !0),
-                      (o(), M(I(f.all ? "td" : "div"), { class: "ks-row-main" }, {
+                      f.all ? (l(), r("td", Le, b(i(t)), 1)) : _("", !0),
+                      (l(), M(I(f.all ? "td" : "div"), { class: "ks-row-main" }, {
                         default: V(() => [
                           m("div", Oe, [
                             m("span", Ee, b(C(t)), 1),
                             m("code", Ue, b(t.key), 1),
-                            t.is_secret && t.has_value ? (o(), r("span", Ve, "set")) : !t.is_default && !t.is_secret ? (o(), r("span", De, "overridden")) : _("", !0)
+                            t.is_secret && t.has_value ? (l(), r("span", Ve, "set")) : !t.is_default && !t.is_secret ? (l(), r("span", De, "overridden")) : _("", !0)
                           ]),
-                          t.error ? (o(), r("p", Ie, b(t.error), 1)) : _("", !0),
-                          t.description ? (o(), r("p", Re, b(t.description), 1)) : _("", !0),
-                          B(t.schema) ? (o(), r("p", Te, b(B(t.schema)), 1)) : _("", !0),
-                          !t.is_default && t.updated_by ? (o(), r("p", qe, [
+                          t.error ? (l(), r("p", Ie, b(t.error), 1)) : _("", !0),
+                          t.description ? (l(), r("p", Re, b(t.description), 1)) : _("", !0),
+                          B(t.schema) ? (l(), r("p", Te, b(B(t.schema)), 1)) : _("", !0),
+                          !t.is_default && t.updated_by ? (l(), r("p", qe, [
                             X("by " + b(t.updated_by), 1),
-                            t.updated_at ? (o(), r("span", Pe, " · " + b(N($e)(t.updated_at)), 1)) : _("", !0)
+                            t.updated_at ? (l(), r("span", Pe, " · " + b(N($e)(t.updated_at)), 1)) : _("", !0)
                           ])) : _("", !0)
                         ]),
                         _: 2
                       }, 1024)),
-                      t.ui ? (o(), M(I(f.all ? "td" : "div"), {
+                      t.ui ? (l(), M(I(f.all ? "td" : "div"), {
                         key: 1,
                         class: "ks-wc-slot"
                       }, {
                         default: V(() => [
-                          (o(), M(W, {
+                          (l(), M(G, {
                             key: a(t),
                             tag: t.ui,
                             config: E(t),
@@ -335,24 +335,24 @@ const we = { class: "ks-form" }, xe = {
                           }, null, 8, ["tag", "config"]))
                         ]),
                         _: 2
-                      }, 1024)) : (o(), M(I(f.all ? "td" : "div"), {
+                      }, 1024)) : (l(), M(I(f.all ? "td" : "div"), {
                         key: 2,
                         class: "ks-control"
                       }, {
                         default: V(() => [
                           m("div", Be, [
-                            t.editable === !1 ? (o(), r("span", Ke, b(t.value), 1)) : (o(), r(L, { key: 1 }, [
-                              t.control ? (o(), M(W, {
+                            t.editable === !1 ? (l(), r("span", Ke, b(t.value), 1)) : (l(), r(L, { key: 1 }, [
+                              t.control ? (l(), M(G, {
                                 key: 0,
                                 tag: t.control.tag,
-                                attrs: { ...t.control.props, value: Y(t, u.value[a(t)]) },
+                                attrs: { ...t.control.props, value: z(t, u.value[a(t)]) },
                                 onSelect: (s) => ne(t, s)
-                              }, null, 8, ["tag", "attrs", "onSelect"])) : t.value_type === "bool" ? (o(), M(N(pe), {
+                              }, null, 8, ["tag", "attrs", "onSelect"])) : t.value_type === "bool" ? (l(), M(N(pe), {
                                 key: 1,
                                 "model-value": !!u.value[a(t)],
                                 "aria-label": C(t),
                                 "onUpdate:modelValue": (s) => u.value[a(t)] = s
-                              }, null, 8, ["model-value", "aria-label", "onUpdate:modelValue"])) : O(t) ? (o(), M(N(de), {
+                              }, null, 8, ["model-value", "aria-label", "onUpdate:modelValue"])) : O(t) ? (l(), M(N(de), {
                                 key: 2,
                                 class: A(["ks-select", { "ks-select-invalid": c.value[a(t)] }]),
                                 "model-value": u.value[a(t)],
@@ -360,7 +360,7 @@ const we = { class: "ks-form" }, xe = {
                                 "onUpdate:modelValue": (s) => {
                                   u.value[a(t)] = s, U(t);
                                 }
-                              }, null, 8, ["class", "model-value", "options", "onUpdate:modelValue"])) : t.value_type === "int" ? (o(), r("input", {
+                              }, null, 8, ["class", "model-value", "options", "onUpdate:modelValue"])) : t.value_type === "int" ? (l(), r("input", {
                                 key: 3,
                                 type: "number",
                                 class: A(["ks-input", { "ks-input-invalid": c.value[a(t)] }]),
@@ -370,7 +370,7 @@ const we = { class: "ks-form" }, xe = {
                                 onInput: (s) => {
                                   u.value[a(t)] = Number(s.target.value), U(t);
                                 }
-                              }, null, 42, Fe)) : t.value_type === "json" ? (o(), r("textarea", {
+                              }, null, 42, Fe)) : t.value_type === "json" ? (l(), r("textarea", {
                                 key: 4,
                                 rows: "4",
                                 class: A(["ks-input", { "ks-input-invalid": c.value[a(t)] }]),
@@ -378,7 +378,7 @@ const we = { class: "ks-form" }, xe = {
                                 onInput: (s) => {
                                   u.value[a(t)] = s.target.value, U(t);
                                 }
-                              }, null, 42, He)) : t.value_type === "secret" ? (o(), r("input", {
+                              }, null, 42, He)) : t.value_type === "secret" ? (l(), r("input", {
                                 key: 5,
                                 type: "password",
                                 autocomplete: "off",
@@ -388,7 +388,7 @@ const we = { class: "ks-form" }, xe = {
                                 onInput: (s) => {
                                   u.value[a(t)] = s.target.value, U(t);
                                 }
-                              }, null, 42, Je)) : (o(), r("input", {
+                              }, null, 42, Je)) : (l(), r("input", {
                                 key: 6,
                                 type: "text",
                                 class: A(["ks-input", { "ks-input-invalid": c.value[a(t)] }]),
@@ -398,8 +398,8 @@ const we = { class: "ks-form" }, xe = {
                                 onInput: (s) => {
                                   u.value[a(t)] = s.target.value, U(t);
                                 }
-                              }, null, 42, We)),
-                              x.value === a(t) ? (o(), r("span", Ge, [...n[2] || (n[2] = [
+                              }, null, 42, Ge)),
+                              x.value === a(t) ? (l(), r("span", Ye, [...n[2] || (n[2] = [
                                 m("span", { class: "ks-saved-tick" }, "✓", -1),
                                 X(" Saved", -1)
                               ])])) : _("", !0),
@@ -408,9 +408,9 @@ const we = { class: "ks-form" }, xe = {
                                 label: $.value === a(t) ? "Saving…" : "Save",
                                 loading: $.value === a(t),
                                 disabled: $.value === a(t) || !!c.value[a(t)] || t.value_type !== "bool" && !ae(t),
-                                onClick: (s) => oe(t)
+                                onClick: (s) => le(t)
                               }, null, 8, ["label", "loading", "disabled", "onClick"]),
-                              t.is_default ? _("", !0) : (o(), M(N(Q), {
+                              t.is_default ? _("", !0) : (l(), M(N(Q), {
                                 key: 8,
                                 type: "button",
                                 severity: "secondary",
@@ -419,7 +419,7 @@ const we = { class: "ks-form" }, xe = {
                                 disabled: $.value === a(t),
                                 title: "Reset to default",
                                 "aria-label": "Reset to default",
-                                onClick: (s) => le(t)
+                                onClick: (s) => oe(t)
                               }, {
                                 icon: V(() => [
                                   R(N(K), {
@@ -431,7 +431,7 @@ const we = { class: "ks-form" }, xe = {
                               }, 8, ["disabled", "onClick"]))
                             ], 64))
                           ]),
-                          c.value[a(t)] ? (o(), r("p", Ye, b(c.value[a(t)]), 1)) : _("", !0)
+                          c.value[a(t)] ? (l(), r("p", ze, b(c.value[a(t)]), 1)) : _("", !0)
                         ]),
                         _: 2
                       }, 1024))
@@ -445,10 +445,10 @@ const we = { class: "ks-form" }, xe = {
             _: 2
           }, 1032, ["class"]))
         ]))), 128))
-      ], 64)) : (o(), r("div", Me, "No settings declared."))
+      ], 64)) : (l(), r("div", Me, "No settings declared."))
     ]));
   }
-}), ze = { class: "ks" }, Qe = {
+}), We = { class: "ks" }, Qe = {
   key: 0,
   class: "ks-err"
 }, Xe = {
@@ -466,7 +466,7 @@ const we = { class: "ks-form" }, xe = {
 }, nt = {
   key: 0,
   class: "ks-nav-group"
-}, at = ["onClick"], ot = { class: "ks-nav-label" }, lt = { class: "ks-pane-head" }, st = { class: "ks-pane-ico" }, rt = { class: "ks-pane-head-text" }, it = { key: 0 }, ut = {
+}, at = ["onClick"], lt = { class: "ks-nav-label" }, ot = { class: "ks-pane-head" }, st = { class: "ks-pane-ico" }, rt = { class: "ks-pane-head-text" }, it = { key: 0 }, ut = {
   key: 2,
   class: "ks-empty"
 }, ct = /* @__PURE__ */ ee({
@@ -503,9 +503,9 @@ const we = { class: "ks-form" }, xe = {
         w.value = !1;
       }
     }
-    return ue(j), (i, p) => (o(), r("div", ze, [
-      $.value ? (o(), r("div", Qe, b($.value), 1)) : _("", !0),
-      w.value ? (o(), r("div", Xe, "Loading…")) : g.value.length ? (o(), r("div", et, [
+    return ue(j), (i, p) => (l(), r("div", We, [
+      $.value ? (l(), r("div", Qe, b($.value), 1)) : _("", !0),
+      w.value ? (l(), r("div", Xe, "Loading…")) : g.value.length ? (l(), r("div", et, [
         m("nav", tt, [
           m("button", {
             type: "button",
@@ -519,12 +519,12 @@ const we = { class: "ks-form" }, xe = {
             }),
             p[0] || (p[0] = m("span", { class: "ks-nav-label" }, "All settings", -1))
           ], 2),
-          (o(!0), r(L, null, H(c.value, (d, O) => (o(), r("div", {
+          (l(!0), r(L, null, H(c.value, (d, O) => (l(), r("div", {
             key: O,
             class: "ks-nav-section"
           }, [
-            d.group ? (o(), r("div", nt, b(d.group), 1)) : _("", !0),
-            (o(!0), r(L, null, H(d.items, (E) => (o(), r("button", {
+            d.group ? (l(), r("div", nt, b(d.group), 1)) : _("", !0),
+            (l(!0), r(L, null, H(d.items, (E) => (l(), r("button", {
               key: E.key,
               type: "button",
               class: A(["ks-nav-item", { "ks-nav-item-active": !u.value && E.key === x.value }]),
@@ -535,14 +535,14 @@ const we = { class: "ks-form" }, xe = {
                 icon: E.icon || "tabler:adjustments",
                 "aria-hidden": "true"
               }, null, 8, ["icon"]),
-              m("span", ot, b(E.title), 1)
+              m("span", lt, b(E.title), 1)
             ], 10, at))), 128))
           ]))), 128))
         ]),
         m("section", {
           class: A(["ks-pane", { "ks-pane-flush": !u.value && a.value && a.value.component_tag }])
         }, [
-          u.value ? (o(), r(L, { key: 0 }, [
+          u.value ? (l(), r(L, { key: 0 }, [
             p[1] || (p[1] = m("header", { class: "ks-pane-head" }, [
               m("h1", null, "All settings")
             ], -1)),
@@ -552,13 +552,13 @@ const we = { class: "ks-form" }, xe = {
               all: "",
               blocks: g.value
             }, null, 8, ["blocks"])
-          ], 64)) : a.value ? (o(), r(L, { key: 1 }, [
-            a.value.component_tag ? (o(), M(W, {
+          ], 64)) : a.value ? (l(), r(L, { key: 1 }, [
+            a.value.component_tag ? (l(), M(G, {
               key: a.value.key,
               tag: a.value.component_tag,
               config: a.value.config
-            }, null, 8, ["tag", "config"])) : a.value.namespace ? (o(), r(L, { key: 1 }, [
-              m("header", lt, [
+            }, null, 8, ["tag", "config"])) : a.value.namespace ? (l(), r(L, { key: 1 }, [
+              m("header", ot, [
                 m("span", st, [
                   R(N(K), {
                     icon: a.value.icon || "tabler:adjustments",
@@ -567,17 +567,17 @@ const we = { class: "ks-form" }, xe = {
                 ]),
                 m("div", rt, [
                   m("h1", null, b(a.value.title), 1),
-                  typeof a.value.config?.description == "string" ? (o(), r("p", it, b(a.value.config.description), 1)) : _("", !0)
+                  typeof a.value.config?.description == "string" ? (l(), r("p", it, b(a.value.config.description), 1)) : _("", !0)
                 ])
               ]),
-              (o(), M(Z, {
+              (l(), M(Z, {
                 key: a.value.key,
                 namespace: a.value.namespace
               }, null, 8, ["namespace"]))
-            ], 64)) : (o(), r("div", ut, "This block has no editor."))
+            ], 64)) : (l(), r("div", ut, "This block has no editor."))
           ], 64)) : _("", !0)
         ], 2)
-      ])) : (o(), r("div", Ze, "No settings declared."))
+      ])) : (l(), r("div", Ze, "No settings declared."))
     ]));
   }
 }), mt = { props: { type: "object", properties: { route: { type: "string", default: "", description: "Deep-link to a settings block by key. Unset selects the first block." } } } }, pt = {

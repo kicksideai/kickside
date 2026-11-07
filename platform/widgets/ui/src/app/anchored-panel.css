@@ -1,0 +1,5 @@
+/* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
+/* Shared AnchoredPanel (viewport-anchored popover). A consuming web component imports this file into its inline
+   stylesheet: @import '@widgets/app/anchored-panel.css'. Tokens-only (--p-*). */
+/* Placement-only wrapper; the slotted panel carries its own chrome. */
+.anchored-panel { position: fixed; min-width: 0; overflow: auto; }

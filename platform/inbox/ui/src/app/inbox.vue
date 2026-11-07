@@ -15,6 +15,7 @@ import { subscribeComponentMeta } from '@widgets/app/componentRealtime'
 import { relativeTime as relativeTimeBase } from '@widgets/app/datetime'
 import { errMsg } from '@widgets/app/errMsg'
 import { statusLabel, INBOX_META_FIELD_TYPES } from './labels'
+import { previewText } from './preview'
 
 // Inbox host (the container). A Gmail-style master/detail: a filter strip across
 // folders (Pending / Resolved / All), a compact native list, and a detail pane
@@ -62,6 +63,7 @@ const resolutions = new Map<string, Item>()
 let resolvedCountFloor = 0
 
 const selected = computed(() => items.value.find(i => i.id === selectedId.value) || null)
+const previews = computed(() => new Map(items.value.map(item => [item.id, previewText(item.content)])))
 const kindOf = (t: string): Kind | undefined => kinds.value[t]
 const hasOwn = (obj: Record<string, unknown>, key: string): boolean => Object.prototype.hasOwnProperty.call(obj, key)
 const headerCount = computed(() => {
@@ -300,7 +302,7 @@ onUnmounted(() => {
               </span>
               <span class="kx-time" :title="absoluteTime(item.created_at)">{{ relativeTime(item.created_at) }}</span>
             </div>
-            <wc-render-markdown v-if="item.content" class="kx-preview" :source="item.content" inert />
+            <span v-if="previews.get(item.id)" class="kx-preview">{{ previews.get(item.id) }}</span>
             <Tag
               v-if="item.status !== 'pending'"
               severity="secondary"

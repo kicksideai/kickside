@@ -10,6 +10,7 @@ import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import { useComponentEvents } from '../constants.ts'
 import AgentForm from './AgentForm.vue'
 import { errMsg } from '@widgets/app/errMsg'
+import { latestRequest } from '@widgets/app/latestRequest'
 import { loadToolCatalog } from './toolCatalog.ts'
 
 // Canonical WC: the authenticated client comes from @wippy-fe/proxy; in-component
@@ -62,17 +63,19 @@ const filtered = computed(() => {
   )
 })
 
+const beginLoad = latestRequest()
 async function load() {
+  const current = beginLoad()
   loading.value = true
   error.value = ''
   try {
     const { data } = await api.get('/api/v1/user-agents')
     if (!data?.success) throw new Error(data?.error || 'failed to load agents')
-    agents.value = (data.agents || []) as Agent[]
+    if (current()) agents.value = (data.agents || []) as Agent[]
   } catch (e) {
-    error.value = errMsg(e, 'could not load agents')
+    if (current()) error.value = errMsg(e, 'could not load agents')
   } finally {
-    loading.value = false
+    if (current()) loading.value = false
   }
 }
 
@@ -163,7 +166,7 @@ watch([shareOpen, shareHost], async () => {
 useHostVisibilityRefresh(async () => {
   await Promise.all([load(), loadOptions()])
 })
-const {acceptDeletion} = useComponentDeletion(agents, row => row.id)
+const {acceptDeletion} = useComponentDeletion(agents, row => row.id, undefined, load)
 </script>
 
 <template>
