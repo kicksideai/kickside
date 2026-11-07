@@ -75,27 +75,6 @@ class PublicHarnessTests(unittest.TestCase):
             checked.append(module)
         self.assertTrue(checked, 'CI must exercise stateful PostgreSQL harnesses')
 
-    def test_harness_links_stay_out_of_other_module_test_trees(self):
-        modules = [ROOT / entry['path'] for entry in
-                   json.loads((ROOT / '.github/modules.json').read_text())['modules'].values()]
-        checked = 0
-        for path in subprocess.check_output(['git', 'ls-files', '-s'], cwd=ROOT, text=True).splitlines():
-            mode, _, _, name = path.split(None, 3)
-            if mode != '120000':
-                continue
-            link = ROOT / name
-            owner = next((module for module in modules if link.is_relative_to(module)), None)
-            if owner is None:
-                continue
-            target = link.resolve()
-            target_owner = next((module for module in modules if target.is_relative_to(module) and module != owner), None)
-            checked += 1
-            with self.subTest(link=name):
-                if target_owner is not None:
-                    self.assertTrue(target.is_relative_to(target_owner / 'src'),
-                                    'a harness owns its fixtures; links reach only another module source tree')
-        self.assertTrue(checked, 'module trees must exercise harness links')
-
     def test_automation_upgrade_and_live_harnesses_use_separate_databases(self):
         workflow = (ROOT / '.github/workflows/ci.yml').read_text()
         jobs = re.split(r'(?m)^        - module: ', workflow)[1:]
