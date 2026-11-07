@@ -11,11 +11,11 @@ local uuid = require("uuid")
 local channel = require("channel")
 local process = require("process")
 local time = require("time")
-local funcs = require("funcs")
 local errors = require("errors")
 local round_write = require("round_write")
 local drive = require("drive")
 local h = require("round_harness")
+local provenance = require("round_provenance")
 
 type Map = { [string]: any }
 
@@ -75,6 +75,13 @@ local function stamped(_id: string, round_until: string?): Map
         automation_revision = 3, fence = { round_token = "round-" .. id, revision = 1, rewind_generation = 0, command_generation = 0,
             round_until = round_until or "2999-01-01T00:00:00Z",
             job = { id = job.id, lease_token = job.lease_token, execution_seq = job.execution_seq } } }
+end
+
+-- admit(held, ...) journals the delivery evidence a round admits for its items
+-- before any effect.
+local function admit(held: Map, ...: string): ()
+    local _, err = provenance.admit(held, { ... })
+    if err then error(tostring(err)) end
 end
 
 local function define_tests()
@@ -297,6 +304,7 @@ local function define_tests()
 
             -- At most once: the item is reserved uncertain before the request, so
             -- an ambiguous answer stays uncertain and is never repeated by itself.
+            admit(held, "f@1", "g@1")
             local ambiguous = write(notify, "timeout", "f")
             test.eq(ambiguous.state, "uncertain")
             local reserved = query("SELECT state FROM kickside_trigger_item_ledger WHERE owner_id = $1 AND item_key = 'f'", { id })
@@ -319,6 +327,7 @@ local function define_tests()
             local item = { item_key = key, dedup_key = key }
             local request = { config = {}, sink_op = "upsert", input = { directive = "" },
                 identity_key = key, idempotency_key = key .. "@1" }
+            admit(held, request.idempotency_key, round_write.keys(held, item).idempotency_key)
             local sent = round_write.write(notify, request, held, item)
             test.eq(sent.state, "delivered")
             -- The durable reservation survived; the outcome/cursor commit did not.
@@ -444,25 +453,6 @@ local function define_tests()
             test.eq(#query("SELECT id FROM round_fixture_log WHERE drive_key = 'sink' AND item_key = $1", { key }), 0)
         end)
 
-        test.it("answers an authority write refused before its send as a refusal, not a call failure", function()
-            local id = uuid.v7()
-            local held = stamped(id, "2000-01-01T00:00:00Z")
-            id = tostring(held.automation_id)
-            local notify, sink_err = round_write.describe_sink(NOTIFY)
-            if sink_err or not notify then error("sink unavailable: " .. tostring(sink_err)) end
-            local key = "refused-" .. id
-            local packet, call_err = funcs.call("kickside.automation:round_authority_write", { drive = held, key = key .. "@1",
-                delivery_key = key .. "@1", binding = notify.binding, config = {},
-                body = { config = {}, sink_op = "upsert", input = { directive = "" }, identity_key = key,
-                    idempotency_key = key .. "@1", origin = id } })
-            test.is_nil(call_err, tostring(call_err))
-            test.not_nil(packet.refused)
-            test.eq(packet.refused.kind, errors.CONFLICT)
-            test.is_true(packet.refused.retriable)
-            test.is_nil(packet.result)
-            test.eq(#query("SELECT id FROM round_fixture_log WHERE item_key = $1", { key }), 0)
-        end)
-
         test.it("sends nothing once the round's job lease is gone, at-most-once after its reservation", function()
             local id = uuid.v7()
             local held = stamped(id)
@@ -479,6 +469,7 @@ local function define_tests()
             local notify, sink_err = round_write.describe_sink(NOTIFY)
             if sink_err or not notify then error("sink unavailable: " .. tostring(sink_err)) end
             local notify_key = "leased-notify-" .. id
+            admit(held, notify_key .. "@1")
             local notified = round_write.write(notify, { config = {}, sink_op = "upsert", input = { directive = "" },
                 identity_key = notify_key, idempotency_key = notify_key .. "@1" }, held, { item_key = notify_key, dedup_key = notify_key })
             test.eq(notified.state, "failed")

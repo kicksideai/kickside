@@ -20,6 +20,10 @@ function M.resolve(args: any): any
     if create_err then db:release(); return nil, create_err end
     local _, policy_create_err = db:execute("CREATE TABLE IF NOT EXISTS round_scope_policy (principal_id TEXT NOT NULL, policy_id TEXT NOT NULL, PRIMARY KEY (principal_id, policy_id))")
     if policy_create_err then db:release(); return nil, policy_create_err end
+    local _, count_create_err = db:execute("CREATE TABLE IF NOT EXISTS round_resolver_call (principal_id TEXT NOT NULL)")
+    if count_create_err then db:release(); return nil, count_create_err end
+    local _, count_err = db:execute("INSERT INTO round_resolver_call (principal_id) VALUES ($1)", {principal.id})
+    if count_err then db:release(); return nil, count_err end
     local rows, read_err = db:query("SELECT error_kind FROM round_authority_revocation WHERE principal_id=$1", {args.authorized_by and args.authorized_by.id or principal.id})
     if read_err then db:release(); return nil, read_err end
     local policies, policies_err = db:query("SELECT policy_id FROM round_scope_policy WHERE principal_id=$1 ORDER BY policy_id", {principal.id})

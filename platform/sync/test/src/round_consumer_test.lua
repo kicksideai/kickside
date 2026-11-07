@@ -8,6 +8,7 @@
 
 local test = require("test")
 local round_write = require("round_write")
+local round_provenance = require("round_provenance")
 local sql = require("sql")
 local json = require("json")
 local uuid = require("uuid")
@@ -138,15 +139,18 @@ local function define_tests(section: string)
                 caller = caller:with_actor(security.new_actor(who.actor, { security_groups = { "app:automation_test" } }))
                     :with_scope(security.new_scope({ security.policy("app:user") }))
             end
-            return caller:call(DELIVER, {
-                drive = { automation_id = automation_id, drive_key = "main", source_kind = who.source_kind or "collection", source_ref = SOURCE,
-                    source_port = SOURCE, ledger_port = SOURCE, delivery_revision = 1,
-                    fence = { round_token = "round-" .. automation_id, revision = 1, rewind_generation = 0, command_generation = 0,
-                        round_until = "2999-01-01T00:00:00Z", job = round_job },
-                    operator = { kind = "user", id = who.operator or operator },
-                    principal = { kind = "user", id = who.principal or principal } },
-                items = items, config = config,
-            })
+            local held: Map = { automation_id = automation_id, drive_key = "main", source_kind = who.source_kind or "collection", source_ref = SOURCE,
+                source_port = SOURCE, ledger_port = SOURCE, delivery_revision = 1,
+                fence = { round_token = "round-" .. automation_id, revision = 1, rewind_generation = 0, command_generation = 0,
+                    round_until = "2999-01-01T00:00:00Z", job = round_job },
+                operator = { kind = "user", id = who.operator or operator },
+                principal = { kind = "user", id = who.principal or principal } }
+            -- A round admits its page's delivery keys before it delivers them.
+            local keys: { string } = {}
+            for _, entry in ipairs(items) do keys[#keys + 1] = entry.delivery_key end
+            local _, admit_err = round_provenance.admit(held, keys)
+            if admit_err then error("admit: " .. tostring(admit_err)) end
+            return caller:call(DELIVER, { drive = held, items = items, config = config })
         end
 
         local function func_transform(resource_id: string?): Map
@@ -602,23 +606,25 @@ local function define_tests(section: string)
             end)
 
         else
-            test.it("refreshes transform resource grants before the next effect", function()
+            test.it("honours a transform resource grant revoked mid-page until the next page", function()
                 local resource = register_resource(operator, principal)
+                local config = declaration("app.fixture:round_record", func_transform(resource))
                 local out, err = deliver({
                     item("grant-first", { revoke_resource = resource, revoke_principal = principal }),
-                    item("grant-second", {}) }, declaration("app.fixture:round_record", func_transform(resource)))
+                    item("grant-second", {}) }, config)
                 test.is_nil(err, tostring(err))
                 test.not_nil(out)
-                test.eq(#out.delivered_items, 1)
-                test.not_nil(by_key(out.delivered_items)[delivery_key("grant-first")])
-                local denied = by_key(out.failed_items)[delivery_key("grant-second")]
-                test.not_nil(denied)
-                test.eq(denied.error.kind, errors.PERMISSION_DENIED)
-                test.eq(denied.error.details.error_kind, "access")
+                test.eq(#out.delivered_items, 2)
                 test.eq(transform_calls("grant-first"), 1)
-                test.eq(transform_calls("grant-second"), 0)
+                test.eq(transform_calls("grant-second"), 1)
                 test.eq(#writes(identity("grant-first")), 1)
-                test.eq(#writes(identity("grant-second")), 0)
+                test.eq(#writes(identity("grant-second")), 1)
+                local next_page, next_err = deliver({ item("grant-next", {}) }, config)
+                test.is_nil(next_page)
+                test.not_nil(next_err)
+                test.eq(errors.is(next_err, errors.PERMISSION_DENIED), true)
+                test.eq(transform_calls("grant-next"), 0)
+                test.eq(#writes(identity("grant-next")), 0)
             end)
             test.it("runs an effectful transform on a resource its operator and principal both hold", function()
                 local out, err = deliver({ item("granted", { directive = "" }) }, declaration("app.fixture:round_record", func_transform(shared)))

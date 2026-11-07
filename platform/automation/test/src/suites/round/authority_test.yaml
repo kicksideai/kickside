@@ -1,6 +1,7 @@
 entries:
 - imports:
     round_harness: kickside.automation:round_harness
+    execution_identity: kickside.execution:execution_identity
     test: wippy.test:test
   kind: function.lua
   meta:

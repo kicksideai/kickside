@@ -67,7 +67,7 @@ function M.references(transform: Map): ({ Map }?, error?)
     return references :: { Map }, nil
 end
 
-local function authorization(strategy: string, transform: Map, d: Map): (Map?, error?)
+local function authorization(transform: Map, d: Map): (Map?, error?)
     local references, references_err = M.references(transform)
     if references_err or not references then return nil, references_err end
     if type(d.operator) ~= "table" or type(d.principal) ~= "table" then
@@ -114,7 +114,7 @@ function M.compile(declaration: any, drive: any): (Map?, error?)
     local binding, binding_err = strategies.resolve(strategy)
     if binding_err or not binding then return nil, invalid("transform strategy " .. strategy .. ": " .. tostring(binding_err)) end
     local holders = type(drive) == "table" and (drive :: Map) or {}
-    local grants, grants_err = authorization(strategy, transform, holders)
+    local grants, grants_err = authorization(transform, holders)
     if grants_err or not grants then return nil, grants_err end
     local trigger = type(d.trigger) == "table" and (d.trigger :: Map) or {}
     local filter = type(trigger.filter) == "table" and trim((trigger.filter :: Map).expr) or ""
@@ -125,8 +125,6 @@ function M.compile(declaration: any, drive: any): (Map?, error?)
         strategy = strategy,
         transform = transform,
         replay_safe = (binding :: Map).replay_safe,
-        operator = holders.operator,
-        principal = holders.principal,
         authorization = grants,
         filter = filter ~= "" and filter or nil,
     }, nil
@@ -159,11 +157,7 @@ function M.keeps(plan: Map, item: Map): (boolean, Map?)
     return result ~= nil and result ~= false, nil
 end
 
-function M.compute(request: Map): (Map?, any)
-    local plan,item=request.plan,request.item
-    local grants, grants_err = authorization(plan.strategy, plan.transform, plan)
-    if grants_err or not grants then return nil, grants_err end
-    plan.authorization = grants
+local function compute(plan: Map, item: Map): (Map?, any)
     local answer, request_err = apply.apply({ strategy = plan.strategy, config = plan.transform, item = strategy_item(item),
         authorization = plan.authorization })
     if request_err ~= nil or not answer then
@@ -177,11 +171,6 @@ function M.compute(request: Map): (Map?, any)
     return { present = a.present == true, value = a.value, skip = a.skip }, nil
 end
 
-function M.evaluate_pure(plan: Map, item: Map): (Map?, any)
-    if plan.replay_safe ~= true then return nil, invalid("pure evaluation requires a replay-safe strategy") end
-    return M.compute({plan=plan,item=item})
-end
-
 -- transform(plan, drive, item, keys) -> { present, value?, skip? } or the item's failure.
 function M.payload_hash(plan: Map, item: Map): (string?, any)
     if plan.replay_safe then return nil, nil end
@@ -193,12 +182,8 @@ function M.transform(plan: Map, d: Map, item: Map, keys: Map): (Map?, any)
     local payload_hash, hash_err = M.payload_hash(plan, item)
     if hash_err then return nil, hash_err end
     return round_write.prepare({ drive = d, key = tostring(keys.idempotency_key),
-        hash = payload_hash, prepared = not plan.replay_safe,
-        effect = not plan.replay_safe and {target="kickside.sync:round_transform_effect",args={plan=plan,item=item}} or nil },
-        function(): (any?, any)
-            if plan.replay_safe then return M.evaluate_pure(plan, item) end
-            return M.compute({plan=plan,item=item})
-        end)
+        hash = payload_hash, prepared = not plan.replay_safe },
+        function(): (any?, any) return compute(plan, item) end)
 end
 
 return M
