@@ -66,9 +66,11 @@ async function fetchConnections(offset: number) {
   return data
 }
 
-const beginLoad = latestRequest()
+// Reloads and further pages share one read sequence: a page applies only while no
+// later read of the listing has started.
+const beginListingRead = latestRequest()
 async function load() {
-  const current = beginLoad()
+  const current = beginListingRead()
   loading.value = true
   error.value = ''
   loadError.value = ''
@@ -101,17 +103,19 @@ async function load() {
 
 async function loadMoreConnections() {
   if (loadingMore.value || !connectionsHasMore.value) return
+  const current = beginListingRead()
   loadingMore.value = true
   error.value = ''
   try {
     const data = await fetchConnections(connections.value.length)
+    if (!current()) return
     const next = (data.connections ?? []) as Connection[]
     connections.value = [...connections.value, ...next]
     connectionsTotal.value = Number(data.total_count ?? connectionsTotal.value)
     connectionsHasMore.value = Boolean(data.has_more)
     syncComponentSubscriptions()
   } catch (e) {
-    error.value = apiError(e)
+    if (current()) error.value = apiError(e)
   } finally {
     loadingMore.value = false
   }
