@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
 /* Shared ComponentDeletion status (deleting spinner, failure with retry). A consuming
    web component imports this file into its inline stylesheet:
    @import '@widgets/app/component-deletion.css'. Tokens-only (--p-*). */

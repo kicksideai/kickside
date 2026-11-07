@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
 /* Shared MultiSelectField (mounts the wc-multiselect picker, with a retryable load failure). A consuming web component imports this file into its inline
    stylesheet: @import '@widgets/app/multiselect-field.css'. Tokens-only (--p-*). */
 .kx-msfield-fail {

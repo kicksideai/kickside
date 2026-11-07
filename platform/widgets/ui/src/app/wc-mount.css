@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
 /* Shared WcMount (mounts a declared web component by tag, with a retryable load failure). A consuming web component imports this file into its inline
    stylesheet: @import '@widgets/app/wc-mount.css'. Tokens-only (--p-*). */
 .kx-wcmount {
