@@ -113,6 +113,7 @@ type ComponentRef = { component_id: string }
 -- owns completion, deleted is false and in_progress, status, cleanup_pending and
 -- job_id describe it.
 type DeleteResult = {
+    success: boolean,
     component_id: string,
     deleted: boolean,
     in_progress: boolean?,

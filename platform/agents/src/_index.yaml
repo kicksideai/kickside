@@ -366,7 +366,7 @@ entries:
             format: application/schema+json
         output_schemas:
           - definition: |
-              { "type": "object", "properties": { "component_id": { "type": "string" }, "deleted": { "type": "boolean" }, "in_progress": { "type": "boolean" }, "status": { "type": "string" }, "cleanup_pending": { "type": "boolean" }, "job_id": { "type": "string" }, "notification_error": { "type": "object" }, "error": { "type": "string" } }, "required": ["component_id", "deleted"] }
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "component_id": { "type": "string" }, "deleted": { "type": "boolean" }, "in_progress": { "type": "boolean" }, "status": { "type": "string" }, "cleanup_pending": { "type": "boolean" }, "job_id": { "type": "string" }, "notification_error": { "type": "object" }, "error": { "type": "string" } }, "required": ["success", "component_id", "deleted"] }
             format: application/schema+json
       - name: list
         description: One offset page of visible agents, newest first; filter by text, page with pagination { limit, offset } and follow has_more.
