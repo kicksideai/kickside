@@ -1334,6 +1334,7 @@ entries:
     meta: {type: test, suite: jobs_pool_nudge_native}
     source: file://pool_nudge_native_test.lua
     method: run
+    modules: [process, time, channel]
     imports:
       test: wippy.test:test
       nudge: app:pool_nudge_native_source
