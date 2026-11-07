@@ -21,7 +21,7 @@ function serve(items: Record<string, unknown>[]) {
 }
 
 describe('Inbox list excerpts', () => {
-  it('previews each item with the plain text its Markdown body leads with', async () => {
+  it('previews each item with the first line its Markdown body leads with', async () => {
     serve([
       { id: 'review', item_type: 'notice', title: 'Review files', status: 'pending', priority: 'normal',
         content: '[Review documents](/knowledge/example/review) with **suggestions**.' },
@@ -34,7 +34,7 @@ describe('Inbox list excerpts', () => {
     const rows = view.findAll('.kx-item')
     expect(rows).toHaveLength(3)
     const preview = (title: string) => rows.find(row => row.text().includes(title))!.find('.kx-preview')
-    expect(preview('Review files').text()).toBe('Review documents with suggestions.')
+    expect(preview('Review files').text()).toBe('[Review documents](/knowledge/example/review) with **suggestions**.')
     expect(preview('Approve stock').text()).toBe('account: Kestrel Labs')
     expect(preview('No body').exists()).toBe(false)
     expect(view.find('.kx-item wc-render-markdown').exists()).toBe(false)
