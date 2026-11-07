@@ -170,7 +170,7 @@ entries:
     meta:
       comment: Component identity receipt and live principal access checks.
     source: file://identity_access.lua
-    modules: [sql]
+    modules: [json, sql]
     imports:
       persisted_json: kickside.contract:persisted_json
       component_types: kickside.component:types

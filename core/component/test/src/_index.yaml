@@ -847,6 +847,7 @@ entries:
   - name: identity_native_source
     kind: library.lua
     source: file://identity_native_source.lua
+    modules: [json]
     imports:
       persisted_json: kickside.contract:persisted_json
       sql: app:identity_native_sql_adapter
@@ -2393,6 +2394,7 @@ entries:
   - name: identity_read_cleanup_fixture
     kind: library.lua
     source: file://identity_read_cleanup_fixture.lua
+    modules: [json]
 
   - name: identity_read_cleanup_sql
     kind: library.lua
@@ -2409,6 +2411,7 @@ entries:
   - name: identity_read_cleanup_source
     kind: library.lua
     source: file://identity_read_cleanup_source.lua
+    modules: [json]
     imports:
       persisted_json: kickside.contract:persisted_json
       sql: app:identity_read_cleanup_sql
@@ -2437,6 +2440,16 @@ entries:
       test: wippy.test:test
       identity: app:identity_read_cleanup_source
       fixture: app:identity_read_cleanup_fixture
+
+  - name: identity_receipt_store_test
+    kind: function.lua
+    source: file://identity_receipt_store_test.lua
+    method: run
+    meta: {type: test, suite: identity_receipt_store}
+    modules: [json, sql, time, uuid]
+    imports:
+      test: wippy.test:test
+      identity: kickside.component:identity_access
 
   - name: metadata_tx_fixture
     kind: library.lua
