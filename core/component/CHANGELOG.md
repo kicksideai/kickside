@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.8](https://github.com/kicksideai/kickside/compare/component-v0.3.7...component-v0.3.8) (2026-11-07)
+
+
+### Bug Fixes
+
+* **component:** export deeply nested contexts without overflowing the call stack ([#326](https://github.com/kicksideai/kickside/issues/326)) ([56f765d](https://github.com/kicksideai/kickside/commit/56f765ddc8079d50544de76e426522087478d108))
+
 ## [0.3.7](https://github.com/kicksideai/kickside/compare/component-v0.3.6...component-v0.3.7) (2026-11-06)
 
 
