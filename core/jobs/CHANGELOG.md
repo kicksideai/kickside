@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.74](https://github.com/kicksideai/kickside/compare/jobs-v0.1.73...jobs-v0.1.74) (2026-11-07)
+
+
+### Bug Fixes
+
+* **jobs:** keep the pool running while the Settings change scope is unavailable ([#349](https://github.com/kicksideai/kickside/issues/349)) ([a946d3e](https://github.com/kicksideai/kickside/commit/a946d3e209fa276408f5c2d79364021288481108))
+
 ## [0.1.73](https://github.com/kicksideai/kickside/compare/jobs-v0.1.72...jobs-v0.1.73) (2026-11-07)
 
 
