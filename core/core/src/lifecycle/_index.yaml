@@ -238,10 +238,10 @@ entries:
   - name: boot_process
     kind: process.lua
     meta:
-      comment: Provisions the system lifecycle singleton and converges declared component state as system:lifecycle once the core-database migrations are applied (on start or upgrade when current, else on the migrations-applied message), then stays resident and upgradable — on the OUTDATED code-change event it process.upgrade()s in place and the upgraded code converges once every core-database migration is applied.
+      comment: Provisions the system lifecycle singleton and converges declared component state as system:lifecycle once the migrations owning the tables it reads are applied (on start or upgrade when current; otherwise on the migrations-applied message or the parked ledger retry), then stays resident and upgradable — on the OUTDATED code-change event it process.upgrade()s in place.
     source: file://boot.lua
     method: main
-    modules: [security, logger, process, channel]
+    modules: [security, logger, process, channel, time]
     imports:
       provision: kickside.core.threads:provision
       lifecycle_consts: kickside.core.lifecycle:consts

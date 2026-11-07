@@ -30,7 +30,10 @@ end
 function M.setup(_database_id: string): any
     return {find_migrations = function(_self: any): (any, string?)
         hit("migrations")
-        return {{id = "app:applied_migration", applied = true}, {id = "app:pending_migration", applied = not M.pending}}, nil
+        return {{id = "kickside.core.migrations:applied", applied = true},
+            {id = "kickside.component.migrations:pending", applied = not M.pending},
+            {id = "kickside.core.jobs.migrations:applied", applied = true},
+            {id = "app.other.migrations:pending", applied = false}}, nil
     end}
 end
 function M.listen(_topic: string): (any, error?) hit("listen"); return channel.new(), nil end

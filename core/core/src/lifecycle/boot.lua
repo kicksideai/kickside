@@ -1,14 +1,17 @@
 -- boot: provisions the singleton system lifecycle thread and converges declared
 -- component state, then stays resident as an upgradable process. Convergence
 -- reads the schema of the installed code, so it runs only once every migration
--- registered for the core database is applied. The runtime delivers OUTDATED at
--- the registry commit, before a hot install's migrations run; boot answers with
--- process.upgrade(), and the upgraded code converges on entry when the schema is
--- already current, otherwise on the migrations-applied message the lifecycle
--- bootloader sends after the install's migrations.
+-- in the namespaces that own the tables it reads is applied. The runtime
+-- delivers OUTDATED at the registry commit, before a hot install's migrations
+-- run; boot answers with process.upgrade(), and the upgraded code converges on
+-- entry when the schema is already current. Otherwise it parks until the migrations land: the lifecycle
+-- bootloader's migrations-applied message wakes it at once, and a parked boot
+-- re-reads the ledger on a fixed retry interval for migrations that arrive
+-- without that message.
 
 local process = require("process")
 local channel = require("channel")
+local time = require("time")
 local security = require("security")
 local provision = require("provision")
 local logger = require("logger"):named("kickside.lifecycle")
@@ -76,7 +79,7 @@ local function converge_reported(): (integer?, error?)
 end
 
 -- Registry publication precedes a hot install's migrations; the migration
--- ledger is the authority on whether the installed code's schema exists.
+-- ledger is the authority on whether the schema convergence reads exists.
 local function schema_ready(): (boolean, error?)
     local rows, err = migration_runner.setup(core_db.id()):find_migrations()
     if err or type(rows) ~= "table" then
@@ -84,24 +87,35 @@ local function schema_ready(): (boolean, error?)
             message = "lifecycle migration status unavailable: " .. tostring(err),
             details = {code = "lifecycle_migration_status"}})
     end
+    local found: { [string]: boolean } = {}
+    for _, namespace in ipairs(consts.CONVERGE_SCHEMA_NAMESPACES) do found[namespace] = false end
+    local ready = true
     for _, row in ipairs(rows) do
-        if row.applied ~= true then return false, nil end
+        local namespace = string.match(tostring(row.id), "^([^:]+):")
+        if namespace and found[namespace] ~= nil then
+            found[namespace] = true
+            if row.applied ~= true then ready = false end
+        end
     end
-    return true, nil
+    for namespace, present in pairs(found) do
+        if not present then
+            return false, errors.new({kind = errors.INTERNAL, retryable = false,
+                message = "lifecycle convergence schema has no migrations: " .. namespace,
+                details = {code = "lifecycle_migration_namespace", namespace = namespace}})
+        end
+    end
+    return ready, nil
 end
 
--- Converges when the ledger is current; a pending migration parks convergence
--- until the next migrations-applied message, and parked reports no attempt.
+-- Converges when the ledger is current. A pending migration parks convergence
+-- and reports no attempt.
 local function converge_when_ready(): (boolean, integer?, error?)
     local ready, ready_err = schema_ready()
     if ready_err then
         logger:error("system lifecycle convergence failed", { reason = tostring(ready_err), error_native = error_envelope.encode(ready_err) })
         return true, nil, ready_err
     end
-    if not ready then
-        logger:info("system lifecycle convergence awaits migrations")
-        return false, nil, nil
-    end
+    if not ready then return false, nil, nil end
     local count, converge_err = converge_reported()
     return true, count, converge_err
 end
@@ -124,7 +138,9 @@ local function main(_args: any): any
     end
     if claimed ~= true then error(response_error("claim")) end
 
-    local _, count, converge_err = converge_when_ready()
+    local converged, count, converge_err = converge_when_ready()
+    local parked = not converged
+    if parked then logger:info("system lifecycle convergence awaits migrations") end
 
     -- Resident from here: upgradable, parked on the events channel and the
     -- migrations-applied listener. A clean return on CANCEL or channel closure
@@ -137,19 +153,28 @@ local function main(_args: any): any
     end
     logger:info("system lifecycle resident", { upgradable = opts_ok == true })
     while true do
-        local selected = channel.select({ events:case_receive(), applied:case_receive() })
+        -- The migrations-applied message is the immediate wake-up. A parked boot
+        -- also re-reads the ledger on the retry interval, because migrations can
+        -- land without that message: an install whose changed modules exclude
+        -- core, or migrations applied after an install that ran none.
+        local cases = { events:case_receive(), applied:case_receive() }
+        local retry = parked and time.after(tostring(consts.SCHEMA_RETRY_MS) .. "ms") or nil
+        if retry then cases[#cases + 1] = retry:case_receive() end
+        local selected = channel.select(cases)
         local ev = selected.value
-        if not selected.ok or (selected.channel == events and ev and (ev :: any).kind == process.event.CANCEL) then
+        if selected.channel ~= retry and (not selected.ok or (selected.channel == events and ev and (ev :: any).kind == process.event.CANCEL)) then
             if converge_err then error(converge_err) end
             return { ok = true, count = count }
         end
-        if selected.channel == applied then
-            -- Bootloaders also run without migrations, so the message re-reads
-            -- the ledger rather than vouching for the schema.
+        if selected.channel == applied or selected.channel == retry then
             local attempted, next_count, next_err = converge_when_ready()
             if attempted then
+                parked = false
                 count, converge_err = next_count, next_err
                 logger:info("system lifecycle converged after migrations", { failed = converge_err ~= nil })
+            elseif selected.channel == applied or not parked then
+                parked = true
+                logger:info("system lifecycle convergence awaits migrations")
             end
         elseif ev and (ev :: any).kind == process.event.OUTDATED then
             process.upgrade()

@@ -55,9 +55,10 @@ local function define_tests()
         end)
 
         -- Diverges the lifecycle thread's retention policy from its declaration
-        -- and refuses the write that converges it back, the way a column the
-        -- installed code reads is absent until the install's migrations run.
-        local function diverge_with_refusal(name: string): (string, number)
+        -- and, given a trigger name, refuses the write that converges it back,
+        -- the way a column the installed code reads is absent until the
+        -- install's migrations run.
+        local function diverge_with_refusal(name: string?): (string, number)
             local actor = security.new_actor(consts.SYSTEM_ACTOR, { system = true, groups = { "system", "lifecycle" } })
             local scope = assert(security.named_scope(consts.SYSTEM_SCOPE))
             local _, ensure_err = provision.ensure_system(actor, scope)
@@ -70,6 +71,10 @@ local function define_tests()
             if declared_days == nil then error("retention policy has no numeric event days") end
             local _, seed_err = db:execute("UPDATE kickside_retention_policy SET event_hot_retention_days=$1 WHERE thread_id=$2", { declared_days + 1, id })
             test.is_nil(seed_err)
+            if not name then
+                db:release()
+                return id, declared_days
+            end
             trigger_name = name
             if postgres then
                 local _, function_err = db:execute("CREATE FUNCTION " .. name .. "() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.thread_id = '" .. id .. "' THEN RAISE EXCEPTION 'boot retention refusal'; END IF; RETURN NEW; END $$")
@@ -112,14 +117,14 @@ local function define_tests()
             end
         end
 
-        -- Publishes an in-place boot upgrade together with a pending core-database
-        -- migration, the shape of a hot install whose code reads schema its own
-        -- migration creates after the registry commit.
-        local function upgrade_boot_with_migration(): string
+        -- Publishes an in-place boot upgrade together with a pending migration
+        -- in `namespace` on the core database, the shape of a hot install whose
+        -- code reads schema a migration creates after the registry commit.
+        local function upgrade_boot_with_migration(namespace: string): string
             original = assert(registry.current_version())
             local entry = assert(registry.get("kickside.core.lifecycle:boot_process"))
             local template = assert(registry.get("kickside.core.lifecycle:pending_schema_migration"))
-            local migration_id = "kickside.core.lifecycle:pending_schema_" .. uuid.v7():gsub("-", "_")
+            local migration_id = namespace .. ":pending_schema_" .. uuid.v7():gsub("-", "_")
             local snapshot = assert(registry.snapshot())
             local changes = snapshot:changes()
             entry.meta.comment = tostring(entry.meta.comment or "") .. " contract audit " .. uuid.v7()
@@ -146,7 +151,7 @@ local function define_tests()
             local id, declared_days = diverge_with_refusal("lifecycle_boot_pending_schema")
             -- The shared stream carries resident logs from other processes.
             logger:info("system lifecycle resident")
-            local migration_id = upgrade_boot_with_migration()
+            local migration_id = upgrade_boot_with_migration("kickside.core.migrations")
             test.eq(await_boot(logs, pid, "system lifecycle resident"), false, "upgraded boot converges before the install's migrations")
             test.eq(service_pid(), pid, "boot upgrades in place")
             test.eq(retention_days(id), declared_days + 1)
@@ -164,23 +169,54 @@ local function define_tests()
             test.eq(retention_days(id), declared_days)
         end)
 
-        test.it("keeps convergence parked on a migrations-applied message while a migration is pending", function()
+        local function apply_pending_migrations(): ()
+            local run = migration_runner.setup(core_db.id()):run()
+            test.eq(type(run) == "table" and run.status, "complete")
+            trigger_name = nil
+        end
+
+        test.it("keeps convergence parked on a migrations-applied message while a migration is pending, then converges on the retry", function()
             subscription = assert(events.subscribe("logs", "logs.entry"))
             logs = subscription:channel()
             local pid = service_pid()
             boot_pid = pid
             local id, declared_days = diverge_with_refusal("lifecycle_boot_pending_schema")
             logger:info("system lifecycle resident")
-            upgrade_boot_with_migration()
+            upgrade_boot_with_migration("kickside.core.migrations")
             test.eq(await_boot(logs, pid, "system lifecycle resident"), false, "upgraded boot converges before the install's migrations")
+            -- Bootloaders run without migrations; the migration lands later.
             migrations_applied()
             test.eq(await_boot(logs, pid, "system lifecycle convergence awaits migrations"), false, "message converges against a pending migration")
             test.eq(retention_days(id), declared_days + 1)
-            local run = migration_runner.setup(core_db.id()):run()
-            test.eq(type(run) == "table" and run.status, "complete")
-            trigger_name = nil
-            migrations_applied()
-            test.eq(await_boot(logs, pid, "system lifecycle converged after migrations"), false, "boot converges once the migration is applied")
+            apply_pending_migrations()
+            test.eq(await_boot(logs, pid, "system lifecycle converged after migrations"), false, "parked boot converges on the retry once the migration lands")
+            test.eq(retention_days(id), declared_days)
+        end)
+
+        test.it("converges after a dependency-only upgrade's migration without a migrations-applied message", function()
+            subscription = assert(events.subscribe("logs", "logs.entry"))
+            logs = subscription:channel()
+            local pid = service_pid()
+            boot_pid = pid
+            local id, declared_days = diverge_with_refusal("lifecycle_boot_pending_schema")
+            logger:info("system lifecycle resident")
+            upgrade_boot_with_migration("kickside.component.migrations")
+            test.eq(await_boot(logs, pid, "system lifecycle resident"), false, "upgraded boot converges before the component migration")
+            test.eq(retention_days(id), declared_days + 1)
+            apply_pending_migrations()
+            test.eq(await_boot(logs, pid, "system lifecycle converged after migrations"), false, "parked boot converges on the retry once the migration lands")
+            test.eq(retention_days(id), declared_days)
+        end)
+
+        test.it("converges on upgrade while a migration outside the convergence schema is pending", function()
+            subscription = assert(events.subscribe("logs", "logs.entry"))
+            logs = subscription:channel()
+            local pid = service_pid()
+            boot_pid = pid
+            local id, declared_days = diverge_with_refusal(nil)
+            logger:info("system lifecycle resident")
+            upgrade_boot_with_migration("app.unrelated.migrations")
+            test.eq(await_boot(logs, pid, "system lifecycle resident"), false, "upgraded boot fails convergence")
             test.eq(retention_days(id), declared_days)
         end)
 
