@@ -22,7 +22,10 @@ function M.run(args: any): (any?, error?)
         })
     end
     if args.operation == "round_sink" then
-        return round_write.write({ binding = "app:capacity_sink_binding", delivery = "at_most_once" },
+        local slots, slots_err = round_write.destination_slots()
+        if slots_err or not slots then return nil, slots_err end
+        return round_write.write({ binding = "app:capacity_sink_binding", delivery = "at_most_once",
+            destination_slots = slots },
             { config = { connection_id = args.component_id }, sink_op = "upsert", input = {},
                 identity_key = "capacity-item", idempotency_key = "capacity-delivery" },
             { automation_id = args.component_id, drive_key = "main", ledger_port = "capacity", fence = {} },

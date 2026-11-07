@@ -9,8 +9,6 @@ local function deliver(request)
     if target_err then return nil, target_err end
     local sink, sink_err = round_write.describe_sink(target.port)
     if sink_err or not sink then return nil, sink_err end
-    local slots, slots_err = round_write.destination_slots()
-    if slots_err then return nil, slots_err end
     local d = request.drive
     local out = { delivered_items = {}, skipped_items = {}, waiting_items = {}, uncertain_items = {}, failed_items = {} }
     for _, item in ipairs(request.items) do
@@ -18,7 +16,7 @@ local function deliver(request)
         local result = round_write.write(sink, {
             config = target.config, sink_op = "upsert", input = target.input,
             identity_key = keys.identity_key, idempotency_key = keys.idempotency_key,
-            max_destination_slots = slots, known_slots = 0,
+            max_destination_slots = sink.destination_slots, known_slots = 0,
         }, d, item)
         if result.state == "delivered" then
             out.delivered_items[#out.delivered_items + 1] = { key = item.delivery_key,

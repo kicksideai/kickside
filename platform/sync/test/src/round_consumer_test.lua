@@ -25,6 +25,7 @@ type Map = { [string]: any }
 
 local DB = "app:db"
 local DELIVER = "kickside.sync:round_deliver"
+local COUNTED_DELIVER = "app:counted_round_deliver"
 local SOURCE = "app.fixture:records"
 
 local function exec(statement: string, params: { any }?): ()
@@ -131,7 +132,7 @@ local function define_tests(section: string)
             return round_write.keys({ automation_id = automation_id, source_port = SOURCE }, { item_key = key }, slot).identity_key
         end
 
-        local function deliver(items: { Map }, config: Map, holders: Map?): (Map?, any)
+        local function deliver(items: { Map }, config: Map, holders: Map?, target: string?): (Map?, any)
             for _, item in ipairs(items) do item.delivery_key = delivery_key(item.item_key, item.op) end
             local who = holders or {}
             local caller = funcs.new()
@@ -150,7 +151,7 @@ local function define_tests(section: string)
             for _, entry in ipairs(items) do keys[#keys + 1] = entry.delivery_key end
             local _, admit_err = round_provenance.admit(held, keys)
             if admit_err then error("admit: " .. tostring(admit_err)) end
-            return caller:call(DELIVER, { drive = held, items = items, config = config })
+            return caller:call(target or DELIVER, { drive = held, items = items, config = config })
         end
 
         local function func_transform(resource_id: string?): Map
@@ -212,6 +213,16 @@ local function define_tests(section: string)
         end)
 
         if section == "delivery" then
+            test.it("reads the runtime policy and the transform strategy once per round whatever its item count", function()
+                local events: { Map } = {}
+                for index = 1, 6 do events[index] = item("counted-" .. tostring(index), { directive = "" }) end
+                local answer, err = deliver(events, declaration("app.fixture:round_record", RECORD_EXPR), nil, COUNTED_DELIVER)
+                test.is_nil(err, tostring(err))
+                test.eq(#answer.out.delivered_items, 6, json.encode(answer.out))
+                test.eq(answer.policy_reads, 1)
+                test.eq(answer.strategy_reads, 2)
+            end)
+
             test.it("skips explicit transform outcomes and replays their prepared reason without writing", function()
                 local round_outcome = require("round_outcome")
                 local round_commit = require("round_commit")

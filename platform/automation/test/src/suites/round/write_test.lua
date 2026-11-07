@@ -13,6 +13,7 @@ local process = require("process")
 local time = require("time")
 local errors = require("errors")
 local round_write = require("round_write")
+local runtime_policy = require("runtime_policy")
 local drive = require("drive")
 local h = require("round_harness")
 local provenance = require("round_provenance")
@@ -263,6 +264,30 @@ local function define_tests()
             test.eq(refused.state, "failed")
             test.eq(refused.error.kind, errors.INVALID)
             test.eq(#query("SELECT id FROM round_fixture_log WHERE drive_key = 'sink' AND item_key = $1", { key }), 0)
+        end)
+
+        test.it("reads the runtime policy once for a sink and every write a round makes through it", function()
+            local id = uuid.v7()
+            local held = stamped(id)
+            local resolve = runtime_policy.policy
+            local reads = 0
+            runtime_policy.policy = function(): (any, any)
+                reads = reads + 1
+                return resolve()
+            end
+            local store, sink_err = round_write.describe_sink(STORE)
+            local outcomes: { Map } = {}
+            if store then
+                for index = 1, 5 do
+                    local key = "policy-" .. tostring(index) .. "-" .. tostring(held.automation_id)
+                    outcomes[index] = round_write.write(store, { config = {}, sink_op = "upsert", input = { directive = "" },
+                        identity_key = key, idempotency_key = key .. "@1" }, held, { item_key = key, dedup_key = key })
+                end
+            end
+            runtime_policy.policy = resolve
+            if sink_err or not store then error("sink unavailable: " .. tostring(sink_err)) end
+            for _, outcome in ipairs(outcomes) do test.eq(outcome.state, "delivered", json.encode(outcome)) end
+            test.eq(reads, 1)
         end)
 
         test.it("classifies each write outcome by the sink's declared delivery", function()
