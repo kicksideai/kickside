@@ -77,6 +77,23 @@ describe('Inbox list preview text', () => {
     expect(previewText('An `unclosed span')).toBe('An `unclosed span')
   })
 
+  it('keeps intraword underscores literal', () => {
+    expect(previewText('Use build__prod__backup today')).toBe('Use build__prod__backup today')
+    expect(previewText('Use snake_case_name and __bold__ and _it_')).toBe('Use snake_case_name and bold and it')
+    expect(previewText('Keep **strong** and in**word**')).toBe('Keep strong and inword')
+  })
+
+  it('reads a backtick line with a closing run as inline code, not a fence', () => {
+    expect(previewText('```status``` is the field name')).toBe('status is the field name')
+    expect(previewText('```js\nconst a = 1\n```')).toBe('const a = 1')
+    expect(previewText('~~~ a`b\ncode line\n~~~')).toBe('code line')
+  })
+
+  it('reads a row as table cells only when the delimiter row has as many cells', () => {
+    expect(previewText('A | B | C\n--- | ---')).toBe('A | B | C')
+    expect(previewText('A | B | C\n--- | --- | ---')).toBe('A · B · C')
+  })
+
   it('collapses whitespace into one line', () => {
     expect(previewText('  spaced \t  words  ')).toBe('spaced words')
   })

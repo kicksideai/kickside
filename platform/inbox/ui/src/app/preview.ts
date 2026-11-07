@@ -72,19 +72,33 @@ function plainInline(text: string): string {
     .replace(URI_AUTOLINK, '$1')
     .replace(EMAIL_AUTOLINK, '$1')
     .replace(/<\/?[A-Za-z][A-Za-z0-9-]*(?:\s[^<>]*)?\/?>/g, '')
-    .replace(/(\*\*|__)(?=\S)(.+?)(?<=\S)\1/g, '$2')
+    .replace(/\*\*(?=\S)(.+?)(?<=\S)\*\*/g, '$1')
+    .replace(/(?<![\p{L}\p{N}_])__(?![_\s])(.+?)(?<![_\s])__(?![\p{L}\p{N}_])/gu, '$1')
     .replace(/~~(?=\S)(.+?)(?<=\S)~~/g, '$1')
     .replace(/\*(?=\S)(.+?)(?<=\S)\*/g, '$1')
-    .replace(/(^|[^\w])_(?=\S)(.+?)(?<=\S)_(?!\w)/g, '$1$2')
+    .replace(/(?<![\p{L}\p{N}_])_(?![_\s])(.+?)(?<![_\s])_(?![\p{L}\p{N}_])/gu, '$1')
     .replace(PROTECTED, (_, index: string) => literals[Number(index)])
 }
 
-// A table header row: the line is read as cells only when a delimiter row follows it.
+function rowCells(line: string): string[] {
+  return line.trim().replace(/^\|/, '').replace(/(?<!\\)\|$/, '').split(/(?<!\\)\|/)
+}
+
+// A table header row: the line is read as cells only when a delimiter row with the
+// same number of cells follows it.
 function tableCells(line: string, next: string | undefined): string[] | null {
   if (next === undefined || !TABLE_DELIMITER.test(next) || !next.includes('|')) return null
-  const trimmed = line.trim()
-  const cells = trimmed.replace(/^\|/, '').replace(/(?<!\\)\|$/, '').split(/(?<!\\)\|/)
+  const cells = rowCells(line)
+  if (cells.length !== rowCells(next).length) return null
   return cells.map(cell => plainInline(cell).trim()).filter(Boolean)
+}
+
+// An opening code fence; a backtick fence's info string carries no backticks, so a
+// line such as ```status``` opens an inline code span instead.
+function fenceOpener(line: string): string {
+  const opener = FENCE.exec(line)
+  if (!opener || (opener[1][0] === '`' && line.slice(opener[0].length).includes('`'))) return ''
+  return opener[1]
 }
 
 function collapse(text: string): string {
@@ -97,13 +111,14 @@ export function previewText(markdown: string | undefined): string {
   let fence = ''
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
-    const opener = FENCE.exec(line)
     if (fence) {
-      if (opener && opener[1][0] === fence[0] && opener[1].length >= fence.length && !line.slice(opener[0].length).trim()) fence = ''
+      const closer = FENCE.exec(line)
+      if (closer && closer[1][0] === fence[0] && closer[1].length >= fence.length && !line.slice(closer[0].length).trim()) fence = ''
       else if (line.trim()) return collapse(line)
       continue
     }
-    if (opener) { fence = opener[1]; continue }
+    const opener = fenceOpener(line)
+    if (opener) { fence = opener; continue }
     if (!line.trim() || THEMATIC_BREAK.test(line)) continue
     const block = stripBlockPrefixes(line)
     const cells = tableCells(block, lines[i + 1])
