@@ -364,8 +364,8 @@ local function repo_call(args: any)
         return { ok = ok, error = err, denied = errors.is(err, errors.PERMISSION_DENIED) }
     end
     if args.method == "delete" then
-        local ok, err = repo.delete(args.webhook_id)
-        return { ok = ok, error = err, conflict = errors.is(err, errors.CONFLICT), denied = errors.is(err, errors.PERMISSION_DENIED) }
+        local ok, err, receipt = repo.delete(args.webhook_id)
+        return { ok = ok, error = err, receipt = receipt, conflict = errors.is(err, errors.CONFLICT), denied = errors.is(err, errors.PERMISSION_DENIED) }
     end
     return nil, "unknown method"
 end

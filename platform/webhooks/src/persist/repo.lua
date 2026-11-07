@@ -519,10 +519,11 @@ function M.delete_row(webhook_id: any): (boolean, string?)
     return true, nil
 end
 
--- delete(webhook_id) -> (ok, err). The request path delegates to the component
--- service so DELETE access, deletable cleanup, thread purge, and unregister all run
--- through the canonical component teardown.
-function M.delete(webhook_id: any): (boolean, error?)
+-- delete(webhook_id) -> (ok, err, receipt). The request path delegates to the
+-- component service so DELETE access, deletable cleanup, thread purge, and
+-- unregister all run through the canonical component teardown; receipt is the
+-- component deletion receipt.
+function M.delete(webhook_id: any): (boolean, error?, Map?)
     if type(webhook_id) ~= "string" or webhook_id == "" then return false, errors.new({ kind = errors.INVALID, message = "missing webhook id" }) end
     local actor = security.actor()
     if not actor then return false, errors.new({ kind = errors.PERMISSION_DENIED, message = "no authenticated actor" }) end
@@ -544,7 +545,7 @@ function M.delete(webhook_id: any): (boolean, error?)
     if type(res) ~= "table" or (res :: Map).success ~= true then
         return false, errors.new({ kind = errors.INTERNAL, message = tostring(type(res) == "table" and (res :: Map).error or "component delete failed") })
     end
-    return true, nil
+    return true, nil, res :: Map
 end
 
 return M

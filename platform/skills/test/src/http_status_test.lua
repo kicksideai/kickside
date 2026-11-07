@@ -51,6 +51,38 @@ return { run = test.run_cases(function()
             test.eq(captured.body.file, file)
         end)
     end)
+    test.describe("Skill HTTP deletion", function()
+        test.it("answers with the component deletion receipt while the deletion job owns completion", function()
+            local captured: any = {}
+            configure({
+                http = {
+                    CONTENT = { JSON = "application/json" }, STATUS = { OK = 200 },
+                    request = function() return { param = function() return "skill" end } end,
+                    response = function() return {
+                        set_content_type = function() end,
+                        set_status = function(_, value) captured.status = value end,
+                        write_json = function(_, value) captured.body = value end,
+                    } end,
+                },
+                security = { actor = function() return {} end },
+                funcs = { call = function(id, args)
+                    test.eq(id, "kickside.skills:skill_delete")
+                    test.eq(args.skill_id, "skill")
+                    return { skill_id = "skill", deleted = false, in_progress = true, status = "in_progress",
+                        cleanup_pending = true, job_id = "job" }
+                end },
+            })
+            delete_api.handler()
+            test.eq(captured.status, 200)
+            test.eq(captured.body.success, true)
+            test.eq(captured.body.skill_id, "skill")
+            test.is_false(captured.body.deleted)
+            test.is_true(captured.body.in_progress)
+            test.eq(captured.body.status, "in_progress")
+            test.is_true(captured.body.cleanup_pending)
+            test.eq(captured.body.job_id, "job")
+        end)
+    end)
     test.describe("Skills HTTP error kinds", function()
         for _, api in ipairs({ create_api, refine_api, delete_api, get_api, versions_api, list_api, file_api }) do
             for _, row in ipairs({ { errors.PERMISSION_DENIED, 403 }, { errors.NOT_FOUND, 404 },

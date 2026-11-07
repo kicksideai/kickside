@@ -378,6 +378,27 @@ local function define_tests()
             test.eq(n, 0)
         end)
 
+        test.it("answers delete with the component deletion receipt", function()
+            local minted_out, mint_err = call_repo_as("delete-receipt-owner", {
+                method = "mint", label = "delete-receipt", schema = { type = "object" },
+            })
+            test.is_nil(mint_err)
+            test.is_nil((minted_out :: any).error)
+            local webhook_id = tostring((minted_out :: any).row.webhook_id)
+            local out, call_err = call_repo_as("delete-receipt-owner", { method = "delete", webhook_id = webhook_id })
+            test.is_nil(call_err)
+            test.is_nil((out :: any).error)
+            test.is_true((out :: any).ok)
+            local receipt = (out :: any).receipt
+            test.eq(receipt.component_id, webhook_id)
+            test.is_false(receipt.deleted)
+            test.is_true(receipt.in_progress)
+            test.eq(receipt.status, "in_progress")
+            test.is_true(receipt.cleanup_pending)
+            test.eq(type(receipt.job_id), "string")
+            test.is_true(receipt.job_id ~= "")
+        end)
+
         test.it("mints one matching side row, thread, and component identity", function()
             local label = "atomic-mint-success"
             local out, call_err = call_repo_as("mint-success-owner", {

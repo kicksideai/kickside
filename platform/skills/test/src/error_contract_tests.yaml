@@ -97,3 +97,32 @@ entries:
     test: wippy.test:test
     test_identity: app:test_identity
     http_errors: kickside.contract:http_errors
+    deletion_worker: app:deletion_test_worker
+- name: component_fixture
+  kind: library.lua
+  source: file://api_component_fixture.lua
+- name: reader
+  kind: library.lua
+  source: file://reader_source.lua
+  modules: [base64]
+  imports:
+    component: app.skill_errors:component_fixture
+    envelope: kickside.component:envelope
+    types: kickside.skills:types
+    normalize: kickside.skills.bundle:normalize
+    skill_state: kickside.skills:state
+    bundle_store: kickside.skills.bundle:store
+- name: skill_read_race_test
+  kind: function.lua
+  source: file://skill_read_race_test.lua
+  method: run
+  meta: { type: test, suite: skill_error_contract }
+  imports:
+    test: wippy.test:test
+    reader: app.skill_errors:reader
+    get_api: app.skill_errors:get_api
+    http_fixture: app.skill_errors:http_fixture
+    security_fixture: app.skill_errors:security_fixture
+    funcs_fixture: app.skill_errors:funcs_fixture
+    component_fixture: app.skill_errors:component_fixture
+    http_errors: kickside.contract:http_errors

@@ -341,9 +341,10 @@ function M.list(options: any?): (any?, error?, integer?)
     return out, nil, next_offset
 end
 
--- delete(workflow_id) -> (ok, err). Routes through the component service so DELETE
--- access is enforced and the deletable binding purges the definition tables.
-function M.delete(workflow_id: any): (boolean, error?)
+-- delete(workflow_id) -> (ok, err, receipt). Routes through the component service so
+-- DELETE access is enforced and the deletable binding purges the definition tables;
+-- receipt is the component deletion receipt.
+function M.delete(workflow_id: any): (boolean, error?, Map?)
     if type(workflow_id) ~= "string" or workflow_id == "" then
         return false, (errors.new({ message = "workflow id required", kind = errors.INVALID }) :: error)
     end
@@ -356,7 +357,7 @@ function M.delete(workflow_id: any): (boolean, error?)
     end
     local result_err = envelope.error_of(res, "workflow delete")
     if result_err then return false, result_err end
-    return true, nil
+    return true, nil, res :: Map
 end
 
 -- require_access(workflow_id, mask) -> err?. nil when the actor holds the access bit.

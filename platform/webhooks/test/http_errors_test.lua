@@ -31,6 +31,35 @@ return test.run_cases(function()
             test.eq(captured.body.next_cursor, "next")
             test.eq(captured.body.webhooks[1].webhook_id, "id")
         end)
+        test.it("answers delete with the component deletion receipt", function()
+            local captured: any = {}
+            local endpoint = delete_api.new({
+                security = { actor = function() return {} end },
+                http = {
+                    CONTENT = { JSON = "application/json" }, STATUS = { OK = 200 },
+                    request = function() return { param = function() return "webhook" end } end,
+                    response = function() return {
+                        set_content_type = function() end,
+                        set_status = function(_self: any, status: any) captured.status = status end,
+                        write_json = function(_self: any, body: any) captured.body = body end,
+                    } end,
+                },
+                repo = { delete = function(id: string)
+                    test.eq(id, "webhook")
+                    return true, nil, { success = true, component_id = id, deleted = false, in_progress = true,
+                        status = "in_progress", cleanup_pending = true, job_id = "job" }
+                end },
+            })
+            endpoint.handler()
+            test.eq(captured.status, 200)
+            test.eq(captured.body.success, true)
+            test.eq(captured.body.webhook_id, "webhook")
+            test.is_false(captured.body.deleted)
+            test.is_true(captured.body.in_progress)
+            test.eq(captured.body.status, "in_progress")
+            test.is_true(captured.body.cleanup_pending)
+            test.eq(captured.body.job_id, "job")
+        end)
         for _, operation in ipairs({ "update", "revoke", "delete", "list" }) do
             for _, row in ipairs({ { errors.INVALID, 400 }, { errors.PERMISSION_DENIED, 403 },
                 { errors.NOT_FOUND, 404 }, { errors.CONFLICT, 409 }, { errors.UNAVAILABLE, 503 },

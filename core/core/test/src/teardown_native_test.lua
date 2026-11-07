@@ -97,7 +97,7 @@ local function proofs()
             if mode == "absent_purge" then fixture.stage, fixture.missing, fixture.proof = "lookup", true, {} end
             if mode == "absent_delete" then fixture.stage, fixture.missing, fixture.proof = "remaining", true, {} end
             if mode == "empty_notified" then fixture.stage, fixture.missing, fixture.proof = "page", true, {notified = {}} end
-            if mode == "in_progress" then fixture.warning = {in_progress = true, status = "deleting", cleanup_pending = true,
+            if mode == "in_progress" then fixture.warning = {in_progress = true, status = "deleting", cleanup_pending = true, job_id = "job",
                 kind = errors.CONFLICT, retryable = true, details = {code = "component_pending"}, discarded = {events = 3}} end
             local value, err
             if mode == "delete" or mode == "absent_delete" or mode == "in_progress" then
@@ -107,6 +107,8 @@ local function proofs()
             if mode == "in_progress" then
                 test.is_true(value.in_progress)
                 test.is_false(value.deleted)
+                test.eq(value.job_id, "job")
+                test.is_true(value.cleanup_pending)
                 test.eq(value.kind, errors.CONFLICT)
                 test.is_true(value.retryable)
                 test.eq(value.details.code, "component_pending")

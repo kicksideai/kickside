@@ -77,13 +77,13 @@ entries:
           - format: application/schema+json
             definition: "{\n  \"type\": \"object\",\n  \"properties\": { \"thread_id\": { \"type\": \"string\" }, \"thread\": { \"type\": \"object\" } },\n  \"required\": [\"thread_id\", \"thread\"]\n}\n"
       - name: delete
-        description: Remove a thread, cascade its kickside_* rows, and delete its component. Requires DELETE access.
+        description: Remove a thread, cascade its kickside_* rows, and delete its component. Requires DELETE access. While the component deletion job owns completion the result carries deleted=false, in_progress=true, status, cleanup_pending and job_id.
         input_schemas:
           - format: application/schema+json
             definition: "{\n  \"type\": \"object\",\n  \"properties\": { \"thread_id\": { \"type\": \"string\" } },\n  \"required\": [\"thread_id\"]\n}\n"
         output_schemas:
           - format: application/schema+json
-            definition: "{\n  \"type\": \"object\",\n  \"properties\": { \"thread_id\": { \"type\": \"string\" }, \"deleted\": { \"type\": \"boolean\" } },\n  \"required\": [\"thread_id\", \"deleted\"]\n}\n"
+            definition: "{\n  \"type\": \"object\",\n  \"properties\": { \"thread_id\": { \"type\": \"string\" }, \"component_id\": { \"type\": \"string\" }, \"deleted\": { \"type\": \"boolean\" }, \"in_progress\": { \"type\": \"boolean\" }, \"status\": { \"type\": \"string\" }, \"cleanup_pending\": { \"type\": \"boolean\" }, \"job_id\": { \"type\": \"string\" } },\n  \"required\": [\"thread_id\", \"deleted\"]\n}\n"
       - name: list
         description: List the threads the actor can read, optionally filtered by thread_class. Access-filtered by the component contract.
         input_schemas:

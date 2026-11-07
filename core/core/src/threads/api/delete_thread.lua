@@ -1,5 +1,6 @@
 -- DELETE /threads/{id} — remove a thread and its component. Response:
--- { success, thread_id }.
+-- { success, thread_id, deleted }, or 202 with { success, thread_id, deleted = false,
+-- in_progress, status, cleanup_pending, job_id } while the deletion job owns completion.
 
 local http = require("http")
 local http_errors = require("http_errors")
@@ -33,7 +34,7 @@ local function handler(): ()
     res:set_status(result.in_progress == true and http.STATUS.ACCEPTED or http.STATUS.OK)
     res:write_json({ success = true, thread_id = thread_id, deleted = result.deleted,
         in_progress = result.in_progress, status = result.status, cleanup_pending = result.cleanup_pending,
-        kind = result.kind, retryable = result.retryable, details = result.details, discarded = result.discarded })
+        job_id = result.job_id, kind = result.kind, retryable = result.retryable, details = result.details, discarded = result.discarded })
 end
 
 return { handler = handler }

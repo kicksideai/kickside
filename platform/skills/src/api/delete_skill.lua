@@ -25,14 +25,16 @@ local function handler()
         return
     end
 
-    local _, err = funcs.call("kickside.skills:skill_delete", { skill_id = id })
+    local result, err = funcs.call("kickside.skills:skill_delete", { skill_id = id })
     if err then
         res:set_status((http_errors.classify(err)))
         res:write_json({ success = false, error = tostring(err) })
         return
     end
     res:set_status(http.STATUS.OK)
-    res:write_json({ success = true, skill_id = id })
+    res:write_json({ success = true, skill_id = id, deleted = result.deleted, in_progress = result.in_progress,
+        status = result.status, cleanup_pending = result.cleanup_pending, job_id = result.job_id,
+        notification_error = result.notification_error })
 end
 
 return { handler = handler }

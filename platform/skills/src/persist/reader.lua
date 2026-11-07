@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Read side of the skills slice (queries). A skill's metadata lives on its
 -- component (discovery); its body, version history, and file manifests live in the
 -- committed projection body (state.lua), folded from thread events; file bytes
@@ -7,6 +8,7 @@
 
 local errors = require("errors")
 local component = require("component")
+local envelope = require("envelope")
 local base64 = require("base64")
 local skill_types = require("types")
 local normalize = require("normalize")
@@ -61,7 +63,9 @@ function M.get(args: any): (skill_types.Skill?, error?)
     local svc, serr = component.get_service()
     if serr or not svc then return nil, errors.wrap(serr or errors.new({ kind = errors.UNAVAILABLE, message = "component service missing" }), "component service unavailable") end
     local comp, cerr = svc:get({ component_id = skill_id })
-    if cerr or not (comp and comp.success) then return nil, errors.wrap(cerr or (comp and comp.error) or errors.new({ kind = errors.NOT_FOUND, message = "skill not found" }), "get skill failed") end
+    if cerr then return nil, envelope.call_error(cerr, "get skill") end
+    local comp_err = envelope.error_of(comp, "get skill")
+    if comp_err then return nil, comp_err end
 
     local body, berr = state.body_for(skill_id)
     if berr then return nil, berr end
