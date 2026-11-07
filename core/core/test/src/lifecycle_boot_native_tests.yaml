@@ -6,17 +6,22 @@ entries:
   source: file://lifecycle_boot_native_source.lua
   modules:
   - logger
+  - channel
   imports:
     process: app:lifecycle_boot_native_process
     security: app:lifecycle_boot_native_security
     provision: app:lifecycle_boot_native_provision
     lifecycle_consts: kickside.core.lifecycle:consts
     error_envelope: kickside.contract:error_envelope
+    proc_supervisor: kickside.core.jobs:proc_supervisor
+    migration_runner: app:lifecycle_boot_native_migration
+    core_db: kickside.core:db
 - name: lifecycle_boot_native_fixture
   kind: library.lua
   source: file://lifecycle_boot_native_fixture.lua
   modules:
   - process
+  - channel
 - name: lifecycle_boot_native_exit
   kind: process.lua
   source: file://lifecycle_boot_native_exit.lua
@@ -53,5 +58,10 @@ entries:
 - name: lifecycle_boot_native_provision
   kind: library.lua
   source: file://lifecycle_boot_native_provision.lua
+  imports:
+    fixture: app:lifecycle_boot_native_fixture
+- name: lifecycle_boot_native_migration
+  kind: library.lua
+  source: file://lifecycle_boot_native_migration.lua
   imports:
     fixture: app:lifecycle_boot_native_fixture

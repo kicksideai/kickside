@@ -25,6 +25,11 @@ M.EVENT = {
     COMPONENT_DELETED = "kickside.lifecycle.events:component.deleted",
 }
 
+-- Registered name of the resident boot process and the topic the migrations-applied
+-- bootloader messages it on once an install's migrations have run.
+M.BOOT_NAME = "kickside.core.lifecycle:boot_process"
+M.MIGRATIONS_APPLIED_TOPIC = "kickside.core.lifecycle.migrations_applied"
+
 -- Deterministic id of the singleton lifecycle thread. A thread IS its component, so
 -- this is both the component id (autoinit) and the thread id callers append to.
 function M.thread_id(): string

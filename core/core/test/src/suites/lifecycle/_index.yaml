@@ -24,11 +24,22 @@ entries:
       group: KickSide Core / Lifecycle
     source: file://boot_test.lua
     method: run
-    modules: [process, time, channel, registry, events, sql, security, uuid, logger]
+    modules: [process, time, channel, registry, events, sql, security, uuid, logger, funcs]
     imports:
       test: wippy.test:test
       provision: kickside.core.threads:provision
       lifecycle_consts: kickside.core.lifecycle:consts
+      migration_runner: wippy.migration:runner
+      core_db: kickside.core:db
+
+  - name: pending_schema_migration
+    kind: function.lua
+    meta:
+      comment: Template the boot test publishes as a pending core-database migration alongside an in-place boot upgrade.
+    source: file://pending_schema_migration.lua
+    method: migrate
+    imports:
+      migration: wippy.migration:migration
 
   - name: test_principal_cleanup
     kind: function.lua

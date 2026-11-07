@@ -26,7 +26,7 @@ local function counters(stage: string): ()
     test.eq(fixture.calls.provision or 0, stage ~= "scope" and 1 or 0)
     test.eq(fixture.calls.converge or 0, (stage == "converge" or stage == "options") and 1 or 0)
     test.eq(fixture.calls.options or 0, 1)
-    test.eq(fixture.calls.events or 0, stage == "options" and 0 or 1); test.eq(fixture.calls.receive or 0, stage == "options" and 0 or 1)
+    test.eq(fixture.calls.events, 1); test.eq(fixture.calls.listen, 1); test.eq(fixture.calls.register, 1); test.eq(fixture.calls.migrations, 1)
 end
 return {run = test.run_cases(function()
     test.describe("native lifecycle boot refusals", function()
@@ -76,7 +76,12 @@ return {run = test.run_cases(function()
         end
         test.it("healthy boot retains one count and graceful closure", function()
             fixture.reset("", nil); local out = boot.main(nil); test.is_true(out.ok); test.eq(out.count, 1)
-            for _, step in ipairs({"actor", "scope", "provision", "converge", "options", "events", "receive"}) do test.eq(fixture.calls[step], 1) end
+            for _, step in ipairs({"events", "listen", "register", "migrations", "actor", "scope", "provision", "converge", "options"}) do test.eq(fixture.calls[step], 1) end
+        end)
+        test.it("pending migration defers convergence and keeps boot resident", function()
+            fixture.reset("", nil, nil, true); local out = boot.main(nil); test.is_true(out.ok); test.is_nil(out.count)
+            for _, step in ipairs({"events", "listen", "register", "migrations", "options"}) do test.eq(fixture.calls[step], 1) end
+            for _, step in ipairs({"actor", "scope", "provision", "converge"}) do test.is_nil(fixture.calls[step]) end
         end)
     end)
 end)}
