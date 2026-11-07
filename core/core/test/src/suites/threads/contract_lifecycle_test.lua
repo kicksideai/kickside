@@ -41,6 +41,17 @@ local PROCESS_SCOPE = "wippy.security:process"
 
 local fixture = require("fixture")
 
+-- The pending deletion job that owns a component's teardown.
+local function deletion_job_id(component_id: string): string?
+    local db, db_err = sql.get(DB)
+    if db_err or not db then error(tostring(db_err)) end
+    local rows, query_err = db:query("SELECT id FROM kickside_job WHERE owner_kind='component' AND owner_id=$1 AND status='pending'",
+        { component_id })
+    db:release()
+    if query_err then error(tostring(query_err)) end
+    return rows[1] and rows[1].id or nil
+end
+
 local function define_tests()
     test.describe("Threads Contract", function()
         local context = fixture.new()
@@ -170,6 +181,12 @@ local function define_tests()
             test.is_nil(derr)
             test.not_nil(deleted)
             test.is_true(deleted.in_progress)
+            test.is_false(deleted.deleted)
+            test.eq(deleted.status, "in_progress")
+            test.is_true(deleted.cleanup_pending)
+            test.eq(deleted.thread_id, thread_id)
+            test.not_nil(deleted.job_id)
+            test.eq(deleted.job_id, deletion_job_id(component_id))
             local finished, finish_err = deletion_worker.run(deleted.component_id)
             test.is_nil(finish_err, tostring(finish_err))
             test.is_true(finished.deleted)

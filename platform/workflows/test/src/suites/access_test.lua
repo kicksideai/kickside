@@ -335,8 +335,8 @@ local function seam(args: any): any
     elseif args.op == "require_access" then
         return { error = repo.require_access(args.id, args.mask) }
     elseif args.op == "delete" then
-        local ok, err = repo.delete(args.id)
-        return { success = ok, error = err }
+        local ok, err, receipt = repo.delete(args.id)
+        return { success = ok, error = err, receipt = receipt }
     end
     return { error = "unknown op" }
 end

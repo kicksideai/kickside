@@ -286,8 +286,8 @@ function M.update(args: any): (agent_types.ComponentRef?, error?)
     return ({ component_id = args.component_id }) :: agent_types.ComponentRef, nil
 end
 
--- delete: remove agent component.
-function M.delete(args: any): (agent_types.ComponentRef?, error?)
+-- delete: remove agent component. Returns the component deletion receipt.
+function M.delete(args: any): (agent_types.DeleteResult?, error?)
     args = args or {}
     if not is_str(args.component_id) then return nil, fail(errors.INVALID, "component_id is required") end
 
@@ -299,7 +299,9 @@ function M.delete(args: any): (agent_types.ComponentRef?, error?)
     if not result or not result.success then
         return nil, fail(errors.INTERNAL, "delete_component returned: " .. tostring(result and result.error or "no result"))
     end
-    return ({ component_id = args.component_id }) :: agent_types.ComponentRef, nil
+    return ({ component_id = args.component_id, deleted = result.deleted == true, in_progress = result.in_progress,
+        status = result.status, cleanup_pending = result.cleanup_pending, job_id = result.job_id,
+        notification_error = result.notification_error }) :: agent_types.DeleteResult, nil
 end
 
 -- list: one offset page of visible agents, newest first. Filters: text?.

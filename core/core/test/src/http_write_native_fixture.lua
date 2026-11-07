@@ -23,6 +23,10 @@ local function mutate(...)
     M.calls = M.calls + 1
     if M.stage == "failure" then return nil, M.failure end
     if M.stage == "missing_result" then return nil, nil end
+    if M.stage == "in_progress" then
+        return {thread_id = "thread", component_id = "thread", deleted = false, in_progress = true,
+            status = "in_progress", cleanup_pending = true, job_id = "job"}, nil
+    end
     return {thread = {id = "thread", marker = "kept"}, component_id = "thread", thread_id = "thread",
         inserted = M.stage == "duplicate" and 0 or 1, duplicates = M.stage == "duplicate" and 1 or 0, max_seq = 1}, nil
 end
