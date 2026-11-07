@@ -1,0 +1,5 @@
+/* Shared ComponentDeletion status (deleting spinner, failure with retry). A consuming
+   web component imports this file into its inline stylesheet:
+   @import '@widgets/app/component-deletion.css'. Tokens-only (--p-*). */
+.component-deletion { display: inline-flex; align-items: center; gap: .5rem; color: var(--p-text-muted-color); }
+.component-deletion-spinner { width: 1rem; height: 1rem; margin: 0; }

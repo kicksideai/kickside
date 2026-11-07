@@ -3,7 +3,7 @@ import { defineComponent as B, ref as m, onUnmounted as T, computed as S, openBl
 import { L as _, f as k, h as K, X as M } from "./pickerselect-By4p9K1S.js";
 import { s as z, g as D, c as F } from "./versions-DLybI1MU.js";
 import { on as H, define as L } from "@wippy-fe/proxy";
-import { W as X } from "./WcMount-uWtDjrEa.js";
+import { W as X } from "./WcMount-DMmeXI-l.js";
 import { _ as q, s as G } from "./workflow-embed-B-oXahj5.js";
 import "@iconify/vue";
 const Q = /* @__PURE__ */ B({

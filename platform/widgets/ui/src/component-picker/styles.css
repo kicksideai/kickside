@@ -1,4 +1,5 @@
 @import "../picker/cp-base.css";
+@import "../app/component-deletion.css";
 
 /* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
    preflight; without it PrimeVue controls keep UA defaults the theme never

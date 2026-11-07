@@ -1,4 +1,4 @@
-import { hasInjectionContext as T, inject as m, effectScope as H, ref as f, markRaw as N, onMounted as $, onUnmounted as x, watch as U, createApp as j } from "vue";
+import { hasInjectionContext as T, inject as m, effectScope as H, ref as f, markRaw as N, onMounted as $, onUnmounted as U, watch as x, createApp as j } from "vue";
 import { addCollection as D } from "@iconify/vue";
 import { config as C, addIcons as W, on as B, applyThemeMode as b, host as z, hostCss as F, loadCss as M } from "@wippy-fe/proxy";
 var g = "data-wippy-visible";
@@ -6,12 +6,12 @@ function E(t) {
   const e = t.getAttribute(g);
   return e === "true" ? !0 : e === "false" ? !1 : null;
 }
-var K = Object.defineProperty, Y = (t, e, s) => e in t ? K(t, e, { enumerable: !0, configurable: !0, writable: !0, value: s }) : t[e] = s, h = (t, e, s) => Y(t, typeof e != "symbol" ? e + "" : e, s), k = [
+var K = Object.defineProperty, Y = (t, e, s) => e in t ? K(t, e, { enumerable: !0, configurable: !0, writable: !0, value: s }) : t[e] = s, h = (t, e, s) => Y(t, typeof e != "symbol" ? e + "" : e, s), J = [
   "themeConfigUrl",
   "primeVueCssUrl",
   "markdownCssUrl",
   "iframeCssUrl"
-], J = [
+], k = [
   ":where([data-wippy-theme-root]).w-theme-light",
   ":where([data-wippy-theme-root]).w-theme-dark"
 ].join(`,
@@ -42,7 +42,7 @@ function G(t) {
     return "";
   const e = t.map((s) => `  ${s}: inherit;`).join(`
 `);
-  return `${J} {
+  return `${k} {
 ${e}
 }`;
 }
@@ -51,7 +51,7 @@ function Q(t, e) {
   s && S(t, s, "@wippy-fe/css-variables-bridge");
 }
 function X(t, e) {
-  const i = (e ?? k).map(async (r) => {
+  const i = (e ?? J).map(async (r) => {
     const n = F[r];
     if (!n)
       return console.warn(`[wippy-fe/webcomponent-core] hostCss key "${r}" is undefined — skipping. Remove it from hostCssKeys if the CSS was removed.`), null;
@@ -502,9 +502,9 @@ function Et(t) {
     });
     return i = a, a;
   }
-  return $(() => (s = !0, n())), x(() => {
+  return $(() => (s = !0, n())), U(() => {
     s = !1, r = !1;
-  }), U(e, (o, a) => {
+  }), x(e, (o, a) => {
     if (s && a === !1 && o === !0)
       return n();
   }), e;
@@ -567,17 +567,10 @@ var wt = class extends rt {
     this._bridgeAbort?.abort(), this._bridgeAbort = null, this._vueApp && (this._vueApp.unmount(), this._vueApp = null);
   }
 };
-const St = (t, e) => {
-  const s = t.__vccOpts || t;
-  for (const [i, r] of e)
-    s[i] = r;
-  return s;
-};
 export {
   wt as W,
-  St as _,
   gt as a,
   Ct as b,
   Et as u
 };
-//# sourceMappingURL=_plugin-vue_export-helper-C8-5lmir.js.map
+//# sourceMappingURL=index-D52CRMw6.js.map

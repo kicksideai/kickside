@@ -107,7 +107,7 @@ const Je = { class: "wf-embed" }, Be = {
 }, ot = { class: "wf-embed-actions" }, ut = /* @__PURE__ */ fe({
   __name: "EmbedWorkflow",
   setup(t) {
-    const r = ve(() => import("./SchemaEditor-BpTdl8zF.js")), l = ue(), f = ie(), i = _(() => Fe(l.value)), o = h(null), S = h(!1), C = h(""), P = h({}), B = h(0), L = h(!0), p = h("ready"), V = h(!1), E = h(""), g = h(""), y = h(null);
+    const r = ve(() => import("./SchemaEditor-CDXO2DLv.js")), l = ue(), f = ie(), i = _(() => Fe(l.value)), o = h(null), S = h(!1), C = h(""), P = h({}), B = h(0), L = h(!0), p = h("ready"), V = h(!1), E = h(""), g = h(""), y = h(null);
     let N = null, H = null, x = !1;
     const X = _(() => o.value ? `/workflows/${o.value.id}` : "");
     function Q() {

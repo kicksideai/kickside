@@ -1,15 +1,10 @@
 import { defineComponent as P, ref as A, onMounted as S, watch as C, onBeforeUnmount as N, openBlock as h, createElementBlock as y, createElementVNode as T, nextTick as O } from "vue";
 import { loadByTagName as W } from "@wippy-fe/proxy";
-const j = (l, v) => {
-  const t = l.__vccOpts || l;
-  for (const [s, a] of v)
-    t[s] = a;
-  return t;
-}, H = { class: "kx-wcmount" }, z = {
+const j = { class: "kx-wcmount" }, H = {
   key: 0,
   class: "kx-wcmount-fail",
   role: "alert"
-}, G = /* @__PURE__ */ P({
+}, z = /* @__PURE__ */ P({
   __name: "WcMount",
   props: {
     tag: {},
@@ -22,7 +17,7 @@ const j = (l, v) => {
   },
   emits: ["change", "select", "created", "close", "error"],
   setup(l, { emit: v }) {
-    const t = l, s = v, a = A(null), c = A(!1);
+    const t = l, s = v, c = A(null), a = A(!1);
     let r = null, u = 0;
     const f = /* @__PURE__ */ new Set();
     function d(e) {
@@ -83,23 +78,23 @@ const j = (l, v) => {
         }
     }
     async function g() {
-      const e = ++u, i = a.value, n = t.tag;
-      if (c.value = !1, !!i && (w(), i.innerHTML = "", !!n))
+      const e = ++u, i = c.value, n = t.tag;
+      if (a.value = !1, !!i && (w(), i.innerHTML = "", !!n))
         try {
-          if (await M(n), e !== u || a.value !== i || t.tag !== n) return;
+          if (await M(n), e !== u || c.value !== i || t.tag !== n) return;
           const o = document.createElement(n);
-          o.classList.add("kx-wcmount-surface"), r = o, L(), o.addEventListener("config-changed", d), o.addEventListener("change", d), o.addEventListener("select", E), o.addEventListener("created", b), o.addEventListener("close", _), o.addEventListener("error", k), o.style.display = "block", i.appendChild(o), c.value = !customElements.get(n);
+          o.classList.add("kx-wcmount-surface"), r = o, L(), o.addEventListener("config-changed", d), o.addEventListener("change", d), o.addEventListener("select", E), o.addEventListener("created", b), o.addEventListener("close", _), o.addEventListener("error", k), o.style.display = "block", i.appendChild(o), a.value = !customElements.get(n);
         } catch {
-          e === u && (c.value = !0);
+          e === u && (a.value = !0);
         }
     }
     async function B() {
-      c.value = !1, await O(), await g();
+      a.value = !1, await O(), await g();
     }
     return S(g), C(() => t.tag, g), C(() => [t.config, t.schema, t.meta, t.provider, t.label, t.attrs], L, { deep: !0 }), N(() => {
       u += 1, w();
-    }), (e, i) => (h(), y("div", H, [
-      c.value ? (h(), y("div", z, [
+    }), (e, i) => (h(), y("div", j, [
+      a.value ? (h(), y("div", H, [
         i[0] || (i[0] = T("span", null, "This setup panel couldn’t load.", -1)),
         T("button", {
           type: "button",
@@ -108,12 +103,16 @@ const j = (l, v) => {
       ])) : (h(), y("div", {
         key: 1,
         ref_key: "host",
-        ref: a
+        ref: c
       }, null, 512))
     ]));
   }
-}), R = /* @__PURE__ */ j(G, [["__scopeId", "data-v-3d6a00f1"]]);
+}), G = (l, v) => {
+  const t = l.__vccOpts || l;
+  for (const [s, c] of v)
+    t[s] = c;
+  return t;
+}, R = /* @__PURE__ */ G(z, [["__scopeId", "data-v-3d6a00f1"]]);
 export {
-  R as W,
-  j as _
+  R as W
 };
