@@ -133,6 +133,28 @@ entries:
       user_repo: kickside.users.persist:user_repo
       user_groups_repo: kickside.users.persist:user_groups_repo
 
+  - name: counted_round_consumer
+    kind: library.lua
+    meta: { comment: The sync's round consumer source hosted as a library so a probe can count the registry reads of one page. }
+    source: file://counted_round_consumer_source.lua
+    imports:
+      sink_input: kickside.transform:sink_input
+      failure_classification: kickside.automation:failure_classification
+      round_write: kickside.automation:round_write
+      round_plan: kickside.sync:round_plan
+      transform_gate: kickside.transform:generator
+      sync_document: kickside.sync:document
+
+  - name: counted_round_deliver
+    kind: function.lua
+    meta: { comment: Test-only adapter that delivers one page and counts its runtime policy and transform strategy reads. }
+    source: file://counted_round_probe.lua
+    method: run
+    imports:
+      consumer: app:counted_round_consumer
+      runtime_policy: kickside.automation:runtime_policy
+      transform_strategies: kickside.transform:strategies
+
   - name: db
     kind: db.sql.sqlite
     foreign_keys: true

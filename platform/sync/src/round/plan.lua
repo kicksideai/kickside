@@ -99,20 +99,21 @@ local function authorization(transform: Map, d: Map): (Map?, error?)
 end
 
 -- compile(declaration, drive) -> { sink, sink_config, strategy, transform,
--- replay_safe, authorization, filter? }.
+-- replay_safe, authorization, filter?, strategy_handle }. The strategy is
+-- resolved and opened here once; every item of the round applies through
+-- strategy_handle, which carries the open failure for each item to report.
 function M.compile(declaration: any, drive: any): (Map?, error?)
     local d = type(declaration) == "table" and (declaration :: Map) or {}
     local sink_port = trim(d.sink_port)
     if sink_port == "" then return nil, invalid("the sync declares no sink_port") end
     local sink, sink_err = round_write.describe_sink(sink_port)
     if sink_err or not sink then return nil, sink_err end
-    local max_slots, slots_err = round_write.destination_slots()
-    if slots_err or not max_slots then return nil, slots_err end
     local transform = type(d.transform) == "table" and (d.transform :: Map) or nil
     if not transform or trim(transform.kind) == "" then return nil, invalid("the sync declares no transform kind") end
     local strategy = trim(transform.kind)
     local binding, binding_err = strategies.resolve(strategy)
     if binding_err or not binding then return nil, invalid("transform strategy " .. strategy .. ": " .. tostring(binding_err)) end
+    local instance, open_err = strategies.open_binding(binding :: Map)
     local holders = type(drive) == "table" and (drive :: Map) or {}
     local grants, grants_err = authorization(transform, holders)
     if grants_err or not grants then return nil, grants_err end
@@ -120,13 +121,14 @@ function M.compile(declaration: any, drive: any): (Map?, error?)
     local filter = type(trigger.filter) == "table" and trim((trigger.filter :: Map).expr) or ""
     return {
         sink = sink,
-        max_destination_slots = max_slots,
+        max_destination_slots = (sink :: Map).destination_slots,
         sink_config = type(d.sink_config) == "table" and d.sink_config or {},
         strategy = strategy,
         transform = transform,
         replay_safe = (binding :: Map).replay_safe,
         authorization = grants,
         filter = filter ~= "" and filter or nil,
+        strategy_handle = { binding = binding, instance = instance, error = open_err },
     }, nil
 end
 
@@ -158,8 +160,8 @@ function M.keeps(plan: Map, item: Map): (boolean, Map?)
 end
 
 local function compute(plan: Map, item: Map): (Map?, any)
-    local answer, request_err = apply.apply({ strategy = plan.strategy, config = plan.transform, item = strategy_item(item),
-        authorization = plan.authorization })
+    local answer, request_err = apply.apply_with(plan.strategy_handle :: Map, { strategy = plan.strategy,
+        config = plan.transform, item = strategy_item(item), authorization = plan.authorization })
     if request_err ~= nil or not answer then
         return nil, failure_classification.native({ kind = errors.INVALID, retriable = false, message = "transform: " .. tostring(request_err) })
     end

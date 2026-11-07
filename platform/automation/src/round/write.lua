@@ -74,7 +74,9 @@ function M.keys(d: Map, item: Map, map_slot: string?): Map
     return identity.keys(d, item, map_slot)
 end
 
--- describe_sink(port_id) -> { port, binding, delivery, input_shape }.
+-- describe_sink(port_id) -> { port, binding, delivery, input_shape,
+-- destination_slots }. destination_slots is the policy's per-item slot bound,
+-- resolved here once for every write a round makes through this sink.
 function M.describe_sink(port_id: string): (Map?, error?)
     local port, port_err = automations_lib.resolve_sink(port_id)
     if port_err then return nil, port_err end
@@ -89,7 +91,10 @@ function M.describe_sink(port_id: string): (Map?, error?)
     if not SHAPES[tostring(meta.input_shape)] then
         return nil, invalid("sink binding " .. binding .. " declares no input_shape (record or content)")
     end
-    return { port = port_id, binding = binding, delivery = meta.delivery, input_shape = meta.input_shape }, nil
+    local slots, slots_err = M.destination_slots()
+    if slots_err or not slots then return nil, slots_err end
+    return { port = port_id, binding = binding, delivery = meta.delivery, input_shape = meta.input_shape,
+        destination_slots = slots }, nil
 end
 
 -- The most keys one receipt statement names.
@@ -317,13 +322,14 @@ function M.write(sink: Map, request: Map, d: Map, item: Map): Map
         return { state = "failed", error = failure_classification.classify({ kind = errors.INVALID, retriable = false,
             message = "a write names its sink operation" }) }
     end
-    local policy, policy_err = runtime_policy.policy()
-    if policy_err or not policy then
-        return { state = "failed", error = failure_classification.classify(policy_err) }
+    local policy_slots = sink.destination_slots
+    if type(policy_slots) ~= "number" or policy_slots ~= math.floor(policy_slots) or policy_slots < 1 then
+        return { state = "failed", error = failure_classification.classify(invalid(
+            "a write requires the sink described with its policy destination-slot bound")) }
     end
-    local max_slots = request.max_destination_slots or policy.destination_slots_per_item
+    local max_slots = request.max_destination_slots or policy_slots
     if type(max_slots) ~= "number" or max_slots ~= math.floor(max_slots) or max_slots < 1
-        or max_slots > policy.destination_slots_per_item then
+        or max_slots > policy_slots then
         return { state = "failed", error = failure_classification.classify(invalid(
             "a write requires a finite destination-slot bound within policy")) }
     end
