@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- kickside.connection:reply_sender stand-in for the channel sink WRITE boundary:
 -- send_reply authorizes like the real sender (an operation without a reply
 -- proof needs the caller's connection WRITE grant, refused with the
