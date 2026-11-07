@@ -25,7 +25,6 @@ local get_identity_receipt = identity_access.get_identity_receipt
 local get_component_service = context_policy.get_component_service
 local current_runtime_identity = context_policy.current_runtime_identity
 local open_contract_instance = context_policy.open_contract_instance
-local result_error = context_policy.result_error
 local open = context_policy.open
 local open_by_meta = context_policy.open_by_meta
 local validate_access = context_policy.validate_access
@@ -120,7 +119,7 @@ local function query(filter: component_types.QueryFilter?): (component_types.Com
     if call_err then
         return nil, envelope.call_error(call_err, "query_components")
     end
-    local result_err = result_error(result, "query_components")
+    local result_err = envelope.error_of(result :: component_types.ServiceEnvelope, "query_components")
     if result_err then
         return nil, result_err
     end

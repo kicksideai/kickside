@@ -239,6 +239,7 @@ type ServiceEnvelope = {
     kind: string?,
     retryable: boolean?,
     details: { [string]: any }?,
+    error_kind: string?,
 }
 
 type UpdateResult = {

@@ -342,14 +342,14 @@ function M.commit_tx(tx: any, round: Map, result: Map): (Map?, error?)
 end
 
 -- settle_tx(tx, round, failure) -> { committed }. failure = { phase, error =
--- { kind, message }, attempts, next_run_at? }.
+-- { kind, message }, error_kind?, attempts, next_run_at? }.
 function M.settle_tx(tx: any, round: Map, failure: Map): (Map?, error?)
     local d, fence_err = fenced_drive(tx, round)
     if fence_err then return nil, fence_err end
     if not d then return { committed = false }, nil end
     local encoded, enc_err = json.encode({
         kind = (failure.error :: Map).kind, message = (failure.error :: Map).message,
-        error_kind = failure.error_kind or (type(failure.error.details) == "table" and failure.error.details.error_kind or nil),
+        error_kind = failure.error_kind,
         attempts = failure.attempts, at = round.now, next_attempt_at = failure.next_run_at,
     })
     if enc_err then return nil, internal("failed to encode the round failure", enc_err) end

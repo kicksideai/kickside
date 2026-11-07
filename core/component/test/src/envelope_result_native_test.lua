@@ -1,7 +1,8 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
-local context = require("context")
+local envelope = require("envelope")
 return {run = test.run_cases(function()
-    test.describe("native component result annotations", function()
+    test.describe("component result error classification", function()
         for _, kind in ipairs({errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.PERMISSION_DENIED,
             errors.UNAVAILABLE, errors.INTERNAL, errors.CANCELED, errors.CONFLICT, errors.TIMEOUT, errors.RATE_LIMITED, errors.UNKNOWN}) do
             for _, options in ipairs({{}, {retryable = false}, {retryable = true}}) do
@@ -13,7 +14,7 @@ return {run = test.run_cases(function()
                         local result: any = {success = false, error = source:message(), kind = source:kind(),
                             retryable = source:retryable(), details = source:details()}
                         if annotated then result.error_kind = "result_classification" end
-                        local actual = context.result_error(result, "read")
+                        local actual = envelope.error_of(result, "read")
                         if not actual then error(errors.new({kind = errors.INTERNAL, retryable = false, message = "result guard requires failure"})) end
                         test.eq(actual:kind(), source:kind()); test.eq(actual:retryable(), source:retryable())
                         test.eq(actual:details().code, "result_source"); test.eq(actual:details().nested.marker, "kept")
@@ -25,10 +26,10 @@ return {run = test.run_cases(function()
             end
         end
         test.it("successful annotated result remains successful", function()
-            test.is_nil(context.result_error({success = true, error_kind = "result_classification"}, "read"))
+            test.is_nil(envelope.error_of({success = true, error_kind = "result_classification"}, "read"))
         end)
         test.it("missing failure details accept the existing result classification", function()
-            local actual = context.result_error({success = false, error = "refused", kind = errors.PERMISSION_DENIED,
+            local actual = envelope.error_of({success = false, error = "refused", kind = errors.PERMISSION_DENIED,
                 retryable = false, error_kind = "access"}, "read")
             test.eq(actual:kind(), errors.PERMISSION_DENIED); test.is_false(actual:retryable())
             test.eq(actual:details().error_kind, "access")

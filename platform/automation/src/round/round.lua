@@ -152,9 +152,10 @@ local function wake_dispatcher_after_release(committed: Map?): error?
 end
 
 -- round_failure(failure, error_kind, prior_attempts, rp) -> the failure a
--- round records on its drive: the phase it leaves and, unless it parks, the
--- capped jittered retry time.
+-- round records on its drive: the phase it leaves, the error_kind it carries
+-- and, unless it parks, the capped jittered retry time.
 local function round_failure(failure: Map, error_kind: string?, prior_attempts: integer, rp: Map): Map
+    error_kind = outcome.error_kind(failure, error_kind)
     local phase, parks = outcome.failure_phase(failure, error_kind)
     local attempts = prior_attempts + 1
     return { phase = phase, error = failure, error_kind = error_kind, attempts = attempts,
