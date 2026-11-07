@@ -38,6 +38,14 @@ local function same_data(actual: any, expected: any)
     for key, _ in pairs(actual) do test.not_nil(expected[key]) end
 end
 
+-- A context JSON chaining `levels` objects through `n` down to the `leaf` JSON value,
+-- which sits at depth `levels`.
+local function nested_context(levels: integer, leaf: string): string
+    return string.rep('{"n":', levels) .. leaf .. string.rep("}", levels)
+end
+
+local DEEPEST_CONTEXT = nested_context(126, '{"leaf":1}')
+
 local function define_tests()
     test.describe("Component service failure classification", function()
         local suffix = uuid.v4():sub(1, 8)
@@ -153,6 +161,15 @@ local function define_tests()
                 additional_access = { { subject_id = users.reader, subject_type = "user", access_mask = 1 } },
             })
             fx.failing_delete = register(FAILING_DELETE_IMPL)
+            -- json decodes values and encodes objects at most 128 levels below a
+            -- document's root, and the envelope holds the context one level down.
+            -- DEEPEST_CONTEXT exports a shell whose deepest value sits at the decode
+            -- bound; an empty object stored at depth 128 lands past the encode bound
+            -- inside the envelope.
+            fx.deepest = register(PORTABLE_IMPL)
+            exec("UPDATE " .. COMPONENTS .. " SET private_context = '" .. DEEPEST_CONTEXT .. "' WHERE component_id = '" .. fx.deepest .. "'")
+            fx.too_deep = register(PORTABLE_IMPL)
+            exec("UPDATE " .. COMPONENTS .. " SET private_context = '" .. nested_context(128, "{}") .. "' WHERE component_id = '" .. fx.too_deep .. "'")
             fx.non_portable = register(NON_PORTABLE_IMPL)
             fx.not_installed = register(NOT_INSTALLED_IMPL)
             for _, kind in ipairs({ errors.TIMEOUT, errors.CANCELED, errors.RATE_LIMITED, errors.UNAVAILABLE }) do
@@ -244,6 +261,7 @@ local function define_tests()
             { name = "import when the registration fails", method = "import", hide = { COMPONENTS }, request = function() return { shell = shell(PORTABLE_IMPL) } end, kind = errors.INTERNAL, native_sql = true },
             { name = "list_access when the owner read fails", method = "list_access", hide = { META }, request = function(f) return { component_id = f.cid } end, kind = errors.INTERNAL, native_sql = true },
             { name = "delete when the read fails", method = "delete", hide = { COMPONENTS }, request = function(f) return { component_id = f.cid } end, kind = errors.INTERNAL, native_sql = true },
+            { name = "export when the envelope nests past the json depth bound", method = "export", request = function(f) return { component_id = f.too_deep } end, kind = errors.INTERNAL },
             { name = "delete when the lifecycle record fails", worker = true, method = "delete", request = function(f) return { component_id = f.failing_delete } end, kind = errors.INTERNAL },
             { name = "set_meta when the meta write fails", method = "set_meta", hide = { META }, request = function(f) return { component_id = f.cid, fields = { title = "x" } } end, kind = errors.INTERNAL, native_sql = true },
             { name = "set_placement when the placement write fails", method = "set_placement", hide = { COMPONENTS }, request = function(f) return { component_id = f.cid, parent_id = false } end, kind = errors.INTERNAL, native_sql = true },
@@ -303,6 +321,16 @@ local function define_tests()
                 end
             end)
         end
+
+        test.it("export: a context nested to the json depth bound exports unchanged", function()
+            local res = service("owner"):export({ component_id = fx.deepest })
+            test.eq(res.success, true, tostring(res.error))
+            local shell, decode_err = json.decode(res.shell)
+            test.is_nil(decode_err, tostring(decode_err))
+            local context, encode_err = json.encode(shell.context)
+            test.is_nil(encode_err, tostring(encode_err))
+            test.eq(context, DEEPEST_CONTEXT)
+        end)
 
         test.it("read_port refuses a read without an actor as PERMISSION_DENIED", function()
             local port = read_port :: any
