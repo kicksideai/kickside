@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.13](https://github.com/kicksideai/kickside/compare/core-v0.3.12...core-v0.3.13) (2026-11-07)
+
+
+### Bug Fixes
+
+* **core:** converge the lifecycle boot once the install's migrations are applied ([#352](https://github.com/kicksideai/kickside/issues/352)) ([7652781](https://github.com/kicksideai/kickside/commit/7652781374b81a3be7604acdb08c8cf020a5158f))
+
 ## [0.3.12](https://github.com/kicksideai/kickside/compare/core-v0.3.11...core-v0.3.12) (2026-11-07)
 
 
