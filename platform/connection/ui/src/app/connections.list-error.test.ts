@@ -80,3 +80,37 @@ it('ignores a further page that settles after a newer reload', async () => {
   expect(wrapper.text()).not.toContain('Stale connection')
   expect(wrapper.find('.list-foot button').exists()).toBe(false)
 })
+
+it('keeps the reload current when a superseded page settles and load more is pressed again', async () => {
+  let resolvePage!: (page: unknown) => void
+  let resolveReload!: (page: unknown) => void
+  serve([
+    { success: true, connections: [{ component_id: 'old', name: 'Old connection', provider: 'generic' }], total_count: 3, has_more: true },
+    new Promise(resolve => { resolvePage = resolve }),
+    new Promise(resolve => { resolveReload = resolve }),
+    { success: true, connections: [{ component_id: 'next', name: 'Next connection', provider: 'generic' }], total_count: 2, has_more: false },
+  ])
+  const listReads = () => vi.mocked(api.get).mock.calls.filter(([url]: unknown[]) => String(url).startsWith('/api/v1/connections?'))
+  wrapper = mount(Connections, { global: { plugins: [PrimeVuePlugin] } })
+  await flushPromises()
+
+  await wrapper.get('.list-foot button').trigger('click')
+  const reload = refresh()
+  resolvePage({ success: true, connections: [{ component_id: 'stale', name: 'Stale connection', provider: 'generic' }], total_count: 3, has_more: true })
+  await flushPromises()
+  await wrapper.get('.list-foot button').trigger('click')
+  expect(listReads()).toHaveLength(3)
+
+  resolveReload({ success: true, connections: [{ component_id: 'fresh', name: 'Fresh connection', provider: 'generic' }], total_count: 2, has_more: true })
+  await reload
+  await flushPromises()
+  expect(wrapper.text()).toContain('Fresh connection')
+  expect(wrapper.text()).not.toContain('Stale connection')
+  expect(wrapper.get('.list-foot button').attributes('disabled')).toBeUndefined()
+
+  await wrapper.get('.list-foot button').trigger('click')
+  await flushPromises()
+  expect(listReads()).toHaveLength(4)
+  expect(wrapper.text()).toContain('Next connection')
+  expect(wrapper.find('.list-foot button').exists()).toBe(false)
+})

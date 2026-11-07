@@ -66,12 +66,14 @@ async function fetchConnections(offset: number) {
   return data
 }
 
-// Reloads and further pages share one read sequence: a page applies only while no
-// later read of the listing has started.
+// Reloads and further pages share one read sequence: a read applies its rows, its
+// error and its loading flag only while no later read of the listing has started.
+// A reload supersedes a pending page, and a page is refused while a reload is in flight.
 const beginListingRead = latestRequest()
 async function load() {
   const current = beginListingRead()
   loading.value = true
+  loadingMore.value = false
   error.value = ''
   loadError.value = ''
   try {
@@ -102,7 +104,7 @@ async function load() {
 }
 
 async function loadMoreConnections() {
-  if (loadingMore.value || !connectionsHasMore.value) return
+  if (loading.value || loadingMore.value || !connectionsHasMore.value) return
   const current = beginListingRead()
   loadingMore.value = true
   error.value = ''
@@ -117,7 +119,7 @@ async function loadMoreConnections() {
   } catch (e) {
     if (current()) error.value = apiError(e)
   } finally {
-    loadingMore.value = false
+    if (current()) loadingMore.value = false
   }
 }
 
@@ -353,7 +355,7 @@ const {acceptDeletion} = useComponentDeletion(connections, row => row.component_
             <button
               v-if="connectionsHasMore"
               class="ghost-action"
-              :disabled="loadingMore"
+              :disabled="loading || loadingMore"
               @click="loadMoreConnections"
             >
               <Icon :icon="loadingMore ? 'tabler:loader-2' : 'tabler:chevron-down'" :class="loadingMore && 'spin'" />
