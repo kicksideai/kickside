@@ -48,16 +48,28 @@ end
 
 -- Deep copy a value, recursively dropping any string key present in cred. Used so a
 -- credential nested inside the context (e.g. { settings = { api_key = "x" } }) can
--- never ride along.
+-- never ride along. The walk keeps its pending tables on a heap worklist, so every
+-- depth json decodes stays within reach and json's own nesting bound decides the rest.
 local function deep_clean(v: any, cred: { [string]: boolean }): any
     if type(v) ~= "table" then return v end
-    local out: { [string]: any } = {}
-    for k, val in pairs(v :: { [string]: any }) do
-        if not (type(k) == "string" and cred[k]) then
-            (out :: any)[k] = deep_clean(val, cred)
+    local root: { [string]: any } = {}
+    local pending: { { any } } = { { v, root } }
+    while #pending > 0 do
+        local pair = table.remove(pending) :: { any }
+        local src, dst = pair[1], pair[2]
+        for k, val in pairs(src :: { [string]: any }) do
+            if not (type(k) == "string" and cred[k]) then
+                if type(val) == "table" then
+                    local copy: { [string]: any } = {}
+                    (dst :: any)[k] = copy
+                    pending[#pending + 1] = { val, copy }
+                else
+                    (dst :: any)[k] = val
+                end
+            end
         end
     end
-    return out
+    return root
 end
 
 -- Remove the value at a "/a/b/c" pointer if present. No-op on a missing/scalar path.
