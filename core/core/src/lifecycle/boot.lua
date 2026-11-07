@@ -88,7 +88,7 @@ local function schema_ready(): (boolean, error?)
             details = {code = "lifecycle_migration_status"}})
     end
     local found: { [string]: boolean } = {}
-    for _, namespace in ipairs(consts.CONVERGE_SCHEMA_NAMESPACES) do found[namespace] = false end
+    for _, owner in ipairs(consts.CONVERGE_SCHEMA) do found[owner.namespace] = false end
     local ready = true
     for _, row in ipairs(rows) do
         local namespace = string.match(tostring(row.id), "^([^:]+):")
@@ -97,27 +97,36 @@ local function schema_ready(): (boolean, error?)
             if row.applied ~= true then ready = false end
         end
     end
-    for namespace, present in pairs(found) do
-        if not present then
+    for _, owner in ipairs(consts.CONVERGE_SCHEMA) do
+        if owner.required and not found[owner.namespace] then
             return false, errors.new({kind = errors.INTERNAL, retryable = false,
-                message = "lifecycle convergence schema has no migrations: " .. namespace,
-                details = {code = "lifecycle_migration_namespace", namespace = namespace}})
+                message = "lifecycle convergence schema has no migrations: " .. owner.namespace,
+                details = {code = "lifecycle_migration_namespace", namespace = owner.namespace}})
         end
     end
     return ready, nil
 end
 
--- Converges when the ledger is current. A pending migration parks convergence
--- and reports no attempt.
-local function converge_when_ready(): (boolean, integer?, error?)
+local CONVERGED, PARKED = "converged", "parked"
+
+-- Converges when the ledger is current. A pending migration or an unavailable
+-- ledger parks convergence for the next retry; the unavailable ledger is
+-- logged once per parked stretch through `ledger_failed`.
+local function converge_when_ready(ledger_failed: boolean): (string, integer?, error?, boolean)
     local ready, ready_err = schema_ready()
     if ready_err then
+        if ready_err:retryable() then
+            if not ledger_failed then
+                logger:error("system lifecycle migration ledger unavailable", { reason = tostring(ready_err), error_native = error_envelope.encode(ready_err) })
+            end
+            return PARKED, nil, nil, true
+        end
         logger:error("system lifecycle convergence failed", { reason = tostring(ready_err), error_native = error_envelope.encode(ready_err) })
-        return true, nil, ready_err
+        return CONVERGED, nil, ready_err, false
     end
-    if not ready then return false, nil, nil end
+    if not ready then return PARKED, nil, nil, false end
     local count, converge_err = converge_reported()
-    return true, count, converge_err
+    return CONVERGED, count, converge_err, false
 end
 
 local function main(_args: any): any
@@ -138,8 +147,8 @@ local function main(_args: any): any
     end
     if claimed ~= true then error(response_error("claim")) end
 
-    local converged, count, converge_err = converge_when_ready()
-    local parked = not converged
+    local state, count, converge_err, ledger_failed = converge_when_ready(false)
+    local parked = state == PARKED
     if parked then logger:info("system lifecycle convergence awaits migrations") end
 
     -- Resident from here: upgradable, parked on the events channel and the
@@ -167,8 +176,9 @@ local function main(_args: any): any
             return { ok = true, count = count }
         end
         if selected.channel == applied or selected.channel == retry then
-            local attempted, next_count, next_err = converge_when_ready()
-            if attempted then
+            local next_state, next_count, next_err, next_ledger_failed = converge_when_ready(ledger_failed)
+            ledger_failed = next_ledger_failed
+            if next_state == CONVERGED then
                 parked = false
                 count, converge_err = next_count, next_err
                 logger:info("system lifecycle converged after migrations", { failed = converge_err ~= nil })

@@ -78,6 +78,12 @@ return {run = test.run_cases(function()
             fixture.reset("", nil); local out = boot.main(nil); test.is_true(out.ok); test.eq(out.count, 1)
             for _, step in ipairs({"events", "listen", "register", "migrations", "actor", "scope", "provision", "converge", "options"}) do test.eq(fixture.calls[step], 1) end
         end)
+        test.it("unavailable ledger keeps convergence parked and the retry converges once the migration lands", function()
+            fixture.reset("", nil); fixture.script_ledger({"unavailable", "pending", "applied"})
+            local out = boot.main(nil); test.is_true(out.ok); test.eq(out.count, 1)
+            test.eq(fixture.calls.migrations, 3)
+            for _, step in ipairs({"actor", "scope", "provision", "converge"}) do test.eq(fixture.calls[step], 1) end
+        end)
         test.it("pending migration defers convergence and keeps boot resident", function()
             fixture.reset("", nil, nil, true); local out = boot.main(nil); test.is_true(out.ok); test.is_nil(out.count)
             for _, step in ipairs({"events", "listen", "register", "migrations", "options"}) do test.eq(fixture.calls[step], 1) end

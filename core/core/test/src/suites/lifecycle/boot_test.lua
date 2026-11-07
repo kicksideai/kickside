@@ -193,20 +193,24 @@ local function define_tests()
             test.eq(retention_days(id), declared_days)
         end)
 
-        test.it("converges after a dependency-only upgrade's migration without a migrations-applied message", function()
-            subscription = assert(events.subscribe("logs", "logs.entry"))
-            logs = subscription:channel()
-            local pid = service_pid()
-            boot_pid = pid
-            local id, declared_days = diverge_with_refusal("lifecycle_boot_pending_schema")
-            logger:info("system lifecycle resident")
-            upgrade_boot_with_migration("kickside.component.migrations")
-            test.eq(await_boot(logs, pid, "system lifecycle resident"), false, "upgraded boot converges before the component migration")
-            test.eq(retention_days(id), declared_days + 1)
-            apply_pending_migrations()
-            test.eq(await_boot(logs, pid, "system lifecycle converged after migrations"), false, "parked boot converges on the retry once the migration lands")
-            test.eq(retention_days(id), declared_days)
-        end)
+        -- Component and Users migrations reach the core database through
+        -- installs whose changed modules exclude core, so no message follows.
+        for _, namespace in ipairs({ "kickside.component.migrations", "kickside.users.migrations" }) do
+            test.it("converges after a dependency-only upgrade's " .. namespace .. " migration without a migrations-applied message", function()
+                subscription = assert(events.subscribe("logs", "logs.entry"))
+                logs = subscription:channel()
+                local pid = service_pid()
+                boot_pid = pid
+                local id, declared_days = diverge_with_refusal("lifecycle_boot_pending_schema")
+                logger:info("system lifecycle resident")
+                upgrade_boot_with_migration(namespace)
+                test.eq(await_boot(logs, pid, "system lifecycle resident"), false, "upgraded boot converges before the " .. namespace .. " migration")
+                test.eq(retention_days(id), declared_days + 1)
+                apply_pending_migrations()
+                test.eq(await_boot(logs, pid, "system lifecycle converged after migrations"), false, "parked boot converges on the retry once the migration lands")
+                test.eq(retention_days(id), declared_days)
+            end)
+        end
 
         test.it("converges on upgrade while a migration outside the convergence schema is pending", function()
             subscription = assert(events.subscribe("logs", "logs.entry"))
