@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.14](https://github.com/kicksideai/kickside/compare/automation-v0.2.13...automation-v0.2.14) (2026-11-07)
+
+
+### Bug Fixes
+
+* **automation:** retry a delivery whose call target is not registered ([#333](https://github.com/kicksideai/kickside/issues/333)) ([b964dc3](https://github.com/kicksideai/kickside/commit/b964dc30c7f740bf8721599da0b1457af80d2cd5))
+* **automation:** style execution history inside the shadow root ([#331](https://github.com/kicksideai/kickside/issues/331)) ([de28143](https://github.com/kicksideai/kickside/commit/de2814359348cc2e0ae20ad059307e2159230b38))
+
 ## [0.2.13](https://github.com/kicksideai/kickside/compare/automation-v0.2.12...automation-v0.2.13) (2026-11-07)
 
 
