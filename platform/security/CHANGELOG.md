@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.24](https://github.com/kicksideai/kickside/compare/security-v0.2.23...security-v0.2.24) (2026-11-07)
+
+
+### Bug Fixes
+
+* **security:** read only what the requested groups reach ([#323](https://github.com/kicksideai/kickside/issues/323)) ([36676fd](https://github.com/kicksideai/kickside/commit/36676fd486d7485b343511388f9ac33a6be7ad26))
+
 ## [0.2.23](https://github.com/kicksideai/kickside/compare/security-v0.2.22...security-v0.2.23) (2026-10-30)
 
 
