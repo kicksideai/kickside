@@ -121,6 +121,8 @@ entries:
     suite: kickside_automation
   source: file://failure_classification_test.lua
   method: run
+  modules:
+  - funcs
   imports:
     test: wippy.test:test
     failure_classification: kickside.automation:failure_classification

@@ -311,7 +311,8 @@ entries:
           deliver: kickside.automation.round.fixture:deliver
 
   # The production round write library over a funcs seam that loses the answer
-  # of a lost_answer item's sink effect after its send.
+  # of a lost_answer item's sink effect after its send and sends an
+  # absent_target item's sink effect to a target the registry does not hold.
   - name: lost_answer_funcs
     kind: library.lua
     source: file://lost_answer_funcs.lua

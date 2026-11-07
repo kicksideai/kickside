@@ -117,6 +117,31 @@ local function define_tests(group: integer)
             test.eq(#query("SELECT item_key FROM kickside_automation_receipt WHERE owner_id = $1 AND item_key = 'w-1'",
                 { automation_id }), 1, "an update reuses the stable receipt slot")
         end)
+
+        test.it("retries a delivery whose sink call target is not registered and keeps a deterministic failure dead", function()
+            local items = { { key = "a-1", directive = "absent_target" }, { key = "a-2", directive = "invalid" } }
+            new_drive({ automation_id = automation_id, drive_key = "absent", source_kind = "collection",
+                applied = { sink_port = "kickside.automation.round.fixture:store" },
+                action = { source_ref = "kickside.automation.round.fixture:records", config = { items = items },
+                    schedule = { type = "interval", expression = "30m" } } })
+            set_drive(automation_id, "absent", "next_run_at = $1", { PAST })
+            local _, err = run(automation_id, "absent")
+            test.is_nil(err, tostring(err))
+            local absent = ledger_row(automation_id, "a-1") :: Map
+            test.eq(absent.state, "retrying")
+            test.not_nil(absent.next_attempt_at)
+            test.eq((ledger_row(automation_id, "a-2") :: Map).state, "dead")
+
+            h.exec("UPDATE kickside_trigger_item_ledger SET next_attempt_at = $1 WHERE owner_id = $2 AND item_key = 'a-1'",
+                { PAST, automation_id })
+            set_drive(automation_id, "absent", "next_run_at = $1", { PAST })
+            local _, again_err = run(automation_id, "absent")
+            test.is_nil(again_err, tostring(again_err))
+            local retried = ledger_row(automation_id, "a-1") :: Map
+            test.eq(retried.state, "retrying")
+            test.eq(tonumber(retried.attempts), 2, "the next round redelivers the item")
+            test.eq((ledger_row(automation_id, "a-2") :: Map).state, "dead")
+        end)
         end
 
         if group == 2 then
