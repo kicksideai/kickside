@@ -1,5 +1,6 @@
 version: "1.0"
 override:
+  "kickside.core.jobs.service:worker.service:lifecycle.auto_start": false
   "app:db:file": "${sqlite_path}"
 workspace:
   replacements:
