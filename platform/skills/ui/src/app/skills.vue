@@ -318,7 +318,7 @@ function fileIcon(kind?: string) {
 // trapping, initial focus, and Escape-to-close. The share popup is a self-contained
 // web component that handles its own backdrop, Escape, and close.
 useHostVisibilityRefresh(load)
-const {acceptDeletion} = useComponentDeletion(skills, row => row.skill_id)
+const {acceptDeletion} = useComponentDeletion(skills, row => row.skill_id, undefined, load)
 </script>
 
 <template>

@@ -163,7 +163,7 @@ watch([shareOpen, shareHost], async () => {
 useHostVisibilityRefresh(async () => {
   await Promise.all([load(), loadOptions()])
 })
-const {acceptDeletion} = useComponentDeletion(agents, row => row.id)
+const {acceptDeletion} = useComponentDeletion(agents, row => row.id, undefined, load)
 </script>
 
 <template>

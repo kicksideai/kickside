@@ -12,6 +12,8 @@ export interface ComponentDeletionState {
 
 // onDeleted reports every row that leaves the list. onDeletionFinished reports only a
 // known deletion: a marked row that leaves the list, or a component.deleted event.
+// A list view passes its loader as onDeletionFinished: the deletion changes the list
+// outside any list read, and the next read replaces the outcome of earlier reads.
 export function useComponentDeletion<T extends ComponentDeletionState>(
   rows: Ref<T[]>, id: (row: T) => string, onDeleted?: (id: string) => void, onDeletionFinished?: (id: string) => void,
 ) {

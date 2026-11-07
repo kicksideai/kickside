@@ -4244,7 +4244,7 @@ function yl(t, e, n, o) {
   const d = Ee(() => t.value, (p, f = []) => {
     const m = p.filter((g) => !i.has(e(g)));
     for (const g of f)
-      i.has(e(g)) || m.some((b) => e(b) === e(g)) || g.deleting_at;
+      i.has(e(g)) || m.some((b) => e(b) === e(g)) || g.deleting_at && o?.(e(g));
     if (m.length !== p.length) {
       t.value = m;
       return;
@@ -4260,7 +4260,7 @@ function yl(t, e, n, o) {
     const f = vl(p);
     if (!f) return;
     const m = t.value.find((g) => e(g) === f.component_id);
-    f.event === "component.deleted" ? (m && i.has(f.component_id), i.add(f.component_id), l.delete(f.component_id), t.value = t.value.filter((g) => e(g) !== f.component_id)) : m && s(f.component_id, { job_id: f.deletion_job_id });
+    f.event === "component.deleted" ? (m && !i.has(f.component_id) && o?.(f.component_id), i.add(f.component_id), l.delete(f.component_id), t.value = t.value.filter((g) => e(g) !== f.component_id)) : m && s(f.component_id, { job_id: f.deletion_job_id });
   });
   return xo(() => {
     r = !1, d(), typeof c == "function" && c();
@@ -8511,7 +8511,7 @@ const Ou = /* @__PURE__ */ Mt({
       return _ === "script" ? "tabler:file-code" : _ === "asset" ? "tabler:file-download" : "tabler:file-text";
     }
     kr(a);
-    const { acceptDeletion: Kt } = yl(i, (_) => _.skill_id);
+    const { acceptDeletion: Kt } = yl(i, (_) => _.skill_id, void 0, a);
     return (_, S) => (v(), x("div", _u, [
       w("header", Iu, [
         w("div", Lu, [

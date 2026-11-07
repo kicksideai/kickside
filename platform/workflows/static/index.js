@@ -172,7 +172,7 @@ function ab(e, t, n, o) {
   const u = _e(() => e.value, (f, h = []) => {
     const m = f.filter((g) => !i.has(t(g)));
     for (const g of h)
-      i.has(t(g)) || m.some((v) => t(v) === t(g)) || g.deleting_at;
+      i.has(t(g)) || m.some((v) => t(v) === t(g)) || g.deleting_at && o?.(t(g));
     if (m.length !== f.length) {
       e.value = m;
       return;
@@ -188,7 +188,7 @@ function ab(e, t, n, o) {
     const h = ib(f);
     if (!h) return;
     const m = e.value.find((g) => t(g) === h.component_id);
-    h.event === "component.deleted" ? (m && i.has(h.component_id), i.add(h.component_id), a.delete(h.component_id), e.value = e.value.filter((g) => t(g) !== h.component_id)) : m && s(h.component_id, { job_id: h.deletion_job_id });
+    h.event === "component.deleted" ? (m && !i.has(h.component_id) && o?.(h.component_id), i.add(h.component_id), a.delete(h.component_id), e.value = e.value.filter((g) => t(g) !== h.component_id)) : m && s(h.component_id, { job_id: h.deletion_job_id });
   });
   return rt(() => {
     r = !1, u(), typeof d == "function" && d();
@@ -5162,7 +5162,7 @@ const z0 = { class: "kx-modal-head-icon" }, L0 = { class: "kx-modal-body" }, B0 
       k.value = null, T();
     }
     Wf(F);
-    const { acceptDeletion: L } = ab(i, (M) => M.id);
+    const { acceptDeletion: L } = ab(i, (M) => M.id, void 0, F);
     return (M, N) => (x(), A("div", {
       ref_key: "rootEl",
       ref: y,

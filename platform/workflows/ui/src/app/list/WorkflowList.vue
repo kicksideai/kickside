@@ -257,7 +257,7 @@ function closeShare() {
 }
 
 useHostVisibilityRefresh(load)
-const {acceptDeletion} = useComponentDeletion(rows, row => row.id)
+const {acceptDeletion} = useComponentDeletion(rows, row => row.id, undefined, load)
 </script>
 
 <template>

@@ -163,7 +163,7 @@ async function askDelete(row: WebhookRow) {
 }
 
 useHostVisibilityRefresh(load)
-const {acceptDeletion} = useComponentDeletion(rows, row => row.webhook_id)
+const {acceptDeletion} = useComponentDeletion(rows, row => row.webhook_id, undefined, load)
 </script>
 
 <template>

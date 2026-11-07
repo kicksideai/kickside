@@ -197,13 +197,7 @@ useHostVisibilityRefresh(async () => {
     error.value = errMsg(e, 'host API unavailable')
   }
 })
-// A finished deletion changes the catalog outside any list read; reading the catalog
-// again makes the surface report the outcome of the latest read.
-const {acceptDeletion} = useComponentDeletion(
-  kbs, row => row.id,
-  id => { if (detail.value?.id === id) closeDetail() },
-  () => { void load() },
-)
+const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (detail.value?.id === id) closeDetail() }, load)
 </script>
 
 <template>

@@ -260,7 +260,7 @@ async function remove(c: Connection) {
 
 useHostVisibilityRefresh(load)
 onBeforeUnmount(clearComponentSubscriptions)
-const {acceptDeletion} = useComponentDeletion(connections, row => row.component_id)
+const {acceptDeletion} = useComponentDeletion(connections, row => row.component_id, undefined, load)
 </script>
 
 <template>

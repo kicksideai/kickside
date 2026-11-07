@@ -1,7 +1,7 @@
-import { B as Ne, C as Pe, c as Me, r as De, d as Te, b as Y, e as Oe, W as Ae, s as Le, P as Re } from "./styles-tpVissSe.js";
-import { openBlock as _, createElementBlock as m, mergeProps as ne, createElementVNode as i, defineComponent as ue, computed as Z, withModifiers as oe, Fragment as W, createTextVNode as se, toDisplayString as E, createCommentVNode as N, createVNode as b, unref as d, watch as Be, onBeforeUnmount as pe, ref as w, withDirectives as Ie, vModelText as Ue, withCtx as le, renderList as ce, normalizeClass as q, createBlock as Ve, nextTick as Ke } from "vue";
+import { B as Ne, C as Pe, c as Me, r as Te, d as De, b as Y, e as Oe, W as Ae, s as Le, P as Re } from "./styles-tpVissSe.js";
+import { openBlock as h, createElementBlock as m, mergeProps as ne, createElementVNode as i, defineComponent as ue, computed as Z, withModifiers as oe, Fragment as F, createTextVNode as se, toDisplayString as E, createCommentVNode as N, createVNode as b, unref as d, watch as Be, onBeforeUnmount as pe, ref as w, withDirectives as Ie, vModelText as Ue, withCtx as le, renderList as ce, normalizeClass as q, createBlock as Ve, nextTick as Ke } from "vue";
 import { s as ze, a as re, _ as He } from "./ConnectionPicker.vue_vue_type_script_setup_true_lang-RKLMj11t.js";
-import { on as fe, api as H, host as We, loadByTagName as Fe, define as Ge } from "@wippy-fe/proxy";
+import { on as fe, api as W, host as We, loadByTagName as Fe, define as Ge } from "@wippy-fe/proxy";
 import { Icon as $ } from "@iconify/vue";
 var Je = `
     .p-progressspinner {
@@ -120,11 +120,11 @@ var Je = `
     }
   }
 }, Qe = ["fill", "stroke-width"];
-function Xe(r, n, l, p, f, c) {
-  return _(), m("div", ne({
+function Xe(r, t, l, u, f, c) {
+  return h(), m("div", ne({
     class: r.cx("root"),
     role: "progressbar"
-  }, r.ptmi("root")), [(_(), m("svg", ne({
+  }, r.ptmi("root")), [(h(), m("svg", ne({
     class: r.cx("spin"),
     viewBox: "25 25 50 50",
     style: c.svgStyle
@@ -146,8 +146,8 @@ const et = { key: 0 }, tt = /* @__PURE__ */ ue({
   },
   emits: ["retry"],
   setup(r) {
-    const n = r, l = Z(() => n.state.deletion_job === null || ["dead", "cancelled"].includes(n.state.deletion_job?.status || ""));
-    return (p, f) => r.state.deleting_at ? (_(), m("span", {
+    const t = r, l = Z(() => t.state.deletion_job === null || ["dead", "cancelled"].includes(t.state.deletion_job?.status || ""));
+    return (u, f) => r.state.deleting_at ? (h(), m("span", {
       key: 0,
       class: "component-deletion",
       role: "status",
@@ -156,19 +156,19 @@ const et = { key: 0 }, tt = /* @__PURE__ */ ue({
       onKeydown: f[2] || (f[2] = oe(() => {
       }, ["stop"]))
     }, [
-      l.value ? (_(), m(W, { key: 0 }, [
+      l.value ? (h(), m(F, { key: 0 }, [
         i("span", null, [
           f[3] || (f[3] = se("Deletion failed", -1)),
-          r.state.deletion_job?.last_error ? (_(), m("span", et, ": " + E(r.state.deletion_job.last_error), 1)) : N("", !0)
+          r.state.deletion_job?.last_error ? (h(), m("span", et, ": " + E(r.state.deletion_job.last_error), 1)) : N("", !0)
         ]),
         b(d(re), {
           label: "Retry deletion",
           severity: "secondary",
           size: "small",
           outlined: "",
-          onClick: f[0] || (f[0] = oe((c) => p.$emit("retry"), ["stop"]))
+          onClick: f[0] || (f[0] = oe((c) => u.$emit("retry"), ["stop"]))
         })
-      ], 64)) : (_(), m(W, { key: 1 }, [
+      ], 64)) : (h(), m(F, { key: 1 }, [
         b(d(ve), {
           class: "component-deletion-spinner",
           "aria-label": "Deletion in progress"
@@ -177,149 +177,149 @@ const et = { key: 0 }, tt = /* @__PURE__ */ ue({
       ], 64))
     ], 32)) : N("", !0);
   }
-}), nt = (r, n) => {
+}), nt = (r, t) => {
   const l = r.__vccOpts || r;
-  for (const [p, f] of n)
-    l[p] = f;
+  for (const [u, f] of t)
+    l[u] = f;
   return l;
 }, ot = /* @__PURE__ */ nt(tt, [["__scopeId", "data-v-63c136c7"]]);
-function z(r) {
+function H(r) {
   return !!r && typeof r == "object" && !Array.isArray(r);
 }
-function st(r, n) {
-  if (n == null) return n;
+function st(r, t) {
+  if (t == null) return t;
   switch (r) {
     case "boolean":
     case "checkbox":
-      return typeof n == "boolean" ? n : n === "true" ? !0 : n === "false" ? !1 : n;
+      return typeof t == "boolean" ? t : t === "true" ? !0 : t === "false" ? !1 : t;
     case "number":
     case "integer": {
-      if (typeof n == "number") return n;
-      if (typeof n == "string" && n.trim() !== "") {
-        const l = Number(n);
+      if (typeof t == "number") return t;
+      if (typeof t == "string" && t.trim() !== "") {
+        const l = Number(t);
         if (!Number.isNaN(l)) return l;
       }
-      return n;
+      return t;
     }
     case "object":
     case "array":
-      if (typeof n == "string")
+      if (typeof t == "string")
         try {
-          const l = JSON.parse(n);
+          const l = JSON.parse(t);
           if (l && typeof l == "object") return l;
         } catch {
         }
-      return n;
+      return t;
     default:
-      return n;
+      return t;
   }
 }
-function rt(r, n) {
-  if (!n) return r;
+function rt(r, t) {
+  if (!t) return r;
   const l = {};
-  for (const [p, f] of Object.entries(r))
-    l[p] = st(n[p], f);
+  for (const [u, f] of Object.entries(r))
+    l[u] = st(t[u], f);
   return l;
 }
-function he(r, n, l) {
-  if (n !== void 0 && !n) return null;
-  const p = z(r) ? r : {}, f = [
-    p,
-    z(p.data) ? p.data : null,
-    z(p.payload) ? p.payload : null,
-    z(p.detail) ? p.detail : null
+function _e(r, t, l) {
+  if (t !== void 0 && !t) return null;
+  const u = H(r) ? r : {}, f = [
+    u,
+    H(u.data) ? u.data : null,
+    H(u.payload) ? u.payload : null,
+    H(u.detail) ? u.detail : null
   ].filter(Boolean);
   for (const c of f) {
     if (c.event !== "component.meta.changed" && c.event !== "component.deleting" && c.event !== "component.deleted") continue;
-    const S = String(c.component_id || ""), x = String(p.topic || c.topic || "");
-    if (n === void 0) {
+    const S = String(c.component_id || ""), x = String(u.topic || c.topic || "");
+    if (t === void 0) {
       if (!S && (!x.startsWith("component.") || x === "component.")) continue;
-    } else if (S && S !== n || !S && x !== `component.${n}`) continue;
-    const j = S || n || x.slice(10);
+    } else if (S && S !== t || !S && x !== `component.${t}`) continue;
+    const j = S || t || x.slice(10);
     return c.event === "component.deleting" && typeof c.deletion_job_id == "string" && c.deletion_job_id ? { event: c.event, component_id: j, deletion_job_id: c.deletion_job_id } : c.event !== "component.meta.changed" ? { event: c.event, component_id: j } : {
       event: "component.meta.changed",
       component_id: j,
-      meta: rt(z(c.meta) ? c.meta : {}, l),
+      meta: rt(H(c.meta) ? c.meta : {}, l),
       deleted: Array.isArray(c.deleted) ? c.deleted.map(String) : []
     };
   }
   return null;
 }
-function it(r, n, l) {
-  const p = he(r, n, l);
-  return p?.event === "component.meta.changed" ? p : null;
+function it(r, t, l) {
+  const u = _e(r, t, l);
+  return u?.event === "component.meta.changed" ? u : null;
 }
-function at(r, n) {
-  const l = he(r, n);
+function at(r, t) {
+  const l = _e(r, t);
   return l && l.event !== "component.meta.changed" ? l : null;
 }
-function lt(r, n, l) {
+function lt(r, t, l) {
   if (!r) return null;
-  const p = fe(`component.${r}`, (f) => {
+  const u = fe(`component.${r}`, (f) => {
     const c = it(f, r, l);
-    c && n(c);
+    c && t(c);
   });
-  return typeof p == "function" ? p : null;
+  return typeof u == "function" ? u : null;
 }
-function de(r, n) {
+function de(r, t) {
   if (r && typeof r == "object") {
-    const l = r, p = l.response?.data?.error;
-    if (typeof p == "string") return p;
-    if (p && typeof p == "object" && typeof p.message == "string")
-      return p.message;
+    const l = r, u = l.response?.data?.error;
+    if (typeof u == "string") return u;
+    if (u && typeof u == "object" && typeof u.message == "string")
+      return u.message;
     if (typeof l.message == "string" && l.message) return l.message;
   }
-  return n;
+  return t;
 }
-function ct(r, n, l, p) {
+function ct(r, t, l, u) {
   let f = !0;
   const c = /* @__PURE__ */ new Set(), S = /* @__PURE__ */ new Map();
   function x(y, g) {
-    const v = r.value.find((L) => n(L) === y), u = S.get(y), k = g?.job_id || u?.deletion_job_id || v?.deletion_job_id, T = u ? u.deletion_job_id : v?.deleting_at ? v.deletion_job_id : void 0;
-    if ((u || v?.deleting_at) && k === T) return;
+    const v = r.value.find((L) => t(L) === y), p = S.get(y), k = g?.job_id || p?.deletion_job_id || v?.deletion_job_id, D = p ? p.deletion_job_id : v?.deleting_at ? v.deletion_job_id : void 0;
+    if ((p || v?.deleting_at) && k === D) return;
     const M = {
-      deleting_at: u?.deleting_at || v?.deleting_at || (/* @__PURE__ */ new Date()).toISOString(),
+      deleting_at: p?.deleting_at || v?.deleting_at || (/* @__PURE__ */ new Date()).toISOString(),
       deletion_job_id: k
     };
     S.set(y, M), v && (Object.assign(v, M), v.deletion_job = void 0);
   }
   async function j(y) {
-    const g = n(y), v = S.get(g), u = () => f && r.value.includes(y) && S.get(g) === v;
+    const g = t(y), v = S.get(g), p = () => f && r.value.includes(y) && S.get(g) === v;
     try {
-      const { data: k } = await H.get(`/api/v1/components/${encodeURIComponent(g)}`);
+      const { data: k } = await W.get(`/api/v1/components/${encodeURIComponent(g)}`);
       if (!k?.success) throw new Error(de(k, "Could not read deletion progress"));
-      u() && (y.deleting_at = v?.deleting_at || k.deleting_at, y.deletion_job_id = k.deletion_job_id, v && (v.deletion_job_id = y.deletion_job_id), y.deletion_job = k.deletion_job ?? null);
+      p() && (y.deleting_at = v?.deleting_at || k.deleting_at, y.deletion_job_id = k.deletion_job_id, v && (v.deletion_job_id = y.deletion_job_id), y.deletion_job = k.deletion_job ?? null);
     } catch (k) {
-      u() && We.handleError("other", { message: de(k, "Could not read deletion progress") });
+      p() && We.handleError("other", { message: de(k, "Could not read deletion progress") });
     }
   }
   let A = [];
   const P = Be(() => r.value, (y, g = []) => {
-    const v = y.filter((u) => !c.has(n(u)));
-    for (const u of g)
-      c.has(n(u)) || v.some((k) => n(k) === n(u)) || u.deleting_at;
+    const v = y.filter((p) => !c.has(t(p)));
+    for (const p of g)
+      c.has(t(p)) || v.some((k) => t(k) === t(p)) || p.deleting_at && u?.(t(p));
     if (v.length !== y.length) {
       r.value = v;
       return;
     }
-    for (const u of y) {
-      const k = S.get(n(u));
-      k && (u.deletion_job_id !== k.deletion_job_id && (u.deletion_job = void 0), Object.assign(u, k));
-      const T = g.find((M) => n(M) === n(u));
-      u.deletion_job === void 0 && T?.deletion_job_id === u.deletion_job_id && (u.deletion_job = T?.deletion_job), u.deleting_at && !A.includes(u) && j(u);
+    for (const p of y) {
+      const k = S.get(t(p));
+      k && (p.deletion_job_id !== k.deletion_job_id && (p.deletion_job = void 0), Object.assign(p, k));
+      const D = g.find((M) => t(M) === t(p));
+      p.deletion_job === void 0 && D?.deletion_job_id === p.deletion_job_id && (p.deletion_job = D?.deletion_job), p.deleting_at && !A.includes(p) && j(p);
     }
     A = y;
-  }, { immediate: !0 }), D = fe("@message", (y) => {
+  }, { immediate: !0 }), T = fe("@message", (y) => {
     const g = at(y);
     if (!g) return;
-    const v = r.value.find((u) => n(u) === g.component_id);
-    g.event === "component.deleted" ? (v && c.has(g.component_id), c.add(g.component_id), S.delete(g.component_id), r.value = r.value.filter((u) => n(u) !== g.component_id)) : v && x(g.component_id, { job_id: g.deletion_job_id });
+    const v = r.value.find((p) => t(p) === g.component_id);
+    g.event === "component.deleted" ? (v && !c.has(g.component_id) && u?.(g.component_id), c.add(g.component_id), S.delete(g.component_id), r.value = r.value.filter((p) => t(p) !== g.component_id)) : v && x(g.component_id, { job_id: g.deletion_job_id });
   });
   return pe(() => {
-    f = !1, P(), typeof D == "function" && D();
+    f = !1, P(), typeof T == "function" && T();
   }), { acceptDeletion: x };
 }
-function dt({ providers: r, connections: n, search: l, confirmId: p }) {
+function dt({ providers: r, connections: t, search: l, confirmId: u }) {
   const f = (o) => o.provider ?? "", c = (o) => o.title ?? o.name ?? o.oauth_provider ?? "Provider", S = (o) => o.icon || "tabler:plug", x = Z(() => {
     const o = {};
     for (const a of r.value) {
@@ -337,35 +337,35 @@ function dt({ providers: r, connections: n, search: l, confirmId: p }) {
   function P(o) {
     return new Set((o.scopes_granted ?? []).filter((a) => typeof a == "string" && a.length > 0));
   }
-  function D(o) {
+  function T(o) {
     return new Set((o?.default_scopes ?? []).filter((a) => typeof a == "string" && a.length > 0));
   }
   function y(o) {
     return (o?.available_scopes ?? []).map((a) => a.scope).filter((a) => typeof a == "string" && a.length > 0);
   }
   function g(o) {
-    const a = D(o);
+    const a = T(o);
     return y(o).some((C) => !a.has(C));
   }
   function v(o) {
     if (!o.oauth) return !1;
     const a = A(o);
     if (!g(a)) return !1;
-    const C = P(o), B = D(a);
+    const C = P(o), B = T(a);
     if (C.size === 0 || B.size === 0) return !1;
     for (const Q of C)
       if (!B.has(Q)) return !1;
     return !0;
   }
-  function u(o) {
-    return De(o.connection_state, o.expires_at);
+  function p(o) {
+    return Te(o.connection_state, o.expires_at);
   }
   function k(o) {
-    const a = u(o);
+    const a = p(o);
     return a === "connected" && v(o) ? "warn" : Me[a];
   }
-  function T(o) {
-    const a = u(o);
+  function D(o) {
+    const a = p(o);
     return a === "connected" && v(o) ? "Limited access" : Pe[a];
   }
   function M(o) {
@@ -384,15 +384,15 @@ function dt({ providers: r, connections: n, search: l, confirmId: p }) {
     return a.join(" · ");
   }
   function R(o) {
-    if (p.value === o.component_id) return "Click the check again to remove this connection.";
-    const a = u(o);
+    if (u.value === o.component_id) return "Click the check again to remove this connection.";
+    const a = p(o);
     return a === "expired" ? "The stored access token is expired; reconnect or wait for refresh." : a === "needs_reauth" ? `Reauthorize this connection to restore access.${o.reauth_reason ? " " + o.reauth_reason : ""}` : a === "disabled" ? "This connection is disabled and will not be used." : v(o) ? "Reauthorize this connection to grant service scopes." : o.oauth ? "OAuth connection available for agents and automations." : "Connection available for agents and automations.";
   }
   function O(o) {
     const a = l.value.trim().toLowerCase();
     return !a || o.toLowerCase().includes(a);
   }
-  const I = Z(() => r.value.filter((o) => O(`${c(o)} ${o.description ?? ""} ${(o.classes ?? []).join(" ")}`))), F = Z(() => n.value.filter((o) => O(`${o.name ?? ""} ${o.provider ?? ""}`)));
+  const I = Z(() => r.value.filter((o) => O(`${c(o)} ${o.description ?? ""} ${(o.classes ?? []).join(" ")}`))), G = Z(() => t.value.filter((o) => O(`${o.name ?? ""} ${o.provider ?? ""}`)));
   return {
     providerKey: f,
     providerLabel: c,
@@ -400,24 +400,24 @@ function dt({ providers: r, connections: n, search: l, confirmId: p }) {
     connIcon: j,
     providerForConnection: A,
     grantedScopeSet: P,
-    defaultScopeSet: D,
+    defaultScopeSet: T,
     availableScopeValues: y,
     hasOptionalProviderScopes: g,
     hasSignInOnlyScopes: v,
-    connectionState: u,
+    connectionState: p,
     statusClass: k,
-    statusLabel: T,
+    statusLabel: D,
     expiryText: M,
     statusDetail: L,
     connectionDescription: R,
     filteredProviders: I,
-    filteredConnections: F
+    filteredConnections: G
   };
 }
-const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-head-icon" }, vt = { class: "kx-head-actions" }, ht = {
+const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-head-icon" }, vt = { class: "kx-head-actions" }, _t = {
   class: "kx-search",
   role: "search"
-}, _t = { class: "conn-body" }, mt = {
+}, ht = { class: "conn-body" }, mt = {
   key: 0,
   class: "conn-loading"
 }, gt = {
@@ -429,7 +429,7 @@ const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-
 }, Ct = {
   key: 1,
   class: "block au d1"
-}, St = { class: "live-grid" }, xt = { class: "lc-top" }, $t = { class: "lc-ico" }, jt = { class: "lc-top-r" }, wt = ["title", "aria-label", "onClick", "disabled"], Et = ["title", "aria-label", "onClick", "disabled"], Nt = ["title", "aria-label", "onClick", "disabled"], Pt = { class: "lc-name" }, Mt = { class: "lc-desc" }, Dt = { class: "lc-primary" }, Tt = {
+}, St = { class: "live-grid" }, xt = { class: "lc-top" }, $t = { class: "lc-ico" }, jt = { class: "lc-top-r" }, wt = ["title", "aria-label", "onClick", "disabled"], Et = ["title", "aria-label", "onClick", "disabled"], Nt = ["title", "aria-label", "onClick", "disabled"], Pt = { class: "lc-name" }, Mt = { class: "lc-desc" }, Tt = { class: "lc-primary" }, Dt = {
   key: 0,
   class: "lc-secondary"
 }, Ot = {
@@ -450,18 +450,18 @@ const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-
 }, Zt = { class: "lt-empty-hero is-info" }, Qt = 100, Xt = /* @__PURE__ */ ue({
   __name: "connections",
   setup(r) {
-    const n = w([]), l = w([]), p = w(!0), f = w(!1), c = w(""), S = w(""), x = w(""), j = w(""), A = dt({ providers: l, connections: n, search: j, confirmId: x }), {
+    const t = w([]), l = w([]), u = w(!0), f = w(!1), c = w(""), S = w(""), x = w(""), j = w(""), A = dt({ providers: l, connections: t, search: j, confirmId: x }), {
       providerKey: P,
-      providerLabel: D,
+      providerLabel: T,
       providerIcon: y,
       connIcon: g,
       statusClass: v,
-      statusLabel: u,
+      statusLabel: p,
       statusDetail: k,
-      connectionDescription: T,
+      connectionDescription: D,
       filteredProviders: M,
       filteredConnections: L
-    } = A, R = w(0), O = w(!1), I = w(!1), F = w(void 0), o = w(void 0), a = w(!1), C = w(null), B = w(null);
+    } = A, R = w(0), O = w(!1), I = w(!1), G = w(void 0), o = w(void 0), a = w(!1), C = w(null), B = w(null);
     function Q(s) {
       return `/api/v1/connections?${new URLSearchParams({
         limit: String(Qt),
@@ -469,33 +469,33 @@ const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-
       }).toString()}`;
     }
     async function ie(s) {
-      const { data: e } = await H.get(Q(s));
+      const { data: e } = await W.get(Q(s));
       return e ?? { connections: [], total_count: 0, has_more: !1 };
     }
-    async function G() {
-      p.value = !0, c.value = "", S.value = "";
+    async function K() {
+      u.value = !0, c.value = "", S.value = "";
       try {
-        const [s, e, t] = await Promise.all([
+        const [s, e, n] = await Promise.all([
           ie(0),
-          H.get("/api/v1/oauth/providers/discover"),
-          H.get("/api/v1/connections/providers/discover")
+          W.get("/api/v1/oauth/providers/discover"),
+          W.get("/api/v1/connections/providers/discover")
         ]);
-        n.value = s.connections ?? [], R.value = Number(s.total_count ?? n.value.length), O.value = !!s.has_more, ee(), l.value = me([
+        t.value = s.connections ?? [], R.value = Number(s.total_count ?? t.value.length), O.value = !!s.has_more, ee(), l.value = me([
           ...e.data?.providers ?? [],
-          ...t.data?.providers ?? []
+          ...n.data?.providers ?? []
         ]);
       } catch (s) {
-        n.value.length ? c.value = Y(s) : S.value = Y(s), ee();
+        t.value.length ? c.value = Y(s) : S.value = Y(s), ee();
       } finally {
-        p.value = !1;
+        u.value = !1;
       }
     }
-    async function _e() {
+    async function he() {
       if (!(f.value || !O.value)) {
         f.value = !0, c.value = "";
         try {
-          const s = await ie(n.value.length), e = s.connections ?? [];
-          n.value = [...n.value, ...e], R.value = Number(s.total_count ?? R.value), O.value = !!s.has_more, ee();
+          const s = await ie(t.value.length), e = s.connections ?? [];
+          t.value = [...t.value, ...e], R.value = Number(s.total_count ?? R.value), O.value = !!s.has_more, ee();
         } catch (s) {
           c.value = Y(s);
         } finally {
@@ -505,25 +505,25 @@ const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-
     }
     function me(s) {
       const e = {};
-      for (const t of s) {
-        const h = P(t);
-        h && (e[h] = e[h] ? { ...t, ...e[h] } : t);
+      for (const n of s) {
+        const _ = P(n);
+        _ && (e[_] = e[_] ? { ...n, ...e[_] } : n);
       }
       return Object.values(e);
     }
     function ge(s) {
       return Array.isArray(s) ? s.filter((e) => typeof e == "string" && e.length > 0) : typeof s != "string" ? [] : s.split(/\s+/).filter(Boolean);
     }
-    function ye(s, e, t = []) {
-      const h = {};
-      if (typeof e.title == "string" && (h.name = e.title), typeof e.provider == "string" && (h.provider = e.provider), typeof e.icon == "string" && (h.icon = e.icon), typeof e.connection_state == "string" && (h.connection_state = e.connection_state), typeof e.reauth_reason == "string" && (h.reauth_reason = e.reauth_reason), typeof e.expires_at == "number" && (h.expires_at = e.expires_at), typeof e.refresh_expires_at == "number" && (h.refresh_expires_at = e.refresh_expires_at), typeof e.last_token_refresh == "string" && (h.last_token_refresh = e.last_token_refresh), typeof e.scopes_granted == "string") {
-        const K = ge(e.scopes_granted);
-        h.scopes_granted = K, h.scope_count = K.length;
+    function ye(s, e, n = []) {
+      const _ = {};
+      if (typeof e.title == "string" && (_.name = e.title), typeof e.provider == "string" && (_.provider = e.provider), typeof e.icon == "string" && (_.icon = e.icon), typeof e.connection_state == "string" && (_.connection_state = e.connection_state), typeof e.reauth_reason == "string" && (_.reauth_reason = e.reauth_reason), typeof e.expires_at == "number" && (_.expires_at = e.expires_at), typeof e.refresh_expires_at == "number" && (_.refresh_expires_at = e.refresh_expires_at), typeof e.last_token_refresh == "string" && (_.last_token_refresh = e.last_token_refresh), typeof e.scopes_granted == "string") {
+        const z = ge(e.scopes_granted);
+        _.scopes_granted = z, _.scope_count = z.length;
       }
-      typeof e.oauth_connection == "boolean" && (h.oauth = e.oauth_connection);
-      const V = { ...s, ...h };
-      for (const K of t) {
-        const Ee = K === "title" ? "name" : K;
+      typeof e.oauth_connection == "boolean" && (_.oauth = e.oauth_connection);
+      const V = { ...s, ..._ };
+      for (const z of n) {
+        const Ee = z === "title" ? "name" : z;
         delete V[Ee];
       }
       return V;
@@ -531,7 +531,7 @@ const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-
     const U = /* @__PURE__ */ new Map(), J = /* @__PURE__ */ new Set();
     let X = 0;
     function be(s, e) {
-      n.value = n.value.map((t) => t.component_id === s ? ye(t, e.meta || {}, e.deleted || []) : t);
+      t.value = t.value.map((n) => n.component_id === s ? ye(n, e.meta || {}, e.deleted || []) : n);
     }
     function ke() {
       X++, J.clear();
@@ -539,25 +539,25 @@ const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-
       U.clear();
     }
     function ee() {
-      const s = new Set(n.value.map((t) => t.component_id).filter(Boolean));
-      for (const [t, h] of U)
-        s.has(t) || (h(), U.delete(t));
+      const s = new Set(t.value.map((n) => n.component_id).filter(Boolean));
+      for (const [n, _] of U)
+        s.has(n) || (_(), U.delete(n));
       const e = X;
-      for (const t of s) {
-        if (U.has(t) || J.has(t)) continue;
-        J.add(t);
-        const h = lt(t, (V) => be(t, V), Oe);
-        if (J.delete(t), !!h) {
-          if (e !== X || !n.value.some((V) => V.component_id === t)) {
-            h();
+      for (const n of s) {
+        if (U.has(n) || J.has(n)) continue;
+        J.add(n);
+        const _ = lt(n, (V) => be(n, V), Oe);
+        if (J.delete(n), !!_) {
+          if (e !== X || !t.value.some((V) => V.component_id === n)) {
+            _();
             continue;
           }
-          U.set(t, h);
+          U.set(n, _);
         }
       }
     }
     function te(s, e) {
-      F.value = s, o.value = e, I.value = !0;
+      G.value = s, o.value = e, I.value = !0;
     }
     async function Ce(s) {
       C.value = s, a.value = !0, await Ke(), await xe();
@@ -583,11 +583,11 @@ const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-
     }
     function $e(s) {
       if (!s.provider) return;
-      const e = l.value.find((t) => P(t) === s.provider);
+      const e = l.value.find((n) => P(n) === s.provider);
       te(s.provider, s.oauth || e?.create_ui_id ? { componentId: s.component_id, name: s.name } : void 0);
     }
     function je() {
-      I.value = !1, o.value = void 0, n.value = [], G();
+      I.value = !1, o.value = void 0, t.value = [], K();
     }
     async function ae(s) {
       if (x.value !== s.component_id) {
@@ -596,16 +596,16 @@ const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-
       }
       x.value = "", c.value = "";
       try {
-        const { data: e } = await H.delete(`/api/v1/connections/${encodeURIComponent(s.component_id)}`);
+        const { data: e } = await W.delete(`/api/v1/connections/${encodeURIComponent(s.component_id)}`);
         if (!e?.success) throw new Error(e?.error || "delete failed");
-        we(s.component_id, e), await G();
+        we(s.component_id, e), await K();
       } catch (e) {
         c.value = Y(e);
       }
     }
-    Te(G), pe(ke);
-    const { acceptDeletion: we } = ct(n, (s) => s.component_id);
-    return (s, e) => (_(), m("div", ut, [
+    De(K), pe(ke);
+    const { acceptDeletion: we } = ct(t, (s) => s.component_id, void 0, K);
+    return (s, e) => (h(), m("div", ut, [
       i("header", pt, [
         i("div", ft, [
           b(d($), {
@@ -618,14 +618,14 @@ const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-
           i("p", { class: "kx-head-sub" }, "Connect external services and manage them here.")
         ], -1)),
         i("div", vt, [
-          i("label", ht, [
+          i("label", _t, [
             b(d($), {
               icon: "tabler:search",
               class: "kx-search-ico",
               "aria-hidden": "true"
             }),
             Ie(i("input", {
-              "onUpdate:modelValue": e[0] || (e[0] = (t) => j.value = t),
+              "onUpdate:modelValue": e[0] || (e[0] = (n) => j.value = n),
               class: "kx-search-input",
               type: "search",
               placeholder: "Search services",
@@ -633,10 +633,10 @@ const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-
             }, null, 512), [
               [Ue, j.value]
             ]),
-            j.value ? (_(), m("button", {
+            j.value ? (h(), m("button", {
               key: 0,
               class: "kx-search-clear",
-              onClick: e[1] || (e[1] = (t) => j.value = ""),
+              onClick: e[1] || (e[1] = (n) => j.value = ""),
               "aria-label": "Clear search"
             }, [
               b(d($), {
@@ -647,7 +647,7 @@ const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-
           ]),
           b(d(re), {
             label: "Connect app",
-            onClick: e[2] || (e[2] = (t) => te())
+            onClick: e[2] || (e[2] = (n) => te())
           }, {
             icon: le(() => [
               b(d($), {
@@ -659,8 +659,8 @@ const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-
           })
         ])
       ]),
-      i("div", _t, [
-        p.value && !n.value.length ? (_(), m("div", mt, "Loading…")) : S.value ? (_(), m("section", gt, [
+      i("div", ht, [
+        u.value && !t.value.length ? (h(), m("div", mt, "Loading…")) : S.value ? (h(), m("section", gt, [
           i("div", yt, [
             b(d($), { icon: "tabler:plug-x" })
           ]),
@@ -669,7 +669,7 @@ const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-
           b(d(re), {
             label: "Try again",
             class: "conn-retry",
-            onClick: G
+            onClick: K
           }, {
             icon: le(() => [
               b(d($), {
@@ -679,83 +679,83 @@ const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-
             ]),
             _: 1
           })
-        ])) : (_(), m(W, { key: 2 }, [
-          c.value ? (_(), m("div", kt, [
+        ])) : (h(), m(F, { key: 2 }, [
+          c.value ? (h(), m("div", kt, [
             b(d($), { icon: "tabler:alert-circle" }),
             se(E(c.value), 1)
           ])) : N("", !0),
-          d(L).length ? (_(), m("section", Ct, [
+          d(L).length ? (h(), m("section", Ct, [
             e[8] || (e[8] = i("div", { class: "block-head" }, [
               i("h2", { class: "lt-section-header" }, "Your connections")
             ], -1)),
             i("div", St, [
-              (_(!0), m(W, null, ce(d(L), (t) => (_(), m("div", {
-                key: t.component_id,
-                class: q(["live-card s-live", `state-${d(v)(t)}`])
+              (h(!0), m(F, null, ce(d(L), (n) => (h(), m("div", {
+                key: n.component_id,
+                class: q(["live-card s-live", `state-${d(v)(n)}`])
               }, [
                 b(ot, {
-                  state: t,
-                  onRetry: (h) => {
-                    x.value = t.component_id, ae(t);
+                  state: n,
+                  onRetry: (_) => {
+                    x.value = n.component_id, ae(n);
                   }
                 }, null, 8, ["state", "onRetry"]),
                 i("div", xt, [
                   i("div", $t, [
                     b(d($), {
-                      icon: d(g)(t),
+                      icon: d(g)(n),
                       "aria-hidden": "true"
                     }, null, 8, ["icon"])
                   ]),
                   i("div", jt, [
                     i("button", {
                       class: "lc-add",
-                      title: `Share ${t.name || t.provider}`,
-                      "aria-label": `Share ${t.name || t.provider}`,
-                      onClick: (h) => Ce(t),
-                      disabled: !!t.deleting_at
+                      title: `Share ${n.name || n.provider}`,
+                      "aria-label": `Share ${n.name || n.provider}`,
+                      onClick: (_) => Ce(n),
+                      disabled: !!n.deleting_at
                     }, [
                       b(d($), { icon: "tabler:share" })
                     ], 8, wt),
                     i("button", {
                       class: "lc-add",
-                      title: `Reconnect ${t.name || t.provider}`,
-                      "aria-label": `Reconnect ${t.name || t.provider}`,
-                      onClick: (h) => $e(t),
-                      disabled: !!t.deleting_at
+                      title: `Reconnect ${n.name || n.provider}`,
+                      "aria-label": `Reconnect ${n.name || n.provider}`,
+                      onClick: (_) => $e(n),
+                      disabled: !!n.deleting_at
                     }, [
                       b(d($), { icon: "tabler:refresh" })
                     ], 8, Et),
                     i("button", {
-                      class: q(["lc-add lc-danger", x.value === t.component_id && "armed"]),
-                      title: x.value === t.component_id ? "Click again to remove" : `Remove ${t.name || t.provider}`,
-                      "aria-label": `Remove ${t.name || t.provider}`,
-                      onClick: (h) => ae(t),
-                      disabled: !!t.deleting_at
+                      class: q(["lc-add lc-danger", x.value === n.component_id && "armed"]),
+                      title: x.value === n.component_id ? "Click again to remove" : `Remove ${n.name || n.provider}`,
+                      "aria-label": `Remove ${n.name || n.provider}`,
+                      onClick: (_) => ae(n),
+                      disabled: !!n.deleting_at
                     }, [
                       b(d($), {
-                        icon: x.value === t.component_id ? "tabler:check" : "tabler:trash"
+                        icon: x.value === n.component_id ? "tabler:check" : "tabler:trash"
                       }, null, 8, ["icon"])
                     ], 10, Nt)
                   ])
                 ]),
-                i("div", Pt, E(t.name || t.provider || "Connection"), 1),
-                i("div", Mt, E(d(T)(t)), 1),
+                i("div", Pt, E(n.name || n.provider || "Connection"), 1),
+                i("div", Mt, E(d(D)(n)), 1),
                 i("div", {
-                  class: q(["lc-status", `state-${d(v)(t)}`])
+                  class: q(["lc-status", `state-${d(v)(n)}`])
                 }, [
                   e[6] || (e[6] = i("span", { class: "dot" }, null, -1)),
-                  i("span", Dt, E(d(u)(t)), 1),
-                  d(k)(t) ? (_(), m("span", Tt, "· " + E(d(k)(t)), 1)) : N("", !0)
+                  i("span", Tt, E(d(p)(n)), 1),
+                  d(k)(n) ? (h(), m("span", Dt, "· " + E(d(k)(n)), 1)) : N("", !0)
                 ], 2)
               ], 2))), 128))
             ]),
-            R.value || O.value ? (_(), m("div", Ot, [
-              i("span", null, E(n.value.length) + " of " + E(R.value || n.value.length) + " loaded", 1),
-              O.value ? (_(), m("button", {
+            R.value || O.value ? (h(), m("div", Ot, [
+              i("span", null, E(t.value.length) + " of " + E(R.value || t.value.length) + " loaded", 1),
+              O.value ? (h(), m("button", {
                 key: 0,
                 class: "ghost-action",
                 disabled: f.value,
-                onClick: _e
+                onClick: he
               }, [
                 b(d($), {
                   icon: f.value ? "tabler:loader-2" : "tabler:chevron-down",
@@ -764,33 +764,33 @@ const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-
                 e[7] || (e[7] = se(" Load more ", -1))
               ], 8, At)) : N("", !0)
             ])) : N("", !0)
-          ])) : !j.value && l.value.length ? (_(), m("section", Lt, [
+          ])) : !j.value && l.value.length ? (h(), m("section", Lt, [
             i("div", Rt, [
               b(d($), { icon: "tabler:plug-connected" })
             ]),
             e[9] || (e[9] = i("div", { class: "e-title" }, "Connect your first app", -1)),
             e[10] || (e[10] = i("div", { class: "e-sub" }, "Pick a service below — your agents and automations will read events and act through it.", -1))
           ])) : N("", !0),
-          d(M).length ? (_(), m("section", Bt, [
+          d(M).length ? (h(), m("section", Bt, [
             i("div", It, [
               i("h2", Ut, E(d(L).length ? "Add another" : "Available services"), 1)
             ]),
             i("div", Vt, [
-              (_(!0), m(W, null, ce(d(M), (t) => (_(), m("button", {
-                key: d(P)(t),
-                "data-provider-key": d(P)(t),
+              (h(!0), m(F, null, ce(d(M), (n) => (h(), m("button", {
+                key: d(P)(n),
+                "data-provider-key": d(P)(n),
                 class: "setup-card",
-                onClick: (h) => te(d(P)(t))
+                onClick: (_) => te(d(P)(n))
               }, [
                 i("div", zt, [
                   b(d($), {
-                    icon: d(y)(t),
+                    icon: d(y)(n),
                     "aria-hidden": "true"
                   }, null, 8, ["icon"])
                 ]),
                 i("div", Ht, [
-                  i("div", Wt, E(d(D)(t)), 1),
-                  i("div", Ft, E(t.description || `Set up ${d(D)(t)}`), 1)
+                  i("div", Wt, E(d(T)(n)), 1),
+                  i("div", Ft, E(n.description || `Set up ${d(T)(n)}`), 1)
                 ]),
                 b(d($), {
                   icon: "tabler:arrow-right",
@@ -799,12 +799,12 @@ const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-
                 })
               ], 8, Kt))), 128))
             ])
-          ])) : j.value ? (_(), m("section", Gt, [
+          ])) : j.value ? (h(), m("section", Gt, [
             i("div", Jt, [
               b(d($), { icon: "tabler:search-off" })
             ]),
             i("div", Yt, "No services match “" + E(j.value) + "”", 1)
-          ])) : !l.value.length && !n.value.length ? (_(), m("section", qt, [
+          ])) : !l.value.length && !t.value.length ? (h(), m("section", qt, [
             i("div", Zt, [
               b(d($), { icon: "tabler:plug-x" })
             ]),
@@ -813,15 +813,15 @@ const ut = { class: "conn-page" }, pt = { class: "kx-head" }, ft = { class: "kx-
           ])) : N("", !0)
         ], 64))
       ]),
-      I.value ? (_(), Ve(He, {
+      I.value ? (h(), Ve(He, {
         key: 0,
         providers: l.value,
-        provider: F.value,
+        provider: G.value,
         reauth: o.value,
-        onClose: e[3] || (e[3] = (t) => I.value = !1),
+        onClose: e[3] || (e[3] = (n) => I.value = !1),
         onConnected: je
       }, null, 8, ["providers", "provider", "reauth"])) : N("", !0),
-      a.value ? (_(), m("div", {
+      a.value ? (h(), m("div", {
         key: 1,
         ref_key: "shareHost",
         ref: B

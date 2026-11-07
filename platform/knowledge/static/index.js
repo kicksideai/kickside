@@ -1054,16 +1054,9 @@ const Kt = { class: "kx" }, Nt = { class: "kx-head" }, It = { class: "kx-head-ic
         C.value = ne(p, "host API unavailable");
       }
     });
-    const { acceptDeletion: ze } = mt(
-      H,
-      (p) => p.id,
-      (p) => {
-        s.value?.id === p && l();
-      },
-      () => {
-        b();
-      }
-    );
+    const { acceptDeletion: ze } = mt(H, (p) => p.id, (p) => {
+      s.value?.id === p && l();
+    }, b);
     return (p, r) => (g(), m("div", Kt, [
       s.value ? (g(), m(Y, { key: 1 }, [
         y("div", sn, [
