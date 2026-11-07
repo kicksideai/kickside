@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.10](https://github.com/kicksideai/kickside/compare/component-v0.3.9...component-v0.3.10) (2026-11-07)
+
+
+### Bug Fixes
+
+* keep the typed access refusal of an event round's source pull ([#347](https://github.com/kicksideai/kickside/issues/347)) ([4b7a264](https://github.com/kicksideai/kickside/commit/4b7a2640d6593e7384764785e97aa4d6bdc3e4d7))
+
 ## [0.3.9](https://github.com/kicksideai/kickside/compare/component-v0.3.8...component-v0.3.9) (2026-11-07)
 
 
