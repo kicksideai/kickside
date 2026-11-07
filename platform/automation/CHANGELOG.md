@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.17](https://github.com/kicksideai/kickside/compare/automation-v0.2.16...automation-v0.2.17) (2026-11-07)
+
+
+### Bug Fixes
+
+* keep the typed access refusal of an event round's source pull ([#347](https://github.com/kicksideai/kickside/issues/347)) ([4b7a264](https://github.com/kicksideai/kickside/commit/4b7a2640d6593e7384764785e97aa4d6bdc3e4d7))
+
 ## [0.2.16](https://github.com/kicksideai/kickside/compare/automation-v0.2.15...automation-v0.2.16) (2026-11-07)
 
 

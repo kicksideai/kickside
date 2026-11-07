@@ -1,11 +1,11 @@
 {
-  "core/component": "0.3.9",
+  "core/component": "0.3.10",
   "core/contract": "0.3.3",
   "core/core": "0.3.12",
   "core/execution": "0.2.7",
   "core/jobs": "0.1.73",
   "platform/agents": "0.2.12",
-  "platform/automation": "0.2.16",
+  "platform/automation": "0.2.17",
   "platform/blocks": "0.1.43",
   "platform/channel": "0.2.7",
   "platform/connection": "0.5.4",
