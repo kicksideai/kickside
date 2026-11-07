@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Read side of the skills slice (queries). A skill's metadata lives on its
 -- component (discovery); its body, version history, and file manifests live in the
 -- committed projection body (state.lua), folded from thread events; file bytes
