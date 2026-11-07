@@ -108,6 +108,16 @@ local function kind_of(value: any): (string?, { kind: string, deterministic: boo
     return nil, nil, false
 end
 
+-- The function registry answers a call to a target it does not hold with a
+-- typed NOT_FOUND naming that target. A registry changeset replaces entries in
+-- place, so the target's absence is a transient unavailability of the call,
+-- whatever retry verdict the registry attaches.
+local function is_missing_call_target(value: any): boolean
+    if type(value) ~= "userdata" or not errors.is(value, KIND_NOT_FOUND) then return false end
+    local details = (value :: any):details()
+    return type(details) == "table" and type(details.target) == "string"
+end
+
 local function is_failure_envelope(value: any): boolean
     if type(value) ~= "table" then return false end
     local envelope = value :: Map
@@ -127,11 +137,13 @@ function M.classify(value: any, prefix: string?): ClassifiedFailure
     if outer ~= nil and outer.error ~= nil then detail = outer.error end
     local kind, mapping, typed = kind_of(detail)
     kind = kind or KIND_INTERNAL
+    local missing_target = is_missing_call_target(detail)
+    if missing_target then kind = KIND_UNAVAILABLE end
 
     local explicit: any = nil
     if outer ~= nil then explicit = outer.retriable end
     if type(explicit) ~= "boolean" then explicit = field(detail, "retriable") end
-    if type(explicit) ~= "boolean" and typed and type(detail) == "userdata" then
+    if type(explicit) ~= "boolean" and typed and not missing_target and type(detail) == "userdata" then
         local retryable = (detail :: any):retryable()
         if type(retryable) == "boolean" then explicit = retryable end
     end
