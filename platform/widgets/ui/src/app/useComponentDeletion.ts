@@ -21,9 +21,14 @@ export function useComponentDeletion<T extends ComponentDeletionState>(
   function acceptDeletion(componentId: string, result?: {job_id?: string | null}) {
     const row = rows.value.find(row => id(row) === componentId)
     const previous = accepted.get(componentId)
+    const jobId = result?.job_id || previous?.deletion_job_id || row?.deletion_job_id
+    // The same deletion job is the attempt the row already tracks; its progress and
+    // any outstanding progress read stay valid. Only a different job starts a new attempt.
+    const tracked = previous ? previous.deletion_job_id : row?.deleting_at ? row.deletion_job_id : undefined
+    if ((previous || row?.deleting_at) && jobId === tracked) return
     const state = {
       deleting_at: previous?.deleting_at || row?.deleting_at || new Date().toISOString(),
-      deletion_job_id: result?.job_id || previous?.deletion_job_id || row?.deletion_job_id,
+      deletion_job_id: jobId,
     }
     accepted.set(componentId, state)
     if (row) { Object.assign(row, state); row.deletion_job = undefined }

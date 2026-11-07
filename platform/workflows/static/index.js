@@ -150,11 +150,13 @@ function ab(e, t, n, o) {
   let r = !0;
   const i = /* @__PURE__ */ new Set(), a = /* @__PURE__ */ new Map();
   function s(f, h) {
-    const m = e.value.find((k) => t(k) === f), g = a.get(f), v = {
+    const m = e.value.find((y) => t(y) === f), g = a.get(f), v = h?.job_id || g?.deletion_job_id || m?.deletion_job_id, k = g ? g.deletion_job_id : m?.deleting_at ? m.deletion_job_id : void 0;
+    if ((g || m?.deleting_at) && v === k) return;
+    const S = {
       deleting_at: g?.deleting_at || m?.deleting_at || (/* @__PURE__ */ new Date()).toISOString(),
-      deletion_job_id: h?.job_id || g?.deletion_job_id || m?.deletion_job_id
+      deletion_job_id: v
     };
-    a.set(f, v), m && (Object.assign(m, v), m.deletion_job = void 0);
+    a.set(f, S), m && (Object.assign(m, S), m.deletion_job = void 0);
   }
   async function l(f) {
     const h = t(f), m = a.get(h), g = () => r && e.value.includes(f) && a.get(h) === m;

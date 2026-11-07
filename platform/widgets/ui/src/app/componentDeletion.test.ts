@@ -292,3 +292,33 @@ it('reads progress of a marked row from a list that also returns a deleted id', 
   expect(api.get).toHaveBeenCalledExactlyOnceWith('/api/v1/components/marked')
   expect(rows.value[0].deletion_job?.status).toBe('dead')
 })
+
+it('keeps a dead attempt and its retry when that attempt\'s deleting event arrives after the list read', async () => {
+  vi.mocked(api.get).mockResolvedValue({data: {success: true, deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'dead', attempts: 3, last_error: 'cleanup refused'}}} as never)
+  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job'}])
+  mounted.push(mount(defineComponent({setup() {useComponentDeletion(rows, row => row.id); return () => null}})))
+  await flushPromises()
+  const receive = vi.mocked(on).mock.calls.at(-1)?.[1] as (message: unknown) => void
+  receive({event: 'component.deleting', component_id: 'selected', deletion_job_id: 'job'})
+  await flushPromises()
+  const indicator = mount(ComponentDeletion, {props: {state: rows.value[0]}}); mounted.push(indicator)
+  expect(rows.value[0].deletion_job?.status).toBe('dead')
+  expect(indicator.text()).toContain('Deletion failed')
+  expect(indicator.find('button').exists()).toBe(true)
+  receive({event: 'component.deleting', component_id: 'selected', deletion_job_id: 'retry-job'})
+  await flushPromises()
+  expect(rows.value[0].deletion_job_id).toBe('retry-job')
+  expect(rows.value[0].deletion_job).toBeUndefined()
+})
+
+it('keeps an in-flight progress read of the same attempt when its deleting event arrives', async () => {
+  let resolve!: (value: unknown) => void
+  vi.mocked(api.get).mockImplementation(() => new Promise(done => {resolve = done}) as never)
+  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job'}])
+  mounted.push(mount(defineComponent({setup() {useComponentDeletion(rows, row => row.id); return () => null}})))
+  const receive = vi.mocked(on).mock.calls.at(-1)?.[1] as (message: unknown) => void
+  receive({event: 'component.deleting', component_id: 'selected', deletion_job_id: 'job'})
+  resolve({data: {success: true, deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'dead', attempts: 3}}})
+  await flushPromises()
+  expect(rows.value[0].deletion_job?.status).toBe('dead')
+})
