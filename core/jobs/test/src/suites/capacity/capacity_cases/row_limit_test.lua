@@ -8,6 +8,12 @@ local job_fixture = require("job_fixture")
 local worker_fence = require("worker_fence")
 local row_bytes = require("row_bytes")
 
+-- The longest canonical RFC3339 timestamp. PostgreSQL renders TIMESTAMPTZ
+-- with trailing fractional zeros trimmed, so the trigger-owned updated_at
+-- changes length between writes. Rows are measured with this value in its
+-- place, so a byte budget does not depend on the instant the trigger records.
+local TIMESTAMP_BOUND = "9999-12-31T23:59:59.999999999+00:00"
+
 local function open_db(): sql.DB
     local db, err = sql.get("app:db")
     if not db then error("test database unavailable: " .. tostring(err)) end
@@ -79,7 +85,7 @@ local function define_tests()
             test.eq(stored.actor_context, "{}")
             test.not_nil(stored.created_at)
             test.not_nil(stored.updated_at)
-            test.is_true(stored.created_at ~= "9999-12-31T23:59:59.999999999+00:00")
+            test.is_true(stored.created_at ~= TIMESTAMP_BOUND)
             test.eq(tonumber(stored.execution_seq), 0)
             test.is_nil(select(2, db:execute("DELETE FROM kickside_job WHERE id=$1", { safe_id })))
             db:release()
@@ -107,7 +113,7 @@ local function define_tests()
             test.is_nil(read_err)
             local predicted = rows[1]
             predicted.payload = json.encode(payload)
-            predicted.created_at = "9999-12-31T23:59:59.999999999+00:00"
+            predicted.created_at = TIMESTAMP_BOUND
             predicted.updated_at = predicted.created_at
             predicted.slot = false
             predicted.wake_enabled = true
@@ -190,6 +196,7 @@ local function define_tests()
             test.is_nil(read_err)
             local row = rows[1]
             row.last_error = marker
+            row.updated_at = TIMESTAMP_BOUND
             local base_bytes, measure_err = row_bytes.measure(row)
             test.is_nil(measure_err)
             local pad = policy.max_row_bytes - (base_bytes :: integer) + 1
@@ -202,6 +209,7 @@ local function define_tests()
             test.is_nil(padded_read_err)
             local padded_row = padded_rows[1]
             padded_row.last_error = marker
+            padded_row.updated_at = TIMESTAMP_BOUND
             local padded_bytes, padded_measure_err = row_bytes.measure(padded_row)
             test.is_nil(padded_measure_err)
             test.eq(padded_bytes, policy.max_row_bytes + 1)
@@ -212,9 +220,10 @@ local function define_tests()
             local after_prepare = db:query("SELECT * FROM kickside_job WHERE id=$1", { id })[1]
             test.eq(after_prepare.last_error, marker)
             test.eq(after_prepare.payload, padded_rows[1].payload)
+            after_prepare.updated_at = TIMESTAMP_BOUND
             local after_bytes, after_measure_err = row_bytes.measure(after_prepare)
             test.is_nil(after_measure_err)
-            test.is_true((after_bytes :: integer) > policy.max_row_bytes)
+            test.eq(after_bytes, policy.max_row_bytes + 1)
             test.is_nil(row_bytes.check_update(db, "kickside_job", id, {}, policy.max_row_bytes, "termination_budget"))
 
             local overlarge = json.encode(string.rep("y", policy.max_row_bytes * 2))
