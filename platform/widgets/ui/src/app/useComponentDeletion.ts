@@ -46,6 +46,8 @@ export function useComponentDeletion<T extends ComponentDeletionState>(
       if (current()) host.handleError('other', {message: errMsg(error, 'Could not read deletion progress')})
     }
   }
+  // The rows whose deletion progress this hook has already taken from the server.
+  let settled: T[] = []
   const stop = watch(() => rows.value, (list, previous = []) => {
     const remaining = list.filter(row => !deleted.has(id(row)))
     for (const row of previous) {
@@ -62,8 +64,11 @@ export function useComponentDeletion<T extends ComponentDeletionState>(
       }
       const prior = previous.find(prior => id(prior) === id(row))
       if (row.deletion_job === undefined && prior?.deletion_job_id === row.deletion_job_id) row.deletion_job = prior?.deletion_job
-      if (row.deleting_at) void read(row)
+      // Progress is read for rows whose state arrives from the server; a row kept from
+      // the settled list carries the state the deletion events already applied.
+      if (row.deleting_at && !settled.includes(row)) void read(row)
     }
+    settled = list
   }, {immediate: true})
   const off = on('@message', message => {
     const event = componentDeletionEvent(message)
@@ -78,8 +83,7 @@ export function useComponentDeletion<T extends ComponentDeletionState>(
       accepted.delete(event.component_id)
       rows.value = rows.value.filter(row => id(row) !== event.component_id)
     } else if (row) {
-      acceptDeletion(event.component_id)
-      void read(row)
+      acceptDeletion(event.component_id, {job_id: event.deletion_job_id})
     }
   })
   onBeforeUnmount(() => { active = false; stop(); if (typeof off === 'function') off() })
