@@ -102,48 +102,40 @@ onBeforeUnmount(() => { sequence += 1 })
 
 <template>
   <section aria-label="Execution history" class="kx-history">
-    <p v-if="busy" role="status">Loading execution history…</p>
-    <p v-if="error" role="alert">{{ error }}</p>
+    <p v-if="busy" role="status" class="kx-dnote">Loading execution history…</p>
+    <p v-if="error" role="alert" class="kx-dnote kx-dnote-err">{{ error }}</p>
     <template v-else>
-      <div>
-        <h3>Committed deliveries</h3>
-        <p v-if="!busy && !deliveries.length">No retained deliveries.</p>
+      <div class="kx-history-group">
+        <h3 class="kx-dsub-lbl">Committed deliveries</h3>
+        <p v-if="!busy && !deliveries.length" class="kx-dnote">No retained deliveries.</p>
         <article v-for="row in deliveries" :key="deliveryKey(row)" class="kx-history-entry">
-          <strong>{{ row.item_key }} · {{ row.state }}</strong>
-          <p>Round starts {{ relativeTime(row.round_at, { future: true }) }}</p>
-          <p>{{ evidenceLabel(row) }}</p>
-          <dl v-if="row.evidence?.identity">
-            <dt>Executor</dt><dd :title="row.evidence.identity.principal.id" aria-label="Historical executor">{{ subject(row.evidence.identity.principal) }}</dd>
+          <div class="kx-history-head"><strong class="kx-history-title" :title="row.item_key">{{ row.item_key }}</strong><span class="kx-history-state">{{ row.state }}</span></div>
+          <p class="kx-history-meta">Round starts {{ relativeTime(row.round_at, { future: true }) }}</p>
+          <p class="kx-history-meta">{{ evidenceLabel(row) }}</p>
+          <dl class="kx-history-kv" v-if="row.evidence?.identity">
+            <dt class="kx-dfact-k">Executor</dt><dd class="kx-history-v" :title="row.evidence.identity.principal.id" aria-label="Historical executor">{{ subject(row.evidence.identity.principal) }}</dd>
             <template v-if="row.evidence.identity.authorized_by">
-              <dt>Authorized by</dt><dd :title="row.evidence.identity.authorized_by.id" aria-label="Historical authorizer">{{ subject(row.evidence.identity.authorized_by) }}</dd>
+              <dt class="kx-dfact-k">Authorized by</dt><dd class="kx-history-v" :title="row.evidence.identity.authorized_by.id" aria-label="Historical authorizer">{{ subject(row.evidence.identity.authorized_by) }}</dd>
             </template>
           </dl>
-          <p v-if="errorMessage(row.error)">{{ errorMessage(row.error) }}</p>
+          <p v-if="errorMessage(row.error)" class="kx-dmsg is-err">{{ errorMessage(row.error) }}</p>
         </article>
         <Button v-if="deliveryCursor" label="More deliveries" severity="secondary" :disabled="busy" @click="more('deliveries')" />
       </div>
-      <div>
-        <h3>Control requests</h3>
-        <p>Control requests and delivery admission are independent records.</p>
-        <p v-if="!busy && !controls.length">No retained control requests.</p>
+      <div class="kx-history-group">
+        <h3 class="kx-dsub-lbl">Control requests</h3>
+        <p class="kx-dnote">Control requests and delivery admission are independent records.</p>
+        <p v-if="!busy && !controls.length" class="kx-dnote">No retained control requests.</p>
         <article v-for="row in controls" :key="`${row.generation}:${row.request_id}`" class="kx-history-entry">
-          <strong>{{ row.state }}</strong>
-          <p>Requested {{ relativeTime(row.created_at, { future: true }) }}</p>
-          <dl v-if="row.initiation">
-            <dt>Initiated by</dt><dd :title="row.initiation.actor_id" aria-label="Control initiator">{{ subject({ kind: 'user', id: row.initiation.actor_id }) }}</dd>
+          <div class="kx-history-head"><span class="kx-history-state">{{ row.state }}</span></div>
+          <p class="kx-history-meta">Requested {{ relativeTime(row.created_at, { future: true }) }}</p>
+          <dl class="kx-history-kv" v-if="row.initiation">
+            <dt class="kx-dfact-k">Initiated by</dt><dd class="kx-history-v" :title="row.initiation.actor_id" aria-label="Control initiator">{{ subject({ kind: 'user', id: row.initiation.actor_id }) }}</dd>
           </dl>
-          <p v-else>Initiator not recorded.</p>
+          <p v-else class="kx-history-meta">Initiator not recorded.</p>
         </article>
         <Button v-if="controlCursor" label="More control requests" severity="secondary" :disabled="busy" @click="more('controls')" />
       </div>
     </template>
   </section>
 </template>
-
-<style scoped>
-.kx-history { display: grid; gap: 1.5rem; }
-.kx-history-entry { padding-block: 0.75rem; border-block-end: 1px solid var(--p-content-border-color); }
-h3, p { margin: 0 0 0.5rem; }
-dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 0.25rem 0.75rem; }
-dd { margin: 0; overflow-wrap: anywhere; }
-</style>

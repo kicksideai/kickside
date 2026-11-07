@@ -103,8 +103,3 @@ onBeforeUnmount(() => { sequence += 1 })
     </div>
   </section>
 </template>
-
-<style scoped>
-.kx-identity-editor { display: grid; gap: 0.75rem; }
-p { margin: 0; }
-</style>

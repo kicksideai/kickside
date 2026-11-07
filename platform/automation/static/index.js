@@ -1,12 +1,12 @@
-import { _ as Et, e as ee, W as Re, u as Dn, a as Pn, c as En, b as In } from "./errMsg-BT807vrI.js";
-import { B as ve, l as It, s as Lt, L as Ln, b as ge, v as we, U as An, I as vt, d as Mn, r as At, a as jn, c as Rn, e as Tn, C as On, h as Bn, S as Fn, _ as Nn, W as Un, f as Hn, P as Vn } from "./AnchoredPanel.vue_vue_type_style_index_0_lang-DNnuyvEa.js";
-import { openBlock as s, createElementBlock as u, mergeProps as F, renderSlot as Q, createTextVNode as ae, toDisplayString as y, resolveComponent as Te, resolveDirective as Mt, withDirectives as pe, createBlock as U, resolveDynamicComponent as Oe, withCtx as N, createCommentVNode as _, normalizeClass as W, createElementVNode as l, defineComponent as be, computed as L, withModifiers as Xe, Fragment as Y, createVNode as z, unref as r, watch as Be, onBeforeUnmount as it, Transition as Kn, isRef as qn, vModelText as tt, renderList as te, vModelCheckbox as jt, vModelDynamic as Wn, ref as O, nextTick as Je } from "vue";
-import { s as Ae, f as me, R as Rt, a as Yn, b as Tt, B as Zn, c as Gn, x as Qe, d as Xn } from "./index-DVv1zr-X.js";
-import { on as Ot, api as de, host as Fe, loadByTagName as Jn, define as Qn } from "@wippy-fe/proxy";
+import { _ as zo, e as ee, W as Re, u as Do, a as Po, c as Eo, b as Io } from "./errMsg-BT807vrI.js";
+import { B as ve, l as Et, s as It, L as Lo, b as ge, v as we, U as Ao, I as vt, d as Mo, r as Lt, a as jo, c as Ro, e as To, C as Oo, h as Bo, S as Fo, _ as No, W as Uo, f as Ho, P as Vo } from "./AnchoredPanel.vue_vue_type_style_index_0_lang-DNnuyvEa.js";
+import { openBlock as s, createElementBlock as d, mergeProps as F, renderSlot as Q, createTextVNode as ae, toDisplayString as x, resolveComponent as Te, resolveDirective as At, withDirectives as pe, createBlock as U, resolveDynamicComponent as Oe, withCtx as N, createCommentVNode as w, normalizeClass as W, createElementVNode as l, defineComponent as be, computed as A, withModifiers as Xe, Fragment as Y, createVNode as P, unref as r, watch as Be, onBeforeUnmount as it, Transition as Ko, isRef as qo, vModelText as tt, renderList as te, vModelCheckbox as Mt, vModelDynamic as Wo, ref as O, nextTick as Je } from "vue";
+import { s as Ae, f as me, R as jt, a as Yo, b as Rt, B as Zo, c as Go, x as Qe, d as Xo } from "./index-DVv1zr-X.js";
+import { on as Tt, api as de, host as Fe, loadByTagName as Jo, define as Qo } from "@wippy-fe/proxy";
 import { Icon as T } from "@iconify/vue";
-import { i as eo, e as to, a as no, f as oo, d as ht, v as ro, b as ao, u as io, c as so } from "./install-form-Ce0pU51G.js";
-import { r as lo } from "./principals-Bury5BH3.js";
-var co = `
+import { i as en, e as tn, a as on, f as nn, d as ht, v as rn, b as an, u as sn, c as ln } from "./install-form-Ce0pU51G.js";
+import { r as cn } from "./principals-Bury5BH3.js";
+var dn = `
     .p-badge {
         display: inline-flex;
         border-radius: dt('badge.border.radius');
@@ -81,28 +81,28 @@ var co = `
         min-width: dt('badge.xl.min.width');
         height: dt('badge.xl.height');
     }
-`, uo = {
+`, un = {
   root: function(t) {
-    var n = t.props, o = t.instance;
+    var o = t.props, n = t.instance;
     return ["p-badge p-component", {
-      "p-badge-circle": Lt(n.value) && String(n.value).length === 1,
-      "p-badge-dot": It(n.value) && !o.$slots.default,
-      "p-badge-sm": n.size === "small",
-      "p-badge-lg": n.size === "large",
-      "p-badge-xl": n.size === "xlarge",
-      "p-badge-info": n.severity === "info",
-      "p-badge-success": n.severity === "success",
-      "p-badge-warn": n.severity === "warn",
-      "p-badge-danger": n.severity === "danger",
-      "p-badge-secondary": n.severity === "secondary",
-      "p-badge-contrast": n.severity === "contrast"
+      "p-badge-circle": It(o.value) && String(o.value).length === 1,
+      "p-badge-dot": Et(o.value) && !n.$slots.default,
+      "p-badge-sm": o.size === "small",
+      "p-badge-lg": o.size === "large",
+      "p-badge-xl": o.size === "xlarge",
+      "p-badge-info": o.severity === "info",
+      "p-badge-success": o.severity === "success",
+      "p-badge-warn": o.severity === "warn",
+      "p-badge-danger": o.severity === "danger",
+      "p-badge-secondary": o.severity === "secondary",
+      "p-badge-contrast": o.severity === "contrast"
     }];
   }
-}, po = ve.extend({
+}, pn = ve.extend({
   name: "badge",
-  style: co,
-  classes: uo
-}), bo = {
+  style: dn,
+  classes: un
+}), bn = {
   name: "BaseBadge",
   extends: Ae,
   props: {
@@ -119,7 +119,7 @@ var co = `
       default: null
     }
   },
-  style: po,
+  style: pn,
   provide: function() {
     return {
       $pcBadge: this,
@@ -135,26 +135,26 @@ function Se(e) {
     return t && typeof Symbol == "function" && t.constructor === Symbol && t !== Symbol.prototype ? "symbol" : typeof t;
   }, Se(e);
 }
-function xt(e, t, n) {
-  return (t = fo(t)) in e ? Object.defineProperty(e, t, { value: n, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = n, e;
+function xt(e, t, o) {
+  return (t = fn(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
 }
-function fo(e) {
-  var t = go(e, "string");
+function fn(e) {
+  var t = gn(e, "string");
   return Se(t) == "symbol" ? t : t + "";
 }
-function go(e, t) {
+function gn(e, t) {
   if (Se(e) != "object" || !e) return e;
-  var n = e[Symbol.toPrimitive];
-  if (n !== void 0) {
-    var o = n.call(e, t);
-    if (Se(o) != "object") return o;
+  var o = e[Symbol.toPrimitive];
+  if (o !== void 0) {
+    var n = o.call(e, t);
+    if (Se(n) != "object") return n;
     throw new TypeError("@@toPrimitive must return a primitive value.");
   }
   return (t === "string" ? String : Number)(e);
 }
-var Bt = {
+var Ot = {
   name: "Badge",
-  extends: bo,
+  extends: bn,
   inheritAttrs: !1,
   computed: {
     dataP: function() {
@@ -164,17 +164,17 @@ var Bt = {
       }, this.severity, this.severity), this.size, this.size));
     }
   }
-}, mo = ["data-p"];
-function vo(e, t, n, o, i, a) {
-  return s(), u("span", F({
+}, mn = ["data-p"];
+function vn(e, t, o, n, i, a) {
+  return s(), d("span", F({
     class: e.cx("root"),
     "data-p": a.dataP
   }, e.ptmi("root")), [Q(e.$slots, "default", {}, function() {
-    return [ae(y(e.value), 1)];
-  })], 16, mo);
+    return [ae(x(e.value), 1)];
+  })], 16, mn);
 }
-Bt.render = vo;
-var ho = `
+Ot.render = vn;
+var hn = `
     .p-button {
         display: inline-flex;
         cursor: pointer;
@@ -833,44 +833,44 @@ function ze(e) {
     return t && typeof Symbol == "function" && t.constructor === Symbol && t !== Symbol.prototype ? "symbol" : typeof t;
   }, ze(e);
 }
-function le(e, t, n) {
-  return (t = xo(t)) in e ? Object.defineProperty(e, t, { value: n, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = n, e;
+function le(e, t, o) {
+  return (t = xn(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
 }
-function xo(e) {
-  var t = yo(e, "string");
+function xn(e) {
+  var t = yn(e, "string");
   return ze(t) == "symbol" ? t : t + "";
 }
-function yo(e, t) {
+function yn(e, t) {
   if (ze(e) != "object" || !e) return e;
-  var n = e[Symbol.toPrimitive];
-  if (n !== void 0) {
-    var o = n.call(e, t);
-    if (ze(o) != "object") return o;
+  var o = e[Symbol.toPrimitive];
+  if (o !== void 0) {
+    var n = o.call(e, t);
+    if (ze(n) != "object") return n;
     throw new TypeError("@@toPrimitive must return a primitive value.");
   }
   return (t === "string" ? String : Number)(e);
 }
-var ko = {
+var kn = {
   root: function(t) {
-    var n = t.instance, o = t.props;
+    var o = t.instance, n = t.props;
     return ["p-button p-component", le(le(le(le(le(le(le(le(le({
-      "p-button-icon-only": n.hasIcon && !o.label && !o.badge,
-      "p-button-vertical": (o.iconPos === "top" || o.iconPos === "bottom") && o.label,
-      "p-button-loading": o.loading,
-      "p-button-link": o.link || o.variant === "link"
-    }, "p-button-".concat(o.severity), o.severity), "p-button-raised", o.raised), "p-button-rounded", o.rounded), "p-button-text", o.text || o.variant === "text"), "p-button-outlined", o.outlined || o.variant === "outlined"), "p-button-sm", o.size === "small"), "p-button-lg", o.size === "large"), "p-button-plain", o.plain), "p-button-fluid", n.hasFluid)];
+      "p-button-icon-only": o.hasIcon && !n.label && !n.badge,
+      "p-button-vertical": (n.iconPos === "top" || n.iconPos === "bottom") && n.label,
+      "p-button-loading": n.loading,
+      "p-button-link": n.link || n.variant === "link"
+    }, "p-button-".concat(n.severity), n.severity), "p-button-raised", n.raised), "p-button-rounded", n.rounded), "p-button-text", n.text || n.variant === "text"), "p-button-outlined", n.outlined || n.variant === "outlined"), "p-button-sm", n.size === "small"), "p-button-lg", n.size === "large"), "p-button-plain", n.plain), "p-button-fluid", o.hasFluid)];
   },
   loadingIcon: "p-button-loading-icon",
   icon: function(t) {
-    var n = t.props;
-    return ["p-button-icon", le({}, "p-button-icon-".concat(n.iconPos), n.label)];
+    var o = t.props;
+    return ["p-button-icon", le({}, "p-button-icon-".concat(o.iconPos), o.label)];
   },
   label: "p-button-label"
-}, wo = ve.extend({
+}, wn = ve.extend({
   name: "button",
-  style: ho,
-  classes: ko
-}), _o = {
+  style: hn,
+  classes: kn
+}), _n = {
   name: "BaseButton",
   extends: Ae,
   props: {
@@ -959,7 +959,7 @@ var ko = {
       default: null
     }
   },
-  style: wo,
+  style: wn,
   provide: function() {
     return {
       $pcButton: this,
@@ -975,26 +975,26 @@ function De(e) {
     return t && typeof Symbol == "function" && t.constructor === Symbol && t !== Symbol.prototype ? "symbol" : typeof t;
   }, De(e);
 }
-function J(e, t, n) {
-  return (t = $o(t)) in e ? Object.defineProperty(e, t, { value: n, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = n, e;
+function J(e, t, o) {
+  return (t = $n(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
 }
-function $o(e) {
-  var t = Co(e, "string");
+function $n(e) {
+  var t = Cn(e, "string");
   return De(t) == "symbol" ? t : t + "";
 }
-function Co(e, t) {
+function Cn(e, t) {
   if (De(e) != "object" || !e) return e;
-  var n = e[Symbol.toPrimitive];
-  if (n !== void 0) {
-    var o = n.call(e, t);
-    if (De(o) != "object") return o;
+  var o = e[Symbol.toPrimitive];
+  if (o !== void 0) {
+    var n = o.call(e, t);
+    if (De(n) != "object") return n;
     throw new TypeError("@@toPrimitive must return a primitive value.");
   }
   return (t === "string" ? String : Number)(e);
 }
 var X = {
   name: "Button",
-  extends: _o,
+  extends: _n,
   inheritAttrs: !1,
   inject: {
     $pcFluid: {
@@ -1003,8 +1003,8 @@ var X = {
   },
   methods: {
     getPTOptions: function(t) {
-      var n = t === "root" ? this.ptmi : this.ptm;
-      return n(t, {
+      var o = t === "root" ? this.ptmi : this.ptm;
+      return o(t, {
         context: {
           disabled: this.disabled
         }
@@ -1039,7 +1039,7 @@ var X = {
       };
     },
     hasFluid: function() {
-      return It(this.fluid) ? !!this.$pcFluid : this.fluid;
+      return Et(this.fluid) ? !!this.$pcFluid : this.fluid;
     },
     dataP: function() {
       return me(J(J(J(J(J(J(J(J(J(J({}, this.size, this.size), "icon-only", this.hasIcon && !this.label && !this.badge), "loading", this.loading), "fluid", this.hasFluid), "rounded", this.rounded), "raised", this.raised), "outlined", this.outlined || this.variant === "outlined"), "text", this.text || this.variant === "text"), "link", this.link || this.variant === "link"), "vertical", (this.iconPos === "top" || this.iconPos === "bottom") && this.label));
@@ -1052,15 +1052,15 @@ var X = {
     }
   },
   components: {
-    SpinnerIcon: Yn,
-    Badge: Bt
+    SpinnerIcon: Yo,
+    Badge: Ot
   },
   directives: {
-    ripple: Rt
+    ripple: jt
   }
-}, So = ["data-p"], zo = ["data-p"];
-function Do(e, t, n, o, i, a) {
-  var f = Te("SpinnerIcon"), g = Te("Badge"), $ = Mt("ripple");
+}, Sn = ["data-p"], zn = ["data-p"];
+function Dn(e, t, o, n, i, a) {
+  var b = Te("SpinnerIcon"), m = Te("Badge"), _ = At("ripple");
   return e.asChild ? Q(e.$slots, "default", {
     key: 1,
     class: W(e.cx("root")),
@@ -1076,10 +1076,10 @@ function Do(e, t, n, o, i, a) {
           key: 0,
           class: [e.cx("loadingIcon"), e.cx("icon")]
         }, e.ptm("loadingIcon")), function() {
-          return [e.loadingIcon ? (s(), u("span", F({
+          return [e.loadingIcon ? (s(), d("span", F({
             key: 0,
             class: [e.cx("loadingIcon"), e.cx("icon"), e.loadingIcon]
-          }, e.ptm("loadingIcon")), null, 16)) : (s(), U(f, F({
+          }, e.ptm("loadingIcon")), null, 16)) : (s(), U(b, F({
             key: 1,
             class: [e.cx("loadingIcon"), e.cx("icon")],
             spin: ""
@@ -1088,31 +1088,31 @@ function Do(e, t, n, o, i, a) {
           key: 1,
           class: [e.cx("icon")]
         }, e.ptm("icon")), function() {
-          return [e.icon ? (s(), u("span", F({
+          return [e.icon ? (s(), d("span", F({
             key: 0,
             class: [e.cx("icon"), e.icon, e.iconClass],
             "data-p": a.dataIconP
-          }, e.ptm("icon")), null, 16, So)) : _("", !0)];
-        }), e.label ? (s(), u("span", F({
+          }, e.ptm("icon")), null, 16, Sn)) : w("", !0)];
+        }), e.label ? (s(), d("span", F({
           key: 2,
           class: e.cx("label")
         }, e.ptm("label"), {
           "data-p": a.dataLabelP
-        }), y(e.label), 17, zo)) : _("", !0), e.badge ? (s(), U(g, {
+        }), x(e.label), 17, zn)) : w("", !0), e.badge ? (s(), U(m, {
           key: 3,
           value: e.badge,
           class: W(e.badgeClass),
           severity: e.badgeSeverity,
           unstyled: e.unstyled,
           pt: e.ptm("pcBadge")
-        }, null, 8, ["value", "class", "severity", "unstyled", "pt"])) : _("", !0)];
+        }, null, 8, ["value", "class", "severity", "unstyled", "pt"])) : w("", !0)];
       })];
     }),
     _: 3
-  }, 16, ["class", "data-p"])), [[$]]);
+  }, 16, ["class", "data-p"])), [[_]]);
 }
-X.render = Do;
-var Po = `
+X.render = Dn;
+var Pn = `
     .p-progressspinner {
         position: relative;
         margin: 0 auto;
@@ -1185,15 +1185,15 @@ var Po = `
             stroke: dt('progressspinner.color.four');
         }
     }
-`, Eo = {
+`, En = {
   root: "p-progressspinner",
   spin: "p-progressspinner-spin",
   circle: "p-progressspinner-circle"
-}, Io = ve.extend({
+}, In = ve.extend({
   name: "progressspinner",
-  style: Po,
-  classes: Eo
-}), Lo = {
+  style: Pn,
+  classes: En
+}), Ln = {
   name: "BaseProgressSpinner",
   extends: Ae,
   props: {
@@ -1210,16 +1210,16 @@ var Po = `
       default: "2s"
     }
   },
-  style: Io,
+  style: In,
   provide: function() {
     return {
       $pcProgressSpinner: this,
       $parentInstance: this
     };
   }
-}, Ft = {
+}, Bt = {
   name: "ProgressSpinner",
-  extends: Lo,
+  extends: Ln,
   inheritAttrs: !1,
   computed: {
     svgStyle: function() {
@@ -1228,12 +1228,12 @@ var Po = `
       };
     }
   }
-}, Ao = ["fill", "stroke-width"];
-function Mo(e, t, n, o, i, a) {
-  return s(), u("div", F({
+}, An = ["fill", "stroke-width"];
+function Mn(e, t, o, n, i, a) {
+  return s(), d("div", F({
     class: e.cx("root"),
     role: "progressbar"
-  }, e.ptmi("root")), [(s(), u("svg", F({
+  }, e.ptmi("root")), [(s(), d("svg", F({
     class: e.cx("spin"),
     viewBox: "25 25 50 50",
     style: a.svgStyle
@@ -1245,18 +1245,18 @@ function Mo(e, t, n, o, i, a) {
     fill: e.fill,
     "stroke-width": e.strokeWidth,
     strokeMiterlimit: "10"
-  }, e.ptm("circle")), null, 16, Ao)], 16))], 16);
+  }, e.ptm("circle")), null, 16, An)], 16))], 16);
 }
-Ft.render = Mo;
-const jo = { key: 0 }, Ro = /* @__PURE__ */ be({
+Bt.render = Mn;
+const jn = { key: 0 }, Rn = /* @__PURE__ */ be({
   __name: "ComponentDeletion",
   props: {
     state: {}
   },
   emits: ["retry"],
   setup(e) {
-    const t = e, n = L(() => t.state.deletion_job === null || ["dead", "cancelled"].includes(t.state.deletion_job?.status || ""));
-    return (o, i) => e.state.deleting_at ? (s(), u("span", {
+    const t = e, o = A(() => t.state.deletion_job === null || ["dead", "cancelled"].includes(t.state.deletion_job?.status || ""));
+    return (n, i) => e.state.deleting_at ? (s(), d("span", {
       key: 0,
       class: "component-deletion",
       role: "status",
@@ -1265,32 +1265,32 @@ const jo = { key: 0 }, Ro = /* @__PURE__ */ be({
       onKeydown: i[2] || (i[2] = Xe(() => {
       }, ["stop"]))
     }, [
-      n.value ? (s(), u(Y, { key: 0 }, [
+      o.value ? (s(), d(Y, { key: 0 }, [
         l("span", null, [
           i[3] || (i[3] = ae("Deletion failed", -1)),
-          e.state.deletion_job?.last_error ? (s(), u("span", jo, ": " + y(e.state.deletion_job.last_error), 1)) : _("", !0)
+          e.state.deletion_job?.last_error ? (s(), d("span", jn, ": " + x(e.state.deletion_job.last_error), 1)) : w("", !0)
         ]),
-        z(r(X), {
+        P(r(X), {
           label: "Retry deletion",
           severity: "secondary",
           size: "small",
           outlined: "",
-          onClick: i[0] || (i[0] = Xe((a) => o.$emit("retry"), ["stop"]))
+          onClick: i[0] || (i[0] = Xe((a) => n.$emit("retry"), ["stop"]))
         })
-      ], 64)) : (s(), u(Y, { key: 1 }, [
-        z(r(Ft), {
+      ], 64)) : (s(), d(Y, { key: 1 }, [
+        P(r(Bt), {
           class: "component-deletion-spinner",
           "aria-label": "Deletion in progress"
         }),
         i[4] || (i[4] = l("span", null, "Deleting…", -1))
       ], 64))
-    ], 32)) : _("", !0);
+    ], 32)) : w("", !0);
   }
-}), To = /* @__PURE__ */ Et(Ro, [["__scopeId", "data-v-69a579d4"]]);
+}), Tn = /* @__PURE__ */ zo(Rn, [["__scopeId", "data-v-63c136c7"]]);
 function _e(e) {
   return !!e && typeof e == "object" && !Array.isArray(e);
 }
-function Oo(e, t) {
+function On(e, t) {
   if (t == null) return t;
   switch (e) {
     case "boolean":
@@ -1300,8 +1300,8 @@ function Oo(e, t) {
     case "integer": {
       if (typeof t == "number") return t;
       if (typeof t == "string" && t.trim() !== "") {
-        const n = Number(t);
-        if (!Number.isNaN(n)) return n;
+        const o = Number(t);
+        if (!Number.isNaN(o)) return o;
       }
       return t;
     }
@@ -1309,8 +1309,8 @@ function Oo(e, t) {
     case "array":
       if (typeof t == "string")
         try {
-          const n = JSON.parse(t);
-          if (n && typeof n == "object") return n;
+          const o = JSON.parse(t);
+          if (o && typeof o == "object") return o;
         } catch {
         }
       return t;
@@ -1318,188 +1318,189 @@ function Oo(e, t) {
       return t;
   }
 }
-function Bo(e, t) {
+function Bn(e, t) {
   if (!t) return e;
-  const n = {};
-  for (const [o, i] of Object.entries(e))
-    n[o] = Oo(t[o], i);
-  return n;
+  const o = {};
+  for (const [n, i] of Object.entries(e))
+    o[n] = On(t[n], i);
+  return o;
 }
-function Nt(e, t, n) {
+function Ft(e, t, o) {
   if (t !== void 0 && !t) return null;
-  const o = _e(e) ? e : {}, i = [
-    o,
-    _e(o.data) ? o.data : null,
-    _e(o.payload) ? o.payload : null,
-    _e(o.detail) ? o.detail : null
+  const n = _e(e) ? e : {}, i = [
+    n,
+    _e(n.data) ? n.data : null,
+    _e(n.payload) ? n.payload : null,
+    _e(n.detail) ? n.detail : null
   ].filter(Boolean);
   for (const a of i) {
     if (a.event !== "component.meta.changed" && a.event !== "component.deleting" && a.event !== "component.deleted") continue;
-    const f = String(a.component_id || ""), g = String(o.topic || a.topic || "");
+    const b = String(a.component_id || ""), m = String(n.topic || a.topic || "");
     if (t === void 0) {
-      if (!f && (!g.startsWith("component.") || g === "component.")) continue;
-    } else if (f && f !== t || !f && g !== `component.${t}`) continue;
-    const $ = f || t || g.slice(10);
-    return a.event !== "component.meta.changed" ? { event: a.event, component_id: $ } : {
+      if (!b && (!m.startsWith("component.") || m === "component.")) continue;
+    } else if (b && b !== t || !b && m !== `component.${t}`) continue;
+    const _ = b || t || m.slice(10);
+    return a.event !== "component.meta.changed" ? { event: a.event, component_id: _ } : {
       event: "component.meta.changed",
-      component_id: $,
-      meta: Bo(_e(a.meta) ? a.meta : {}, n),
+      component_id: _,
+      meta: Bn(_e(a.meta) ? a.meta : {}, o),
       deleted: Array.isArray(a.deleted) ? a.deleted.map(String) : []
     };
   }
   return null;
 }
-function Fo(e, t, n) {
-  const o = Nt(e, t, n);
-  return o?.event === "component.meta.changed" ? o : null;
+function Fn(e, t, o) {
+  const n = Ft(e, t, o);
+  return n?.event === "component.meta.changed" ? n : null;
 }
-function No(e, t) {
-  const n = Nt(e, t);
-  return n && n.event !== "component.meta.changed" ? n : null;
+function Nn(e, t) {
+  const o = Ft(e, t);
+  return o && o.event !== "component.meta.changed" ? o : null;
 }
-function Uo(e, t, n) {
+function Un(e, t, o) {
   if (!e) return null;
-  const o = Ot(`component.${e}`, (i) => {
-    const a = Fo(i, e, n);
+  const n = Tt(`component.${e}`, (i) => {
+    const a = Fn(i, e, o);
     a && t(a);
   });
-  return typeof o == "function" ? o : null;
+  return typeof n == "function" ? n : null;
 }
-function Ho(e, t, n) {
-  let o = !0;
-  const i = /* @__PURE__ */ new Set(), a = /* @__PURE__ */ new Map();
-  function f(x, m) {
-    const h = e.value.find((A) => t(A) === x), c = a.get(x), v = {
-      deleting_at: c?.deleting_at || h?.deleting_at || (/* @__PURE__ */ new Date()).toISOString(),
-      deletion_job_id: m?.job_id || c?.deletion_job_id || h?.deletion_job_id
+function Hn(e, t, o, n) {
+  let i = !0;
+  const a = /* @__PURE__ */ new Set(), b = /* @__PURE__ */ new Map();
+  function m(v, h) {
+    const u = e.value.find((H) => t(H) === v), g = b.get(v), z = {
+      deleting_at: g?.deleting_at || u?.deleting_at || (/* @__PURE__ */ new Date()).toISOString(),
+      deletion_job_id: h?.job_id || g?.deletion_job_id || u?.deletion_job_id
     };
-    a.set(x, v), h && (Object.assign(h, v), h.deletion_job = void 0);
+    b.set(v, z), u && (Object.assign(u, z), u.deletion_job = void 0);
   }
-  async function g(x) {
-    const m = t(x), h = a.get(m), c = () => o && e.value.includes(x) && a.get(m) === h;
+  async function _(v) {
+    const h = t(v), u = b.get(h), g = () => i && e.value.includes(v) && b.get(h) === u;
     try {
-      const { data: v } = await de.get(`/api/v1/components/${encodeURIComponent(m)}`);
-      if (!v?.success) throw new Error(ee(v, "Could not read deletion progress"));
-      c() && (x.deleting_at = h?.deleting_at || v.deleting_at, x.deletion_job_id = v.deletion_job_id, h && (h.deletion_job_id = x.deletion_job_id), x.deletion_job = v.deletion_job ?? null);
-    } catch (v) {
-      c() && Fe.handleError("other", { message: ee(v, "Could not read deletion progress") });
+      const { data: z } = await de.get(`/api/v1/components/${encodeURIComponent(h)}`);
+      if (!z?.success) throw new Error(ee(z, "Could not read deletion progress"));
+      g() && (v.deleting_at = u?.deleting_at || z.deleting_at, v.deletion_job_id = z.deletion_job_id, u && (u.deletion_job_id = v.deletion_job_id), v.deletion_job = z.deletion_job ?? null);
+    } catch (z) {
+      g() && Fe.handleError("other", { message: ee(z, "Could not read deletion progress") });
     }
   }
-  const $ = Be(() => e.value, (x, m = []) => {
-    const h = x.filter((c) => !i.has(t(c)));
-    for (const c of m) !i.has(t(c)) && h.some((v) => t(v) === t(c));
-    if (h.length !== x.length) {
-      e.value = h;
+  const f = Be(() => e.value, (v, h = []) => {
+    const u = v.filter((g) => !a.has(t(g)));
+    for (const g of h)
+      a.has(t(g)) || u.some((z) => t(z) === t(g)) || g.deleting_at;
+    if (u.length !== v.length) {
+      e.value = u;
       return;
     }
-    for (const c of x) {
-      const v = a.get(t(c));
-      v && (c.deletion_job_id !== v.deletion_job_id && (c.deletion_job = void 0), Object.assign(c, v));
-      const A = m.find((K) => t(K) === t(c));
-      c.deletion_job === void 0 && A?.deletion_job_id === c.deletion_job_id && (c.deletion_job = A?.deletion_job), c.deleting_at && g(c);
+    for (const g of v) {
+      const z = b.get(t(g));
+      z && (g.deletion_job_id !== z.deletion_job_id && (g.deletion_job = void 0), Object.assign(g, z));
+      const H = h.find((K) => t(K) === t(g));
+      g.deletion_job === void 0 && H?.deletion_job_id === g.deletion_job_id && (g.deletion_job = H?.deletion_job), g.deleting_at && _(g);
     }
-  }, { immediate: !0 }), b = Ot("@message", (x) => {
-    const m = No(x);
-    if (!m) return;
-    const h = e.value.find((c) => t(c) === m.component_id);
-    m.event === "component.deleted" ? (h && i.has(m.component_id), i.add(m.component_id), a.delete(m.component_id), e.value = e.value.filter((c) => t(c) !== m.component_id)) : h && (f(m.component_id), g(h));
+  }, { immediate: !0 }), $ = Tt("@message", (v) => {
+    const h = Nn(v);
+    if (!h) return;
+    const u = e.value.find((g) => t(g) === h.component_id);
+    h.event === "component.deleted" ? (u && a.has(h.component_id), a.add(h.component_id), b.delete(h.component_id), e.value = e.value.filter((g) => t(g) !== h.component_id)) : u && (m(h.component_id), _(u));
   });
   return it(() => {
-    o = !1, $(), typeof b == "function" && b();
-  }), { acceptDeletion: f };
+    i = !1, f(), typeof $ == "function" && $();
+  }), { acceptDeletion: m };
 }
-var Ut = {
+var Nt = {
   name: "WindowMaximizeIcon",
-  extends: Tt
+  extends: Rt
 };
-function Vo(e) {
-  return Yo(e) || Wo(e) || qo(e) || Ko();
+function Vn(e) {
+  return Yn(e) || Wn(e) || qn(e) || Kn();
 }
-function Ko() {
+function Kn() {
   throw new TypeError(`Invalid attempt to spread non-iterable instance.
 In order to be iterable, non-array objects must have a [Symbol.iterator]() method.`);
 }
-function qo(e, t) {
+function qn(e, t) {
   if (e) {
-    if (typeof e == "string") return nt(e, t);
-    var n = {}.toString.call(e).slice(8, -1);
-    return n === "Object" && e.constructor && (n = e.constructor.name), n === "Map" || n === "Set" ? Array.from(e) : n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n) ? nt(e, t) : void 0;
+    if (typeof e == "string") return ot(e, t);
+    var o = {}.toString.call(e).slice(8, -1);
+    return o === "Object" && e.constructor && (o = e.constructor.name), o === "Map" || o === "Set" ? Array.from(e) : o === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(o) ? ot(e, t) : void 0;
   }
 }
-function Wo(e) {
+function Wn(e) {
   if (typeof Symbol < "u" && e[Symbol.iterator] != null || e["@@iterator"] != null) return Array.from(e);
 }
-function Yo(e) {
-  if (Array.isArray(e)) return nt(e);
+function Yn(e) {
+  if (Array.isArray(e)) return ot(e);
 }
-function nt(e, t) {
+function ot(e, t) {
   (t == null || t > e.length) && (t = e.length);
-  for (var n = 0, o = Array(t); n < t; n++) o[n] = e[n];
-  return o;
+  for (var o = 0, n = Array(t); o < t; o++) n[o] = e[o];
+  return n;
 }
-function Zo(e, t, n, o, i, a) {
-  return s(), u("svg", F({
+function Zn(e, t, o, n, i, a) {
+  return s(), d("svg", F({
     width: "14",
     height: "14",
     viewBox: "0 0 14 14",
     fill: "none",
     xmlns: "http://www.w3.org/2000/svg"
-  }, e.pti()), Vo(t[0] || (t[0] = [l("path", {
+  }, e.pti()), Vn(t[0] || (t[0] = [l("path", {
     "fill-rule": "evenodd",
     "clip-rule": "evenodd",
     d: "M7 14H11.8C12.3835 14 12.9431 13.7682 13.3556 13.3556C13.7682 12.9431 14 12.3835 14 11.8V2.2C14 1.61652 13.7682 1.05694 13.3556 0.644365C12.9431 0.231785 12.3835 0 11.8 0H2.2C1.61652 0 1.05694 0.231785 0.644365 0.644365C0.231785 1.05694 0 1.61652 0 2.2V7C0 7.15913 0.063214 7.31174 0.175736 7.42426C0.288258 7.53679 0.44087 7.6 0.6 7.6C0.75913 7.6 0.911742 7.53679 1.02426 7.42426C1.13679 7.31174 1.2 7.15913 1.2 7V2.2C1.2 1.93478 1.30536 1.68043 1.49289 1.49289C1.68043 1.30536 1.93478 1.2 2.2 1.2H11.8C12.0652 1.2 12.3196 1.30536 12.5071 1.49289C12.6946 1.68043 12.8 1.93478 12.8 2.2V11.8C12.8 12.0652 12.6946 12.3196 12.5071 12.5071C12.3196 12.6946 12.0652 12.8 11.8 12.8H7C6.84087 12.8 6.68826 12.8632 6.57574 12.9757C6.46321 13.0883 6.4 13.2409 6.4 13.4C6.4 13.5591 6.46321 13.7117 6.57574 13.8243C6.68826 13.9368 6.84087 14 7 14ZM9.77805 7.42192C9.89013 7.534 10.0415 7.59788 10.2 7.59995C10.3585 7.59788 10.5099 7.534 10.622 7.42192C10.7341 7.30985 10.798 7.15844 10.8 6.99995V3.94242C10.8066 3.90505 10.8096 3.86689 10.8089 3.82843C10.8079 3.77159 10.7988 3.7157 10.7824 3.6623C10.756 3.55552 10.701 3.45698 10.622 3.37798C10.5099 3.2659 10.3585 3.20202 10.2 3.19995H7.00002C6.84089 3.19995 6.68828 3.26317 6.57576 3.37569C6.46324 3.48821 6.40002 3.64082 6.40002 3.79995C6.40002 3.95908 6.46324 4.11169 6.57576 4.22422C6.68828 4.33674 6.84089 4.39995 7.00002 4.39995H8.80006L6.19997 7.00005C6.10158 7.11005 6.04718 7.25246 6.04718 7.40005C6.04718 7.54763 6.10158 7.69004 6.19997 7.80005C6.30202 7.91645 6.44561 7.98824 6.59997 8.00005C6.75432 7.98824 6.89791 7.91645 6.99997 7.80005L9.60002 5.26841V6.99995C9.6021 7.15844 9.66598 7.30985 9.77805 7.42192ZM1.4 14H3.8C4.17066 13.9979 4.52553 13.8498 4.78763 13.5877C5.04973 13.3256 5.1979 12.9707 5.2 12.6V10.2C5.1979 9.82939 5.04973 9.47452 4.78763 9.21242C4.52553 8.95032 4.17066 8.80215 3.8 8.80005H1.4C1.02934 8.80215 0.674468 8.95032 0.412371 9.21242C0.150274 9.47452 0.00210008 9.82939 0 10.2V12.6C0.00210008 12.9707 0.150274 13.3256 0.412371 13.5877C0.674468 13.8498 1.02934 13.9979 1.4 14ZM1.25858 10.0586C1.29609 10.0211 1.34696 10 1.4 10H3.8C3.85304 10 3.90391 10.0211 3.94142 10.0586C3.97893 10.0961 4 10.147 4 10.2V12.6C4 12.6531 3.97893 12.704 3.94142 12.7415C3.90391 12.779 3.85304 12.8 3.8 12.8H1.4C1.34696 12.8 1.29609 12.779 1.25858 12.7415C1.22107 12.704 1.2 12.6531 1.2 12.6V10.2C1.2 10.147 1.22107 10.0961 1.25858 10.0586Z",
     fill: "currentColor"
   }, null, -1)])), 16);
 }
-Ut.render = Zo;
-var Ht = {
+Nt.render = Zn;
+var Ut = {
   name: "WindowMinimizeIcon",
-  extends: Tt
+  extends: Rt
 };
-function Go(e) {
-  return er(e) || Qo(e) || Jo(e) || Xo();
+function Gn(e) {
+  return er(e) || Qn(e) || Jn(e) || Xn();
 }
-function Xo() {
+function Xn() {
   throw new TypeError(`Invalid attempt to spread non-iterable instance.
 In order to be iterable, non-array objects must have a [Symbol.iterator]() method.`);
 }
-function Jo(e, t) {
+function Jn(e, t) {
   if (e) {
-    if (typeof e == "string") return ot(e, t);
-    var n = {}.toString.call(e).slice(8, -1);
-    return n === "Object" && e.constructor && (n = e.constructor.name), n === "Map" || n === "Set" ? Array.from(e) : n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n) ? ot(e, t) : void 0;
+    if (typeof e == "string") return nt(e, t);
+    var o = {}.toString.call(e).slice(8, -1);
+    return o === "Object" && e.constructor && (o = e.constructor.name), o === "Map" || o === "Set" ? Array.from(e) : o === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(o) ? nt(e, t) : void 0;
   }
 }
-function Qo(e) {
+function Qn(e) {
   if (typeof Symbol < "u" && e[Symbol.iterator] != null || e["@@iterator"] != null) return Array.from(e);
 }
 function er(e) {
-  if (Array.isArray(e)) return ot(e);
+  if (Array.isArray(e)) return nt(e);
 }
-function ot(e, t) {
+function nt(e, t) {
   (t == null || t > e.length) && (t = e.length);
-  for (var n = 0, o = Array(t); n < t; n++) o[n] = e[n];
-  return o;
+  for (var o = 0, n = Array(t); o < t; o++) n[o] = e[o];
+  return n;
 }
-function tr(e, t, n, o, i, a) {
-  return s(), u("svg", F({
+function tr(e, t, o, n, i, a) {
+  return s(), d("svg", F({
     width: "14",
     height: "14",
     viewBox: "0 0 14 14",
     fill: "none",
     xmlns: "http://www.w3.org/2000/svg"
-  }, e.pti()), Go(t[0] || (t[0] = [l("path", {
+  }, e.pti()), Gn(t[0] || (t[0] = [l("path", {
     "fill-rule": "evenodd",
     "clip-rule": "evenodd",
     d: "M11.8 0H2.2C1.61652 0 1.05694 0.231785 0.644365 0.644365C0.231785 1.05694 0 1.61652 0 2.2V7C0 7.15913 0.063214 7.31174 0.175736 7.42426C0.288258 7.53679 0.44087 7.6 0.6 7.6C0.75913 7.6 0.911742 7.53679 1.02426 7.42426C1.13679 7.31174 1.2 7.15913 1.2 7V2.2C1.2 1.93478 1.30536 1.68043 1.49289 1.49289C1.68043 1.30536 1.93478 1.2 2.2 1.2H11.8C12.0652 1.2 12.3196 1.30536 12.5071 1.49289C12.6946 1.68043 12.8 1.93478 12.8 2.2V11.8C12.8 12.0652 12.6946 12.3196 12.5071 12.5071C12.3196 12.6946 12.0652 12.8 11.8 12.8H7C6.84087 12.8 6.68826 12.8632 6.57574 12.9757C6.46321 13.0883 6.4 13.2409 6.4 13.4C6.4 13.5591 6.46321 13.7117 6.57574 13.8243C6.68826 13.9368 6.84087 14 7 14H11.8C12.3835 14 12.9431 13.7682 13.3556 13.3556C13.7682 12.9431 14 12.3835 14 11.8V2.2C14 1.61652 13.7682 1.05694 13.3556 0.644365C12.9431 0.231785 12.3835 0 11.8 0ZM6.368 7.952C6.44137 7.98326 6.52025 7.99958 6.6 8H9.8C9.95913 8 10.1117 7.93678 10.2243 7.82426C10.3368 7.71174 10.4 7.55913 10.4 7.4C10.4 7.24087 10.3368 7.08826 10.2243 6.97574C10.1117 6.86321 9.95913 6.8 9.8 6.8H8.048L10.624 4.224C10.73 4.11026 10.7877 3.95982 10.7849 3.80438C10.7822 3.64894 10.7192 3.50063 10.6093 3.3907C10.4994 3.28077 10.3511 3.2178 10.1956 3.21506C10.0402 3.21232 9.88974 3.27002 9.776 3.376L7.2 5.952V4.2C7.2 4.04087 7.13679 3.88826 7.02426 3.77574C6.91174 3.66321 6.75913 3.6 6.6 3.6C6.44087 3.6 6.28826 3.66321 6.17574 3.77574C6.06321 3.88826 6 4.04087 6 4.2V7.4C6.00042 7.47975 6.01674 7.55862 6.048 7.632C6.07656 7.70442 6.11971 7.7702 6.17475 7.82524C6.2298 7.88029 6.29558 7.92344 6.368 7.952ZM1.4 8.80005H3.8C4.17066 8.80215 4.52553 8.95032 4.78763 9.21242C5.04973 9.47452 5.1979 9.82939 5.2 10.2V12.6C5.1979 12.9707 5.04973 13.3256 4.78763 13.5877C4.52553 13.8498 4.17066 13.9979 3.8 14H1.4C1.02934 13.9979 0.674468 13.8498 0.412371 13.5877C0.150274 13.3256 0.00210008 12.9707 0 12.6V10.2C0.00210008 9.82939 0.150274 9.47452 0.412371 9.21242C0.674468 8.95032 1.02934 8.80215 1.4 8.80005ZM3.94142 12.7415C3.97893 12.704 4 12.6531 4 12.6V10.2C4 10.147 3.97893 10.0961 3.94142 10.0586C3.90391 10.0211 3.85304 10 3.8 10H1.4C1.34696 10 1.29609 10.0211 1.25858 10.0586C1.22107 10.0961 1.2 10.147 1.2 10.2V12.6C1.2 12.6531 1.22107 12.704 1.25858 12.7415C1.29609 12.779 1.34696 12.8 1.4 12.8H3.8C3.85304 12.8 3.90391 12.779 3.94142 12.7415Z",
     fill: "currentColor"
   }, null, -1)])), 16);
 }
-Ht.render = tr;
-var nr = ve.extend({
+Ut.render = tr;
+var or = ve.extend({
   name: "focustrap-directive"
-}), or = Zn.extend({
-  style: nr
+}), nr = Zo.extend({
+  style: or
 });
 function Pe(e) {
   "@babel/helpers - typeof";
@@ -1510,28 +1511,28 @@ function Pe(e) {
   }, Pe(e);
 }
 function yt(e, t) {
-  var n = Object.keys(e);
+  var o = Object.keys(e);
   if (Object.getOwnPropertySymbols) {
-    var o = Object.getOwnPropertySymbols(e);
-    t && (o = o.filter(function(i) {
+    var n = Object.getOwnPropertySymbols(e);
+    t && (n = n.filter(function(i) {
       return Object.getOwnPropertyDescriptor(e, i).enumerable;
-    })), n.push.apply(n, o);
+    })), o.push.apply(o, n);
   }
-  return n;
+  return o;
 }
 function kt(e) {
   for (var t = 1; t < arguments.length; t++) {
-    var n = arguments[t] != null ? arguments[t] : {};
-    t % 2 ? yt(Object(n), !0).forEach(function(o) {
-      rr(e, o, n[o]);
-    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(n)) : yt(Object(n)).forEach(function(o) {
-      Object.defineProperty(e, o, Object.getOwnPropertyDescriptor(n, o));
+    var o = arguments[t] != null ? arguments[t] : {};
+    t % 2 ? yt(Object(o), !0).forEach(function(n) {
+      rr(e, n, o[n]);
+    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(o)) : yt(Object(o)).forEach(function(n) {
+      Object.defineProperty(e, n, Object.getOwnPropertyDescriptor(o, n));
     });
   }
   return e;
 }
-function rr(e, t, n) {
-  return (t = ar(t)) in e ? Object.defineProperty(e, t, { value: n, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = n, e;
+function rr(e, t, o) {
+  return (t = ar(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
 }
 function ar(e) {
   var t = ir(e, "string");
@@ -1539,21 +1540,21 @@ function ar(e) {
 }
 function ir(e, t) {
   if (Pe(e) != "object" || !e) return e;
-  var n = e[Symbol.toPrimitive];
-  if (n !== void 0) {
-    var o = n.call(e, t);
-    if (Pe(o) != "object") return o;
+  var o = e[Symbol.toPrimitive];
+  if (o !== void 0) {
+    var n = o.call(e, t);
+    if (Pe(n) != "object") return n;
     throw new TypeError("@@toPrimitive must return a primitive value.");
   }
   return (t === "string" ? String : Number)(e);
 }
-var sr = or.extend("focustrap", {
-  mounted: function(t, n) {
-    var o = n.value || {}, i = o.disabled;
-    i || (this.createHiddenFocusableElements(t, n), this.bind(t, n), this.autoElementFocus(t, n)), t.setAttribute("data-pd-focustrap", !0), this.$el = t;
+var sr = nr.extend("focustrap", {
+  mounted: function(t, o) {
+    var n = o.value || {}, i = n.disabled;
+    i || (this.createHiddenFocusableElements(t, o), this.bind(t, o), this.autoElementFocus(t, o)), t.setAttribute("data-pd-focustrap", !0), this.$el = t;
   },
-  updated: function(t, n) {
-    var o = n.value || {}, i = o.disabled;
+  updated: function(t, o) {
+    var n = o.value || {}, i = n.disabled;
     i && this.unbind(t);
   },
   unmounted: function(t) {
@@ -1563,24 +1564,24 @@ var sr = or.extend("focustrap", {
     getComputedSelector: function(t) {
       return ':not(.p-hidden-focusable):not([data-p-hidden-focusable="true"])'.concat(t ?? "");
     },
-    bind: function(t, n) {
-      var o = this, i = n.value || {}, a = i.onFocusIn, f = i.onFocusOut;
-      t.$_pfocustrap_mutationobserver = new MutationObserver(function(g) {
-        g.forEach(function($) {
-          if ($.type === "childList" && !t.contains(document.activeElement)) {
-            var b = function(m) {
-              var h = vt(m) ? vt(m, o.getComputedSelector(t.$_pfocustrap_focusableselector)) ? m : we(t, o.getComputedSelector(t.$_pfocustrap_focusableselector)) : we(m);
-              return Lt(h) ? h : m.nextSibling && b(m.nextSibling);
+    bind: function(t, o) {
+      var n = this, i = o.value || {}, a = i.onFocusIn, b = i.onFocusOut;
+      t.$_pfocustrap_mutationobserver = new MutationObserver(function(m) {
+        m.forEach(function(_) {
+          if (_.type === "childList" && !t.contains(document.activeElement)) {
+            var f = function(v) {
+              var h = vt(v) ? vt(v, n.getComputedSelector(t.$_pfocustrap_focusableselector)) ? v : we(t, n.getComputedSelector(t.$_pfocustrap_focusableselector)) : we(v);
+              return It(h) ? h : v.nextSibling && f(v.nextSibling);
             };
-            ge(b($.nextSibling));
+            ge(f(_.nextSibling));
           }
         });
       }), t.$_pfocustrap_mutationobserver.disconnect(), t.$_pfocustrap_mutationobserver.observe(t, {
         childList: !0
-      }), t.$_pfocustrap_focusinlistener = function(g) {
-        return a && a(g);
-      }, t.$_pfocustrap_focusoutlistener = function(g) {
-        return f && f(g);
+      }), t.$_pfocustrap_focusinlistener = function(m) {
+        return a && a(m);
+      }, t.$_pfocustrap_focusoutlistener = function(m) {
+        return b && b(m);
       }, t.addEventListener("focusin", t.$_pfocustrap_focusinlistener), t.addEventListener("focusout", t.$_pfocustrap_focusoutlistener);
     },
     unbind: function(t) {
@@ -1593,42 +1594,42 @@ var sr = or.extend("focustrap", {
         })
       });
     },
-    autoElementFocus: function(t, n) {
-      var o = n.value || {}, i = o.autoFocusSelector, a = i === void 0 ? "" : i, f = o.firstFocusableSelector, g = f === void 0 ? "" : f, $ = o.autoFocus, b = $ === void 0 ? !1 : $, x = we(t, "[autofocus]".concat(this.getComputedSelector(a)));
-      b && !x && (x = we(t, this.getComputedSelector(g))), ge(x);
+    autoElementFocus: function(t, o) {
+      var n = o.value || {}, i = n.autoFocusSelector, a = i === void 0 ? "" : i, b = n.firstFocusableSelector, m = b === void 0 ? "" : b, _ = n.autoFocus, f = _ === void 0 ? !1 : _, $ = we(t, "[autofocus]".concat(this.getComputedSelector(a)));
+      f && !$ && ($ = we(t, this.getComputedSelector(m))), ge($);
     },
     onFirstHiddenElementFocus: function(t) {
-      var n, o = t.currentTarget, i = t.relatedTarget, a = i === o.$_pfocustrap_lasthiddenfocusableelement || !((n = this.$el) !== null && n !== void 0 && n.contains(i)) ? we(o.parentElement, this.getComputedSelector(o.$_pfocustrap_focusableselector)) : o.$_pfocustrap_lasthiddenfocusableelement;
+      var o, n = t.currentTarget, i = t.relatedTarget, a = i === n.$_pfocustrap_lasthiddenfocusableelement || !((o = this.$el) !== null && o !== void 0 && o.contains(i)) ? we(n.parentElement, this.getComputedSelector(n.$_pfocustrap_focusableselector)) : n.$_pfocustrap_lasthiddenfocusableelement;
       ge(a);
     },
     onLastHiddenElementFocus: function(t) {
-      var n, o = t.currentTarget, i = t.relatedTarget, a = i === o.$_pfocustrap_firsthiddenfocusableelement || !((n = this.$el) !== null && n !== void 0 && n.contains(i)) ? Ln(o.parentElement, this.getComputedSelector(o.$_pfocustrap_focusableselector)) : o.$_pfocustrap_firsthiddenfocusableelement;
+      var o, n = t.currentTarget, i = t.relatedTarget, a = i === n.$_pfocustrap_firsthiddenfocusableelement || !((o = this.$el) !== null && o !== void 0 && o.contains(i)) ? Lo(n.parentElement, this.getComputedSelector(n.$_pfocustrap_focusableselector)) : n.$_pfocustrap_firsthiddenfocusableelement;
       ge(a);
     },
-    createHiddenFocusableElements: function(t, n) {
-      var o = this, i = n.value || {}, a = i.tabIndex, f = a === void 0 ? 0 : a, g = i.firstFocusableSelector, $ = g === void 0 ? "" : g, b = i.lastFocusableSelector, x = b === void 0 ? "" : b, m = function(A) {
-        return An("span", {
+    createHiddenFocusableElements: function(t, o) {
+      var n = this, i = o.value || {}, a = i.tabIndex, b = a === void 0 ? 0 : a, m = i.firstFocusableSelector, _ = m === void 0 ? "" : m, f = i.lastFocusableSelector, $ = f === void 0 ? "" : f, v = function(z) {
+        return Ao("span", {
           class: "p-hidden-accessible p-hidden-focusable",
-          tabIndex: f,
+          tabIndex: b,
           role: "presentation",
           "aria-hidden": !0,
           "data-p-hidden-accessible": !0,
           "data-p-hidden-focusable": !0,
-          onFocus: A?.bind(o)
+          onFocus: z?.bind(n)
         });
-      }, h = m(this.onFirstHiddenElementFocus), c = m(this.onLastHiddenElementFocus);
-      h.$_pfocustrap_lasthiddenfocusableelement = c, h.$_pfocustrap_focusableselector = $, h.setAttribute("data-pc-section", "firstfocusableelement"), c.$_pfocustrap_firsthiddenfocusableelement = h, c.$_pfocustrap_focusableselector = x, c.setAttribute("data-pc-section", "lastfocusableelement"), t.prepend(h), t.append(c);
+      }, h = v(this.onFirstHiddenElementFocus), u = v(this.onLastHiddenElementFocus);
+      h.$_pfocustrap_lasthiddenfocusableelement = u, h.$_pfocustrap_focusableselector = _, h.setAttribute("data-pc-section", "firstfocusableelement"), u.$_pfocustrap_firsthiddenfocusableelement = h, u.$_pfocustrap_focusableselector = $, u.setAttribute("data-pc-section", "lastfocusableelement"), t.prepend(h), t.append(u);
     }
   }
 });
 function wt() {
-  jn({
-    variableName: At("scrollbar.width").name
+  jo({
+    variableName: Lt("scrollbar.width").name
   });
 }
 function _t() {
-  Mn({
-    variableName: At("scrollbar.width").name
+  Mo({
+    variableName: Lt("scrollbar.width").name
   });
 }
 var lr = `
@@ -1731,7 +1732,7 @@ var lr = `
     }
 `, cr = {
   mask: function(t) {
-    var n = t.position, o = t.modal;
+    var o = t.position, n = t.modal;
     return {
       position: "fixed",
       height: "100%",
@@ -1739,9 +1740,9 @@ var lr = `
       left: 0,
       top: 0,
       display: "flex",
-      justifyContent: n === "left" || n === "topleft" || n === "bottomleft" ? "flex-start" : n === "right" || n === "topright" || n === "bottomright" ? "flex-end" : "center",
-      alignItems: n === "top" || n === "topleft" || n === "topright" ? "flex-start" : n === "bottom" || n === "bottomleft" || n === "bottomright" ? "flex-end" : "center",
-      pointerEvents: o ? "auto" : "none"
+      justifyContent: o === "left" || o === "topleft" || o === "bottomleft" ? "flex-start" : o === "right" || o === "topright" || o === "bottomright" ? "flex-end" : "center",
+      alignItems: o === "top" || o === "topleft" || o === "topright" ? "flex-start" : o === "bottom" || o === "bottomleft" || o === "bottomright" ? "flex-end" : "center",
+      pointerEvents: n ? "auto" : "none"
     };
   },
   root: {
@@ -1751,17 +1752,17 @@ var lr = `
   }
 }, dr = {
   mask: function(t) {
-    var n = t.props, o = ["left", "right", "top", "topleft", "topright", "bottom", "bottomleft", "bottomright"], i = o.find(function(a) {
-      return a === n.position;
+    var o = t.props, n = ["left", "right", "top", "topleft", "topright", "bottom", "bottomleft", "bottomright"], i = n.find(function(a) {
+      return a === o.position;
     });
     return ["p-dialog-mask", {
-      "p-overlay-mask p-overlay-mask-enter-active": n.modal
+      "p-overlay-mask p-overlay-mask-enter-active": o.modal
     }, i ? "p-dialog-".concat(i) : ""];
   },
   root: function(t) {
-    var n = t.props, o = t.instance;
+    var o = t.props, n = t.instance;
     return ["p-dialog p-component", {
-      "p-dialog-maximized": n.maximizable && o.maximized
+      "p-dialog-maximized": o.maximizable && n.maximized
     }];
   },
   header: "p-dialog-header",
@@ -1917,7 +1918,7 @@ var lr = `
   provide: function() {
     var t = this;
     return {
-      dialogRef: L(function() {
+      dialogRef: A(function() {
         return t._instance;
       })
     };
@@ -1966,7 +1967,7 @@ var lr = `
       this.focus();
     },
     onBeforeLeave: function() {
-      this.modal && !this.isUnstyled && Un(this.mask, "p-overlay-mask-leave-active"), this.dragging && this.documentDragEndListener && this.documentDragEndListener();
+      this.modal && !this.isUnstyled && Uo(this.mask, "p-overlay-mask-leave-active"), this.dragging && this.documentDragEndListener && this.documentDragEndListener();
     },
     onLeave: function() {
       this.$emit("hide"), ge(this.target), this.target = null, this.focusableClose = null, this.focusableMax = null;
@@ -1983,8 +1984,8 @@ var lr = `
     focus: function() {
       var t = function(i) {
         return i && i.querySelector("[autofocus]");
-      }, n = this.$slots.footer && t(this.footerContainer);
-      n || (n = this.$slots.header && t(this.headerContainer), n || (n = this.$slots.default && t(this.content), n || (this.maximizable ? (this.focusableMax = !0, n = this.maximizableButton) : (this.focusableClose = !0, n = this.closeButton)))), n && ge(n, {
+      }, o = this.$slots.footer && t(this.footerContainer);
+      o || (o = this.$slots.header && t(this.headerContainer), o || (o = this.$slots.default && t(this.content), o || (this.maximizable ? (this.focusableMax = !0, o = this.maximizableButton) : (this.focusableClose = !0, o = this.closeButton)))), o && ge(o, {
         focusVisible: !0
       });
     },
@@ -2030,24 +2031,24 @@ var lr = `
     createStyle: function() {
       if (!this.styleElement && !this.isUnstyled) {
         var t;
-        this.styleElement = document.createElement("style"), this.styleElement.type = "text/css", Nn(this.styleElement, "nonce", (t = this.$primevue) === null || t === void 0 || (t = t.config) === null || t === void 0 || (t = t.csp) === null || t === void 0 ? void 0 : t.nonce), document.head.appendChild(this.styleElement);
-        var n = "";
-        for (var o in this.breakpoints)
-          n += `
-                        @media screen and (max-width: `.concat(o, `) {
+        this.styleElement = document.createElement("style"), this.styleElement.type = "text/css", No(this.styleElement, "nonce", (t = this.$primevue) === null || t === void 0 || (t = t.config) === null || t === void 0 || (t = t.csp) === null || t === void 0 ? void 0 : t.nonce), document.head.appendChild(this.styleElement);
+        var o = "";
+        for (var n in this.breakpoints)
+          o += `
+                        @media screen and (max-width: `.concat(n, `) {
                             .p-dialog[`).concat(this.$attrSelector, `] {
-                                width: `).concat(this.breakpoints[o], ` !important;
+                                width: `).concat(this.breakpoints[n], ` !important;
                             }
                         }
                     `);
-        this.styleElement.innerHTML = n;
+        this.styleElement.innerHTML = o;
       }
     },
     destroyStyle: function() {
       this.styleElement && (document.head.removeChild(this.styleElement), this.styleElement = null);
     },
     initDrag: function(t) {
-      t.target.closest("div").getAttribute("data-pc-section") !== "headeractions" && this.draggable && (this.dragging = !0, this.lastPageX = t.pageX, this.lastPageY = t.pageY, this.container.style.margin = "0", document.body.setAttribute("data-p-unselectable-text", "true"), !this.isUnstyled && Fn(document.body, {
+      t.target.closest("div").getAttribute("data-pc-section") !== "headeractions" && this.draggable && (this.dragging = !0, this.lastPageX = t.pageX, this.lastPageY = t.pageY, this.container.style.margin = "0", document.body.setAttribute("data-p-unselectable-text", "true"), !this.isUnstyled && Fo(document.body, {
         "user-select": "none"
       }), this.$emit("dragstart", t));
     },
@@ -2059,10 +2060,10 @@ var lr = `
     },
     bindDocumentDragListener: function() {
       var t = this;
-      this.documentDragListener = function(n) {
+      this.documentDragListener = function(o) {
         if (t.dragging) {
-          var o = Tn(t.container), i = On(t.container), a = n.pageX - t.lastPageX, f = n.pageY - t.lastPageY, g = t.container.getBoundingClientRect(), $ = g.left + a, b = g.top + f, x = Bn(), m = getComputedStyle(t.container), h = parseFloat(m.marginLeft), c = parseFloat(m.marginTop);
-          t.container.style.position = "fixed", t.keepInViewport ? ($ >= t.minX && $ + o < x.width && (t.lastPageX = n.pageX, t.container.style.left = $ - h + "px"), b >= t.minY && b + i < x.height && (t.lastPageY = n.pageY, t.container.style.top = b - c + "px")) : (t.lastPageX = n.pageX, t.container.style.left = $ - h + "px", t.lastPageY = n.pageY, t.container.style.top = b - c + "px");
+          var n = To(t.container), i = Oo(t.container), a = o.pageX - t.lastPageX, b = o.pageY - t.lastPageY, m = t.container.getBoundingClientRect(), _ = m.left + a, f = m.top + b, $ = Bo(), v = getComputedStyle(t.container), h = parseFloat(v.marginLeft), u = parseFloat(v.marginTop);
+          t.container.style.position = "fixed", t.keepInViewport ? (_ >= t.minX && _ + n < $.width && (t.lastPageX = o.pageX, t.container.style.left = _ - h + "px"), f >= t.minY && f + i < $.height && (t.lastPageY = o.pageY, t.container.style.top = f - u + "px")) : (t.lastPageX = o.pageX, t.container.style.left = _ - h + "px", t.lastPageY = o.pageY, t.container.style.top = f - u + "px");
         }
       }, window.document.addEventListener("mousemove", this.documentDragListener);
     },
@@ -2071,8 +2072,8 @@ var lr = `
     },
     bindDocumentDragEndListener: function() {
       var t = this;
-      this.documentDragEndListener = function(n) {
-        t.dragging && (t.dragging = !1, document.body.removeAttribute("data-p-unselectable-text"), !t.isUnstyled && (document.body.style["user-select"] = ""), t.$emit("dragend", n));
+      this.documentDragEndListener = function(o) {
+        t.dragging && (t.dragging = !1, document.body.removeAttribute("data-p-unselectable-text"), !t.isUnstyled && (document.body.style["user-select"] = ""), t.$emit("dragend", o));
       }, window.document.addEventListener("mouseup", this.documentDragEndListener);
     },
     unbindDocumentDragEndListener: function() {
@@ -2097,15 +2098,15 @@ var lr = `
     }
   },
   directives: {
-    ripple: Rt,
+    ripple: jt,
     focustrap: sr
   },
   components: {
     Button: X,
-    Portal: Rn,
-    WindowMinimizeIcon: Ht,
-    WindowMaximizeIcon: Ut,
-    TimesIcon: Gn
+    Portal: Ro,
+    WindowMinimizeIcon: Ut,
+    WindowMaximizeIcon: Nt,
+    TimesIcon: Go
   }
 };
 function Ee(e) {
@@ -2117,28 +2118,28 @@ function Ee(e) {
   }, Ee(e);
 }
 function $t(e, t) {
-  var n = Object.keys(e);
+  var o = Object.keys(e);
   if (Object.getOwnPropertySymbols) {
-    var o = Object.getOwnPropertySymbols(e);
-    t && (o = o.filter(function(i) {
+    var n = Object.getOwnPropertySymbols(e);
+    t && (n = n.filter(function(i) {
       return Object.getOwnPropertyDescriptor(e, i).enumerable;
-    })), n.push.apply(n, o);
+    })), o.push.apply(o, n);
   }
-  return n;
+  return o;
 }
 function Ct(e) {
   for (var t = 1; t < arguments.length; t++) {
-    var n = arguments[t] != null ? arguments[t] : {};
-    t % 2 ? $t(Object(n), !0).forEach(function(o) {
-      br(e, o, n[o]);
-    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(n)) : $t(Object(n)).forEach(function(o) {
-      Object.defineProperty(e, o, Object.getOwnPropertyDescriptor(n, o));
+    var o = arguments[t] != null ? arguments[t] : {};
+    t % 2 ? $t(Object(o), !0).forEach(function(n) {
+      br(e, n, o[n]);
+    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(o)) : $t(Object(o)).forEach(function(n) {
+      Object.defineProperty(e, n, Object.getOwnPropertyDescriptor(o, n));
     });
   }
   return e;
 }
-function br(e, t, n) {
-  return (t = fr(t)) in e ? Object.defineProperty(e, t, { value: n, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = n, e;
+function br(e, t, o) {
+  return (t = fr(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
 }
 function fr(e) {
   var t = gr(e, "string");
@@ -2146,22 +2147,22 @@ function fr(e) {
 }
 function gr(e, t) {
   if (Ee(e) != "object" || !e) return e;
-  var n = e[Symbol.toPrimitive];
-  if (n !== void 0) {
-    var o = n.call(e, t);
-    if (Ee(o) != "object") return o;
+  var o = e[Symbol.toPrimitive];
+  if (o !== void 0) {
+    var n = o.call(e, t);
+    if (Ee(n) != "object") return n;
     throw new TypeError("@@toPrimitive must return a primitive value.");
   }
   return (t === "string" ? String : Number)(e);
 }
 var mr = ["data-p"], vr = ["aria-labelledby", "aria-modal", "data-p"], hr = ["id"], xr = ["data-p"];
-function yr(e, t, n, o, i, a) {
-  var f = Te("Button"), g = Te("Portal"), $ = Mt("focustrap");
-  return s(), U(g, {
+function yr(e, t, o, n, i, a) {
+  var b = Te("Button"), m = Te("Portal"), _ = At("focustrap");
+  return s(), U(m, {
     appendTo: e.appendTo
   }, {
     default: N(function() {
-      return [i.containerVisible ? (s(), u("div", F({
+      return [i.containerVisible ? (s(), d("div", F({
         key: 0,
         ref: a.maskRef,
         class: e.cx("mask"),
@@ -2176,7 +2177,7 @@ function yr(e, t, n, o, i, a) {
           return a.onMaskMouseUp && a.onMaskMouseUp.apply(a, arguments);
         }),
         "data-p": a.dataP
-      }, e.ptm("mask")), [z(Kn, F({
+      }, e.ptm("mask")), [P(Ko, F({
         name: "p-dialog",
         onEnter: a.onEnter,
         onAfterEnter: a.onAfterEnter,
@@ -2186,7 +2187,7 @@ function yr(e, t, n, o, i, a) {
         appear: ""
       }, e.ptm("transition")), {
         default: N(function() {
-          return [e.visible ? pe((s(), u("div", F({
+          return [e.visible ? pe((s(), d("div", F({
             key: 0,
             ref: a.containerRef,
             class: e.cx("root"),
@@ -2198,13 +2199,13 @@ function yr(e, t, n, o, i, a) {
           }, e.ptmi("root")), [e.$slots.container ? Q(e.$slots, "container", {
             key: 0,
             closeCallback: a.close,
-            maximizeCallback: function(x) {
-              return a.maximize(x);
+            maximizeCallback: function($) {
+              return a.maximize($);
             },
             initDragCallback: a.initDrag
-          }) : (s(), u(Y, {
+          }) : (s(), d(Y, {
             key: 1
-          }, [e.showHeader ? (s(), u("div", F({
+          }, [e.showHeader ? (s(), d("div", F({
             key: 0,
             ref: a.headerContainerRef,
             class: e.cx("header"),
@@ -2214,21 +2215,21 @@ function yr(e, t, n, o, i, a) {
           }, e.ptm("header")), [Q(e.$slots, "header", {
             class: W(e.cx("title"))
           }, function() {
-            return [e.header ? (s(), u("span", F({
+            return [e.header ? (s(), d("span", F({
               key: 0,
               id: a.ariaLabelledById,
               class: e.cx("title")
-            }, e.ptm("title")), y(e.header), 17, hr)) : _("", !0)];
+            }, e.ptm("title")), x(e.header), 17, hr)) : w("", !0)];
           }), l("div", F({
             class: e.cx("headerActions")
           }, e.ptm("headerActions")), [e.maximizable ? Q(e.$slots, "maximizebutton", {
             key: 0,
             maximized: i.maximized,
-            maximizeCallback: function(x) {
-              return a.maximize(x);
+            maximizeCallback: function($) {
+              return a.maximize($);
             }
           }, function() {
-            return [z(f, F({
+            return [P(b, F({
               ref: a.maximizableRef,
               autofocus: i.focusableMax,
               class: e.cx("pcMaximizeButton"),
@@ -2239,22 +2240,22 @@ function yr(e, t, n, o, i, a) {
               pt: e.ptm("pcMaximizeButton"),
               "data-pc-group-section": "headericon"
             }), {
-              icon: N(function(b) {
+              icon: N(function(f) {
                 return [Q(e.$slots, "maximizeicon", {
                   maximized: i.maximized
                 }, function() {
                   return [(s(), U(Oe(a.maximizeIconComponent), F({
-                    class: [b.class, i.maximized ? e.minimizeIcon : e.maximizeIcon]
+                    class: [f.class, i.maximized ? e.minimizeIcon : e.maximizeIcon]
                   }, e.ptm("pcMaximizeButton").icon), null, 16, ["class"]))];
                 })];
               }),
               _: 3
             }, 16, ["autofocus", "class", "onClick", "tabindex", "unstyled", "pt"])];
-          }) : _("", !0), e.closable ? Q(e.$slots, "closebutton", {
+          }) : w("", !0), e.closable ? Q(e.$slots, "closebutton", {
             key: 1,
             closeCallback: a.close
           }, function() {
-            return [z(f, F({
+            return [P(b, F({
               ref: a.closeButtonRef,
               autofocus: i.focusableClose,
               class: e.cx("pcCloseButton"),
@@ -2265,32 +2266,32 @@ function yr(e, t, n, o, i, a) {
               pt: e.ptm("pcCloseButton"),
               "data-pc-group-section": "headericon"
             }), {
-              icon: N(function(b) {
+              icon: N(function(f) {
                 return [Q(e.$slots, "closeicon", {}, function() {
                   return [(s(), U(Oe(e.closeIcon ? "span" : "TimesIcon"), F({
-                    class: [e.closeIcon, b.class]
+                    class: [e.closeIcon, f.class]
                   }, e.ptm("pcCloseButton").icon), null, 16, ["class"]))];
                 })];
               }),
               _: 3
             }, 16, ["autofocus", "class", "onClick", "aria-label", "unstyled", "pt"])];
-          }) : _("", !0)], 16)], 16)) : _("", !0), l("div", F({
+          }) : w("", !0)], 16)], 16)) : w("", !0), l("div", F({
             ref: a.contentRef,
             class: [e.cx("content"), e.contentClass],
             style: e.contentStyle,
             "data-p": a.dataP
-          }, Ct(Ct({}, e.contentProps), e.ptm("content"))), [Q(e.$slots, "default")], 16, xr), e.footer || e.$slots.footer ? (s(), u("div", F({
+          }, Ct(Ct({}, e.contentProps), e.ptm("content"))), [Q(e.$slots, "default")], 16, xr), e.footer || e.$slots.footer ? (s(), d("div", F({
             key: 1,
             ref: a.footerContainerRef,
             class: e.cx("footer")
           }, e.ptm("footer")), [Q(e.$slots, "footer", {}, function() {
-            return [ae(y(e.footer), 1)];
-          })], 16)) : _("", !0)], 64))], 16, vr)), [[$, {
+            return [ae(x(e.footer), 1)];
+          })], 16)) : w("", !0)], 64))], 16, vr)), [[_, {
             disabled: !e.modal
-          }]]) : _("", !0)];
+          }]]) : w("", !0)];
         }),
         _: 3
-      }, 16, ["onEnter", "onAfterEnter", "onBeforeLeave", "onLeave", "onAfterLeave"])], 16, mr)) : _("", !0)];
+      }, 16, ["onEnter", "onAfterEnter", "onBeforeLeave", "onLeave", "onAfterLeave"])], 16, mr)) : w("", !0)];
     }),
     _: 3
   }, 8, ["appendTo"]);
@@ -2351,15 +2352,15 @@ var kr = `
     }
 `, wr = {
   root: function(t) {
-    var n = t.props;
+    var o = t.props;
     return ["p-tag p-component", {
-      "p-tag-info": n.severity === "info",
-      "p-tag-success": n.severity === "success",
-      "p-tag-warn": n.severity === "warn",
-      "p-tag-danger": n.severity === "danger",
-      "p-tag-secondary": n.severity === "secondary",
-      "p-tag-contrast": n.severity === "contrast",
-      "p-tag-rounded": n.rounded
+      "p-tag-info": o.severity === "info",
+      "p-tag-success": o.severity === "success",
+      "p-tag-warn": o.severity === "warn",
+      "p-tag-danger": o.severity === "danger",
+      "p-tag-secondary": o.severity === "secondary",
+      "p-tag-contrast": o.severity === "contrast",
+      "p-tag-rounded": o.rounded
     }];
   },
   icon: "p-tag-icon",
@@ -2393,8 +2394,8 @@ function Ie(e) {
     return t && typeof Symbol == "function" && t.constructor === Symbol && t !== Symbol.prototype ? "symbol" : typeof t;
   }, Ie(e);
 }
-function Cr(e, t, n) {
-  return (t = Sr(t)) in e ? Object.defineProperty(e, t, { value: n, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = n, e;
+function Cr(e, t, o) {
+  return (t = Sr(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
 }
 function Sr(e) {
   var t = zr(e, "string");
@@ -2402,10 +2403,10 @@ function Sr(e) {
 }
 function zr(e, t) {
   if (Ie(e) != "object" || !e) return e;
-  var n = e[Symbol.toPrimitive];
-  if (n !== void 0) {
-    var o = n.call(e, t);
-    if (Ie(o) != "object") return o;
+  var o = e[Symbol.toPrimitive];
+  if (o !== void 0) {
+    var n = o.call(e, t);
+    if (Ie(n) != "object") return n;
     throw new TypeError("@@toPrimitive must return a primitive value.");
   }
   return (t === "string" ? String : Number)(e);
@@ -2422,23 +2423,23 @@ var st = {
     }
   }
 }, Dr = ["data-p"];
-function Pr(e, t, n, o, i, a) {
-  return s(), u("span", F({
+function Pr(e, t, o, n, i, a) {
+  return s(), d("span", F({
     class: e.cx("root"),
     "data-p": a.dataP
   }, e.ptmi("root")), [e.$slots.icon ? (s(), U(Oe(e.$slots.icon), F({
     key: 0,
     class: e.cx("icon")
-  }, e.ptm("icon")), null, 16, ["class"])) : e.icon ? (s(), u("span", F({
+  }, e.ptm("icon")), null, 16, ["class"])) : e.icon ? (s(), d("span", F({
     key: 1,
     class: [e.cx("icon"), e.icon]
-  }, e.ptm("icon")), null, 16)) : _("", !0), e.value != null || e.$slots.default ? Q(e.$slots, "default", {
+  }, e.ptm("icon")), null, 16)) : w("", !0), e.value != null || e.$slots.default ? Q(e.$slots, "default", {
     key: 2
   }, function() {
     return [l("span", F({
       class: e.cx("label")
-    }, e.ptm("label")), y(e.value), 17)];
-  }) : _("", !0)], 16, Dr);
+    }, e.ptm("label")), x(e.value), 17)];
+  }) : w("", !0)], 16, Dr);
 }
 st.render = Pr;
 function Er(e) {
@@ -2447,53 +2448,53 @@ function Er(e) {
   if (typeof e == "number")
     t = e;
   else {
-    const n = e.trim();
-    if (/^\d+$/.test(n))
-      t = Number(n);
+    const o = e.trim();
+    if (/^\d+$/.test(o))
+      t = Number(o);
     else {
-      const o = Date.parse(n);
-      return Number.isNaN(o) ? null : o;
+      const n = Date.parse(o);
+      return Number.isNaN(n) ? null : n;
     }
   }
   return Number.isFinite(t) ? t < 1e12 ? t * 1e3 : t : null;
 }
 function ce(e, t) {
-  const n = Er(e);
-  if (n === null) return "";
-  const o = t?.now ?? Date.now(), i = t?.suffix ?? !0, a = t?.maxUnit ?? "day", f = t?.future ?? !1, g = 6e4, $ = 60 * g, b = 24 * $, x = 30 * b, m = 365 * b, h = o - n;
-  if (f && h < 0) {
-    const A = -h;
-    return A < g ? "in <1m" : A < $ ? `in ${Math.floor(A / g)}m` : A < b ? `in ${Math.floor(A / $)}h` : `in ${Math.floor(A / b)}d`;
+  const o = Er(e);
+  if (o === null) return "";
+  const n = t?.now ?? Date.now(), i = t?.suffix ?? !0, a = t?.maxUnit ?? "day", b = t?.future ?? !1, m = 6e4, _ = 60 * m, f = 24 * _, $ = 30 * f, v = 365 * f, h = n - o;
+  if (b && h < 0) {
+    const z = -h;
+    return z < m ? "in <1m" : z < _ ? `in ${Math.floor(z / m)}m` : z < f ? `in ${Math.floor(z / _)}h` : `in ${Math.floor(z / f)}d`;
   }
-  const c = Math.max(0, h);
-  if (c < g) return "just now";
-  const v = i ? " ago" : "";
-  return c < $ ? `${Math.floor(c / g)}m${v}` : c < b ? `${Math.floor(c / $)}h${v}` : a === "year" ? c < x ? `${Math.floor(c / b)}d${v}` : c < m ? `${Math.floor(c / x)}mo${v}` : `${Math.floor(c / m)}y${v}` : `${Math.floor(c / b)}d${v}`;
+  const u = Math.max(0, h);
+  if (u < m) return "just now";
+  const g = i ? " ago" : "";
+  return u < _ ? `${Math.floor(u / m)}m${g}` : u < f ? `${Math.floor(u / _)}h${g}` : a === "year" ? u < $ ? `${Math.floor(u / f)}d${g}` : u < v ? `${Math.floor(u / $)}mo${g}` : `${Math.floor(u / v)}y${g}` : `${Math.floor(u / f)}d${g}`;
 }
 function rt(e) {
   return String(e.description || "").trim();
 }
-function Vt(e) {
+function Ht(e) {
   const t = e?.tag_name;
   return typeof t == "string" ? t.trim() : "";
 }
-function Kt(e) {
-  const t = typeof e?.base_path == "string" ? e.base_path.trim() : "", n = typeof e?.entry_point == "string" ? e.entry_point.trim() : "";
-  return t && n ? `/${t}/${n}` : typeof e?.url == "string" ? e.url.trim() : "";
+function Vt(e) {
+  const t = typeof e?.base_path == "string" ? e.base_path.trim() : "", o = typeof e?.entry_point == "string" ? e.entry_point.trim() : "";
+  return t && o ? `/${t}/${o}` : typeof e?.url == "string" ? e.url.trim() : "";
 }
 function at(e) {
-  return Vt(e?.component?.create_ui);
+  return Ht(e?.component?.create_ui);
 }
 function Ir(e) {
-  return Kt(e?.component?.create_ui);
+  return Vt(e?.component?.create_ui);
 }
 function lt(e) {
+  return Ht(e?.component?.manage_ui);
+}
+function Kt(e) {
   return Vt(e?.component?.manage_ui);
 }
-function qt(e) {
-  return Kt(e?.component?.manage_ui);
-}
-function Wt(e, t) {
+function qt(e, t) {
   return { id: e.id, automation: e, public_state: e.public_state || {}, type: t };
 }
 let St = 0;
@@ -2528,10 +2529,10 @@ const Ar = { class: "kx-modal-head-icon" }, Mr = { class: "kx-modal-head-text" }
   key: 0,
   class: "kx-req",
   "aria-hidden": "true"
-}, Qr = ["onUpdate:modelValue"], ea = ["onUpdate:modelValue"], ta = ["onUpdate:modelValue", "type", "placeholder"], na = {
+}, Qr = ["onUpdate:modelValue"], ea = ["onUpdate:modelValue"], ta = ["onUpdate:modelValue", "type", "placeholder"], oa = {
   key: 4,
   class: "kx-field-hint"
-}, oa = {
+}, na = {
   key: 5,
   class: "kx-field-hint"
 }, ra = {
@@ -2546,22 +2547,22 @@ const Ar = { class: "kx-modal-head-icon" }, Mr = { class: "kx-modal-head-text" }
   },
   setup(e) {
     const t = e, {
-      showTypeCatalog: n,
-      installFields: o,
+      showTypeCatalog: o,
+      installFields: n,
       showInstall: i,
       installType: a,
-      installForm: f,
-      installing: g,
-      customSaving: $,
-      installError: b,
-      customInstallHost: x,
-      installSearchInput: m,
+      installForm: b,
+      installing: m,
+      customSaving: _,
+      installError: f,
+      customInstallHost: $,
+      installSearchInput: v,
       typeSearch: h,
-      filteredTypes: c,
-      chooseType: v,
-      closeInstall: A,
-      focusInstallDialog: K,
-      onCreate: q
+      filteredTypes: u,
+      chooseType: g,
+      closeInstall: z,
+      focusInstallDialog: H,
+      onCreate: K
     } = t.flow;
     return (re, G) => (s(), U(r(Ce), {
       visible: r(i),
@@ -2569,68 +2570,68 @@ const Ar = { class: "kx-modal-head-icon" }, Mr = { class: "kx-modal-head-text" }
       "block-scroll": !0,
       "dismissable-mask": !0,
       pt: e.dialogPt,
-      class: W(["kx-modal kx-modal-2p", { "kx-modal-solo": !r(n) }]),
+      class: W(["kx-modal kx-modal-2p", { "kx-modal-solo": !r(o) }]),
       "aria-label": "Add an automation",
-      "onUpdate:visible": G[1] || (G[1] = (I) => {
-        I || r(A)();
+      "onUpdate:visible": G[1] || (G[1] = (L) => {
+        L || r(z)();
       }),
-      onShow: r(K)
+      onShow: r(H)
     }, {
       header: N(() => [
         l("span", Ar, [
-          z(r(T), {
+          P(r(T), {
             icon: r(a) && r(a).icon || "tabler:bolt",
             "aria-hidden": "true"
           }, null, 8, ["icon"])
         ]),
         l("span", Mr, [
-          l("span", jr, y(r(a) ? r(a).title || r(a).name : "Add an automation"), 1),
+          l("span", jr, x(r(a) ? r(a).title || r(a).name : "Add an automation"), 1),
           G[2] || (G[2] = l("span", { class: "kx-modal-head-sub" }, "Configure an automation.", -1))
         ])
       ]),
       footer: N(() => [
-        r(b) ? (s(), u("div", ra, y(r(b)), 1)) : _("", !0),
-        z(r(X), {
+        r(f) ? (s(), d("div", ra, x(r(f)), 1)) : w("", !0),
+        P(r(X), {
           type: "button",
           label: "Cancel",
           severity: "secondary",
           outlined: "",
-          disabled: r(g) || r($),
-          onClick: r(A)
+          disabled: r(m) || r(_),
+          onClick: r(z)
         }, null, 8, ["disabled", "onClick"]),
         r(a) ? (s(), U(r(X), {
           key: 1,
           type: "button",
           "data-testid": "automations-install-create",
-          label: r(g) || r($) ? "Creating…" : "Create",
-          loading: r(g) || r($),
-          disabled: r(g) || r($),
-          onClick: r(q)
+          label: r(m) || r(_) ? "Creating…" : "Create",
+          loading: r(m) || r(_),
+          disabled: r(m) || r(_),
+          onClick: r(K)
         }, {
-          icon: N(({ class: I }) => [
-            z(r(T), {
+          icon: N(({ class: L }) => [
+            P(r(T), {
               icon: "tabler:plus",
-              class: W(I),
+              class: W(L),
               "aria-hidden": "true"
             }, null, 8, ["class"])
           ]),
           _: 1
-        }, 8, ["label", "loading", "disabled", "onClick"])) : _("", !0)
+        }, 8, ["label", "loading", "disabled", "onClick"])) : w("", !0)
       ]),
       default: N(() => [
         l("div", {
-          class: W(["kx-2p", { "kx-2p-solo": !r(n) }])
+          class: W(["kx-2p", { "kx-2p-solo": !r(o) }])
         }, [
-          r(n) ? (s(), u("div", Rr, [
+          r(o) ? (s(), d("div", Rr, [
             l("div", Tr, [
-              z(r(T), {
+              P(r(T), {
                 icon: "tabler:search",
                 "aria-hidden": "true"
               }),
               pe(l("input", {
                 ref_key: "installSearchInput",
-                ref: m,
-                "onUpdate:modelValue": G[0] || (G[0] = (I) => qn(h) ? h.value = I : null),
+                ref: v,
+                "onUpdate:modelValue": G[0] || (G[0] = (L) => qo(h) ? h.value = L : null),
                 "data-modal-initial": "",
                 type: "text",
                 placeholder: "Search types…",
@@ -2639,90 +2640,90 @@ const Ar = { class: "kx-modal-head-icon" }, Mr = { class: "kx-modal-head-text" }
                 [tt, r(h)]
               ])
             ]),
-            r(c).length ? (s(), u("div", Br, [
-              (s(!0), u(Y, null, te(r(c), (I) => (s(), u("button", {
-                key: I.id,
-                class: W(["kx-cat-card", r(a)?.id === I.id && "sel"]),
-                onClick: (H) => r(v)(I)
+            r(u).length ? (s(), d("div", Br, [
+              (s(!0), d(Y, null, te(r(u), (L) => (s(), d("button", {
+                key: L.id,
+                class: W(["kx-cat-card", r(a)?.id === L.id && "sel"]),
+                onClick: (V) => r(g)(L)
               }, [
                 l("span", Nr, [
-                  z(r(T), {
-                    icon: I.icon || "tabler:sparkles",
+                  P(r(T), {
+                    icon: L.icon || "tabler:sparkles",
                     "aria-hidden": "true"
                   }, null, 8, ["icon"])
                 ]),
                 l("span", Ur, [
-                  l("span", Hr, y(I.title || I.name), 1),
-                  r(rt)(I) ? (s(), u("span", Vr, y(r(rt)(I)), 1)) : _("", !0)
+                  l("span", Hr, x(L.title || L.name), 1),
+                  r(rt)(L) ? (s(), d("span", Vr, x(r(rt)(L)), 1)) : w("", !0)
                 ]),
-                z(r(T), {
+                P(r(T), {
                   icon: "tabler:check",
                   class: "kx-cat-check",
                   "aria-hidden": "true"
                 })
               ], 10, Fr))), 128))
-            ])) : (s(), u("div", Or, "No setups match “" + y(r(h)) + "”.", 1))
-          ])) : _("", !0),
+            ])) : (s(), d("div", Or, "No setups match “" + x(r(h)) + "”.", 1))
+          ])) : w("", !0),
           l("div", Kr, [
-            r(n) ? (s(), u("div", qr, "Setup")) : _("", !0),
+            r(o) ? (s(), d("div", qr, "Setup")) : w("", !0),
             l("div", Wr, [
-              r(a) ? (s(), u(Y, { key: 1 }, [
-                r(at)(r(a)) ? (s(), u("div", {
+              r(a) ? (s(), d(Y, { key: 1 }, [
+                r(at)(r(a)) ? (s(), d("div", {
                   key: 0,
                   ref_key: "customInstallHost",
-                  ref: x,
+                  ref: $,
                   class: "kx-custom-host"
-                }, null, 512)) : r(o).length ? (s(), u("div", Gr, [
-                  (s(!0), u(Y, null, te(r(o), ([I, H]) => (s(), u("label", {
-                    key: I,
+                }, null, 512)) : r(n).length ? (s(), d("div", Gr, [
+                  (s(!0), d(Y, null, te(r(n), ([L, V]) => (s(), d("label", {
+                    key: L,
                     class: "kx-field"
                   }, [
                     l("span", Xr, [
-                      ae(y(H.title || I) + " ", 1),
-                      r(eo)(r(a), I) ? (s(), u("span", Jr, "*")) : _("", !0)
+                      ae(x(V.title || L) + " ", 1),
+                      r(en)(r(a), L) ? (s(), d("span", Jr, "*")) : w("", !0)
                     ]),
-                    H.enum ? (s(), U(r(Xn), {
+                    V.enum ? (s(), U(r(Xo), {
                       key: 0,
                       class: "kx-select",
-                      "model-value": r(f)[I],
-                      options: r(to)(r(a), I, H),
+                      "model-value": r(b)[L],
+                      options: r(tn)(r(a), L, V),
                       "option-label": "label",
                       "option-value": "value",
                       placeholder: "—",
-                      "aria-label": H.title || I,
-                      "onUpdate:modelValue": (C) => r(f)[I] = C
-                    }, null, 8, ["model-value", "options", "aria-label", "onUpdate:modelValue"])) : H.type === "boolean" ? pe((s(), u("input", {
+                      "aria-label": V.title || L,
+                      "onUpdate:modelValue": (C) => r(b)[L] = C
+                    }, null, 8, ["model-value", "options", "aria-label", "onUpdate:modelValue"])) : V.type === "boolean" ? pe((s(), d("input", {
                       key: 1,
-                      "onUpdate:modelValue": (C) => r(f)[I] = C,
+                      "onUpdate:modelValue": (C) => r(b)[L] = C,
                       class: "kx-check",
                       type: "checkbox"
                     }, null, 8, Qr)), [
-                      [jt, r(f)[I]]
-                    ]) : H.type === "number" || H.type === "integer" ? pe((s(), u("input", {
+                      [Mt, r(b)[L]]
+                    ]) : V.type === "number" || V.type === "integer" ? pe((s(), d("input", {
                       key: 2,
-                      "onUpdate:modelValue": (C) => r(f)[I] = C,
+                      "onUpdate:modelValue": (C) => r(b)[L] = C,
                       class: "kx-input",
                       type: "number"
                     }, null, 8, ea)), [
                       [
                         tt,
-                        r(f)[I],
+                        r(b)[L],
                         void 0,
                         { number: !0 }
                       ]
-                    ]) : pe((s(), u("input", {
+                    ]) : pe((s(), d("input", {
                       key: 3,
-                      "onUpdate:modelValue": (C) => r(f)[I] = C,
+                      "onUpdate:modelValue": (C) => r(b)[L] = C,
                       class: "kx-input",
-                      type: r(no)(H),
-                      placeholder: H.description || ""
+                      type: r(on)(V),
+                      placeholder: V.description || ""
                     }, null, 8, ta)), [
-                      [Wn, r(f)[I]]
+                      [Wo, r(b)[L]]
                     ]),
-                    H.description && !(H.type !== "boolean" && !H.enum) ? (s(), u("span", na, y(H.description), 1)) : H.description && H.enum ? (s(), u("span", oa, y(H.description), 1)) : _("", !0)
+                    V.description && !(V.type !== "boolean" && !V.enum) ? (s(), d("span", oa, x(V.description), 1)) : V.description && V.enum ? (s(), d("span", na, x(V.description), 1)) : w("", !0)
                   ]))), 128))
-                ])) : (s(), u("div", Zr, "This automation needs no configuration."))
-              ], 64)) : (s(), u("p", Yr, "Select an automation type to configure it."))
+                ])) : (s(), d("div", Zr, "This automation needs no configuration."))
+              ], 64)) : (s(), d("p", Yr, "Select an automation type to configure it."))
             ])
           ])
         ], 2)
@@ -2743,46 +2744,46 @@ const Ar = { class: "kx-modal-head-icon" }, Mr = { class: "kx-modal-head-text" }
     detail: { default: () => [] }
   },
   setup(e) {
-    return (t, n) => (s(), u(Y, null, [
-      e.face.length ? (s(), u("div", ia, [
-        (s(!0), u(Y, null, te(e.face, (o) => (s(), u("span", {
-          key: o.label,
+    return (t, o) => (s(), d(Y, null, [
+      e.face.length ? (s(), d("div", ia, [
+        (s(!0), d(Y, null, te(e.face, (n) => (s(), d("span", {
+          key: n.label,
           class: "kx-metric"
         }, [
-          o.icon ? (s(), U(r(T), {
+          n.icon ? (s(), U(r(T), {
             key: 0,
-            icon: o.icon,
+            icon: n.icon,
             class: "kx-metric-i",
             "aria-hidden": "true"
-          }, null, 8, ["icon"])) : _("", !0),
-          l("span", sa, y(o.label), 1),
+          }, null, 8, ["icon"])) : w("", !0),
+          l("span", sa, x(n.label), 1),
           l("span", {
             class: "kx-metric-v",
-            title: o.title
-          }, y(o.value), 9, la)
+            title: n.title
+          }, x(n.value), 9, la)
         ]))), 128))
-      ])) : _("", !0),
-      e.detail.length ? (s(), u("details", ca, [
-        n[0] || (n[0] = l("summary", { class: "kx-metric-more" }, "Details", -1)),
+      ])) : w("", !0),
+      e.detail.length ? (s(), d("details", ca, [
+        o[0] || (o[0] = l("summary", { class: "kx-metric-more" }, "Details", -1)),
         l("div", da, [
-          (s(!0), u(Y, null, te(e.detail, (o) => (s(), u("span", {
-            key: o.label,
+          (s(!0), d(Y, null, te(e.detail, (n) => (s(), d("span", {
+            key: n.label,
             class: "kx-metric"
           }, [
-            o.icon ? (s(), U(r(T), {
+            n.icon ? (s(), U(r(T), {
               key: 0,
-              icon: o.icon,
+              icon: n.icon,
               class: "kx-metric-i",
               "aria-hidden": "true"
-            }, null, 8, ["icon"])) : _("", !0),
-            l("span", ua, y(o.label), 1),
+            }, null, 8, ["icon"])) : w("", !0),
+            l("span", ua, x(n.label), 1),
             l("span", {
               class: "kx-metric-v",
-              title: o.title
-            }, y(o.value), 9, pa)
+              title: n.title
+            }, x(n.value), 9, pa)
           ]))), 128))
         ])
-      ])) : _("", !0)
+      ])) : w("", !0)
     ], 64));
   }
 }), fa = /* @__PURE__ */ new Set(["pause", "resume"]), ga = /* @__PURE__ */ new Set(["reconfigure"]), zt = /* @__PURE__ */ new Set(["run_now", "trigger", "execute", "run"]), et = {
@@ -2797,7 +2798,7 @@ const Ar = { class: "kx-modal-head-icon" }, Mr = { class: "kx-modal-head-text" }
   reconcile: { label: "Reconcile", description: "Recompute state against the source of truth.", group: "recovery", icon: "tabler:adjustments-check" },
   status: { label: "Refresh status", description: "Fetch the latest run status now.", group: "recovery", icon: "tabler:activity-heartbeat" }
 };
-function Yt(e) {
+function Wt(e) {
   return e.has("run_now") ? "run_now" : e.has("trigger") ? "trigger" : e.has("execute") ? "execute" : "";
 }
 function ma(e) {
@@ -2806,16 +2807,16 @@ function ma(e) {
 function Dt(e) {
   return { label: ma(e), description: "Run this action.", group: "recovery", icon: "tabler:bolt" };
 }
-function Zt(e) {
+function Yt(e) {
   return new Set([...e?.controls || [], ...e?.actions || []].map((t) => t.name).filter(Boolean));
 }
-function Gt(e) {
-  const t = [...Zt(e)], n = !!lt(e);
+function Zt(e) {
+  const t = [...Yt(e)], o = !!lt(e);
   return {
     declared: t,
-    requiresKeys: e?.controls?.filter((o) => o.keys_required).map((o) => o.name),
-    runNow: Yt(new Set(t)),
-    canReconfigure: n,
+    requiresKeys: e?.controls?.filter((n) => n.keys_required).map((n) => n.name),
+    runNow: Wt(new Set(t)),
+    canReconfigure: o,
     // An automation is a component, so it shares through the generic component
     // access endpoints; the server is the authority on who may grant.
     canShare: !0,
@@ -2823,22 +2824,22 @@ function Gt(e) {
     canDelete: !0
   };
 }
-function Xt(e) {
+function Gt(e) {
   const t = e instanceof Set ? e : new Set(e);
   return t.has("rewind") ? "rewind" : t.has("resync") ? "resync" : "";
 }
-function Jt(e) {
+function Xt(e) {
   const t = [];
   if (e.runNow) {
-    const o = et[e.runNow] || et.trigger;
-    t.push({ method: e.runNow, ...o, kind: "call" });
+    const n = et[e.runNow] || et.trigger;
+    t.push({ method: e.runNow, ...n, kind: "call" });
   }
-  const n = /* @__PURE__ */ new Set();
-  for (const o of e.declared) {
-    if (fa.has(o) || o === e.runNow || e.runNow !== "run_now" && zt.has(o) || ga.has(o) || n.has(o)) continue;
-    n.add(o);
-    const i = e.runNow === "run_now" && zt.has(o) ? { ...Dt(o), group: "run" } : et[o] || Dt(o);
-    t.push({ method: o, ...i, kind: "call", disabled: e.requiresKeys?.includes(o) });
+  const o = /* @__PURE__ */ new Set();
+  for (const n of e.declared) {
+    if (fa.has(n) || n === e.runNow || e.runNow !== "run_now" && zt.has(n) || ga.has(n) || o.has(n)) continue;
+    o.add(n);
+    const i = e.runNow === "run_now" && zt.has(n) ? { ...Dt(n), group: "run" } : et[n] || Dt(n);
+    t.push({ method: n, ...i, kind: "call", disabled: e.requiresKeys?.includes(n) });
   }
   return e.canReconfigure && t.push({ method: "reconfigure", label: "Reconfigure", description: "Change how this automation is set up.", group: "edit", icon: "tabler:settings", kind: "reconfigure" }), e.canShare && t.push({ method: "share", label: "Share", description: "Give other people access to this automation.", group: "edit", icon: "tabler:users", kind: "share" }), e.canExport && t.push({ method: "export", label: "Export", description: "Download a portable copy to import elsewhere.", group: "edit", icon: "tabler:download", kind: "export" }), e.canDelete && t.push({ method: "delete", label: "Delete", description: "Stop it and remove its setup. This cannot be undone.", group: "delete", icon: "tabler:trash", kind: "delete", danger: !0 }), t;
 }
@@ -2849,7 +2850,7 @@ const va = ["run", "recovery", "edit", "delete"], ha = {
   delete: ""
 };
 function xa(e) {
-  return va.map((t) => ({ group: t, label: ha[t], items: e.filter((n) => n.group === t) })).filter((t) => t.items.length > 0);
+  return va.map((t) => ({ group: t, label: ha[t], items: e.filter((o) => o.group === t) })).filter((t) => t.items.length > 0);
 }
 function ya(e, t) {
   return e.group === "run" ? `Run ${t} now` : e.method === "reconfigure" ? `Edit ${t}` : `${e.label} ${t}`;
@@ -2858,7 +2859,7 @@ const ka = ["aria-label"], wa = {
   key: 1,
   class: "kx-menu-sep",
   role: "separator"
-}, _a = ["data-testid", "aria-label", "disabled", "onClick"], $a = { class: "kx-menu-item-body" }, Ca = { class: "kx-menu-item-label" }, Sa = { class: "kx-menu-item-desc" }, Qt = /* @__PURE__ */ be({
+}, _a = ["data-testid", "aria-label", "disabled", "onClick"], $a = { class: "kx-menu-item-body" }, Ca = { class: "kx-menu-item-label" }, Sa = { class: "kx-menu-item-desc" }, Jt = /* @__PURE__ */ be({
   __name: "ActionMenu",
   props: {
     items: {},
@@ -2870,22 +2871,22 @@ const ka = ["aria-label"], wa = {
   },
   emits: ["select"],
   setup(e, { emit: t }) {
-    const n = e, o = t, i = O(!1), a = O(null), f = L(() => xa(n.items));
-    function g() {
+    const o = e, n = t, i = O(!1), a = O(null), b = A(() => xa(o.items));
+    function m() {
       i.value = !i.value;
     }
-    function $() {
+    function _() {
       i.value = !1;
     }
-    function b(x) {
-      n.disabled || x.disabled || ($(), o("select", x.method));
+    function f($) {
+      o.disabled || $.disabled || (_(), n("select", $.method));
     }
-    return (x, m) => (s(), u("span", {
+    return ($, v) => (s(), d("span", {
       ref_key: "trigger",
       ref: a,
       class: "kx-menu"
     }, [
-      z(r(X), {
+      P(r(X), {
         type: "button",
         severity: "secondary",
         outlined: "",
@@ -2896,10 +2897,10 @@ const ka = ["aria-label"], wa = {
         "aria-label": e.triggerLabel || `More actions for ${e.name}`,
         title: "More actions",
         disabled: e.disabled,
-        onClick: g
+        onClick: m
       }, {
         icon: N(({ class: h }) => [
-          z(r(T), {
+          P(r(T), {
             icon: "tabler:dots",
             "aria-hidden": "true",
             class: W(h)
@@ -2907,9 +2908,9 @@ const ka = ["aria-label"], wa = {
         ]),
         _: 1
       }, 8, ["size", "class", "aria-expanded", "aria-label", "disabled"]),
-      z(Hn, {
+      P(Ho, {
         open: i.value,
-        "onUpdate:open": m[0] || (m[0] = (h) => i.value = h),
+        "onUpdate:open": v[0] || (v[0] = (h) => i.value = h),
         anchor: a.value,
         align: "right",
         width: 264,
@@ -2922,39 +2923,39 @@ const ka = ["aria-label"], wa = {
             role: "menu",
             "aria-label": `Actions for ${e.name}`
           }, [
-            (s(!0), u(Y, null, te(f.value, (h, c) => (s(), u(Y, {
+            (s(!0), d(Y, null, te(b.value, (h, u) => (s(), d(Y, {
               key: h.group
             }, [
-              h.label ? (s(), u("div", {
+              h.label ? (s(), d("div", {
                 key: 0,
-                class: W(["kx-menu-group", c === 0 && "is-first"])
-              }, y(h.label), 3)) : c > 0 ? (s(), u("div", wa)) : _("", !0),
-              (s(!0), u(Y, null, te(h.items, (v) => (s(), u("button", {
-                key: v.method,
+                class: W(["kx-menu-group", u === 0 && "is-first"])
+              }, x(h.label), 3)) : u > 0 ? (s(), d("div", wa)) : w("", !0),
+              (s(!0), d(Y, null, te(h.items, (g) => (s(), d("button", {
+                key: g.method,
                 type: "button",
                 role: "menuitem",
-                class: W(["kx-menu-item", [v.danger && "is-danger", v.warn && "is-warn"]]),
-                "data-testid": `action-${v.method}`,
-                "aria-label": r(ya)(v, e.name),
-                disabled: e.disabled || v.disabled || e.busy && v.kind === "call",
-                onClick: (A) => b(v)
+                class: W(["kx-menu-item", [g.danger && "is-danger", g.warn && "is-warn"]]),
+                "data-testid": `action-${g.method}`,
+                "aria-label": r(ya)(g, e.name),
+                disabled: e.disabled || g.disabled || e.busy && g.kind === "call",
+                onClick: (z) => f(g)
               }, [
-                z(r(T), {
-                  icon: v.icon,
+                P(r(T), {
+                  icon: g.icon,
                   class: "kx-menu-item-ico",
                   "aria-hidden": "true"
                 }, null, 8, ["icon"]),
                 l("span", $a, [
                   l("span", Ca, [
-                    ae(y(v.label) + " ", 1),
-                    v.warn ? (s(), U(r(T), {
+                    ae(x(g.label) + " ", 1),
+                    g.warn ? (s(), U(r(T), {
                       key: 0,
                       icon: "tabler:alert-triangle",
                       class: "kx-menu-item-warn",
                       "aria-hidden": "true"
-                    })) : _("", !0)
+                    })) : w("", !0)
                   ]),
-                  l("span", Sa, y(v.description), 1)
+                  l("span", Sa, x(g.description), 1)
                 ])
               ], 10, _a))), 128))
             ], 64))), 128))
@@ -2969,26 +2970,46 @@ const ka = ["aria-label"], wa = {
   class: "kx-history"
 }, Da = {
   key: 0,
-  role: "status"
+  role: "status",
+  class: "kx-dnote"
 }, Pa = {
   key: 1,
-  role: "alert"
-}, Ea = { key: 0 }, Ia = { key: 0 }, La = ["title"], Aa = ["title"], Ma = { key: 1 }, ja = { key: 0 }, Ra = { key: 0 }, Ta = ["title"], Oa = { key: 1 }, Ba = /* @__PURE__ */ be({
+  role: "alert",
+  class: "kx-dnote kx-dnote-err"
+}, Ea = { class: "kx-history-group" }, Ia = {
+  key: 0,
+  class: "kx-dnote"
+}, La = { class: "kx-history-head" }, Aa = ["title"], Ma = { class: "kx-history-state" }, ja = { class: "kx-history-meta" }, Ra = { class: "kx-history-meta" }, Ta = {
+  key: 0,
+  class: "kx-history-kv"
+}, Oa = ["title"], Ba = ["title"], Fa = {
+  key: 1,
+  class: "kx-dmsg is-err"
+}, Na = { class: "kx-history-group" }, Ua = {
+  key: 0,
+  class: "kx-dnote"
+}, Ha = { class: "kx-history-head" }, Va = { class: "kx-history-state" }, Ka = { class: "kx-history-meta" }, qa = {
+  key: 0,
+  class: "kx-history-kv"
+}, Wa = ["title"], Ya = {
+  key: 1,
+  class: "kx-history-meta"
+}, Za = /* @__PURE__ */ be({
   __name: "ExecutionHistory",
   props: {
     root: {}
   },
   emits: ["error"],
   setup(e, { emit: t }) {
-    const n = e, o = t, i = O([]), a = O([]), f = O([]), g = O(""), $ = O(""), b = O(!1), x = O("");
-    let m = 0;
+    const o = e, n = t, i = O([]), a = O([]), b = O([]), m = O(""), _ = O(""), f = O(!1), $ = O("");
+    let v = 0;
     function h() {
-      i.value = [], a.value = [], f.value = [], g.value = "", $.value = "";
+      i.value = [], a.value = [], b.value = [], m.value = "", _.value = "";
     }
-    function c(C) {
-      return f.value.find((E) => E.type === C?.kind && E.id === C?.id)?.label || "Account unavailable";
+    function u(C) {
+      return b.value.find((I) => I.type === C?.kind && I.id === C?.id)?.label || "Account unavailable";
     }
-    function v(C) {
+    function g(C) {
       return {
         recorded: "Recorded admission",
         absent: "Identity evidence absent",
@@ -2996,144 +3017,155 @@ const ka = ["aria-label"], wa = {
         unresolved: "Identity unresolved"
       }[C.evidence_status];
     }
-    function A(C) {
+    function z(C) {
       return JSON.stringify([C.drive_key, C.round_token, C.source_port, C.item_key, C.identity_key]);
     }
-    function K(C) {
+    function H(C) {
       return ee(C, typeof C == "string" ? C : "");
     }
-    async function q(C, E, D = "") {
+    async function K(C, I, D = "") {
       const { data: j } = await de.get(
         "/api/v1/automations/" + encodeURIComponent(C) + "/history",
-        { params: { kind: E, page_size: 25, ...D ? { page_token: D } : {} } }
+        { params: { kind: I, page_size: 25, ...D ? { page_token: D } : {} } }
       );
-      if (!j.success || j.kind !== E || !Array.isArray(j.entries)) throw new Error(j.error?.message || "Could not read execution history");
+      if (!j.success || j.kind !== I || !Array.isArray(j.entries)) throw new Error(j.error?.message || "Could not read execution history");
       if (j.next_page_token && j.next_page_token === D) throw new Error("History page repeats its cursor");
       return j;
     }
-    async function re(C, E) {
+    async function re(C, I) {
       const D = /* @__PURE__ */ new Map();
       function j(R) {
         R && (R.kind === "user" || R.kind === "group") && D.set(R.kind + ":" + R.id, { type: R.kind, id: R.id });
       }
       for (const R of C)
         j(R.evidence?.identity?.principal), j(R.evidence?.identity?.authorized_by);
-      for (const R of E)
+      for (const R of I)
         R.initiation && j({ kind: "user", id: R.initiation.actor_id });
-      return lo([...D.values()]);
+      return cn([...D.values()]);
     }
     function G(C) {
-      h(), x.value = ee(C, "Could not read execution history"), o("error", { message: x.value, error: C });
+      h(), $.value = ee(C, "Could not read execution history"), n("error", { message: $.value, error: C });
     }
-    async function I() {
-      const C = ++m, E = n.root;
-      if (h(), x.value = "", b.value = !1, !!E) {
-        b.value = !0;
+    async function L() {
+      const C = ++v, I = o.root;
+      if (h(), $.value = "", f.value = !1, !!I) {
+        f.value = !0;
         try {
-          const [D, j] = await Promise.all([q(E, "deliveries"), q(E, "controls")]), R = await re(D.entries, j.entries);
-          if (C !== m) return;
-          i.value = D.entries, a.value = j.entries, f.value = R, g.value = D.next_page_token || "", $.value = j.next_page_token || "";
+          const [D, j] = await Promise.all([K(I, "deliveries"), K(I, "controls")]), R = await re(D.entries, j.entries);
+          if (C !== v) return;
+          i.value = D.entries, a.value = j.entries, b.value = R, m.value = D.next_page_token || "", _.value = j.next_page_token || "";
         } catch (D) {
-          C === m && G(D);
+          C === v && G(D);
         } finally {
-          C === m && (b.value = !1);
+          C === v && (f.value = !1);
         }
       }
     }
-    async function H(C) {
-      if (b.value) return;
-      const E = m, D = n.root, j = C === "deliveries" ? g.value : $.value;
+    async function V(C) {
+      if (f.value) return;
+      const I = v, D = o.root, j = C === "deliveries" ? m.value : _.value;
       if (j) {
-        b.value = !0, x.value = "";
+        f.value = !0, $.value = "";
         try {
-          const R = await q(D, C, j), d = C === "deliveries" ? [...i.value, ...R.entries] : i.value, M = C === "controls" ? [...a.value, ...R.entries] : a.value, B = await re(d, M);
-          if (E !== m) return;
-          i.value = d, a.value = M, f.value = B, C === "deliveries" ? g.value = R.next_page_token || "" : $.value = R.next_page_token || "";
+          const R = await K(D, C, j), c = C === "deliveries" ? [...i.value, ...R.entries] : i.value, M = C === "controls" ? [...a.value, ...R.entries] : a.value, B = await re(c, M);
+          if (I !== v) return;
+          i.value = c, a.value = M, b.value = B, C === "deliveries" ? m.value = R.next_page_token || "" : _.value = R.next_page_token || "";
         } catch (R) {
-          E === m && G(R);
+          I === v && G(R);
         } finally {
-          E === m && (b.value = !1);
+          I === v && (f.value = !1);
         }
       }
     }
-    return Be(() => n.root, () => {
-      I();
+    return Be(() => o.root, () => {
+      L();
     }, { immediate: !0 }), it(() => {
-      m += 1;
-    }), (C, E) => (s(), u("section", za, [
-      b.value ? (s(), u("p", Da, "Loading execution history…")) : _("", !0),
-      x.value ? (s(), u("p", Pa, y(x.value), 1)) : (s(), u(Y, { key: 2 }, [
-        l("div", null, [
-          E[4] || (E[4] = l("h3", null, "Committed deliveries", -1)),
-          !b.value && !i.value.length ? (s(), u("p", Ea, "No retained deliveries.")) : _("", !0),
-          (s(!0), u(Y, null, te(i.value, (D) => (s(), u("article", {
-            key: A(D),
+      v += 1;
+    }), (C, I) => (s(), d("section", za, [
+      f.value ? (s(), d("p", Da, "Loading execution history…")) : w("", !0),
+      $.value ? (s(), d("p", Pa, x($.value), 1)) : (s(), d(Y, { key: 2 }, [
+        l("div", Ea, [
+          I[4] || (I[4] = l("h3", { class: "kx-dsub-lbl" }, "Committed deliveries", -1)),
+          !f.value && !i.value.length ? (s(), d("p", Ia, "No retained deliveries.")) : w("", !0),
+          (s(!0), d(Y, null, te(i.value, (D) => (s(), d("article", {
+            key: z(D),
             class: "kx-history-entry"
           }, [
-            l("strong", null, y(D.item_key) + " · " + y(D.state), 1),
-            l("p", null, "Round starts " + y(r(ce)(D.round_at, { future: !0 })), 1),
-            l("p", null, y(v(D)), 1),
-            D.evidence?.identity ? (s(), u("dl", Ia, [
-              E[3] || (E[3] = l("dt", null, "Executor", -1)),
+            l("div", La, [
+              l("strong", {
+                class: "kx-history-title",
+                title: D.item_key
+              }, x(D.item_key), 9, Aa),
+              l("span", Ma, x(D.state), 1)
+            ]),
+            l("p", ja, "Round starts " + x(r(ce)(D.round_at, { future: !0 })), 1),
+            l("p", Ra, x(g(D)), 1),
+            D.evidence?.identity ? (s(), d("dl", Ta, [
+              I[3] || (I[3] = l("dt", { class: "kx-dfact-k" }, "Executor", -1)),
               l("dd", {
+                class: "kx-history-v",
                 title: D.evidence.identity.principal.id,
                 "aria-label": "Historical executor"
-              }, y(c(D.evidence.identity.principal)), 9, La),
-              D.evidence.identity.authorized_by ? (s(), u(Y, { key: 0 }, [
-                E[2] || (E[2] = l("dt", null, "Authorized by", -1)),
+              }, x(u(D.evidence.identity.principal)), 9, Oa),
+              D.evidence.identity.authorized_by ? (s(), d(Y, { key: 0 }, [
+                I[2] || (I[2] = l("dt", { class: "kx-dfact-k" }, "Authorized by", -1)),
                 l("dd", {
+                  class: "kx-history-v",
                   title: D.evidence.identity.authorized_by.id,
                   "aria-label": "Historical authorizer"
-                }, y(c(D.evidence.identity.authorized_by)), 9, Aa)
-              ], 64)) : _("", !0)
-            ])) : _("", !0),
-            K(D.error) ? (s(), u("p", Ma, y(K(D.error)), 1)) : _("", !0)
+                }, x(u(D.evidence.identity.authorized_by)), 9, Ba)
+              ], 64)) : w("", !0)
+            ])) : w("", !0),
+            H(D.error) ? (s(), d("p", Fa, x(H(D.error)), 1)) : w("", !0)
           ]))), 128)),
-          g.value ? (s(), U(r(X), {
+          m.value ? (s(), U(r(X), {
             key: 1,
             label: "More deliveries",
             severity: "secondary",
-            disabled: b.value,
-            onClick: E[0] || (E[0] = (D) => H("deliveries"))
-          }, null, 8, ["disabled"])) : _("", !0)
+            disabled: f.value,
+            onClick: I[0] || (I[0] = (D) => V("deliveries"))
+          }, null, 8, ["disabled"])) : w("", !0)
         ]),
-        l("div", null, [
-          E[6] || (E[6] = l("h3", null, "Control requests", -1)),
-          E[7] || (E[7] = l("p", null, "Control requests and delivery admission are independent records.", -1)),
-          !b.value && !a.value.length ? (s(), u("p", ja, "No retained control requests.")) : _("", !0),
-          (s(!0), u(Y, null, te(a.value, (D) => (s(), u("article", {
+        l("div", Na, [
+          I[6] || (I[6] = l("h3", { class: "kx-dsub-lbl" }, "Control requests", -1)),
+          I[7] || (I[7] = l("p", { class: "kx-dnote" }, "Control requests and delivery admission are independent records.", -1)),
+          !f.value && !a.value.length ? (s(), d("p", Ua, "No retained control requests.")) : w("", !0),
+          (s(!0), d(Y, null, te(a.value, (D) => (s(), d("article", {
             key: `${D.generation}:${D.request_id}`,
             class: "kx-history-entry"
           }, [
-            l("strong", null, y(D.state), 1),
-            l("p", null, "Requested " + y(r(ce)(D.created_at, { future: !0 })), 1),
-            D.initiation ? (s(), u("dl", Ra, [
-              E[5] || (E[5] = l("dt", null, "Initiated by", -1)),
+            l("div", Ha, [
+              l("span", Va, x(D.state), 1)
+            ]),
+            l("p", Ka, "Requested " + x(r(ce)(D.created_at, { future: !0 })), 1),
+            D.initiation ? (s(), d("dl", qa, [
+              I[5] || (I[5] = l("dt", { class: "kx-dfact-k" }, "Initiated by", -1)),
               l("dd", {
+                class: "kx-history-v",
                 title: D.initiation.actor_id,
                 "aria-label": "Control initiator"
-              }, y(c({ kind: "user", id: D.initiation.actor_id })), 9, Ta)
-            ])) : (s(), u("p", Oa, "Initiator not recorded."))
+              }, x(u({ kind: "user", id: D.initiation.actor_id })), 9, Wa)
+            ])) : (s(), d("p", Ya, "Initiator not recorded."))
           ]))), 128)),
-          $.value ? (s(), U(r(X), {
+          _.value ? (s(), U(r(X), {
             key: 1,
             label: "More control requests",
             severity: "secondary",
-            disabled: b.value,
-            onClick: E[1] || (E[1] = (D) => H("controls"))
-          }, null, 8, ["disabled"])) : _("", !0)
+            disabled: f.value,
+            onClick: I[1] || (I[1] = (D) => V("controls"))
+          }, null, 8, ["disabled"])) : w("", !0)
         ])
       ], 64))
     ]));
   }
-}), Fa = /* @__PURE__ */ Et(Ba, [["__scopeId", "data-v-3d5e957f"]]);
+});
 function Le(e) {
   return typeof e == "object" && e !== null && !Array.isArray(e);
 }
-function Na(e) {
+function Ga(e) {
   return Le(e) && typeof e.code == "string" && typeof e.message == "string" && typeof e.at == "string" && (e.item_key === void 0 || typeof e.item_key == "string");
 }
-function Ua(e) {
+function Xa(e) {
   if (!Le(e) || typeof e.drive_key != "string") return !1;
   for (const t of ["source_kind", "phase"])
     if (e[t] !== void 0 && typeof e[t] != "string") return !1;
@@ -3144,12 +3176,12 @@ function Ua(e) {
     if (e[t] !== void 0 && (typeof e[t] != "number" || !Number.isInteger(e[t]) || e[t] < 0)) return !1;
   return !(e.last_error !== void 0 && e.last_error !== null && (!Le(e.last_error) || e.last_error.message !== void 0 && typeof e.last_error.message != "string"));
 }
-function Ha(e) {
-  if (!Le(e) || e.success !== !0 || !Array.isArray(e.drives) || !e.drives.every(Ua) || e.next_page_token !== void 0 && e.next_page_token !== null && (typeof e.next_page_token != "string" || !e.next_page_token)) return !1;
+function Ja(e) {
+  if (!Le(e) || e.success !== !0 || !Array.isArray(e.drives) || !e.drives.every(Xa) || e.next_page_token !== void 0 && e.next_page_token !== null && (typeof e.next_page_token != "string" || !e.next_page_token)) return !1;
   const t = e.delivery_failures;
-  return t === void 0 || Le(t) && typeof t.count == "number" && Number.isInteger(t.count) && t.count >= 0 && (t.last_error === void 0 || Na(t.last_error));
+  return t === void 0 || Le(t) && typeof t.count == "number" && Number.isInteger(t.count) && t.count >= 0 && (t.last_error === void 0 || Ga(t.last_error));
 }
-const en = {
+const Qt = {
   blocked_identity: "The account this automation runs as needs to be confirmed.",
   blocked_access: "This automation lost access to something it uses.",
   blocked_declaration: "This automation's settings need to be fixed."
@@ -3163,64 +3195,64 @@ function je(e) {
 function Pt(e) {
   return (e.source_kind === "timer" || e.source_kind === "collection") && (e.phase === "pending" || e.phase === "active") && typeof e.next_run_at == "string" && Date.parse(e.next_run_at) > Date.now();
 }
-function Va(e) {
-  const t = Ue(e), n = (e?.delivery_failures?.count || 0) > 0;
-  if (!t.length) return n ? { kind: "warn", label: "Needs attention" } : null;
-  if (t.some((i) => (i.phase || "") in en)) return { kind: "warn", label: "Needs attention" };
+function Qa(e) {
+  const t = Ue(e), o = (e?.delivery_failures?.count || 0) > 0;
+  if (!t.length) return o ? { kind: "warn", label: "Needs attention" } : null;
+  if (t.some((i) => (i.phase || "") in Qt)) return { kind: "warn", label: "Needs attention" };
   if (t.every(je)) return { kind: "off", label: "Paused" };
-  if (n) return { kind: "warn", label: "Needs attention" };
+  if (o) return { kind: "warn", label: "Needs attention" };
   if (t.some((i) => i.phase === "degraded")) return { kind: "warn", label: "Retrying" };
   if (t.some((i) => i.phase === "backpressure")) return { kind: "live", label: "Catching up" };
   if (t.some((i) => !je(i) && i.phase === "pending" && !Pt(i))) return { kind: "neutral", label: "Starting" };
-  const o = t.filter((i) => !je(i) && i.source_kind !== "reconcile");
-  return o.length && o.every(Pt) ? { kind: "on", label: "Scheduled" } : { kind: "on", label: "Active" };
+  const n = t.filter((i) => !je(i) && i.source_kind !== "reconcile");
+  return n.length && n.every(Pt) ? { kind: "on", label: "Scheduled" } : { kind: "on", label: "Active" };
 }
-function Ka(e) {
+function ei(e) {
   const t = e?.delivery_failures?.last_error;
   if (t) return `${t.code}: ${t.message}`;
-  const n = Ue(e);
-  for (const o of n) {
-    const i = en[o.phase || ""];
+  const o = Ue(e);
+  for (const n of o) {
+    const i = Qt[n.phase || ""];
     if (i) return i;
   }
-  for (const o of n) {
-    if (o.phase !== "degraded") continue;
-    return (typeof o.last_error?.message == "string" ? o.last_error.message.trim() : "") || "The last run failed; it is retrying.";
+  for (const n of o) {
+    if (n.phase !== "degraded") continue;
+    return (typeof n.last_error?.message == "string" ? n.last_error.message.trim() : "") || "The last run failed; it is retrying.";
   }
   return "";
 }
-function qa(e) {
-  const t = Ue(e), n = [], o = $e(e).next;
-  o && n.push({ label: "Next run", value: o, time: !0 });
-  const i = t.reduce((a, f) => a + (f.unresolved_count || 0), 0);
-  return i > 0 && n.push({ label: "Waiting to retry", value: `${i} ${i === 1 ? "item" : "items"}` }), n;
+function ti(e) {
+  const t = Ue(e), o = [], n = $e(e).next;
+  n && o.push({ label: "Next run", value: n, time: !0 });
+  const i = t.reduce((a, b) => a + (b.unresolved_count || 0), 0);
+  return i > 0 && o.push({ label: "Waiting to retry", value: `${i} ${i === 1 ? "item" : "items"}` }), o;
 }
 function $e(e) {
-  const t = Ue(e), n = t.map((i) => i.last_run_at).filter((i) => typeof i == "string" && !!i).sort().at(-1), o = t.filter((i) => !je(i)).map((i) => i.next_run_at).filter((i) => typeof i == "string" && !!i).sort()[0];
-  return { last: n, next: o };
+  const t = Ue(e), o = t.map((i) => i.last_run_at).filter((i) => typeof i == "string" && !!i).sort().at(-1), n = t.filter((i) => !je(i)).map((i) => i.next_run_at).filter((i) => typeof i == "string" && !!i).sort()[0];
+  return { last: o, next: n };
 }
-const Wa = /* @__PURE__ */ new Set(["status", "enabled", "last_error", "last_run_at", "next_run_at"]);
-function Ya(e) {
+const oi = /* @__PURE__ */ new Set(["status", "enabled", "last_error", "last_run_at", "next_run_at"]);
+function ni(e) {
   return e.replace(/_/g, " ").replace(/\b\w/g, (t) => t.toUpperCase());
 }
-function Za(e) {
+function ri(e) {
   return e.replace(/\b\w/g, (t) => t.toUpperCase());
 }
-function Ga(e) {
+function ai(e) {
   return e && e.charAt(0).toUpperCase() + e.slice(1);
 }
-function Xa(e, t) {
+function ii(e, t) {
   if (e.type === "boolean") return t === !0 ? "Yes" : "No";
-  const n = String(t);
-  return e.key.endsWith("_at") || /^\d{4}-\d{2}-\d{2}T/.test(n) ? ce(n, { future: !0 }) || n : e.type === "text" ? Ga(n) : n;
+  const o = String(t);
+  return e.key.endsWith("_at") || /^\d{4}-\d{2}-\d{2}T/.test(o) ? ce(o, { future: !0 }) || o : e.type === "text" ? ai(o) : o;
 }
-function tn(e) {
+function eo(e) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(e) || /^[0-9A-HJKMNP-TV-Z]{26}$/i.test(e) ? !0 : /^[a-z][a-z0-9_-]*:[a-z0-9][a-z0-9:_-]*$/i.test(e) && /:[0-9a-f-]{6,}/i.test(e);
 }
-function Ja(e) {
-  return tn(e) ? { text: e.length > 12 ? `${e.slice(0, 8)}…` : e, title: e } : { text: e };
+function si(e) {
+  return eo(e) ? { text: e.length > 12 ? `${e.slice(0, 8)}…` : e, title: e } : { text: e };
 }
-const Qa = [
+const li = [
   { match: /component_id not in scope|not in scope/i, text: "Not part of this workspace" },
   { match: /transform output must be an object/i, text: "Item format not recognized" },
   { match: /trigger events dropped/i, text: "Incoming events were dropped" },
@@ -3229,68 +3261,68 @@ const Qa = [
   { match: /sink write (returned a non-object|did not acknowledge)/i, text: "Destination did not confirm the save" },
   { match: /(sink|source) resolve/i, text: "Source or destination unavailable" }
 ];
-function ei(e) {
+function ci(e) {
   const t = e.trim();
   if (!t) return { text: "" };
-  for (const n of Qa)
-    if (n.match.test(t)) return { text: n.text, title: t };
+  for (const o of li)
+    if (o.match.test(t)) return { text: o.text, title: t };
   return { text: "Skipped", title: t };
 }
-function nn(e) {
+function to(e) {
   return /reason/i.test(e);
 }
-function ti(e, t) {
-  return nn(e.key) || /(^|_)item(_key)?$/i.test(e.key) ? !0 : typeof t == "string" && tn(t);
+function di(e, t) {
+  return to(e.key) || /(^|_)item(_key)?$/i.test(e.key) ? !0 : typeof t == "string" && eo(t);
 }
-function ni(e, t) {
-  const n = Za(e.label || Ya(e.key));
-  if (nn(e.key)) {
-    const { text: a, title: f } = ei(String(t));
-    return { label: n, value: a, title: f, icon: e.icon };
+function ui(e, t) {
+  const o = ri(e.label || ni(e.key));
+  if (to(e.key)) {
+    const { text: a, title: b } = ci(String(t));
+    return { label: o, value: a, title: b, icon: e.icon };
   }
-  const { text: o, title: i } = Ja(Xa(e, t));
-  return { label: n, value: o, title: i, icon: e.icon };
+  const { text: n, title: i } = si(ii(e, t));
+  return { label: o, value: n, title: i, icon: e.icon };
 }
-function Ne(e, t, n) {
-  const o = t;
-  if (!e || !o) return [];
+function Ne(e, t, o) {
+  const n = t;
+  if (!e || !n) return [];
   const i = [];
   for (const a of e) {
-    if (!a?.key || Wa.has(a.key) || a.role === "subtitle") continue;
-    const f = o[a.key];
-    f == null || f === "" || a.hidden || a.hide_zero && f === 0 || ti(a, f) === n && i.push(ni(a, f));
+    if (!a?.key || oi.has(a.key) || a.role === "subtitle") continue;
+    const b = n[a.key];
+    b == null || b === "" || a.hidden || a.hide_zero && b === 0 || di(a, b) === o && i.push(ui(a, b));
   }
   return i;
 }
 function ct(e) {
   return String(e?.status || "").toLowerCase();
 }
-function oi(e) {
+function pi(e) {
   return typeof e == "string" && /\b(completed|succeeded|successfully)\b/i.test(e);
 }
-function on(e) {
+function oo(e) {
   const t = ct(e);
   return t === "completed" || t === "failed";
 }
 function dt(e) {
   const t = ct(e);
-  return t === "failed" || t === "failing" ? !0 : !!e?.last_error && !oi(e.last_error);
+  return t === "failed" || t === "failing" ? !0 : !!e?.last_error && !pi(e.last_error);
 }
-function rn(e, t) {
+function no(e, t) {
   if (t?.code === "unavailable") return { tone: "error", text: "Its module is unavailable. Reinstall its module to use this automation." };
-  const n = typeof e?.last_error == "string" ? e.last_error.trim() : "";
-  return n ? dt(e) ? { tone: "error", text: n } : { tone: "success", text: n } : null;
+  const o = typeof e?.last_error == "string" ? e.last_error.trim() : "";
+  return o ? dt(e) ? { tone: "error", text: o } : { tone: "success", text: o } : null;
 }
-function an(e, t, n, o) {
-  if (o?.code === "unavailable") return { kind: "warn", label: "Unavailable" };
-  const i = Va(n);
+function ro(e, t, o, n) {
+  if (n?.code === "unavailable") return { kind: "warn", label: "Unavailable" };
+  const i = Qa(o);
   if (i) return i;
   if (!e)
     return t ? { kind: "neutral", label: "…" } : { kind: "neutral", label: "Installed" };
   const a = ct(e);
   return dt(e) ? { kind: "warn", label: a === "failed" ? "Failed" : "Failing" } : a === "completed" ? { kind: "done", label: "Completed" } : a === "paused" || e.enabled === !1 ? { kind: "off", label: "Paused" } : a === "running" ? { kind: "live", label: "Running" } : { kind: "on", label: "Active" };
 }
-function sn(e) {
+function ao(e) {
   switch (e) {
     case "on":
     case "live":
@@ -3304,57 +3336,57 @@ function sn(e) {
       return "secondary";
   }
 }
-function ln(e, t) {
-  const n = (e || []).find((i) => i?.role === "subtitle"), o = n ? t?.[n.key] : void 0;
-  return typeof o == "string" ? o.trim() : "";
+function io(e, t) {
+  const o = (e || []).find((i) => i?.role === "subtitle"), n = o ? t?.[o.key] : void 0;
+  return typeof n == "string" ? n.trim() : "";
 }
-async function cn(e) {
-  const t = [], n = /* @__PURE__ */ new Set();
-  let o, i;
+async function so(e) {
+  const t = [], o = /* @__PURE__ */ new Set();
+  let n, i;
   do {
-    const a = o ? `?page_token=${encodeURIComponent(o)}` : "", { data: f } = await de.get(`/api/v1/automations/${encodeURIComponent(e)}/status${a}`);
-    if (!Ha(f)) throw new Error("Invalid automation status response");
-    if (t.push(...f.drives), i = f.delivery_failures, o = f.next_page_token || void 0, o && n.has(o)) throw new Error("Automation status repeated a page token");
-    o && n.add(o);
-  } while (o);
+    const a = n ? `?page_token=${encodeURIComponent(n)}` : "", { data: b } = await de.get(`/api/v1/automations/${encodeURIComponent(e)}/status${a}`);
+    if (!Ja(b)) throw new Error("Invalid automation status response");
+    if (t.push(...b.drives), i = b.delivery_failures, n = b.next_page_token || void 0, n && o.has(n)) throw new Error("Automation status repeated a page token");
+    n && o.add(n);
+  } while (n);
   return { drives: t, delivery_failures: i };
 }
-const ri = ["aria-label"], ai = { class: "kx-drawer-head" }, ii = { class: "kx-ficon" }, si = { class: "kx-drawer-id" }, li = ["title"], ci = { class: "kx-drawer-sub" }, di = { class: "kx-drawer-controls" }, ui = {
+const bi = ["aria-label"], fi = { class: "kx-drawer-head" }, gi = { class: "kx-ficon" }, mi = { class: "kx-drawer-id" }, vi = ["title"], hi = { class: "kx-drawer-sub" }, xi = { class: "kx-drawer-controls" }, yi = {
   class: "kx-tabs",
   role: "tablist"
-}, pi = ["aria-selected", "data-testid", "onClick"], bi = { class: "kx-drawer-body" }, fi = {
+}, ki = ["aria-selected", "data-testid", "onClick"], wi = { class: "kx-drawer-body" }, _i = {
   key: 0,
   class: "kx-dsec"
-}, gi = {
+}, $i = {
   key: 0,
   class: "kx-errcard",
   "data-testid": "drawer-error-card"
-}, mi = { class: "kx-errcard-head" }, vi = { class: "kx-errcard-cause" }, hi = { class: "kx-dgrid" }, xi = { class: "kx-dfact-k" }, yi = { class: "kx-dfact-v" }, ki = {
+}, Ci = { class: "kx-errcard-head" }, Si = { class: "kx-errcard-cause" }, zi = { class: "kx-dgrid" }, Di = { class: "kx-dfact-k" }, Pi = { class: "kx-dfact-v" }, Ei = {
   key: 1,
   class: "kx-dsub"
-}, wi = { class: "kx-metrics" }, _i = { class: "kx-metric-k" }, $i = ["title"], Ci = {
+}, Ii = { class: "kx-metrics" }, Li = { class: "kx-metric-k" }, Ai = ["title"], Mi = {
   key: 1,
   class: "kx-dsec"
-}, Si = {
+}, ji = {
   key: 0,
   class: "kx-dnote"
-}, zi = {
+}, Ri = {
   key: 1,
   class: "kx-dgrid"
-}, Di = { class: "kx-dfact-k" }, Pi = ["title"], Ei = {
+}, Ti = { class: "kx-dfact-k" }, Oi = ["title"], Bi = {
   key: 2,
   class: "kx-dsec",
   "data-testid": "drawer-config"
-}, Ii = {
+}, Fi = {
   key: 2,
   class: "kx-dnote"
-}, Li = {
+}, Ni = {
   key: 3,
   class: "kx-dsec"
-}, Ai = { class: "kx-dgrid" }, Mi = { class: "kx-dfact" }, ji = { class: "kx-dfact-v" }, Ri = { class: "kx-dfact" }, Ti = { class: "kx-dfact-v" }, Oi = { class: "kx-dfact" }, Bi = { class: "kx-dfact-v" }, Fi = {
+}, Ui = { class: "kx-dgrid" }, Hi = { class: "kx-dfact" }, Vi = { class: "kx-dfact-v" }, Ki = { class: "kx-dfact" }, qi = { class: "kx-dfact-v" }, Wi = { class: "kx-dfact" }, Yi = { class: "kx-dfact-v" }, Zi = {
   key: 0,
   class: "kx-dsub"
-}, Ni = /* @__PURE__ */ be({
+}, Gi = /* @__PURE__ */ be({
   __name: "DetailDrawer",
   props: {
     automation: { default: () => ({ id: "" }) },
@@ -3362,119 +3394,119 @@ const ri = ["aria-label"], ai = { class: "kx-drawer-head" }, ii = { class: "kx-f
   },
   emits: ["close", "action", "recover", "changed"],
   setup(e, { emit: t }) {
-    const n = e, o = t, i = O("overview"), a = [
+    const o = e, n = t, i = O("overview"), a = [
       { id: "overview", label: "Overview", icon: "tabler:layout-dashboard" },
       { id: "state", label: "State", icon: "tabler:chart-dots" },
       { id: "config", label: "Config", icon: "tabler:settings" },
       { id: "activity", label: "Activity", icon: "tabler:history" }
-    ], f = L(() => n.automation.title || n.automation.id), g = L(() => n.automation.icon || n.type?.icon || "tabler:bolt"), $ = L(() => n.type?.title || "Automation"), b = L(() => n.automation.public_state), x = L(() => Gt(n.type)), m = L(() => Jt(x.value)), h = L(() => x.value.declared.includes("status")), c = O(null);
-    let v = 0;
-    async function A(V) {
-      const P = ++v;
-      if (!V || !n.automation.drive_status || n.automation.availability) {
-        c.value = null;
+    ], b = A(() => o.automation.title || o.automation.id), m = A(() => o.automation.icon || o.type?.icon || "tabler:bolt"), _ = A(() => o.type?.title || "Automation"), f = A(() => o.automation.public_state), $ = A(() => Zt(o.type)), v = A(() => Xt($.value)), h = A(() => $.value.declared.includes("status")), u = O(null);
+    let g = 0;
+    async function z(q) {
+      const E = ++g;
+      if (!q || !o.automation.drive_status || o.automation.availability) {
+        u.value = null;
         return;
       }
-      c.value = n.automation.drive_status;
-      const S = await cn(V);
-      P === v && n.automation.id === V && (c.value = S);
+      u.value = o.automation.drive_status;
+      const S = await so(q);
+      E === g && o.automation.id === q && (u.value = S);
     }
-    Be(() => [n.automation.id, n.automation.drive_status, n.automation.availability], ([V]) => {
-      A(V).catch((P) => Fe.handleError("other", { message: String(P) }));
+    Be(() => [o.automation.id, o.automation.drive_status, o.automation.availability], ([q]) => {
+      z(q).catch((E) => Fe.handleError("other", { message: String(E) }));
     }, { immediate: !0 });
-    const K = L(() => an(b.value, h.value, c.value, n.automation.availability)), q = L(() => K.value.kind === "off"), re = L(() => on(b.value)), G = L(() => (x.value.declared.includes("pause") || x.value.declared.includes("resume")) && !re.value), I = L(() => dt(b.value)), H = L(() => Xt(x.value.declared)), C = L(() => {
-      if (n.automation.availability) return rn(b.value, n.automation.availability)?.text || "";
-      const V = Ka(c.value);
-      if (V) return V;
-      const P = typeof b.value?.last_error == "string" ? b.value.last_error.trim() : "";
-      return I.value ? P : "";
-    }), E = L(() => ln(n.type?.public_state_schema?.fields, b.value)), D = L(() => {
-      const V = n.type?.public_state_schema?.fields;
-      return [...Ne(V, b.value, !1), ...Ne(V, b.value, !0)];
-    }), j = L(() => {
-      const V = b.value, P = [];
-      P.push({ label: "Status", value: K.value.label }), n.automation.availability || P.push({ label: "Enabled", value: q.value ? "Paused" : "Yes" }), E.value && P.push({ label: "When", value: E.value }), V?.last_run_at && P.push({ label: "Last run", value: ce(V.last_run_at, { future: !0 }) }), V?.next_run_at && P.push({ label: "Next run", value: ce(V.next_run_at, { future: !0 }) });
-      for (const S of qa(c.value))
-        P.push({ label: S.label, value: S.time ? ce(S.value, { future: !0 }) : S.value });
-      return P;
-    }), R = L(() => {
-      const V = c.value?.drives.flatMap((S) => typeof S.last_round_at == "string" ? [S.last_round_at] : []) || [], P = c.value?.delivery_failures?.last_error?.at;
-      return P && V.push(P), V.sort().at(-1) || b.value?.last_run_at;
-    }), d = L(() => c.value?.delivery_failures), M = L(() => {
-      const V = d.value?.last_error;
-      return V ? `${V.code}: ${V.message}` : b.value?.last_error;
-    }), B = L(() => lt(n.type)), ie = L(() => Wt(n.automation, n.type)), He = L(() => ({ location: qt(n.type) }));
-    return Be(() => n.automation.id, () => {
+    const H = A(() => ro(f.value, h.value, u.value, o.automation.availability)), K = A(() => H.value.kind === "off"), re = A(() => oo(f.value)), G = A(() => ($.value.declared.includes("pause") || $.value.declared.includes("resume")) && !re.value), L = A(() => dt(f.value)), V = A(() => Gt($.value.declared)), C = A(() => {
+      if (o.automation.availability) return no(f.value, o.automation.availability)?.text || "";
+      const q = ei(u.value);
+      if (q) return q;
+      const E = typeof f.value?.last_error == "string" ? f.value.last_error.trim() : "";
+      return L.value ? E : "";
+    }), I = A(() => io(o.type?.public_state_schema?.fields, f.value)), D = A(() => {
+      const q = o.type?.public_state_schema?.fields;
+      return [...Ne(q, f.value, !1), ...Ne(q, f.value, !0)];
+    }), j = A(() => {
+      const q = f.value, E = [];
+      E.push({ label: "Status", value: H.value.label }), o.automation.availability || E.push({ label: "Enabled", value: K.value ? "Paused" : "Yes" }), I.value && E.push({ label: "When", value: I.value }), q?.last_run_at && E.push({ label: "Last run", value: ce(q.last_run_at, { future: !0 }) }), q?.next_run_at && E.push({ label: "Next run", value: ce(q.next_run_at, { future: !0 }) });
+      for (const S of ti(u.value))
+        E.push({ label: S.label, value: S.time ? ce(S.value, { future: !0 }) : S.value });
+      return E;
+    }), R = A(() => {
+      const q = u.value?.drives.flatMap((S) => typeof S.last_round_at == "string" ? [S.last_round_at] : []) || [], E = u.value?.delivery_failures?.last_error?.at;
+      return E && q.push(E), q.sort().at(-1) || f.value?.last_run_at;
+    }), c = A(() => u.value?.delivery_failures), M = A(() => {
+      const q = c.value?.last_error;
+      return q ? `${q.code}: ${q.message}` : f.value?.last_error;
+    }), B = A(() => lt(o.type)), ie = A(() => qt(o.automation, o.type)), He = A(() => ({ location: Kt(o.type) }));
+    return Be(() => o.automation.id, () => {
       i.value = "overview";
-    }), (V, P) => (s(), u(Y, null, [
+    }), (q, E) => (s(), d(Y, null, [
       l("div", {
         class: "kx-drawer-scrim",
-        onClick: P[0] || (P[0] = (S) => o("close"))
+        onClick: E[0] || (E[0] = (S) => n("close"))
       }),
       l("aside", {
         class: "kx-drawer",
         role: "dialog",
         "aria-modal": "true",
-        "aria-label": f.value,
+        "aria-label": b.value,
         "data-testid": "detail-drawer"
       }, [
-        l("header", ai, [
-          l("span", ii, [
-            z(r(T), {
-              icon: g.value,
+        l("header", fi, [
+          l("span", gi, [
+            P(r(T), {
+              icon: m.value,
               "aria-hidden": "true"
             }, null, 8, ["icon"])
           ]),
-          l("div", si, [
+          l("div", mi, [
             l("div", {
               class: "kx-drawer-name",
-              title: f.value
-            }, y(f.value), 9, li),
-            l("div", ci, y($.value), 1)
+              title: b.value
+            }, x(b.value), 9, vi),
+            l("div", hi, x(_.value), 1)
           ]),
-          z(r(st), {
-            severity: r(sn)(K.value.kind),
+          P(r(st), {
+            severity: r(ao)(H.value.kind),
             class: "kx-badge kx-tag-sm"
           }, {
             default: N(() => [
-              K.value.kind === "live" ? (s(), U(r(T), {
+              H.value.kind === "live" ? (s(), U(r(T), {
                 key: 0,
                 icon: "tabler:loader-2",
                 class: "spin",
                 "aria-hidden": "true"
-              })) : _("", !0),
-              ae(" " + y(K.value.label), 1)
+              })) : w("", !0),
+              ae(" " + x(H.value.label), 1)
             ]),
             _: 1
           }, 8, ["severity"]),
-          l("div", di, [
+          l("div", xi, [
             G.value ? (s(), U(r(X), {
               key: 0,
               type: "button",
               severity: "secondary",
               outlined: "",
               size: "small",
-              "aria-label": `${q.value ? "Resume" : "Pause"} ${f.value}`,
-              title: q.value ? "Resume" : "Pause",
+              "aria-label": `${K.value ? "Resume" : "Pause"} ${b.value}`,
+              title: K.value ? "Resume" : "Pause",
               disabled: !!e.automation.deleting_at,
-              onClick: P[1] || (P[1] = (S) => !e.automation.deleting_at && o("action", q.value ? "resume" : "pause"))
+              onClick: E[1] || (E[1] = (S) => !e.automation.deleting_at && n("action", K.value ? "resume" : "pause"))
             }, {
               icon: N(({ class: S }) => [
-                z(r(T), {
-                  icon: q.value ? "tabler:player-play-filled" : "tabler:player-pause",
+                P(r(T), {
+                  icon: K.value ? "tabler:player-play-filled" : "tabler:player-pause",
                   "aria-hidden": "true",
                   class: W(S)
                 }, null, 8, ["icon", "class"])
               ]),
               _: 1
-            }, 8, ["aria-label", "title", "disabled"])) : _("", !0),
-            z(Qt, {
-              items: m.value,
-              name: f.value,
+            }, 8, ["aria-label", "title", "disabled"])) : w("", !0),
+            P(Jt, {
+              items: v.value,
+              name: b.value,
               disabled: !!e.automation.deleting_at,
-              onSelect: P[2] || (P[2] = (S) => !e.automation.deleting_at && o("action", S))
+              onSelect: E[2] || (E[2] = (S) => !e.automation.deleting_at && n("action", S))
             }, null, 8, ["items", "name", "disabled"]),
-            z(r(X), {
+            P(r(X), {
               type: "button",
               severity: "secondary",
               text: "",
@@ -3482,10 +3514,10 @@ const ri = ["aria-label"], ai = { class: "kx-drawer-head" }, ii = { class: "kx-f
               class: "kx-drawer-close",
               "aria-label": "Close details",
               title: "Close",
-              onClick: P[3] || (P[3] = (S) => o("close"))
+              onClick: E[3] || (E[3] = (S) => n("close"))
             }, {
               icon: N(({ class: S }) => [
-                z(r(T), {
+                P(r(T), {
                   icon: "tabler:x",
                   "aria-hidden": "true",
                   class: W(S)
@@ -3495,8 +3527,8 @@ const ri = ["aria-label"], ai = { class: "kx-drawer-head" }, ii = { class: "kx-f
             })
           ])
         ]),
-        l("nav", ui, [
-          (s(), u(Y, null, te(a, (S) => l("button", {
+        l("nav", yi, [
+          (s(), d(Y, null, te(a, (S) => l("button", {
             key: S.id,
             type: "button",
             role: "tab",
@@ -3505,58 +3537,58 @@ const ri = ["aria-label"], ai = { class: "kx-drawer-head" }, ii = { class: "kx-f
             "data-testid": `drawer-tab-${S.id}`,
             onClick: (ut) => i.value = S.id
           }, [
-            z(r(T), {
+            P(r(T), {
               icon: S.icon,
               "aria-hidden": "true"
             }, null, 8, ["icon"]),
-            ae(" " + y(S.label), 1)
-          ], 10, pi)), 64))
+            ae(" " + x(S.label), 1)
+          ], 10, ki)), 64))
         ]),
-        l("div", bi, [
-          i.value === "overview" ? (s(), u("section", fi, [
-            C.value ? (s(), u("div", gi, [
-              l("div", mi, [
-                z(r(T), {
+        l("div", wi, [
+          i.value === "overview" ? (s(), d("section", _i, [
+            C.value ? (s(), d("div", $i, [
+              l("div", Ci, [
+                P(r(T), {
                   icon: "tabler:alert-circle",
                   "aria-hidden": "true"
                 }),
-                l("span", null, y(n.automation.availability ? "This automation is unavailable" : "This automation is failing"), 1)
+                l("span", null, x(o.automation.availability ? "This automation is unavailable" : "This automation is failing"), 1)
               ]),
-              l("p", vi, y(C.value), 1),
-              H.value ? (s(), U(r(X), {
+              l("p", Si, x(C.value), 1),
+              V.value ? (s(), U(r(X), {
                 key: 0,
                 type: "button",
                 size: "small",
                 severity: "danger",
-                "aria-label": `Recover ${f.value}`,
+                "aria-label": `Recover ${b.value}`,
                 "data-testid": "drawer-recover",
                 label: "Recover",
                 disabled: !!e.automation.deleting_at,
-                onClick: P[4] || (P[4] = (S) => !e.automation.deleting_at && o("recover"))
+                onClick: E[4] || (E[4] = (S) => !e.automation.deleting_at && n("recover"))
               }, {
                 icon: N(({ class: S }) => [
-                  z(r(T), {
+                  P(r(T), {
                     icon: "tabler:rotate-clockwise-2",
                     "aria-hidden": "true",
                     class: W(S)
                   }, null, 8, ["class"])
                 ]),
                 _: 1
-              }, 8, ["aria-label", "disabled"])) : _("", !0)
-            ])) : _("", !0),
-            l("div", hi, [
-              (s(!0), u(Y, null, te(j.value, (S) => (s(), u("div", {
+              }, 8, ["aria-label", "disabled"])) : w("", !0)
+            ])) : w("", !0),
+            l("div", zi, [
+              (s(!0), d(Y, null, te(j.value, (S) => (s(), d("div", {
                 key: S.label,
                 class: "kx-dfact"
               }, [
-                l("span", xi, y(S.label), 1),
-                l("strong", yi, y(S.value), 1)
+                l("span", Di, x(S.label), 1),
+                l("strong", Pi, x(S.value), 1)
               ]))), 128))
             ]),
-            D.value.length ? (s(), u("div", ki, [
-              P[9] || (P[9] = l("div", { class: "kx-dsub-lbl" }, "Progress", -1)),
-              l("div", wi, [
-                (s(!0), u(Y, null, te(D.value, (S) => (s(), u("span", {
+            D.value.length ? (s(), d("div", Ei, [
+              E[9] || (E[9] = l("div", { class: "kx-dsub-lbl" }, "Progress", -1)),
+              l("div", Ii, [
+                (s(!0), d(Y, null, te(D.value, (S) => (s(), d("span", {
                   key: S.label,
                   class: "kx-metric"
                 }, [
@@ -3565,155 +3597,155 @@ const ri = ["aria-label"], ai = { class: "kx-drawer-head" }, ii = { class: "kx-f
                     icon: S.icon,
                     class: "kx-metric-i",
                     "aria-hidden": "true"
-                  }, null, 8, ["icon"])) : _("", !0),
-                  l("span", _i, y(S.label), 1),
+                  }, null, 8, ["icon"])) : w("", !0),
+                  l("span", Li, x(S.label), 1),
                   l("span", {
                     class: "kx-metric-v",
                     title: S.title
-                  }, y(S.value), 9, $i)
+                  }, x(S.value), 9, Ai)
                 ]))), 128))
               ])
-            ])) : _("", !0)
-          ])) : i.value === "state" ? (s(), u("section", Ci, [
-            D.value.length ? (s(), u("div", zi, [
-              (s(!0), u(Y, null, te(D.value, (S) => (s(), u("div", {
+            ])) : w("", !0)
+          ])) : i.value === "state" ? (s(), d("section", Mi, [
+            D.value.length ? (s(), d("div", Ri, [
+              (s(!0), d(Y, null, te(D.value, (S) => (s(), d("div", {
                 key: S.label,
                 class: "kx-dfact"
               }, [
-                l("span", Di, y(S.label), 1),
+                l("span", Ti, x(S.label), 1),
                 l("strong", {
                   class: "kx-dfact-v",
                   title: S.title
-                }, y(S.value), 9, Pi)
+                }, x(S.value), 9, Oi)
               ]))), 128))
-            ])) : (s(), u("div", Si, "This automation reports no additional state."))
-          ])) : i.value === "config" ? (s(), u("section", Ei, [
+            ])) : (s(), d("div", ji, "This automation reports no additional state."))
+          ])) : i.value === "config" ? (s(), d("section", Bi, [
             !e.automation.deleting_at && !e.automation.availability && ((e.automation.access_level || 0) & 8) !== 0 ? (s(), U(Re, {
               key: 0,
               tag: "wc-execution-identity-editor",
               attrs: { root: e.automation.id },
-              onChange: P[5] || (P[5] = (S) => o("changed"))
-            }, null, 8, ["attrs"])) : _("", !0),
+              onChange: E[5] || (E[5] = (S) => n("changed"))
+            }, null, 8, ["attrs"])) : w("", !0),
             B.value && !e.automation.deleting_at ? (s(), U(Re, {
               key: 1,
               class: "kx-manage-host",
               tag: B.value,
               config: ie.value,
               meta: He.value,
-              onChange: P[6] || (P[6] = (S) => o("changed")),
-              onClose: P[7] || (P[7] = (S) => i.value = "overview")
-            }, null, 8, ["tag", "config", "meta"])) : (s(), u("div", Ii, "This automation type declares no settings view."))
-          ])) : (s(), u("section", Li, [
-            l("div", Ai, [
-              l("div", Mi, [
-                P[10] || (P[10] = l("span", { class: "kx-dfact-k" }, "Last run", -1)),
-                l("strong", ji, y(R.value ? r(ce)(R.value, { future: !0 }) : "Never"), 1)
+              onChange: E[6] || (E[6] = (S) => n("changed")),
+              onClose: E[7] || (E[7] = (S) => i.value = "overview")
+            }, null, 8, ["tag", "config", "meta"])) : (s(), d("div", Fi, "This automation type declares no settings view."))
+          ])) : (s(), d("section", Ni, [
+            l("div", Ui, [
+              l("div", Hi, [
+                E[10] || (E[10] = l("span", { class: "kx-dfact-k" }, "Last run", -1)),
+                l("strong", Vi, x(R.value ? r(ce)(R.value, { future: !0 }) : "Never"), 1)
               ]),
-              l("div", Ri, [
-                P[11] || (P[11] = l("span", { class: "kx-dfact-k" }, "Last outcome", -1)),
-                l("strong", Ti, y(d.value?.count ? "Failed delivery" : b.value?.status || "—"), 1)
+              l("div", Ki, [
+                E[11] || (E[11] = l("span", { class: "kx-dfact-k" }, "Last outcome", -1)),
+                l("strong", qi, x(c.value?.count ? "Failed delivery" : f.value?.status || "—"), 1)
               ]),
-              l("div", Oi, [
-                P[12] || (P[12] = l("span", { class: "kx-dfact-k" }, "Failed deliveries", -1)),
-                l("strong", Bi, y(d.value?.count ?? 0), 1)
+              l("div", Wi, [
+                E[12] || (E[12] = l("span", { class: "kx-dfact-k" }, "Failed deliveries", -1)),
+                l("strong", Yi, x(c.value?.count ?? 0), 1)
               ])
             ]),
-            typeof M.value == "string" && M.value.trim() ? (s(), u("div", Fi, [
-              P[13] || (P[13] = l("div", { class: "kx-dsub-lbl" }, "Last message", -1)),
+            typeof M.value == "string" && M.value.trim() ? (s(), d("div", Zi, [
+              E[13] || (E[13] = l("div", { class: "kx-dsub-lbl" }, "Last message", -1)),
               l("p", {
-                class: W(["kx-dmsg", I.value || d.value?.count ? "is-err" : "is-ok"])
-              }, y(M.value), 3)
-            ])) : _("", !0),
-            !e.automation.availability && ((e.automation.access_level || 0) & 8) !== 0 ? (s(), U(Fa, {
+                class: W(["kx-dmsg", L.value || c.value?.count ? "is-err" : "is-ok"])
+              }, x(M.value), 3)
+            ])) : w("", !0),
+            !e.automation.availability && ((e.automation.access_level || 0) & 8) !== 0 ? (s(), U(Za, {
               key: 1,
               root: e.automation.id,
-              onError: P[8] || (P[8] = (S) => r(Fe).handleError("other", { message: S.message }))
-            }, null, 8, ["root"])) : _("", !0)
+              onError: E[8] || (E[8] = (S) => r(Fe).handleError("other", { message: S.message }))
+            }, null, 8, ["root"])) : w("", !0)
           ]))
         ])
-      ], 8, ri)
+      ], 8, bi)
     ], 64));
   }
 });
-function Ui(e) {
-  const t = O(!1), n = O(null), o = O({}), i = O(!1), a = O(!1), f = O(""), g = O(null), $ = O(null);
-  let b = null;
-  const x = O(""), m = L(() => e.types.value.filter(
-    (d) => d.installable !== !1 && Object.entries(e.inputPreset.value).every(([M, B]) => {
-      const ie = d.inputs?.properties?.[M];
+function Xi(e) {
+  const t = O(!1), o = O(null), n = O({}), i = O(!1), a = O(!1), b = O(""), m = O(null), _ = O(null);
+  let f = null;
+  const $ = O(""), v = A(() => e.types.value.filter(
+    (c) => c.installable !== !1 && Object.entries(e.inputPreset.value).every(([M, B]) => {
+      const ie = c.inputs?.properties?.[M];
       return !!ie && (!ie.enum || typeof B == "string" && ie.enum.includes(B));
     })
-  )), h = L(() => !e.componentMode.value || !e.preferredTypeId.value || n.value?.id !== e.preferredTypeId.value), c = L(() => n.value ? oo(n.value).filter(([d]) => !(d in e.inputPreset.value)) : []), v = L(() => {
-    const d = x.value.trim().toLowerCase();
-    return d ? m.value.filter(
-      (M) => (M.title || "").toLowerCase().includes(d) || (M.name || "").toLowerCase().includes(d) || rt(M).toLowerCase().includes(d)
-    ) : m.value;
+  )), h = A(() => !e.componentMode.value || !e.preferredTypeId.value || o.value?.id !== e.preferredTypeId.value), u = A(() => o.value ? nn(o.value).filter(([c]) => !(c in e.inputPreset.value)) : []), g = A(() => {
+    const c = $.value.trim().toLowerCase();
+    return c ? v.value.filter(
+      (M) => (M.title || "").toLowerCase().includes(c) || (M.name || "").toLowerCase().includes(c) || rt(M).toLowerCase().includes(c)
+    ) : v.value;
   });
-  function A(d) {
-    E(), x.value = "", n.value = d || null, o.value = d ? { ...ht(d), ...e.inputPreset.value } : {}, f.value = "", t.value = !0, Je(G);
+  function z(c) {
+    I(), $.value = "", o.value = c || null, n.value = c ? { ...ht(c), ...e.inputPreset.value } : {}, b.value = "", t.value = !0, Je(G);
   }
-  function K(d) {
-    E(), n.value = d, o.value = { ...ht(d), ...e.inputPreset.value }, f.value = "", Je(G);
+  function H(c) {
+    I(), o.value = c, n.value = { ...ht(c), ...e.inputPreset.value }, b.value = "", Je(G);
   }
-  function q() {
-    E(), t.value = !1, n.value = null, o.value = {}, f.value = "", a.value = !1, e.createMode.value && e.emitHost("close", {});
+  function K() {
+    I(), t.value = !1, o.value = null, n.value = {}, b.value = "", a.value = !1, e.createMode.value && e.emitHost("close", {});
   }
   function re() {
-    !h.value || n.value || Je(() => $.value?.focus({ preventScroll: !0 }));
+    !h.value || o.value || Je(() => _.value?.focus({ preventScroll: !0 }));
   }
   async function G() {
-    const d = n.value, M = at(d);
-    if (!(!M || !d || !g.value))
+    const c = o.value, M = at(c);
+    if (!(!M || !c || !m.value))
       try {
-        if (await Jn(M, { timeoutMs: 8e3 }), n.value?.id !== d.id || !g.value) return;
+        if (await Jo(M, { timeoutMs: 8e3 }), o.value?.id !== c.id || !m.value) return;
         const B = document.createElement(M);
-        B.setAttribute("type-id", d.id), B.setAttribute("input", JSON.stringify(e.inputPreset.value)), e.effectiveParentId.value && B.setAttribute("parent-id", e.effectiveParentId.value), B.setAttribute("embedded", "true"), B.addEventListener("automation-installed", C), B.addEventListener("submit-state", I), g.value.innerHTML = "", g.value.appendChild(B), b = B;
+        B.setAttribute("type-id", c.id), B.setAttribute("input", JSON.stringify(e.inputPreset.value)), e.effectiveParentId.value && B.setAttribute("parent-id", e.effectiveParentId.value), B.setAttribute("embedded", "true"), B.addEventListener("automation-installed", C), B.addEventListener("submit-state", L), m.value.innerHTML = "", m.value.appendChild(B), f = B;
       } catch (B) {
-        const ie = Ir(d);
-        f.value = `Failed to load setup UI (${M}${ie ? ` at ${ie}` : ""}): ` + (B instanceof Error ? B.message : String(B));
+        const ie = Ir(c);
+        b.value = `Failed to load setup UI (${M}${ie ? ` at ${ie}` : ""}): ` + (B instanceof Error ? B.message : String(B));
       }
   }
-  function I(d) {
-    a.value = !!d.detail?.saving;
+  function L(c) {
+    a.value = !!c.detail?.saving;
   }
-  function H() {
-    at(n.value) ? Lr(b) : R();
+  function V() {
+    at(o.value) ? Lr(f) : R();
   }
-  async function C(d) {
-    const M = d.detail;
+  async function C(c) {
+    const M = c.detail;
     if (M?.success === !1) {
-      f.value = M?.error || "Could not create the automation.", a.value = !1;
+      b.value = M?.error || "Could not create the automation.", a.value = !1;
       return;
     }
     if (e.createMode.value) {
       e.emitHost("created", { id: M?.id });
       return;
     }
-    q(), await e.reload();
+    K(), await e.reload();
   }
-  function E() {
-    b && (b.removeEventListener("automation-installed", C), b.removeEventListener("submit-state", I), b.remove(), b = null), g.value && (g.value.innerHTML = "");
+  function I() {
+    f && (f.removeEventListener("automation-installed", C), f.removeEventListener("submit-state", L), f.remove(), f = null), m.value && (m.value.innerHTML = "");
   }
   function D() {
-    const d = e.preferredTypeId.value;
-    return d ? m.value.find((M) => M.id === d) : void 0;
+    const c = e.preferredTypeId.value;
+    return c ? v.value.find((M) => M.id === c) : void 0;
   }
   function j() {
-    A(D());
+    z(D());
   }
   async function R() {
-    const d = n.value;
-    if (!d) return;
-    const M = ro(d, o.value);
+    const c = o.value;
+    if (!c) return;
+    const M = rn(c, n.value);
     if (M) {
-      f.value = M;
+      b.value = M;
       return;
     }
-    i.value = !0, f.value = "";
+    i.value = !0, b.value = "";
     try {
       const { data: B } = await de.post("/api/v1/automations", {
-        type: d.id,
-        input: ao(d, o.value),
+        type: c.id,
+        input: an(c, n.value),
         parent_id: e.effectiveParentId.value || void 0
       });
       if (B?.success) {
@@ -3721,474 +3753,474 @@ function Ui(e) {
           e.emitHost("created", { id: B.id });
           return;
         }
-        q(), await e.reload();
+        K(), await e.reload();
       } else
-        f.value = ee({ response: { data: B } }, "install failed");
+        b.value = ee({ response: { data: B } }, "install failed");
     } catch (B) {
-      f.value = ee(B, "install failed");
+      b.value = ee(B, "install failed");
     } finally {
       i.value = !1;
     }
   }
   return {
     showTypeCatalog: h,
-    installFields: c,
+    installFields: u,
     showInstall: t,
-    installType: n,
-    installForm: o,
+    installType: o,
+    installForm: n,
     installing: i,
     customSaving: a,
-    installError: f,
-    customInstallHost: g,
-    installSearchInput: $,
-    typeSearch: x,
-    filteredTypes: v,
-    openInstall: A,
+    installError: b,
+    customInstallHost: m,
+    installSearchInput: _,
+    typeSearch: $,
+    filteredTypes: g,
+    openInstall: z,
     openPreferredInstall: j,
-    chooseType: K,
-    closeInstall: q,
+    chooseType: H,
+    closeInstall: K,
     focusInstallDialog: re,
-    onCreate: H,
-    unmountCustomInstallUi: E
+    onCreate: V,
+    unmountCustomInstallUi: I
   };
 }
-function Hi({ automations: e, types: t, query: n, drawerId: o }) {
-  const i = L(() => {
-    const d = {};
-    for (const M of t.value) d[M.id] = M;
-    return d;
-  }), a = L(() => {
-    const d = n.value.trim().toLowerCase();
-    return d ? e.value.filter(
-      (M) => (M.title || "").toLowerCase().includes(d) || (M.description || "").toLowerCase().includes(d) || (M.type || "").toLowerCase().includes(d)
+function Ji({ automations: e, types: t, query: o, drawerId: n }) {
+  const i = A(() => {
+    const c = {};
+    for (const M of t.value) c[M.id] = M;
+    return c;
+  }), a = A(() => {
+    const c = o.value.trim().toLowerCase();
+    return c ? e.value.filter(
+      (M) => (M.title || "").toLowerCase().includes(c) || (M.description || "").toLowerCase().includes(c) || (M.type || "").toLowerCase().includes(c)
     ) : e.value;
   });
-  function f(d) {
-    return d.title || d.id;
+  function b(c) {
+    return c.title || c.id;
   }
-  function g(d) {
-    return d.type ? i.value[d.type] : void 0;
+  function m(c) {
+    return c.type ? i.value[c.type] : void 0;
   }
-  function $(d) {
-    return d.icon ? d.icon : g(d)?.icon || "tabler:bolt";
+  function _(c) {
+    return c.icon ? c.icon : m(c)?.icon || "tabler:bolt";
   }
-  function b(d) {
-    return Zt(g(d));
+  function f(c) {
+    return Yt(m(c));
   }
-  function x(d, M) {
-    return b(d).has(M);
+  function $(c, M) {
+    return f(c).has(M);
   }
-  function m(d) {
-    return Yt(b(d));
+  function v(c) {
+    return Wt(f(c));
   }
-  function h(d) {
-    return Jt(Gt(g(d)));
+  function h(c) {
+    return Xt(Zt(m(c)));
   }
-  function c(d) {
-    return Xt(b(d));
+  function u(c) {
+    return Gt(f(c));
   }
-  function v(d) {
-    return lt(g(d));
+  function g(c) {
+    return lt(m(c));
   }
-  function A(d) {
-    return qt(g(d));
+  function z(c) {
+    return Kt(m(c));
   }
-  function K(d) {
-    return d ? Wt(d, g(d)) : {};
+  function H(c) {
+    return c ? qt(c, m(c)) : {};
   }
-  function q(d) {
-    return d.public_state;
+  function K(c) {
+    return c.public_state;
   }
-  function re(d) {
-    return Ne(g(d)?.public_state_schema?.fields, q(d), !1);
+  function re(c) {
+    return Ne(m(c)?.public_state_schema?.fields, K(c), !1);
   }
-  function G(d) {
-    return Ne(g(d)?.public_state_schema?.fields, q(d), !0);
+  function G(c) {
+    return Ne(m(c)?.public_state_schema?.fields, K(c), !0);
   }
-  function I(d) {
-    return on(q(d));
+  function L(c) {
+    return oo(K(c));
   }
-  function H(d) {
-    return rn(q(d), d.availability);
+  function V(c) {
+    return no(K(c), c.availability);
   }
-  function C(d) {
-    return an(q(d), x(d, "status"), d.drive_status, d.availability);
+  function C(c) {
+    return ro(K(c), $(c, "status"), c.drive_status, c.availability);
   }
-  function E(d) {
-    return C(d).kind === "off";
+  function I(c) {
+    return C(c).kind === "off";
   }
-  function D(d) {
-    return ln(g(d)?.public_state_schema?.fields, q(d));
+  function D(c) {
+    return io(m(c)?.public_state_schema?.fields, K(c));
   }
-  const j = L(() => e.value.find((d) => d.id === o.value) || null), R = L(() => j.value ? g(j.value) : void 0);
+  const j = A(() => e.value.find((c) => c.id === n.value) || null), R = A(() => j.value ? m(j.value) : void 0);
   return {
     typeById: i,
     filtered: a,
-    pretty: f,
-    typeFor: g,
-    iconFor: $,
-    declaredActions: b,
-    hasAction: x,
-    runNowFor: m,
+    pretty: b,
+    typeFor: m,
+    iconFor: _,
+    declaredActions: f,
+    hasAction: $,
+    runNowFor: v,
     actionItemsFor: h,
-    recoverFor: c,
-    manageTag: v,
-    manageLocation: A,
-    manageConfig: K,
-    statusFor: q,
+    recoverFor: u,
+    manageTag: g,
+    manageLocation: z,
+    manageConfig: H,
+    statusFor: K,
     metrics: re,
     detailMetrics: G,
-    isTerminal: I,
-    rowMessage: H,
+    isTerminal: L,
+    rowMessage: V,
     statusOf: C,
-    isPaused: E,
+    isPaused: I,
     subtitleLine: D,
     drawerAutomation: j,
     drawerType: R
   };
 }
-function Vi(e, t) {
-  const n = /* @__PURE__ */ new Map(), o = /* @__PURE__ */ new Set();
+function Qi(e, t) {
+  const o = /* @__PURE__ */ new Map(), n = /* @__PURE__ */ new Set();
   let i = 0;
   const a = /* @__PURE__ */ new Map();
-  function f(m, h) {
-    const c = h.meta;
-    e.value = e.value.map((v) => {
-      if (v.id !== m) return v;
-      const A = {
-        ...v,
-        public_state: { ...v.public_state || {}, ...c }
+  function b(v, h) {
+    const u = h.meta;
+    e.value = e.value.map((g) => {
+      if (g.id !== v) return g;
+      const z = {
+        ...g,
+        public_state: { ...g.public_state || {}, ...u }
       };
-      return typeof c.title == "string" && (A.title = c.title), typeof c.comment == "string" && (A.description = c.comment), A;
-    }), g(m).catch((v) => Fe.handleError("other", { message: String(v) }));
+      return typeof u.title == "string" && (z.title = u.title), typeof u.comment == "string" && (z.description = u.comment), z;
+    }), m(v).catch((g) => Fe.handleError("other", { message: String(g) }));
   }
-  async function g(m) {
-    if (!e.value.some((v) => v.id === m && v.drive_status)) return;
-    const h = Symbol(m);
-    a.set(m, h);
-    const c = await cn(m);
-    a.get(m) === h && (a.delete(m), e.value = e.value.map((v) => v.id === m ? { ...v, drive_status: c } : v));
+  async function m(v) {
+    if (!e.value.some((g) => g.id === v && g.drive_status)) return;
+    const h = Symbol(v);
+    a.set(v, h);
+    const u = await so(v);
+    a.get(v) === h && (a.delete(v), e.value = e.value.map((g) => g.id === v ? { ...g, drive_status: u } : g));
   }
-  function $(m) {
+  function _(v) {
     const h = {};
-    for (const c of t(m)?.public_state_schema?.fields || [])
-      c?.key && c.type && (h[c.key] = c.type);
+    for (const u of t(v)?.public_state_schema?.fields || [])
+      u?.key && u.type && (h[u.key] = u.type);
     return h;
   }
-  function b() {
-    i++, o.clear(), a.clear();
-    for (const m of n.values()) m();
-    n.clear();
+  function f() {
+    i++, n.clear(), a.clear();
+    for (const v of o.values()) v();
+    o.clear();
   }
-  function x() {
-    const m = new Set(e.value.map((c) => c.id).filter(Boolean));
-    for (const [c, v] of n)
-      m.has(c) || (v(), n.delete(c), a.delete(c));
+  function $() {
+    const v = new Set(e.value.map((u) => u.id).filter(Boolean));
+    for (const [u, g] of o)
+      v.has(u) || (g(), o.delete(u), a.delete(u));
     const h = i;
-    for (const c of m) {
-      if (n.has(c) || o.has(c)) continue;
-      o.add(c);
-      const v = e.value.find((K) => K.id === c), A = Uo(c, (K) => f(c, K), v ? $(v) : void 0);
-      if (o.delete(c), !!A) {
-        if (h !== i || !e.value.some((K) => K.id === c)) {
-          A();
+    for (const u of v) {
+      if (o.has(u) || n.has(u)) continue;
+      n.add(u);
+      const g = e.value.find((H) => H.id === u), z = Un(u, (H) => b(u, H), g ? _(g) : void 0);
+      if (n.delete(u), !!z) {
+        if (h !== i || !e.value.some((H) => H.id === u)) {
+          z();
           continue;
         }
-        n.set(c, A);
+        o.set(u, z);
       }
     }
   }
-  return { syncRealtimeSubscriptions: x, clearRealtimeSubscriptions: b, refreshDriveStatus: g };
+  return { syncRealtimeSubscriptions: $, clearRealtimeSubscriptions: f, refreshDriveStatus: m };
 }
-function Ki({ automations: e, types: t, loading: n, error: o, parentId: i, syncRealtimeSubscriptions: a }) {
-  async function f() {
+function es({ automations: e, types: t, loading: o, error: n, parentId: i, syncRealtimeSubscriptions: a }) {
+  async function b() {
     try {
-      const { data: b } = await de.get("/api/v1/automations/types");
-      t.value = b?.success ? b.types || [] : [];
+      const { data: f } = await de.get("/api/v1/automations/types");
+      t.value = f?.success ? f.types || [] : [];
     } catch {
       t.value = [];
     }
   }
-  async function g() {
-    n.value = !0, o.value = "";
+  async function m() {
+    o.value = !0, n.value = "";
     try {
-      const { data: b } = await de.get("/api/v1/automations", { params: { class: "automation", parent_id: i() } });
-      if (!b?.success) throw new Error(ee(b?.error, "failed to load automations"));
-      e.value = b.automations || [], a();
-    } catch (b) {
-      a(), o.value = ee(b, "failed to load automations");
+      const { data: f } = await de.get("/api/v1/automations", { params: { class: "automation", parent_id: i() } });
+      if (!f?.success) throw new Error(ee(f?.error, "failed to load automations"));
+      e.value = f.automations || [], a();
+    } catch (f) {
+      a(), n.value = ee(f, "failed to load automations");
     } finally {
-      n.value = !1;
+      o.value = !1;
     }
   }
-  async function $() {
-    await f(), await g();
+  async function _() {
+    await b(), await m();
   }
-  return { fetchTypes: f, fetchAutomations: g, reload: $ };
+  return { fetchTypes: b, fetchAutomations: m, reload: _ };
 }
-function qi(e, t, n) {
-  async function o(i) {
+function ts(e, t, o) {
+  async function n(i) {
     e.value = i.id, t.value = "";
     try {
       const { data: a } = await de.get(`/api/v1/automations/${encodeURIComponent(i.id)}/export`);
       if (!a?.success || !a.artifact)
         throw new Error(a?.error?.message || a?.error || "Automation export failed.");
-      const f = n(i).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "automation", g = new Blob([`${JSON.stringify(a.artifact, null, 2)}
-`], { type: "application/json" }), $ = URL.createObjectURL(g), b = document.createElement("a");
-      b.href = $, b.download = `${f}.automation.json`, document.body.appendChild(b), b.click(), b.remove(), URL.revokeObjectURL($);
+      const b = o(i).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "automation", m = new Blob([`${JSON.stringify(a.artifact, null, 2)}
+`], { type: "application/json" }), _ = URL.createObjectURL(m), f = document.createElement("a");
+      f.href = _, f.download = `${b}.automation.json`, document.body.appendChild(f), f.click(), f.remove(), URL.revokeObjectURL(_);
     } catch (a) {
       t.value = ee(a, "Automation export failed.");
     } finally {
       e.value = "";
     }
   }
-  return { exportAutomation: o };
+  return { exportAutomation: n };
 }
-const Wi = { class: "kx" }, Yi = {
+const os = { class: "kx" }, ns = {
   key: 0,
   class: "kx-head"
-}, Zi = { class: "kx-head-icon" }, Gi = { class: "kx-head-actions" }, Xi = { class: "kx-count" }, Ji = { class: "kx-search" }, Qi = {
+}, rs = { class: "kx-head-icon" }, as = { class: "kx-head-actions" }, is = { class: "kx-count" }, ss = { class: "kx-search" }, ls = {
   key: 1,
   class: "kx-err"
-}, es = {
+}, cs = {
   key: 2,
   class: "kx-body"
-}, ts = {
+}, ds = {
   key: 0,
   class: "kx-loading"
-}, ns = {
+}, us = {
   key: 1,
   class: "kx-empty"
-}, os = { class: "kx-empty-ico" }, rs = {
+}, ps = { class: "kx-empty-ico" }, bs = {
   key: 2,
   class: "kx-empty"
-}, as = {
+}, fs = {
   key: 3,
   class: "kx-list"
-}, is = ["aria-label", "onClick", "disabled"], ss = { class: "kx-ficon" }, ls = { class: "kx-id" }, cs = ["title"], ds = { class: "kx-sub" }, us = { key: 0 }, ps = { key: 1 }, bs = { key: 2 }, fs = { class: "kx-actions" }, gs = {
+}, gs = ["aria-label", "onClick", "disabled"], ms = { class: "kx-ficon" }, vs = { class: "kx-id" }, hs = ["title"], xs = { class: "kx-sub" }, ys = { key: 0 }, ks = { key: 1 }, ws = { key: 2 }, _s = { class: "kx-actions" }, $s = {
   key: 0,
   class: "kx-rowfoot"
-}, ms = ["title"], vs = { class: "kx-modal-head-icon" }, hs = { class: "kx-modal-head-text" }, xs = { class: "kx-modal-head-title" }, ys = { class: "kx-modal-head-sub" }, ks = { class: "kx-modal-body" }, ws = { class: "kx-modal-head-icon" }, _s = { class: "kx-modal-head-text" }, $s = { class: "kx-modal-head-title" }, Cs = { class: "kx-modal-head-sub" }, Ss = { class: "kx-modal-body" }, zs = { class: "kx-modal-body" }, Ds = {
+}, Cs = ["title"], Ss = { class: "kx-modal-head-icon" }, zs = { class: "kx-modal-head-text" }, Ds = { class: "kx-modal-head-title" }, Ps = { class: "kx-modal-head-sub" }, Es = { class: "kx-modal-body" }, Is = { class: "kx-modal-head-icon" }, Ls = { class: "kx-modal-head-text" }, As = { class: "kx-modal-head-title" }, Ms = { class: "kx-modal-head-sub" }, js = { class: "kx-modal-body" }, Rs = { class: "kx-modal-body" }, Ts = {
   key: 0,
   class: "kx-delopts"
-}, Ps = ["onUpdate:modelValue"], Es = { class: "kx-delopt-copy" }, Is = { class: "kx-delopt-t" }, Ls = {
+}, Os = ["onUpdate:modelValue"], Bs = { class: "kx-delopt-copy" }, Fs = { class: "kx-delopt-t" }, Ns = {
   key: 0,
   class: "kx-delopt-d"
-}, As = /* @__PURE__ */ be({
+}, Us = /* @__PURE__ */ be({
   __name: "automations",
   setup(e) {
     const t = {
       header: { class: "kx-dialog-header" },
       content: { class: "kx-dialog-content" },
       footer: { class: "kx-dialog-footer" }
-    }, n = O([]), o = O([]), i = O(!1), a = O(""), f = O(""), g = O(""), $ = /* @__PURE__ */ new Map(), b = O(""), x = O(""), m = Hi({ automations: n, types: o, query: f, drawerId: x }), {
+    }, o = O([]), n = O([]), i = O(!1), a = O(""), b = O(""), m = O(""), _ = /* @__PURE__ */ new Map(), f = O(""), $ = O(""), v = Ji({ automations: o, types: n, query: b, drawerId: $ }), {
       filtered: h,
-      pretty: c,
-      typeFor: v,
-      iconFor: A,
-      hasAction: K,
-      actionItemsFor: q,
+      pretty: u,
+      typeFor: g,
+      iconFor: z,
+      hasAction: H,
+      actionItemsFor: K,
       recoverFor: re,
       manageTag: G,
-      manageLocation: I,
-      manageConfig: H,
+      manageLocation: L,
+      manageConfig: V,
       metrics: C,
-      detailMetrics: E,
+      detailMetrics: I,
       isTerminal: D,
       rowMessage: j,
       statusOf: R,
-      isPaused: d,
+      isPaused: c,
       subtitleLine: M,
       drawerAutomation: B,
       drawerType: ie
-    } = m, He = Vi(n, v), { syncRealtimeSubscriptions: V, clearRealtimeSubscriptions: P, refreshDriveStatus: S } = He, ut = qi(b, a, c), { exportAutomation: dn } = ut, fe = Dn(), un = Pn(), he = L(() => fe.value?.mode === "create"), Ve = L(() => fe.value?.mode === "component"), pn = io(fe), pt = L(() => String(fe.value?.componentId || "").trim()), bn = L(() => String(fe.value?.typeId || "").trim()), fn = L(() => pt.value || pn.value), gn = Ki({
-      automations: n,
-      types: o,
+    } = v, He = Qi(o, g), { syncRealtimeSubscriptions: q, clearRealtimeSubscriptions: E, refreshDriveStatus: S } = He, ut = ts(f, a, u), { exportAutomation: lo } = ut, fe = Do(), co = Po(), he = A(() => fe.value?.mode === "create"), Ve = A(() => fe.value?.mode === "component"), uo = sn(fe), pt = A(() => String(fe.value?.componentId || "").trim()), po = A(() => String(fe.value?.typeId || "").trim()), bo = A(() => pt.value || uo.value), fo = es({
+      automations: o,
+      types: n,
       loading: i,
       error: a,
       parentId: () => pt.value || void 0,
-      syncRealtimeSubscriptions: V
-    }), { fetchAutomations: xe, reload: Ke } = gn, ye = Ui({
-      types: o,
+      syncRealtimeSubscriptions: q
+    }), { fetchAutomations: xe, reload: Ke } = fo, ye = Xi({
+      types: n,
       createMode: he,
       componentMode: Ve,
-      effectiveParentId: fn,
-      preferredTypeId: bn,
-      inputPreset: L(() => so(fe.value?.input)),
-      emitHost: (k, w) => un(k, w),
+      effectiveParentId: bo,
+      preferredTypeId: po,
+      inputPreset: A(() => ln(fe.value?.input)),
+      emitHost: (y, k) => co(y, k),
       reload: () => Ke()
-    }), se = O(null), Me = O({}), ke = O(!1), ne = O(null), ue = O(null);
-    function mn(k) {
-      ue.value = k;
+    }), se = O(null), Me = O({}), ke = O(!1), oe = O(null), ue = O(null);
+    function go(y) {
+      ue.value = y;
     }
     function bt() {
       ue.value = null;
     }
-    function vn(k) {
-      const w = k?.id || "";
+    function mo(y) {
+      const k = y?.id || "";
       return {
-        resource_id: w,
-        access_url: `/api/v1/component-access/grants/${encodeURIComponent(w)}`,
-        share_url: `/api/v1/component-access/share/${encodeURIComponent(w)}`,
-        title: k ? c(k) : ""
+        resource_id: k,
+        access_url: `/api/v1/component-access/grants/${encodeURIComponent(k)}`,
+        share_url: `/api/v1/component-access/share/${encodeURIComponent(k)}`,
+        title: y ? u(y) : ""
       };
     }
-    function ft(k, w) {
-      if (!k.deleting_at)
-        switch (w) {
+    function ft(y, k) {
+      if (!y.deleting_at)
+        switch (k) {
           case "reconfigure":
-            Cn(k);
+            $o(y);
             break;
           case "share":
-            mn(k);
+            go(y);
             break;
           case "export":
-            dn(k);
+            lo(y);
             break;
           case "delete":
-            We(k);
+            We(y);
             break;
           default:
-            qe(k, w);
+            qe(y, k);
         }
     }
-    function gt(k) {
-      if (k.deleting_at) return;
-      const w = re(k);
-      w && qe(k, w);
+    function gt(y) {
+      if (y.deleting_at) return;
+      const k = re(y);
+      k && qe(y, k);
     }
-    function hn(k) {
-      x.value = k.id, xe();
+    function vo(y) {
+      $.value = y.id, xe();
     }
-    function xn() {
-      x.value = "";
+    function ho() {
+      $.value = "";
     }
-    function yn(k) {
-      const w = B.value;
-      w && ft(w, k);
-    }
-    function kn() {
+    function xo(y) {
       const k = B.value;
-      k && gt(k);
+      k && ft(k, y);
     }
-    async function qe(k, w) {
-      if (k.deleting_at || g.value) return;
-      g.value = k.id, a.value = "";
-      const p = v(k)?.controls?.some((oe) => oe.name === w) === !0, Z = `${k.id}:${w}`, mt = p ? $.get(Z) || crypto.randomUUID() : "";
-      p && $.set(Z, mt);
+    function yo() {
+      const y = B.value;
+      y && gt(y);
+    }
+    async function qe(y, k) {
+      if (y.deleting_at || m.value) return;
+      m.value = y.id, a.value = "";
+      const p = g(y)?.controls?.some((ne) => ne.name === k) === !0, Z = `${y.id}:${k}`, mt = p ? _.get(Z) || crypto.randomUUID() : "";
+      p && _.set(Z, mt);
       try {
-        const { data: oe } = await de.post(
-          `/api/v1/automations/${k.id}/actions/${w}`,
+        const { data: ne } = await de.post(
+          `/api/v1/automations/${y.id}/actions/${k}`,
           p ? { request_id: mt } : {}
         );
-        if (!oe?.success) {
-          a.value = ee({ response: { data: oe } }, `${w} failed`);
+        if (!ne?.success) {
+          a.value = ee({ response: { data: ne } }, `${k} failed`);
           return;
         }
-        if (p && oe.result?.state === "succeeded" && $.delete(Z), oe.result && typeof oe.result == "object") {
-          const { success: Ge, ...zn } = oe.result;
-          k.public_state = { ...k.public_state || {}, ...zn };
+        if (p && ne.result?.state === "succeeded" && _.delete(Z), ne.result && typeof ne.result == "object") {
+          const { success: Ge, ...So } = ne.result;
+          y.public_state = { ...y.public_state || {}, ...So };
         }
-        if (k.drive_status?.drives?.length)
-          await S(k.id);
-        else if (w === "pause" || w === "resume") {
-          const Ge = typeof oe.result?.paused == "boolean" ? oe.result.paused : w === "pause";
-          k.public_state = {
-            ...k.public_state || {},
+        if (y.drive_status?.drives?.length)
+          await S(y.id);
+        else if (k === "pause" || k === "resume") {
+          const Ge = typeof ne.result?.paused == "boolean" ? ne.result.paused : k === "pause";
+          y.public_state = {
+            ...y.public_state || {},
             enabled: !Ge,
-            status: oe.result?.status || (Ge ? "paused" : "active")
+            status: ne.result?.status || (Ge ? "paused" : "active")
           };
         }
-      } catch (oe) {
-        a.value = ee(oe, `${w} failed`);
+      } catch (ne) {
+        a.value = ee(ne, `${k} failed`);
       } finally {
-        g.value = "";
+        m.value = "";
       }
     }
-    async function wn(k) {
-      await qe(k, d(k) ? "resume" : "pause");
+    async function ko(y) {
+      await qe(y, c(y) ? "resume" : "pause");
     }
-    function We(k) {
-      se.value = k;
-      const w = v(k), p = {};
-      for (const Z of w?.delete_options || []) p[Z.key] = !!Z.default;
+    function We(y) {
+      se.value = y;
+      const k = g(y), p = {};
+      for (const Z of k?.delete_options || []) p[Z.key] = !!Z.default;
       Me.value = p;
     }
-    function Ye(k) {
-      return k ? v(k)?.delete_options || [] : [];
+    function Ye(y) {
+      return y ? g(y)?.delete_options || [] : [];
     }
-    function _n(k) {
-      ne.value = null, We(k);
+    function wo(y) {
+      oe.value = null, We(y);
     }
-    async function $n() {
-      const k = se.value;
-      if (k) {
+    async function _o() {
+      const y = se.value;
+      if (y) {
         ke.value = !0, a.value = "";
         try {
-          const p = Ye(k).length ? { options: { ...Me.value } } : {}, { data: Z } = await de.delete(`/api/v1/automations/${k.id}`, { data: p });
-          Z?.success ? (Sn(k.id, Z), se.value = null, await xe()) : a.value = ee({ response: { data: Z } }, "failed to delete automation");
-        } catch (w) {
-          a.value = ee(w, "failed to delete automation");
+          const p = Ye(y).length ? { options: { ...Me.value } } : {}, { data: Z } = await de.delete(`/api/v1/automations/${y.id}`, { data: p });
+          Z?.success ? (Co(y.id, Z), se.value = null, await xe()) : a.value = ee({ response: { data: Z } }, "failed to delete automation");
+        } catch (k) {
+          a.value = ee(k, "failed to delete automation");
         } finally {
           ke.value = !1;
         }
       }
     }
-    function Cn(k) {
-      G(k) && (ne.value = k);
+    function $o(y) {
+      G(y) && (oe.value = y);
     }
-    async function Ze(k = !0) {
-      ne.value = null, k && await Ke();
+    async function Ze(y = !0) {
+      oe.value = null, y && await Ke();
     }
-    En(async () => {
+    Eo(async () => {
       try {
         await Ke(), he.value && ye.openPreferredInstall();
-      } catch (k) {
-        a.value = ee(k, "host API unavailable");
+      } catch (y) {
+        a.value = ee(y, "host API unavailable");
       }
     }), it(() => {
-      ye.unmountCustomInstallUi(), P();
+      ye.unmountCustomInstallUi(), E();
     });
-    const { acceptDeletion: Sn } = Ho(n, (k) => k.id);
-    return (k, w) => (s(), u("div", Wi, [
-      he.value ? _("", !0) : (s(), u("header", Yi, [
-        Ve.value ? _("", !0) : (s(), u(Y, { key: 0 }, [
-          l("div", Zi, [
-            z(r(T), {
+    const { acceptDeletion: Co } = Hn(o, (y) => y.id);
+    return (y, k) => (s(), d("div", os, [
+      he.value ? w("", !0) : (s(), d("header", ns, [
+        Ve.value ? w("", !0) : (s(), d(Y, { key: 0 }, [
+          l("div", rs, [
+            P(r(T), {
               icon: "tabler:bolt",
               "aria-hidden": "true"
             })
           ]),
-          w[10] || (w[10] = l("div", { class: "kx-head-text" }, [
+          k[10] || (k[10] = l("div", { class: "kx-head-text" }, [
             l("h1", { class: "kx-head-title" }, "Automations"),
             l("p", { class: "kx-head-sub" }, "Scheduled and event-driven jobs that run on their own.")
           ], -1))
         ], 64)),
-        l("div", Gi, [
-          l("span", Xi, y(n.value.length) + " automation" + y(n.value.length !== 1 ? "s" : ""), 1),
-          l("div", Ji, [
-            z(r(T), {
+        l("div", as, [
+          l("span", is, x(o.value.length) + " automation" + x(o.value.length !== 1 ? "s" : ""), 1),
+          l("div", ss, [
+            P(r(T), {
               icon: "tabler:search",
               class: "kx-search-ico",
               "aria-hidden": "true"
             }),
             pe(l("input", {
-              "onUpdate:modelValue": w[0] || (w[0] = (p) => f.value = p),
+              "onUpdate:modelValue": k[0] || (k[0] = (p) => b.value = p),
               class: "kx-search-input",
               type: "text",
               placeholder: "Search automations…"
             }, null, 512), [
-              [tt, f.value]
+              [tt, b.value]
             ])
           ]),
-          z(r(X), {
+          P(r(X), {
             type: "button",
             "data-testid": "automations-add",
             label: "Add automation",
-            onClick: w[1] || (w[1] = (p) => r(ye).openPreferredInstall())
+            onClick: k[1] || (k[1] = (p) => r(ye).openPreferredInstall())
           }, {
             icon: N(({ class: p }) => [
-              z(r(T), {
+              P(r(T), {
                 icon: "tabler:plus",
                 class: W(p),
                 "aria-hidden": "true"
@@ -4198,48 +4230,48 @@ const Wi = { class: "kx" }, Yi = {
           })
         ])
       ])),
-      !he.value && a.value ? (s(), u("div", Qi, y(a.value), 1)) : _("", !0),
-      he.value ? _("", !0) : (s(), u("div", es, [
-        i.value && !n.value.length ? (s(), u("div", ts, [
-          z(r(T), {
+      !he.value && a.value ? (s(), d("div", ls, x(a.value), 1)) : w("", !0),
+      he.value ? w("", !0) : (s(), d("div", cs, [
+        i.value && !o.value.length ? (s(), d("div", ds, [
+          P(r(T), {
             icon: "tabler:loader-2",
             class: "spin",
             "aria-hidden": "true"
           }),
-          w[11] || (w[11] = ae(" Loading… ", -1))
-        ])) : n.value.length ? r(h).length ? (s(), u("div", as, [
-          (s(!0), u(Y, null, te(r(h), (p) => (s(), u("div", {
+          k[11] || (k[11] = ae(" Loading… ", -1))
+        ])) : o.value.length ? r(h).length ? (s(), d("div", fs, [
+          (s(!0), d(Y, null, te(r(h), (p) => (s(), d("div", {
             key: p.id,
-            class: W(["kx-row", x.value === p.id && "is-open"])
+            class: W(["kx-row", $.value === p.id && "is-open"])
           }, [
             l("button", {
               type: "button",
               class: "kx-open",
-              "aria-label": `Open ${r(c)(p)} details`,
-              onClick: (Z) => !p.deleting_at && hn(p),
+              "aria-label": `Open ${r(u)(p)} details`,
+              onClick: (Z) => !p.deleting_at && vo(p),
               disabled: !!p.deleting_at
             }, [
-              l("span", ss, [
-                z(r(T), {
-                  icon: r(A)(p),
+              l("span", ms, [
+                P(r(T), {
+                  icon: r(z)(p),
                   "aria-hidden": "true"
                 }, null, 8, ["icon"])
               ]),
-              l("span", ls, [
+              l("span", vs, [
                 l("span", {
                   class: "kx-name",
-                  title: r(c)(p)
-                }, y(r(c)(p)), 9, cs),
-                l("span", ds, [
-                  l("span", null, y(r(v)(p)?.title || "Automation"), 1),
-                  r(M)(p) ? (s(), u("span", us, " · " + y(r(M)(p)), 1)) : _("", !0),
-                  r($e)(p.drive_status).last ? (s(), u("span", ps, " · last ran " + y(r(ce)(r($e)(p.drive_status).last, { future: !0 })), 1)) : _("", !0),
-                  r($e)(p.drive_status).next ? (s(), u("span", bs, " · next " + y(r(ce)(r($e)(p.drive_status).next, { future: !0 })), 1)) : _("", !0)
+                  title: r(u)(p)
+                }, x(r(u)(p)), 9, hs),
+                l("span", xs, [
+                  l("span", null, x(r(g)(p)?.title || "Automation"), 1),
+                  r(M)(p) ? (s(), d("span", ys, " · " + x(r(M)(p)), 1)) : w("", !0),
+                  r($e)(p.drive_status).last ? (s(), d("span", ks, " · last ran " + x(r(ce)(r($e)(p.drive_status).last, { future: !0 })), 1)) : w("", !0),
+                  r($e)(p.drive_status).next ? (s(), d("span", ws, " · next " + x(r(ce)(r($e)(p.drive_status).next, { future: !0 })), 1)) : w("", !0)
                 ])
               ])
-            ], 8, is),
-            z(r(st), {
-              severity: r(sn)(r(R)(p).kind),
+            ], 8, gs),
+            P(r(st), {
+              severity: r(ao)(r(R)(p).kind),
               class: "kx-badge kx-tag-sm"
             }, {
               default: N(() => [
@@ -4248,56 +4280,56 @@ const Wi = { class: "kx" }, Yi = {
                   icon: "tabler:loader-2",
                   class: "spin",
                   "aria-hidden": "true"
-                })) : _("", !0),
-                ae(" " + y(r(R)(p).label), 1)
+                })) : w("", !0),
+                ae(" " + x(r(R)(p).label), 1)
               ]),
               _: 2
             }, 1032, ["severity"]),
-            l("div", fs, [
-              (r(K)(p, "pause") || r(K)(p, "resume")) && !r(D)(p) ? (s(), U(r(X), {
+            l("div", _s, [
+              (r(H)(p, "pause") || r(H)(p, "resume")) && !r(D)(p) ? (s(), U(r(X), {
                 key: 0,
                 type: "button",
                 severity: "secondary",
                 outlined: "",
                 size: "small",
-                disabled: !!p.deleting_at || g.value === p.id,
-                "aria-label": `${r(d)(p) ? "Resume" : "Pause"} ${r(c)(p)}`,
-                title: r(d)(p) ? "Resume" : "Pause",
-                onClick: (Z) => wn(p)
+                disabled: !!p.deleting_at || m.value === p.id,
+                "aria-label": `${r(c)(p) ? "Resume" : "Pause"} ${r(u)(p)}`,
+                title: r(c)(p) ? "Resume" : "Pause",
+                onClick: (Z) => ko(p)
               }, {
                 icon: N(({ class: Z }) => [
-                  z(r(T), {
-                    icon: r(d)(p) ? "tabler:player-play-filled" : "tabler:player-pause",
+                  P(r(T), {
+                    icon: r(c)(p) ? "tabler:player-play-filled" : "tabler:player-pause",
                     "aria-hidden": "true",
                     class: W(Z)
                   }, null, 8, ["icon", "class"])
                 ]),
                 _: 2
-              }, 1032, ["disabled", "aria-label", "title", "onClick"])) : _("", !0),
-              z(Qt, {
-                items: r(q)(p),
-                name: r(c)(p),
-                busy: !!p.deleting_at || g.value === p.id,
+              }, 1032, ["disabled", "aria-label", "title", "onClick"])) : w("", !0),
+              P(Jt, {
+                items: r(K)(p),
+                name: r(u)(p),
+                busy: !!p.deleting_at || m.value === p.id,
                 onSelect: (Z) => ft(p, Z)
               }, null, 8, ["items", "name", "busy", "onSelect"])
             ]),
-            p.deleting_at || r(j)(p) || r(E)(p).length || r(C)(p).length ? (s(), u("div", gs, [
-              z(To, {
+            p.deleting_at || r(j)(p) || r(I)(p).length || r(C)(p).length ? (s(), d("div", $s, [
+              P(Tn, {
                 state: p,
                 onRetry: (Z) => We(p)
               }, null, 8, ["state", "onRetry"]),
-              r(j)(p) ? (s(), u("div", {
+              r(j)(p) ? (s(), d("div", {
                 key: 0,
                 class: W(["kx-rowmsg", `kx-rowmsg-${r(j)(p)?.tone}`])
               }, [
-                z(r(T), {
+                P(r(T), {
                   icon: r(j)(p)?.tone === "error" ? "tabler:alert-circle" : "tabler:circle-check",
                   "aria-hidden": "true"
                 }, null, 8, ["icon"]),
                 l("span", {
                   class: "kx-rowmsg-txt",
                   title: r(j)(p)?.text
-                }, y(r(j)(p)?.text), 9, ms),
+                }, x(r(j)(p)?.text), 9, Cs),
                 r(j)(p)?.tone === "error" && r(re)(p) ? (s(), U(r(X), {
                   key: 0,
                   type: "button",
@@ -4306,47 +4338,47 @@ const Wi = { class: "kx" }, Yi = {
                   size: "small",
                   class: "kx-recover",
                   "data-testid": "row-recover",
-                  "aria-label": `Recover ${r(c)(p)}`,
-                  disabled: !!p.deleting_at || g.value === p.id,
+                  "aria-label": `Recover ${r(u)(p)}`,
+                  disabled: !!p.deleting_at || m.value === p.id,
                   label: "Recover",
                   onClick: (Z) => gt(p)
                 }, {
                   icon: N(({ class: Z }) => [
-                    z(r(T), {
+                    P(r(T), {
                       icon: "tabler:rotate-clockwise-2",
                       "aria-hidden": "true",
                       class: W(Z)
                     }, null, 8, ["class"])
                   ]),
                   _: 1
-                }, 8, ["aria-label", "disabled", "onClick"])) : _("", !0)
-              ], 2)) : _("", !0),
-              z(ba, {
+                }, 8, ["aria-label", "disabled", "onClick"])) : w("", !0)
+              ], 2)) : w("", !0),
+              P(ba, {
                 face: r(C)(p),
-                detail: r(E)(p)
+                detail: r(I)(p)
               }, null, 8, ["face", "detail"])
-            ])) : _("", !0)
+            ])) : w("", !0)
           ], 2))), 128))
-        ])) : (s(), u("div", rs, [...w[14] || (w[14] = [
+        ])) : (s(), d("div", bs, [...k[14] || (k[14] = [
           l("div", { class: "kx-empty-title" }, "No matches", -1),
           l("div", { class: "kx-empty-sub" }, "No automations match the current search.", -1)
-        ])])) : (s(), u("div", ns, [
-          l("div", os, [
-            z(r(T), {
+        ])])) : (s(), d("div", us, [
+          l("div", ps, [
+            P(r(T), {
               icon: "tabler:bolt",
               "aria-hidden": "true"
             })
           ]),
-          w[12] || (w[12] = l("div", { class: "kx-empty-title" }, "No automations yet", -1)),
-          w[13] || (w[13] = l("div", { class: "kx-empty-sub" }, "Choose an automation type to get started.", -1)),
-          z(r(X), {
+          k[12] || (k[12] = l("div", { class: "kx-empty-title" }, "No automations yet", -1)),
+          k[13] || (k[13] = l("div", { class: "kx-empty-sub" }, "Choose an automation type to get started.", -1)),
+          P(r(X), {
             type: "button",
             "data-testid": "automations-add",
             label: "Add automation",
-            onClick: w[2] || (w[2] = (p) => r(ye).openPreferredInstall())
+            onClick: k[2] || (k[2] = (p) => r(ye).openPreferredInstall())
           }, {
             icon: N(({ class: p }) => [
-              z(r(T), {
+              P(r(T), {
                 icon: "tabler:plus",
                 class: W(p),
                 "aria-hidden": "true"
@@ -4356,55 +4388,55 @@ const Wi = { class: "kx" }, Yi = {
           })
         ]))
       ])),
-      r(B) ? (s(), U(Ni, {
+      r(B) ? (s(), U(Gi, {
         key: 3,
         automation: r(B),
         type: r(ie),
-        onClose: xn,
-        onAction: yn,
-        onRecover: kn,
+        onClose: ho,
+        onAction: xo,
+        onRecover: yo,
         onChanged: r(xe)
-      }, null, 8, ["automation", "type", "onChanged"])) : _("", !0),
-      z(aa, {
+      }, null, 8, ["automation", "type", "onChanged"])) : w("", !0),
+      P(aa, {
         flow: r(ye),
         "component-mode": Ve.value,
         "dialog-pt": t
       }, null, 8, ["flow", "component-mode"]),
-      ne.value ? (s(), U(r(Ce), {
+      oe.value ? (s(), U(r(Ce), {
         key: 4,
-        visible: !!ne.value,
+        visible: !!oe.value,
         modal: !0,
         "dismissable-mask": !0,
         pt: t,
         class: "kx-modal kx-modal-manage",
-        "aria-label": r(c)(ne.value),
-        "onUpdate:visible": w[6] || (w[6] = (p) => {
+        "aria-label": r(u)(oe.value),
+        "onUpdate:visible": k[6] || (k[6] = (p) => {
           p || Ze(!1);
         })
       }, {
         header: N(() => [
-          l("span", vs, [
-            z(r(T), {
-              icon: r(A)(ne.value),
+          l("span", Ss, [
+            P(r(T), {
+              icon: r(z)(oe.value),
               "aria-hidden": "true"
             }, null, 8, ["icon"])
           ]),
-          l("span", hs, [
-            l("span", xs, y(r(c)(ne.value)), 1),
-            l("span", ys, y(r(v)(ne.value)?.title || "Automation"), 1)
+          l("span", zs, [
+            l("span", Ds, x(r(u)(oe.value)), 1),
+            l("span", Ps, x(r(g)(oe.value)?.title || "Automation"), 1)
           ])
         ]),
         footer: N(() => [
-          z(r(X), {
+          P(r(X), {
             type: "button",
             class: "kx-foot-delete",
             severity: "danger",
             outlined: "",
             label: "Delete",
-            onClick: w[5] || (w[5] = (p) => _n(ne.value))
+            onClick: k[5] || (k[5] = (p) => wo(oe.value))
           }, {
             icon: N(({ class: p }) => [
-              z(r(T), {
+              P(r(T), {
                 icon: "tabler:trash",
                 "aria-hidden": "true",
                 class: W(p)
@@ -4414,56 +4446,56 @@ const Wi = { class: "kx" }, Yi = {
           })
         ]),
         default: N(() => [
-          l("div", ks, [
-            z(Re, {
+          l("div", Es, [
+            P(Re, {
               class: "kx-manage-host",
-              tag: r(G)(ne.value),
-              config: r(H)(ne.value),
-              meta: { location: r(I)(ne.value) },
-              onCreated: w[3] || (w[3] = (p) => Ze(!0)),
-              onClose: w[4] || (w[4] = (p) => Ze(!0)),
+              tag: r(G)(oe.value),
+              config: r(V)(oe.value),
+              meta: { location: r(L)(oe.value) },
+              onCreated: k[3] || (k[3] = (p) => Ze(!0)),
+              onClose: k[4] || (k[4] = (p) => Ze(!0)),
               onChange: r(xe)
             }, null, 8, ["tag", "config", "meta", "onChange"])
           ])
         ]),
         _: 1
-      }, 8, ["visible", "aria-label"])) : _("", !0),
+      }, 8, ["visible", "aria-label"])) : w("", !0),
       ue.value ? (s(), U(r(Ce), {
         key: 5,
         visible: !!ue.value,
         modal: "",
         pt: t,
         class: "kx-modal",
-        "aria-label": `Share ${r(c)(ue.value)}`,
-        "onUpdate:visible": w[7] || (w[7] = (p) => {
+        "aria-label": `Share ${r(u)(ue.value)}`,
+        "onUpdate:visible": k[7] || (k[7] = (p) => {
           p || bt();
         })
       }, {
         header: N(() => [
-          l("span", ws, [
-            z(r(T), {
+          l("span", Is, [
+            P(r(T), {
               icon: "tabler:users",
               "aria-hidden": "true"
             })
           ]),
-          l("span", _s, [
-            l("span", $s, "Share " + y(r(c)(ue.value)), 1),
-            l("span", Cs, y(r(v)(ue.value)?.title || "Automation"), 1)
+          l("span", Ls, [
+            l("span", As, "Share " + x(r(u)(ue.value)), 1),
+            l("span", Ms, x(r(g)(ue.value)?.title || "Automation"), 1)
           ])
         ]),
         default: N(() => [
-          l("div", Ss, [
-            z(Re, {
+          l("div", js, [
+            P(Re, {
               class: "kx-manage-host",
               tag: "kickside-share",
-              config: vn(ue.value),
+              config: mo(ue.value),
               onClose: bt,
               onChange: r(xe)
             }, null, 8, ["config", "onChange"])
           ])
         ]),
         _: 1
-      }, 8, ["visible", "aria-label"])) : _("", !0),
+      }, 8, ["visible", "aria-label"])) : w("", !0),
       se.value ? (s(), U(r(Ce), {
         key: 6,
         visible: !!se.value,
@@ -4473,30 +4505,30 @@ const Wi = { class: "kx" }, Yi = {
         class: "kx-modal",
         header: "Delete automation",
         "aria-label": "Delete automation",
-        "onUpdate:visible": w[9] || (w[9] = (p) => {
+        "onUpdate:visible": k[9] || (k[9] = (p) => {
           p || (se.value = null);
         })
       }, {
         footer: N(() => [
-          z(r(X), {
+          P(r(X), {
             type: "button",
             label: "Cancel",
             severity: "secondary",
             outlined: "",
             disabled: ke.value,
-            onClick: w[8] || (w[8] = (p) => se.value = null)
+            onClick: k[8] || (k[8] = (p) => se.value = null)
           }, null, 8, ["disabled"]),
-          z(r(X), {
+          P(r(X), {
             type: "button",
             "data-testid": "automations-confirm-delete",
             severity: "danger",
             label: "Delete",
             loading: ke.value,
             disabled: ke.value,
-            onClick: $n
+            onClick: _o
           }, {
             icon: N(({ class: p }) => [
-              z(r(T), {
+              P(r(T), {
                 icon: "tabler:trash",
                 class: W(p),
                 "aria-hidden": "true"
@@ -4506,49 +4538,49 @@ const Wi = { class: "kx" }, Yi = {
           }, 8, ["loading", "disabled"])
         ]),
         default: N(() => [
-          l("div", zs, [
+          l("div", Rs, [
             l("p", null, [
-              w[15] || (w[15] = ae(" Delete ", -1)),
-              l("strong", null, y(r(c)(se.value)), 1),
-              w[16] || (w[16] = ae("? It will stop running and its setup will be removed. This can't be undone. ", -1))
+              k[15] || (k[15] = ae(" Delete ", -1)),
+              l("strong", null, x(r(u)(se.value)), 1),
+              k[16] || (k[16] = ae("? It will stop running and its setup will be removed. This can't be undone. ", -1))
             ]),
-            Ye(se.value).length ? (s(), u("div", Ds, [
-              (s(!0), u(Y, null, te(Ye(se.value), (p) => (s(), u("label", {
+            Ye(se.value).length ? (s(), d("div", Ts, [
+              (s(!0), d(Y, null, te(Ye(se.value), (p) => (s(), d("label", {
                 key: p.key,
                 class: "kx-delopt"
               }, [
                 pe(l("input", {
                   "onUpdate:modelValue": (Z) => Me.value[p.key] = Z,
                   type: "checkbox"
-                }, null, 8, Ps), [
-                  [jt, Me.value[p.key]]
+                }, null, 8, Os), [
+                  [Mt, Me.value[p.key]]
                 ]),
-                l("span", Es, [
-                  l("span", Is, y(p.title || p.key), 1),
-                  p.description ? (s(), u("span", Ls, y(p.description), 1)) : _("", !0)
+                l("span", Bs, [
+                  l("span", Fs, x(p.title || p.key), 1),
+                  p.description ? (s(), d("span", Ns, x(p.description), 1)) : w("", !0)
                 ])
               ]))), 128))
-            ])) : _("", !0)
+            ])) : w("", !0)
           ])
         ]),
         _: 1
-      }, 8, ["visible"])) : _("", !0)
+      }, 8, ["visible"])) : w("", !0)
     ]));
   }
-}), Ms = ':root{--p-form-field-padding-x: .75rem;--p-form-field-padding-y: .5rem;--p-form-field-sm-padding-x: .625rem;--p-form-field-sm-padding-y: .375rem;--p-form-field-lg-padding-x: .875rem;--p-form-field-lg-padding-y: .625rem;--p-form-field-border-radius: .375rem;--p-form-field-transition-duration: .2s;--p-form-field-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), 0 1px 2px 0 rgba(18, 18, 23, .05);--p-focus-ring-width: 1px;--p-focus-ring-style: solid;--p-focus-ring-color: color-mix(in srgb, var(--p-primary-color) 100%, transparent);--p-focus-ring-offset: 2px;--p-toggleswitch-width: 2.5rem;--p-toggleswitch-height: 1.5rem;--p-toggleswitch-border-radius: 30px;--p-toggleswitch-gap: .25rem;--p-toggleswitch-border-width: 1px;--p-toggleswitch-transition-duration: .2s;--p-toggleswitch-slide-duration: .2s;--p-toggleswitch-handle-size: 1rem;--p-toggleswitch-handle-border-radius: 9999px}:root{color-scheme:light dark;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-secondary: #6f7385;--p-secondary-50: color-mix(in srgb, var(--p-secondary) 5%, white);--p-secondary-100: color-mix(in srgb, var(--p-secondary) 10%, white);--p-secondary-200: color-mix(in srgb, var(--p-secondary) 20%, white);--p-secondary-300: color-mix(in srgb, var(--p-secondary) 35%, white);--p-secondary-400: color-mix(in srgb, var(--p-secondary) 65%, white);--p-secondary-500: var(--p-secondary);--p-secondary-600: color-mix(in srgb, var(--p-secondary) 80%, black);--p-secondary-700: color-mix(in srgb, var(--p-secondary) 65%, black);--p-secondary-800: color-mix(in srgb, var(--p-secondary) 55%, black);--p-secondary-900: color-mix(in srgb, var(--p-secondary) 50%, black);--p-secondary-950: color-mix(in srgb, var(--p-secondary) 30%, black);--p-danger: rgb(239, 68, 68);--p-danger-50: color-mix(in srgb, var(--p-danger) 5%, white);--p-danger-100: color-mix(in srgb, var(--p-danger) 10%, white);--p-danger-200: color-mix(in srgb, var(--p-danger) 20%, white);--p-danger-300: color-mix(in srgb, var(--p-danger) 30%, white);--p-danger-400: color-mix(in srgb, var(--p-danger) 40%, white);--p-danger-500: var(--p-danger);--p-danger-600: color-mix(in srgb, var(--p-danger) 80%, black);--p-danger-700: color-mix(in srgb, var(--p-danger) 70%, black);--p-danger-800: color-mix(in srgb, var(--p-danger) 60%, black);--p-danger-900: color-mix(in srgb, var(--p-danger) 50%, black);--p-danger-950: color-mix(in srgb, var(--p-danger) 40%, black);--p-success: rgb(34, 197, 94);--p-success-50: color-mix(in srgb, var(--p-success) 5%, white);--p-success-100: color-mix(in srgb, var(--p-success) 10%, white);--p-success-200: color-mix(in srgb, var(--p-success) 20%, white);--p-success-300: color-mix(in srgb, var(--p-success) 30%, white);--p-success-400: color-mix(in srgb, var(--p-success) 40%, white);--p-success-500: var(--p-success);--p-success-600: color-mix(in srgb, var(--p-success) 80%, black);--p-success-700: color-mix(in srgb, var(--p-success) 70%, black);--p-success-800: color-mix(in srgb, var(--p-success) 60%, black);--p-success-900: color-mix(in srgb, var(--p-success) 50%, black);--p-success-950: color-mix(in srgb, var(--p-success) 40%, black);--p-warn: rgb(249, 115, 22);--p-warn-50: color-mix(in srgb, var(--p-warn) 5%, white);--p-warn-100: color-mix(in srgb, var(--p-warn) 10%, white);--p-warn-200: color-mix(in srgb, var(--p-warn) 20%, white);--p-warn-300: color-mix(in srgb, var(--p-warn) 30%, white);--p-warn-400: color-mix(in srgb, var(--p-warn) 40%, white);--p-warn-500: var(--p-warn);--p-warn-600: color-mix(in srgb, var(--p-warn) 80%, black);--p-warn-700: color-mix(in srgb, var(--p-warn) 70%, black);--p-warn-800: color-mix(in srgb, var(--p-warn) 60%, black);--p-warn-900: color-mix(in srgb, var(--p-warn) 50%, black);--p-warn-950: color-mix(in srgb, var(--p-warn) 40%, black);--p-info: rgb(14, 165, 233);--p-info-50: color-mix(in srgb, var(--p-info) 5%, white);--p-info-100: color-mix(in srgb, var(--p-info) 10%, white);--p-info-200: color-mix(in srgb, var(--p-info) 20%, white);--p-info-300: color-mix(in srgb, var(--p-info) 30%, white);--p-info-400: color-mix(in srgb, var(--p-info) 40%, white);--p-info-500: var(--p-info);--p-info-600: color-mix(in srgb, var(--p-info) 80%, black);--p-info-700: color-mix(in srgb, var(--p-info) 70%, black);--p-info-800: color-mix(in srgb, var(--p-info) 60%, black);--p-info-900: color-mix(in srgb, var(--p-info) 50%, black);--p-info-950: color-mix(in srgb, var(--p-info) 40%, black);--p-help: rgb(168, 85, 247);--p-help-50: color-mix(in srgb, var(--p-help) 5%, white);--p-help-100: color-mix(in srgb, var(--p-help) 10%, white);--p-help-200: color-mix(in srgb, var(--p-help) 20%, white);--p-help-300: color-mix(in srgb, var(--p-help) 30%, white);--p-help-400: color-mix(in srgb, var(--p-help) 40%, white);--p-help-500: var(--p-help);--p-help-600: color-mix(in srgb, var(--p-help) 80%, black);--p-help-700: color-mix(in srgb, var(--p-help) 70%, black);--p-help-800: color-mix(in srgb, var(--p-help) 60%, black);--p-help-900: color-mix(in srgb, var(--p-help) 50%, black);--p-help-950: color-mix(in srgb, var(--p-help) 40%, black);--p-accent: rgb(20, 184, 166);--p-accent-50: color-mix(in srgb, var(--p-accent) 5%, white);--p-accent-100: color-mix(in srgb, var(--p-accent) 10%, white);--p-accent-200: color-mix(in srgb, var(--p-accent) 20%, white);--p-accent-300: color-mix(in srgb, var(--p-accent) 30%, white);--p-accent-400: color-mix(in srgb, var(--p-accent) 40%, white);--p-accent-500: var(--p-accent);--p-accent-600: color-mix(in srgb, var(--p-accent) 80%, black);--p-accent-700: color-mix(in srgb, var(--p-accent) 70%, black);--p-accent-800: color-mix(in srgb, var(--p-accent) 60%, black);--p-accent-900: color-mix(in srgb, var(--p-accent) 50%, black);--p-accent-950: color-mix(in srgb, var(--p-accent) 40%, black);--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-content-border-radius: 6px;--p-font-heading-family: var(--v-font-family-head, Arial);--p-font-heading-scale: 1;--p-font-heading-line-height: 1.5;--p-font-heading-letter-spacing: normal;--p-font-heading-stretch: normal;--p-font-heading-variation-settings: normal;--p-font-body-scale: 1;--p-font-body-line-height: 1.5;--p-font-body-letter-spacing: normal;--p-font-body-stretch: normal;--p-font-body-variation-settings: normal;--p-font-mono-family: ui-monospace}:root{--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}@media(prefers-color-scheme:dark){:root:not(.w-theme-light){--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}}:root.w-theme-dark,.w-theme-dark{color-scheme:dark;--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}:root.w-theme-light,.w-theme-light{color-scheme:light;--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}:host{--kx-picker-shadow: var(--p-select-overlay-shadow);--kx-picker-option-icon-size: 17px;--kx-picker-option-icon-gap: 10px;--kx-picker-option-stack-gap: 1px;--kx-picker-option-title-size: 13px;--kx-picker-option-title-weight: 600;--kx-picker-option-subtitle-size: 11.5px;--kx-picker-option-subtitle-line-height: 1.4}.kx-ps{width:100%;text-align:start;font:inherit}.anchored-panel>.p-select-overlay.kx-ps-panel{position:static;width:100%;display:flex;flex-direction:column;max-height:var(--anchored-panel-available-height);overflow:hidden}.kx-ps-panel>.p-select-header{flex:none}.kx-ps-options{min-height:0;overflow-y:auto}.kx-ps-options>li{flex:none}.kx-ps-val{display:flex;align-items:center;gap:8px;min-width:0}.kx-ps-val-ico{width:16px;height:16px;color:var(--p-primary-color);flex:none}.kx-ps-val-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-ps-ph{color:var(--p-text-muted-color)}.kx-ps-option{gap:var(--kx-picker-option-icon-gap)}.kx-ps-opt-ico{width:var(--kx-picker-option-icon-size);height:var(--kx-picker-option-icon-size);flex:none}.kx-ps-opt-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--kx-picker-option-stack-gap)}.kx-ps-opt-title{font-size:var(--kx-picker-option-title-size);font-weight:var(--kx-picker-option-title-weight);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.kx-ps-opt-sub{font-size:var(--kx-picker-option-subtitle-size);line-height:var(--kx-picker-option-subtitle-line-height);color:var(--p-text-muted-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.spin{animation:kx-spin 1s linear infinite}@keyframes kx-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spin{animation:none}}.kx-head{display:flex;align-items:center;gap:12px;padding:20px 24px 14px;flex-wrap:wrap}.kx-head-icon{width:40px;height:40px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);color:var(--p-primary-color)}.kx-head-icon svg{width:22px;height:22px}.kx-head-text{min-width:0}.kx-title{font-size:17px;font-weight:700;color:var(--p-text-color);margin:0}.kx-head-sub{font-size:13px;color:var(--p-text-muted-color);margin:2px 0 0}.kx-head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}.kx-modal-head-icon{width:38px;height:38px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);color:var(--p-primary-color)}.kx-modal-head-icon svg{width:20px;height:20px}.kx-modal-head-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.kx-modal-head-title{font-size:15.5px;font-weight:700;color:var(--p-text-color);line-height:1.2}.kx-modal-head-sub{font-size:12.5px;font-weight:400;color:var(--p-text-muted-color);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-empty{text-align:center;padding:44px 24px;display:flex;flex-direction:column;align-items:center;gap:8px}.kx-empty-ico{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 12%,transparent);color:var(--p-primary-color);margin-bottom:4px}.kx-empty-ico svg{width:28px;height:28px}.kx-empty-title{font-size:15px;font-weight:700;color:var(--p-text-color);margin:0}.kx-empty-sub{font-size:13px;color:var(--p-text-muted-color);max-width:380px;margin:0}.kx-empty>.p-button{margin-top:6px}.kx-empty-actions{display:flex;gap:8px;margin-top:6px}.kx-loading{display:flex;align-items:center;gap:8px;color:var(--p-text-muted-color);font-size:13px;padding:24px}.kx-err{margin:0 20px 8px;padding:9px 12px;border-radius:10px;font-size:13px;background:color-mix(in srgb,var(--p-danger-500) 12%,transparent);color:var(--p-danger-600, var(--p-danger-500))}.kx-err.inline{margin:12px 0 0}.kx-empty.kx-empty-spacious{padding:60px 24px;gap:9px}.kx-empty-spacious .kx-empty-ico{width:58px;height:58px;margin-bottom:5px}.kx-empty-spacious .kx-empty-ico svg{width:27px;height:27px}.kx-empty-spacious .kx-empty-title{font-size:14.5px}.kx-empty-spacious .kx-empty-sub{font-size:12.5px;max-width:360px;line-height:1.55}.kx-empty-ico.primary{background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);border:1px solid color-mix(in srgb,var(--p-primary-color) 28%,transparent)}.kx-empty-ico.muted{background:var(--kx-surface-2);color:color-mix(in srgb,var(--p-text-color) 45%,transparent);border:1px solid var(--p-content-border-color)}.kx-empty>.kx-empty-cta{margin-top:8px;padding-inline:16px}.kx-loading.kx-loading-centered{flex:1;display:grid;place-items:center;padding:64px 20px}.kx-loading-inner{display:flex;flex-direction:column;align-items:center;gap:12px;font-size:13px}.kx-loading-inner svg{width:24px;height:24px}.kx-tag-sm,.kx-tag-sm.kx-tag-sm{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:var(--kx-radius-tag, 6px);font-size:10.5px;font-weight:600;line-height:1.5;white-space:nowrap}.kx-tag-sm svg,.kx-tag-sm.kx-tag-sm svg{width:12px;height:12px}.kx-tag-caps,.kx-tag-caps.kx-tag-caps{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:var(--kx-radius-tag, 6px);font-size:9px;font-weight:700;line-height:1.5;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}.kx-tag-caps svg,.kx-tag-caps.kx-tag-caps svg{width:11px;height:11px}:host,:root{--kx-surface-1: color-mix(in srgb, var(--p-content-background) 96%, var(--p-text-color) 4%);--kx-surface-2: color-mix(in srgb, var(--p-content-background) 92%, var(--p-text-color) 8%);--kx-surface-3: color-mix(in srgb, var(--p-content-background) 86%, var(--p-text-color) 14%);--kx-surface-4: color-mix(in srgb, var(--p-content-background) 78%, var(--p-text-color) 22%);--kx-border-strong: color-mix(in srgb, var(--p-content-border-color) 60%, var(--p-text-color) 40%);--kx-border-stronger: color-mix(in srgb, var(--p-content-border-color) 30%, var(--p-text-color) 70%);--kx-text-faint: color-mix(in srgb, var(--p-text-muted-color) 70%, var(--p-content-background) 30%);--kx-text-fainter: color-mix(in srgb, var(--p-text-muted-color) 45%, var(--p-content-background) 55%);--kx-wash-primary: color-mix(in srgb, var(--p-primary-color) 12%, var(--p-content-background) 88%);--kx-wash-success: color-mix(in srgb, var(--p-success-500) 12%, var(--p-content-background) 88%);--kx-wash-info: color-mix(in srgb, var(--p-info-500) 12%, var(--p-content-background) 88%);--kx-wash-warn: color-mix(in srgb, var(--p-warn-500) 12%, var(--p-content-background) 88%);--kx-wash-danger: color-mix(in srgb, var(--p-danger-500) 12%, var(--p-content-background) 88%);--kx-wash-help: color-mix(in srgb, var(--p-help-500) 12%, var(--p-content-background) 88%);--kx-font-heading: "Outfit", system-ui, sans-serif;--kx-font-body: "Inter", system-ui, sans-serif;--kx-radius-4: 4px;--kx-radius-6: 6px;--kx-radius-8: 8px;--kx-radius-10: 10px;--kx-radius-14: 14px;--kx-radius-16: 16px;--kx-radius-tag: var(--p-content-border-radius, 6px);--kx-control-height: 34px;--kx-control-height-sm: 30px;--kx-rail-width: 264px;--kx-reading-measure: 880px;--kx-row-height: 32px;--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .08);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .12);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .18);--kx-overlay-hover: color-mix(in srgb, var(--p-text-color) 7%, transparent);--kx-overlay-subtle: color-mix(in srgb, var(--p-text-color) 4%, transparent)}@media(prefers-color-scheme:dark){:host(:not(.w-theme-light)),:root:not(.w-theme-light){--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .45);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .6)}}:host(.w-theme-dark),:root.w-theme-dark{--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .45);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .6)}*,:before,:after{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }*,:before,:after{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}:before,:after{--tw-content: ""}html,:host{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dl,dd,h1,h2,h3,h4,h5,h6,hr,figure,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}ol,ul,menu{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}button,[role=button]{cursor:pointer}:disabled{cursor:default}img,svg,video,canvas,audio,iframe,embed,object{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}@supports (-moz-appearance:none){*{scrollbar-color:initial;scrollbar-width:initial}}:host{--kx-modal-shadow: var(--kx-shadow-lg);display:block;height:100%;min-height:0}:host>div{height:100%;min-height:0}*,*:before,*:after{box-sizing:border-box}.kx{font-family:inherit;color:var(--p-text-color);background:var(--p-content-background);height:100%;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}.kx-head-title{font-size:17px;font-weight:700;color:var(--p-text-color);margin:0}.kx-count{font-size:12.5px;color:var(--p-text-muted-color);display:inline-flex;align-items:center;gap:5px}.kx-search{position:relative;display:flex;align-items:center}.kx-search-ico{position:absolute;left:10px;width:15px;height:15px;color:var(--p-text-muted-color);pointer-events:none}.kx-search-input{height:34px;width:220px;max-width:40vw;padding:0 10px 0 30px;font:inherit;font-size:13px;color:var(--p-text-color);background:var(--p-content-background);border:1px solid var(--p-content-border-color);border-radius:8px;transition:border-color .15s}.kx-body{flex:1 0 auto;padding:6px 20px 20px;display:flex;flex-direction:column;gap:14px}.kx-list{display:flex;flex-direction:column;border:1px solid var(--p-content-border-color);border-radius:14px;overflow:hidden;background:var(--p-content-background);max-width:1100px}.kx-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"main status actions" "foot foot   foot";align-items:center;column-gap:14px;row-gap:6px;padding:10px 14px;border-bottom:1px solid var(--p-content-border-color)}.kx-row:last-child{border-bottom:none}.kx-row.is-open{background:var(--kx-wash-primary)}.kx-row:hover{background:var(--kx-overlay-subtle)}.kx-row.is-open:hover{background:var(--kx-wash-primary)}.kx-open{grid-area:main;display:flex;align-items:center;gap:12px;min-width:0;padding:0;margin:0;border:none;background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer}.kx-ficon{width:38px;height:38px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--kx-wash-primary);color:var(--p-primary-color)}.kx-ficon svg{width:20px;height:20px}.kx-id{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}.kx-name{display:block;font-size:14px;font-weight:600;color:var(--p-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-sub{display:block;font-size:12px;color:var(--p-text-muted-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-open:focus-visible{outline:none}.kx-open:focus-visible .kx-name{text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--p-primary-color)}.kx-rowfoot{grid-area:foot;padding-left:50px;display:flex;flex-direction:column;gap:4px;min-width:0}.kx-rowfoot:empty{display:none}.kx-rowmsg{font-size:11.5px;display:flex;align-items:center;gap:5px;min-width:0}.kx-rowmsg-txt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-rowmsg svg{width:13px;height:13px;flex:none}.kx-rowmsg-error{color:var(--p-danger-600, var(--p-danger-500))}.kx-rowmsg-success{color:var(--p-success-600, var(--p-success-500))}.kx-recover{flex:none;margin-left:2px}.kx-badge{grid-area:status;border:1px solid color-mix(in srgb,currentColor 28%,transparent)}.kx-badge:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}.kx-badge:has(svg):before{display:none}.kx-actions{grid-area:actions;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;min-width:0}.kx-actions .is-active{color:var(--p-primary-color);border-color:color-mix(in srgb,var(--p-primary-color) 38%,var(--p-content-border-color));background:color-mix(in srgb,var(--p-primary-color) 10%,transparent)}.kx-admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}.kx-admin-item{min-width:0;padding:10px 11px;border:1px solid var(--p-content-border-color);border-radius:10px;background:var(--p-content-background)}.kx-admin-item>span{display:block;margin-bottom:4px;color:var(--p-text-muted-color);font-size:10.5px;font-weight:700;letter-spacing:.055em;text-transform:uppercase}.kx-admin-item strong{display:block;overflow:hidden;color:var(--p-text-color);font-size:12.5px;text-overflow:ellipsis;white-space:nowrap}.kx-admin-item strong em{color:var(--p-text-muted-color);font-size:11px;font-style:normal;font-weight:600}.kx-admin-item code{display:block;margin-top:4px;overflow:hidden;color:var(--p-text-muted-color);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;text-overflow:ellipsis;white-space:nowrap}.kx-admin-item a{display:inline-block;margin-top:4px;color:var(--p-primary-color);font-size:11px;font-weight:650;text-decoration:none}.kx-admin-item a:hover{text-decoration:underline}@media(max-width:560px){.kx-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"main   actions" "status status" "foot   foot";align-items:center;row-gap:8px}.kx-badge{justify-self:start}.kx-rowfoot{padding-left:0}}@media(max-width:640px){.kx-admin-grid{grid-template-columns:1fr}}.kx-modal{--p-dialog-content-padding: 0;max-width:calc(100vw - 32px);max-height:90vh}.kx-modal>.kx-dialog-header{padding:16px 18px;border-bottom:1px solid var(--p-content-border-color);gap:10px}.kx-modal>.kx-dialog-content{padding:0;display:flex;flex-direction:column;min-height:0;overflow:hidden}.kx-modal>.kx-dialog-footer{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--p-content-border-color)}.kx-2p-r-body>*{animation:kx-pane-fade .28s ease both}@keyframes kx-pane-fade{0%{opacity:0}to{opacity:1}}@media(prefers-reduced-motion:reduce){.kx-2p-r-body>*{animation:none}}.kx-modal-body{padding:18px;font-size:13.5px;line-height:1.5;color:var(--p-text-color);overflow-y:auto}.kx-modal-body p{margin:0 0 10px}.kx-modal-body p:last-child{margin-bottom:0}.kx-form{display:flex;flex-direction:column;gap:14px}.kx-field{display:flex;flex-direction:column;gap:5px}.kx-field-lbl{font-size:12.5px;font-weight:600;color:var(--p-text-color)}.kx-req{color:var(--p-danger-500)}.kx-input{height:36px;padding:0 10px;font:inherit;font-size:13px;color:var(--p-text-color);background:var(--p-content-background);border:1px solid var(--p-content-border-color);border-radius:8px;transition:border-color .15s;width:100%}.kx-select{width:100%;min-width:0}.kx-check,.kx-delopt input{appearance:none;-webkit-appearance:none;width:18px;height:18px;margin:0;flex:none;display:grid;place-content:center;border:1px solid var(--p-content-border-color);border-radius:8px;background:var(--p-content-background);cursor:pointer;transition:border-color .15s,background-color .15s,box-shadow .15s,opacity .15s}.kx-check:before,.kx-delopt input:before{content:"";width:5px;height:9px;border:solid var(--p-button-primary-color);border-width:0 2px 2px 0;transform:rotate(45deg) scale(0);transform-origin:center;transition:transform .12s ease-out}.kx-check:checked,.kx-delopt input:checked{border-color:var(--p-primary-color);background:var(--p-primary-color)}.kx-check:focus-visible{outline:var(--p-focus-ring-width) var(--p-focus-ring-style) var(--p-focus-ring-color);outline-offset:var(--p-focus-ring-offset)}.kx-check:checked:before,.kx-delopt input:checked:before{transform:rotate(45deg) scale(1)}.kx-check:disabled,.kx-delopt input:disabled{opacity:.55;cursor:not-allowed}.kx-field-hint{font-size:11px;line-height:1.3;color:var(--p-text-muted-color);margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.kx-custom-host{min-height:180px;width:100%}.kx-custom-host>*{display:block;width:100%}.kx-delopts{display:flex;flex-direction:column;gap:10px;margin-top:14px}.kx-delopt{display:flex;align-items:flex-start;gap:10px;cursor:pointer}.kx-delopt input{margin-top:2px}.kx-delopt-copy{min-width:0;display:flex;flex-direction:column;gap:2px}.kx-delopt-t{display:block;font-size:13px;font-weight:600;color:var(--p-text-color)}.kx-delopt-d{display:block;font-size:11.5px;line-height:1.35;color:var(--p-text-muted-color)}.kx-modal-2p{width:min(880px,calc(100vw - 40px));max-width:100%}.kx-modal-solo{width:min(620px,calc(100vw - 40px));max-width:100%}.kx-modal-manage{width:min(760px,calc(100vw - 40px));max-width:100%}.kx-manage-host{display:block;min-height:180px}.kx-2p{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);min-height:0;flex:1;overflow:hidden}.kx-2p-solo{grid-template-columns:minmax(0,1fr)}.kx-2p-solo .kx-2p-r-body{padding-top:16px}.kx-2p-l{padding:16px;overflow-y:auto;border-right:1px solid var(--p-content-border-color);display:flex;flex-direction:column;gap:10px}.kx-2p-r{display:flex;flex-direction:column;min-width:0;min-height:0;background:color-mix(in srgb,var(--p-text-color) 2.5%,var(--p-content-background))}.kx-2p-r-head{padding:14px 18px 10px;font-size:12.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-2p-r-body{padding:0 18px 18px;overflow-y:auto;flex:1;min-height:0}.kx-2p-r-note{margin:0;font-size:12.5px;color:var(--p-text-muted-color)}.kx-foot-err{order:-1;flex:1 0 100%;margin:0;max-width:none}.kx-foot-err+.p-button{margin-left:auto}.kx-foot-delete{margin-right:auto}.kx-cat-search{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;flex:none;border:1px solid var(--p-content-border-color);border-radius:8px;color:var(--p-text-muted-color)}.kx-cat-search svg{width:15px;height:15px;flex:none}.kx-cat-search input{flex:1;border:none;background:transparent;outline:none;font:inherit;font-size:13px;color:var(--p-text-color)}.kx-cat{display:flex;flex-direction:column;gap:6px}.kx-cat-card{display:flex;align-items:center;gap:11px;text-align:left;width:100%;padding:10px 12px;border:1px solid var(--p-content-border-color);border-radius:14px;background:transparent;color:var(--p-text-color);cursor:pointer;transition:border-color .14s,background .14s}.kx-cat-card:hover{background:color-mix(in srgb,var(--p-text-color) 5%,transparent)}.kx-cat-card.sel{border-color:var(--p-primary-color);background:color-mix(in srgb,var(--p-primary-color) 9%,transparent)}.kx-cat-ico{width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:11px;background:color-mix(in srgb,var(--p-primary-color) 12%,transparent);color:var(--p-primary-color)}.kx-cat-ico svg{width:18px;height:18px}.kx-cat-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.kx-cat-name{font-size:13px;font-weight:600}.kx-cat-desc{font-size:11px;line-height:1.3;color:var(--p-text-muted-color);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.kx-cat-check{width:17px;height:17px;flex:none;color:var(--p-primary-color);visibility:hidden}.kx-cat-card.sel .kx-cat-check{visibility:visible}.kx-cat-empty{font-size:12.5px;color:var(--p-text-muted-color);padding:4px 2px}@media(max-width:760px){.kx-modal-2p{width:560px}.kx-2p{grid-template-columns:1fr}.kx-2p-l{border-right:none;border-bottom:1px solid var(--p-content-border-color)}}.kx-flow{display:flex;flex-direction:column;gap:14px;padding:6px 0 0}.kx-pipe,.kx-stage{display:flex;flex-direction:column;gap:8px}.kx-stage-mid{background:transparent}.kx-stage-head{display:flex;align-items:center;gap:8px}.kx-stage-ico{width:26px;height:26px;border-radius:11px;flex:none;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);color:var(--p-primary-color)}.kx-stage-ico svg{width:15px;height:15px}.kx-stage-lbl{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-stage-cfg{margin-top:2px}.kx-stage-badges{display:flex;flex-wrap:wrap;gap:6px}.kx-stage-desc{margin:0;font-size:12px;line-height:1.4;color:var(--p-text-muted-color)}.kx-stage-opts{display:flex;flex-direction:column;gap:6px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--p-content-border-color)}.kx-opts-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-pipe-conn{display:flex;align-items:center;justify-content:center;gap:6px;padding:5px 0;color:var(--p-text-muted-color);font-size:11px}.kx-pipe-conn svg{width:16px;height:16px}.kx-runopts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.kx-detect{display:flex;align-items:center;gap:6px;font-size:11.5px;line-height:1.35;padding:7px 9px;border-radius:8px;color:var(--p-success-600, var(--p-success-500));background:color-mix(in srgb,var(--p-success-500) 10%,transparent)}.kx-detect svg{width:14px;height:14px;flex:none}.kx-detect-warn{color:var(--p-warn-600, var(--p-warn-500));background:color-mix(in srgb,var(--p-warn-500) 12%,transparent)}.kx-flow-enable{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--p-text-muted-color);cursor:pointer}.kx-flow-enable input{width:16px;height:16px;accent-color:var(--p-primary-color)}.kx-textarea{height:auto;min-height:72px;padding:8px 10px;line-height:1.4;resize:vertical}.kx-wcmount{width:100%}.kx-wcmount>div{display:block;width:100%}.kx-metrics{display:flex;flex-wrap:wrap;gap:5px 6px;margin-top:5px;min-width:0}.kx-metric{display:inline-flex;align-items:center;gap:5px;max-width:100%;font-size:11.5px;line-height:1.6;padding:2px 9px;border-radius:6px;background:color-mix(in srgb,var(--p-text-color) 6%,transparent);color:var(--p-text-color)}.kx-metric-i{width:13px;height:13px;color:var(--p-text-muted-color);flex:none}.kx-metric-k{color:var(--p-text-muted-color);font-weight:600;flex:none}.kx-metric-v{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-metric-details{margin-top:5px}.kx-metric-more{display:inline-flex;align-items:center;gap:4px;cursor:pointer;list-style:none;font-size:11.5px;font-weight:600;color:var(--p-text-muted-color);user-select:none}.kx-metric-more::-webkit-details-marker{display:none}.kx-metric-more:before{content:"";width:0;height:0;border-left:4px solid currentColor;border-top:3px solid transparent;border-bottom:3px solid transparent;transition:transform .15s;flex:none}.kx-metric-details[open] .kx-metric-more:before{transform:rotate(90deg)}.kx-metric-more:hover{color:var(--p-text-color)}.kx-metrics-detail{margin-top:4px}@media(prefers-reduced-motion:reduce){.kx-modal{transition:none}}.kx-cat-search:focus-within{border-color:var(--p-focus-ring-color);box-shadow:var(--p-focus-ring-shadow)}.kx-cat-search input:focus{box-shadow:none}.kx-cat-card:focus-visible{border-color:var(--p-focus-ring-color);outline:none;box-shadow:var(--p-focus-ring-shadow)}.kx-menu{position:relative;display:inline-flex}.kx-menu-trigger.is-active{color:var(--p-primary-color);border-color:color-mix(in srgb,var(--p-primary-color) 38%,var(--p-content-border-color));background:var(--kx-wash-primary)}.kx-menu-panel{display:flex;flex-direction:column;gap:1px;padding:6px;border:1px solid var(--p-content-border-color);border-radius:var(--kx-radius-14);background:var(--p-content-background);box-shadow:var(--kx-shadow-lg);max-height:min(70vh,460px);overflow-y:auto}.kx-menu-group{padding:8px 10px 4px;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-menu-group.is-first{padding-top:4px}.kx-menu-sep{height:1px;margin:5px 6px;background:var(--p-content-border-color)}.kx-menu-item{display:flex;align-items:flex-start;gap:10px;width:100%;padding:8px 10px;text-align:left;border:none;border-radius:var(--kx-radius-10);background:transparent;color:var(--p-text-color);cursor:pointer;transition:background .12s}.kx-menu-item:hover,.kx-menu-item:focus-visible{background:var(--kx-overlay-hover);outline:none}.kx-menu-item:disabled{opacity:.5;cursor:not-allowed}.kx-menu-item-ico{width:17px;height:17px;flex:none;margin-top:1px;color:var(--p-text-muted-color)}.kx-menu-item-body{display:flex;flex-direction:column;gap:1px;min-width:0}.kx-menu-item-label{display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600}.kx-menu-item-desc{font-size:11px;line-height:1.35;color:var(--p-text-muted-color)}.kx-menu-item-warn{width:12px;height:12px;color:var(--p-warn-600, var(--p-warn-500))}.kx-menu-item.is-warn .kx-menu-item-ico{color:var(--p-warn-600, var(--p-warn-500))}.kx-menu-item.is-danger .kx-menu-item-ico{color:var(--p-danger-600, var(--p-danger-500))}.kx-menu-item.is-danger:hover,.kx-menu-item.is-danger:focus-visible{background:var(--kx-wash-danger)}.kx-menu-item.is-danger .kx-menu-item-label{color:var(--p-danger-600, var(--p-danger-500))}.kx-drawer-scrim{position:fixed;inset:0;z-index:60;background:color-mix(in srgb,var(--p-text-color) 40%,transparent);animation:kx-fade .18s ease both}.kx-drawer{position:fixed;top:0;right:0;height:100%;width:min(468px,100vw);z-index:61;display:flex;flex-direction:column;min-height:0;background:var(--p-content-background);border-left:1px solid var(--p-content-border-color);box-shadow:var(--kx-shadow-lg);animation:kx-slide-in .22s cubic-bezier(.22,.61,.36,1) both}@keyframes kx-fade{0%{opacity:0}to{opacity:1}}@keyframes kx-slide-in{0%{transform:translate(24px);opacity:0}to{transform:none;opacity:1}}@media(prefers-reduced-motion:reduce){.kx-drawer,.kx-drawer-scrim{animation:none}}.kx-drawer-head{display:flex;align-items:center;gap:11px;padding:16px 16px 14px;border-bottom:1px solid var(--p-content-border-color);flex:none}.kx-drawer-id{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}.kx-drawer-name{font-size:15px;font-weight:700;color:var(--p-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-drawer-sub{font-size:12px;color:var(--p-text-muted-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-drawer-controls{display:flex;align-items:center;gap:6px;flex:none}.kx-drawer .kx-badge{flex:none}.kx-tabs{display:flex;gap:2px;padding:6px 12px 0;border-bottom:1px solid var(--p-content-border-color);flex:none}.kx-tab{display:inline-flex;align-items:center;gap:6px;padding:8px 12px 10px;margin-bottom:-1px;border:none;border-bottom:2px solid transparent;background:transparent;cursor:pointer;font:inherit;font-size:12.5px;font-weight:600;color:var(--p-text-muted-color);transition:color .12s}.kx-tab svg{width:15px;height:15px}.kx-tab:hover{color:var(--p-text-color)}.kx-tab.is-active{color:var(--p-primary-color);border-bottom-color:var(--p-primary-color)}.kx-tab:focus-visible{outline:none;color:var(--p-primary-color)}.kx-drawer-body{flex:1;min-height:0;overflow-y:auto;padding:16px}.kx-dsec{display:flex;flex-direction:column;gap:16px}.kx-dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}.kx-dfact{padding:10px 11px;border:1px solid var(--p-content-border-color);border-radius:var(--kx-radius-10);background:var(--kx-surface-1);min-width:0}.kx-dfact-k{display:block;margin-bottom:4px;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-dfact-v{display:block;font-size:13px;color:var(--p-text-color);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-dsub{display:flex;flex-direction:column;gap:8px}.kx-dsub-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-dnote{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--p-text-muted-color);padding:4px 0}.kx-dnote-err{color:var(--p-danger-600, var(--p-danger-500))}.kx-dsec-foot{padding-top:4px}.kx-dmsg{margin:0;font-size:12.5px;line-height:1.5;padding:10px 12px;border-radius:var(--kx-radius-10);background:var(--kx-surface-1);color:var(--p-text-color);word-break:break-word}.kx-dmsg.is-err{background:var(--kx-wash-danger);color:var(--p-danger-700, var(--p-danger-600, var(--p-danger-500)))}.kx-dmsg.is-ok{background:var(--kx-wash-success);color:var(--p-success-700, var(--p-success-600, var(--p-success-500)))}.kx-errcard{display:flex;flex-direction:column;gap:9px;padding:13px 14px;border:1px solid color-mix(in srgb,var(--p-danger-500) 40%,var(--p-content-border-color));border-radius:var(--kx-radius-14);background:var(--kx-wash-danger)}.kx-errcard-head{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:var(--p-danger-700, var(--p-danger-600, var(--p-danger-500)))}.kx-errcard-head svg{width:17px;height:17px;flex:none}.kx-errcard-cause{margin:0;font-size:12.5px;line-height:1.5;color:var(--p-text-color);word-break:break-word}.kx-errcard .p-button{align-self:flex-start}.kx-hint{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:var(--kx-radius-10);background:var(--kx-wash-info);font-size:12px;line-height:1.45;color:var(--p-text-color)}.kx-hint svg{width:16px;height:16px;flex:none;margin-top:1px;color:var(--p-info-600, var(--p-info-500))}', js = { props: { type: "object", properties: { mode: { type: "string", default: "", description: '"create" when mounted as the workspace "+" -> Automation create view: opens straight into the install popup and emits created/close. Unset renders the full Automations page.' }, "parent-id": { type: "string", default: "", description: "Workspace folder to place the new automation under (create mode; empty = root)." }, "component-id": { type: "string", default: "", description: "Optional owning component; scopes rows and places newly created Automations under that component." }, input: { type: "string", default: "", description: "Initial declared install inputs as a JSON object, supplied by the owning component." }, "type-id": { type: "string", default: "", description: "Optional registry automation type id to preselect in create or component mode. The manager treats the id opaquely and mounts that type's declared create view." } } } }, Rs = {
-  wippy: js
+}), Hs = ':root{--p-form-field-padding-x: .75rem;--p-form-field-padding-y: .5rem;--p-form-field-sm-padding-x: .625rem;--p-form-field-sm-padding-y: .375rem;--p-form-field-lg-padding-x: .875rem;--p-form-field-lg-padding-y: .625rem;--p-form-field-border-radius: .375rem;--p-form-field-transition-duration: .2s;--p-form-field-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), 0 1px 2px 0 rgba(18, 18, 23, .05);--p-focus-ring-width: 1px;--p-focus-ring-style: solid;--p-focus-ring-color: color-mix(in srgb, var(--p-primary-color) 100%, transparent);--p-focus-ring-offset: 2px;--p-toggleswitch-width: 2.5rem;--p-toggleswitch-height: 1.5rem;--p-toggleswitch-border-radius: 30px;--p-toggleswitch-gap: .25rem;--p-toggleswitch-border-width: 1px;--p-toggleswitch-transition-duration: .2s;--p-toggleswitch-slide-duration: .2s;--p-toggleswitch-handle-size: 1rem;--p-toggleswitch-handle-border-radius: 9999px}:root{color-scheme:light dark;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-secondary: #6f7385;--p-secondary-50: color-mix(in srgb, var(--p-secondary) 5%, white);--p-secondary-100: color-mix(in srgb, var(--p-secondary) 10%, white);--p-secondary-200: color-mix(in srgb, var(--p-secondary) 20%, white);--p-secondary-300: color-mix(in srgb, var(--p-secondary) 35%, white);--p-secondary-400: color-mix(in srgb, var(--p-secondary) 65%, white);--p-secondary-500: var(--p-secondary);--p-secondary-600: color-mix(in srgb, var(--p-secondary) 80%, black);--p-secondary-700: color-mix(in srgb, var(--p-secondary) 65%, black);--p-secondary-800: color-mix(in srgb, var(--p-secondary) 55%, black);--p-secondary-900: color-mix(in srgb, var(--p-secondary) 50%, black);--p-secondary-950: color-mix(in srgb, var(--p-secondary) 30%, black);--p-danger: rgb(239, 68, 68);--p-danger-50: color-mix(in srgb, var(--p-danger) 5%, white);--p-danger-100: color-mix(in srgb, var(--p-danger) 10%, white);--p-danger-200: color-mix(in srgb, var(--p-danger) 20%, white);--p-danger-300: color-mix(in srgb, var(--p-danger) 30%, white);--p-danger-400: color-mix(in srgb, var(--p-danger) 40%, white);--p-danger-500: var(--p-danger);--p-danger-600: color-mix(in srgb, var(--p-danger) 80%, black);--p-danger-700: color-mix(in srgb, var(--p-danger) 70%, black);--p-danger-800: color-mix(in srgb, var(--p-danger) 60%, black);--p-danger-900: color-mix(in srgb, var(--p-danger) 50%, black);--p-danger-950: color-mix(in srgb, var(--p-danger) 40%, black);--p-success: rgb(34, 197, 94);--p-success-50: color-mix(in srgb, var(--p-success) 5%, white);--p-success-100: color-mix(in srgb, var(--p-success) 10%, white);--p-success-200: color-mix(in srgb, var(--p-success) 20%, white);--p-success-300: color-mix(in srgb, var(--p-success) 30%, white);--p-success-400: color-mix(in srgb, var(--p-success) 40%, white);--p-success-500: var(--p-success);--p-success-600: color-mix(in srgb, var(--p-success) 80%, black);--p-success-700: color-mix(in srgb, var(--p-success) 70%, black);--p-success-800: color-mix(in srgb, var(--p-success) 60%, black);--p-success-900: color-mix(in srgb, var(--p-success) 50%, black);--p-success-950: color-mix(in srgb, var(--p-success) 40%, black);--p-warn: rgb(249, 115, 22);--p-warn-50: color-mix(in srgb, var(--p-warn) 5%, white);--p-warn-100: color-mix(in srgb, var(--p-warn) 10%, white);--p-warn-200: color-mix(in srgb, var(--p-warn) 20%, white);--p-warn-300: color-mix(in srgb, var(--p-warn) 30%, white);--p-warn-400: color-mix(in srgb, var(--p-warn) 40%, white);--p-warn-500: var(--p-warn);--p-warn-600: color-mix(in srgb, var(--p-warn) 80%, black);--p-warn-700: color-mix(in srgb, var(--p-warn) 70%, black);--p-warn-800: color-mix(in srgb, var(--p-warn) 60%, black);--p-warn-900: color-mix(in srgb, var(--p-warn) 50%, black);--p-warn-950: color-mix(in srgb, var(--p-warn) 40%, black);--p-info: rgb(14, 165, 233);--p-info-50: color-mix(in srgb, var(--p-info) 5%, white);--p-info-100: color-mix(in srgb, var(--p-info) 10%, white);--p-info-200: color-mix(in srgb, var(--p-info) 20%, white);--p-info-300: color-mix(in srgb, var(--p-info) 30%, white);--p-info-400: color-mix(in srgb, var(--p-info) 40%, white);--p-info-500: var(--p-info);--p-info-600: color-mix(in srgb, var(--p-info) 80%, black);--p-info-700: color-mix(in srgb, var(--p-info) 70%, black);--p-info-800: color-mix(in srgb, var(--p-info) 60%, black);--p-info-900: color-mix(in srgb, var(--p-info) 50%, black);--p-info-950: color-mix(in srgb, var(--p-info) 40%, black);--p-help: rgb(168, 85, 247);--p-help-50: color-mix(in srgb, var(--p-help) 5%, white);--p-help-100: color-mix(in srgb, var(--p-help) 10%, white);--p-help-200: color-mix(in srgb, var(--p-help) 20%, white);--p-help-300: color-mix(in srgb, var(--p-help) 30%, white);--p-help-400: color-mix(in srgb, var(--p-help) 40%, white);--p-help-500: var(--p-help);--p-help-600: color-mix(in srgb, var(--p-help) 80%, black);--p-help-700: color-mix(in srgb, var(--p-help) 70%, black);--p-help-800: color-mix(in srgb, var(--p-help) 60%, black);--p-help-900: color-mix(in srgb, var(--p-help) 50%, black);--p-help-950: color-mix(in srgb, var(--p-help) 40%, black);--p-accent: rgb(20, 184, 166);--p-accent-50: color-mix(in srgb, var(--p-accent) 5%, white);--p-accent-100: color-mix(in srgb, var(--p-accent) 10%, white);--p-accent-200: color-mix(in srgb, var(--p-accent) 20%, white);--p-accent-300: color-mix(in srgb, var(--p-accent) 30%, white);--p-accent-400: color-mix(in srgb, var(--p-accent) 40%, white);--p-accent-500: var(--p-accent);--p-accent-600: color-mix(in srgb, var(--p-accent) 80%, black);--p-accent-700: color-mix(in srgb, var(--p-accent) 70%, black);--p-accent-800: color-mix(in srgb, var(--p-accent) 60%, black);--p-accent-900: color-mix(in srgb, var(--p-accent) 50%, black);--p-accent-950: color-mix(in srgb, var(--p-accent) 40%, black);--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-content-border-radius: 6px;--p-font-heading-family: var(--v-font-family-head, Arial);--p-font-heading-scale: 1;--p-font-heading-line-height: 1.5;--p-font-heading-letter-spacing: normal;--p-font-heading-stretch: normal;--p-font-heading-variation-settings: normal;--p-font-body-scale: 1;--p-font-body-line-height: 1.5;--p-font-body-letter-spacing: normal;--p-font-body-stretch: normal;--p-font-body-variation-settings: normal;--p-font-mono-family: ui-monospace}:root{--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}@media(prefers-color-scheme:dark){:root:not(.w-theme-light){--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}}:root.w-theme-dark,.w-theme-dark{color-scheme:dark;--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}:root.w-theme-light,.w-theme-light{color-scheme:light;--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}:host{--kx-picker-shadow: var(--p-select-overlay-shadow);--kx-picker-option-icon-size: 17px;--kx-picker-option-icon-gap: 10px;--kx-picker-option-stack-gap: 1px;--kx-picker-option-title-size: 13px;--kx-picker-option-title-weight: 600;--kx-picker-option-subtitle-size: 11.5px;--kx-picker-option-subtitle-line-height: 1.4}.kx-ps{width:100%;text-align:start;font:inherit}.anchored-panel>.p-select-overlay.kx-ps-panel{position:static;width:100%;display:flex;flex-direction:column;max-height:var(--anchored-panel-available-height);overflow:hidden}.kx-ps-panel>.p-select-header{flex:none}.kx-ps-options{min-height:0;overflow-y:auto}.kx-ps-options>li{flex:none}.kx-ps-val{display:flex;align-items:center;gap:8px;min-width:0}.kx-ps-val-ico{width:16px;height:16px;color:var(--p-primary-color);flex:none}.kx-ps-val-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-ps-ph{color:var(--p-text-muted-color)}.kx-ps-option{gap:var(--kx-picker-option-icon-gap)}.kx-ps-opt-ico{width:var(--kx-picker-option-icon-size);height:var(--kx-picker-option-icon-size);flex:none}.kx-ps-opt-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--kx-picker-option-stack-gap)}.kx-ps-opt-title{font-size:var(--kx-picker-option-title-size);font-weight:var(--kx-picker-option-title-weight);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.kx-ps-opt-sub{font-size:var(--kx-picker-option-subtitle-size);line-height:var(--kx-picker-option-subtitle-line-height);color:var(--p-text-muted-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.spin{animation:kx-spin 1s linear infinite}@keyframes kx-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spin{animation:none}}.kx-head{display:flex;align-items:center;gap:12px;padding:20px 24px 14px;flex-wrap:wrap}.kx-head-icon{width:40px;height:40px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);color:var(--p-primary-color)}.kx-head-icon svg{width:22px;height:22px}.kx-head-text{min-width:0}.kx-title{font-size:17px;font-weight:700;color:var(--p-text-color);margin:0}.kx-head-sub{font-size:13px;color:var(--p-text-muted-color);margin:2px 0 0}.kx-head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}.kx-modal-head-icon{width:38px;height:38px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);color:var(--p-primary-color)}.kx-modal-head-icon svg{width:20px;height:20px}.kx-modal-head-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.kx-modal-head-title{font-size:15.5px;font-weight:700;color:var(--p-text-color);line-height:1.2}.kx-modal-head-sub{font-size:12.5px;font-weight:400;color:var(--p-text-muted-color);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-empty{text-align:center;padding:44px 24px;display:flex;flex-direction:column;align-items:center;gap:8px}.kx-empty-ico{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 12%,transparent);color:var(--p-primary-color);margin-bottom:4px}.kx-empty-ico svg{width:28px;height:28px}.kx-empty-title{font-size:15px;font-weight:700;color:var(--p-text-color);margin:0}.kx-empty-sub{font-size:13px;color:var(--p-text-muted-color);max-width:380px;margin:0}.kx-empty>.p-button{margin-top:6px}.kx-empty-actions{display:flex;gap:8px;margin-top:6px}.kx-loading{display:flex;align-items:center;gap:8px;color:var(--p-text-muted-color);font-size:13px;padding:24px}.kx-err{margin:0 20px 8px;padding:9px 12px;border-radius:10px;font-size:13px;background:color-mix(in srgb,var(--p-danger-500) 12%,transparent);color:var(--p-danger-600, var(--p-danger-500))}.kx-err.inline{margin:12px 0 0}.kx-empty.kx-empty-spacious{padding:60px 24px;gap:9px}.kx-empty-spacious .kx-empty-ico{width:58px;height:58px;margin-bottom:5px}.kx-empty-spacious .kx-empty-ico svg{width:27px;height:27px}.kx-empty-spacious .kx-empty-title{font-size:14.5px}.kx-empty-spacious .kx-empty-sub{font-size:12.5px;max-width:360px;line-height:1.55}.kx-empty-ico.primary{background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);border:1px solid color-mix(in srgb,var(--p-primary-color) 28%,transparent)}.kx-empty-ico.muted{background:var(--kx-surface-2);color:color-mix(in srgb,var(--p-text-color) 45%,transparent);border:1px solid var(--p-content-border-color)}.kx-empty>.kx-empty-cta{margin-top:8px;padding-inline:16px}.kx-loading.kx-loading-centered{flex:1;display:grid;place-items:center;padding:64px 20px}.kx-loading-inner{display:flex;flex-direction:column;align-items:center;gap:12px;font-size:13px}.kx-loading-inner svg{width:24px;height:24px}.kx-tag-sm,.kx-tag-sm.kx-tag-sm{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:var(--kx-radius-tag, 6px);font-size:10.5px;font-weight:600;line-height:1.5;white-space:nowrap}.kx-tag-sm svg,.kx-tag-sm.kx-tag-sm svg{width:12px;height:12px}.kx-tag-caps,.kx-tag-caps.kx-tag-caps{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:var(--kx-radius-tag, 6px);font-size:9px;font-weight:700;line-height:1.5;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}.kx-tag-caps svg,.kx-tag-caps.kx-tag-caps svg{width:11px;height:11px}:host,:root{--kx-surface-1: color-mix(in srgb, var(--p-content-background) 96%, var(--p-text-color) 4%);--kx-surface-2: color-mix(in srgb, var(--p-content-background) 92%, var(--p-text-color) 8%);--kx-surface-3: color-mix(in srgb, var(--p-content-background) 86%, var(--p-text-color) 14%);--kx-surface-4: color-mix(in srgb, var(--p-content-background) 78%, var(--p-text-color) 22%);--kx-border-strong: color-mix(in srgb, var(--p-content-border-color) 60%, var(--p-text-color) 40%);--kx-border-stronger: color-mix(in srgb, var(--p-content-border-color) 30%, var(--p-text-color) 70%);--kx-text-faint: color-mix(in srgb, var(--p-text-muted-color) 70%, var(--p-content-background) 30%);--kx-text-fainter: color-mix(in srgb, var(--p-text-muted-color) 45%, var(--p-content-background) 55%);--kx-wash-primary: color-mix(in srgb, var(--p-primary-color) 12%, var(--p-content-background) 88%);--kx-wash-success: color-mix(in srgb, var(--p-success-500) 12%, var(--p-content-background) 88%);--kx-wash-info: color-mix(in srgb, var(--p-info-500) 12%, var(--p-content-background) 88%);--kx-wash-warn: color-mix(in srgb, var(--p-warn-500) 12%, var(--p-content-background) 88%);--kx-wash-danger: color-mix(in srgb, var(--p-danger-500) 12%, var(--p-content-background) 88%);--kx-wash-help: color-mix(in srgb, var(--p-help-500) 12%, var(--p-content-background) 88%);--kx-font-heading: "Outfit", system-ui, sans-serif;--kx-font-body: "Inter", system-ui, sans-serif;--kx-radius-4: 4px;--kx-radius-6: 6px;--kx-radius-8: 8px;--kx-radius-10: 10px;--kx-radius-14: 14px;--kx-radius-16: 16px;--kx-radius-tag: var(--p-content-border-radius, 6px);--kx-control-height: 34px;--kx-control-height-sm: 30px;--kx-rail-width: 264px;--kx-reading-measure: 880px;--kx-row-height: 32px;--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .08);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .12);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .18);--kx-overlay-hover: color-mix(in srgb, var(--p-text-color) 7%, transparent);--kx-overlay-subtle: color-mix(in srgb, var(--p-text-color) 4%, transparent)}@media(prefers-color-scheme:dark){:host(:not(.w-theme-light)),:root:not(.w-theme-light){--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .45);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .6)}}:host(.w-theme-dark),:root.w-theme-dark{--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .45);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .6)}*,:before,:after{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }*,:before,:after{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}:before,:after{--tw-content: ""}html,:host{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dl,dd,h1,h2,h3,h4,h5,h6,hr,figure,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}ol,ul,menu{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}button,[role=button]{cursor:pointer}:disabled{cursor:default}img,svg,video,canvas,audio,iframe,embed,object{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}@supports (-moz-appearance:none){*{scrollbar-color:initial;scrollbar-width:initial}}:host{--kx-modal-shadow: var(--kx-shadow-lg);display:block;height:100%;min-height:0}:host>div{height:100%;min-height:0}*,*:before,*:after{box-sizing:border-box}.kx{font-family:inherit;color:var(--p-text-color);background:var(--p-content-background);height:100%;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}.kx-head-title{font-size:17px;font-weight:700;color:var(--p-text-color);margin:0}.kx-count{font-size:12.5px;color:var(--p-text-muted-color);display:inline-flex;align-items:center;gap:5px}.kx-search{position:relative;display:flex;align-items:center}.kx-search-ico{position:absolute;left:10px;width:15px;height:15px;color:var(--p-text-muted-color);pointer-events:none}.kx-search-input{height:34px;width:220px;max-width:40vw;padding:0 10px 0 30px;font:inherit;font-size:13px;color:var(--p-text-color);background:var(--p-content-background);border:1px solid var(--p-content-border-color);border-radius:8px;transition:border-color .15s}.kx-body{flex:1 0 auto;padding:6px 20px 20px;display:flex;flex-direction:column;gap:14px}.kx-list{display:flex;flex-direction:column;border:1px solid var(--p-content-border-color);border-radius:14px;overflow:hidden;background:var(--p-content-background);max-width:1100px}.kx-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"main status actions" "foot foot   foot";align-items:center;column-gap:14px;row-gap:6px;padding:10px 14px;border-bottom:1px solid var(--p-content-border-color)}.kx-row:last-child{border-bottom:none}.kx-row.is-open{background:var(--kx-wash-primary)}.kx-row:hover{background:var(--kx-overlay-subtle)}.kx-row.is-open:hover{background:var(--kx-wash-primary)}.kx-open{grid-area:main;display:flex;align-items:center;gap:12px;min-width:0;padding:0;margin:0;border:none;background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer}.kx-ficon{width:38px;height:38px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--kx-wash-primary);color:var(--p-primary-color)}.kx-ficon svg{width:20px;height:20px}.kx-id{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}.kx-name{display:block;font-size:14px;font-weight:600;color:var(--p-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-sub{display:block;font-size:12px;color:var(--p-text-muted-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-open:focus-visible{outline:none}.kx-open:focus-visible .kx-name{text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--p-primary-color)}.kx-rowfoot{grid-area:foot;padding-left:50px;display:flex;flex-direction:column;gap:4px;min-width:0}.kx-rowfoot:empty{display:none}.kx-rowmsg{font-size:11.5px;display:flex;align-items:center;gap:5px;min-width:0}.kx-rowmsg-txt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-rowmsg svg{width:13px;height:13px;flex:none}.kx-rowmsg-error{color:var(--p-danger-600, var(--p-danger-500))}.kx-rowmsg-success{color:var(--p-success-600, var(--p-success-500))}.kx-recover{flex:none;margin-left:2px}.kx-badge{grid-area:status;border:1px solid color-mix(in srgb,currentColor 28%,transparent)}.kx-badge:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}.kx-badge:has(svg):before{display:none}.kx-actions{grid-area:actions;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;min-width:0}.kx-actions .is-active{color:var(--p-primary-color);border-color:color-mix(in srgb,var(--p-primary-color) 38%,var(--p-content-border-color));background:color-mix(in srgb,var(--p-primary-color) 10%,transparent)}.kx-admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}.kx-admin-item{min-width:0;padding:10px 11px;border:1px solid var(--p-content-border-color);border-radius:10px;background:var(--p-content-background)}.kx-admin-item>span{display:block;margin-bottom:4px;color:var(--p-text-muted-color);font-size:10.5px;font-weight:700;letter-spacing:.055em;text-transform:uppercase}.kx-admin-item strong{display:block;overflow:hidden;color:var(--p-text-color);font-size:12.5px;text-overflow:ellipsis;white-space:nowrap}.kx-admin-item strong em{color:var(--p-text-muted-color);font-size:11px;font-style:normal;font-weight:600}.kx-admin-item code{display:block;margin-top:4px;overflow:hidden;color:var(--p-text-muted-color);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;text-overflow:ellipsis;white-space:nowrap}.kx-admin-item a{display:inline-block;margin-top:4px;color:var(--p-primary-color);font-size:11px;font-weight:650;text-decoration:none}.kx-admin-item a:hover{text-decoration:underline}@media(max-width:560px){.kx-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"main   actions" "status status" "foot   foot";align-items:center;row-gap:8px}.kx-badge{justify-self:start}.kx-rowfoot{padding-left:0}}@media(max-width:640px){.kx-admin-grid{grid-template-columns:1fr}}.kx-modal{--p-dialog-content-padding: 0;max-width:calc(100vw - 32px);max-height:90vh}.kx-modal>.kx-dialog-header{padding:16px 18px;border-bottom:1px solid var(--p-content-border-color);gap:10px}.kx-modal>.kx-dialog-content{padding:0;display:flex;flex-direction:column;min-height:0;overflow:hidden}.kx-modal>.kx-dialog-footer{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--p-content-border-color)}.kx-2p-r-body>*{animation:kx-pane-fade .28s ease both}@keyframes kx-pane-fade{0%{opacity:0}to{opacity:1}}@media(prefers-reduced-motion:reduce){.kx-2p-r-body>*{animation:none}}.kx-modal-body{padding:18px;font-size:13.5px;line-height:1.5;color:var(--p-text-color);overflow-y:auto}.kx-modal-body p{margin:0 0 10px}.kx-modal-body p:last-child{margin-bottom:0}.kx-form{display:flex;flex-direction:column;gap:14px}.kx-field{display:flex;flex-direction:column;gap:5px}.kx-field-lbl{font-size:12.5px;font-weight:600;color:var(--p-text-color)}.kx-req{color:var(--p-danger-500)}.kx-input{height:36px;padding:0 10px;font:inherit;font-size:13px;color:var(--p-text-color);background:var(--p-content-background);border:1px solid var(--p-content-border-color);border-radius:8px;transition:border-color .15s;width:100%}.kx-select{width:100%;min-width:0}.kx-check,.kx-delopt input{appearance:none;-webkit-appearance:none;width:18px;height:18px;margin:0;flex:none;display:grid;place-content:center;border:1px solid var(--p-content-border-color);border-radius:8px;background:var(--p-content-background);cursor:pointer;transition:border-color .15s,background-color .15s,box-shadow .15s,opacity .15s}.kx-check:before,.kx-delopt input:before{content:"";width:5px;height:9px;border:solid var(--p-button-primary-color);border-width:0 2px 2px 0;transform:rotate(45deg) scale(0);transform-origin:center;transition:transform .12s ease-out}.kx-check:checked,.kx-delopt input:checked{border-color:var(--p-primary-color);background:var(--p-primary-color)}.kx-check:focus-visible{outline:var(--p-focus-ring-width) var(--p-focus-ring-style) var(--p-focus-ring-color);outline-offset:var(--p-focus-ring-offset)}.kx-check:checked:before,.kx-delopt input:checked:before{transform:rotate(45deg) scale(1)}.kx-check:disabled,.kx-delopt input:disabled{opacity:.55;cursor:not-allowed}.kx-field-hint{font-size:11px;line-height:1.3;color:var(--p-text-muted-color);margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.kx-custom-host{min-height:180px;width:100%}.kx-custom-host>*{display:block;width:100%}.kx-delopts{display:flex;flex-direction:column;gap:10px;margin-top:14px}.kx-delopt{display:flex;align-items:flex-start;gap:10px;cursor:pointer}.kx-delopt input{margin-top:2px}.kx-delopt-copy{min-width:0;display:flex;flex-direction:column;gap:2px}.kx-delopt-t{display:block;font-size:13px;font-weight:600;color:var(--p-text-color)}.kx-delopt-d{display:block;font-size:11.5px;line-height:1.35;color:var(--p-text-muted-color)}.kx-modal-2p{width:min(880px,calc(100vw - 40px));max-width:100%}.kx-modal-solo{width:min(620px,calc(100vw - 40px));max-width:100%}.kx-modal-manage{width:min(760px,calc(100vw - 40px));max-width:100%}.kx-manage-host{display:block;min-height:180px}.kx-2p{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);min-height:0;flex:1;overflow:hidden}.kx-2p-solo{grid-template-columns:minmax(0,1fr)}.kx-2p-solo .kx-2p-r-body{padding-top:16px}.kx-2p-l{padding:16px;overflow-y:auto;border-right:1px solid var(--p-content-border-color);display:flex;flex-direction:column;gap:10px}.kx-2p-r{display:flex;flex-direction:column;min-width:0;min-height:0;background:color-mix(in srgb,var(--p-text-color) 2.5%,var(--p-content-background))}.kx-2p-r-head{padding:14px 18px 10px;font-size:12.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-2p-r-body{padding:0 18px 18px;overflow-y:auto;flex:1;min-height:0}.kx-2p-r-note{margin:0;font-size:12.5px;color:var(--p-text-muted-color)}.kx-foot-err{order:-1;flex:1 0 100%;margin:0;max-width:none}.kx-foot-err+.p-button{margin-left:auto}.kx-foot-delete{margin-right:auto}.kx-cat-search{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;flex:none;border:1px solid var(--p-content-border-color);border-radius:8px;color:var(--p-text-muted-color)}.kx-cat-search svg{width:15px;height:15px;flex:none}.kx-cat-search input{flex:1;border:none;background:transparent;outline:none;font:inherit;font-size:13px;color:var(--p-text-color)}.kx-cat{display:flex;flex-direction:column;gap:6px}.kx-cat-card{display:flex;align-items:center;gap:11px;text-align:left;width:100%;padding:10px 12px;border:1px solid var(--p-content-border-color);border-radius:14px;background:transparent;color:var(--p-text-color);cursor:pointer;transition:border-color .14s,background .14s}.kx-cat-card:hover{background:color-mix(in srgb,var(--p-text-color) 5%,transparent)}.kx-cat-card.sel{border-color:var(--p-primary-color);background:color-mix(in srgb,var(--p-primary-color) 9%,transparent)}.kx-cat-ico{width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:11px;background:color-mix(in srgb,var(--p-primary-color) 12%,transparent);color:var(--p-primary-color)}.kx-cat-ico svg{width:18px;height:18px}.kx-cat-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.kx-cat-name{font-size:13px;font-weight:600}.kx-cat-desc{font-size:11px;line-height:1.3;color:var(--p-text-muted-color);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.kx-cat-check{width:17px;height:17px;flex:none;color:var(--p-primary-color);visibility:hidden}.kx-cat-card.sel .kx-cat-check{visibility:visible}.kx-cat-empty{font-size:12.5px;color:var(--p-text-muted-color);padding:4px 2px}@media(max-width:760px){.kx-modal-2p{width:560px}.kx-2p{grid-template-columns:1fr}.kx-2p-l{border-right:none;border-bottom:1px solid var(--p-content-border-color)}}.kx-flow{display:flex;flex-direction:column;gap:14px;padding:6px 0 0}.kx-pipe,.kx-stage{display:flex;flex-direction:column;gap:8px}.kx-stage-mid{background:transparent}.kx-stage-head{display:flex;align-items:center;gap:8px}.kx-stage-ico{width:26px;height:26px;border-radius:11px;flex:none;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);color:var(--p-primary-color)}.kx-stage-ico svg{width:15px;height:15px}.kx-stage-lbl{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-stage-cfg{margin-top:2px}.kx-stage-badges{display:flex;flex-wrap:wrap;gap:6px}.kx-stage-desc{margin:0;font-size:12px;line-height:1.4;color:var(--p-text-muted-color)}.kx-stage-opts{display:flex;flex-direction:column;gap:6px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--p-content-border-color)}.kx-opts-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-pipe-conn{display:flex;align-items:center;justify-content:center;gap:6px;padding:5px 0;color:var(--p-text-muted-color);font-size:11px}.kx-pipe-conn svg{width:16px;height:16px}.kx-runopts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.kx-detect{display:flex;align-items:center;gap:6px;font-size:11.5px;line-height:1.35;padding:7px 9px;border-radius:8px;color:var(--p-success-600, var(--p-success-500));background:color-mix(in srgb,var(--p-success-500) 10%,transparent)}.kx-detect svg{width:14px;height:14px;flex:none}.kx-detect-warn{color:var(--p-warn-600, var(--p-warn-500));background:color-mix(in srgb,var(--p-warn-500) 12%,transparent)}.kx-flow-enable{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--p-text-muted-color);cursor:pointer}.kx-flow-enable input{width:16px;height:16px;accent-color:var(--p-primary-color)}.kx-textarea{height:auto;min-height:72px;padding:8px 10px;line-height:1.4;resize:vertical}.kx-wcmount{width:100%}.kx-wcmount>div{display:block;width:100%}.kx-metrics{display:flex;flex-wrap:wrap;gap:5px 6px;margin-top:5px;min-width:0}.kx-metric{display:inline-flex;align-items:center;gap:5px;max-width:100%;font-size:11.5px;line-height:1.6;padding:2px 9px;border-radius:6px;background:color-mix(in srgb,var(--p-text-color) 6%,transparent);color:var(--p-text-color)}.kx-metric-i{width:13px;height:13px;color:var(--p-text-muted-color);flex:none}.kx-metric-k{color:var(--p-text-muted-color);font-weight:600;flex:none}.kx-metric-v{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-metric-details{margin-top:5px}.kx-metric-more{display:inline-flex;align-items:center;gap:4px;cursor:pointer;list-style:none;font-size:11.5px;font-weight:600;color:var(--p-text-muted-color);user-select:none}.kx-metric-more::-webkit-details-marker{display:none}.kx-metric-more:before{content:"";width:0;height:0;border-left:4px solid currentColor;border-top:3px solid transparent;border-bottom:3px solid transparent;transition:transform .15s;flex:none}.kx-metric-details[open] .kx-metric-more:before{transform:rotate(90deg)}.kx-metric-more:hover{color:var(--p-text-color)}.kx-metrics-detail{margin-top:4px}@media(prefers-reduced-motion:reduce){.kx-modal{transition:none}}.kx-cat-search:focus-within{border-color:var(--p-focus-ring-color);box-shadow:var(--p-focus-ring-shadow)}.kx-cat-search input:focus{box-shadow:none}.kx-cat-card:focus-visible{border-color:var(--p-focus-ring-color);outline:none;box-shadow:var(--p-focus-ring-shadow)}.kx-menu{position:relative;display:inline-flex}.kx-menu-trigger.is-active{color:var(--p-primary-color);border-color:color-mix(in srgb,var(--p-primary-color) 38%,var(--p-content-border-color));background:var(--kx-wash-primary)}.kx-menu-panel{display:flex;flex-direction:column;gap:1px;padding:6px;border:1px solid var(--p-content-border-color);border-radius:var(--kx-radius-14);background:var(--p-content-background);box-shadow:var(--kx-shadow-lg);max-height:min(70vh,460px);overflow-y:auto}.kx-menu-group{padding:8px 10px 4px;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-menu-group.is-first{padding-top:4px}.kx-menu-sep{height:1px;margin:5px 6px;background:var(--p-content-border-color)}.kx-menu-item{display:flex;align-items:flex-start;gap:10px;width:100%;padding:8px 10px;text-align:left;border:none;border-radius:var(--kx-radius-10);background:transparent;color:var(--p-text-color);cursor:pointer;transition:background .12s}.kx-menu-item:hover,.kx-menu-item:focus-visible{background:var(--kx-overlay-hover);outline:none}.kx-menu-item:disabled{opacity:.5;cursor:not-allowed}.kx-menu-item-ico{width:17px;height:17px;flex:none;margin-top:1px;color:var(--p-text-muted-color)}.kx-menu-item-body{display:flex;flex-direction:column;gap:1px;min-width:0}.kx-menu-item-label{display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600}.kx-menu-item-desc{font-size:11px;line-height:1.35;color:var(--p-text-muted-color)}.kx-menu-item-warn{width:12px;height:12px;color:var(--p-warn-600, var(--p-warn-500))}.kx-menu-item.is-warn .kx-menu-item-ico{color:var(--p-warn-600, var(--p-warn-500))}.kx-menu-item.is-danger .kx-menu-item-ico{color:var(--p-danger-600, var(--p-danger-500))}.kx-menu-item.is-danger:hover,.kx-menu-item.is-danger:focus-visible{background:var(--kx-wash-danger)}.kx-menu-item.is-danger .kx-menu-item-label{color:var(--p-danger-600, var(--p-danger-500))}.kx-drawer-scrim{position:fixed;inset:0;z-index:60;background:color-mix(in srgb,var(--p-text-color) 40%,transparent);animation:kx-fade .18s ease both}.kx-drawer{position:fixed;top:0;right:0;height:100%;width:min(468px,100vw);z-index:61;display:flex;flex-direction:column;min-height:0;background:var(--p-content-background);border-left:1px solid var(--p-content-border-color);box-shadow:var(--kx-shadow-lg);animation:kx-slide-in .22s cubic-bezier(.22,.61,.36,1) both}@keyframes kx-fade{0%{opacity:0}to{opacity:1}}@keyframes kx-slide-in{0%{transform:translate(24px);opacity:0}to{transform:none;opacity:1}}@media(prefers-reduced-motion:reduce){.kx-drawer,.kx-drawer-scrim{animation:none}}.kx-drawer-head{display:flex;align-items:center;gap:11px;padding:16px 16px 14px;border-bottom:1px solid var(--p-content-border-color);flex:none}.kx-drawer-id{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}.kx-drawer-name{font-size:15px;font-weight:700;color:var(--p-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-drawer-sub{font-size:12px;color:var(--p-text-muted-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-drawer-controls{display:flex;align-items:center;gap:6px;flex:none}.kx-drawer .kx-badge{flex:none}.kx-tabs{display:flex;gap:2px;padding:6px 12px 0;border-bottom:1px solid var(--p-content-border-color);flex:none}.kx-tab{display:inline-flex;align-items:center;gap:6px;padding:8px 12px 10px;margin-bottom:-1px;border:none;border-bottom:2px solid transparent;background:transparent;cursor:pointer;font:inherit;font-size:12.5px;font-weight:600;color:var(--p-text-muted-color);transition:color .12s}.kx-tab svg{width:15px;height:15px}.kx-tab:hover{color:var(--p-text-color)}.kx-tab.is-active{color:var(--p-primary-color);border-bottom-color:var(--p-primary-color)}.kx-tab:focus-visible{outline:none;color:var(--p-primary-color)}.kx-drawer-body{flex:1;min-height:0;overflow-y:auto;padding:16px}.kx-dsec{display:flex;flex-direction:column;gap:16px}.kx-dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}.kx-dfact{padding:10px 11px;border:1px solid var(--p-content-border-color);border-radius:var(--kx-radius-10);background:var(--kx-surface-1);min-width:0}.kx-dfact-k{display:block;margin-bottom:4px;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-dfact-v{display:block;font-size:13px;color:var(--p-text-color);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-dsub{display:flex;flex-direction:column;gap:8px}.kx-dsub-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-dnote{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--p-text-muted-color);padding:4px 0}.kx-dnote-err{color:var(--p-danger-600, var(--p-danger-500))}.kx-dsec-foot{padding-top:4px}.kx-dmsg{margin:0;font-size:12.5px;line-height:1.5;padding:10px 12px;border-radius:var(--kx-radius-10);background:var(--kx-surface-1);color:var(--p-text-color);word-break:break-word}.kx-dmsg.is-err{background:var(--kx-wash-danger);color:var(--p-danger-700, var(--p-danger-600, var(--p-danger-500)))}.kx-dmsg.is-ok{background:var(--kx-wash-success);color:var(--p-success-700, var(--p-success-600, var(--p-success-500)))}.kx-errcard{display:flex;flex-direction:column;gap:9px;padding:13px 14px;border:1px solid color-mix(in srgb,var(--p-danger-500) 40%,var(--p-content-border-color));border-radius:var(--kx-radius-14);background:var(--kx-wash-danger)}.kx-errcard-head{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:var(--p-danger-700, var(--p-danger-600, var(--p-danger-500)))}.kx-errcard-head svg{width:17px;height:17px;flex:none}.kx-errcard-cause{margin:0;font-size:12.5px;line-height:1.5;color:var(--p-text-color);word-break:break-word}.kx-errcard .p-button{align-self:flex-start}.kx-hint{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:var(--kx-radius-10);background:var(--kx-wash-info);font-size:12px;line-height:1.45;color:var(--p-text-color)}.kx-hint svg{width:16px;height:16px;flex:none;margin-top:1px;color:var(--p-info-600, var(--p-info-500))}.kx-history{display:flex;flex-direction:column;gap:20px}.kx-history-group{display:flex;flex-direction:column;gap:8px}.kx-history-group>h3{margin:0}.kx-history-entry{display:flex;flex-direction:column;gap:6px;padding:10px 11px;border:1px solid var(--p-content-border-color);border-radius:var(--kx-radius-10);background:var(--kx-surface-1);min-width:0}.kx-history-head{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}.kx-history-title{font-size:13px;color:var(--p-text-color);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-history-state{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-history-meta{margin:0;font-size:12px;color:var(--p-text-muted-color)}.kx-history-kv{margin:0;display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;align-items:baseline}.kx-history-kv .kx-dfact-k{margin:0}.kx-history-v{margin:0;font-size:13px;color:var(--p-text-color);overflow-wrap:anywhere}', Vs = { props: { type: "object", properties: { mode: { type: "string", default: "", description: '"create" when mounted as the workspace "+" -> Automation create view: opens straight into the install popup and emits created/close. Unset renders the full Automations page.' }, "parent-id": { type: "string", default: "", description: "Workspace folder to place the new automation under (create mode; empty = root)." }, "component-id": { type: "string", default: "", description: "Optional owning component; scopes rows and places newly created Automations under that component." }, input: { type: "string", default: "", description: "Initial declared install inputs as a JSON object, supplied by the owning component." }, "type-id": { type: "string", default: "", description: "Optional registry automation type id to preselect in create or component mode. The manager treats the id opaquely and mounts that type's declared create view." } } } }, Ks = {
+  wippy: Vs
 };
-class Ts extends In {
+class qs extends Io {
   static get wippyConfig() {
     return {
-      propsSchema: Rs.wippy.props,
+      propsSchema: Ks.wippy.props,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: Ms
+      inlineCss: Hs
     };
   }
   static get vueConfig() {
-    return { rootComponent: As, plugins: [Vn] };
+    return { rootComponent: Us, plugins: [Vo] };
   }
 }
-Qn(import.meta.url, Ts);
+Qo(import.meta.url, qs);
 //# sourceMappingURL=index.js.map

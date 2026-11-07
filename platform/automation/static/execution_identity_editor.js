@@ -1,41 +1,41 @@
-import { W as T, e as $, _ as j, u as F, a as K, b as G } from "./errMsg-BT807vrI.js";
-import { defineComponent as W, ref as l, computed as H, watch as J, onBeforeUnmount as O, openBlock as c, createElementBlock as v, createCommentVNode as m, Fragment as A, createElementVNode as f, toDisplayString as x, createVNode as Q, createTextVNode as X, createBlock as Y, unref as I } from "vue";
-import { api as L, define as Z } from "@wippy-fe/proxy";
-import { r as ee } from "./principals-Bury5BH3.js";
-import { s as te } from "./execution-identity-editor-BMqd4DxB.js";
+import { W as T, e as $, u as j, a as F, b as K } from "./errMsg-BT807vrI.js";
+import { defineComponent as W, ref as l, computed as G, watch as H, onBeforeUnmount as J, openBlock as c, createElementBlock as v, createCommentVNode as m, Fragment as A, createElementVNode as f, toDisplayString as x, createVNode as O, createTextVNode as Q, createBlock as X, unref as I } from "vue";
+import { api as L, define as Y } from "@wippy-fe/proxy";
+import { r as Z } from "./principals-Bury5BH3.js";
+import { s as ee } from "./execution-identity-editor-Cd9uOMxs.js";
 import "@iconify/vue";
-const ne = {
+const te = {
   "aria-label": "Execution account",
   class: "kx-identity-editor"
-}, oe = {
+}, ne = {
   key: 0,
   role: "status"
-}, re = { "aria-label": "Runs as" }, ae = { "aria-label": "Authorized by" }, ie = ["disabled"], ue = {
+}, oe = { "aria-label": "Runs as" }, re = { "aria-label": "Authorized by" }, ae = ["disabled"], ie = {
   key: 2,
   role: "alert"
-}, se = {
+}, ue = {
   key: 3,
   role: "status"
-}, le = {
+}, se = {
   key: 4,
   role: "status"
-}, ce = /* @__PURE__ */ W({
+}, le = /* @__PURE__ */ W({
   __name: "ExecutionIdentityEditor",
   props: {
     root: {}
   },
   emits: ["changed", "error"],
-  setup(h, { emit: k }) {
-    const d = h, C = k, n = l(null), o = l(null), i = l(!1), y = l(!1), p = l(""), g = l(!1), b = l(!1), z = l(""), U = l("");
-    let r = 0, _ = null;
-    const N = H(() => !!n.value && !!o.value && !i.value && !y.value && b.value);
+  setup(b, { emit: E }) {
+    const d = b, C = E, n = l(null), o = l(null), i = l(!1), y = l(!1), p = l(""), g = l(!1), _ = l(!1), z = l(""), U = l("");
+    let r = 0, h = null;
+    const N = G(() => !!n.value && !!o.value && !i.value && !y.value && _.value);
     function w(t) {
       p.value = $(t, "Could not change the run-as account"), C("error", { message: p.value, error: t });
     }
     async function V(t) {
       const { data: e } = await L.get("/api/v1/automations/" + encodeURIComponent(t) + "/identity");
       if (!e.success || !e.identity?.principal?.id || !Number.isInteger(e.identity.identity_generation) || e.identity.identity_generation < 0) throw new Error("Could not read the run-as account");
-      const u = e.identity, E = [u.principal, u.authorized_by].filter((a) => !!a).filter((a) => a.kind === "user" || a.kind === "group").map((a) => ({ type: a.kind, id: a.id })), P = await ee(E);
+      const u = e.identity, k = [u.principal, u.authorized_by].filter((a) => !!a).filter((a) => a.kind === "user" || a.kind === "group").map((a) => ({ type: a.kind, id: a.id })), P = await Z(k);
       function B(a) {
         return P.find((S) => S.type === a?.kind && S.id === a?.id)?.label || "Account unavailable";
       }
@@ -46,7 +46,7 @@ const ne = {
     }
     async function q() {
       const t = ++r;
-      if (n.value = null, o.value = null, y.value = !1, p.value = "", g.value = !1, b.value = !1, _ = null, !d.root) {
+      if (n.value = null, o.value = null, y.value = !1, p.value = "", g.value = !1, _.value = !1, h = null, !d.root) {
         i.value = !1;
         return;
       }
@@ -63,13 +63,13 @@ const ne = {
     }
     function D(t) {
       const e = t;
-      !e?.principal || e.principal.kind !== "user" || !e.principal.id || i.value || y.value || (o.value = { kind: "user", id: e.principal.id }, _ = null, p.value = "", g.value = !1, b.value = !0);
+      !e?.principal || e.principal.kind !== "user" || !e.principal.id || i.value || y.value || (o.value = { kind: "user", id: e.principal.id }, h = null, p.value = "", g.value = !1, _.value = !0);
     }
     async function M() {
       if (!N.value || !n.value || !o.value) return;
       const t = r, e = d.root;
-      _ ||= { id: crypto.randomUUID(), principal: { ...o.value }, generation: n.value.identity_generation };
-      const u = _;
+      h ||= { id: crypto.randomUUID(), principal: { ...o.value }, generation: n.value.identity_generation };
+      const u = h;
       i.value = !0, p.value = "", g.value = !1;
       try {
         const { data: s } = await L.post(
@@ -87,34 +87,34 @@ const ne = {
           return;
         }
         if (s.state !== "succeeded" || !Number.isInteger(s.identity_generation)) throw new Error("Identity change is not confirmed");
-        const E = await V(e);
+        const k = await V(e);
         if (t !== r) return;
-        if (E.identity.identity_generation < s.identity_generation) throw new Error("Execution account confirmation is stale");
-        R(E), g.value = !0, _ = null, b.value = !1, C("changed");
+        if (k.identity.identity_generation < s.identity_generation) throw new Error("Execution account confirmation is stale");
+        R(k), g.value = !0, h = null, _.value = !1, C("changed");
       } catch (s) {
         t === r && w(s);
       } finally {
         t === r && (i.value = !1);
       }
     }
-    return J(() => d.root, () => {
+    return H(() => d.root, () => {
       q();
-    }, { immediate: !0 }), O(() => {
+    }, { immediate: !0 }), J(() => {
       r += 1;
-    }), (t, e) => (c(), v("section", ne, [
-      i.value && !n.value ? (c(), v("p", oe, "Loading run-as account…")) : m("", !0),
+    }), (t, e) => (c(), v("section", te, [
+      i.value && !n.value ? (c(), v("p", ne, "Loading run-as account…")) : m("", !0),
       n.value ? (c(), v(A, { key: 1 }, [
         f("dl", null, [
           e[1] || (e[1] = f("dt", null, "Runs as", -1)),
-          f("dd", re, x(z.value), 1),
+          f("dd", oe, x(z.value), 1),
           n.value.authorized_by ? (c(), v(A, { key: 0 }, [
             e[0] || (e[0] = f("dt", null, "Authorized by", -1)),
-            f("dd", ae, x(U.value), 1)
+            f("dd", re, x(U.value), 1)
           ], 64)) : m("", !0)
         ]),
-        Q(T, {
+        O(T, {
           tag: "wc-run-as-picker",
-          attrs: { root: h.root, value: o.value?.id, disabled: i.value || y.value },
+          attrs: { root: b.root, value: o.value?.id, disabled: i.value || y.value },
           onChange: D,
           onError: w
         }, null, 8, ["attrs"]),
@@ -123,12 +123,12 @@ const ne = {
           class: "p-button p-button-secondary",
           disabled: !N.value,
           onClick: M
-        }, "Save run-as account", 8, ie)
+        }, "Save run-as account", 8, ae)
       ], 64)) : m("", !0),
-      p.value ? (c(), v("p", ue, x(p.value), 1)) : m("", !0),
-      g.value ? (c(), v("p", se, "Run-as account saved")) : m("", !0),
-      y.value ? (c(), v("div", le, [
-        e[2] || (e[2] = X(" Identity change is pending. ", -1)),
+      p.value ? (c(), v("p", ie, x(p.value), 1)) : m("", !0),
+      g.value ? (c(), v("p", ue, "Run-as account saved")) : m("", !0),
+      y.value ? (c(), v("div", se, [
+        e[2] || (e[2] = Q(" Identity change is pending. ", -1)),
         f("button", {
           type: "button",
           class: "p-button p-button-secondary",
@@ -137,24 +137,24 @@ const ne = {
       ])) : m("", !0)
     ]));
   }
-}), de = /* @__PURE__ */ j(ce, [["__scopeId", "data-v-55f06e2d"]]), pe = /* @__PURE__ */ W({
+}), ce = /* @__PURE__ */ W({
   __name: "ExecutionIdentityEditorElement",
-  setup(h) {
-    const k = F(), d = K();
-    return (C, n) => (c(), Y(de, {
-      root: I(k).root || "",
+  setup(b) {
+    const E = j(), d = F();
+    return (C, n) => (c(), X(le, {
+      root: I(E).root || "",
       onChanged: n[0] || (n[0] = (o) => I(d)("change", void 0)),
       onError: n[1] || (n[1] = (o) => I(d)("error", o))
     }, null, 8, ["root"]));
   }
-}), ve = { type: "object", properties: { root: { type: "string", default: "" } } };
-class fe extends G {
+}), de = { type: "object", properties: { root: { type: "string", default: "" } } };
+class pe extends K {
   static get wippyConfig() {
-    return { propsSchema: ve, hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"], inlineCss: te };
+    return { propsSchema: de, hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"], inlineCss: ee };
   }
   static get vueConfig() {
-    return { rootComponent: pe };
+    return { rootComponent: ce };
   }
 }
-Z(import.meta.url, fe);
+Y(import.meta.url, pe);
 //# sourceMappingURL=execution_identity_editor.js.map
