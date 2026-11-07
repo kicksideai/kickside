@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.73](https://github.com/kicksideai/kickside/compare/jobs-v0.1.72...jobs-v0.1.73) (2026-11-07)
+
+
+### Bug Fixes
+
+* **jobs:** treat a worker pool that exits before a nudge as absent ([#329](https://github.com/kicksideai/kickside/issues/329)) ([8b4f7d5](https://github.com/kicksideai/kickside/commit/8b4f7d532505478a8d9af8d6a364d5f69527bdf6))
+
 ## [0.1.72](https://github.com/kicksideai/kickside/compare/jobs-v0.1.71...jobs-v0.1.72) (2026-11-06)
 
 
