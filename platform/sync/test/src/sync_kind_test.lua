@@ -24,6 +24,7 @@ type Map = { [string]: any }
 
 local PROCESS_SCOPE = "wippy.security:process"
 local MANAGE = "kickside.automation.agent:automations_manage"
+local READ = "kickside.automation.agent:automations_read"
 local DB = "app:db"
 
 local function read_drive(id: string, key: string): Map?
@@ -515,6 +516,84 @@ local function define_tests()
             test.is_nil(moved)
             test.not_nil(move_err)
             test.contains(tostring(move_err), "destination")
+
+            local keyed = { v = 2, source = "app.fixture:keyed_records",
+                schedule = { type = "interval", expression = "1h" }, backfill = "all" }
+            local plain = install_ok(declaration({ trigger = keyed })) :: Map
+            local added, add_err = exec:call(MANAGE, { action = "reconfigure", id = plain.id,
+                input = declaration({ trigger = keyed, reconcile = true }) })
+            test.is_nil(added)
+            test.contains(tostring(add_err), "reconcile")
+            test.is_nil(read_drive(plain.id, "reconcile"))
+
+            local reconciled = install_ok(declaration({ trigger = keyed, reconcile = true })) :: Map
+            local dropped, drop_err = exec:call(MANAGE, { action = "reconfigure", id = reconciled.id,
+                input = declaration({ trigger = keyed, title = "Dropped reconcile" }) })
+            test.is_nil(dropped)
+            test.contains(tostring(drop_err), "reconcile")
+            test.not_nil(read_drive(reconciled.id, "reconcile"))
+            test.eq((read_drive(reconciled.id, "main") :: Map).applied.declaration.title, "Records to store")
+        end)
+
+        test.it("reconfigures the read_config declaration of a reconcile sync with only a transform change", function()
+            local transform = { kind = "func", ["function"] = "app.fixture:round_transform",
+                resource_id = uuid.v7(), config = { step = "first" } }
+            local installed = install_ok(declaration({ trigger = { v = 2, source = "app.fixture:keyed_records",
+                schedule = { type = "interval", expression = "1h" }, backfill = "all",
+                delivery = { retry_after_ms = 5000 }, poll = { page_size = 50, max_pages_per_run = 4, max_items_per_run = 200 } },
+                transform = transform, reconcile = true })) :: Map
+            local function portable(): Map
+                local read, read_err = exec:call(READ, { action = "read_config", id = installed.id })
+                test.is_nil(read_err, tostring(read_err))
+                return (read :: Map).config._portable_input :: Map
+            end
+
+            local unchanged, unchanged_err = exec:call(MANAGE, { action = "reconfigure", id = installed.id, input = portable() })
+            test.is_nil(unchanged_err, tostring(unchanged_err))
+            test.is_true((unchanged :: Map).success)
+
+            local edited = portable()
+            edited.transform = { kind = transform.kind, ["function"] = transform["function"],
+                resource_id = transform.resource_id, config = { step = "second" } }
+            local result, err = exec:call(MANAGE, { action = "reconfigure", id = installed.id, input = edited })
+            test.is_nil(err, tostring(err))
+            test.is_true((result :: Map).success)
+            test.eq((read_drive(installed.id, "main") :: Map).applied.declaration.transform.config.step, "second")
+            test.not_nil(read_drive(installed.id, "reconcile"))
+            local stored = portable()
+            test.is_true(stored.reconcile)
+            test.eq(stored.trigger.delivery.retry_after_ms, 5000)
+            test.eq(stored.trigger.poll.page_size, 50)
+        end)
+
+        test.it("edits a reconcile sync whose stored state holds the reconcile pass record instead of the flag", function()
+            local keyed = { v = 2, source = "app.fixture:keyed_records",
+                schedule = { type = "interval", expression = "1h" }, backfill = "all" }
+            local installed = install_ok(declaration({ trigger = keyed, reconcile = true })) :: Map
+            local db, db_err = sql.get(DB)
+            test.is_nil(db_err)
+            local rows, read_err = db:query("SELECT private_context FROM kickside_components WHERE component_id = $1", { installed.id })
+            test.is_nil(read_err)
+            local state = rows[1].private_context
+            if type(state) == "string" then state = json.decode(state) end
+            state.reconcile = { phase = "idle", keys = {}, coverage = { final = false, pages_seen = 0 } }
+            local _, write_err = db:execute("UPDATE kickside_components SET private_context = $1, context_revision = context_revision + 1 WHERE component_id = $2", { json.encode(state), installed.id })
+            db:release()
+            test.is_nil(write_err)
+
+            local result, err = exec:call(MANAGE, { action = "reconfigure", id = installed.id,
+                input = declaration({ trigger = keyed, reconcile = true, transform = { kind = "func",
+                    ["function"] = "app.fixture:round_transform", resource_id = uuid.v7(), config = { step = "edited" } } }) })
+            test.is_nil(err, tostring(err))
+            test.is_true((result :: Map).success)
+            test.eq((read_drive(installed.id, "main") :: Map).applied.declaration.transform.config.step, "edited")
+            test.not_nil(read_drive(installed.id, "reconcile"))
+            test.is_true((automations_lib.read_state(installed.id) :: Map).reconcile)
+
+            local dropped, drop_err = exec:call(MANAGE, { action = "reconfigure", id = installed.id,
+                input = declaration({ trigger = keyed }) })
+            test.is_nil(dropped)
+            test.contains(tostring(drop_err), "reconcile")
         end)
     end)
 
