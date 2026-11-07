@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- migrations_applied: the bootloader that follows the migration bootloader. It
 -- tells the resident boot process that the install's schema is in place, so
 -- convergence of the installed code runs against the schema that code reads.

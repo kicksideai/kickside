@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Template for the migration a hot install adds alongside new code: it creates
 -- the schema the upgraded code converges against by lifting the refusal the
 -- boot test installs on the lifecycle thread's retention policy.
