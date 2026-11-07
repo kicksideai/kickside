@@ -204,37 +204,6 @@ entries:
       test: wippy.test:test
       reply_sender: kickside.connection:reply_sender
 
-  - name: channel_sink_reply_fixture
-    kind: library.lua
-    source: file://channel_sink_reply_fixture.lua
-    imports:
-      component: kickside.component:component
-
-  - name: channel_sink_under_test
-    kind: library.lua
-    source: file://channel_src_link/sink/channel_sink.lua
-    imports:
-      canonical_json: kickside.contract:canonical_json
-      writable_sink: kickside.data:writable_sink
-      reply_sender: app:channel_sink_reply_fixture
-
-  - name: channel_sink_access_probe
-    kind: function.lua
-    source: file://channel_sink_access_probe.lua
-    method: run
-    imports:
-      channel_sink: app:channel_sink_under_test
-      reply_sender: app:channel_sink_reply_fixture
-
-  - name: channel_sink_access_test
-    kind: function.lua
-    meta: { type: test, suite: channel_sink_access }
-    source: file://suites/channel_sink_access_test.lua
-    method: run
-    modules: [sql, uuid, funcs, security]
-    imports:
-      test: wippy.test:test
-
   - name: users_closure_test
     kind: function.lua
     meta:

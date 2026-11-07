@@ -40,16 +40,12 @@ entries:
       link_service: app:link_service_stub
       reply_sender: app:reply_sender_stub
       channel_receive: app:channel_receive_stub
-      channel_refusal: app:channel_refusal
+      channel_refusal: kickside.channel:refusal
       channel_persist: app:channel_persist_stub
       channel_consts: app:channel_consts_stub
       channel_types: app:channel_types_stub
       execution_identity: app:execution_identity_stub
       dm_consts: app:dm_consts
-
-  - name: channel_refusal
-    kind: library.lua
-    source: file://channel_link/refusal.lua
 
   - name: dm_consts
     kind: library.lua
@@ -94,3 +90,188 @@ entries:
     source: file://channel_persist_stub.lua
     imports:
       test_state: app:test_state
+
+  # kickside/channel is DM's real dependency; the DM surface reads the
+  # channel's typed write refusals from it. The entries below host it.
+  - name: env_storage
+    kind: env.storage.file
+    file_path: ./.wippy/dm-test.env
+    auto_create: true
+
+  - name: processes
+    kind: process.host
+    lifecycle:
+      auto_start: true
+
+  - name: gateway
+    kind: http.service
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      server: gateway
+    prefix: /api
+
+  - name: uploads
+    kind: fs.directory
+    directory: ./.wippy/uploads
+    auto_init: true
+
+  - name: dep.wippy.bootloader
+    kind: ns.dependency
+    component: wippy/bootloader
+    version: "*"
+    parameters:
+      - name: wippy.bootloader:application_host
+        value: app:processes
+      - name: wippy.bootloader:env_storage
+        value: app:env_storage
+      - name: wippy.migration:app_db
+        value: app:db
+
+  - name: dep.kickside.channel
+    kind: ns.dependency
+    component: kickside/channel
+    version: "*"
+    parameters:
+      - name: kickside.channel:target_db
+        value: app:db
+      - name: kickside.channel:ui_server
+        value: app:gateway
+      - name: kickside.channel:process_host
+        value: app:processes
+      - name: kickside.agents:api_router
+        value: app:api
+      - name: kickside.agents:ui_server
+        value: app:gateway
+      - name: kickside.connection:api_router
+        value: app:api
+      - name: kickside.connection:ui_server
+        value: app:gateway
+      - name: kickside.uploads:api_router
+        value: app:api
+      - name: kickside.uploads:ui_server
+        value: app:gateway
+      - name: kickside.uploads:database_resource
+        value: app:db
+      - name: kickside.uploads:storage_id
+        value: app:uploads
+      - name: kickside.uploads:env_storage
+        value: app:env_storage
+      - name: kickside.component:target_db
+        value: app:db
+      - name: kickside.component:api_router
+        value: app:api
+      - name: kickside.component:lifecycle_impl
+        value: kickside.core.lifecycle:component_lifecycle_impl
+      - name: kickside.core:target_db
+        value: app:db
+      - name: kickside.core.lifecycle:process_host
+        value: app:processes
+      - name: kickside.core.lifecycle:user_lifecycle_grant
+        value: {subject_id: app:dm_user, subject_type: group, access_mask: 2}
+      - name: kickside.core.lifecycle:admin_lifecycle_grant
+        value: {subject_id: app:dm_admin, subject_type: group, access_mask: 3}
+      - name: kickside.core.retention:process_host
+        value: app:processes
+      - name: kickside.core.threads:process_host
+        value: app:processes
+      - name: kickside.core.projections:process_host
+        value: app:processes
+      - name: kickside.core.retention:api_router
+        value: app:api
+      - name: kickside.core.threads:api_router
+        value: app:api
+      - name: kickside.core.projections:api_router
+        value: app:api
+      - name: kickside.core.projections:env_storage
+        value: app:env_storage
+      - name: kickside.core.jobs:target_db
+        value: app:db
+      - name: kickside.core.jobs:process_host
+        value: app:processes
+      - name: wippy.migration:app_db
+        value: app:db
+      - name: wippy.session:api_router
+        value: app:api
+      - name: wippy.session:env_storage
+        value: app:env_storage
+      - name: wippy.session:database_resource
+        value: app:db
+      - name: wippy.session:default_host
+        value: app:processes
+      - name: wippy.session:checkpoint_function_id
+        value: wippy.session.funcs:checkpoint
+      - name: wippy.relay:env_storage
+        value: app:env_storage
+      - name: wippy.relay:application_host
+        value: app:processes
+      - name: wippy.llm:env_storage
+        value: app:env_storage
+      - name: wippy.llm:process_host
+        value: app:processes
+      - name: kickside.automation:ui_server
+        value: app:gateway
+      - name: kickside.automation:api_router
+        value: app:api
+      - name: kickside.automation:target_db
+        value: app:db
+      - name: kickside.automation.engine:process_host
+        value: app:processes
+      - name: wippy.views:api_router
+        value: app:api
+      - name: wippy.views:env_storage
+        value: app:env_storage
+
+  - name: api.public
+    kind: http.router
+    meta:
+      server: gateway
+    prefix: /api/public
+
+  - name: dep.kickside.users
+    kind: ns.dependency
+    component: kickside/users
+    version: "*"
+    parameters:
+      - name: kickside.users:env_storage
+        value: app:env_storage
+      - name: kickside.settings:process_host
+        value: app:processes
+      - name: kickside.users:public_router
+        value: app:api.public
+      - name: kickside.users:api_router
+        value: app:api
+      - name: kickside.users:ui_server
+        value: app:gateway
+      - name: kickside.users:target_db
+        value: app:db
+      - name: kickside.users:user_security_scope
+        value: app:dm_user
+      - name: kickside.users:admin_security_scope
+        value: app:dm_admin
+      - name: kickside.users:login_role_resource
+        value: app:*
+      - name: kickside.settings:target_db
+        value: app:db
+      - name: kickside.settings:api_router
+        value: app:api
+      - name: kickside.settings:ui_server
+        value: app:gateway
+
+  - name: dep.kickside.security
+    kind: ns.dependency
+    component: kickside/security
+    version: "*"
+    parameters:
+      - name: api_router
+        value: app:api
+      - name: ui_server
+        value: app:gateway
+      - name: target_db
+        value: app:db
+      - name: process_host
+        value: app:processes
