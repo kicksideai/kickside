@@ -616,6 +616,7 @@ jobs:
             mkdir -p "$TMPDIR"
             make install MOD=inbox
             make build MOD=inbox
+            make -C platform/inbox test-ui
             make -C platform/inbox lockrefresh
             cd platform/inbox/test
             mkdir -p .wippy
