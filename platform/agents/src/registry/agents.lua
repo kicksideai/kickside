@@ -299,7 +299,7 @@ function M.delete(args: any): (agent_types.DeleteResult?, error?)
     if not result or not result.success then
         return nil, fail(errors.INTERNAL, "delete_component returned: " .. tostring(result and result.error or "no result"))
     end
-    return ({ component_id = args.component_id, deleted = result.deleted == true, in_progress = result.in_progress,
+    return ({ success = true, component_id = args.component_id, deleted = result.deleted == true, in_progress = result.in_progress,
         status = result.status, cleanup_pending = result.cleanup_pending, job_id = result.job_id,
         notification_error = result.notification_error }) :: agent_types.DeleteResult, nil
 end
