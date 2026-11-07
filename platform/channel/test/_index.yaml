@@ -682,20 +682,6 @@ entries:
       health_reporter: app:responder_health
       test_state: app:test_state
 
-  - name: registry_probe_access
-    kind: security.policy
-    groups: [app.security:user]
-    policy:
-      resources: app:registry_probe
-      actions: funcs.call
-      effect: allow
-
-  - name: registry_probe
-    kind: function.lua
-    source: file://registry_probe.lua
-    method: claim
-    modules: [process]
-
   - name: bridge_registry_probe
     kind: function.lua
     source: file://registry_probe.lua
@@ -710,7 +696,7 @@ entries:
     meta: { type: test, suite: channel }
     source: file://registry_authority_test.lua
     method: run
-    modules: [funcs, security, uuid]
+    modules: [funcs, uuid]
     imports:
       test: wippy.test:test
 
