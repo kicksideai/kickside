@@ -1,20 +1,20 @@
 import { u as U, a as V, s as j, W as O, P as R } from "./index-BhiG6P-P.js";
-import { defineComponent as B, ref as m, onUnmounted as T, computed as S, openBlock as c, createElementBlock as A, Fragment as I, createVNode as p, unref as n, createBlock as v, withCtx as i, createTextVNode as f, createCommentVNode as y, toDisplayString as J } from "vue";
-import { L as _, f as k, h as K, X as M } from "./pickerselect-By4p9K1S.js";
-import { s as z, g as D, c as F } from "./versions-DLybI1MU.js";
-import { on as H, define as L } from "@wippy-fe/proxy";
-import { W as X } from "./WcMount-DMmeXI-l.js";
-import { _ as q, s as G } from "./workflow-embed-B-oXahj5.js";
+import { defineComponent as B, ref as d, onUnmounted as T, computed as x, openBlock as c, createElementBlock as A, Fragment as I, createVNode as p, unref as n, createBlock as v, withCtx as i, createTextVNode as f, createCommentVNode as y, toDisplayString as J } from "vue";
+import { L as S, f as k, h as K, X as M, Y as z } from "./wc-mount-krbIT6pk.js";
+import { s as D, g as F, c as H } from "./versions-d9QvfoPQ.js";
+import { on as L, define as X } from "@wippy-fe/proxy";
+import { _ as Y } from "./WcMount.vue_vue_type_script_setup_true_lang-CNWT59Oh.js";
+import { _ as q, s as G } from "./workflow-embed-BXNW4FQr.js";
 import "@iconify/vue";
 const Q = /* @__PURE__ */ B({
   __name: "WorkflowPicker",
-  setup(W) {
-    const s = U(), d = V(), r = m(!1), w = m(0), l = m("");
+  setup($) {
+    const s = U(), m = V(), r = d(!1), w = d(0), l = d("");
     let a = () => {
     };
     T(() => a());
-    const C = S(() => Object.keys(_(s.value.schema)?.properties || {})[0] || "flow_ref"), E = S(() => _(s.value.config)?.[C.value]);
-    async function $(o) {
+    const C = x(() => Object.keys(S(s.value.schema)?.properties || {})[0] || "flow_ref"), E = x(() => S(s.value.config)?.[C.value]);
+    async function N(o) {
       o.published_version && (a(), await b({ kind: "flow", id: o.id, version: o.published_version }));
     }
     function g(o) {
@@ -25,27 +25,27 @@ const Q = /* @__PURE__ */ B({
       try {
         if (s.value.sourceContext) {
           if (!s.value.sourceSchema) throw new Error("The source item schema is unavailable.");
-          const e = JSON.parse(s.value.sourceSchema), t = await D(o.id, o.version);
+          const e = JSON.parse(s.value.sourceSchema), t = await F(o.id, o.version);
           if (t.version !== o.version) throw new Error("The published Workflow version is unavailable.");
-          const u = g(e) === g(t.input_schema) ? { kind: "none" } : { kind: "expr", expr: await F(o.id, e, t.input_schema) };
-          d("select", { input_schema: t.input_schema, transform: u });
+          const u = g(e) === g(t.input_schema) ? { kind: "none" } : { kind: "expr", expr: await H(o.id, e, t.input_schema) };
+          m("select", { input_schema: t.input_schema, transform: u });
         }
-        d("change", { [C.value]: o });
+        m("change", { [C.value]: o });
       } catch (e) {
         l.value = K(e, "Could not select the published Workflow.");
       }
     }
-    function N(o) {
+    function P(o) {
       const e = o?.id;
-      e && (r.value = !1, a(), a = H(`workflow.${e}`, async (t) => {
-        const x = ((t?.data || t)?.events || []).find((P) => P.type === "kickside.workflows.events:version.published")?.body?.version;
-        x && (await b({ kind: "flow", id: e, version: x }), a());
-      }), d("navigate", { route: `/workflows/${encodeURIComponent(e)}/return/${encodeURIComponent(s.value.returnRoute || "")}` }));
+      e && (r.value = !1, a(), a = L(`workflow.${e}`, async (t) => {
+        const _ = ((t?.data || t)?.events || []).find((W) => W.type === "kickside.workflows.events:version.published")?.body?.version;
+        _ && (await b({ kind: "flow", id: e, version: _ }), a());
+      }), m("navigate", { route: `/workflows/${encodeURIComponent(e)}/return/${encodeURIComponent(s.value.returnRoute || "")}` }));
     }
     return (o, e) => (c(), A(I, null, [
       p(q, {
         selected: E.value,
-        onSelect: $
+        onSelect: N
       }, null, 8, ["selected"]),
       n(s).sourceContext && n(s).returnRoute ? (c(), v(n(k), {
         key: 0,
@@ -70,7 +70,7 @@ const Q = /* @__PURE__ */ B({
         ]),
         _: 1
       })) : y("", !0),
-      p(n(z), {
+      p(n(D), {
         visible: r.value,
         "onUpdate:visible": e[3] || (e[3] = (t) => r.value = t),
         modal: "",
@@ -99,18 +99,18 @@ const Q = /* @__PURE__ */ B({
           })
         ]),
         default: i(() => [
-          r.value ? (c(), v(X, {
+          r.value ? (c(), v(Y, {
             key: 0,
             tag: "kickside-workflow-setup",
             attrs: { "source-context": n(s).sourceContext, "submit-nonce": w.value || void 0 },
-            onCreated: N
+            onCreated: P
           }, null, 8, ["attrs"])) : y("", !0)
         ]),
         _: 1
       }, 8, ["visible"])
     ], 64));
   }
-}), Y = {
+}), Z = {
   type: "object",
   properties: {
     config: { type: "string", default: "{}" },
@@ -120,12 +120,12 @@ const Q = /* @__PURE__ */ B({
     "return-route": { type: "string" }
   }
 };
-class Z extends O {
+class ee extends O {
   static get wippyConfig() {
     return {
-      propsSchema: Y,
+      propsSchema: Z,
       hostCssKeys: ["themeConfigUrl", "markdownCssUrl", "primeVueCssUrl"],
-      inlineCss: [M, G].join(`
+      inlineCss: [M, z, G].join(`
 `)
     };
   }
@@ -133,4 +133,4 @@ class Z extends O {
     return { rootComponent: Q, plugins: [R] };
   }
 }
-L(import.meta.url, Z);
+X(import.meta.url, ee);

@@ -2,8 +2,8 @@ import { W as Z, P as ee } from "./primevue-plugin-Dn0ACs8V.js";
 import { defineComponent as te, ref as u, watch as se, onMounted as ne, computed as q, openBlock as a, createElementBlock as i, createElementVNode as n, Fragment as v, renderList as x, createTextVNode as I, toDisplayString as m, createVNode as c, unref as p, createCommentVNode as f, withCtx as M, normalizeClass as U } from "vue";
 import { Icon as d } from "@iconify/vue";
 import { api as z, define as ae } from "@wippy-fe/proxy";
-import { _ as B } from "./AnchoredPanel.vue_vue_type_style_index_0_lang-DSLnUKFT.js";
-import { s as ie } from "./styles-q_CDwtZB.js";
+import { _ as B } from "./AnchoredPanel.vue_vue_type_script_setup_true_lang-DSLnUKFT.js";
+import { s as ie } from "./styles-BB131pAp.js";
 const le = { class: "kx-ns" }, oe = { class: "kx-ns-toggle" }, ce = ["checked"], re = { class: "kx-ns-section" }, ue = { class: "kx-ns-chips" }, pe = ["onClick"], de = {
   key: 0,
   class: "kx-ns-empty"

@@ -6,6 +6,7 @@
 @import "@kickside/ui-kit/kx-state.css";
 @import "@kickside/ui-kit/kx-tag.css";
 @import "@kickside/ui-kit/kx-tone.css";
+@import "@widgets/app/wc-mount.css";
 
 /* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
    preflight; without it PrimeVue controls keep UA defaults the theme never

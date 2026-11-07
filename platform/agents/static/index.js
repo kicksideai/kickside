@@ -1,10 +1,10 @@
 import { g as ne, h as oe, W as se, P as ie } from "./primevue-plugin-Dn0ACs8V.js";
 import { defineComponent as J, computed as F, openBlock as g, createElementBlock as h, withModifiers as T, Fragment as W, createElementVNode as a, createTextVNode as U, toDisplayString as E, createCommentVNode as O, createVNode as p, unref as m, watch as G, onBeforeUnmount as ae, ref as C, withDirectives as le, vModelText as re, withCtx as L, normalizeClass as R, renderList as de, withKeys as q } from "vue";
-import { s as N, e as z, _ as ce, l as ue } from "./toolCatalog-BlyBDd4C.js";
+import { s as N, e as z, _ as ce, l as ue } from "./toolCatalog-DTcZpeT0.js";
 import { s as pe } from "./index-BvJc5yvO.js";
 import { on as ve, api as M, host as Q, loadByTagName as me, define as fe } from "@wippy-fe/proxy";
 import { Icon as k } from "@iconify/vue";
-import { s as _e } from "./styles-q_CDwtZB.js";
+import { s as _e } from "./styles-BB131pAp.js";
 const ge = { key: 0 }, he = /* @__PURE__ */ J({
   __name: "ComponentDeletion",
   props: {

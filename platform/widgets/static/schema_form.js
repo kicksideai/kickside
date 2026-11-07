@@ -1,18 +1,18 @@
-import { u as R, a as K, W as $ } from "./index-C70m2Vvt.js";
-import { defineComponent as W, ref as A, useId as z, watch as B, openBlock as a, createElementBlock as l, Fragment as w, createElementVNode as k, unref as F, normalizeClass as D, toDisplayString as f, createCommentVNode as x, computed as q, renderList as N, createTextVNode as T, createBlock as O } from "vue";
-import { W as M } from "./WcMount-Dheo0oY4.js";
-import { s as H } from "./styles-DR8LFeMF.js";
+import { u as $, a as K, W } from "./index-C70m2Vvt.js";
+import { defineComponent as M, ref as A, useId as z, watch as R, openBlock as a, createElementBlock as l, Fragment as w, createElementVNode as k, unref as F, normalizeClass as D, toDisplayString as y, createCommentVNode as x, computed as q, renderList as N, createTextVNode as T, createBlock as O } from "vue";
+import { _ as P } from "./WcMount.vue_vue_type_script_setup_true_lang-CNWT59Oh.js";
+import { s as H } from "./styles-CigVtYJF.js";
 import "@iconify/vue";
 import { define as U } from "@wippy-fe/proxy";
 function S(p, h) {
   if (Object.is(p, h)) return !0;
   if (!p || !h || typeof p != "object" || typeof h != "object") return !1;
   if (Array.isArray(p) || Array.isArray(h))
-    return Array.isArray(p) && Array.isArray(h) && p.length === h.length && p.every((m, y) => S(m, h[y]));
+    return Array.isArray(p) && Array.isArray(h) && p.length === h.length && p.every((m, f) => S(m, h[f]));
   const c = p, g = h, _ = Object.keys(c);
   return _.length === Object.keys(g).length && _.every((m) => Object.hasOwn(g, m) && S(c[m], g[m]));
 }
-const G = ["rows", "value", "placeholder", "aria-invalid", "aria-describedby"], Q = ["id"], P = /* @__PURE__ */ W({
+const G = ["rows", "value", "placeholder", "aria-invalid", "aria-describedby"], Q = ["id"], B = /* @__PURE__ */ M({
   __name: "StructuredValueField",
   props: {
     value: {},
@@ -30,7 +30,7 @@ const G = ["rows", "value", "placeholder", "aria-invalid", "aria-describedby"], 
     function m(o) {
       return c.kind === "array" ? Array.isArray(o) : !!o && typeof o == "object" && !Array.isArray(o);
     }
-    function y() {
+    function f() {
       return m(c.value) ? c.value : m(c.fallback) ? c.fallback : _();
     }
     function j(o) {
@@ -40,10 +40,10 @@ const G = ["rows", "value", "placeholder", "aria-invalid", "aria-describedby"], 
         return JSON.stringify(_(), null, 2);
       }
     }
-    const i = A(j(y())), s = A(""), C = z();
-    let d = y();
-    B(() => [c.value, c.fallback, c.kind], () => {
-      const o = y();
+    const i = A(j(f())), s = A(""), C = z();
+    let d = f();
+    R(() => [c.value, c.fallback, c.kind], () => {
+      const o = f();
       S(o, d) || (d = o, i.value = j(o), s.value = "");
     });
     function b(o) {
@@ -77,7 +77,7 @@ const G = ["rows", "value", "placeholder", "aria-invalid", "aria-describedby"], 
         id: F(C),
         class: "sf-error",
         role: "alert"
-      }, f(s.value), 9, Q)) : x("", !0)
+      }, y(s.value), 9, Q)) : x("", !0)
     ], 64));
   }
 }), X = { class: "sf" }, Y = { class: "sf-lbl" }, Z = {
@@ -95,10 +95,10 @@ const G = ["rows", "value", "placeholder", "aria-invalid", "aria-describedby"], 
 }, de = ["required", "value", "onChange"], pe = ["value"], he = ["required", "minlength", "maxlength", "rows", "value", "placeholder", "onInput"], me = ["checked", "onChange"], ve = ["required", "min", "max", "step", "value", "onInput"], ge = ["type", "required", "minlength", "maxlength", "value", "placeholder", "onInput"], _e = {
   key: 7,
   class: "sf-hint"
-}, ye = /* @__PURE__ */ W({
+}, fe = /* @__PURE__ */ M({
   __name: "SchemaForm",
   setup(p) {
-    const h = R(), c = K(), g = q(() => {
+    const h = $(), c = K(), g = q(() => {
       const n = h.value.schema;
       if (typeof n == "string")
         try {
@@ -107,8 +107,8 @@ const G = ["rows", "value", "placeholder", "aria-invalid", "aria-describedby"], 
           return {};
         }
       return n || {};
-    }), _ = q(() => Object.entries(g.value.properties || {})), m = q(() => _.value.filter(([, n]) => n.group !== "advanced")), y = q(() => _.value.filter(([, n]) => n.group === "advanced")), j = q(() => new Set(g.value.required || [])), i = A({});
-    B(() => h.value.config, (n) => {
+    }), _ = q(() => Object.entries(g.value.properties || {})), m = q(() => _.value.filter(([, n]) => n.group !== "advanced")), f = q(() => _.value.filter(([, n]) => n.group === "advanced")), j = q(() => new Set(g.value.required || [])), i = A({});
+    R(() => h.value.config, (n) => {
       i.value = { ...n };
     }, { immediate: !0, flush: "sync" });
     function s(n, u) {
@@ -159,10 +159,10 @@ const G = ["rows", "value", "placeholder", "aria-invalid", "aria-describedby"], 
         class: "sf-field"
       }, [
         k("span", Y, [
-          T(f(e.title || t), 1),
+          T(y(e.title || t), 1),
           d(t, e) ? (a(), l("span", Z, " *")) : x("", !0)
         ]),
-        o(e) ? (a(), O(M, {
+        o(e) ? (a(), O(P, {
           key: 0,
           tag: o(e),
           schema: v(t, e),
@@ -181,7 +181,7 @@ const G = ["rows", "value", "placeholder", "aria-invalid", "aria-describedby"], 
           (a(!0), l(w, null, N(e.enum, (r) => (a(), l("option", {
             key: r,
             value: r
-          }, f(r), 9, te))), 128))
+          }, y(r), 9, te))), 128))
         ], 40, ee)) : e.format === "textarea" ? (a(), l("textarea", {
           key: 2,
           class: "sf-input sf-textarea",
@@ -192,7 +192,7 @@ const G = ["rows", "value", "placeholder", "aria-invalid", "aria-describedby"], 
           value: i.value[t] ?? e.default ?? "",
           placeholder: e.description || "",
           onInput: (r) => s(t, r.target.value)
-        }, null, 40, ne)) : e.type === "object" || e.type === "array" ? (a(), O(P, {
+        }, null, 40, ne)) : e.type === "object" || e.type === "array" ? (a(), O(B, {
           key: 3,
           value: i.value[t],
           fallback: e.default,
@@ -227,20 +227,20 @@ const G = ["rows", "value", "placeholder", "aria-invalid", "aria-describedby"], 
           placeholder: e.description || "",
           onInput: (r) => s(t, r.target.value)
         }, null, 40, le)),
-        e.description ? (a(), l("span", se, f(e.description), 1)) : x("", !0)
+        e.description ? (a(), l("span", se, y(e.description), 1)) : x("", !0)
       ]))), 128)),
-      y.value.length ? (a(), l("details", ie, [
+      f.value.length ? (a(), l("details", ie, [
         u[0] || (u[0] = k("summary", { class: "sf-advanced-summary" }, "Advanced", -1)),
         k("div", ue, [
-          (a(!0), l(w, null, N(y.value, ([t, e]) => (a(), l("label", {
+          (a(!0), l(w, null, N(f.value, ([t, e]) => (a(), l("label", {
             key: t,
             class: "sf-field"
           }, [
             k("span", oe, [
-              T(f(e.title || t), 1),
+              T(y(e.title || t), 1),
               d(t, e) ? (a(), l("span", ce, " *")) : x("", !0)
             ]),
-            o(e) ? (a(), O(M, {
+            o(e) ? (a(), O(P, {
               key: 0,
               tag: o(e),
               schema: v(t, e),
@@ -259,7 +259,7 @@ const G = ["rows", "value", "placeholder", "aria-invalid", "aria-describedby"], 
               (a(!0), l(w, null, N(e.enum, (r) => (a(), l("option", {
                 key: r,
                 value: r
-              }, f(r), 9, pe))), 128))
+              }, y(r), 9, pe))), 128))
             ], 40, de)) : e.format === "textarea" ? (a(), l("textarea", {
               key: 2,
               class: "sf-input sf-textarea",
@@ -270,7 +270,7 @@ const G = ["rows", "value", "placeholder", "aria-invalid", "aria-describedby"], 
               value: i.value[t] ?? e.default ?? "",
               placeholder: e.description || "",
               onInput: (r) => s(t, r.target.value)
-            }, null, 40, he)) : e.type === "object" || e.type === "array" ? (a(), O(P, {
+            }, null, 40, he)) : e.type === "object" || e.type === "array" ? (a(), O(B, {
               key: 3,
               value: i.value[t],
               fallback: e.default,
@@ -305,29 +305,29 @@ const G = ["rows", "value", "placeholder", "aria-invalid", "aria-describedby"], 
               placeholder: e.description || "",
               onInput: (r) => s(t, r.target.value)
             }, null, 40, ge)),
-            e.description ? (a(), l("span", _e, f(e.description), 1)) : x("", !0)
+            e.description ? (a(), l("span", _e, y(e.description), 1)) : x("", !0)
           ]))), 128))
         ])
       ])) : x("", !0)
     ]));
   }
-}), fe = {
+}), ye = {
   type: "object",
   properties: {
     schema: { type: "object", description: "JSON Schema describing the config fields (object or JSON string)." },
     config: { type: "object", description: "Current config values." }
   }
 };
-class be extends $ {
+class be extends W {
   static get wippyConfig() {
     return {
-      propsSchema: fe,
+      propsSchema: ye,
       hostCssKeys: ["themeConfigUrl"],
       inlineCss: H
     };
   }
   static get vueConfig() {
-    return { rootComponent: ye };
+    return { rootComponent: fe };
   }
 }
 U(import.meta.url, be);
