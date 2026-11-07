@@ -405,9 +405,11 @@ local function define_tests()
         end)
 
         test.it("resolves session file_provider attachments through the upload repo", function()
-            test.is_nil(file_provider.get_info(nil))
-            test.is_nil(file_provider.get_info({}))
-            test.is_nil(file_provider.get_info({ file_uuid = uuid_v4() }))
+            for _, args in ipairs({ false, {}, { file_uuid = uuid_v4() } }) do
+                local absent, absent_err = file_provider.get_info(args or nil)
+                test.is_nil(absent_err, tostring(absent_err))
+                test.is_nil(absent)
+            end
 
             local upload_id = uuid_v4()
             local upload = create_completed_upload(upload_id, "file-provider-user", "text/plain", "attachment.txt", 42)
