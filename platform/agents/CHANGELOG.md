@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.12](https://github.com/kicksideai/kickside/compare/agents-v0.2.11...agents-v0.2.12) (2026-11-07)
+
+
+### Bug Fixes
+
+* **agents:** carry success on the agent deletion receipt ([#343](https://github.com/kicksideai/kickside/issues/343)) ([d33187a](https://github.com/kicksideai/kickside/commit/d33187ac2ce471efabb19c2ed9f25ee257e5c983))
+
 ## [0.2.11](https://github.com/kicksideai/kickside/compare/agents-v0.2.10...agents-v0.2.11) (2026-11-07)
 
 
