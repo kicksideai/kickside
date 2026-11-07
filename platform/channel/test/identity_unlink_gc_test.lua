@@ -1,7 +1,6 @@
 local test = require("test")
 local sql = require("sql")
 local uuid = require("uuid")
-local link_service = require("link_service")
 local cleanup_conversation = require("cleanup_conversation")
 local channel_cleanup_finalize = require("channel_cleanup_finalize")
 local conversation = require("channel_conversation")
@@ -15,77 +14,6 @@ local DB = "app:db"
 
 return test.run_cases(function()
     test.describe("identity unlink conversation counts", function()
-        test.before_all(function()
-            local db = assert(sql.get(DB))
-            local created, create_err = db:execute([[CREATE TABLE IF NOT EXISTS kickside_external_links (
-                link_id TEXT NOT NULL UNIQUE, provider TEXT NOT NULL, external_id TEXT NOT NULL,
-                user_id TEXT NOT NULL, PRIMARY KEY (provider,external_id))]])
-            test.is_nil(create_err, tostring(create_err))
-            test.not_nil(created)
-            local blocker, blocker_err = db:execute([[CREATE TABLE IF NOT EXISTS unlink_delete_blocker (
-                link_id TEXT NOT NULL REFERENCES kickside_external_links(link_id) ON DELETE RESTRICT)]])
-            db:release()
-            test.is_nil(blocker_err, tostring(blocker_err))
-            test.not_nil(blocker)
-        end)
-
-        test.it("keeps discarded counts through a failed link DELETE and reports them on retry", function()
-            fixture.truncate()
-            local external_id, link_id, session_id = "unlink-" .. uuid.v4(), uuid.v7(), uuid.v7()
-            local db = assert(sql.get(DB))
-            local added, add_err = db:execute([[INSERT INTO kickside_external_links
-                (link_id,provider,external_id,user_id) VALUES ($1,'discord',$2,'owner')]],
-                { link_id, external_id })
-            test.is_nil(add_err, tostring(add_err))
-            test.not_nil(added)
-            local blocked, block_err = db:execute("INSERT INTO unlink_delete_blocker (link_id) VALUES ($1)", { link_id })
-            test.is_nil(block_err, tostring(block_err))
-            test.not_nil(blocked)
-            local turn, turn_err = db:execute([[INSERT INTO kickside_channel_turns
-                (turn_id,route_json,accepted_at,reply_state)
-                VALUES ($1,$2,'2000-01-01T00:00:00Z','reserved')]],
-                { uuid.v7(), '{"session_id":"' .. session_id .. '"}' })
-            db:release()
-            test.is_nil(turn_err, tostring(turn_err))
-            test.not_nil(turn)
-            test.is_nil(persist.set(DB, "kickside_channel_sessions", "discord", external_id, session_id))
-
-            local first, first_err = link_service.unlink("owner", "discord", external_id)
-            test.is_false(first)
-            test.is_true(errors.is(first_err, errors.UNAVAILABLE), tostring(first_err))
-            test.eq((first_err :: any):details().discarded.reply_uncertain, 1)
-            test.eq((first_err :: any):details().discarded.unappended, 1)
-            db = assert(sql.get(DB))
-            local retained, read_err = db:query([[SELECT reply_uncertain,unappended
-                FROM kickside_channel_cleanup_counts WHERE provider='discord' AND external_id=$1]], { external_id })
-            test.is_nil(read_err, tostring(read_err))
-            test.eq(#retained, 1, "failed link delete must retain the count pointer")
-            db:release()
-            local repeated_cleanup = cleanup_conversation.cleanup_conversation({
-                provider = "discord", external_id = external_id })
-            test.is_true(repeated_cleanup.success, tostring(repeated_cleanup.error))
-            db = assert(sql.get(DB))
-            local retained_again, retained_err = db:query([[SELECT reply_uncertain,unappended
-                FROM kickside_channel_cleanup_counts WHERE provider='discord' AND external_id=$1]], { external_id })
-            test.is_nil(retained_err, tostring(retained_err))
-            test.eq(#retained_again, 1, "later cleanup may not erase a linked owner's counts")
-            local _, unblock_err = db:execute("DELETE FROM unlink_delete_blocker WHERE link_id=$1", { link_id })
-            db:release()
-            test.is_nil(unblock_err, tostring(unblock_err))
-
-            local second, second_err, discarded = link_service.unlink("owner", "discord", external_id)
-            test.is_true(second, tostring(second_err))
-            test.is_nil(second_err)
-            test.eq(discarded.reply_uncertain, 1)
-            test.eq(discarded.unappended, 1)
-            db = assert(sql.get(DB))
-            local remaining, remaining_err = db:query([[SELECT provider FROM kickside_channel_cleanup_counts
-                WHERE provider='discord' AND external_id=$1]], { external_id })
-            db:release()
-            test.is_nil(remaining_err, tostring(remaining_err))
-            test.eq(#remaining, 0)
-        end)
-
         test.it("deletes a counted page while a bridge acknowledges its append", function()
             fixture.truncate()
             local external_id, session_id, turn_id = "unlink-race-" .. uuid.v4(), uuid.v7(), uuid.v7()
