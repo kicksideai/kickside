@@ -71,7 +71,3 @@ onBeforeUnmount(() => { sequence += 1 })
     <p v-if="queued" role="status">Run queued. Follow the task in Automations.</p>
   </section>
 </template>
-<style scoped>
-.kx-manual-launcher { display: grid; gap: 0.75rem; }
-p { margin: 0; }
-</style>
