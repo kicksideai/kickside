@@ -750,3 +750,68 @@ entries:
     kind: library.lua
     source: file://responder_delete_fixture.lua
     imports: {test_state: app:test_state}
+
+  # The channel sink's WRITE boundary against real component grants: the sink
+  # and the reply sender stand-in run over the real kickside.component service.
+  - name: gateway
+    kind: http.service
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      server: gateway
+    prefix: /api
+
+  - name: dep.kickside_component
+    kind: ns.dependency
+    component: kickside/component
+    version: "*"
+    parameters:
+      - name: kickside.component:target_db
+        value: app:db
+      - name: kickside.component:api_router
+        value: app:api
+
+  - name: dep.kickside_jobs
+    kind: ns.dependency
+    component: kickside/jobs
+    version: "*"
+    parameters:
+      - name: kickside.core.jobs:target_db
+        value: app:db
+      - name: kickside.core.jobs:process_host
+        value: app:processes
+
+  - name: sink_access_reply_sender
+    kind: library.lua
+    source: file://reply_sender_stub.lua
+    imports:
+      component: kickside.component:component
+
+  - name: sink_access_channel_sink
+    kind: library.lua
+    source: file://src_link/sink/channel_sink.lua
+    imports:
+      canonical_json: kickside.contract:canonical_json
+      writable_sink: kickside.data:writable_sink
+      reply_sender: app:sink_access_reply_sender
+
+  - name: channel_sink_access_probe
+    kind: function.lua
+    source: file://channel_sink_access_probe.lua
+    method: run
+    imports:
+      channel_sink: app:sink_access_channel_sink
+      reply_sender: app:sink_access_reply_sender
+
+  - name: channel_sink_access_test
+    kind: function.lua
+    meta: { type: test, suite: channel_sink_access }
+    source: file://channel_sink_access_test.lua
+    method: run
+    modules: [sql, uuid, funcs, security]
+    imports:
+      test: wippy.test:test
