@@ -75,9 +75,22 @@ local function pool_until(id: string, crash: boolean?)
         end
         error("deletion job does not complete")
     end)
+    -- Cancellation only requests the drain; the next case enqueues its own job
+    -- and needs the pool gone, so wait for the pool's monitored exit.
+    local events = process.events()
     local canceled, cancel_err = process.cancel(pid, "2s")
     test.is_nil(cancel_err, tostring(cancel_err))
     test.is_true(canceled)
+    local exit_deadline = time.after("10s")
+    while true do
+        local selected = channel.select({events:case_receive(), exit_deadline:case_receive()})
+        test.eq(selected.channel, events, "job worker pool does not exit after cancellation")
+        local event = selected.value
+        if event.kind == process.event.EXIT and tostring(event.from) == tostring(pid) then
+            test.is_nil(event.result and event.result.error, tostring(event.result and event.result.error))
+            break
+        end
+    end
     if not ok then error(failure) end
 end
 local function seed(mode: string, owner: string, parent: string?): string
