@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.13](https://github.com/kicksideai/kickside/compare/automation-v0.2.12...automation-v0.2.13) (2026-11-07)
+
+
+### Bug Fixes
+
+* **automation:** resolve round authority once per identity at round start ([#322](https://github.com/kicksideai/kickside/issues/322)) ([b798aec](https://github.com/kicksideai/kickside/commit/b798aec3a005d99017f84247931990fc42aa3cc5))
+
 ## [0.2.12](https://github.com/kicksideai/kickside/compare/automation-v0.2.11...automation-v0.2.12) (2026-11-05)
 
 
