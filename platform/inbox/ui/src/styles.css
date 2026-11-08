@@ -143,7 +143,6 @@
 }
 
 @media (max-width: 640px) {
-  .kx-head-actions { margin-left: 0; }
   /* PrimeVue's TabList scrolls its own container; the tabs must not shrink. */
   .kx-tabs-list { overflow-x: auto; }
   .kx-tab { flex: none; }

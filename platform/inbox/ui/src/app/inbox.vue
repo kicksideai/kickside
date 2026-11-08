@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
-import Button from 'primevue/button'
 import Tab from 'primevue/tab'
 import TabList from 'primevue/tablist'
 import Tabs from 'primevue/tabs'
@@ -215,19 +214,6 @@ async function del(id: string) {
   }
 }
 
-async function createTestNotice() {
-  try {
-    await api.post('/api/v1/inbox', {
-      item_type: 'notice',
-      title: 'Test notice ' + new Date().toLocaleTimeString(),
-      content: 'Created to exercise the realtime round-trip.',
-      priority: 'high',
-    })
-  } catch (e) {
-    error.value = errMsg(e, 'Could not create the test notice.')
-  }
-}
-
 function connectRealtime(id: string): boolean {
   if (!id || connectedComponentId === id) return false
   if (componentUnsub) componentUnsub()
@@ -264,9 +250,6 @@ onUnmounted(() => {
         <div class="kx-head-text">
           <h1 class="kx-title">Inbox</h1>
           <p class="kx-sub">{{ headerCount }} {{ filter }} · live</p>
-        </div>
-        <div class="kx-head-actions">
-          <Button type="button" label="New notice" severity="secondary" outlined @click="createTestNotice" />
         </div>
       </div>
       <Tabs :value="filter" data-kx-separator="surface" @update:value="filter = String($event)">
