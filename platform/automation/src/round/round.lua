@@ -450,7 +450,7 @@ local function run(deps: Map, input: any): (Map?, error?)
     end
     local ledger_outcomes, receipts = outcome.ledger_outcomes(items, answered, dlv)
 
-    local result: Map = { outcomes = ledger_outcomes, receipts = receipts, backpressure = backpressure, acquired = acquiring }
+    local result: Map = { outcomes = ledger_outcomes, receipts = receipts, deliveries = answered.delivered, backpressure = backpressure, acquired = acquiring }
     local continues = false
     local next_due: string? = nil
     if not acquiring then
@@ -486,7 +486,7 @@ local function run(deps: Map, input: any): (Map?, error?)
         elseif continues then
             next_due = now
         else
-            local due, due_err = claim.next_due(d, now)
+            local due, due_err = claim.next_due(d, drive.utc_now())
             if due_err then return settle(ctx, round, classify(due_err), "declaration", attempts, rp) end
             next_due = due
         end

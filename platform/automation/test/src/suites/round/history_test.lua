@@ -1,6 +1,9 @@
 local test = require("test")
 local h = require("round_harness")
 local json = require("json")
+local time = require("time")
+local channel = require("channel")
+local drive = require("drive")
 
 type Map = { [string]: any }
 local PORT = "kickside.automation.round.fixture:records"
@@ -57,6 +60,61 @@ local function define_tests()
                 test.eq(h.encoded(history(env.automation_id)),before,"A round without work rewrites historical evidence")
             end)
         end
+
+        test.it("does not append unchanged skipped items on later scheduled scans",function()
+            local env=setup({})
+            local function source(identity: any,target: string,args: any,opts: any): (any?,any)
+                if target == "kickside.automation:round_acquire" then
+                    return {success=true,items={{item_key="unchanged",dedup_key="unchanged",op="upsert",
+                        payload={directive="skip"}}},next_cursor={},has_more=false},nil
+                end
+                return env.run_as(identity,target,args,opts)
+            end
+            for scan=1,4 do
+                h.set_drive(env.automation_id,"history","next_run_at=$1",{h.PAST})
+                local _,err=env.run(env.automation_id,"history",source)
+                test.is_nil(err,tostring(err))
+            end
+            test.eq(#history(env.automation_id),1,"unchanged skips append no delivery or state transition")
+        end)
+
+        test.it("retains actual deliveries even when their resolved state repeats",function()
+            local env=setup({})
+            local function source(identity: any,target: string,args: any,opts: any): (any?,any)
+                if target == "kickside.automation:round_acquire" then
+                    return {success=true,items={{item_key="delivered",dedup_key="delivered",op="upsert",payload={}}},
+                        next_cursor={},has_more=false},nil
+                end
+                return env.run_as(identity,target,args,opts)
+            end
+            for scan=1,3 do
+                h.set_drive(env.automation_id,"history","next_run_at=$1",{h.PAST})
+                local _,err=env.run(env.automation_id,"history",source)
+                test.is_nil(err,tostring(err))
+            end
+            test.eq(#history(env.automation_id),3)
+        end)
+
+        test.it("waits for the next cadence when a completed idle pull outlasts its interval",function()
+            local env=h.setup("idle_cadence")
+            h.new_drive({automation_id=env.automation_id,drive_key="history",source_kind="collection",
+                action={source_ref=PORT,config={items={}},schedule={type="interval",expression="1s"}}})
+            h.set_drive(env.automation_id,"history","next_run_at=$1",{h.PAST})
+            local function slow(identity: any,target: string,args: any,opts: any): (any?,any)
+                if target == "kickside.automation:round_acquire" then
+                    local delay=time.after("1100ms")
+                    channel.select({delay:case_receive()})
+                end
+                return env.run_as(identity,target,args,opts)
+            end
+            local _,err=env.run(env.automation_id,"history",slow)
+            test.is_nil(err,tostring(err))
+            local completed=h.read_drive(env.automation_id,"history")
+            test.is_true(drive.after(completed.next_run_at,drive.utc_now()),"an idle pull rearms in the future")
+            round(env)
+            test.eq(h.read_drive(env.automation_id,"history").round_seq,completed.round_seq)
+            test.eq(#history(env.automation_id),0)
+        end)
 
         test.it("appends a retry outcome without rewriting its original admission or first failure",function()
             local env=setup({{key="retry",directive="fail_retry"}})

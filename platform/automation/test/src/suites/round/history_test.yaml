@@ -8,7 +8,8 @@ entries:
     meta:
       type: test
       suite: kickside_automation_history
-    modules: [json]
+    modules: [json, time, channel]
     imports:
+      drive: kickside.automation:drive
       test: wippy.test:test
       round_harness: kickside.automation:round_harness

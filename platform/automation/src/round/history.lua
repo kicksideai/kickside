@@ -7,30 +7,69 @@ type Map = { [string]: any }
 local TABLE = "kickside_automation_delivery_history"
 local KEY = "automation_id,drive_key,round_token,source_port,item_key,identity_key"
 local BATCH = 50
+M.MAX_ROWS = 10000
 
 local function internal(message: string, cause: any): error
     return errors.new({kind=errors.INTERNAL,retryable=true,message=message .. ": " .. tostring(cause)})
 end
 
-function M.record_tx(tx: any, round: Map, outcomes: {Map}): error?
+local function latest_states(tx: any, round: Map, outcomes: {Map}, deliveries: {Map}?): (Map?,error?)
+    local delivered: Map={}
+    for _,entry in ipairs(deliveries or {}) do delivered[entry.key]=true end
+    local candidates: {Map}={}
+    for _,entry in ipairs(outcomes) do
+        if entry.state == "resolved" and not delivered[entry.item.delivery_key] then
+            candidates[#candidates+1]=entry.item
+        end
+    end
+    local states: Map={}
+    for first=1,#candidates,100 do
+        local params: {any}={round.automation_id,round.drive_key,round.source_port}
+        local matches: {string}={}
+        for index=first,math.min(#candidates,first+99) do
+            params[#params+1]=candidates[index].item_key
+            params[#params+1]=candidates[index].delivery_key
+            matches[#matches+1]="(item_key=$" .. tostring(#params-1) .. " AND identity_key=$" .. tostring(#params) .. ")"
+        end
+        local rows,err=tx:query("SELECT item_key,identity_key,state,round_token FROM (SELECT item_key,identity_key,state,round_token,"
+            .. " ROW_NUMBER() OVER (PARTITION BY item_key,identity_key ORDER BY round_at DESC,drive_key DESC,round_token DESC) AS position"
+            .. " FROM " .. TABLE .. " WHERE automation_id=$1 AND drive_key=$2 AND source_port=$3 AND ("
+            .. table.concat(matches," OR ") .. ")) AS latest WHERE position=1",params)
+        if err then return nil,internal("delivery history state read fails",err) end
+        for _,row in ipairs(rows :: {Map}) do
+            local item_states=states[row.item_key] or {}
+            item_states[row.identity_key]=row
+            states[row.item_key]=item_states
+        end
+    end
+    return states,nil
+end
+
+function M.record_tx(tx: any, round: Map, outcomes: {Map}, deliveries: {Map}?): error?
+    local states,state_err=latest_states(tx,round,outcomes,deliveries)
+    if state_err or not states then return state_err end
     local rows: {Map} = {}
     for _,outcome in ipairs(outcomes) do
-        local error_json: string? = nil
-        if outcome.error ~= nil then
-            local encoded,err=json.encode(outcome.error)
-            if err then return internal("delivery history error encoding fails",err) end
-            error_json=encoded
+        local item_states=states[outcome.item.item_key]
+        local prior=item_states and item_states[outcome.item.delivery_key] or nil
+        if not prior or prior.state ~= outcome.state or prior.round_token == round.captured.round_token then
+            local error_json: string? = nil
+            if outcome.error ~= nil then
+                local encoded,err=json.encode(outcome.error)
+                if err then return internal("delivery history error encoding fails",err) end
+                error_json=encoded
+            end
+            local row: Map={automation_id=round.automation_id,drive_key=round.drive_key,
+                round_token=round.captured.round_token,source_port=round.source_port,
+                item_key=outcome.item.item_key,identity_key=outcome.item.delivery_key,state=outcome.state,
+                execution_identity_json=outcome.execution_identity_json,error_json=error_json,
+                round_at=round.now,expires_at=round.resolved_expires_at}
+            local encoded,encode_err=json.encode(row)
+            if encode_err then return internal("delivery history encoding fails",encode_err) end
+            local bound_err=row_limit.check(encoded,"delivery_history",round.automation_id)
+            if bound_err then return bound_err end
+            rows[#rows+1]=row
         end
-        local row: Map={automation_id=round.automation_id,drive_key=round.drive_key,
-            round_token=round.captured.round_token,source_port=round.source_port,
-            item_key=outcome.item.item_key,identity_key=outcome.item.delivery_key,state=outcome.state,
-            execution_identity_json=outcome.execution_identity_json,error_json=error_json,
-            round_at=round.now,expires_at=round.resolved_expires_at}
-        local encoded,encode_err=json.encode(row)
-        if encode_err then return internal("delivery history encoding fails",encode_err) end
-        local bound_err=row_limit.check(encoded,"delivery_history",round.automation_id)
-        if bound_err then return bound_err end
-        rows[#rows+1]=row
     end
     table.sort(rows,function(a: Map,b: Map): boolean
         if a.item_key ~= b.item_key then return a.item_key < b.item_key end
@@ -53,6 +92,13 @@ function M.record_tx(tx: any, round: Map, outcomes: {Map}): error?
         local _,write_err=tx:execute("INSERT INTO " .. TABLE .. " (" .. KEY
             .. ",state,execution_identity_json,error_json,round_at,expires_at) VALUES " .. table.concat(values,","),params)
         if write_err then return internal("delivery history append fails",write_err) end
+        -- Age retention drains existing rows; each append also bounds the retained
+        -- recent window without an unbounded delete on an older installation.
+        local _,trim_err=tx:execute("DELETE FROM " .. TABLE .. " WHERE (" .. KEY .. ") IN (SELECT " .. KEY
+            .. " FROM " .. TABLE .. " WHERE automation_id=$1 AND drive_key=$2 ORDER BY round_at DESC,round_token DESC,"
+            .. "source_port DESC,item_key DESC,identity_key DESC LIMIT $3 OFFSET $4)",
+            {round.automation_id,round.drive_key,math.min(BATCH,#rows-first+1),M.MAX_ROWS})
+        if trim_err then return internal("delivery history window prune fails",trim_err) end
     end
     return nil
 end

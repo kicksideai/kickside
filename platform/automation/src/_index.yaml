@@ -94,6 +94,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.automation.migrations:11_delivery_provenance
         path: .meta.target_db
+      - entry: kickside.automation.migrations:17_delivery_history_lookup
+        path: .meta.target_db
       - entry: kickside.automation.migrations:12_delivery_history
         path: .meta.target_db
       - entry: kickside.automation.migrations:13_stranded_drives

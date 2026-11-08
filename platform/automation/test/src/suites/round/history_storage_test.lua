@@ -26,6 +26,13 @@ local function rows(id: string): {Map}
     return h.query("SELECT * FROM kickside_automation_delivery_history WHERE automation_id=$1 ORDER BY drive_key,round_token,source_port,item_key,identity_key",{id})
 end
 
+local function seed(id: string, count: integer, expiry: string): ()
+    h.exec("WITH RECURSIVE numbers(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM numbers WHERE n<$1)"
+        .. " INSERT INTO kickside_automation_delivery_history (automation_id,drive_key,round_token,source_port,item_key,identity_key,state,round_at,expires_at)"
+        .. " SELECT $2,'history','seed','source',CAST(n AS TEXT),CAST(n AS TEXT),'resolved','1800-01-01T00:00:00Z',$3 FROM numbers",
+        {count,id,expiry})
+end
+
 local function define_tests()
     test.describe("AUTOMATION-DELIVERY-HISTORY atomic append and retention",function()
         test.before_each(function() h.ensure_log() end)
@@ -77,7 +84,7 @@ local function define_tests()
         test.it("propagates storage errors and refuses an oversized row before writes",function()
             local outage=errors.new({kind=errors.UNAVAILABLE,message="history unavailable"})
             local _,err=automation_db.in_tx(function(tx)
-                return true,history.record_tx({execute=function() return nil,outage end},round(uuid.v7()),{item("one","{}")})
+                return true,history.record_tx({query=function(_,statement,params) return tx:query(statement,params) end,execute=function() return nil,outage end},round(uuid.v7()),{item("one","{}")})
             end)
             test.not_nil(err)
             test.is_true(tostring(err):find("history unavailable",1,true) ~= nil)
@@ -113,6 +120,55 @@ local function define_tests()
             test.is_nil(second_err,tostring(second_err))
             test.eq(#rows(id),1)
             test.eq(rows(id)[1].item_key,"c")
+        end)
+
+        test.it("bounds a busy drive's retained window while preserving other automations",function()
+            local id,other=uuid.v7(),uuid.v7()
+            seed(id,9990,"2099-01-01T00:00:00Z")
+            seed(other,3,"2099-01-01T00:00:00Z")
+            local outcomes: {Map}={}
+            for index=1,205 do outcomes[#outcomes+1]=item("recent-" .. tostring(index)) end
+            local _,err=automation_db.in_tx(function(tx) return true,history.record_tx(tx,round(id),outcomes) end)
+            test.is_nil(err,tostring(err))
+            test.eq(#rows(id),10000)
+            test.eq(#rows(other),3)
+            local independent=round(id)
+            independent.drive_key="independent"
+            local _,independent_err=automation_db.in_tx(function(tx)
+                return true,history.record_tx(tx,independent,{item("another-drive")})
+            end)
+            test.is_nil(independent_err,tostring(independent_err))
+            test.eq(#rows(id),10001)
+            test.eq(#h.query("SELECT item_key FROM kickside_automation_delivery_history WHERE automation_id=$1 AND drive_key='history'",{id}),10000)
+            test.eq(#h.query("SELECT item_key FROM kickside_automation_delivery_history WHERE automation_id=$1 AND drive_key='history' AND round_at=$2",{id,NOW}),205)
+        end)
+
+        test.it("drains a large retained table through bounded age pruning after an update",function()
+            local id=uuid.v7()
+            local cutoff="1900-01-01T00:00:00Z"
+            seed(id,12050,cutoff)
+            local total=0
+            for page=1,13 do
+                local count,err=automation_db.in_tx(function(tx) return history.prune_tx(tx,cutoff,1000) end)
+                test.is_nil(err,tostring(err))
+                test.is_true(count <= 1000)
+                total=total+count
+            end
+            test.eq(total,12050)
+            test.eq(#rows(id),0)
+        end)
+
+        test.it("retains a resolution after an intervening failure of the same delivery",function()
+            local id=uuid.v7()
+            for index,state in ipairs({"resolved","retrying","resolved"}) do
+                local r=round(id)
+                r.now="2026-10-11T00:00:0" .. tostring(index) .. "Z"
+                local outcome=item("transition")
+                outcome.state=state
+                local _,err=automation_db.in_tx(function(tx) return true,history.record_tx(tx,r,{outcome}) end)
+                test.is_nil(err,tostring(err))
+            end
+            test.eq(#rows(id),3)
         end)
 
         test.it("does not retain outcomes from a round whose commit fence moves",function()
