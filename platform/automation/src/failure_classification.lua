@@ -11,9 +11,15 @@ type ClassifiedFailure = {
     retry_after_ms: integer?,
     retry_at_ms: integer?,
     details: Map?,
+    sink_effect: boolean?,
 }
 
 local M = {}
+
+-- UNACKNOWLEDGED is the code of a writable answer that carries no explicit
+-- success=true acknowledgement and no error of the sink's own: the sink may
+-- have applied the write.
+M.UNACKNOWLEDGED = "unacknowledged_write"
 
 local KIND_INTERNAL: string = errors.INTERNAL :: string
 local KIND_UNAVAILABLE: string = errors.UNAVAILABLE :: string

@@ -74,11 +74,13 @@ function part.attach(M: any, dependencies: any, _P: any): ()
                 if type(res) ~= "table" then
                     local classified = failure_classification.classify({
                         kind = errors.INVALID,
+                        code = failure_classification.UNACKNOWLEDGED,
                         message = "writable result must explicitly acknowledge success=true",
                         retriable = false,
                     })
                     return nil, classified.message, {
                         kind = classified.kind,
+                        code = classified.code,
                         message = classified.message,
                         retriable = classified.retriable,
                         terminal = not classified.retriable,
@@ -87,12 +89,17 @@ function part.attach(M: any, dependencies: any, _P: any): ()
                 local result = res :: Map
                 if result.success ~= true then
                     local rerr: any = result.error
+                    -- Only an explicit success=false or the sink's own error is
+                    -- a refusal; any other answer leaves the write unacknowledged.
+                    local refused = result.success == false or rerr ~= nil
                     local classified = failure_classification.classify(rerr or {
                         kind = errors.INVALID,
+                        code = not refused and failure_classification.UNACKNOWLEDGED or nil,
                         message = "writable result must explicitly acknowledge success=true",
                         retriable = false,
                     })
                     local envelope: Map = type(rerr) == "table" and copy_map(rerr) or {}
+                    if not refused then envelope.code = classified.code end
                     envelope.kind = classified.kind
                     envelope.message = classified.message
                     envelope.retriable = classified.retriable

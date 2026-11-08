@@ -237,6 +237,26 @@ local function define_tests()
             refused_after_reconfigure(id, "accepted_published", items, 1)
         end)
 
+        test.it("refuses a reconfigured replay of an item a sink slot accepted before another refused", function()
+            local items = { { key = "partial", directive = "partial" } }
+            local id = install(items)
+            run(id)
+            test.eq(ledger(id, "partial").state, "dead")
+            test.eq(receipts(id, "partial"), 1, "the accepted slot recorded its destination")
+            refused_after_reconfigure(id, "partial", items, 1)
+        end)
+
+        test.it("refuses a reconfigured replay of a write whose answer lacked its acknowledgement", function()
+            local items = { { key = "unacknowledged", directive = "unacknowledged" } }
+            local id = install(items)
+            run(id)
+            local failed = h.query("SELECT state, error_code FROM kickside_trigger_item_ledger WHERE owner_id = $1 AND item_key = 'unacknowledged'",
+                { id })[1]
+            test.eq(failed.state, "dead")
+            test.eq(failed.error_code, "unacknowledged_write")
+            refused_after_reconfigure(id, "unacknowledged", items, 1)
+        end)
+
         test.it("refuses a reconfigured replay once the delivery history no longer covers every attempt", function()
             local items = { { key = "pruned", directive = "invalid" } }
             local id = install(items)

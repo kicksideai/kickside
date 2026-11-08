@@ -21,6 +21,7 @@ local canonical_json = require("canonical_json")
 
 local identity = require("delivery_identity")
 local history = require("round_history")
+local failure_classification = require("failure_classification")
 
 local drive = require("drive")
 
@@ -395,11 +396,20 @@ function M.reserve_uncertain_tx(tx: any, owner: string, port: string, item: Map,
     return { send = true }, prior and UNRESOLVED[tostring(prior.state)] and 0 or 1, nil
 end
 
--- Outcomes that prove an attempt returned without a sink effect: a
--- deterministic refusal (dead, parked) by the sink or before its call, and a
--- capacity wait. A retriable failure or an uncertain send may have reached the
--- sink.
+-- Outcomes that can return without a sink effect: a deterministic refusal
+-- (dead, parked) and a capacity wait. A retriable failure or an uncertain
+-- send may have reached the sink.
 local REFUSED: { [string]: boolean } = { dead = true, parked = true, waiting = true }
+
+-- refusal(outcome) -> whether a recorded outcome proves its attempt left no
+-- sink effect: a refusal raised by the sink as an error or before its call.
+-- A failure answered with receipts wrote destinations, and an unacknowledged
+-- answer may have been applied.
+local function refusal(outcome: Map): boolean
+    if not REFUSED[tostring(outcome.state)] then return false end
+    local failure = type(outcome.error) == "table" and (outcome.error :: Map) or {}
+    return failure.sink_effect ~= true and failure.code ~= failure_classification.UNACKNOWLEDGED
+end
 
 -- unsent(executor, d, delivery_key) -> whether the retained item now under
 -- delivery_key provably never reached its sink: the delivery history holds an
@@ -423,12 +433,12 @@ function M.unsent(executor: any, d: Map, delivery_key: string): (boolean?, error
         item.attempt_generation = generation
         keys[#keys + 1] = identity.keys(d, item).idempotency_key
     end
-    local states, states_err = history.states(executor, owner, port, tostring(row.item_key), keys)
-    if states_err or not states then return nil, states_err end
+    local outcomes, outcomes_err = history.outcomes(executor, owner, port, tostring(row.item_key), keys)
+    if outcomes_err or not outcomes then return nil, outcomes_err end
     local attempts = 0
-    for _, state in ipairs(states) do
-        if not REFUSED[state] then return false, nil end
-        if state ~= M.STATE.WAITING then attempts = attempts + 1 end
+    for _, outcome in ipairs(outcomes) do
+        if not refusal(outcome) then return false, nil end
+        if outcome.state ~= M.STATE.WAITING then attempts = attempts + 1 end
     end
     return attempts == math.floor(tonumber(row.attempts) or 0), nil
 end

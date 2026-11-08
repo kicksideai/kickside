@@ -178,8 +178,9 @@ end
 -- replay-unsafe transform (every transform unless config.replay_safe),
 -- normalization and the classified write. A declared config.transform.directive
 -- replaces each item's directive in the transformed output, and the prepared
--- payload hash covers the transform. A delete item removes every destination
--- slot its receipts name.
+-- payload hash covers the transform. A partial directive fails the item with
+-- the receipts of the slot its write delivered. A delete item removes every
+-- destination slot its receipts name.
 local function deliver_to_sink(r: Map, d: Map, config: Map): Map
     local transform = type(config.transform) == "table" and (config.transform :: Map) or nil
     local declared = transform and json.encode(transform) or ""
@@ -247,6 +248,12 @@ local function deliver_to_sink(r: Map, d: Map, config: Map): Map
                     identity_key = keys.identity_key, idempotency_key = keys.idempotency_key,
                     dest_ref = unslotted and unslotted.dest_ref or nil,
                 }, d, item)
+                if input.directive == "partial" and outcome.state == "delivered" then
+                    -- One destination slot accepted the write and a later slot
+                    -- refused it: the item fails with the accepted slot's receipts.
+                    outcome = { state = "failed", receipts = outcome.receipts, error = { kind = "Invalid",
+                        code = "invalid_request", message = "second slot refused", retriable = false } }
+                end
                 classify_write(out, item.delivery_key, outcome, outcome.receipts or {}, keys.idempotency_key)
             end
         end
@@ -309,7 +316,8 @@ end
 
 -- write is the fixture store's kickside.data:writable.write: it records the
 -- write and answers a delete as deleted, else by the input's directive: slots
--- (two destination slots a and b), capacity (a capacity wait),
+-- (two destination slots a and b), unacknowledged (an accepted write whose
+-- answer lacks success=true), capacity (a capacity wait),
 -- timeout (an ambiguous failure), invalid (a deterministic failure), conflict
 -- (idempotency_conflict); anything else commits with a destination ref.
 function M.write(request: any): (any, any)
@@ -351,6 +359,8 @@ function M.write(request: any): (any, any)
             refs[slot] = { dest_ref = { id = "rec:" .. tostring(r.identity_key) .. ":" .. slot }, dest_version = "v1" }
         end
         return { success = true, dest_refs = refs }, nil
+    elseif what == "unacknowledged" then
+        return { accepted = true, dest_ref = { id = "rec:" .. tostring(r.identity_key) } }, nil
     elseif what == "capacity" then
         return { success = false, error = { code = "rate_limited", scope = "capacity", retry_after_ms = 30000, retriable = true, message = "busy" } }, nil
     elseif what == "timeout" then
