@@ -202,7 +202,7 @@ onMounted(() => { void loadByTagName('wc-render-markdown', { timeoutMs: 8000 }).
               <div class="km-sec-title"><Icon icon="tabler:hierarchy-2" class="km-i km-accent" aria-hidden="true" /> Installs {{ c.moduleCount.value }} module{{ c.moduleCount.value === 1 ? '' : 's' }}
                 <span v-if="c.totalSize.value" class="km-dim">· {{ fmtBytes(c.totalSize.value) }}</span>
               </div>
-              <p class="km-hint">The module plus its full dependency chain (ns.dependency), resolved to these versions.</p>
+              <p class="km-hint">Includes these dependencies at the versions shown.</p>
 
               <div v-for="n in c.planRows.value" :key="n.path || n.module" class="km-mrow" :class="{ 'km-mrow-direct': n.direct || n.module === props.component, 'km-mrow-transitive': !(n.direct || n.module === props.component) }" :style="{ '--tree-level': n.level }">
                 <Icon v-if="n.level > 0" icon="tabler:corner-down-right" class="km-i-sm km-dim" aria-hidden="true" />
@@ -225,12 +225,12 @@ onMounted(() => { void loadByTagName('wc-render-markdown', { timeoutMs: 8000 }).
               <div class="km-skel km-skel-field" v-for="i in 3" :key="i" />
             </template>
             <template v-else-if="!c.requirements.value.length">
-              <div class="km-empty-inline"><Icon icon="tabler:circle-check" class="km-i-lg km-sev-ok-fg" aria-hidden="true" /><p>Nothing to configure — this module binds no host resources.</p></div>
+              <div class="km-empty-inline"><Icon icon="tabler:circle-check" class="km-i-lg km-sev-ok-fg" aria-hidden="true" /><p>Nothing to configure — this module needs no additional resources.</p></div>
             </template>
             <template v-else>
               <div class="km-sec-title"><Icon icon="tabler:adjustments" class="km-i km-accent" aria-hidden="true" /> Configuration <span class="km-dim">({{ c.boundRequirementCount.value }}/{{ c.requirements.value.length }} set)</span></div>
               <div class="km-req-toolbar">
-                <p class="km-hint km-grow">Bind root requirements to host resources. Transitive requirements are shown for review and are configured by their owning module.</p>
+                <p class="km-hint km-grow">Connect required resources. Resources already configured by a dependency are shown for review.</p>
                 <Button v-if="c.aiResolvableCount.value" size="small" severity="secondary" outlined :disabled="c.aiResolving.value || !c.planCurrent.value" @click="c.resolveRequirementsWithAI(mainRef)">
                   <Icon :icon="c.aiResolving.value ? 'tabler:loader-2' : 'tabler:sparkles'" :class="['km-i', c.aiResolving.value && 'spin']" aria-hidden="true" />
                   {{ c.aiResolving.value ? 'Resolving…' : 'Resolve with AI' }}
@@ -449,21 +449,16 @@ onMounted(() => { void loadByTagName('wc-render-markdown', { timeoutMs: 8000 }).
               <template v-if="c.result.value.dry_run">
                 <div class="km-dim">No changes were applied.</div>
                 <div v-if="c.resultExecution.value.length" class="km-dim">{{ c.resultExecution.value.length }} planned step{{ c.resultExecution.value.length === 1 ? '' : 's' }} below.</div>
-                <div v-else class="km-dim">Keeper accepted the dry-run but returned no execution details.</div>
+                <div v-else class="km-dim">No install steps are available for this preview.</div>
               </template>
               <template v-else>
-                <div v-if="c.result.value.apply?.stage || c.result.value.operation_id" class="km-dim">
-                  <template v-if="c.result.value.apply?.stage">stage: {{ c.result.value.apply.stage }}</template>
-                  <template v-if="c.result.value.apply?.stage && c.result.value.operation_id"> · </template>
-                  <template v-if="c.result.value.operation_id">op: <code class="km-mono">{{ c.result.value.operation_id }}</code></template>
-                </div>
-                <div v-else class="km-dim">Changes applied successfully.</div>
+                <div class="km-dim">Changes applied successfully.</div>
                 <div v-if="c.result.value.apply?.message" class="km-dim">{{ c.result.value.apply.message }}</div>
               </template>
             </div>
 
             <div v-if="c.resultExecution.value.length" class="km-ledger">
-              <div class="km-panel-title">Execution ledger</div>
+              <div class="km-panel-title">Install steps</div>
               <div v-for="(s, i) in c.resultExecution.value" :key="`${s.step}-${i}`" class="km-ledger-row" :class="ledgerClass(s.status)">
                 <span class="km-ledger-step">{{ i + 1 }}</span>
                 <span class="km-grow">{{ c.executionStepLabel(s) }}</span>
