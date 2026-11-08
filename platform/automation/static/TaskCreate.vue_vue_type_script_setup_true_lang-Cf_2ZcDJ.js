@@ -1,5 +1,5 @@
 import { W as le, e as _, _ as q, u as se, a as pe } from "./errMsg-kIukmtcj.js";
-import { watch as N, defineComponent as X, ref as d, computed as x, onMounted as Y, openBlock as r, createElementBlock as p, createElementVNode as w, createTextVNode as F, createCommentVNode as b, Fragment as R, renderList as de, toDisplayString as S, createVNode as M, createBlock as H, unref as D, withModifiers as ce, withDirectives as G, vModelText as ue, vModelCheckbox as fe } from "vue";
+import { watch as N, defineComponent as X, ref as d, computed as m, onMounted as Y, openBlock as r, createElementBlock as s, createElementVNode as v, createTextVNode as F, createCommentVNode as h, Fragment as R, renderList as de, toDisplayString as S, createVNode as M, createBlock as H, unref as D, withModifiers as ce, withDirectives as G, vModelText as ue, vModelCheckbox as fe } from "vue";
 import { api as P } from "@wippy-fe/proxy";
 import { v as ge, u as xe, c as J } from "./install-form-Ce0pU51G.js";
 import { p as me, s as we, a as he, _ as ve, b as Q, c as ke, d as be, t as ye, f as ze } from "./source-instance-B4gbQvx6.js";
@@ -57,32 +57,32 @@ const _e = { class: "task-target" }, Ee = { class: "task-field" }, Te = ["value"
     const n = u, l = $, U = [
       { kind: "workflow", title: "Published workflow", tag: "wc-workflow-picker" },
       { kind: "action", title: "Writable action", tag: "wc-schema-form" }
-    ], m = d([]), T = d(!0), y = d(""), z = x(() => U.filter((e) => m.value.includes(e.tag))), A = x(() => U.filter((e) => m.value.includes(e.tag) || e.kind === n.modelValue.kind));
+    ], g = d([]), T = d(!0), y = d(""), z = m(() => U.filter((e) => g.value.includes(e.tag))), A = m(() => U.filter((e) => g.value.includes(e.tag) || e.kind === n.modelValue.kind));
     Y(async () => {
       try {
         const { data: e } = await P.get("/api/v1/views/components/list");
         if (!e.success || !Array.isArray(e.components)) throw new Error("The task target provider catalog is unavailable.");
-        m.value = e.components.flatMap((o) => o.wippy?.tagName ? [o.wippy.tagName] : []), !n.modelValue.kind && z.value.length && l("update:modelValue", { kind: z.value[0].kind });
+        g.value = e.components.flatMap((o) => o.wippy?.tagName ? [o.wippy.tagName] : []), !n.modelValue.kind && z.value.length && l("update:modelValue", { kind: z.value[0].kind });
       } catch (e) {
         y.value = _(e, "Could not load task target providers.");
       } finally {
         T.value = !1;
       }
     });
-    const I = d([]), C = d(""), V = d(!1), c = d(null), s = d(""), E = d(!1), g = x(() => n.modelValue.kind), f = x(() => I.value.find((e) => e.id === n.modelValue.port) || null), B = x(() => I.value.map((e) => ({
+    const I = d([]), C = d(""), V = d(!1), c = d(null), p = d(""), E = d(!1), x = m(() => n.modelValue.kind), f = m(() => I.value.find((e) => e.id === n.modelValue.port) || null), B = m(() => I.value.map((e) => ({
       id: e.id,
       title: e.title || e.name || e.id,
       icon: e.icon,
       group: e.group,
       subtitle: e.description
-    }))), a = x(() => me(f.value, "TaskTarget")), t = x(() => we(f.value, "TaskTarget")), h = x(() => he(f.value, a.value)), Z = { properties: { agent_id: { picker: "wc-agent-picker", title: "Agent", required: !0 } } }, ee = x(() => n.modelValue.agent_id ? { agent_id: n.modelValue.agent_id } : {}), K = x(() => g.value === "workflow" ? c.value : f.value?.input_schema);
+    }))), a = m(() => me(f.value, "TaskTarget")), t = m(() => we(f.value, "TaskTarget")), w = m(() => he(f.value, a.value)), Z = { properties: { agent_id: { picker: "wc-agent-picker", title: "Agent", required: !0 } } }, ee = m(() => n.modelValue.agent_id ? { agent_id: n.modelValue.agent_id } : {}), K = m(() => x.value === "workflow" ? c.value : f.value?.input_schema);
     function j(e) {
       l("update:modelValue", { ...n.modelValue, ...e });
     }
     function te(e) {
       l("update:modelValue", { kind: e.target.value });
     }
-    const oe = { properties: { flow_ref: { picker: "wc-workflow-picker", title: "Published workflow", required: !0 } } }, ae = x(() => n.modelValue.flow_ref ? { flow_ref: n.modelValue.flow_ref } : {});
+    const oe = { properties: { flow_ref: { picker: "wc-workflow-picker", title: "Published workflow", required: !0 } } }, ae = m(() => n.modelValue.flow_ref ? { flow_ref: n.modelValue.flow_ref } : {});
     function ie(e) {
       const o = L(e).flow_ref;
       l("update:modelValue", { kind: "workflow", flow_ref: o, input: {} });
@@ -97,83 +97,83 @@ const _e = { class: "task-target" }, Ee = { class: "task-field" }, Te = ["value"
       const i = ke(e);
       return i ? ge({ inputs: i }, o) : "";
     }
-    const ne = x(() => {
+    const ne = m(() => {
       const e = n.modelValue;
-      if (!g.value)
+      if (!x.value)
         return T.value ? "Loading task target providers…" : y.value || "No task target providers are available.";
-      if (g.value === "agent")
+      if (x.value === "agent")
         return e.agent_id?.trim() ? e.prompt?.trim() ? "" : "Enter a prompt." : "Choose an agent.";
-      if (g.value === "workflow")
-        return E.value ? "Loading the published workflow…" : s.value ? s.value : !e.flow_ref?.id || !Number.isInteger(e.flow_ref.version) || e.flow_ref.version < 1 ? "Choose a published workflow." : W(c.value, e.input || {});
+      if (x.value === "workflow")
+        return E.value ? "Loading the published workflow…" : p.value ? p.value : !e.flow_ref?.id || !Number.isInteger(e.flow_ref.version) || e.flow_ref.version < 1 ? "Choose a published workflow." : W(c.value, e.input || {});
       if (V.value) return "Loading destinations…";
       if (C.value) return C.value;
       if (!f.value) return "Choose a writable action.";
       const o = f.value.config_schema || {};
-      return W({ properties: o, required: Object.keys(o).filter((v) => o[v].required) }, e.config || {}) || W(f.value.input_schema, e.input || {});
+      return W({ properties: o, required: Object.keys(o).filter((k) => o[k].required) }, e.config || {}) || W(f.value.input_schema, e.input || {});
     });
-    return N(ne, (e) => l("validation", e), { immediate: !0 }), N(g, async (e, o, i) => {
+    return N(ne, (e) => l("validation", e), { immediate: !0 }), N(x, async (e, o, i) => {
       if (e !== "action") return;
-      let v = !0;
+      let k = !0;
       i(() => {
-        v = !1;
+        k = !1;
       }), V.value = !0, C.value = "";
       try {
-        const { data: k } = await P.get("/api/v1/automations/sinks");
-        if (!Array.isArray(k.sinks)) throw new Error("The destination catalog is unavailable.");
-        v && (I.value = k.sinks);
-      } catch (k) {
-        v && (C.value = _(k, "Could not load destinations."));
+        const { data: b } = await P.get("/api/v1/automations/sinks");
+        if (!Array.isArray(b.sinks)) throw new Error("The destination catalog is unavailable.");
+        k && (I.value = b.sinks);
+      } catch (b) {
+        k && (C.value = _(b, "Could not load destinations."));
       } finally {
-        v && (V.value = !1);
+        k && (V.value = !1);
       }
     }, { immediate: !0 }), N(() => n.modelValue.flow_ref, async (e, o, i) => {
-      if (E.value = !1, s.value = "", !e) return;
-      let v = !0;
+      if (E.value = !1, p.value = "", !e) return;
+      let k = !0;
       i(() => {
-        v = !1;
-      }), E.value = !0, s.value = "";
+        k = !1;
+      }), E.value = !0, p.value = "";
       try {
-        const { data: k } = await P.get(`/api/v1/workflows/${encodeURIComponent(e.id)}/versions/${e.version}`);
-        if (!k.success || !k.version) throw new Error(_(k.error, "Could not read the published workflow."));
-        const O = k.version;
+        const { data: b } = await P.get(`/api/v1/workflows/${encodeURIComponent(e.id)}/versions/${e.version}`);
+        if (!b.success || !b.version) throw new Error(_(b.error, "Could not read the published workflow."));
+        const O = b.version;
         if (O.version !== e.version) throw new Error("The published workflow version is unavailable.");
-        v && (c.value = O.interface?.input_schema ?? O.input_schema);
-      } catch (k) {
-        v && (s.value = _(k, "Could not read the published workflow."));
+        k && (c.value = O.interface?.input_schema ?? O.input_schema);
+      } catch (b) {
+        k && (p.value = _(b, "Could not read the published workflow."));
       } finally {
-        v && (E.value = !1);
+        k && (E.value = !1);
       }
-    }, { immediate: !0 }), (e, o) => (r(), p("div", _e, [
-      w("label", Ee, [
+    }, { immediate: !0 }), (e, o) => (r(), s("div", _e, [
+      v("label", Ee, [
         o[6] || (o[6] = F("Target ", -1)),
-        w("select", {
-          value: g.value,
+        v("select", {
+          value: x.value,
           "aria-label": "Target kind",
           disabled: u.disabled,
           onChange: te
         }, [
-          o[5] || (o[5] = w("option", {
+          o[5] || (o[5] = v("option", {
             value: "",
             disabled: ""
           }, "Choose a target…", -1)),
-          g.value === "agent" ? (r(), p("option", Se, "Agent prompt (existing task)")) : b("", !0),
-          (r(!0), p(R, null, de(A.value, (i) => (r(), p("option", {
+          x.value === "agent" ? (r(), s("option", Se, "Agent prompt")) : h("", !0),
+          (r(!0), s(R, null, de(A.value, (i) => (r(), s("option", {
             key: i.kind,
             value: i.kind
           }, S(i.title), 9, $e))), 128))
         ], 40, Te)
       ]),
-      y.value ? (r(), p("p", Ue, S(y.value), 1)) : b("", !0),
-      g.value === "agent" ? (r(), p(R, { key: 1 }, [
+      y.value ? (r(), s("p", Ue, S(y.value), 1)) : h("", !0),
+      x.value === "agent" ? (r(), s(R, { key: 1 }, [
         M(q, {
           tag: "wc-agent-picker",
           config: ee.value,
           schema: Z,
           onChange: re
         }, null, 8, ["config"]),
-        w("label", Ae, [
+        v("label", Ae, [
           o[7] || (o[7] = F("Prompt ", -1)),
-          w("textarea", {
+          v("textarea", {
             value: u.modelValue.prompt || "",
             "aria-label": "Prompt",
             rows: "4",
@@ -181,15 +181,15 @@ const _e = { class: "task-target" }, Ee = { class: "task-field" }, Te = ["value"
             onInput: o[0] || (o[0] = (i) => j({ prompt: i.target.value }))
           }, null, 40, Ie)
         ])
-      ], 64)) : g.value === "workflow" ? (r(), p(R, { key: 2 }, [
+      ], 64)) : x.value === "workflow" ? (r(), s(R, { key: 2 }, [
         M(q, {
           tag: "wc-workflow-picker",
           config: ae.value,
           schema: oe,
           onChange: ie
         }, null, 8, ["config"]),
-        s.value ? (r(), p("p", Me, S(s.value), 1)) : b("", !0)
-      ], 64)) : g.value === "action" ? (r(), p(R, { key: 3 }, [
+        p.value ? (r(), s("p", Me, S(p.value), 1)) : h("", !0)
+      ], 64)) : x.value === "action" ? (r(), s(R, { key: 3 }, [
         M(ve, {
           items: B.value,
           "model-value": u.modelValue.port || "",
@@ -200,14 +200,14 @@ const _e = { class: "task-target" }, Ee = { class: "task-field" }, Te = ["value"
           placeholder: "Pick a writable action…",
           "onUpdate:modelValue": o[1] || (o[1] = (i) => l("update:modelValue", { kind: "action", port: i, config: {}, input: {} }))
         }, null, 8, ["items", "model-value", "loading", "error", "disabled"]),
-        f.value ? (r(), p(R, { key: 0 }, [
-          f.value.description ? (r(), p("p", Ne, S(f.value.description), 1)) : b("", !0),
+        f.value ? (r(), s(R, { key: 0 }, [
+          f.value.description ? (r(), s("p", Ne, S(f.value.description), 1)) : h("", !0),
           (r(), H(q, {
             key: f.value.id,
             tag: a.value?.tag || "wc-schema-form",
             schema: a.value?.schema || t.value,
             config: u.modelValue.config || {},
-            meta: h.value,
+            meta: w.value,
             provider: f.value.provider,
             onChange: o[2] || (o[2] = (i) => j({ config: L(i) }))
           }, null, 8, ["tag", "schema", "config", "meta", "provider"])),
@@ -217,18 +217,18 @@ const _e = { class: "task-target" }, Ee = { class: "task-field" }, Te = ["value"
             schema: t.value,
             config: u.modelValue.config || {},
             onChange: o[3] || (o[3] = (i) => j({ config: L(i) }))
-          }, null, 8, ["schema", "config"])) : b("", !0)
-        ], 64)) : b("", !0)
-      ], 64)) : b("", !0),
-      g.value !== "agent" && D(Q)(K.value) ? (r(), p("div", Pe, [
-        o[8] || (o[8] = w("span", null, "Input", -1)),
+          }, null, 8, ["schema", "config"])) : h("", !0)
+        ], 64)) : h("", !0)
+      ], 64)) : h("", !0),
+      x.value !== "agent" && D(Q)(K.value) ? (r(), s("div", Pe, [
+        o[8] || (o[8] = v("span", null, "Input", -1)),
         M(q, {
           tag: "wc-schema-form",
           schema: K.value,
           config: u.modelValue.input || {},
           onChange: o[4] || (o[4] = (i) => j({ input: L(i) }))
         }, null, 8, ["schema", "config"])
-      ])) : b("", !0)
+      ])) : h("", !0)
     ]));
   }
 }), Le = {
@@ -237,15 +237,18 @@ const _e = { class: "task-target" }, Ee = { class: "task-field" }, Te = ["value"
 }, qe = {
   key: 1,
   role: "alert"
-}, Re = { class: "task-field" }, Be = ["disabled"], Fe = { class: "task-check" }, We = ["disabled"], Oe = {
+}, Re = { class: "task-field" }, Be = ["disabled"], Fe = {
   key: 0,
+  class: "task-check"
+}, We = ["disabled"], Oe = {
+  key: 1,
   "aria-label": "Schedule (UTC)"
 }, De = {
-  key: 1,
+  key: 2,
   class: "task-error",
   role: "alert"
 }, Ke = {
-  key: 2,
+  key: 3,
   class: "task-actions"
 }, He = ["disabled"], Ge = ["disabled"], tt = /* @__PURE__ */ X({
   __name: "TaskCreate",
@@ -253,28 +256,28 @@ const _e = { class: "task-target" }, Ee = { class: "task-field" }, Te = ["value"
     recurring: { type: Boolean }
   },
   setup(u) {
-    const $ = u, n = se(), l = pe(), U = xe(n), m = x(() => String(J(n.value.config).id || "")), T = d(""), y = d(!0), z = d(null), A = d({ kind: "" }), I = d("Choose a target."), C = d(!0), V = d(!1), c = d(!1), s = d("");
+    const $ = u, n = se(), l = pe(), U = xe(n), g = m(() => String(J(n.value.config).id || "")), T = d(""), y = d(!0), z = d(null), A = d({ kind: "" }), I = d("Choose a target."), C = d(!0), V = d(!1), c = d(!1), p = d("");
     N(c, (a) => l("submit-state", { saving: a })), Ve(n, B, c);
-    const E = x(() => $.recurring && !z.value ? "Complete the UTC schedule." : I.value);
-    function g(a) {
+    const E = m(() => $.recurring && !z.value ? "Complete the UTC schedule." : I.value);
+    function x(a) {
       T.value = typeof a.title == "string" ? a.title : "", y.value = a.enabled !== !1, z.value = ze(a.schedule || null), A.value = a.target || { kind: "" };
     }
     async function f() {
-      C.value = !0, V.value = !1, s.value = "";
+      C.value = !0, V.value = !1, p.value = "";
       try {
-        if (m.value) {
+        if (g.value) {
           const { data: a } = await P.get(
-            `/api/v1/automations/${encodeURIComponent(m.value)}/config`
+            `/api/v1/automations/${encodeURIComponent(g.value)}/config`
           );
           if (!a.success) throw new Error(_(a.error, "Could not load the task."));
           const t = a.config?._portable_input;
           if (!t || typeof t != "object" || Array.isArray(t) || typeof a.config?.enabled != "boolean")
             throw new Error("The task has no stored declaration.");
-          g({ ...t, enabled: a.config?.enabled });
-        } else g(J(n.value.input));
+          x({ ...t, enabled: a.config?.enabled });
+        } else x(J(n.value.input));
         V.value = !0;
       } catch (a) {
-        s.value = _(a, "Could not load the task.");
+        p.value = _(a, "Could not load the task.");
       } finally {
         C.value = !1;
       }
@@ -282,10 +285,10 @@ const _e = { class: "task-target" }, Ee = { class: "task-field" }, Te = ["value"
     async function B() {
       if (!V.value || c.value) return;
       if (E.value) {
-        s.value = E.value, m.value || l("automation-installed", { success: !1, error: s.value });
+        p.value = E.value, g.value || l("automation-installed", { success: !1, error: p.value });
         return;
       }
-      c.value = !0, s.value = "";
+      c.value = !0, p.value = "";
       const a = {
         title: T.value,
         enabled: y.value,
@@ -293,10 +296,10 @@ const _e = { class: "task-target" }, Ee = { class: "task-field" }, Te = ["value"
         ...$.recurring && z.value ? { schedule: ye(z.value) } : {}
       };
       try {
-        if (m.value) {
-          const { data: t } = await P.put(`/api/v1/automations/${encodeURIComponent(m.value)}`, { input: a });
+        if (g.value) {
+          const { data: t } = await P.put(`/api/v1/automations/${encodeURIComponent(g.value)}`, { input: a });
           if (!t.success) throw new Error(_(t.error, "Could not save the task."));
-          l("change", { id: m.value }), l("close", {});
+          l("change", { id: g.value }), l("close", {});
         } else {
           const { data: t } = await P.post("/api/v1/automations", {
             type: n.value.typeId,
@@ -307,68 +310,68 @@ const _e = { class: "task-target" }, Ee = { class: "task-field" }, Te = ["value"
           l("automation-installed", { success: !0, id: t.id }), l("created", { id: t.id });
         }
       } catch (t) {
-        s.value = _(t, "Could not save the task."), m.value || l("automation-installed", { success: !1, error: s.value });
+        p.value = _(t, "Could not save the task."), g.value || l("automation-installed", { success: !1, error: p.value });
       } finally {
         c.value = !1;
       }
     }
-    return Y(f), N(m, f), (a, t) => C.value ? (r(), p("p", Le, "Loading task…")) : V.value ? (r(), p("form", {
+    return Y(f), N(g, f), (a, t) => C.value ? (r(), s("p", Le, "Loading task…")) : V.value ? (r(), s("form", {
       key: 2,
       class: "task-form",
       onSubmit: ce(B, ["prevent"])
     }, [
-      w("label", Re, [
+      v("label", Re, [
         t[6] || (t[6] = F("Title ", -1)),
-        G(w("input", {
-          "onUpdate:modelValue": t[0] || (t[0] = (h) => T.value = h),
+        G(v("input", {
+          "onUpdate:modelValue": t[0] || (t[0] = (w) => T.value = w),
           "aria-label": "Title",
           disabled: c.value
         }, null, 8, Be), [
           [ue, T.value]
         ])
       ]),
-      w("label", Fe, [
-        G(w("input", {
-          "onUpdate:modelValue": t[1] || (t[1] = (h) => y.value = h),
+      g.value ? h("", !0) : (r(), s("label", Fe, [
+        G(v("input", {
+          "onUpdate:modelValue": t[1] || (t[1] = (w) => y.value = w),
           type: "checkbox",
           disabled: c.value
         }, null, 8, We), [
           [fe, y.value]
         ]),
         t[7] || (t[7] = F(" Enabled", -1))
-      ]),
-      u.recurring ? (r(), p("section", Oe, [
-        t[8] || (t[8] = w("p", { class: "task-hint" }, "All times are UTC.", -1)),
+      ])),
+      u.recurring ? (r(), s("section", Oe, [
+        t[8] || (t[8] = v("p", { class: "task-hint" }, "All times are UTC.", -1)),
         M(be, {
           modelValue: z.value,
-          "onUpdate:modelValue": t[2] || (t[2] = (h) => z.value = h),
+          "onUpdate:modelValue": t[2] || (t[2] = (w) => z.value = w),
           "default-preset": "daily",
           disabled: c.value
         }, null, 8, ["modelValue", "disabled"])
-      ])) : b("", !0),
+      ])) : h("", !0),
       M(je, {
         modelValue: A.value,
-        "onUpdate:modelValue": t[3] || (t[3] = (h) => A.value = h),
+        "onUpdate:modelValue": t[3] || (t[3] = (w) => A.value = w),
         disabled: c.value,
-        onValidation: t[4] || (t[4] = (h) => I.value = h)
+        onValidation: t[4] || (t[4] = (w) => I.value = w)
       }, null, 8, ["modelValue", "disabled"]),
-      s.value ? (r(), p("p", De, S(s.value), 1)) : b("", !0),
-      m.value ? (r(), p("div", Ke, [
-        w("button", {
+      p.value ? (r(), s("p", De, S(p.value), 1)) : h("", !0),
+      g.value ? (r(), s("div", Ke, [
+        v("button", {
           type: "button",
           disabled: c.value,
-          onClick: t[5] || (t[5] = (h) => D(l)("close", {}))
+          onClick: t[5] || (t[5] = (w) => D(l)("close", {}))
         }, "Cancel", 8, He),
-        w("button", {
+        v("button", {
           type: "submit",
           disabled: c.value || !!E.value
         }, S(c.value ? "Saving…" : "Save"), 9, Ge)
-      ])) : b("", !0)
-    ], 32)) : (r(), p("p", qe, S(s.value), 1));
+      ])) : h("", !0)
+    ], 32)) : (r(), s("p", qe, S(p.value), 1));
   }
 });
 export {
   et as T,
   tt as _
 };
-//# sourceMappingURL=TaskCreate.vue_vue_type_script_setup_true_lang-DqN2aYrM.js.map
+//# sourceMappingURL=TaskCreate.vue_vue_type_script_setup_true_lang-Cf_2ZcDJ.js.map
