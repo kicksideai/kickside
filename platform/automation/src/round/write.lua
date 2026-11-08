@@ -180,22 +180,28 @@ function M.check_fence(d: any): error?
     return nil
 end
 
--- Read one page of prepared rows with bounded bind lists. A caller can
--- distinguish a missing row from a stored JSON null through the row map.
-local function prepared_rows(owner_id: string, keys: { string }): (Map?, error?)
+-- Read one page of prepared rows with bounded bind lists, each with whether
+-- it was prepared under the declaration the round's drive applies. A caller
+-- can distinguish a missing row from a stored JSON null through the row map.
+local function prepared_rows(d: Map, keys: { string }): (Map?, error?)
     return with_db(function(db: any): (any?, any)
         local found: Map = {}
         for first = 1, #keys, 100 do
-            local params: { any } = { owner_id }
+            local params: { any } = { tostring(d.automation_id), tostring(d.drive_key) }
             local marks: { string } = {}
             for index = first, math.min(#keys, first + 99) do
                 params[#params + 1] = keys[index]
                 marks[#marks + 1] = "$" .. tostring(#params)
             end
-            local rows, err = db:query("SELECT idempotency_key,payload_hash,prepared_json FROM kickside_automation_prepared"
-                .. " WHERE automation_id=$1 AND idempotency_key IN (" .. table.concat(marks, ",") .. ")", params)
+            local rows, err = db:query("SELECT p.idempotency_key,p.payload_hash,p.prepared_json,p.declaration_hash,"
+                .. "d.applied_hash FROM kickside_automation_prepared p JOIN kickside_automation_drive d"
+                .. " ON d.automation_id=p.automation_id"
+                .. " WHERE p.automation_id=$1 AND d.drive_key=$2 AND p.idempotency_key IN (" .. table.concat(marks, ",") .. ")", params)
             if err then return nil, internal("failed to read prepared page", err) end
-            for _, row in ipairs(rows :: { Map }) do found[tostring(row.idempotency_key)] = row end
+            for _, row in ipairs(rows :: { Map }) do
+                row.current_declaration = row.declaration_hash ~= nil and row.declaration_hash == row.applied_hash
+                found[tostring(row.idempotency_key)] = row
+            end
         end
         return found, nil
     end)
@@ -203,7 +209,16 @@ end
 
 -- prepare(spec, compute) runs compute under the round's live fence. A
 -- replay-unsafe spec (prepared = true) persists its output under the delivery
--- key before the write and every retry under that key and hash reuses it.
+-- key before the write and every retry under that key and hash reuses it;
+-- another payload under that key is an idempotency conflict.
+--
+-- A replay gives its delivery a new key and keeps the output prepared under
+-- the key it was admitted under while that output still holds: its payload
+-- hash is the replay's, or it was prepared under the declaration the drive
+-- applies, where another payload is the conflict. Output prepared under a
+-- superseded declaration is stale for the replay: it prepares its payload
+-- again and replaces the admitted key's row, which every later replay of the
+-- item reads.
 function M.prepare(spec: Map, compute: () -> (any?, any)): (any?, any)
     if type(spec) ~= "table" or type(spec.drive) ~= "table" or type(compute) ~= "function" then
         return nil, invalid("preparation requires a spec with its round drive and a compute function")
@@ -217,11 +232,16 @@ function M.prepare(spec: Map, compute: () -> (any?, any)): (any?, any)
     if spec.prepared ~= true then return compute() end
     local evidence, evidence_err = provenance.load_evidence(d, spec.key)
     if evidence_err or not evidence then return nil, evidence_err end
-    -- A replayed delivery keeps the prepared output of the key it was admitted under.
-    local original_key = evidence.prepared_key or spec.key
-    local stored, stored_err = prepared_rows(tostring(d.automation_id), { tostring(original_key),tostring(spec.key) })
+    local original_key = tostring(evidence.prepared_key or spec.key)
+    local stored, stored_err = prepared_rows(d, { original_key, tostring(spec.key) })
     if stored_err or not stored then return nil, stored_err end
-    local prior = (stored :: Map)[tostring(original_key)] or (stored :: Map)[tostring(spec.key)]
+    local prior = (stored :: Map)[tostring(spec.key)]
+    local target = tostring(spec.key)
+    if not prior then
+        local admitted = (stored :: Map)[original_key]
+        if admitted and (admitted.payload_hash == spec.hash or admitted.current_declaration) then prior = admitted end
+        if admitted and not prior then target = original_key end
+    end
     if prior then
         if prior.payload_hash ~= spec.hash then return nil, prepared_output.conflict(tostring(spec.key)) end
         local value, decode_err = json.decode(tostring(prior.prepared_json))
@@ -235,9 +255,9 @@ function M.prepare(spec: Map, compute: () -> (any?, any)): (any?, any)
         return nil, invalid("prepared output must be JSON serializable")
     end
     local results, materialize_err = prepared_output.materialize_many(d,
-        { { key = tostring(spec.key), hash = tostring(spec.hash), encoded = encoded } })
+        { { key = target, delivery = tostring(spec.key), hash = tostring(spec.hash), encoded = encoded } })
     if materialize_err or not results then return nil, materialize_err end
-    local answer = (results :: Map)[tostring(spec.key)]
+    local answer = (results :: Map)[target]
     return answer.value, answer.error
 end
 

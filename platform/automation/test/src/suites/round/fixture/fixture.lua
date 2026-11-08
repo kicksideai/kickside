@@ -112,9 +112,12 @@ function M.install_collection(input: any): (any, any)
     return result, nil
 end
 
+-- reconfigure_collection re-declares the items and, when the input names
+-- them, the sink port and transform the round delivers through.
 function M.reconfigure_collection(input: any): (any, any)
     local id = tostring(ctx.get("component_id") or "")
-    return automations_lib.update_portable_input(id, { items = input.items }, { source = collection_source(input) })
+    return automations_lib.update_portable_input(id, { items = input.items, sink_port = input.sink_port,
+        transform = input.transform }, { source = collection_source(input) })
 end
 
 local function timer_source(input: Map): Map
@@ -173,9 +176,13 @@ end
 -- the sink the drive's applied declaration names: identity and idempotency
 -- keys, the destinations the receipts already map, prepared output for a
 -- replay-unsafe transform (every transform unless config.replay_safe),
--- normalization and the classified write. A delete item removes every
--- destination slot its receipts name.
+-- normalization and the classified write. A declared config.transform.directive
+-- replaces each item's directive in the transformed output, and the prepared
+-- payload hash covers the transform. A delete item removes every destination
+-- slot its receipts name.
 local function deliver_to_sink(r: Map, d: Map, config: Map): Map
+    local transform = type(config.transform) == "table" and (config.transform :: Map) or nil
+    local declared = transform and json.encode(transform) or ""
     local out: Map = { delivered_items = {}, skipped_items = {}, waiting_items = {}, uncertain_items = {}, failed_items = {} }
     local sink, sink_err = round_write.describe_sink(tostring(config.sink_port))
     if sink_err or not sink then error("fixture sink: " .. tostring(sink_err)) end
@@ -190,13 +197,16 @@ local function deliver_to_sink(r: Map, d: Map, config: Map): Map
         if item.op ~= "delete" then
             local source_item = item
             local identity = round_write.keys(d, source_item, nil)
+            local what = transform and type(transform.directive) == "string" and transform.directive
+                or directive(source_item)
             preparations[#preparations + 1] = {
                 drive = d, prepared = config.replay_safe ~= true, key = identity.idempotency_key,
-                hash = tostring(source_item.item_key) .. ":" .. directive(source_item),
+                hash = tostring(source_item.item_key) .. ":" .. directive(source_item)
+                    .. (declared ~= "" and (":" .. declared) or ""),
                 compute = function(): (any?, any)
                     log(tostring(d.automation_id), "transform", tostring(source_item.item_key), 0,
-                        { directive = directive(source_item) })
-                    return { directive = directive(source_item), principal_id = source_item.payload.principal_id, error_kind = source_item.payload.error_kind, title = "record " .. tostring(source_item.item_key),
+                        { directive = what })
+                    return { directive = what, principal_id = source_item.payload.principal_id, error_kind = source_item.payload.error_kind, title = "record " .. tostring(source_item.item_key),
                         content = "record " .. tostring(source_item.item_key) }, nil
                 end,
             }

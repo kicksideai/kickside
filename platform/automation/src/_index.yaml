@@ -102,6 +102,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.automation.migrations:15_prepared_settlement_index
         path: .meta.target_db
+      - entry: kickside.automation.migrations:16_prepared_declaration
+        path: .meta.target_db
       - entry: kickside.automation:db_config
         path: .meta.db_id
 
