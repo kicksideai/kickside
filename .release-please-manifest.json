@@ -28,12 +28,12 @@
   "platform/sync": "0.1.95",
   "platform/transfer": "0.1.34",
   "platform/transform": "0.1.52",
-  "platform/ui": "0.2.7",
+  "platform/ui": "0.2.8",
   "platform/ui-kit": "1.7.0",
   "platform/uploads": "0.3.11",
   "platform/users": "0.2.18",
   "platform/webhooks": "0.1.43",
   "platform/widgets": "0.1.60",
   "platform/workflows": "0.2.11",
-  "app": "0.2.32"
+  "app": "0.2.33"
 }
