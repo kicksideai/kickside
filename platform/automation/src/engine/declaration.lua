@@ -111,6 +111,43 @@ local function trigger_overrides(trigger: any): (Map?, Map?)
     return next(round) and round or nil, next(delivery) and delivery or nil
 end
 
+-- The fields an earlier Trigger Spec v2 carried that the current spec removes,
+-- by trigger block. Each drive resolves its policy through trigger_overrides,
+-- which reads only trigger.poll's acquisition bounds and trigger.delivery, so
+-- these fields are inert on every drive: poll.delivery's retry_after_ms goes
+-- with its block, and the drive keeps the operator default it applies.
+local REMOVED_TRIGGER_FIELDS: { { string } } = {
+    { "poll", "continue_after_ms" },
+    { "poll", "delivery" },
+    { "schedule", "max_retries" },
+    { "schedule", "timeout_seconds" },
+}
+
+-- upgrade_trigger(trigger) -> upgraded, removed: a stored trigger brought to
+-- the current Trigger Spec v2 and the dotted paths it removed, empty when the
+-- trigger is already current. A poll block left without fields is removed
+-- with them. The upgraded trigger is a copy; the input stays as given.
+local function upgrade_trigger(trigger: any): (any, { string })
+    local removed: { string } = {}
+    if type(trigger) ~= "table" then return trigger, removed end
+    local out: Map = {}
+    for key, value in pairs(trigger :: Map) do out[key] = value end
+    for _, field in ipairs(REMOVED_TRIGGER_FIELDS) do
+        local block_key, field_key = field[1], field[2]
+        local block = out[block_key]
+        if type(block) == "table" and (block :: Map)[field_key] ~= nil then
+            local next_block: Map = {}
+            for key, value in pairs(block :: Map) do
+                if key ~= field_key then next_block[key] = value end
+            end
+            out[block_key] = next_block
+            removed[#removed + 1] = "trigger." .. block_key .. "." .. field_key
+        end
+    end
+    if #removed > 0 and type(out.poll) == "table" and next(out.poll :: Map) == nil then out.poll = nil end
+    return out, removed
+end
+
 local function validate_result(result: any): any
     if type(result) ~= "table" then
         return errors.new({
@@ -239,6 +276,7 @@ end
 
 P.normalize_rollback_chain = normalize_rollback_chain
 P.trigger_overrides = trigger_overrides
+P.upgrade_trigger = upgrade_trigger
 P.validate_result = validate_result
 P.validate_source = validate_source
 

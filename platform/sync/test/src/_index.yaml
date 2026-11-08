@@ -69,6 +69,7 @@ entries:
       automations_lib: kickside.automation:automation
       binding_validation: kickside.automation:binding_validation
       drive: kickside.automation:drive
+      engine_schema: kickside.automation.engine:schema
 
   - name: round_delivery_test
     kind: function.lua
