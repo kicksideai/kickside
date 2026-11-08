@@ -292,11 +292,6 @@
 /* Detail view */
 .kx-detail-meta { display: flex; flex-direction: column; gap: 6px; max-width: 900px; }
 .kx-detail-desc { font-size: 12px; line-height: 1.5; color: var(--p-text-muted-color); white-space: normal; }
-.kx-detail-summary {
-  font-size: 13px; line-height: 1.55; color: var(--p-text-color); padding: 12px 14px;
-  border: 1px solid var(--p-content-border-color); border-radius: 14px; background: var(--p-content-background);
-}
-.kx-detail-summary-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--p-text-muted-color); margin-bottom: 4px; }
 /* Mount point for the KB engine's own detail web component (manage_ui_id).
    Fills the remaining detail height so the engine UI (e.g. the wiki) can run as a
    full-height app frame with its own internal scrolling; the mounted element

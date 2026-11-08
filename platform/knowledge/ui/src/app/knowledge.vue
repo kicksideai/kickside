@@ -311,10 +311,10 @@ const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (de
           <KnowledgeStats :items="detail.stat_items || []" />
           <span
             v-if="detail.auto_summary || detail.auto_description"
+            ref="summaryAnchor"
             class="kx-summary"
           >
             <Button
-              ref="summaryAnchor"
               severity="secondary"
               outlined
               class="kx-summary-btn"
@@ -376,10 +376,6 @@ const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (de
               </div>
             </div>
 
-            <div v-if="detail.auto_summary" class="kx-detail-summary">
-              <div class="kx-detail-summary-lbl">Summary</div>
-              {{ detail.auto_summary }}
-            </div>
           </template>
 
           <div ref="detailHost" class="kx-detail-host"></div>
