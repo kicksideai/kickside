@@ -159,7 +159,7 @@
 .kx-file-list > li + li { border-top: 1px solid var(--p-content-border-color); }
 .kx-file-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; font-size: 12px; }
 .kx-file-row > svg { flex: none; font-size: 20px; color: var(--p-text-muted-color); }
-.kx-file-row .p-button { flex: none; white-space: nowrap; word-spacing: .125em; }
+.kx-file-row .p-button { flex: none; white-space: nowrap; }
 .kx-file-label { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 3px; }
 .kx-file-name { overflow-wrap: anywhere; color: var(--p-text-color); }
 .kx-file-size, .kx-file-locked { color: var(--p-text-muted-color); }

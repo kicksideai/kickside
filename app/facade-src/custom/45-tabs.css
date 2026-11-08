@@ -79,3 +79,10 @@
 .p-tablist-active-bar {
   display: none;
 }
+
+/* The scroll buttons fade the labels beneath them with a 50px white shadow
+   spread. It belongs to the tab row only; clipping the list keeps it from
+   washing over the content below the row. */
+.p-tablist {
+  overflow: clip;
+}

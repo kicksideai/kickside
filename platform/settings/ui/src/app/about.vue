@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { api } from '@wippy-fe/proxy'
+import { onMounted, ref } from 'vue'
+import { api, loadByTagName } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 
 interface AboutInfo {
@@ -29,6 +29,13 @@ async function load() {
 }
 
 useHostVisibilityRefresh(load)
+
+const renderError = ref('')
+onMounted(() => {
+  loadByTagName('wc-render-markdown', { timeoutMs: 8000 }).catch((cause: unknown) => {
+    renderError.value = cause instanceof Error ? cause.message : String(cause)
+  })
+})
 </script>
 
 <template>
@@ -44,7 +51,8 @@ useHostVisibilityRefresh(load)
       <p class="ks-about-runtime">Runs on the Wippy runtime (MPL-2.0) <span>{{ info.runtime_version }}</span></p>
       <section aria-labelledby="third-party-notices">
         <h2 id="third-party-notices">Third-party notices</h2>
-        <pre class="ks-about-notices">{{ info.notices }}</pre>
+        <p v-if="renderError" role="alert" class="ks-err">{{ renderError }}</p>
+        <wc-render-markdown class="ks-about-notices" :source="info.notices"></wc-render-markdown>
       </section>
     </template>
   </div>
