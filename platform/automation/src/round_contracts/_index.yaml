@@ -99,6 +99,7 @@ entries:
       row_limit: kickside.automation:row_limit
       delivery_identity: kickside.automation:delivery_identity
       canonical_json: kickside.contract:canonical_json
+      round_history: kickside.automation:round_history
 
   - name: prepared_retention
     kind: library.lua

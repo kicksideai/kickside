@@ -20,6 +20,7 @@ local row_limit = require("row_limit")
 local canonical_json = require("canonical_json")
 
 local identity = require("delivery_identity")
+local history = require("round_history")
 
 local drive = require("drive")
 
@@ -392,6 +393,44 @@ function M.reserve_uncertain_tx(tx: any, owner: string, port: string, item: Map,
         return decision, 0, nil
     end
     return { send = true }, prior and UNRESOLVED[tostring(prior.state)] and 0 or 1, nil
+end
+
+-- Outcomes that prove an attempt returned without a sink effect: a
+-- deterministic refusal (dead, parked) by the sink or before its call, and a
+-- capacity wait. A retriable failure or an uncertain send may have reached the
+-- sink.
+local REFUSED: { [string]: boolean } = { dead = true, parked = true, waiting = true }
+
+-- unsent(executor, d, delivery_key) -> whether the retained item now under
+-- delivery_key provably never reached its sink: the delivery history holds an
+-- outcome for every attempt the ledger counts across the item's delivery keys
+-- (each replay's attempt generation), and every outcome is a refusal. The
+-- ledger keeps only the last failure, so pruned history proves nothing.
+function M.unsent(executor: any, d: Map, delivery_key: string): (boolean?, error?)
+    local owner = tostring(d.automation_id)
+    local port = tostring(d.ledger_port or d.source_port)
+    local rows, err = executor:query("SELECT item_key,attempts,envelope_json FROM " .. M.TABLE
+        .. " WHERE owner_id=$1 AND source_port=$2 AND identity_key=$3", { owner, port, delivery_key })
+    if err then return nil, internal("failed to read the retained delivery", err) end
+    local row = (rows :: { Map })[1]
+    if not row then return false, nil end
+    local envelope, decode_err = json.decode(tostring(row.envelope_json))
+    if decode_err or type(envelope) ~= "table" then return nil, internal("retained delivery is not JSON", decode_err) end
+    local item: Map = {}
+    for k, v in pairs(envelope :: Map) do item[k] = v end
+    local keys: { string } = {}
+    for generation = 0, math.floor(tonumber(item.attempt_generation) or 0) do
+        item.attempt_generation = generation
+        keys[#keys + 1] = identity.keys(d, item).idempotency_key
+    end
+    local states, states_err = history.states(executor, owner, port, tostring(row.item_key), keys)
+    if states_err or not states then return nil, states_err end
+    local attempts = 0
+    for _, state in ipairs(states) do
+        if not REFUSED[state] then return false, nil end
+        if state ~= M.STATE.WAITING then attempts = attempts + 1 end
+    end
+    return attempts == math.floor(tonumber(row.attempts) or 0), nil
 end
 
 -- Bounded maintenance expires resolved tombstones. Dead evidence remains

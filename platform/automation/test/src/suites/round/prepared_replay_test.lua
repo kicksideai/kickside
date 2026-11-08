@@ -1,9 +1,10 @@
 -- Prepared output across a reconfigure and an operator replay (design v5
 -- §4.6, §4.7): a replayed delivery reuses the output prepared under the key
 -- it was admitted under while that output's payload or declaration still
--- holds; output prepared under a superseded declaration is re-prepared for
--- the replay's new delivery key, and another payload under the same
--- declaration stays an idempotency conflict. Drives a real installed
+-- holds; output prepared under a superseded or unrecorded declaration is
+-- re-prepared only for an item whose every attempt was refused without a
+-- sink effect, and every other payload change stays an idempotency
+-- conflict. Drives a real installed
 -- collection automation through reconfigure, replay and rounds into the
 -- fixture store sink. Runs on SQLite and PostgreSQL.
 
@@ -196,6 +197,53 @@ local function define_tests()
             local refused = ledger(id, "changed")
             test.eq(refused.state, "dead")
             test.contains(tostring(refused.error_message), "has another payload")
+        end)
+
+        -- refused_after_reconfigure(id, key) reconfigures the transform, replays
+        -- and asserts the replay refuses the new payload without a send.
+        local function refused_after_reconfigure(id: string, key: string, items: { Map }, sends: integer): ()
+            reconfigure(id, items, { directive = "deliver" })
+            test.eq(replay(id, key .. "-replay").outcome.replayed, 1)
+            run(id)
+            test.eq(#sink_writes(id, key), sends, "output that may have reached the sink is never replaced")
+            test.eq(transforms(id, key), 1)
+            local refused = ledger(id, key)
+            test.eq(refused.state, "dead")
+            test.contains(tostring(refused.error_message), "has another payload")
+        end
+
+        test.it("refuses a reconfigured replay of an item the sink may have accepted", function()
+            local items = { { key = "accepted", directive = "too_many_slots" } }
+            local id = install(items)
+            run(id)
+            test.eq(ledger(id, "accepted").state, "uncertain")
+            refused_after_reconfigure(id, "accepted", items, 1)
+        end)
+
+        test.it("refuses a reconfigured replay of an item whose sink call failed retriably", function()
+            local items = { { key = "timed_out", directive = "timeout" } }
+            local id = install(items)
+            run(id)
+            test.eq(ledger(id, "timed_out").state, "retrying")
+            refused_after_reconfigure(id, "timed_out", items, 1)
+        end)
+
+        test.it("refuses a replay of an unrecorded declaration's output the sink may have accepted", function()
+            local items = { { key = "accepted_published", directive = "too_many_slots" } }
+            local id = install(items)
+            run(id)
+            test.eq(ledger(id, "accepted_published").state, "uncertain")
+            h.exec("UPDATE kickside_automation_prepared SET declaration_hash = NULL WHERE automation_id = $1", { id })
+            refused_after_reconfigure(id, "accepted_published", items, 1)
+        end)
+
+        test.it("refuses a reconfigured replay once the delivery history no longer covers every attempt", function()
+            local items = { { key = "pruned", directive = "invalid" } }
+            local id = install(items)
+            run(id)
+            test.eq(ledger(id, "pruned").state, "dead")
+            h.exec("DELETE FROM kickside_automation_delivery_history WHERE automation_id = $1 AND item_key = 'pruned'", { id })
+            refused_after_reconfigure(id, "pruned", items, 1)
         end)
     end)
 end

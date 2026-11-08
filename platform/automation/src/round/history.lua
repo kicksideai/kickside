@@ -57,6 +57,28 @@ function M.record_tx(tx: any, round: Map, outcomes: {Map}): error?
     return nil
 end
 
+-- states(executor, automation_id, source_port, item_key, identity_keys) -> the
+-- outcome state of every retained round outcome of the item under those
+-- delivery keys, until the history's retention prunes them.
+function M.states(executor: any, automation_id: string, source_port: string, item_key: string,
+        identity_keys: {string}): ({string}?, error?)
+    local states: {string} = {}
+    for first=1,#identity_keys,100 do
+        local params: {any}={automation_id,source_port,item_key}
+        local marks: {string}={}
+        for index=first,math.min(#identity_keys,first+99) do
+            params[#params+1]=identity_keys[index]
+            marks[#marks+1]="$" .. tostring(#params)
+        end
+        local rows,err=executor:query("SELECT state FROM " .. TABLE
+            .. " WHERE automation_id=$1 AND source_port=$2 AND item_key=$3 AND identity_key IN ("
+            .. table.concat(marks,",") .. ")",params)
+        if err then return nil,internal("delivery history read fails",err) end
+        for _,row in ipairs(rows :: {Map}) do states[#states+1]=tostring(row.state) end
+    end
+    return states,nil
+end
+
 function M.prune_tx(tx: any, now: string, limit: integer): (integer?,error?)
     if type(now) ~= "string" or now == "" or type(limit) ~= "number"
         or limit ~= math.floor(limit) or limit < 1 or limit > 1000 then

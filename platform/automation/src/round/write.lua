@@ -216,9 +216,11 @@ end
 -- the key it was admitted under while that output still holds: its payload
 -- hash is the replay's, or it was prepared under the declaration the drive
 -- applies, where another payload is the conflict. Output prepared under a
--- superseded declaration is stale for the replay: it prepares its payload
--- again and replaces the admitted key's row, which every later replay of the
--- item reads.
+-- superseded or unrecorded declaration is stale for the replay only when the
+-- ledger proves no attempt of the item reached its sink (round_ledger.unsent):
+-- the replay then prepares its payload again and replaces the admitted key's
+-- row, which every later replay of the item reads. Without that proof the
+-- original output may have been sent, and another payload is the conflict.
 function M.prepare(spec: Map, compute: () -> (any?, any)): (any?, any)
     if type(spec) ~= "table" or type(spec.drive) ~= "table" or type(compute) ~= "function" then
         return nil, invalid("preparation requires a spec with its round drive and a compute function")
@@ -240,7 +242,13 @@ function M.prepare(spec: Map, compute: () -> (any?, any)): (any?, any)
     if not prior then
         local admitted = (stored :: Map)[original_key]
         if admitted and (admitted.payload_hash == spec.hash or admitted.current_declaration) then prior = admitted end
-        if admitted and not prior then target = original_key end
+        if admitted and not prior then
+            local unsent, unsent_err = with_db(function(db: any): (any?, any)
+                return ledger.unsent(db, d, tostring(spec.key))
+            end)
+            if unsent_err then return nil, unsent_err end
+            if unsent then target = original_key else prior = admitted end
+        end
     end
     if prior then
         if prior.payload_hash ~= spec.hash then return nil, prepared_output.conflict(tostring(spec.key)) end
