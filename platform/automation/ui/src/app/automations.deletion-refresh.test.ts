@@ -121,3 +121,32 @@ it('keeps the latest list read when an earlier read fails after it', async () =>
   expect(wrapper.findAll('.kx-row')).toHaveLength(1)
   expect(wrapper.text()).toContain('Kept automation')
 })
+
+it('refreshes after one deletion finishes without reading another component during teardown', async () => {
+  const first = { id: 'first', title: 'First automation', type: 'generic' }
+  const second = { id: 'second', title: 'Second automation', type: 'generic' }
+  let reads = 0
+  vi.mocked(on).mockReturnValue(vi.fn())
+  vi.mocked(api.get).mockImplementation(async (url: string) => {
+    if (url === '/api/v1/automations/types') return { data: { success: true, types: [{ id: 'generic' }] } } as never
+    if (url === '/api/v1/automations') return { data: { success: true, automations: reads++ === 0
+      ? [first, second]
+      : [{ ...second, deleting_at: 'marked', deletion_job_id: 'second-job' }] } } as never
+    return { data: { success: false, error: 'Component not found or access denied' } } as never
+  })
+  vi.mocked(loadByTagName).mockResolvedValue(undefined as never)
+  wrapper = mount(Automations, { global: { plugins: [PrimeVuePlugin], stubs: { WcMount: true } } })
+  await flushPromises()
+  const receive = vi.mocked(on).mock.calls.find(([topic]) => topic === '@message')?.[1] as (message: unknown) => void
+  expect(receive).toBeTypeOf('function')
+  receive({ event: 'component.deleting', component_id: 'first', deletion_job_id: 'first-job' })
+  receive({ event: 'component.deleting', component_id: 'second', deletion_job_id: 'second-job' })
+  await flushPromises()
+  receive({ event: 'component.deleted', component_id: 'first' })
+  await flushPromises()
+  expect(reads).toBe(2)
+  expect(wrapper.findAll('.kx-row')).toHaveLength(1)
+  expect(wrapper.text()).toContain('Second automation')
+  expect(wrapper.text()).toContain('Deleting')
+  expect(vi.mocked(api.get).mock.calls.filter(([url]: unknown[]) => String(url).startsWith('/api/v1/components/'))).toEqual([])
+})
