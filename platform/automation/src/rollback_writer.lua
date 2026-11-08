@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- The automation rollback writer: the framework system actor that brings an
 -- automation component's stored rollback chain to the current cleanup
 -- targets. It first removes the trigger projections the chain's retired watch

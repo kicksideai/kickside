@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- The stored rollback upgrade over real installed automations: an automation
 -- installed under the retired trigger runtime holds that runtime's install
 -- teardown in its stored rollback chain, and its uninstall replays the chain.

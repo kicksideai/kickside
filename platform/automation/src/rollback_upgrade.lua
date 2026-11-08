@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- The stored rollback upgrade bootloader: on every boot and module update it
 -- brings each installed automation's stored rollback chain to the current
 -- cleanup targets through the automation engine. A current chain is left as
