@@ -24,6 +24,7 @@ const props = defineProps<{
   collapsedCats: Set<string>
   currentUser: { email: string; full_name: string } | null
   accountItems: AccountItem[]
+  resettingSetup?: boolean
 }>()
 const {
   layout, appTitle, markUrl, isNewChatRoute, renderableCategories, navItems,
@@ -38,6 +39,7 @@ const emit = defineEmits<{
   (event: 'toggle-cat', key: string): void
   (event: 'open-profile'): void
   (event: 'account-open', tag: string): void
+  (event: 'replay-setup'): void
   (event: 'logout'): void
 }>()
 const route = useRoute()
@@ -59,6 +61,9 @@ const profileItems = computed<MenuItem[]>(() => [
   ...accountItems.value.map(item => ({
     label: item.label, icon: item.icon, command: () => emit('account-open', item.component_tag),
   })),
+  ...(navItems.value.some(item => normalizePath(item.path || '/') === '/system')
+    ? [{ label: 'Workspace setup', icon: 'tabler:rocket', disabled: props.resettingSetup, command: () => emit('replay-setup') }]
+    : []),
   { separator: true },
   { label: 'Sign out', icon: 'tabler:logout', command: () => emit('logout') },
 ])
