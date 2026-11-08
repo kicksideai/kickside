@@ -17,6 +17,7 @@ const props = defineProps<{ scopes: Scope[] }>()
 const store = useDelegations()
 const { delegations, loading, saving, error, confirmation, pending } = store
 const formOpen = ref(false)
+const showRevoked = ref(false)
 const user = ref('')
 const root = ref('')
 const anyComponent = ref(true)
@@ -27,7 +28,7 @@ const canSave = computed(() => !!user.value && groups.value.length > 0 && (anyCo
 
 const groupLabel = computed<Record<string, string>>(() => {
   const m: Record<string, string> = {}
-  for (const s of props.scopes) m[s.id] = s.label || s.id
+  for (const s of props.scopes) m[s.id] = s.label || 'Group unavailable'
   return m
 })
 
@@ -52,6 +53,7 @@ watch(delegations, async (rows) => {
 
 const active = computed(() => delegations.value.filter(grant => grant.active))
 const revoked = computed(() => delegations.value.filter(grant => !grant.active))
+const visibleGrants = computed(() => showRevoked.value ? [...active.value, ...revoked.value] : active.value)
 
 function choice(raw: unknown, kind: 'user' | 'group') {
   if (!raw || typeof raw !== 'object') return
@@ -87,7 +89,7 @@ async function save() {
 async function revoke(grant: Delegation) {
   const ok = await host.confirm({
     header: 'Revoke run-as permission?',
-    message: `Members of ${grant.groups.map(id => groupLabel.value[id] || id).join(', ')} can no longer choose ${accountLabel.value[grant.principal.id] || grant.principal.id} in the Run as setting.`,
+    message: `Members of ${grant.groups.map(id => groupLabel.value[id] || 'Group unavailable').join(', ')} can no longer choose ${accountLabel.value[grant.principal.id] || 'Account unavailable'} in the Run as setting.`,
     icon: 'tabler:user-off',
     acceptLabel: 'Revoke',
     rejectLabel: 'Cancel',
@@ -167,34 +169,36 @@ defineExpose({ load: store.load })
     </form>
 
     <div v-if="pending && !saving" class="ks-runas-pending">
-      <span>The result is unconfirmed. Retry the same request before editing this permission.</span>
+      <span>We could not confirm whether the permission changed. Select Retry to check before making another change.</span>
       <Button small @click="store.submit">Retry</Button>
     </div>
 
+    <Button v-if="revoked.length" class="ks-runas-history" variant="ghost" small :aria-expanded="showRevoked" @click="showRevoked = !showRevoked">{{ showRevoked ? 'Hide revoked permissions' : 'Show revoked permissions' }}</Button>
+
     <Spinner v-if="loading && !delegations.length" label="Loading run-as permissions…" />
-    <div v-else-if="active.length || revoked.length" class="ks-runas-list">
-      <article v-for="grant in [...active, ...revoked]" :key="grant.policy_id" class="ks-runas-grant" :class="{ revoked: !grant.active }">
+    <div v-else-if="visibleGrants.length" class="ks-runas-list">
+      <article v-for="grant in visibleGrants" :key="grant.policy_id" class="ks-runas-grant" :class="{ revoked: !grant.active }">
         <Icon class="ks-runas-grant-icon" icon="tabler:user-shield" aria-hidden="true" />
         <div class="ks-runas-grant-body">
           <div class="ks-runas-grant-line">
-            <span v-if="grant.active" class="ks-runas-who">{{ grant.groups.map(id => groupLabel[id] || id).join(', ') }}</span>
+            <span v-if="grant.active" class="ks-runas-who">{{ grant.groups.map(id => groupLabel[id] || 'Group unavailable').join(', ') }}</span>
             <span class="ks-runas-verb">{{ grant.active ? 'can run as' : 'Permission to run as' }}</span>
-            <span class="ks-runas-who">{{ accountLabel[grant.principal.id] || grant.principal.id }}</span>
+            <span class="ks-runas-who">{{ accountLabel[grant.principal.id] || 'Account unavailable' }}</span>
           </div>
           <div class="ks-runas-grant-meta">
             <span v-if="grant.root === '*'">on any component they manage</span>
             <span v-else-if="grant.root_label">on <b>{{ grant.root_label }}</b></span>
-            <span v-else>on component <code>{{ grant.root }}</code></span>
+            <span v-else>on an unavailable component</span>
           </div>
         </div>
         <Pill v-if="!grant.active" severity="secondary">revoked</Pill>
-        <Button v-else variant="ghost" small icon="tabler:user-off" :disabled="locked" :aria-label="`Revoke run-as permission for ${accountLabel[grant.principal.id] || grant.principal.id}`" @click="revoke(grant)">Revoke</Button>
+        <Button v-else variant="ghost" small icon="tabler:user-off" :disabled="locked" :aria-label="`Revoke run-as permission for ${accountLabel[grant.principal.id] || 'Account unavailable'}`" @click="revoke(grant)">Revoke</Button>
       </article>
     </div>
     <div v-else-if="!error && !formOpen" class="ks-runas-empty">
       <Icon icon="tabler:user-shield" aria-hidden="true" />
-      <b>No run-as permissions yet</b>
-      <span>Until a group gets a permission, the Run as setting offers only <b>Me</b>.</span>
+      <b>No active run-as permissions</b>
+      <span>Without an active permission, the Run as setting offers only <b>Me</b>.</span>
     </div>
   </section>
 </template>
