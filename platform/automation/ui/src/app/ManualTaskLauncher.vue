@@ -65,9 +65,9 @@ onBeforeUnmount(() => { sequence += 1 })
   <section aria-label="Launch task" class="kx-manual-launcher">
     <WcMount tag="wc-run-as-picker" :attrs="{ root: '', value: selected?.id, disabled: busy || queued || !!operation }" @change="choose" @error="report" />
     <p v-if="!selected">Select the account that runs this task.</p>
-    <button type="button" class="p-button" :disabled="!canRun" @click="run">{{ busy ? 'Queuing…' : pending ? 'Check run admission' : error ? 'Retry run' : 'Queue run' }}</button>
+    <button type="button" class="p-button" :disabled="!canRun" @click="run">{{ busy ? 'Queuing…' : pending ? 'Check run status' : error ? 'Retry run' : 'Queue run' }}</button>
     <p v-if="declaration.error || error" role="alert">{{ declaration.error || error }}</p>
-    <p v-if="pending" role="status">Run admission is pending.</p>
+    <p v-if="pending" role="status">Queuing run…</p>
     <p v-if="queued" role="status">Run queued. Follow the task in Automations.</p>
   </section>
 </template>
