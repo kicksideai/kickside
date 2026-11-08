@@ -13,6 +13,19 @@ const part = { artifact_id: 'page', upload_id: 'file', kind: 'image', role: 'par
 
 afterEach(() => { vi.restoreAllMocks(); get.mockReset() })
 describe('upload delivery URLs', () => {
+  it.each(['', '   '])('uses the unnamed-file label for preview and download when filename is %j', async filename => {
+    const state = useUploadArtifacts(ref(''))
+    const upload = { ...original, filename }
+    state.preview.value = upload
+    expect(state.activePreviewSource(upload).filename).toBe('Untitled file')
+    get.mockResolvedValue({data: new Blob(['bytes'])} as never)
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test')
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function(this: HTMLAnchorElement) {
+      expect(this.download).toBe('Untitled file')
+    })
+    await state.downloadActive()
+    expect(click).toHaveBeenCalledOnce()
+  })
   it('previews the original and artifacts using their API delivery URLs', () => {
     const state = useUploadArtifacts(ref(''))
     state.preview.value = original

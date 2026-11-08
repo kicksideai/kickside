@@ -456,7 +456,7 @@ onBeforeUnmount(() => {
             >
               <span class="kx-ficon"><Icon :icon="typeIcon(u.mime_type)" aria-hidden="true" /></span>
               <div class="kx-id">
-                <div class="kx-name" :title="uploadLabel(u)">{{ uploadLabel(u) }}<span v-if="!u.filename?.trim()" class="kx-uuid"> {{ u.uuid }}</span></div>
+                <div class="kx-name" :title="uploadLabel(u)">{{ uploadLabel(u) }}</div>
                 <div class="kx-sub"><span class="kx-type">{{ typeLabel(u) }}</span> · {{ formatSize(u.size) }}</div>
                 <div v-if="isFailed(u) && u.error" class="kx-err-reason" :title="formatError(u.error)">{{ formatError(u.error) }}</div>
               </div>
