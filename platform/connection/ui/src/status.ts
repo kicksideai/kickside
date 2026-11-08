@@ -1,4 +1,4 @@
-import type { MetaFieldTypes } from '@widgets/app/componentRealtime'
+import type { MetaFieldTypes } from '@kickside/ui-kit/componentRealtime'
 
 // Canonical connection state vocabulary, shared by every connection UI. The API
 // emits the stored connection_state verbatim; expired is derived here from token

@@ -1,4 +1,4 @@
-import type { ComponentDeletionState } from '@widgets/app/useComponentDeletion'
+import type { ComponentDeletionState } from '@kickside/ui-kit/useComponentDeletion'
 export interface Connection extends ComponentDeletionState {
   component_id: string
   name?: string

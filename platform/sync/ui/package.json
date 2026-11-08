@@ -12,6 +12,7 @@
   ],
   "type": "module",
   "dependencies": {
+    "@kickside/ui-kit": "*",
     "@wippy-fe/theme": "*",
     "@wippy-fe/webcomponent-core": "*",
     "@wippy-fe/webcomponent-vue": "*",
@@ -70,5 +71,8 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch"
-  }
+  },
+  "workspaces": [
+    "./.wippy/npm/@*/*"
+  ]
 }

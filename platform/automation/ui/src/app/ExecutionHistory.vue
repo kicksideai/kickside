@@ -3,7 +3,7 @@ import { onBeforeUnmount, ref, watch } from 'vue'
 import { api } from '@wippy-fe/proxy'
 import Button from 'primevue/button'
 import { relativeTime } from '@widgets/app/datetime'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import { resolvePrincipals, type Principal, type PrincipalRef } from '../../../../users/ui/src/principals'
 
 interface Subject { kind: string; id: string }

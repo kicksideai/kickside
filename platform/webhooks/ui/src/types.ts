@@ -1,4 +1,4 @@
-import type { ComponentDeletionState } from '@widgets/app/useComponentDeletion'
+import type { ComponentDeletionState } from '@kickside/ui-kit/useComponentDeletion'
 // The webhook views fetch their own data; `mode` is the only host-driven prop
 // (the create view is mounted with mode="create" by the generic picker path).
 export interface ComponentProps {

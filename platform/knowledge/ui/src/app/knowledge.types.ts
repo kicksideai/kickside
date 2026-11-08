@@ -1,4 +1,4 @@
-import type { ComponentDeletionState } from '@widgets/app/useComponentDeletion'
+import type { ComponentDeletionState } from '@kickside/ui-kit/useComponentDeletion'
 export type KbType = string
 
 export interface StatItem { icon?: string; value: number; label: string }

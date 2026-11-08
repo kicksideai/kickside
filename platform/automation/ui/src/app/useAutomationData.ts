@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 import { api } from '@wippy-fe/proxy'
-import { errMsg } from '@widgets/app/errMsg'
-import { latestRequest } from '@widgets/app/latestRequest'
+import { errMsg } from '@kickside/ui-kit/errMsg'
+import { latestRequest } from '@kickside/ui-kit/latestRequest'
 import type { Automation, AutomationType } from './automation-types'
 
 interface AutomationDataOptions {

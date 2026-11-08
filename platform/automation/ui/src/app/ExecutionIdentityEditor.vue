@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { api } from '@wippy-fe/proxy'
 import WcMount from '@widgets/app/WcMount.vue'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import { resolvePrincipals, type PrincipalRef } from '../../../../users/ui/src/principals'
 
 interface Principal { kind: string; id: string }

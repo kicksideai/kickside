@@ -1,5 +1,5 @@
 import { api, host } from '@wippy-fe/proxy'
-import { errMsg as baseErrMsg } from '@widgets/app/errMsg'
+import { errMsg as baseErrMsg } from '@kickside/ui-kit/errMsg'
 import type { Credential, MintedCredential, Entry } from './types.ts'
 
 interface ApiError {

@@ -1,4 +1,4 @@
-import type { ComponentDeletionState } from '@widgets/app/useComponentDeletion'
+import type { ComponentDeletionState } from '@kickside/ui-kit/useComponentDeletion'
 // Definition-plane types for the workflow builder. The canvas is a DAG of steps:
 // executable nodes are either an exact Block reference or an exact nested Flow;
 // structural nodes carry only their owned control configuration. Edges carry mappings. Notes

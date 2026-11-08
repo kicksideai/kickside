@@ -1,4 +1,4 @@
-import type { ComponentDeletionState } from '@widgets/app/useComponentDeletion'
+import type { ComponentDeletionState } from '@kickside/ui-kit/useComponentDeletion'
 // The shapes the Automations manager reads off the generic API. Every field here
 // is server-declared: the manager renders engine controls and type actions and never invents
 // a descriptor for one.

@@ -1,6 +1,6 @@
 import { ref, type ComputedRef, type Ref } from 'vue'
 import { api } from '@wippy-fe/proxy'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import type { Form, Model } from './agent-form.types.ts'
 
 interface AgentFormPersistenceOptions {

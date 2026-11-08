@@ -7,7 +7,7 @@ import Inbox from './inbox.vue'
 const api = vi.hoisted(() => ({ get: vi.fn() }))
 vi.mock('@wippy-fe/proxy', () => ({ api, loadByTagName: vi.fn(async () => {}) }))
 vi.mock('@wippy-fe/webcomponent-vue', () => ({ useHostVisibilityRefresh: (refresh: () => Promise<void>) => { void refresh() } }))
-vi.mock('@widgets/app/componentRealtime', () => ({ subscribeComponentMeta: vi.fn(() => vi.fn()) }))
+vi.mock('@kickside/ui-kit/componentRealtime', () => ({ subscribeComponentMeta: vi.fn(() => vi.fn()) }))
 vi.mock('@iconify/vue', () => ({ Icon: { template: '<span aria-hidden="true" />' } }))
 
 afterEach(() => api.get.mockReset())

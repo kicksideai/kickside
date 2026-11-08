@@ -1,5 +1,5 @@
 import { api, host } from '@wippy-fe/proxy'
-import { errMsg as baseErrMsg } from '@widgets/app/errMsg'
+import { errMsg as baseErrMsg } from '@kickside/ui-kit/errMsg'
 import type { Skill, SkillVersion } from './types.ts'
 
 // Shape of the error objects the proxy api throws (axios-like), narrowed so the

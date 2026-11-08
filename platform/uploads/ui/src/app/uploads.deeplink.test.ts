@@ -15,7 +15,7 @@ vi.mock('@wippy-fe/webcomponent-vue', async () => {
   const { onMounted } = await import('vue')
   return { useHostVisibilityRefresh: (fn: () => void) => onMounted(fn) }
 })
-vi.mock('@widgets/app/componentRealtime', () => ({ subscribeComponentMeta: vi.fn() }))
+vi.mock('@kickside/ui-kit/componentRealtime', () => ({ subscribeComponentMeta: vi.fn() }))
 const file = { uuid: 'b1544a30-d59a-4d70-8edc-023a5f4adeb8', filename: 'report.txt', size: 5,
   mime_type: 'text/plain', status: 'completed', created_at: 0, raw_url: 'https://objects.example/report?signature=test' }
 function render() {

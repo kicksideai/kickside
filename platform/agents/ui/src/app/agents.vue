@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import ComponentDeletion from '@widgets/app/ComponentDeletion.vue'
-import { useComponentDeletion } from '@widgets/app/useComponentDeletion'
-import type { ComponentDeletionState } from '@widgets/app/useComponentDeletion'
+import ComponentDeletion from '@kickside/ui-kit/ComponentDeletion.vue'
+import { useComponentDeletion } from '@kickside/ui-kit/useComponentDeletion'
+import type { ComponentDeletionState } from '@kickside/ui-kit/useComponentDeletion'
 import { ref, computed, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import Button from 'primevue/button'
@@ -9,8 +9,8 @@ import { api, host, loadByTagName } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import { useComponentEvents } from '../constants.ts'
 import AgentForm from './AgentForm.vue'
-import { errMsg } from '@widgets/app/errMsg'
-import { latestRequest } from '@widgets/app/latestRequest'
+import { errMsg } from '@kickside/ui-kit/errMsg'
+import { latestRequest } from '@kickside/ui-kit/latestRequest'
 import { loadToolCatalog } from './toolCatalog.ts'
 
 // Canonical WC: the authenticated client comes from @wippy-fe/proxy; in-component
