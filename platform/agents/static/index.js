@@ -1,10 +1,11 @@
 import { g as oe, h as se, W as ie, P as ae } from "./primevue-plugin-Dn0ACs8V.js";
 import { defineComponent as F, computed as G, openBlock as g, createElementBlock as h, withModifiers as N, Fragment as H, createElementVNode as r, createTextVNode as V, toDisplayString as E, createCommentVNode as M, createVNode as c, unref as v, watch as Q, onBeforeUnmount as le, ref as C, withDirectives as re, vModelText as de, withCtx as T, normalizeClass as A, renderList as ce, withKeys as J } from "vue";
-import { s as S, e as B, _ as ue, l as pe } from "./toolCatalog-DTcZpeT0.js";
-import { s as ve } from "./index-BvJc5yvO.js";
-import { on as me, api as U, host as X, loadByTagName as fe, define as _e } from "@wippy-fe/proxy";
+import { s as S, e as B, _ as ue } from "./AgentForm.vue_vue_type_script_setup_true_lang-CndyLk_q.js";
+import { s as pe } from "./index-BvJc5yvO.js";
+import { on as ve, api as U, host as X, loadByTagName as me, define as fe } from "@wippy-fe/proxy";
 import { Icon as k } from "@iconify/vue";
-import { s as ge } from "./styles-DOudO97m.js";
+import { l as _e } from "./toolCatalog-zaiNPgZH.js";
+import { s as ge } from "./styles-Bc_MQ_X7.js";
 const he = { key: 0 }, be = /* @__PURE__ */ F({
   __name: "ComponentDeletion",
   props: {
@@ -35,7 +36,7 @@ const he = { key: 0 }, be = /* @__PURE__ */ F({
           onClick: m[0] || (m[0] = N((a) => d.$emit("retry"), ["stop"]))
         })
       ], 64)) : (g(), h(H, { key: 1 }, [
-        c(v(ve), {
+        c(v(pe), {
           class: "component-deletion-spinner",
           "aria-label": "Deletion in progress"
         }),
@@ -113,7 +114,7 @@ function xe(s, i, _, d) {
       o.deletion_job === void 0 && j?.deletion_job_id === o.deletion_job_id && (o.deletion_job = j?.deletion_job), o.deleting_at && !O.includes(o) && $(o);
     }
     O = p;
-  }, { immediate: !0 }), I = me("@message", (p) => {
+  }, { immediate: !0 }), I = ve("@message", (p) => {
     const u = Ce(p);
     if (!u) return;
     const l = s.value.find((o) => i(o) === u.component_id);
@@ -189,7 +190,7 @@ const $e = { class: "kx" }, Ee = { class: "kx-head" }, De = { class: "kx-head-ic
         a.value = [];
       }
       try {
-        b.value = await pe();
+        b.value = await _e();
       } catch {
         b.value = [];
       }
@@ -244,7 +245,7 @@ const $e = { class: "kx" }, Ee = { class: "kx-head" }, De = { class: "kx-head-ic
       if (!D.value || !e) return;
       if (D.value.innerHTML = "", !customElements.get("kickside-share"))
         try {
-          await fe("kickside-share", { timeoutMs: 8e3 });
+          await me("kickside-share", { timeoutMs: 8e3 });
         } catch {
         }
       const n = document.createElement("kickside-share");
@@ -501,5 +502,5 @@ class Xe extends ie {
     return { rootComponent: Fe, plugins: [ae] };
   }
 }
-_e(import.meta.url, Xe);
+fe(import.meta.url, Xe);
 //# sourceMappingURL=index.js.map

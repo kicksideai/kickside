@@ -2,8 +2,8 @@ import { u as Z, g as rr, W as ar, P as or } from "./primevue-plugin-Dn0ACs8V.js
 import { defineComponent as er, ref as d, computed as I, watch as V, onMounted as tr, openBlock as t, createElementBlock as i, createElementVNode as p, toDisplayString as u, withDirectives as ir, vModelText as pr, createVNode as g, withCtx as cr, Fragment as C, renderList as T, normalizeClass as m, unref as n, createCommentVNode as x, createTextVNode as nr, nextTick as j } from "vue";
 import { Icon as A } from "@iconify/vue";
 import { api as sr, define as lr } from "@wippy-fe/proxy";
-import { u as vr, t as H, b as K, _ as dr } from "./trait-presentation-DrlnUF8R.js";
-import { _ as ur } from "./AnchoredPanel.vue_vue_type_script_setup_true_lang-DSLnUKFT.js";
+import { _ as vr } from "./WcMount.vue_vue_type_script_setup_true_lang-CNWT59Oh.js";
+import { u as dr, _ as ur, t as H, b as K } from "./trait-presentation-SeG51N48.js";
 const fr = {
   class: "kx-agent-trait-picker",
   "data-testid": "agent-trait-picker"
@@ -31,7 +31,7 @@ const fr = {
 }, R = "agent-trait-picker-listbox", Mr = /* @__PURE__ */ er({
   __name: "AgentTraitPicker",
   setup(q) {
-    const b = Z(), Q = rr(), h = d([]), c = d(P(b.value.value)), { collapsedTraits: z, isTraitCollapsed: y, toggleTraitCollapsed: D } = vr(), $ = I(() => h.value.filter((r) => c.value.traits.includes(r.id))), k = (r) => c.value.traits.includes(r), w = d(""), s = d(!1), L = d(null), M = d(null), S = d([]), l = d(-1);
+    const b = Z(), Q = rr(), h = d([]), c = d(P(b.value.value)), { collapsedTraits: z, isTraitCollapsed: y, toggleTraitCollapsed: D } = dr(), $ = I(() => h.value.filter((r) => c.value.traits.includes(r.id))), k = (r) => c.value.traits.includes(r), w = d(""), s = d(!1), L = d(null), M = d(null), S = d([]), l = d(-1);
     let E = 0;
     const f = I(() => {
       const r = w.value.trim().toLowerCase();
@@ -260,7 +260,7 @@ const fr = {
             ])
           ]),
           o.web_component && !n(y)(o.id) ? (t(), i("div", Dr, [
-            g(dr, {
+            g(vr, {
               tag: o.web_component,
               config: c.value.trait_contexts[o.id] || {},
               provider: o.provider,
