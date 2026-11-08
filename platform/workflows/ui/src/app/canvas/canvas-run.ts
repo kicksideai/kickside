@@ -4,7 +4,7 @@
 import { computed, onBeforeUnmount, ref, type Ref } from 'vue'
 import { on } from '@wippy-fe/proxy'
 import type { SyncEngine } from '../mapping/sync'
-import { getRun, humanError, listRuns, simulateWorkflow, type RunExecution, type RunNodeHeader, type RunRow, type SimulateOptions } from '../api/api'
+import { getRun, humanError, listRuns, simulateWorkflow, type RunNodeHeader, type RunRow, type SimulateOptions } from '../api/api'
 import { startNodeId, idleRunState, isLiveRunStatus, isWorkflowRunUpdate, runStateFromHeaders, type RunState } from '../runs/run-overlay'
 
 export interface RunCtx {
@@ -13,7 +13,6 @@ export interface RunCtx {
   rev: Ref<number>
   runState: Ref<RunState>
   viewingRun: Ref<RunRow | null>
-  viewingExecution: Ref<RunExecution | null>
   viewingNodeHeaders: Ref<RunNodeHeader[]>
   rebuild: (refit?: boolean) => void
   clearSelection: () => void
@@ -23,7 +22,7 @@ export interface RunCtx {
 }
 
 export function useCanvasRun(ctx: RunCtx) {
-  const { engine, workflowId, rev, runState, viewingRun, viewingExecution, viewingNodeHeaders, rebuild, clearSelection, error, panelOpen, historyOpen } = ctx
+  const { engine, workflowId, rev, runState, viewingRun, viewingNodeHeaders, rebuild, clearSelection, error, panelOpen, historyOpen } = ctx
 
   // Simulate compiles the current canvas into a transient real run. The initial read and
   // subsequent relay-driven reads project real Dataflow node state onto the canvas.
@@ -32,7 +31,6 @@ export function useCanvasRun(ctx: RunCtx) {
   function stopRun() {
     runId.value = null
     viewingRun.value = null
-    viewingExecution.value = null
     viewingNodeHeaders.value = []
     runState.value = idleRunState()
     clearSelection()
@@ -97,11 +95,10 @@ export function useCanvasRun(ctx: RunCtx) {
     viewingRun.value = row
     panelOpen.value = true
     try {
-      const { run, nodes, execution, errorRouted } = await getRun(workflowId, row.run_id)
+      const { run, nodes, errorRouted } = await getRun(workflowId, row.run_id)
       // The user may have picked another run, or exited, while this was in flight.
       if (viewingRun.value?.run_id !== row.run_id) return
       viewingRun.value = run
-      viewingExecution.value = execution
       viewingNodeHeaders.value = nodes
       runState.value = runStateFromHeaders(engine.doc, nodes, run.status, errorRouted)
       rebuild()

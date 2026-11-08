@@ -33,7 +33,7 @@ local ADMIN_GATE = "kickside.ui:system_onboarding"
 -- DEV OVERRIDE: while true, every splash resolves on every load and dismissals
 -- are NOT stored -- so the page can be iterated on without re-clearing seen state.
 -- Production behavior: a splash shows until dismissed (per user or per instance,
--- by scope), then stays hidden; the Appearance editor's "Show setup again" clears it.
+-- by scope), then stays hidden; the app shell's "Workspace setup" clears it.
 local DEV_ALWAYS_SHOW = false
 
 local function always_show(): boolean

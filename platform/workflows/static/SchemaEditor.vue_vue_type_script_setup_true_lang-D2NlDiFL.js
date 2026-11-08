@@ -1,11 +1,11 @@
 import { resolveDirective as ve, withDirectives as he, openBlock as f, createElementBlock as p, mergeProps as y, createElementVNode as g, renderSlot as H, normalizeClass as me, createCommentVNode as S, toDisplayString as k, resolveComponent as ye, Fragment as M, renderList as we, createBlock as q, createSlots as xe, withCtx as D, defineComponent as Se, computed as R, ref as v, watch as ke, onBeforeUnmount as Ae, unref as m, createVNode as x, withKeys as Oe, withModifiers as $e, createTextVNode as Q } from "vue";
-import { b as re, a as Ve, s as ze } from "./index-CghiLgVY.js";
+import { b as re, a as ze, s as Ve } from "./index-CghiLgVY.js";
 import { B as W, h as le, i as Y, j as X, k as F, p as N } from "./index-BhiG6P-P.js";
 import { Z as Ie, f as U } from "./wc-mount-krbIT6pk.js";
 import { Icon as ee } from "@iconify/vue";
 import { _ as Be } from "./WcMount.vue_vue_type_script_setup_true_lang-CNWT59Oh.js";
 import { api as Te } from "@wippy-fe/proxy";
-import { A as Le } from "./http-error-DTRJ-0zq.js";
+import { z as Le } from "./http-error-Z5dIGHrb.js";
 var Ee = `
     .p-togglebutton {
         display: inline-flex;
@@ -673,7 +673,7 @@ var et = `
   classes: tt
 }), ot = {
   name: "BaseTextarea",
-  extends: Ve,
+  extends: ze,
   props: {
     autoResize: Boolean
   },
@@ -886,13 +886,13 @@ const bt = { class: "wf-sed" }, gt = { class: "wf-sed-bar" }, vt = {
       const l = { ...n.modelValue || {}, ...c };
       r.value = JSON.stringify(l, null, 2), o("update:modelValue", l), o("change", l);
     }
-    const $ = v(""), h = v(!1), V = v(""), A = v(!1), z = v(""), w = v(null), fe = R(() => w.value !== null);
+    const $ = v(""), h = v(!1), z = v(""), A = v(!1), V = v(""), w = v(null), fe = R(() => w.value !== null);
     let I = null, j = 0;
     function K() {
       j++, I?.abort(), I = null, h.value = !1;
     }
     function C() {
-      w.value = null, z.value = "", V.value = "";
+      w.value = null, V.value = "", z.value = "";
     }
     async function Z() {
       if (h.value) {
@@ -902,16 +902,16 @@ const bt = { class: "wf-sed" }, gt = { class: "wf-sed-bar" }, vt = {
       const c = $.value.trim();
       if (!c || A.value) return;
       const l = new AbortController(), b = ++j;
-      I = l, h.value = !0, V.value = "";
+      I = l, h.value = !0, z.value = "";
       const ge = _(r.value).value, B = await pt(c, ge, { surface: n.surface, sample: n.sample }, l.signal);
-      l.signal.aborted || I !== l || b !== j || (I = null, h.value = !1, ft(B) ? (w.value = r.value, r.value = JSON.stringify(B.schema, null, 2), z.value = B.notes || "Drafted from your description — accept it or undo.", s.value = "", $.value = "") : (B.unavailable && (A.value = !0), V.value = B.error));
+      l.signal.aborted || I !== l || b !== j || (I = null, h.value = !1, ft(B) ? (w.value = r.value, r.value = JSON.stringify(B.schema, null, 2), V.value = B.notes || "Drafted from your description — accept it or undo.", s.value = "", $.value = "") : (B.unavailable && (A.value = !0), z.value = B.error));
     }
     function pe() {
       const { value: c, error: l } = _(r.value);
-      s.value = l, o("valid", !l), !(l || !c) && (o("update:modelValue", c), o("change", c), w.value = null, z.value = "");
+      s.value = l, o("valid", !l), !(l || !c) && (o("update:modelValue", c), o("change", c), w.value = null, V.value = "");
     }
     function be() {
-      w.value !== null && (r.value = w.value, w.value = null, z.value = "", s.value = "", o("valid", !0));
+      w.value !== null && (r.value = w.value, w.value = null, V.value = "", s.value = "", o("valid", !0));
     }
     return ke(() => n.resetKey, () => {
       K(), O();
@@ -952,7 +952,7 @@ const bt = { class: "wf-sed" }, gt = { class: "wf-sed-bar" }, vt = {
       ], 64)),
       u.value ? (f(), p(M, { key: 2 }, [
         g("div", mt, [
-          x(m(ze), {
+          x(m(Ve), {
             modelValue: $.value,
             "onUpdate:modelValue": l[2] || (l[2] = (b) => $.value = b),
             class: "wf-input wf-sed-intent",
@@ -985,7 +985,7 @@ const bt = { class: "wf-sed" }, gt = { class: "wf-sed-bar" }, vt = {
               icon: "tabler:sparkles",
               "aria-hidden": "true"
             }),
-            g("span", null, k(z.value), 1)
+            g("span", null, k(V.value), 1)
           ]),
           g("div", xt, [
             x(m(U), {
@@ -1012,7 +1012,7 @@ const bt = { class: "wf-sed" }, gt = { class: "wf-sed-bar" }, vt = {
             })
           ])
         ])) : S("", !0),
-        A.value ? (f(), p("p", St, "AI assist isn’t available here yet.")) : V.value ? (f(), p("p", kt, k(V.value), 1)) : S("", !0)
+        A.value ? (f(), p("p", St, "AI assist isn’t available here yet.")) : z.value ? (f(), p("p", kt, k(z.value), 1)) : S("", !0)
       ], 64)) : S("", !0)
     ]));
   }

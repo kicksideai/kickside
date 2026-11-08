@@ -60,7 +60,7 @@ const anchorEl = ref<HTMLElement | null>(null)
       <div class="km-denied-box">
         <Icon icon="tabler:lock" class="km-denied-icon" aria-hidden="true" />
         <p class="km-denied-title">Admins only</p>
-        <p class="km-denied-sub">You need the <code class="km-mono">app.security:admin</code> scope to manage modules.</p>
+        <p class="km-denied-sub">You need admin access to manage modules.</p>
       </div>
     </div>
 
@@ -122,10 +122,7 @@ const anchorEl = ref<HTMLElement | null>(null)
                       <span>{{ hubTokenExpired ? 'Token expired' : 'Token active' }}<template v-if="hubIdentity"> — <strong>{{ hubIdentity }}</strong></template></span>
                     </div>
                     <div v-if="hubStatus?.registry" class="km-hub-auth-meta">{{ hubStatus.registry }}</div>
-                    <div class="km-hub-auth-meta">
-                      <template v-if="hubStatus?.scope">scope: {{ hubStatus.scope }}</template>
-                      <template v-if="hubExpiry"> · expires {{ hubExpiry }}</template>
-                    </div>
+                    <div v-if="hubExpiry" class="km-hub-auth-meta">Expires {{ hubExpiry }}</div>
                     <div v-if="hubOrgs.length" class="km-hub-auth-orgs">
                       <div class="km-hub-auth-orgs-label">Organizations</div>
                       <div v-for="org in hubOrgs" :key="org.id || org.name" class="km-hub-auth-org">
@@ -436,7 +433,7 @@ const anchorEl = ref<HTMLElement | null>(null)
               </div>
             </div>
             <div v-if="uninstallPreview.kept_under_uncertainty?.length" class="km-preview-block">
-              <div class="km-preview-title">Kept under uncertainty</div>
+              <div class="km-preview-title">Kept because usage is unclear</div>
               <div v-for="k in uninstallPreview.kept_under_uncertainty" :key="k.name || k.component" class="km-preview-row">
                 <Icon icon="tabler:help" class="km-i-xs km-dim" aria-hidden="true" />
                 <span class="km-mono">{{ k.name || k.component }}</span>
@@ -447,7 +444,7 @@ const anchorEl = ref<HTMLElement | null>(null)
           </div>
 
           <div v-if="uninstallExecution.length" class="km-ledger">
-            <div class="km-panel-title">Execution ledger</div>
+            <div class="km-panel-title">Uninstall steps</div>
             <div v-for="(s, i) in uninstallExecution" :key="`${s.step}-${i}`" class="km-ledger-row" :class="s.status === 'failed' || s.status === 'rollback_failed' ? 'km-ledger-bad' : s.status === 'rolled_back' ? 'km-ledger-warn' : 'km-ledger-ok'">
               <span class="km-ledger-step">{{ i + 1 }}</span>
               <span class="km-grow">{{ executionStepLabel(s) }}</span>

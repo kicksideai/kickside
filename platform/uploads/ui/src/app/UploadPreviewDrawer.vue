@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import Button from 'primevue/button'
 import Drawer from 'primevue/drawer'
+import { formatDateTime } from '@widgets/app/datetime'
 import type { PreviewSource, Upload, UploadArtifact } from './uploads.types.ts'
 import {
   artifactLabel,
@@ -43,6 +44,9 @@ interface Props {
 
 const props = defineProps<Props>()
 const notice = computed(() => (props.preview ? uploadNotice(props.preview) : null))
+const previewMeta = computed(() => props.preview
+  ? [typeLabel(props.preview), formatSize(props.preview.size), formatDateTime(props.preview.created_at)].filter(Boolean).join(' · ')
+  : '')
 const emit = defineEmits<{ (event: 'update:partsExpanded', value: boolean): void }>()
 </script>
 
@@ -70,8 +74,8 @@ const emit = defineEmits<{ (event: 'update:partsExpanded', value: boolean): void
       <header class="kx-pv-head">
         <span class="kx-ficon"><Icon :icon="typeIcon(preview.mime_type)" aria-hidden="true" /></span>
         <div class="kx-pv-id">
-          <div class="kx-pv-name" :title="uploadLabel(preview)">{{ uploadLabel(preview) }}<span v-if="!preview.filename?.trim()" class="kx-uuid"> {{ preview.uuid }}</span></div>
-          <div class="kx-pv-sub">{{ typeLabel(preview) }} · {{ formatSize(preview.size) }}</div>
+          <div class="kx-pv-name" :title="uploadLabel(preview)">{{ uploadLabel(preview) }}</div>
+          <div class="kx-pv-sub">{{ previewMeta }}</div>
         </div>
         <Button
           type="button"

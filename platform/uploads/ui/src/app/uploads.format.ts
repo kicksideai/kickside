@@ -26,11 +26,8 @@ export function statusLabel(status: string): string {
   return normalized.charAt(0).toUpperCase() + normalized.slice(1)
 }
 
-// An upload with no reported filename (in flight, or a source that never sent
-// one) never shows its raw uuid as the primary name — the uuid rides as a
-// secondary detail (.kx-uuid) wherever there's room for one instead.
 export function uploadLabel(upload: Upload): string {
-  return (upload.filename || '').trim() || 'Untitled upload'
+  return (upload.filename || '').trim() || 'Untitled file'
 }
 
 // Short, human label instead of the raw mime (e.g. the very long

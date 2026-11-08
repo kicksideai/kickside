@@ -134,26 +134,6 @@ const {
   isHome, setHome,
 } = navigation
 
-// Replay instance setup without clearing any personal splash completion.
-// nav-changed makes the host re-fetch /nav/list, which re-resolves the splash
-// and shows it over the app (no page reload).
-const resetting = ref(false)
-const replayed = ref(false)
-async function replaySetup() {
-  resetting.value = true
-  error.value = ''
-  try {
-    const { data } = await api.delete('/api/v1/ui/splash/seen')
-    if (data?.success !== true) throw new Error(data?.error || 'could not reset setup')
-    replayed.value = true
-    window.dispatchEvent(new CustomEvent('kickside:nav-changed'))
-  } catch (e: any) {
-    error.value = apiError(e, 'could not reset setup')
-  } finally {
-    resetting.value = false
-  }
-}
-
 // ── Base tone delivery (live preview + saved) ────────────────────────────────
 // The facade web-host bakes the tone into every web-component shadow at boot and exposes
 // no live config-update API, so a changed tone (unsaved preview OR just-saved) would
@@ -381,15 +361,6 @@ watch(hostVisible, (visible, previous) => {
             </ul>
           </section>
 
-          <section class="ap-card">
-            <header class="ap-h"><Icon icon="tabler:rocket" aria-hidden="true" /> Setup</header>
-            <p class="ap-sub">Reopen setup for this installation. Once completed, it stays closed for everyone.</p>
-            <button class="ap-btn ap-btn-ghost" :disabled="resetting" @click="replaySetup">
-              <Icon :icon="resetting ? 'tabler:loader-2' : 'tabler:refresh'" :class="resetting && 'spin'" aria-hidden="true" />
-              {{ resetting ? 'Resetting…' : 'Show setup again' }}
-            </button>
-            <p v-if="replayed" class="ap-hint">Setup will appear now, or next time the app loads.</p>
-          </section>
         </aside>
 
         <!-- Structure tree: the wide working area. -->

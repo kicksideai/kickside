@@ -5,7 +5,7 @@ import { effectiveNodeInputSchema, effectiveNodeOutputSchema } from '../domain/s
 import { isFailedSourcePort, FAILED_PAYLOAD_SCHEMA } from '../domain/node-policy'
 import { parseRunError } from '../runs/run-detail'
 import type { RunState } from '../runs/run-overlay'
-import type { RunNodeHeader, RunRow } from '../api/api'
+import type { RunRow } from '../api/api'
 import { humanTitle } from '../domain/labels'
 
 interface InspectorStateOptions {
@@ -15,7 +15,6 @@ interface InspectorStateOptions {
   selectedEdge: ComputedRef<any>
   runState: Ref<RunState>
   viewingRun: Ref<RunRow | null>
-  viewingNodeHeaders: Ref<RunNodeHeader[]>
   error: Ref<string>
   loading: Ref<boolean>
   panelOpen: Ref<boolean>
@@ -25,7 +24,7 @@ interface InspectorStateOptions {
 export function useCanvasInspectorState(options: InspectorStateOptions) {
   const {
     engine, revision, selectedNode, selectedEdge, runState, viewingRun,
-    viewingNodeHeaders, error, loading, panelOpen, select,
+    error, loading, panelOpen, select,
   } = options
 
   // Endpoint schemas of the selected edge feed the connection panel's assist chip
@@ -81,9 +80,6 @@ export function useCanvasInspectorState(options: InspectorStateOptions) {
     void revision.value
     return selectedNode.value ? runState.value.node[selectedNode.value.id] : undefined
   })
-  const selectedRunHeader = computed(() => selectedNode.value
-    ? viewingNodeHeaders.value.find((header) => header.def_node_id === selectedNode.value?.id) || null
-    : null)
   const failedNode = computed(() => {
     void revision.value
     const status = runState.value.node
@@ -128,7 +124,7 @@ export function useCanvasInspectorState(options: InspectorStateOptions) {
 
   return {
     selectedEdgeUpstream, selectedEdgeDownstream, selectedEdgeSourceTitle, selectedEdgeTargetTitle,
-    selectedNodeUpstream, selectedCombineConflict, selectedRunStatus, selectedRunHeader,
+    selectedNodeUpstream, selectedCombineConflict, selectedRunStatus,
     failedNode, failedNodeTitle, failedReason, runErrorView, errorView, openFailedDetails,
     counts, countLabel, canUndo, canRedo, isEmpty,
   }

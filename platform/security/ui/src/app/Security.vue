@@ -81,23 +81,18 @@ function selectScope(s: Scope) {
 
 function newScope() {
   selectedId.value = null
-  draft.value = { slug: '', label: '', description: '', policies: [], enabled: true, isNew: true, target: '', base: [] }
+  draft.value = { slug: Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, '0')).join(''), label: '', description: '', policies: [], enabled: true, isNew: true, target: '', base: [] }
 }
 
 // Clone any scope (built-in, registry, or custom) into a NEW editable custom
 // scope, pre-filled with its policies.
 function copyScope(s: Scope) {
-  selectedId.value = null
-  draft.value = {
-    slug: '',
+  newScope()
+  Object.assign(draft.value!, {
     label: s.label ? `Copy of ${s.label}` : '',
     description: s.description,
     policies: [...s.policies.map(p => p.id), ...(s.overlay_policies ?? []).map(p => p.id)],
-    enabled: true,
-    isNew: true,
-    target: '',
-    base: [],
-  }
+  })
 }
 
 function sanitizeId(id: string): string {
@@ -144,14 +139,13 @@ function onRowDrop(e: DragEvent, targetId: string) {
   arr.splice(to === -1 ? arr.length : to, 0, id)
 }
 
-const slugError = computed(() => {
-  // Overlay slugs are auto-derived from the target id; only validate a
-  // user-entered slug on a new custom scope.
-  if (!draft.value || !draft.value.isNew || draft.value.target !== '') return ''
-  const s = draft.value.slug.trim()
-  return (s && !/^[a-z0-9][\w.-]*$/i.test(s)) ? 'Slug must be alphanumeric (with _.-)' : ''
+const draftSlug = computed(() => {
+  if (!draft.value) return ''
+  if (!draft.value.isNew || draft.value.target) return draft.value.slug
+  const base = sanitizeId(draft.value.label.normalize('NFKD').replace(/\p{M}/gu, '')).toLowerCase() || 'role'
+  return `${base}_${draft.value.slug}`
 })
-const canSave = computed(() => !!draft.value && draft.value.slug.trim() !== '' && !slugError.value && draft.value.policies.length > 0)
+const canSave = computed(() => !!draft.value && draft.value.label.trim() !== '' && draft.value.policies.length > 0)
 
 // Transient confirmation after a successful save — the save button's spinner
 // alone left it ambiguous whether the change persisted.
@@ -166,7 +160,8 @@ function flashSaved(msg: string) {
 
 async function save() {
   if (!draft.value || !canSave.value) return
-  const slug = draft.value.slug.trim()
+  const savedDraft = draft.value
+  const slug = draftSlug.value
   const target = draft.value.target
   const label = draft.value.label.trim() || slug
   const ok = await store.saveScope({
@@ -178,7 +173,9 @@ async function save() {
     enabled: draft.value.enabled,
   })
   if (ok) {
-    selectedId.value = target || `kickside.security.scopes:${slug}`
+    savedDraft.slug = slug
+    savedDraft.isNew = false
+    if (draft.value === savedDraft) selectedId.value = target || `kickside.security.scopes:${slug}`
     flashSaved(`Saved “${label}”. The role will be available when assigning users.`)
   }
 }
@@ -280,13 +277,6 @@ function shortId(id: string): string {
         <p v-else class="ks-view-note">Choose the permissions this role grants, then assign it in System → Users. To restrict a Member, assign this role instead of Member; other assigned roles may still grant access.</p>
 
         <div class="ks-fields">
-          <FormField v-if="!isOverlay" label="Role ID" :help="draft.isNew ? 'Unique identifier; cannot change later.' : undefined">
-            <TextInput v-model="draft.slug" :disabled="!draft.isNew" placeholder="reviewer" />
-            <span v-if="slugError" class="ks-field-err">{{ slugError }}</span>
-          </FormField>
-          <FormField v-else label="Role">
-            <TextInput :model-value="selectedScope?.label || draft.target" disabled />
-          </FormField>
           <FormField label="Name">
             <TextInput v-model="draft.label" placeholder="Reviewer" />
           </FormField>
