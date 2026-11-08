@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/kicksideai/kickside/compare/ui-kit-v1.6.2...ui-kit-v1.7.0) (2026-11-08)
+
+
+### Features
+
+* **ui-kit:** share component deletion tracking ([#358](https://github.com/kicksideai/kickside/issues/358)) ([23dc607](https://github.com/kicksideai/kickside/commit/23dc6075f343d9e58adfd9e3314e3a67493a0379))
+
 ## [1.6.2](https://github.com/kicksideai/kickside/compare/ui-kit-v1.6.1...ui-kit-v1.6.2) (2026-10-28)
 
 
