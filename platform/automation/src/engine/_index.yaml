@@ -150,7 +150,7 @@ entries:
   - name: upgrade
     kind: library.lua
     meta:
-      comment: "Automation engine part: stored declarations brought to the current Trigger Spec through the automation's own reconfigure command."
+      comment: "Automation engine part: stored declarations brought to the current Trigger Spec through the automation's own reconfigure command, stored rollback chains to the current cleanup targets through the rollback writer."
     source: file://upgrade.lua
     imports:
       engine_declaration: kickside.automation.engine:declaration

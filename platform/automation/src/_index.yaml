@@ -503,6 +503,41 @@ entries:
       types: kickside.automation:types
       engine_support: kickside.automation.engine:support
 
+  - name: rollback_writer_upgrade
+    kind: function.lua
+    meta:
+      comment: Framework system actor bringing an automation component's stored rollback chain to the current cleanup targets, retiring the legacy trigger projections its watch teardown steps name.
+      private: true
+    source: file://rollback_writer.lua
+    method: upgrade
+    modules: [sql]
+    security:
+      actor:
+        id: system:kickside.automation.declaration
+      policies:
+        - kickside.automation.security:declaration_writer
+    imports:
+      component: kickside.component:component
+      component_command: kickside.component:component_command
+      engine_declaration: kickside.automation.engine:declaration
+      projection_writer: kickside.core.projections.persist:writer
+      core_db: kickside.core:db
+
+  - name: rollback_upgrade
+    kind: function.lua
+    meta:
+      type: bootloader
+      order: 50
+      requires: [wippy.migration:migration_bootloader]
+      comment: Brings every installed automation's stored rollback chain to the current cleanup targets through the rollback writer.
+    source: file://rollback_upgrade.lua
+    method: run
+    security:
+      policies:
+        - kickside.automation.security:execution_scope
+    imports:
+      automations_lib: kickside.automation:automation
+
   - name: declaration_owner_verify
     kind: function.lua
     meta:

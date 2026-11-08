@@ -303,6 +303,21 @@ entries:
     jobs: kickside.core.jobs:jobs
     jobs_config: kickside.core.jobs:config
     migration_runner: wippy.migration:runner
+- name: rollback_upgrade_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_rollback_upgrade
+    comment: The stored rollback upgrade over real installed automations whose chain names the retired trigger runtime.
+    timeout: 120s
+  source: file://rollback_upgrade_test.lua
+  method: run
+  modules: [json, uuid, funcs]
+  imports:
+    test: wippy.test:test
+    round_harness: kickside.automation:round_harness
+    retention_pin: kickside.core.retention:pin
+    deletion_worker: app:deletion_test_worker
 - name: round_test
   kind: function.lua
   meta:
