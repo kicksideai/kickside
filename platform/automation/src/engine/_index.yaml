@@ -154,6 +154,7 @@ entries:
     source: file://upgrade.lua
     imports:
       engine_declaration: kickside.automation.engine:declaration
+      engine_drive_plan: kickside.automation.engine:drive_plan
       engine_schema: kickside.automation.engine:schema
       engine_support: kickside.automation.engine:support
 
