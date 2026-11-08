@@ -57,6 +57,36 @@ function M.record_tx(tx: any, round: Map, outcomes: {Map}): error?
     return nil
 end
 
+-- outcomes(executor, automation_id, source_port, item_key, identity_keys) ->
+-- { state, error? } of every retained round outcome of the item under those
+-- delivery keys, until the history's retention prunes them.
+function M.outcomes(executor: any, automation_id: string, source_port: string, item_key: string,
+        identity_keys: {string}): ({Map}?, error?)
+    local outcomes: {Map} = {}
+    for first=1,#identity_keys,100 do
+        local params: {any}={automation_id,source_port,item_key}
+        local marks: {string}={}
+        for index=first,math.min(#identity_keys,first+99) do
+            params[#params+1]=identity_keys[index]
+            marks[#marks+1]="$" .. tostring(#params)
+        end
+        local rows,err=executor:query("SELECT state,error_json FROM " .. TABLE
+            .. " WHERE automation_id=$1 AND source_port=$2 AND item_key=$3 AND identity_key IN ("
+            .. table.concat(marks,",") .. ")",params)
+        if err then return nil,internal("delivery history read fails",err) end
+        for _,row in ipairs(rows :: {Map}) do
+            local failure: any = nil
+            if row.error_json ~= nil then
+                local decoded,decode_err=json.decode(tostring(row.error_json))
+                if decode_err then return nil,internal("delivery history error is not JSON",decode_err) end
+                failure=decoded
+            end
+            outcomes[#outcomes+1]={state=tostring(row.state),error=failure}
+        end
+    end
+    return outcomes,nil
+end
+
 function M.prune_tx(tx: any, now: string, limit: integer): (integer?,error?)
     if type(now) ~= "string" or now == "" or type(limit) ~= "number"
         or limit ~= math.floor(limit) or limit < 1 or limit > 1000 then

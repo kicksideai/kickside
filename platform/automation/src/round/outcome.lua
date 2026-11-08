@@ -127,10 +127,13 @@ function M.ledger_outcomes(items: { Map }, outcomes: Map, delivery: Map): ({ Map
     end
     for _, o in ipairs(outcomes.failed :: { Map }) do
         local item = by_key[o.key]
+        local failure = type(o.error) == "table" and failure_classification.classify(o.error) or M.classify(o.error)
+        -- A failure answered with receipts wrote those destinations: the
+        -- attempt had a sink effect, which its recorded failure carries.
         if type(o.receipts) == "table" and #o.receipts > 0 then
             receipts[#receipts+1]={item=item,receipts=o.receipts}
+            failure.sink_effect = true
         end
-        local failure = type(o.error) == "table" and failure_classification.classify(o.error) or M.classify(o.error)
         local _, parks = M.failure_phase(failure)
         if failure_classification.capacity_floor(failure) ~= nil then
             recorded[#recorded + 1] = { item = item, state = ledger.STATE.WAITING,

@@ -7,6 +7,7 @@ local registry = require("registry")
 local DATABASE = "app:prepared_upgrade_db"
 local ROWS = 200
 local INDEX_MIGRATION = "15_prepared_settlement_index"
+local DECLARATION_MIGRATION = "16_prepared_declaration"
 
 local function migrate(name: string): any
     local result, err = funcs.call("kickside.automation.migrations:" .. name,
@@ -92,6 +93,41 @@ return test.run_cases(function()
                 if index.name == "idx_trigger_ledger_settled_delivery" then present = true end
             end
             test.is_true(present)
+        end)
+        test.it("records the prepared declaration on Automation's database and keeps published prepared rows",function()
+            local entry = registry.get("kickside.automation.migrations:" .. DECLARATION_MIGRATION)
+            test.not_nil(entry)
+            test.eq(entry.meta.target_db,"app:db","the migration must follow Automation's configured database")
+            local live, live_err = sql.get("app:db")
+            test.is_nil(live_err)
+            local _, column_err = live:query("SELECT declaration_hash FROM kickside_automation_prepared LIMIT 1")
+            live:release()
+            test.is_nil(column_err, tostring(column_err))
+
+            for _, name in ipairs({"06_trigger_item_ledger","10_drive_schema",
+                "11_delivery_provenance","12_delivery_history"}) do
+                migrate(name)
+            end
+            local db = open()
+            local _, seed_err = db:execute([[INSERT INTO kickside_automation_prepared
+                (automation_id,idempotency_key,payload_hash,prepared_json,created_at,execution_identity_json)
+                VALUES ('owner','published-delivery','published-hash','{"title":"published"}',
+                    '2000-01-01T00:00:00Z','{"retained":"identity"}')]])
+            test.is_nil(seed_err, tostring(seed_err))
+            db:release()
+            migrate(DECLARATION_MIGRATION)
+            migrate(DECLARATION_MIGRATION)
+            db = open()
+            local rows, read_err = db:query("SELECT payload_hash,prepared_json,created_at,execution_identity_json,declaration_hash"
+                .. " FROM kickside_automation_prepared WHERE automation_id='owner' AND idempotency_key='published-delivery'")
+            db:release()
+            test.is_nil(read_err, tostring(read_err))
+            test.eq(#rows,1)
+            test.eq(rows[1].payload_hash,"published-hash")
+            test.eq(rows[1].prepared_json,'{"title":"published"}')
+            test.eq(rows[1].created_at,"2000-01-01T00:00:00Z")
+            test.eq(rows[1].execution_identity_json,'{"retained":"identity"}')
+            test.is_nil(rows[1].declaration_hash,"a published row's declaration is unknown")
         end)
     end)
 end)

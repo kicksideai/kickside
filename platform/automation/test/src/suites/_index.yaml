@@ -379,6 +379,19 @@ entries:
     round_harness: kickside.automation:round_harness
     round_write: kickside.automation:round_write
     runtime_policy: kickside.automation:runtime_policy
+- name: round_prepared_replay_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    comment: Prepared output across a reconfigure and an operator replay of an installed collection automation into the fixture store sink.
+  source: file://round/prepared_replay_test.lua
+  method: run
+  modules: [json]
+  imports:
+    test: wippy.test:test
+    round_harness: kickside.automation:round_harness
+    round_write: kickside.automation:round_write
 - name: round_control_test
   kind: function.lua
   meta:

@@ -20,6 +20,8 @@ local row_limit = require("row_limit")
 local canonical_json = require("canonical_json")
 
 local identity = require("delivery_identity")
+local history = require("round_history")
+local failure_classification = require("failure_classification")
 
 local drive = require("drive")
 
@@ -392,6 +394,53 @@ function M.reserve_uncertain_tx(tx: any, owner: string, port: string, item: Map,
         return decision, 0, nil
     end
     return { send = true }, prior and UNRESOLVED[tostring(prior.state)] and 0 or 1, nil
+end
+
+-- Outcomes that can return without a sink effect: a deterministic refusal
+-- (dead, parked) and a capacity wait. A retriable failure or an uncertain
+-- send may have reached the sink.
+local REFUSED: { [string]: boolean } = { dead = true, parked = true, waiting = true }
+
+-- refusal(outcome) -> whether a recorded outcome proves its attempt left no
+-- sink effect: a refusal raised by the sink as an error or before its call.
+-- A failure answered with receipts wrote destinations, and an unacknowledged
+-- answer may have been applied.
+local function refusal(outcome: Map): boolean
+    if not REFUSED[tostring(outcome.state)] then return false end
+    local failure = type(outcome.error) == "table" and (outcome.error :: Map) or {}
+    return failure.sink_effect ~= true and failure.code ~= failure_classification.UNACKNOWLEDGED
+end
+
+-- unsent(executor, d, delivery_key) -> whether the retained item now under
+-- delivery_key provably never reached its sink: the delivery history holds an
+-- outcome for every attempt the ledger counts across the item's delivery keys
+-- (each replay's attempt generation), and every outcome is a refusal. The
+-- ledger keeps only the last failure, so pruned history proves nothing.
+function M.unsent(executor: any, d: Map, delivery_key: string): (boolean?, error?)
+    local owner = tostring(d.automation_id)
+    local port = tostring(d.ledger_port or d.source_port)
+    local rows, err = executor:query("SELECT item_key,attempts,envelope_json FROM " .. M.TABLE
+        .. " WHERE owner_id=$1 AND source_port=$2 AND identity_key=$3", { owner, port, delivery_key })
+    if err then return nil, internal("failed to read the retained delivery", err) end
+    local row = (rows :: { Map })[1]
+    if not row then return false, nil end
+    local envelope, decode_err = json.decode(tostring(row.envelope_json))
+    if decode_err or type(envelope) ~= "table" then return nil, internal("retained delivery is not JSON", decode_err) end
+    local item: Map = {}
+    for k, v in pairs(envelope :: Map) do item[k] = v end
+    local keys: { string } = {}
+    for generation = 0, math.floor(tonumber(item.attempt_generation) or 0) do
+        item.attempt_generation = generation
+        keys[#keys + 1] = identity.keys(d, item).idempotency_key
+    end
+    local outcomes, outcomes_err = history.outcomes(executor, owner, port, tostring(row.item_key), keys)
+    if outcomes_err or not outcomes then return nil, outcomes_err end
+    local attempts = 0
+    for _, outcome in ipairs(outcomes) do
+        if not refusal(outcome) then return false, nil end
+        if outcome.state ~= M.STATE.WAITING then attempts = attempts + 1 end
+    end
+    return attempts == math.floor(tonumber(row.attempts) or 0), nil
 end
 
 -- Bounded maintenance expires resolved tombstones. Dead evidence remains

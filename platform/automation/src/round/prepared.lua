@@ -1,7 +1,10 @@
 -- Replay-unsafe prepared output persisted under the round's drive fence
 -- before its write. A retry under the same delivery key reuses the stored
--- output; another payload under that key is an idempotency conflict. One
--- prepared row above prepared_bytes_per_item is refused for its item.
+-- output; another payload under that key is an idempotency conflict. Each
+-- row records the applied declaration hash of the drive it was prepared
+-- under; materializing a key whose row records another declaration replaces
+-- that row's output and keeps its admission time and evidence. One prepared
+-- row above prepared_bytes_per_item is refused for its item.
 local json = require("json")
 local sql = require("sql")
 local automation_db = require("automation_db")
@@ -43,6 +46,8 @@ end
 
 -- materialize_many persists prepared output in ascending key order under the
 -- drive fence and the prepared-row locks, one bounded transaction per page.
+-- Each item { key, delivery, hash, encoded } names the prepared row's key and
+-- the delivery key whose admission evidence a new row records.
 function M.materialize_many(d: Map, items: { Map }): (Map?, error?)
     local p, policy_err = runtime_policy.policy()
     if policy_err or not p then return nil, policy_err end
@@ -52,9 +57,9 @@ function M.materialize_many(d: Map, items: { Map }): (Map?, error?)
     local seen: { [string]: boolean } = {}
     local answers: Map = {}
     for _, item in ipairs(items) do
-        if type(item.key) ~= "string" or item.key == "" or type(item.hash) ~= "string"
-            or type(item.encoded) ~= "string" or seen[item.key] then
-            return nil, invalid("prepared results require distinct keys, hashes and encoded values")
+        if type(item.key) ~= "string" or item.key == "" or type(item.delivery) ~= "string" or item.delivery == ""
+            or type(item.hash) ~= "string" or type(item.encoded) ~= "string" or seen[item.key] then
+            return nil, invalid("prepared results require distinct keys, delivery keys, hashes and encoded values")
         end
         seen[item.key] = true
         if #item.encoded > p.prepared_bytes_per_item then
@@ -80,18 +85,22 @@ function M.materialize_many(d: Map, items: { Map }): (Map?, error?)
             for index = first, math.min(#ordered, first + CHUNK - 1) do
                 local item = ordered[index]
                 local marks: { string } = {}
-                local evidence,evidence_err=provenance.encoded(current,item.key)
+                local evidence,evidence_err=provenance.encoded(current,item.delivery)
                 if evidence_err then return nil,evidence_err end
-                for _, value in ipairs({ owner, item.key, item.hash, item.encoded, drive.utc_now(), evidence }) do
+                for _, value in ipairs({ owner, item.key, item.hash, item.encoded, drive.utc_now(), evidence,
+                    current.applied_hash }) do
                     params[#params + 1] = value
                     marks[#marks + 1] = "$" .. tostring(#params)
                 end
                 values[#values + 1] = "(" .. table.concat(marks, ",") .. ")"
             end
+            local distinct = dbtype == sql.type.POSTGRES and " IS DISTINCT FROM " or " IS NOT "
             local _, insert_err = tx:execute("INSERT INTO " .. TABLE
-                .. " (automation_id,idempotency_key,payload_hash,prepared_json,created_at,execution_identity_json)"
+                .. " (automation_id,idempotency_key,payload_hash,prepared_json,created_at,execution_identity_json,declaration_hash)"
                 .. " SELECT * FROM (VALUES " .. table.concat(values, ",")
-                .. ") AS input WHERE true ORDER BY 1,2 ON CONFLICT (automation_id,idempotency_key) DO NOTHING", params)
+                .. ") AS input WHERE true ORDER BY 1,2 ON CONFLICT (automation_id,idempotency_key) DO UPDATE SET"
+                .. " payload_hash=excluded.payload_hash,prepared_json=excluded.prepared_json,declaration_hash=excluded.declaration_hash"
+                .. " WHERE " .. TABLE .. ".declaration_hash" .. distinct .. "excluded.declaration_hash", params)
             if insert_err then return nil, internal("prepared batch insert failed", insert_err) end
         end
         for first = 1, #ordered, CHUNK do
