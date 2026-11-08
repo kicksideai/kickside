@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { api } from '@wippy-fe/proxy'
+import { useEvents, useProps } from '@wippy-fe/webcomponent-vue'
 import CapabilityPicker from './CapabilityPicker.vue'
 import type { Tool, Trait } from './agent-form.types'
 import { loadToolCatalog } from './toolCatalog'
@@ -14,8 +15,8 @@ interface Config {
 }
 interface Ns { id: string; label: string; kind: string }
 
-const props = defineProps<{ config?: Config | string[] | null }>()
-const emit = defineEmits<{ (e: 'config-changed', value: Config): void }>()
+const props = useProps<{ config?: Config | string[] | null }>()
+const emit = useEvents<{ 'config-changed': Config }>()
 
 function list(v: any): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && x !== '') : []
@@ -29,7 +30,7 @@ function read(cfg: Config | string[] | null | undefined): Config {
   }
 }
 
-const current = read(props.config)
+const current = read(props.value.config)
 const namespaces = ref<string[]>(current.namespaces || [])
 const traitIds = ref<string[]>(current.trait_ids || [])
 const injectTraitCatalog = ref(!!current.inject_trait_catalog)
@@ -39,7 +40,7 @@ const tools = ref<Tool[]>([])
 const nsOpen = ref(false)
 const nsAnchorEl = ref<HTMLElement | null>(null)
 
-watch(() => props.config, (c) => {
+watch(() => props.value.config, (c) => {
   const next = read(c)
   namespaces.value = next.namespaces || []
   traitIds.value = next.trait_ids || []
