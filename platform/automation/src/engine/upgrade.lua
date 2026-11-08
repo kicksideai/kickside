@@ -15,6 +15,10 @@
 -- The main drive keeps its source; a legacy retry delay carried into
 -- trigger.delivery is re-declared on the main drive's action, so its policy
 -- applies the configured delay.
+--
+-- Stored rollback upgrade: brings every automation's stored rollback chain to
+-- the current cleanup targets through the rollback writer, which applies the
+-- engine's rollback rule under the component row lock.
 
 local support = require("engine_support")
 local declaration_mod = require("engine_declaration")
@@ -184,6 +188,86 @@ function part.attach(M: any, dependencies: any, P: any): ()
                     if changes.superseded_retry_after_ms ~= nil then
                         log:warn("legacy delivery retry delay set aside for the declared trigger.delivery.retry_after_ms",
                             { automation_id = id, type_id = type_id, legacy_retry_after_ms = changes.superseded_retry_after_ms })
+                    end
+                end
+            end
+            if #rows < PAGE then break end
+            offset = offset + #rows
+        end
+        return report, nil
+    end
+
+    local ROLLBACK_WRITER = "kickside.automation:rollback_writer_upgrade"
+
+    -- upgrade_rollback(component_id) -> the rollback writer's { changes_made,
+    -- removed, retained } for the automation's stored chain.
+    local function upgrade_rollback(component_id: string): (Map?, any)
+        local executor, executor_err = (dependencies.funcs :: any).new()
+        if executor_err or not executor then
+            return nil, automation_error("rollback writer executor unavailable", errors.INTERNAL, executor_err)
+        end
+        local result, err = executor:call(ROLLBACK_WRITER, { component_id = component_id })
+        if err then return nil, err end
+        if type(result) ~= "table" then
+            return nil, automation_error("rollback writer returned no result", errors.INTERNAL)
+        end
+        return result :: Map, nil
+    end
+
+    -- upgrade_rollbacks() -> { upgraded, current, retained, failed }: every
+    -- installed automation's stored rollback chain brought to the current
+    -- cleanup targets through the rollback writer, an automation in deletion
+    -- included, so its next deletion attempt replays the upgraded chain.
+    -- upgraded lists { id, removed }; retained lists { id, target, mode } for
+    -- a retired step the owner delete leaves in place; failed lists { id,
+    -- error } for an automation whose upgrade is refused, which the next run
+    -- retries; current counts the automations already current. Each change,
+    -- retained step and refusal is logged.
+    function M.upgrade_rollbacks(): (Map?, any)
+        local kinds, kinds_err = (dependencies.registry :: any).find({ [".kind"] = "contract.binding",
+            ["meta.type"] = support.AUTOMATION_TYPE })
+        if kinds_err then return nil, kinds_err end
+        local impl_ids: { string } = {}
+        for _, entry in ipairs(kinds or {}) do
+            if type(entry) == "table" and type(entry.id) == "string" then impl_ids[#impl_ids + 1] = entry.id end
+        end
+        local report: Map = { upgraded = {}, current = 0, retained = {}, failed = {} }
+        if #impl_ids == 0 then return report, nil end
+        local log = (dependencies.logger :: any):named("automation.upgrade")
+        local offset = 0
+        while true do
+            local rows, rows_err = (dependencies.component :: any).list_system({ impl_ids = impl_ids,
+                include = { private_context = true }, limit = PAGE, offset = offset,
+                order_by = { field = "created_at", direction = "ASC" } })
+            if rows_err then return nil, rows_err end
+            if type(rows) ~= "table" or #rows == 0 then break end
+            for _, row in ipairs(rows) do
+                local id = tostring(row.component_id)
+                local context = type(row.private_context) == "table" and (row.private_context :: Map) or {}
+                local _, changes = declaration_mod.upgrade_rollback(context._rollback)
+                local refused = false
+                if #changes.removed > 0 then
+                    local result, err = upgrade_rollback(id)
+                    if err or not result then
+                        refused = true
+                        report.failed[#report.failed + 1] = { id = id, error = tostring(err) }
+                        log:error("stored rollback upgrade refused", { automation_id = id, error = tostring(err) })
+                    else
+                        changes = result
+                    end
+                end
+                if not refused then
+                    if #changes.removed > 0 then
+                        report.upgraded[#report.upgraded + 1] = { id = id, removed = changes.removed }
+                        log:info("stored rollback chain upgraded to the current cleanup targets", { automation_id = id,
+                            removed = table.concat(changes.removed, ",") })
+                    else
+                        report.current = report.current + 1
+                    end
+                    for _, step in ipairs(changes.retained) do
+                        report.retained[#report.retained + 1] = { id = id, target = step.target, mode = step.mode }
+                        log:warn("stored rollback step of the retired trigger runtime kept: the owner delete leaves its effect in place",
+                            { automation_id = id, target = step.target, mode = tostring(step.mode) })
                     end
                 end
             end

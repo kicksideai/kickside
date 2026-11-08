@@ -11,7 +11,8 @@
 -- (drive pause, resume, run_now, replay, resync), observe
 -- (status, health), recovery (pending command recovery, the command
 -- dispatcher pass) and upgrade (stored declarations brought to the current
--- Trigger Spec through their own reconfigure command). The parts share
+-- Trigger Spec through their own reconfigure command, stored rollback chains
+-- to the current cleanup targets through the rollback writer). The parts share
 -- private helpers through one table, so each helper keeps one definition.
 
 local support = require("engine_support")

@@ -11,6 +11,7 @@ local context_ops = require("context_ops")
 local meta_ops = require("meta_ops")
 local declaration_fence = require("declaration_fence")
 local execution_identity = require("execution_identity")
+local lifecycle_rollback = require("lifecycle_rollback")
 
 local M = {}
 
@@ -209,6 +210,45 @@ function M.prepare_creation(input: any, verify: any): (any?, error?)
     local token = {}
     creations[token] = { input = frozen_input, receipt = receipt }
     return token, nil
+end
+
+-- The verified inputs of a rollback chain upgrade: a framework system actor
+-- holding component.declaration.apply brings the stored rollback chain of a
+-- component its automation declares to the current cleanup targets, through
+-- that automation's own pure upgrade rule.
+local rollback_upgrades = setmetatable({}, { __mode = "k" })
+
+-- prepare_rollback_upgrade({ component_id, automation_id }, upgrade) -> an
+-- opaque token for upgrade_rollback_tx. Runs before a component transaction
+-- is opened.
+function M.prepare_rollback_upgrade(input: any, upgrade: any): (any?, error?)
+    local actor_err = framework_actor("component.declaration.apply")
+    if actor_err then return nil, actor_err end
+    if type(input) ~= "table" or type(input.component_id) ~= "string" or input.component_id == ""
+        or type(input.automation_id) ~= "string" or input.automation_id == "" or type(upgrade) ~= "function" then
+        return nil, failure("a rollback upgrade names its component, its automation and the upgrade rule",
+            errors.INVALID, "declaration")
+    end
+    local token = {}
+    rollback_upgrades[token] = { component_id = input.component_id, automation_id = input.automation_id,
+        upgrade = upgrade }
+    return token, nil
+end
+
+-- upgrade_rollback_tx(tx, token) applies the prepared upgrade under the
+-- component row lock, for a component whose declaration fence the named
+-- automation holds.
+function M.upgrade_rollback_tx(tx: any, token: any): (any?, error?)
+    local prepared = rollback_upgrades[token]
+    if not prepared then return nil, failure("validated rollback upgrade token is required", errors.PERMISSION_DENIED) end
+    rollback_upgrades[token] = nil
+    local owner, owner_err = declaration_fence.owner(tx, prepared.component_id)
+    if owner_err then return nil, owner_err end
+    if owner ~= prepared.automation_id then
+        return nil, failure("component " .. prepared.component_id .. " is declared by another owner than automation "
+            .. prepared.automation_id, errors.PERMISSION_DENIED, "access")
+    end
+    return lifecycle_rollback.upgrade_tx(tx, prepared.component_id, prepared.upgrade)
 end
 
 -- take_creation(token) -> the verified creation, consumed once.

@@ -293,7 +293,51 @@ local function normalize_rollback_chain(raw: any): ({ automation_types.RollbackS
     return out, nil
 end
 
+-- Rollback targets of the trigger and schedule runtime the drive model
+-- replaced. An automation installed under it holds them in its stored rollback
+-- chain.
+--   * The trigger service's install teardown detached the trigger mode's
+--     registration: a poll or timer mode deleted its Cron schedule row, a poll
+--     mode also dropped the owner's item ledger rows, and a watch mode removed
+--     its projection on the source thread and dropped the item ledger rows.
+--   * The schedule deletion removed a Cron schedule row.
+-- Cron is retired together with that runtime: its rows run nothing. The
+-- automation's owner delete removes its drives with their job slots and
+-- retention pins and its item ledger rows, so the poll and timer teardown and
+-- the schedule deletion are covered by it and leave the chain. A watch
+-- teardown's source-thread projection is outside the owner delete; that step
+-- stays in the chain.
+local RETIRED_TRIGGER_TEARDOWN = "kickside.automation.trigger:trigger_service_install_rollback"
+local RETIRED_SCHEDULE_DELETE = "kickside.automation.schedule:delete_schedule"
+local COVERED_TRIGGER_MODES: { [string]: boolean } = { poll = true, timer = true }
+
+-- upgrade_rollback(chain) -> upgraded, changes: a stored rollback chain
+-- brought to the current cleanup targets. changes = { removed, retained }:
+-- removed lists the targets of the steps it removed, empty when the chain is
+-- already current; retained lists { target, mode } for a retired step whose
+-- effect the owner delete leaves in place. The upgraded chain is a copy in
+-- the stored order; the input stays as given.
+local function upgrade_rollback(chain: any): ({ automation_types.RollbackStep }, Map)
+    local upgraded: { automation_types.RollbackStep } = {}
+    local changes: Map = { removed = {}, retained = {} }
+    for _, step in ipairs(type(chain) == "table" and (chain :: { any }) or {}) do
+        local target = type(step) == "table" and (step :: Map).target or nil
+        local args = type(step) == "table" and type((step :: Map).args) == "table" and ((step :: Map).args :: Map) or {}
+        if target == RETIRED_SCHEDULE_DELETE
+            or target == RETIRED_TRIGGER_TEARDOWN and COVERED_TRIGGER_MODES[tostring(args.mode)] then
+            changes.removed[#changes.removed + 1] = target
+        else
+            if target == RETIRED_TRIGGER_TEARDOWN then
+                changes.retained[#changes.retained + 1] = { target = target, mode = args.mode }
+            end
+            upgraded[#upgraded + 1] = step
+        end
+    end
+    return upgraded, changes
+end
+
 P.normalize_rollback_chain = normalize_rollback_chain
+P.upgrade_rollback = upgrade_rollback
 P.trigger_overrides = trigger_overrides
 P.upgrade_trigger = upgrade_trigger
 P.validate_result = validate_result

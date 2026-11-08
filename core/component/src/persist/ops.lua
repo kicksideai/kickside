@@ -168,6 +168,8 @@ return {
     apply_declaration_tx = declaration_ops.apply_declaration_tx,
     prepare_declaration = declaration_ops.prepare_declaration,
     prepare_creation = declaration_ops.prepare_creation,
+    prepare_rollback_upgrade = declaration_ops.prepare_rollback_upgrade,
+    upgrade_rollback_tx = declaration_ops.upgrade_rollback_tx,
     create_declared_tx = declared_create.create_tx,
     redact_context = context_ops.redact,
 }
