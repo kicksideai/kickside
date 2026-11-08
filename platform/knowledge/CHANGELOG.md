@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.79](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.78...knowledge-v0.1.79) (2026-11-08)
+
+
+### Bug Fixes
+
+* UI artifacts in buttons, headings, dialogs and tables ([#371](https://github.com/kicksideai/kickside/issues/371)) ([ea55ea8](https://github.com/kicksideai/kickside/commit/ea55ea8a17ee5802cb73a4dbcf39878d7f56cd2e))
+
 ## [0.1.78](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.77...knowledge-v0.1.78) (2026-11-07)
 
 
