@@ -1,5 +1,6 @@
 {
   "name": "@kickside/ui-kit-dev",
+  "version": "0.0.0",
   "private": true,
   "description": "Test and typecheck harness for the @kickside/ui-kit package in package/; the package itself is the published deliverable.",
   "license": "LicenseRef-KickSide-Community-1.0",
