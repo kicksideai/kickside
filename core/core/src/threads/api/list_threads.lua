@@ -31,7 +31,8 @@ local function thread_item(row: { [string]: any }): { [string]: any }
     if type(label) ~= "string" or label == "" then label = tostring(id) end
     local icon = type(row.component_icon) == "string" and row.component_icon ~= "" and row.component_icon
         or (type(row.icon) == "string" and row.icon or "")
-    return { id = id, label = label, icon = icon }
+    return {id = id, label = label, icon = icon, deleting_at = row.deleting_at,
+        deletion_job_id = row.deletion_job_id, deletion_job = row.deletion_job}
 end
 
 local function handler(): ()

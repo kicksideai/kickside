@@ -311,7 +311,6 @@ jobs:
             awk '/No tests found/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-test.clean.log
             cd ../live-test
             mkdir -p .wippy
-            wippy install
             wippy test --set "vars.sqlite_path=$PWD/.wippy/repair-live.sqlite" test -- app:drive_repair_live_test 2>&1 | tee .wippy-repair-live.log
             sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-repair-live.log > .wippy-repair-live.clean.log
             awk '/No tests (found|match)/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-repair-live.clean.log
@@ -348,7 +347,6 @@ jobs:
             repair_live_database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_repair_live"
             createdb "$repair_live_database"
             databases+=("$repair_live_database")
-            wippy install
             wippy test --profile postgres --set "vars.pg_database=$repair_live_database" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 test -- app:drive_repair_live_test 2>&1 | tee .wippy-repair-live.log
             sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-repair-live.log > .wippy-repair-live.clean.log
             awk '/No tests (found|match)/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-repair-live.clean.log
@@ -1674,7 +1672,7 @@ jobs:
         node-version: '22'
     - uses: kicksideai/.github/actions/setup-wippy@5401fa65bed7d8648125957520e94206ed1ffd0b
       with:
-        version: 0.3.56a
+        version: 0.3.59a
         hub-url: https://hub.wippy.ai
     - name: Check out components module sources
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -1702,6 +1700,26 @@ jobs:
         persist-credentials: false
     - name: Check native harness database ownership
       run: python3 -m unittest discover -s tests -p test_public_harnesses.py
+    - name: Prepare UI Kit build input
+      run: |
+        set -euo pipefail
+        export TMPDIR="$PWD/.scratch"
+        mkdir -p "$TMPDIR"
+        python3 - <<'PYTHON'
+        from pathlib import Path
+        import os
+        import shutil
+        import sys
+        sys.path.insert(0, 'scripts')
+        from release_artifacts import companion_modules, prepared_artifact
+        repository = Path.cwd()
+        module, = companion_modules(repository, ['platform/ui-kit'])
+        output = repository / '.scratch/ui-kit.wapp'
+        with prepared_artifact(repository, module, 'wippy') as artifact:
+            shutil.copyfile(artifact, output)
+        with open(os.environ['GITHUB_ENV'], 'a') as environment:
+            environment.write('UI_KIT_WAPP=' + str(output) + '\n')
+        PYTHON
     - name: Build, lint and Lua module tests
       run: ${{ matrix.commands }}
     defaults:
@@ -1722,7 +1740,7 @@ jobs:
         node-version: '22'
     - uses: kicksideai/.github/actions/setup-wippy@5401fa65bed7d8648125957520e94206ed1ffd0b
       with:
-        version: 0.3.56a
+        version: 0.3.59a
         hub-url: https://hub.wippy.ai
     - name: Test missing and incomplete application bundles
       run: node --test app/scripts/check-app-bundle.test.mjs

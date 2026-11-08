@@ -22,3 +22,4 @@ publish: build
 .PHONY: lockrefresh
 lockrefresh:
 	cd test && wippy update $(WIPPY_UPDATE_ARGS)
+	cd live-test && wippy update $(WIPPY_UPDATE_ARGS)

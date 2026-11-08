@@ -27,6 +27,7 @@ entries:
     source: file://list_user_agents.lua
     modules: [http, security, funcs]
     imports:
+      deletion_progress: kickside.component:deletion_progress
       component: kickside.component:component
       agent_types: kickside.agents:types
       query_params: kickside.agents.api:query_params

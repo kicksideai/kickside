@@ -456,6 +456,7 @@ entries:
     kind: library.lua
     source: file://list_connections_source.lua
     imports:
+      deletion_progress: kickside.component:deletion_progress
       http: app:connection_reason_fixture
       contract: app:connection_reason_contract
       security: app:connection_reason_security

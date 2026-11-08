@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 import { afterEach, expect, it, vi } from 'vitest'
-import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
+import { DOMWrapper, flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
 import { api, loadByTagName, on } from '@wippy-fe/proxy'
 import Automations from './automations.vue'
@@ -49,7 +49,7 @@ it('clears a failed list read once a finished deletion is read back', async () =
   vi.mocked(api.delete).mockResolvedValue({ data: { success: true, in_progress: true, job_id: 'job' } } as never)
   vi.mocked(loadByTagName).mockResolvedValue(undefined as never)
 
-  wrapper = mount(Automations, { global: { plugins: [PrimeVuePlugin], stubs: { WcMount: true } } })
+  wrapper = mount(Automations, { attachTo: document.body, global: { plugins: [PrimeVuePlugin], stubs: { WcMount: true, teleport: false } } })
   await flushPromises()
   expect(wrapper.findAll('.kx-row')).toHaveLength(1)
 
@@ -58,7 +58,7 @@ it('clears a failed list read once a finished deletion is read back', async () =
   await flushPromises()
   await wrapper.get('[data-testid="action-delete"]').trigger('click')
   await flushPromises()
-  await wrapper.get('[data-testid="automations-confirm-delete"]').trigger('click')
+  await new DOMWrapper(document.body).get('[data-testid="automations-confirm-delete"]').trigger('click')
   await flushPromises()
   expect(wrapper.get('.kx-err').text()).toBe('cleanup status unavailable')
   expect(wrapper.findAll('.kx-row')).toHaveLength(1)
@@ -91,7 +91,7 @@ it('keeps the latest list read when an earlier read fails after it', async () =>
   vi.mocked(api.delete).mockResolvedValue({ data: { success: true, in_progress: true, job_id: 'job' } } as never)
   vi.mocked(loadByTagName).mockResolvedValue(undefined as never)
 
-  wrapper = mount(Automations, { global: { plugins: [PrimeVuePlugin], stubs: { WcMount: true } } })
+  wrapper = mount(Automations, { attachTo: document.body, global: { plugins: [PrimeVuePlugin], stubs: { WcMount: true, teleport: false } } })
   await flushPromises()
   expect(wrapper.findAll('.kx-row')).toHaveLength(1)
 
@@ -104,7 +104,7 @@ it('keeps the latest list read when an earlier read fails after it', async () =>
   await flushPromises()
   await wrapper.get('[data-testid="action-delete"]').trigger('click')
   await flushPromises()
-  await wrapper.get('[data-testid="automations-confirm-delete"]').trigger('click')
+  await new DOMWrapper(document.body).get('[data-testid="automations-confirm-delete"]').trigger('click')
   await flushPromises()
   expect(wrapper.find('.kx-err').exists()).toBe(false)
   expect(wrapper.text()).toContain('Deleting')
@@ -120,4 +120,33 @@ it('keeps the latest list read when an earlier read fails after it', async () =>
   expect(wrapper.find('.kx-err').exists()).toBe(false)
   expect(wrapper.findAll('.kx-row')).toHaveLength(1)
   expect(wrapper.text()).toContain('Kept automation')
+})
+
+it('refreshes after one deletion finishes without reading another component during teardown', async () => {
+  const first = { id: 'first', title: 'First automation', type: 'generic' }
+  const second = { id: 'second', title: 'Second automation', type: 'generic' }
+  let reads = 0
+  vi.mocked(on).mockReturnValue(vi.fn())
+  vi.mocked(api.get).mockImplementation(async (url: string) => {
+    if (url === '/api/v1/automations/types') return { data: { success: true, types: [{ id: 'generic' }] } } as never
+    if (url === '/api/v1/automations') return { data: { success: true, automations: reads++ === 0
+      ? [first, second]
+      : [{ ...second, deleting_at: 'marked', deletion_job_id: 'second-job', deletion_job: {status: 'running', attempts: 1} }] } } as never
+    return { data: { success: false, error: 'Component not found or access denied' } } as never
+  })
+  vi.mocked(loadByTagName).mockResolvedValue(undefined as never)
+  wrapper = mount(Automations, { attachTo: document.body, global: { plugins: [PrimeVuePlugin], stubs: { WcMount: true, teleport: false } } })
+  await flushPromises()
+  const receive = vi.mocked(on).mock.calls.find(([topic]) => topic === '@message')?.[1] as (message: unknown) => void
+  expect(receive).toBeTypeOf('function')
+  receive({ event: 'component.deleting', component_id: 'first', deletion_job_id: 'first-job' })
+  receive({ event: 'component.deleting', component_id: 'second', deletion_job_id: 'second-job' })
+  await flushPromises()
+  receive({ event: 'component.deleted', component_id: 'first' })
+  await flushPromises()
+  expect(reads).toBe(2)
+  expect(wrapper.findAll('.kx-row')).toHaveLength(1)
+  expect(wrapper.text()).toContain('Second automation')
+  expect(wrapper.text()).toContain('Deleting')
+  expect(vi.mocked(api.get).mock.calls.filter(([url]: unknown[]) => String(url).startsWith('/api/v1/components/'))).toEqual([])
 })

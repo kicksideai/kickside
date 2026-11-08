@@ -168,6 +168,9 @@ type Skill = {
 
 -- Discovery row from skill_store.list: no body (loaded on demand via get()).
 type SkillSummary = {
+    deleting_at: string?,
+    deletion_job_id: string?,
+    deletion_job: {status: string, attempts: integer, last_error: string?}?,
     skill_id: string,
     name: string?,
     description: string?,
@@ -262,6 +265,7 @@ type ComponentRow = {
     component_id: string,
     deleting_at: string?,
     deletion_job_id: string?,
+    deletion_job: {status: string, attempts: integer, last_error: string?}?,
     meta: ComponentMeta?,
 }
 

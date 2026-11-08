@@ -132,6 +132,7 @@ entries:
       comment: "Automation engine part: installed and runtime listings, public/private/trigger state reads, delivery options, config."
     source: file://state.lua
     imports:
+      deletion_progress: kickside.component:deletion_progress
       engine_schema: kickside.automation.engine:schema
       engine_support: kickside.automation.engine:support
       types: kickside.automation:types
