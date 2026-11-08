@@ -212,8 +212,8 @@ const outputPreview = computed(() => {
 
     <template v-else-if="choice === 'code'">
       <textarea v-model="codeText" class="kx-input kx-textarea kx-code" spellcheck="false"
-        placeholder="return { content = __cx_args.payload.summary.overview }" data-test="code-editor"></textarea>
-      <span class="kx-hint">Item is <code>__cx_args</code> ({ payload: … }); <code>return</code> a table for the destination. Sandboxed: json / string / table / math.</span>
+        placeholder="return { content = &quot;Text for the destination&quot; }" data-test="code-editor"></textarea>
+      <span class="kx-hint">Map the source item to the destination fields and <code>return</code> a Lua table. Available helpers: json, string, table, math.</span>
     </template>
 
     <p v-else-if="choice === 'auto'" class="kx-hint" data-test="auto-hint">Generate and the AI picks the best mapping — switch the selector to hand-write one.</p>
