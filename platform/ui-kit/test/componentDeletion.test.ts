@@ -224,13 +224,16 @@ it('takes the server retry handle and progress together and retains only matchin
   mounted.push(mount(defineComponent({setup() {({acceptDeletion} = useComponentDeletion(rows, row => row.id)); return () => null}})))
   acceptDeletion('selected', {job_id: 'attempt-a'})
   const running = {status: 'running', attempts: 1}
-  const receive = vi.mocked(on).mock.calls.at(-1)?.[1] as (message: unknown) => void
-  receive({event: 'component.deleting', component_id: 'selected', deletion_job_id: 'attempt-b'})
   rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'attempt-b', deletion_job: running}]
   await flushPromises()
   expect(rows.value[0].deletion_job_id).toBe('attempt-b')
   expect(rows.value[0].deletion_job).toEqual(running)
   rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'attempt-a', deletion_job: {status: 'dead', attempts: 3}}]
+  await flushPromises()
+  expect(rows.value[0].deletion_job_id).toBe('attempt-b')
+  expect(rows.value[0].deletion_job).toEqual(running)
+  const receive = vi.mocked(on).mock.calls.at(-1)?.[1] as (message: unknown) => void
+  receive({event: 'component.deleting', component_id: 'selected', deletion_job_id: 'attempt-a'})
   await flushPromises()
   expect(rows.value[0].deletion_job_id).toBe('attempt-b')
   expect(rows.value[0].deletion_job).toEqual(running)

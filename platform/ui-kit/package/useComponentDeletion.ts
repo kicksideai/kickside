@@ -17,19 +17,25 @@ export function useComponentDeletion<T extends ComponentDeletionState>(
   rows: Ref<T[]>, id: (row: T) => string, onDeleted?: (id: string) => void, onDeletionFinished?: (id: string) => void,
 ) {
   const deleted = new Set<string>()
-  const accepted = new Map<string, Pick<ComponentDeletionState, 'deleting_at' | 'deletion_job_id'>>()
+  type Attempt = Pick<ComponentDeletionState, 'deleting_at' | 'deletion_job_id'>
+  const accepted = new Map<string, {state: Attempt; superseded: Set<string>}>()
   function acceptDeletion(componentId: string, result?: {job_id?: string | null}) {
     const row = rows.value.find(row => id(row) === componentId)
     const previous = accepted.get(componentId)
-    const jobId = result?.job_id || previous?.deletion_job_id || row?.deletion_job_id
+    const jobId = result?.job_id || previous?.state.deletion_job_id || row?.deletion_job_id
     // A repeated event for the same attempt keeps its confirmed progress.
-    const tracked = previous ? previous.deletion_job_id : row?.deleting_at ? row.deletion_job_id : undefined
+    const tracked = previous ? previous.state.deletion_job_id : row?.deleting_at ? row.deletion_job_id : undefined
     if ((previous || row?.deleting_at) && jobId === tracked) return
+    if (jobId && previous?.superseded.has(jobId)) return
     const state = {
-      deleting_at: previous?.deleting_at || row?.deleting_at || new Date().toISOString(),
+      deleting_at: previous?.state.deleting_at || row?.deleting_at || new Date().toISOString(),
       deletion_job_id: jobId,
     }
-    accepted.set(componentId, state)
+    const superseded = new Set(previous?.superseded)
+    for (const prior of [previous?.state.deletion_job_id, row?.deletion_job_id]) {
+      if (prior && prior !== jobId) superseded.add(prior)
+    }
+    accepted.set(componentId, {state, superseded})
     if (row) { Object.assign(row, state); row.deletion_job = undefined }
   }
   const stop = watch(() => rows.value, (list, previous = []) => {
@@ -44,10 +50,15 @@ export function useComponentDeletion<T extends ComponentDeletionState>(
       // A marked list snapshot confirms job absence. Local acceptance and events
       // keep progress unresolved until the next authorized list response arrives.
       if (row.deleting_at && row.deletion_job === undefined && !previous.includes(row)) row.deletion_job = null
-      const state = accepted.get(id(row))
-      if (state) {
-        if (row.deletion_job_id !== state.deletion_job_id) row.deletion_job = undefined
-        Object.assign(row, state)
+      const attempt = accepted.get(id(row))
+      if (attempt) {
+        const jobId = row.deletion_job_id
+        if (row.deleting_at && jobId && jobId !== attempt.state.deletion_job_id && !attempt.superseded.has(jobId)) {
+          if (attempt.state.deletion_job_id) attempt.superseded.add(attempt.state.deletion_job_id)
+          attempt.state.deletion_job_id = jobId
+        }
+        if (jobId !== attempt.state.deletion_job_id) row.deletion_job = undefined
+        Object.assign(row, attempt.state)
       }
       const prior = previous.find(prior => id(prior) === id(row))
       if (row.deletion_job === undefined && prior?.deletion_job_id === row.deletion_job_id) row.deletion_job = prior?.deletion_job
