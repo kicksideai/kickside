@@ -131,7 +131,7 @@ it('refreshes after one deletion finishes without reading another component duri
     if (url === '/api/v1/automations/types') return { data: { success: true, types: [{ id: 'generic' }] } } as never
     if (url === '/api/v1/automations') return { data: { success: true, automations: reads++ === 0
       ? [first, second]
-      : [{ ...second, deleting_at: 'marked', deletion_job_id: 'second-job' }] } } as never
+      : [{ ...second, deleting_at: 'marked', deletion_job_id: 'second-job', deletion_job: {status: 'running', attempts: 1} }] } } as never
     return { data: { success: false, error: 'Component not found or access denied' } } as never
   })
   vi.mocked(loadByTagName).mockResolvedValue(undefined as never)

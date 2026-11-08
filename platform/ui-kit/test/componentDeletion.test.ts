@@ -8,25 +8,35 @@ import ComponentDeletion from '../package/ComponentDeletion.vue'
 vi.mock('@wippy-fe/proxy', () => ({api: {get: vi.fn()}, on: vi.fn(() => vi.fn()), host: {handleError: vi.fn()}}))
 const mounted: ReturnType<typeof mount>[] = []
 afterEach(() => { for (const instance of mounted.splice(0)) instance.unmount(); vi.clearAllMocks() })
-it('retains a marked row, reads failure on refresh, and removes only on final deletion', async () => {
-  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job'}])
-  vi.mocked(api.get).mockResolvedValue({data: {success: true, deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'pending', attempts: 0}}} as never)
+it('retains a marked row, takes list failure on refresh, and removes only on final deletion', async () => {
+  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'pending', attempts: 0}}])
   mounted.push(mount(defineComponent({setup() {useComponentDeletion(rows, row => row.id); return () => null}})))
   await flushPromises()
   expect(rows.value).toHaveLength(1)
-  expect(api.get).toHaveBeenCalledWith('/api/v1/components/selected')
+  expect(api.get).not.toHaveBeenCalled()
   const receive = vi.mocked(on).mock.calls.at(-1)?.[1] as (message: unknown) => void
   receive({event: 'component.deleting', component_id: 'selected'})
   await flushPromises()
   expect(rows.value).toHaveLength(1)
-  vi.mocked(api.get).mockResolvedValue({data: {success: true, deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'dead', attempts: 3, last_error: 'cleanup refused'}}} as never)
-  rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job'}]
+  rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'dead', attempts: 3, last_error: 'cleanup refused'}}]
   await flushPromises()
   expect(rows.value[0].deletion_job?.status).toBe('dead')
   receive({event: 'component.deleted', component_id: 'other'})
   expect(rows.value).toHaveLength(1)
   receive({topic: 'component.selected', data: {event: 'component.deleted'}})
   expect(rows.value).toHaveLength(0)
+})
+
+it('takes deletion progress from an authorized list row without reading the component', async () => {
+  const rows = ref<(ComponentDeletionState & {id: string})[]>([
+    {id: 'selected', deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'dead', attempts: 3, last_error: 'cleanup refused'}},
+  ])
+  mounted.push(mount(defineComponent({setup() {useComponentDeletion(rows, row => row.id); return () => null}})))
+  await flushPromises()
+  const indicator = mount(ComponentDeletion, {props: {state: rows.value[0]}}); mounted.push(indicator)
+  expect(api.get).not.toHaveBeenCalled()
+  expect(indicator.text()).toContain('Deletion failed')
+  expect(indicator.find('button').exists()).toBe(true)
 })
 it('shows a spinner while active and a failure with explicit retry when dead', async () => {
   const state: ComponentDeletionState = {deleting_at: 'marked', deletion_job: {status: 'running', attempts: 1}}
@@ -61,28 +71,32 @@ for (const job of [null, {status: 'cancelled', attempts: 0}]) {
   })
 }
 
-it('keeps unresolved progress spinning until a successful read confirms absence', async () => {
-  let resolve!: (value: unknown) => void
-  vi.mocked(api.get).mockImplementation(() => new Promise(done => {resolve = done}) as never)
-  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked'}])
-  mounted.push(mount(defineComponent({setup() {useComponentDeletion(rows, row => row.id); return () => null}})))
+it('keeps accepted progress spinning until a list confirms absence', async () => {
+  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected'}])
+  let acceptDeletion!: ReturnType<typeof useComponentDeletion>['acceptDeletion']
+  mounted.push(mount(defineComponent({setup() {({acceptDeletion} = useComponentDeletion(rows, row => row.id)); return () => null}})))
+  acceptDeletion('selected', {job_id: 'job'})
   const indicator = mount(ComponentDeletion, {props: {state: rows.value[0]}}); mounted.push(indicator)
   expect(indicator.find('[role="progressbar"]').exists()).toBe(true)
   expect(indicator.find('button').exists()).toBe(false)
-  resolve({data: {success: true, deleting_at: 'marked'}})
+  rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job'}]
   await flushPromises()
+  await indicator.setProps({state: rows.value[0]})
   expect(rows.value[0].deletion_job).toBeNull()
   expect(indicator.text()).toContain('Deletion failed')
+  expect(api.get).not.toHaveBeenCalled()
 })
-it('keeps a failed progress lookup unresolved and reports its read error', async () => {
-  vi.mocked(api.get).mockRejectedValue(new Error('Read unavailable'))
-  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked'}])
+it('leaves event progress unresolved until the list supplies it', async () => {
+  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected'}])
   mounted.push(mount(defineComponent({setup() {useComponentDeletion(rows, row => row.id); return () => null}})))
+  const receive = vi.mocked(on).mock.calls.at(-1)?.[1] as (message: unknown) => void
+  receive({event: 'component.deleting', component_id: 'selected', deletion_job_id: 'job'})
   await flushPromises()
   const indicator = mount(ComponentDeletion, {props: {state: rows.value[0]}}); mounted.push(indicator)
   expect(indicator.find('[role="progressbar"]').exists()).toBe(true)
   expect(indicator.find('button').exists()).toBe(false)
-  expect(host.handleError).toHaveBeenCalled()
+  expect(api.get).not.toHaveBeenCalled()
+  expect(host.handleError).not.toHaveBeenCalled()
 })
 it('filters a late list response against deletion events even for ids outside the current page', async () => {
   const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected'}])
@@ -105,7 +119,6 @@ it('marks accepted deletion locally before an unavailable refresh and clears a p
   expect(rows.value[0].deleting_at).toBeTruthy()
   expect(rows.value[0].deletion_job_id).toBe('new-job')
   expect(rows.value[0].deletion_job).toBeUndefined()
-  vi.mocked(api.get).mockRejectedValue(new Error('Read unavailable'))
   const receive = vi.mocked(on).mock.calls.at(-1)?.[1] as (message: unknown) => void
   receive({event: 'component.deleting', component_id: 'selected'})
   await flushPromises()
@@ -136,7 +149,6 @@ it('keeps accepted deletion when an older list arrives after a failed refresh', 
   const markedAt = rows.value[0].deleting_at
   const refresh = vi.fn().mockRejectedValue(new Error('Refresh unavailable'))
   await expect(refresh()).rejects.toThrow('Refresh unavailable')
-  vi.mocked(api.get).mockRejectedValue(new Error('Progress unavailable'))
   resolveList([{id: 'selected'}])
   await list
   await flushPromises()
@@ -148,58 +160,47 @@ it('keeps accepted deletion when an older list arrives after a failed refresh', 
   expect(indicator.find('button').exists()).toBe(false)
 })
 
-it('ignores an old progress response after an accepted retry', async () => {
-  let resolve!: (value: unknown) => void
-  vi.mocked(api.get).mockImplementation(() => new Promise(done => {resolve = done}) as never)
-  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked', deletion_job_id: 'old-job'}])
+it('ignores an old list snapshot after an accepted retry', async () => {
+  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked', deletion_job_id: 'old-job', deletion_job: {status: 'dead', attempts: 3}}])
   let acceptDeletion!: ReturnType<typeof useComponentDeletion>['acceptDeletion']
   mounted.push(mount(defineComponent({setup() {({acceptDeletion} = useComponentDeletion(rows, row => row.id)); return () => null}})))
   acceptDeletion('selected', {job_id: 'retry-job'})
-  resolve({data: {success: true, deleting_at: 'marked', deletion_job_id: 'old-job', deletion_job: {status: 'dead', attempts: 3}}})
+  rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'old-job', deletion_job: {status: 'dead', attempts: 3}}]
   await flushPromises()
   expect(rows.value[0].deletion_job_id).toBe('retry-job')
   expect(rows.value[0].deletion_job).toBeUndefined()
   const indicator = mount(ComponentDeletion, {props: {state: rows.value[0]}}); mounted.push(indicator)
   expect(indicator.find('[role="progressbar"]').exists()).toBe(true)
   expect(indicator.find('button').exists()).toBe(false)
+  expect(api.get).not.toHaveBeenCalled()
 })
 
 for (const job of [null, {status: 'dead', attempts: 3}, {status: 'cancelled', attempts: 1}]) {
   it(`keeps confirmed ${job?.status ?? 'missing'} progress and retry during list refresh`, async () => {
-    vi.mocked(api.get).mockResolvedValue({data: {success: true, deleting_at: 'marked', deletion_job_id: 'job', deletion_job: job}} as never)
-    const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job'}])
+    const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job', deletion_job: job}])
     mounted.push(mount(defineComponent({setup() {useComponentDeletion(rows, row => row.id); return () => null}})))
     await flushPromises()
-    let reject!: (error: Error) => void
-    vi.mocked(api.get).mockImplementation(() => new Promise((_, fail) => {reject = fail}) as never)
-    rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job'}]
+    rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job', deletion_job: job}]
     await flushPromises()
     const indicator = mount(ComponentDeletion, {props: {state: rows.value[0]}}); mounted.push(indicator)
     expect(rows.value[0].deletion_job).toEqual(job)
     expect(indicator.text()).toContain('Deletion failed')
     expect(indicator.find('[role="progressbar"]').exists()).toBe(false)
     expect(indicator.find('button').exists()).toBe(true)
-    reject(new Error('Progress unavailable'))
-    await flushPromises()
-    expect(rows.value[0].deletion_job).toEqual(job)
-    expect(indicator.find('button').exists()).toBe(true)
-    expect(host.handleError).toHaveBeenCalled()
-    vi.mocked(api.get).mockResolvedValue({data: {success: true, deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'running', attempts: 1}}} as never)
-    rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job'}]
+    rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'running', attempts: 1}}]
     await flushPromises()
     expect(rows.value[0].deletion_job?.status).toBe('running')
+    expect(api.get).not.toHaveBeenCalled()
   })
 }
 
 it('does not carry resolved failure to a different job on list refresh', async () => {
-  vi.mocked(api.get).mockResolvedValue({data: {success: true, deleting_at: 'marked', deletion_job_id: 'old-job', deletion_job: {status: 'dead', attempts: 3}}} as never)
-  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked', deletion_job_id: 'old-job'}])
+  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked', deletion_job_id: 'old-job', deletion_job: {status: 'dead', attempts: 3}}])
   mounted.push(mount(defineComponent({setup() {useComponentDeletion(rows, row => row.id); return () => null}})))
   await flushPromises()
-  vi.mocked(api.get).mockRejectedValue(new Error('Progress unavailable'))
   rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'new-job'}]
   await flushPromises()
-  expect(rows.value[0].deletion_job).toBeUndefined()
+  expect(rows.value[0].deletion_job).toBeNull()
 })
 
 it('keeps an off-page accepted deletion marked when a stale page returns', async () => {
@@ -210,7 +211,6 @@ it('keeps an off-page accepted deletion marked when a stale page returns', async
   const markedAt = rows.value[0].deleting_at
   rows.value = [{id: 'page-one'}]
   await flushPromises()
-  vi.mocked(api.get).mockRejectedValue(new Error('Progress unavailable'))
   rows.value = [{id: 'page-two'}]
   await flushPromises()
   expect(rows.value[0].deleting_at).toBe(markedAt)
@@ -224,12 +224,12 @@ it('takes the server retry handle and progress together and retains only matchin
   mounted.push(mount(defineComponent({setup() {({acceptDeletion} = useComponentDeletion(rows, row => row.id)); return () => null}})))
   acceptDeletion('selected', {job_id: 'attempt-a'})
   const running = {status: 'running', attempts: 1}
-  vi.mocked(api.get).mockResolvedValue({data: {success: true, deleting_at: 'marked', deletion_job_id: 'attempt-b', deletion_job: running}} as never)
-  rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'attempt-a'}]
+  const receive = vi.mocked(on).mock.calls.at(-1)?.[1] as (message: unknown) => void
+  receive({event: 'component.deleting', component_id: 'selected', deletion_job_id: 'attempt-b'})
+  rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'attempt-b', deletion_job: running}]
   await flushPromises()
   expect(rows.value[0].deletion_job_id).toBe('attempt-b')
   expect(rows.value[0].deletion_job).toEqual(running)
-  vi.mocked(api.get).mockRejectedValue(new Error('Progress unavailable'))
   rows.value = [{id: 'selected', deleting_at: 'marked', deletion_job_id: 'attempt-a', deletion_job: {status: 'dead', attempts: 3}}]
   await flushPromises()
   expect(rows.value[0].deletion_job_id).toBe('attempt-b')
@@ -257,7 +257,6 @@ it('finishes a deletion only for a marked row that leaves the list or a deletion
 })
 
 it('follows another actor deleting listed rows from deletion events without reading their components', async () => {
-  vi.mocked(api.get).mockResolvedValue({data: {success: false, error: 'Component not found or access denied'}} as never)
   const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'first'}, {id: 'second'}, {id: 'live'}])
   mounted.push(mount(defineComponent({setup() {useComponentDeletion(rows, row => row.id); return () => null}})))
   await flushPromises()
@@ -279,23 +278,21 @@ it('follows another actor deleting listed rows from deletion events without read
   expect(host.handleError).not.toHaveBeenCalled()
 })
 
-it('reads progress of a marked row from a list that also returns a deleted id', async () => {
-  vi.mocked(api.get).mockResolvedValue({data: {success: true, deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'dead', attempts: 3}}} as never)
+it('takes progress of a marked row from a list that also returns a deleted id', async () => {
   const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'live'}])
   mounted.push(mount(defineComponent({setup() {useComponentDeletion(rows, row => row.id); return () => null}})))
   const receive = vi.mocked(on).mock.calls.at(-1)?.[1] as (message: unknown) => void
   receive({event: 'component.deleted', component_id: 'gone'})
   await flushPromises()
-  rows.value = [{id: 'gone'}, {id: 'marked', deleting_at: 'marked', deletion_job_id: 'job'}]
+  rows.value = [{id: 'gone'}, {id: 'marked', deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'dead', attempts: 3}}]
   await flushPromises()
   expect(rows.value.map(row => row.id)).toEqual(['marked'])
-  expect(api.get).toHaveBeenCalledExactlyOnceWith('/api/v1/components/marked')
+  expect(api.get).not.toHaveBeenCalled()
   expect(rows.value[0].deletion_job?.status).toBe('dead')
 })
 
 it('keeps a dead attempt and its retry when that attempt\'s deleting event arrives after the list read', async () => {
-  vi.mocked(api.get).mockResolvedValue({data: {success: true, deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'dead', attempts: 3, last_error: 'cleanup refused'}}} as never)
-  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job'}])
+  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'dead', attempts: 3, last_error: 'cleanup refused'}}])
   mounted.push(mount(defineComponent({setup() {useComponentDeletion(rows, row => row.id); return () => null}})))
   await flushPromises()
   const receive = vi.mocked(on).mock.calls.at(-1)?.[1] as (message: unknown) => void
@@ -311,14 +308,11 @@ it('keeps a dead attempt and its retry when that attempt\'s deleting event arriv
   expect(rows.value[0].deletion_job).toBeUndefined()
 })
 
-it('keeps an in-flight progress read of the same attempt when its deleting event arrives', async () => {
-  let resolve!: (value: unknown) => void
-  vi.mocked(api.get).mockImplementation(() => new Promise(done => {resolve = done}) as never)
-  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job'}])
+it('keeps list progress for the same attempt when its deleting event arrives', async () => {
+  const rows = ref<(ComponentDeletionState & {id: string})[]>([{id: 'selected', deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'dead', attempts: 3, last_error: 'cleanup refused'}}])
   mounted.push(mount(defineComponent({setup() {useComponentDeletion(rows, row => row.id); return () => null}})))
   const receive = vi.mocked(on).mock.calls.at(-1)?.[1] as (message: unknown) => void
   receive({event: 'component.deleting', component_id: 'selected', deletion_job_id: 'job'})
-  resolve({data: {success: true, deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'dead', attempts: 3}}})
   await flushPromises()
   expect(rows.value[0].deletion_job?.status).toBe('dead')
 })

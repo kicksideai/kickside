@@ -411,6 +411,7 @@ lifecycle.enqueue_job = enqueue.enqueue_job
 lifecycle.carried_identity_error = enqueue.carried_identity_error
 lifecycle.list_jobs = enqueue.list_jobs
 lifecycle.get_job = enqueue.get_job
+lifecycle.get_jobs = enqueue.get_jobs
 lifecycle.get_job_statuses = enqueue.get_job_statuses
 lifecycle.list_job_runs = enqueue.list_job_runs
 

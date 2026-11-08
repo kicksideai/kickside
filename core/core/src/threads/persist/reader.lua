@@ -269,6 +269,9 @@ function reader.list(db_or_tx: Executor, options: table?): (table[]?, error?)
             if disp then
                 row.component_title = disp.title
                 row.component_icon = disp.icon
+                row.deleting_at = disp.deleting_at
+                row.deletion_job_id = disp.deletion_job_id
+                row.deletion_job = disp.deletion_job
             end
         end
     end

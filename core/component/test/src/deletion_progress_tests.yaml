@@ -1,0 +1,20 @@
+version: '1.0'
+namespace: app
+entries:
+  - name: deletion_progress_jobs
+    kind: library.lua
+    source: file://deletion_progress_jobs.lua
+  - name: deletion_progress_source
+    kind: library.lua
+    source: file://deletion_progress_source.lua
+    imports:
+      jobs: app:deletion_progress_jobs
+  - name: deletion_progress_test
+    kind: function.lua
+    meta: {type: test, suite: component_deletion_progress}
+    source: file://deletion_progress_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      progress: app:deletion_progress_source
+      jobs: app:deletion_progress_jobs
