@@ -20,6 +20,7 @@ entries:
     source: file://list_kb.lua
     modules: [http, json, security, registry]
     imports:
+      deletion_progress: kickside.component:deletion_progress
       component: kickside.component:component
       engines: kickside.knowledge:engines
       query_params: kickside.knowledge.api:query_params

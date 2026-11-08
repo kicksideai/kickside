@@ -1,18 +1,27 @@
 import { u as _e, a as we, W as ke } from "./index-C70m2Vvt.js";
-import { defineComponent as Ce, computed as m, reactive as Se, ref as $, watch as U, onMounted as xe, onBeforeUnmount as Ie, openBlock as i, createElementBlock as n, Fragment as A, createElementVNode as p, renderList as H, createBlock as W, unref as g, createCommentVNode as f, toDisplayString as h, withModifiers as Ke, createVNode as k, withDirectives as Ee, vModelText as $e, withCtx as Ae, createTextVNode as I, normalizeClass as ne, nextTick as Me } from "vue";
+import { defineComponent as Ce, computed as m, reactive as Se, ref as $, watch as U, onMounted as xe, onBeforeUnmount as Ie, openBlock as i, createElementBlock as c, Fragment as A, createElementVNode as p, renderList as H, createBlock as W, unref as g, createCommentVNode as f, toDisplayString as h, withModifiers as Ke, createVNode as k, withDirectives as Ee, vModelText as $e, withCtx as Ae, createTextVNode as I, normalizeClass as ae, nextTick as Me } from "vue";
 import { Icon as _ } from "@iconify/vue";
 import { api as J, define as Te } from "@wippy-fe/proxy";
 import { a as Pe } from "./pickerValue-SPnnNBeX.js";
-import { e as ce } from "./errMsg-CxKGcp1F.js";
 import { _ as Le } from "./AnchoredPanel.vue_vue_type_script_setup_true_lang-DSLnUKFT.js";
 import { s as Oe } from "./styles-CigVtYJF.js";
 const Re = () => _e(), qe = () => we();
-function ue(r) {
-  return r.drillId || r.value;
+function ce(o, e) {
+  if (o && typeof o == "object") {
+    const r = o, n = r.response?.data?.error;
+    if (typeof n == "string") return n;
+    if (n && typeof n == "object" && typeof n.message == "string")
+      return n.message;
+    if (typeof r.message == "string" && r.message) return r.message;
+  }
+  return e;
+}
+function ue(o) {
+  return o.drillId || o.value;
 }
 class Ne {
-  constructor(e, l = "server") {
-    this.fetchPage = e, this.declared = l, this.serverSearch = l === "server";
+  constructor(e, r = "server") {
+    this.fetchPage = e, this.declared = r, this.serverSearch = r === "server";
   }
   rows = [];
   query = "";
@@ -35,15 +44,15 @@ class Ne {
   get visible() {
     if (!this.filtersLocally) return this.rows;
     const e = this.query.toLowerCase();
-    return this.rows.filter((l) => l.label.toLowerCase().includes(e) || l.value.toLowerCase().includes(e) || l.description.toLowerCase().includes(e));
+    return this.rows.filter((r) => r.label.toLowerCase().includes(e) || r.value.toLowerCase().includes(e) || r.description.toLowerCase().includes(e));
   }
   get parentId() {
     return this.trail.length ? this.trail[this.trail.length - 1].id : "";
   }
   // Point the pager at another source (or search mode) and forget everything
   // loaded from the previous one.
-  configure(e, l) {
-    this.fetchPage = e, this.declared = l, this.serverSearch = l === "server", this.trail = [], this.query = "", this.clear();
+  configure(e, r) {
+    this.fetchPage = e, this.declared = r, this.serverSearch = r === "server", this.trail = [], this.query = "", this.clear();
   }
   // Start over at the current level for a search text (empty lists
   // everything). A source that cannot search keeps its loaded rows and only
@@ -73,86 +82,86 @@ class Ne {
     this.generation++, this.rows = [], this.nextCursor = null, this.loaded = !1, this.loading = !1, this.error = null, this.failedCursor = null;
   }
   async load(e) {
-    const l = ++this.generation;
+    const r = ++this.generation;
     this.loading = !0, this.error = null;
-    const u = this.serverSearch && this.query ? this.query : "", d = {};
-    u && (d.q = u), e && (d.cursor = e), this.parentId && (d.parentId = this.parentId);
+    const n = this.serverSearch && this.query ? this.query : "", d = {};
+    n && (d.q = n), e && (d.cursor = e), this.parentId && (d.parentId = this.parentId);
     try {
-      const c = await this.fetchPage(d);
-      if (l !== this.generation) return;
-      const C = new Set(this.rows.map(ue)), y = c.rows.filter((K) => !C.has(ue(K)));
-      this.rows = [...this.rows, ...y], this.nextCursor = c.nextCursor || null, this.loaded = !0, this.failedCursor = null, this.loading = !1, typeof c.search == "boolean" && c.search !== this.serverSearch && (this.serverSearch = c.search, c.search && this.query && !u && await this.restart());
-    } catch (c) {
-      if (l !== this.generation) return;
-      this.error = c, this.failedCursor = e, this.loading = !1;
+      const u = await this.fetchPage(d);
+      if (r !== this.generation) return;
+      const C = new Set(this.rows.map(ue)), y = u.rows.filter((K) => !C.has(ue(K)));
+      this.rows = [...this.rows, ...y], this.nextCursor = u.nextCursor || null, this.loaded = !0, this.failedCursor = null, this.loading = !1, typeof u.search == "boolean" && u.search !== this.serverSearch && (this.serverSearch = u.search, u.search && this.query && !n && await this.restart());
+    } catch (u) {
+      if (r !== this.generation) return;
+      this.error = u, this.failedCursor = e, this.loading = !1;
     }
   }
 }
-function De(r, e) {
-  return r.includes(e) ? r.filter((l) => l !== e) : [...r, e];
+function De(o, e) {
+  return o.includes(e) ? o.filter((r) => r !== e) : [...o, e];
 }
 const Ue = ["items", "results", "rows", "data"];
-function T(r) {
-  return typeof r == "string" ? r : typeof r == "number" ? String(r) : "";
+function T(o) {
+  return typeof o == "string" ? o : typeof o == "number" ? String(o) : "";
 }
-function de(r, e) {
-  if (!r || typeof r != "object") return [];
-  const l = r;
-  if (e && Array.isArray(l[e])) return l[e];
-  for (const u of Ue)
-    if (Array.isArray(l[u])) return l[u];
+function de(o, e) {
+  if (!o || typeof o != "object") return [];
+  const r = o;
+  if (e && Array.isArray(r[e])) return r[e];
+  for (const n of Ue)
+    if (Array.isArray(r[n])) return r[n];
   return [];
 }
-function Y(r, e, l) {
-  const u = T(r[e.idKey]), d = T(r[e.drillKey]), c = T(r[e.labelKey]) || u || d;
+function Y(o, e, r) {
+  const n = T(o[e.idKey]), d = T(o[e.drillKey]), u = T(o[e.labelKey]) || n || d;
   return {
-    value: u,
+    value: n,
     drillId: d,
-    label: c,
-    description: T(r[e.descKey]),
-    icon: T(r[e.iconKey]),
-    meta: e.metaKey ? T(r[e.metaKey]) : "",
-    selectable: l.selectable && u !== "",
-    drillable: l.drillable && d !== "",
-    raw: r
+    label: u,
+    description: T(o[e.descKey]),
+    icon: T(o[e.iconKey]),
+    meta: e.metaKey ? T(o[e.metaKey]) : "",
+    selectable: r.selectable && n !== "",
+    drillable: r.drillable && d !== "",
+    raw: o
   };
 }
-function he(r) {
-  const e = r.next_cursor;
+function he(o) {
+  const e = o.next_cursor;
   return typeof e == "string" && e !== "" ? e : null;
 }
-function ze(r) {
+function ze(o) {
   return async (e) => {
-    const l = new URLSearchParams();
-    e.q && l.set("q", e.q), l.set("limit", String(r.pageSize)), e.cursor && l.set("cursor", e.cursor), e.parentId && l.set("parent_id", e.parentId);
-    const u = r.source.includes("?") ? "&" : "?", { data: d } = await J.get(`${r.source}${u}${l.toString()}`), c = d && typeof d == "object" ? d : {};
+    const r = new URLSearchParams();
+    e.q && r.set("q", e.q), r.set("limit", String(o.pageSize)), e.cursor && r.set("cursor", e.cursor), e.parentId && r.set("parent_id", e.parentId);
+    const n = o.source.includes("?") ? "&" : "?", { data: d } = await J.get(`${o.source}${n}${r.toString()}`), u = d && typeof d == "object" ? d : {};
     return {
-      rows: de(c, r.responseKey).map((y) => Y(y, r.keys, {
+      rows: de(u, o.responseKey).map((y) => Y(y, o.keys, {
         selectable: y.selectable !== !1,
         drillable: y.drillable === !0
       })),
-      nextCursor: he(c),
-      search: typeof c.search == "boolean" ? c.search : void 0
+      nextCursor: he(u),
+      search: typeof u.search == "boolean" ? u.search : void 0
     };
   };
 }
 class Ve extends Error {
 }
-function Be(r) {
-  const e = r.discoverPath.replace("{id}", encodeURIComponent(r.connectionId));
-  return async (l) => {
-    const u = { limit: r.pageSize };
-    l.q && (u.q = l.q), l.cursor && (u.cursor = l.cursor), l.parentId && (u.parent_id = l.parentId);
-    const { data: d } = await J.post(e, u), c = d && typeof d == "object" ? d : {}, C = Array.isArray(c.resources) ? c.resources : [], y = Array.isArray(c.items) ? c.items : [];
+function je(o) {
+  const e = o.discoverPath.replace("{id}", encodeURIComponent(o.connectionId));
+  return async (r) => {
+    const n = { limit: o.pageSize };
+    r.q && (n.q = r.q), r.cursor && (n.cursor = r.cursor), r.parentId && (n.parent_id = r.parentId);
+    const { data: d } = await J.post(e, n), u = d && typeof d == "object" ? d : {}, C = Array.isArray(u.resources) ? u.resources : [], y = Array.isArray(u.items) ? u.items : [];
     if (y.length !== C.length)
       throw new Ve("The connection answered a discovery page whose items do not match its resources.");
-    return { rows: C.map((P, R) => Y(P, r.keys, {
+    return { rows: C.map((P, R) => Y(P, o.keys, {
       selectable: y[R].selectable === !0,
       drillable: y[R].drillable === !0
-    })), nextCursor: he(c) };
+    })), nextCursor: he(u) };
   };
 }
-const je = { class: "ms-chip-label" }, Fe = ["title", "aria-label", "onClick"], Ge = ["placeholder", "aria-label", "aria-expanded"], He = ["aria-busy"], We = {
+const Be = { class: "ms-chip-label" }, Fe = ["title", "aria-label", "onClick"], Ge = ["placeholder", "aria-label", "aria-expanded"], He = ["aria-busy"], We = {
   key: 0,
   class: "ms-crumbs",
   "aria-label": "Location"
@@ -183,10 +192,10 @@ const je = { class: "ms-chip-label" }, Fe = ["title", "aria-label", "onClick"], 
   class: "ms-list",
   role: "group",
   "aria-label": "Results"
-}, lt = ["aria-pressed", "onClick", "onMousemove"], ot = { class: "ms-row-main" }, it = { class: "ms-row-title" }, at = {
+}, ot = ["aria-pressed", "onClick", "onMousemove"], lt = { class: "ms-row-main" }, nt = { class: "ms-row-title" }, it = {
   key: 0,
   class: "ms-row-tag"
-}, nt = {
+}, at = {
   key: 0,
   class: "ms-row-sub"
 }, ct = ["aria-label", "onClick", "onMousemove"], ut = { class: "ms-row-main" }, dt = { class: "ms-row-title" }, ht = {
@@ -205,8 +214,8 @@ const je = { class: "ms-chip-label" }, Fe = ["title", "aria-label", "onClick"], 
   class: "ms-foot"
 }, _t = { class: "ms-count" }, wt = ["disabled"], kt = 20, Ct = 1e3, St = 180, xt = /* @__PURE__ */ Ce({
   __name: "MultiSelect",
-  setup(r) {
-    const e = Re(), l = qe(), u = m(() => e.value?.source || ""), d = m(() => e.value?.connectionId || ""), c = m(() => e.value?.discoverPath || "/api/v1/connections/{id}/discover_resources"), C = m(() => e.value?.search === "local" ? "local" : "server"), y = m(() => {
+  setup(o) {
+    const e = Re(), r = qe(), n = m(() => e.value?.source || ""), d = m(() => e.value?.connectionId || ""), u = m(() => e.value?.discoverPath || "/api/v1/connections/{id}/discover_resources"), C = m(() => e.value?.search === "local" ? "local" : "server"), y = m(() => {
       const t = Number(e.value?.pageSize);
       return Number.isInteger(t) && t >= 1 ? Math.min(t, Ct) : kt;
     }), K = m(() => ({
@@ -216,16 +225,16 @@ const je = { class: "ms-chip-label" }, Fe = ["title", "aria-label", "onClick"], 
       iconKey: e.value?.iconKey || "icon",
       metaKey: e.value?.metaKey || "",
       drillKey: e.value?.drillKey || "id"
-    })), P = m(() => e.value?.responseKey || (d.value ? "resources" : "")), R = m(() => e.value?.unselectableHint || "This item cannot be selected."), z = m(() => e.value?.multi !== !1), Z = m(() => e.value?.placeholder || "Search…"), V = m(() => !!(d.value || u.value));
+    })), P = m(() => e.value?.responseKey || (d.value ? "resources" : "")), R = m(() => e.value?.unselectableHint || "This item cannot be selected."), z = m(() => e.value?.multi !== !1), Z = m(() => e.value?.placeholder || "Search…"), V = m(() => !!(d.value || n.value));
     function Q() {
-      return d.value ? Be({ connectionId: d.value, discoverPath: c.value, pageSize: y.value, keys: K.value }) : ze({ source: u.value, responseKey: P.value, pageSize: y.value, keys: K.value });
+      return d.value ? je({ connectionId: d.value, discoverPath: u.value, pageSize: y.value, keys: K.value }) : ze({ source: n.value, responseKey: P.value, pageSize: y.value, keys: K.value });
     }
-    const o = Se(new Ne(Q(), C.value)), v = $([]), M = $({}), S = $(!1), x = $(""), w = $(-1), X = $(null), q = $(null), E = m(() => o.visible), ee = m(() => o.error ? ce(o.error, "The list could not be loaded.") : ""), pe = m(() => {
-      if (o.query) return `No matches for “${o.query}”.`;
-      const t = o.trail[o.trail.length - 1];
+    const l = Se(new Ne(Q(), C.value)), v = $([]), M = $({}), S = $(!1), x = $(""), w = $(-1), X = $(null), q = $(null), E = m(() => l.visible), ee = m(() => l.error ? ce(l.error, "The list could not be loaded.") : ""), pe = m(() => {
+      if (l.query) return `No matches for “${l.query}”.`;
+      const t = l.trail[l.trail.length - 1];
       return t ? `Nothing in ${t.label}.` : "Nothing to choose from.";
     });
-    function B(t) {
+    function j(t) {
       t.value && (M.value = { ...M.value, [t.value]: { label: t.label, icon: t.icon } });
     }
     function N(t) {
@@ -240,62 +249,62 @@ const je = { class: "ms-chip-label" }, Fe = ["title", "aria-label", "onClick"], 
     function ve(t) {
       return t.drillId || t.value;
     }
-    function j(t) {
+    function B(t) {
       return !!t && (t.selectable || t.drillable);
     }
     async function fe(t) {
       const a = t.filter((s) => !M.value[s]);
-      if (!(d.value || !u.value || !a.length))
+      if (!(d.value || !n.value || !a.length))
         try {
-          const { data: s } = await J.get(`${u.value}?ids=${encodeURIComponent(a.join(","))}`);
-          for (const b of de(s, P.value)) B(Y(b, K.value, { selectable: !0, drillable: !1 }));
+          const { data: s } = await J.get(`${n.value}?ids=${encodeURIComponent(a.join(","))}`);
+          for (const b of de(s, P.value)) j(Y(b, K.value, { selectable: !0, drillable: !1 }));
         } catch (s) {
-          l("error", { message: ce(s, "The selected items could not be resolved."), error: s });
+          r("error", { message: ce(s, "The selected items could not be resolved."), error: s });
         }
     }
     U(() => e.value?.selected, (t) => {
       v.value = Pe(t), fe(v.value);
-    }, { immediate: !0 }), U(() => o.rows, (t) => {
-      for (const a of t) a.value && D(a.value) && !M.value[a.value] && B(a);
-    }), U(() => o.error, (t) => {
-      t && l("error", { message: ee.value, error: t });
+    }, { immediate: !0 }), U(() => l.rows, (t) => {
+      for (const a of t) a.value && D(a.value) && !M.value[a.value] && j(a);
+    }), U(() => l.error, (t) => {
+      t && r("error", { message: ee.value, error: t });
     });
-    const me = m(() => JSON.stringify([u.value, d.value, c.value, C.value, y.value, K.value, P.value]));
+    const me = m(() => JSON.stringify([n.value, d.value, u.value, C.value, y.value, K.value, P.value]));
     U(me, () => {
-      o.configure(Q(), C.value), x.value = "", w.value = -1, S.value && V.value && o.search("");
+      l.configure(Q(), C.value), x.value = "", w.value = -1, S.value && V.value && l.search("");
     });
     let L = null;
     function ye() {
-      ie(), w.value = -1, L && clearTimeout(L), o.serverSearch ? L = setTimeout(() => {
-        o.search(x.value);
-      }, St) : o.search(x.value);
+      ne(), w.value = -1, L && clearTimeout(L), l.serverSearch ? L = setTimeout(() => {
+        l.search(x.value);
+      }, St) : l.search(x.value);
     }
     function se(t) {
-      t.selectable && (B(t), z.value ? (v.value = De(v.value, t.value), Me(() => q.value?.focus())) : (v.value = [t.value], x.value = "", S.value = !1), oe());
+      t.selectable && (j(t), z.value ? (v.value = De(v.value, t.value), Me(() => q.value?.focus())) : (v.value = [t.value], x.value = "", S.value = !1), le());
     }
     function F(t) {
-      w.value = -1, o.drill(t);
+      w.value = -1, l.drill(t);
     }
     function re(t) {
-      w.value = -1, o.up(t);
+      w.value = -1, l.up(t);
     }
-    function le(t) {
-      v.value = v.value.filter((a) => a !== t), oe(), q.value?.focus();
+    function oe(t) {
+      v.value = v.value.filter((a) => a !== t), le(), q.value?.focus();
     }
-    function oe() {
-      l("change", { selected: [...v.value], labels: v.value.map(N) });
+    function le() {
+      r("change", { selected: [...v.value], labels: v.value.map(N) });
     }
-    function ie() {
-      S.value || (S.value = !0), V.value && !o.loaded && !o.loading && !o.error && o.search(x.value);
+    function ne() {
+      S.value || (S.value = !0), V.value && !l.loaded && !l.loading && !l.error && l.search(x.value);
     }
     function G() {
-      ie(), q.value?.focus();
+      ne(), q.value?.focus();
     }
-    function ae(t) {
+    function ie(t) {
       const a = E.value;
       let s = w.value;
       for (let b = 0; b < a.length; b++)
-        if (s = t === 1 ? Math.min(s + 1, a.length - 1) : Math.max(s - 1, 0), j(a[s])) {
+        if (s = t === 1 ? Math.min(s + 1, a.length - 1) : Math.max(s - 1, 0), B(a[s])) {
           w.value = s;
           return;
         }
@@ -309,7 +318,7 @@ const je = { class: "ms-chip-label" }, Fe = ["title", "aria-label", "onClick"], 
         return;
       }
       if (t.key === "Backspace" && !x.value && v.value.length) {
-        le(v.value[v.value.length - 1]);
+        oe(v.value[v.value.length - 1]);
         return;
       }
       if (!S.value && (t.key === "ArrowDown" || t.key === "Enter")) {
@@ -317,25 +326,25 @@ const je = { class: "ms-chip-label" }, Fe = ["title", "aria-label", "onClick"], 
         return;
       }
       if (t.key === "ArrowDown")
-        t.preventDefault(), ae(1);
+        t.preventDefault(), ie(1);
       else if (t.key === "ArrowUp")
-        t.preventDefault(), ae(-1);
+        t.preventDefault(), ie(-1);
       else if (t.key === "Enter") {
         t.preventDefault();
-        const a = E.value[w.value] ?? E.value.find(j);
-        j(a) && be(a);
+        const a = E.value[w.value] ?? E.value.find(B);
+        B(a) && be(a);
       }
     }
-    return xe(() => l("load", void 0)), Ie(() => {
+    return xe(() => r("load", void 0)), Ie(() => {
       L && clearTimeout(L);
-    }), (t, a) => (i(), n(A, null, [
+    }), (t, a) => (i(), c(A, null, [
       p("div", {
         ref_key: "ctrl",
         ref: X,
         class: "ms",
         onClick: G
       }, [
-        (i(!0), n(A, null, H(v.value, (s) => (i(), n("span", {
+        (i(!0), c(A, null, H(v.value, (s) => (i(), c("span", {
           key: s,
           class: "ms-chip"
         }, [
@@ -345,13 +354,13 @@ const je = { class: "ms-chip-label" }, Fe = ["title", "aria-label", "onClick"], 
             class: "ms-chip-ico",
             "aria-hidden": "true"
           }, null, 8, ["icon"])) : f("", !0),
-          p("span", je, h(N(s)), 1),
+          p("span", Be, h(N(s)), 1),
           p("button", {
             type: "button",
             class: "ms-chip-x",
             title: `Remove ${N(s)}`,
             "aria-label": `Remove ${N(s)}`,
-            onClick: Ke((b) => le(s), ["stop"])
+            onClick: Ke((b) => oe(s), ["stop"])
           }, [
             k(g(_), {
               icon: "tabler:x",
@@ -387,15 +396,15 @@ const je = { class: "ms-chip-label" }, Fe = ["title", "aria-label", "onClick"], 
         default: Ae(() => [
           p("div", {
             class: "ms-pop",
-            "aria-busy": o.loading
+            "aria-busy": l.loading
           }, [
-            o.trail.length ? (i(), n("nav", We, [
+            l.trail.length ? (i(), c("nav", We, [
               p("button", {
                 type: "button",
                 class: "ms-crumb",
                 onClick: a[1] || (a[1] = (s) => re(0))
               }, "All"),
-              (i(!0), n(A, null, H(o.trail, (s, b) => (i(), n(A, {
+              (i(!0), c(A, null, H(l.trail, (s, b) => (i(), c(A, {
                 key: s.id
               }, [
                 k(g(_), {
@@ -403,21 +412,21 @@ const je = { class: "ms-chip-label" }, Fe = ["title", "aria-label", "onClick"], 
                   class: "ms-crumb-sep",
                   "aria-hidden": "true"
                 }),
-                b < o.trail.length - 1 ? (i(), n("button", {
+                b < l.trail.length - 1 ? (i(), c("button", {
                   key: 0,
                   type: "button",
                   class: "ms-crumb",
                   onClick: (O) => re(b + 1)
-                }, h(s.label), 9, Je)) : (i(), n("span", Ye, h(s.label), 1))
+                }, h(s.label), 9, Je)) : (i(), c("span", Ye, h(s.label), 1))
               ], 64))), 128))
             ])) : f("", !0),
-            o.filtersLocally ? (i(), n("p", Ze, [
-              I(" This source cannot search, so only the " + h(o.rows.length) + " loaded items are filtered.", 1),
-              o.hasMore ? (i(), n(A, { key: 0 }, [
+            l.filtersLocally ? (i(), c("p", Ze, [
+              I(" This source cannot search, so only the " + h(l.rows.length) + " loaded items are filtered.", 1),
+              l.hasMore ? (i(), c(A, { key: 0 }, [
                 I(" Load more to search further.")
               ], 64)) : f("", !0)
             ])) : f("", !0),
-            o.error ? (i(), n("div", Qe, [
+            l.error ? (i(), c("div", Qe, [
               k(g(_), {
                 icon: "tabler:alert-circle",
                 class: "ms-alert-ico",
@@ -427,26 +436,26 @@ const je = { class: "ms-chip-label" }, Fe = ["title", "aria-label", "onClick"], 
               p("button", {
                 type: "button",
                 class: "ms-link",
-                onClick: a[2] || (a[2] = (s) => o.retry())
+                onClick: a[2] || (a[2] = (s) => l.retry())
               }, "Try again")
             ])) : f("", !0),
-            V.value ? o.loading && !o.rows.length ? (i(), n("div", tt, [
+            V.value ? l.loading && !l.rows.length ? (i(), c("div", tt, [
               k(g(_), {
                 icon: "tabler:loader-2",
                 class: "spin",
                 "aria-hidden": "true"
               }),
-              I(" " + h(o.query && o.serverSearch ? "Searching…" : "Loading…"), 1)
-            ])) : o.loaded && !E.value.length && !o.error ? (i(), n("div", st, h(pe.value), 1)) : f("", !0) : (i(), n("div", et, "This picker has no source to list from.")),
-            E.value.length ? (i(), n("div", rt, [
-              (i(!0), n(A, null, H(E.value, (s, b) => (i(), n("div", {
+              I(" " + h(l.query && l.serverSearch ? "Searching…" : "Loading…"), 1)
+            ])) : l.loaded && !E.value.length && !l.error ? (i(), c("div", st, h(pe.value), 1)) : f("", !0) : (i(), c("div", et, "This picker has no source to list from.")),
+            E.value.length ? (i(), c("div", rt, [
+              (i(!0), c(A, null, H(E.value, (s, b) => (i(), c("div", {
                 key: ve(s),
                 class: "ms-item"
               }, [
-                s.selectable ? (i(), n("button", {
+                s.selectable ? (i(), c("button", {
                   key: 0,
                   type: "button",
-                  class: ne(["ms-row", [D(s.value) && "ms-row-on", b === w.value && "ms-row-active"]]),
+                  class: ae(["ms-row", [D(s.value) && "ms-row-on", b === w.value && "ms-row-active"]]),
                   "aria-pressed": D(s.value),
                   onClick: (O) => se(s),
                   onMousemove: (O) => w.value = b
@@ -456,12 +465,12 @@ const je = { class: "ms-chip-label" }, Fe = ["title", "aria-label", "onClick"], 
                     class: "ms-row-ico",
                     "aria-hidden": "true"
                   }, null, 8, ["icon"]),
-                  p("span", ot, [
-                    p("span", it, [
+                  p("span", lt, [
+                    p("span", nt, [
                       I(h(s.label) + " ", 1),
-                      s.meta ? (i(), n("span", at, h(s.meta), 1)) : f("", !0)
+                      s.meta ? (i(), c("span", it, h(s.meta), 1)) : f("", !0)
                     ]),
-                    s.description ? (i(), n("span", nt, h(s.description), 1)) : f("", !0)
+                    s.description ? (i(), c("span", at, h(s.description), 1)) : f("", !0)
                   ]),
                   D(s.value) ? (i(), W(g(_), {
                     key: 0,
@@ -469,10 +478,10 @@ const je = { class: "ms-chip-label" }, Fe = ["title", "aria-label", "onClick"], 
                     class: "ms-row-check",
                     "aria-hidden": "true"
                   })) : f("", !0)
-                ], 42, lt)) : s.drillable ? (i(), n("button", {
+                ], 42, ot)) : s.drillable ? (i(), c("button", {
                   key: 1,
                   type: "button",
-                  class: ne(["ms-row", b === w.value && "ms-row-active"]),
+                  class: ae(["ms-row", b === w.value && "ms-row-active"]),
                   "aria-label": `Open ${s.label}`,
                   onClick: (O) => F(s),
                   onMousemove: (O) => w.value = b
@@ -485,16 +494,16 @@ const je = { class: "ms-chip-label" }, Fe = ["title", "aria-label", "onClick"], 
                   p("span", ut, [
                     p("span", dt, [
                       I(h(s.label) + " ", 1),
-                      s.meta ? (i(), n("span", ht, h(s.meta), 1)) : f("", !0)
+                      s.meta ? (i(), c("span", ht, h(s.meta), 1)) : f("", !0)
                     ]),
-                    s.description ? (i(), n("span", pt, h(s.description), 1)) : f("", !0)
+                    s.description ? (i(), c("span", pt, h(s.description), 1)) : f("", !0)
                   ]),
                   k(g(_), {
                     icon: "tabler:chevron-right",
                     class: "ms-row-go",
                     "aria-hidden": "true"
                   })
-                ], 42, ct)) : (i(), n("button", vt, [
+                ], 42, ct)) : (i(), c("button", vt, [
                   k(g(_), {
                     icon: s.icon || "tabler:point",
                     class: "ms-row-ico",
@@ -505,7 +514,7 @@ const je = { class: "ms-chip-label" }, Fe = ["title", "aria-label", "onClick"], 
                     p("span", yt, h(R.value), 1)
                   ])
                 ])),
-                s.selectable && s.drillable ? (i(), n("button", {
+                s.selectable && s.drillable ? (i(), c("button", {
                   key: 3,
                   type: "button",
                   class: "ms-row-drill",
@@ -520,26 +529,26 @@ const je = { class: "ms-chip-label" }, Fe = ["title", "aria-label", "onClick"], 
                 ], 8, bt)) : f("", !0)
               ]))), 128))
             ])) : f("", !0),
-            o.hasMore ? (i(), n("div", gt, [
+            l.hasMore ? (i(), c("div", gt, [
               p("span", _t, [
                 I(h(E.value.length) + " shown", 1),
-                z.value ? (i(), n(A, { key: 0 }, [
+                z.value ? (i(), c(A, { key: 0 }, [
                   I(" · " + h(v.value.length) + " selected", 1)
                 ], 64)) : f("", !0)
               ]),
               p("button", {
                 type: "button",
                 class: "ms-more",
-                disabled: o.loading,
-                onClick: a[3] || (a[3] = (s) => o.loadMore())
+                disabled: l.loading,
+                onClick: a[3] || (a[3] = (s) => l.loadMore())
               }, [
-                o.loading ? (i(), W(g(_), {
+                l.loading ? (i(), W(g(_), {
                   key: 0,
                   icon: "tabler:loader-2",
                   class: "spin",
                   "aria-hidden": "true"
                 })) : f("", !0),
-                I(" " + h(o.loading ? "Loading…" : "Load more"), 1)
+                I(" " + h(l.loading ? "Loading…" : "Load more"), 1)
               ], 8, wt)
             ])) : f("", !0)
           ], 8, He)

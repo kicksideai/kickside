@@ -25,6 +25,7 @@ type ComponentResult = {
     updated_at: string,
     deleting_at: string?,
     deletion_job_id: string?,
+    deletion_job: {status: string, attempts: integer, last_error: string?}?,
     private_context: { [string]: any }?,
     context_revision: integer?,
     meta: { [string]: string }?,

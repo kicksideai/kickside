@@ -441,6 +441,7 @@ enqueue.enqueue_job = enqueue_job
 enqueue.list_jobs = listing.list_jobs
 enqueue.list_job_runs = listing.list_job_runs
 enqueue.get_job = listing.get_job
+enqueue.get_jobs = listing.get_jobs
 enqueue.get_job_statuses = listing.get_job_statuses
 
 return enqueue

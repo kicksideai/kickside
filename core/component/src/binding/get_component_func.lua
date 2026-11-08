@@ -2,7 +2,7 @@ local security = require("security")
 local component_reader = require("component_reader")
 local ops = require("component_ops")
 local envelope = require("envelope")
-local jobs = require("jobs")
+local deletion_progress = require("deletion_progress")
 
 -- Constants
 local VALIDATION_ERRORS = {
@@ -55,18 +55,12 @@ local function handle(request_dto)
         return envelope.fail(BUSINESS_ERRORS.NOT_FOUND, errors.PERMISSION_DENIED)
     end
 
-    local deletion_job: any = nil
-    if component.deletion_job_id ~= nil then
-        local job, job_err = jobs.get_job(component.deletion_job_id)
-        if job_err then return envelope.from_error(job_err) end
-        if job then
-            deletion_job = {status = job.status, attempts = tonumber(job.attempts), last_error = job.last_error}
-        end
-    end
+    local _, progress_err = deletion_progress.enrich({component})
+    if progress_err then return envelope.from_error(progress_err) end
     return {
         deleting_at = component.deleting_at,
         deletion_job_id = component.deletion_job_id,
-        deletion_job = deletion_job,
+        deletion_job = component.deletion_job,
         component_id = component.component_id,
         impl_id = component.impl_id,
         meta = component.meta or {},

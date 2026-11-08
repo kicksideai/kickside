@@ -229,7 +229,8 @@ async function load() {
       const lbl = rowLabel(r)
       out.push({id, label: (lbl && lbl !== id) ? lbl : untitledLabel.value, icon: rowIcon(r), selection: selectionFor(r, id),
         deleting_at: typeof r.deleting_at === 'string' ? r.deleting_at : undefined,
-        deletion_job_id: typeof r.deletion_job_id === 'string' ? r.deletion_job_id : undefined})
+        deletion_job_id: typeof r.deletion_job_id === 'string' ? r.deletion_job_id : undefined,
+        deletion_job: r.deletion_job as ComponentDeletionState['deletion_job']})
     }
     items.value = out
     loaded.value = true

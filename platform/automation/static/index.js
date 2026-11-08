@@ -1,9 +1,9 @@
-import { e as te, _ as Re, u as zo, a as Po, b as Do, W as Eo } from "./errMsg-kIukmtcj.js";
-import { B as he, l as Et, s as It, L as Io, b as me, v as we, U as Lo, I as vt, d as Ao, r as Lt, a as jo, c as Mo, e as Ro, C as To, h as Oo, S as Bo, _ as Fo, W as No, f as Uo, P as Ho } from "./AnchoredPanel.vue_vue_type_script_setup_true_lang-DNnuyvEa.js";
-import { openBlock as s, createElementBlock as d, mergeProps as U, renderSlot as ee, createTextVNode as ae, toDisplayString as y, resolveComponent as Te, resolveDirective as At, withDirectives as pe, createBlock as V, resolveDynamicComponent as Oe, withCtx as H, createCommentVNode as _, normalizeClass as W, createElementVNode as l, defineComponent as be, computed as j, withModifiers as Xe, Fragment as Y, createVNode as D, unref as r, watch as Be, onBeforeUnmount as it, Transition as Vo, isRef as Ko, vModelText as tt, renderList as oe, vModelCheckbox as jt, vModelDynamic as qo, ref as B, nextTick as Je } from "vue";
-import { s as Ae, f as ve, R as Mt, a as Wo, b as Rt, B as Yo, c as Zo, x as Qe, d as Go } from "./index-H3SmzmI1.js";
-import { on as Tt, api as de, host as Fe, loadByTagName as Xo, define as Jo } from "@wippy-fe/proxy";
-import { Icon as O } from "@iconify/vue";
+import { e as re, _ as Re, u as zo, a as Po, b as Do, W as Eo } from "./errMsg-kIukmtcj.js";
+import { B as he, l as Et, s as It, L as Io, b as ge, v as we, U as Lo, I as vt, d as Ao, r as Lt, a as jo, c as Mo, e as Ro, C as To, h as Oo, S as Bo, _ as Fo, W as No, f as Uo, P as Ho } from "./AnchoredPanel.vue_vue_type_script_setup_true_lang-DNnuyvEa.js";
+import { openBlock as s, createElementBlock as d, mergeProps as N, renderSlot as Q, createTextVNode as ae, toDisplayString as x, resolveComponent as Te, resolveDirective as At, withDirectives as ue, createBlock as H, resolveDynamicComponent as Oe, withCtx as U, createCommentVNode as w, normalizeClass as W, createElementVNode as l, defineComponent as be, computed as A, withModifiers as Ge, Fragment as Y, createVNode as D, unref as r, watch as Be, onBeforeUnmount as it, Transition as Vo, isRef as Ko, vModelText as et, renderList as ee, vModelCheckbox as jt, vModelDynamic as qo, ref as O, nextTick as Xe } from "vue";
+import { s as Ae, f as ve, R as Mt, a as Wo, b as Rt, B as Yo, c as Zo, x as Je, d as Go } from "./index-H3SmzmI1.js";
+import { on as Tt, api as pe, host as tt, loadByTagName as Xo, define as Jo } from "@wippy-fe/proxy";
+import { Icon as T } from "@iconify/vue";
 import { i as Qo, e as en, a as tn, f as on, d as ht, v as nn, b as rn, u as an, c as sn } from "./install-form-Ce0pU51G.js";
 import { r as ln } from "./principals-Bury5BH3.js";
 var cn = `
@@ -164,16 +164,16 @@ var Ot = {
       }, this.severity, this.severity), this.size, this.size));
     }
   }
-}, gn = ["data-p"];
-function mn(e, t, o, n, i, a) {
-  return s(), d("span", U({
+}, mn = ["data-p"];
+function gn(e, t, o, n, i, a) {
+  return s(), d("span", N({
     class: e.cx("root"),
     "data-p": a.dataP
-  }, e.ptmi("root")), [ee(e.$slots, "default", {}, function() {
-    return [ae(y(e.value), 1)];
-  })], 16, gn);
+  }, e.ptmi("root")), [Q(e.$slots, "default", {}, function() {
+    return [ae(x(e.value), 1)];
+  })], 16, mn);
 }
-Ot.render = mn;
+Ot.render = gn;
 var vn = `
     .p-button {
         display: inline-flex;
@@ -975,7 +975,7 @@ function Pe(e) {
     return t && typeof Symbol == "function" && t.constructor === Symbol && t !== Symbol.prototype ? "symbol" : typeof t;
   }, Pe(e);
 }
-function Q(e, t, o) {
+function J(e, t, o) {
   return (t = _n(t)) in e ? Object.defineProperty(e, t, { value: o, enumerable: !0, configurable: !0, writable: !0 }) : e[t] = o, e;
 }
 function _n(e) {
@@ -1022,7 +1022,7 @@ var X = {
       return this.icon || this.$slots.icon;
     },
     attrs: function() {
-      return U(this.asAttrs, this.a11yAttrs, this.getPTOptions("root"));
+      return N(this.asAttrs, this.a11yAttrs, this.getPTOptions("root"));
     },
     asAttrs: function() {
       return this.as === "BUTTON" ? {
@@ -1042,13 +1042,13 @@ var X = {
       return Et(this.fluid) ? !!this.$pcFluid : this.fluid;
     },
     dataP: function() {
-      return ve(Q(Q(Q(Q(Q(Q(Q(Q(Q(Q({}, this.size, this.size), "icon-only", this.hasIcon && !this.label && !this.badge), "loading", this.loading), "fluid", this.hasFluid), "rounded", this.rounded), "raised", this.raised), "outlined", this.outlined || this.variant === "outlined"), "text", this.text || this.variant === "text"), "link", this.link || this.variant === "link"), "vertical", (this.iconPos === "top" || this.iconPos === "bottom") && this.label));
+      return ve(J(J(J(J(J(J(J(J(J(J({}, this.size, this.size), "icon-only", this.hasIcon && !this.label && !this.badge), "loading", this.loading), "fluid", this.hasFluid), "rounded", this.rounded), "raised", this.raised), "outlined", this.outlined || this.variant === "outlined"), "text", this.text || this.variant === "text"), "link", this.link || this.variant === "link"), "vertical", (this.iconPos === "top" || this.iconPos === "bottom") && this.label));
     },
     dataIconP: function() {
-      return ve(Q(Q({}, this.iconPos, this.iconPos), this.size, this.size));
+      return ve(J(J({}, this.iconPos, this.iconPos), this.size, this.size));
     },
     dataLabelP: function() {
-      return ve(Q(Q({}, this.size, this.size), "icon-only", this.hasIcon && !this.label && !this.badge));
+      return ve(J(J({}, this.size, this.size), "icon-only", this.hasIcon && !this.label && !this.badge));
     }
   },
   components: {
@@ -1060,56 +1060,56 @@ var X = {
   }
 }, Cn = ["data-p"], Sn = ["data-p"];
 function zn(e, t, o, n, i, a) {
-  var b = Te("SpinnerIcon"), g = Te("Badge"), $ = At("ripple");
-  return e.asChild ? ee(e.$slots, "default", {
+  var f = Te("SpinnerIcon"), v = Te("Badge"), _ = At("ripple");
+  return e.asChild ? Q(e.$slots, "default", {
     key: 1,
     class: W(e.cx("root")),
     a11yAttrs: a.a11yAttrs
-  }) : pe((s(), V(Oe(e.as), U({
+  }) : ue((s(), H(Oe(e.as), N({
     key: 0,
     class: e.cx("root"),
     "data-p": a.dataP
   }, a.attrs), {
-    default: H(function() {
-      return [ee(e.$slots, "default", {}, function() {
-        return [e.loading ? ee(e.$slots, "loadingicon", U({
+    default: U(function() {
+      return [Q(e.$slots, "default", {}, function() {
+        return [e.loading ? Q(e.$slots, "loadingicon", N({
           key: 0,
           class: [e.cx("loadingIcon"), e.cx("icon")]
         }, e.ptm("loadingIcon")), function() {
-          return [e.loadingIcon ? (s(), d("span", U({
+          return [e.loadingIcon ? (s(), d("span", N({
             key: 0,
             class: [e.cx("loadingIcon"), e.cx("icon"), e.loadingIcon]
-          }, e.ptm("loadingIcon")), null, 16)) : (s(), V(b, U({
+          }, e.ptm("loadingIcon")), null, 16)) : (s(), H(f, N({
             key: 1,
             class: [e.cx("loadingIcon"), e.cx("icon")],
             spin: ""
           }, e.ptm("loadingIcon")), null, 16, ["class"]))];
-        }) : ee(e.$slots, "icon", U({
+        }) : Q(e.$slots, "icon", N({
           key: 1,
           class: [e.cx("icon")]
         }, e.ptm("icon")), function() {
-          return [e.icon ? (s(), d("span", U({
+          return [e.icon ? (s(), d("span", N({
             key: 0,
             class: [e.cx("icon"), e.icon, e.iconClass],
             "data-p": a.dataIconP
-          }, e.ptm("icon")), null, 16, Cn)) : _("", !0)];
-        }), e.label ? (s(), d("span", U({
+          }, e.ptm("icon")), null, 16, Cn)) : w("", !0)];
+        }), e.label ? (s(), d("span", N({
           key: 2,
           class: e.cx("label")
         }, e.ptm("label"), {
           "data-p": a.dataLabelP
-        }), y(e.label), 17, Sn)) : _("", !0), e.badge ? (s(), V(g, {
+        }), x(e.label), 17, Sn)) : w("", !0), e.badge ? (s(), H(v, {
           key: 3,
           value: e.badge,
           class: W(e.badgeClass),
           severity: e.badgeSeverity,
           unstyled: e.unstyled,
           pt: e.ptm("pcBadge")
-        }, null, 8, ["value", "class", "severity", "unstyled", "pt"])) : _("", !0)];
+        }, null, 8, ["value", "class", "severity", "unstyled", "pt"])) : w("", !0)];
       })];
     }),
     _: 3
-  }, 16, ["class", "data-p"])), [[$]]);
+  }, 16, ["class", "data-p"])), [[_]]);
 }
 X.render = zn;
 var Pn = `
@@ -1230,14 +1230,14 @@ var Pn = `
   }
 }, Ln = ["fill", "stroke-width"];
 function An(e, t, o, n, i, a) {
-  return s(), d("div", U({
+  return s(), d("div", N({
     class: e.cx("root"),
     role: "progressbar"
-  }, e.ptmi("root")), [(s(), d("svg", U({
+  }, e.ptmi("root")), [(s(), d("svg", N({
     class: e.cx("spin"),
     viewBox: "25 25 50 50",
     style: a.svgStyle
-  }, e.ptm("spin")), [l("circle", U({
+  }, e.ptm("spin")), [l("circle", N({
     class: e.cx("circle"),
     cx: "50",
     cy: "50",
@@ -1255,27 +1255,27 @@ const jn = { key: 0 }, Mn = /* @__PURE__ */ be({
   },
   emits: ["retry"],
   setup(e) {
-    const t = e, o = j(() => t.state.deletion_job === null || ["dead", "cancelled"].includes(t.state.deletion_job?.status || ""));
+    const t = e, o = A(() => t.state.deletion_job === null || ["dead", "cancelled"].includes(t.state.deletion_job?.status || ""));
     return (n, i) => e.state.deleting_at ? (s(), d("span", {
       key: 0,
       class: "component-deletion",
       role: "status",
-      onClick: i[1] || (i[1] = Xe(() => {
+      onClick: i[1] || (i[1] = Ge(() => {
       }, ["stop"])),
-      onKeydown: i[2] || (i[2] = Xe(() => {
+      onKeydown: i[2] || (i[2] = Ge(() => {
       }, ["stop"]))
     }, [
       o.value ? (s(), d(Y, { key: 0 }, [
         l("span", null, [
           i[3] || (i[3] = ae("Deletion failed", -1)),
-          e.state.deletion_job?.last_error ? (s(), d("span", jn, ": " + y(e.state.deletion_job.last_error), 1)) : _("", !0)
+          e.state.deletion_job?.last_error ? (s(), d("span", jn, ": " + x(e.state.deletion_job.last_error), 1)) : w("", !0)
         ]),
         D(r(X), {
           label: "Retry deletion",
           severity: "secondary",
           size: "small",
           outlined: "",
-          onClick: i[0] || (i[0] = Xe((a) => n.$emit("retry"), ["stop"]))
+          onClick: i[0] || (i[0] = Ge((a) => n.$emit("retry"), ["stop"]))
         })
       ], 64)) : (s(), d(Y, { key: 1 }, [
         D(r(Bt), {
@@ -1284,7 +1284,7 @@ const jn = { key: 0 }, Mn = /* @__PURE__ */ be({
         }),
         i[4] || (i[4] = l("span", null, "Deleting…", -1))
       ], 64))
-    ], 32)) : _("", !0);
+    ], 32)) : w("", !0);
   }
 });
 function _e(e) {
@@ -1335,14 +1335,14 @@ function Ft(e, t, o) {
   ].filter(Boolean);
   for (const a of i) {
     if (a.event !== "component.meta.changed" && a.event !== "component.deleting" && a.event !== "component.deleted") continue;
-    const b = String(a.component_id || ""), g = String(n.topic || a.topic || "");
+    const f = String(a.component_id || ""), v = String(n.topic || a.topic || "");
     if (t === void 0) {
-      if (!b && (!g.startsWith("component.") || g === "component.")) continue;
-    } else if (b && b !== t || !b && g !== `component.${t}`) continue;
-    const $ = b || t || g.slice(10);
-    return a.event === "component.deleting" && typeof a.deletion_job_id == "string" && a.deletion_job_id ? { event: a.event, component_id: $, deletion_job_id: a.deletion_job_id } : a.event !== "component.meta.changed" ? { event: a.event, component_id: $ } : {
+      if (!f && (!v.startsWith("component.") || v === "component.")) continue;
+    } else if (f && f !== t || !f && v !== `component.${t}`) continue;
+    const _ = f || t || v.slice(10);
+    return a.event === "component.deleting" && typeof a.deletion_job_id == "string" && a.deletion_job_id ? { event: a.event, component_id: _, deletion_job_id: a.deletion_job_id } : a.event !== "component.meta.changed" ? { event: a.event, component_id: _ } : {
       event: "component.meta.changed",
-      component_id: $,
+      component_id: _,
       meta: Tn(_e(a.meta) ? a.meta : {}, o),
       deleted: Array.isArray(a.deleted) ? a.deleted.map(String) : []
     };
@@ -1366,52 +1366,45 @@ function Fn(e, t, o) {
   return typeof n == "function" ? n : null;
 }
 function Nn(e, t, o, n) {
-  let i = !0;
-  const a = /* @__PURE__ */ new Set(), b = /* @__PURE__ */ new Map();
-  function g(v, u) {
-    const m = e.value.find((G) => t(G) === v), x = b.get(v), L = u?.job_id || x?.deletion_job_id || m?.deletion_job_id, N = x ? x.deletion_job_id : m?.deleting_at ? m.deletion_job_id : void 0;
-    if ((x || m?.deleting_at) && L === N) return;
-    const J = {
-      deleting_at: x?.deleting_at || m?.deleting_at || (/* @__PURE__ */ new Date()).toISOString(),
-      deletion_job_id: L
-    };
-    b.set(v, J), m && (Object.assign(m, J), m.deletion_job = void 0);
+  const i = /* @__PURE__ */ new Set(), a = /* @__PURE__ */ new Map();
+  function f(b, h) {
+    const g = e.value.find((B) => t(B) === b), m = a.get(b), u = h?.job_id || m?.state.deletion_job_id || g?.deletion_job_id, $ = m ? m.state.deletion_job_id : g?.deleting_at ? g.deletion_job_id : void 0;
+    if ((m || g?.deleting_at) && u === $ || u && m?.superseded.has(u)) return;
+    const z = {
+      deleting_at: m?.state.deleting_at || g?.deleting_at || (/* @__PURE__ */ new Date()).toISOString(),
+      deletion_job_id: u
+    }, K = new Set(m?.superseded);
+    for (const B of [m?.state.deletion_job_id, g?.deletion_job_id])
+      B && B !== u && K.add(B);
+    a.set(b, { state: z, superseded: K }), g && (Object.assign(g, z), g.deletion_job = void 0);
   }
-  async function $(v) {
-    const u = t(v), m = b.get(u), x = () => i && e.value.includes(v) && b.get(u) === m;
-    try {
-      const { data: L } = await de.get(`/api/v1/components/${encodeURIComponent(u)}`);
-      if (!L?.success) throw new Error(te(L, "Could not read deletion progress"));
-      x() && (v.deleting_at = m?.deleting_at || L.deleting_at, v.deletion_job_id = L.deletion_job_id, m && (m.deletion_job_id = v.deletion_job_id), v.deletion_job = L.deletion_job ?? null);
-    } catch (L) {
-      x() && Fe.handleError("other", { message: te(L, "Could not read deletion progress") });
-    }
-  }
-  let f = [];
-  const C = Be(() => e.value, (v, u = []) => {
-    const m = v.filter((x) => !a.has(t(x)));
-    for (const x of u)
-      a.has(t(x)) || m.some((L) => t(L) === t(x)) || x.deleting_at && n?.(t(x));
-    if (m.length !== v.length) {
-      e.value = m;
+  const v = Be(() => e.value, (b, h = []) => {
+    const g = b.filter((m) => !i.has(t(m)));
+    for (const m of h)
+      i.has(t(m)) || g.some((u) => t(u) === t(m)) || m.deleting_at && n?.(t(m));
+    if (g.length !== b.length) {
+      e.value = g;
       return;
     }
-    for (const x of v) {
-      const L = b.get(t(x));
-      L && (x.deletion_job_id !== L.deletion_job_id && (x.deletion_job = void 0), Object.assign(x, L));
-      const N = u.find((J) => t(J) === t(x));
-      x.deletion_job === void 0 && N?.deletion_job_id === x.deletion_job_id && (x.deletion_job = N?.deletion_job), x.deleting_at && !f.includes(x) && $(x);
+    for (const m of b) {
+      m.deleting_at && m.deletion_job === void 0 && !h.includes(m) && (m.deletion_job = null);
+      const u = a.get(t(m));
+      if (u) {
+        const z = m.deletion_job_id;
+        m.deleting_at && z && z !== u.state.deletion_job_id && !u.superseded.has(z) && (u.state.deletion_job_id && u.superseded.add(u.state.deletion_job_id), u.state.deletion_job_id = z), z !== u.state.deletion_job_id && (m.deletion_job = void 0), Object.assign(m, u.state);
+      }
+      const $ = h.find((z) => t(z) === t(m));
+      m.deletion_job === void 0 && $?.deletion_job_id === m.deletion_job_id && (m.deletion_job = $?.deletion_job);
     }
-    f = v;
-  }, { immediate: !0 }), h = Tt("@message", (v) => {
-    const u = Bn(v);
-    if (!u) return;
-    const m = e.value.find((x) => t(x) === u.component_id);
-    u.event === "component.deleted" ? (m && !a.has(u.component_id) && n?.(u.component_id), a.add(u.component_id), b.delete(u.component_id), e.value = e.value.filter((x) => t(x) !== u.component_id)) : m && g(u.component_id, { job_id: u.deletion_job_id });
+  }, { immediate: !0 }), _ = Tt("@message", (b) => {
+    const h = Bn(b);
+    if (!h) return;
+    const g = e.value.find((m) => t(m) === h.component_id);
+    h.event === "component.deleted" ? (g && !i.has(h.component_id) && n?.(h.component_id), i.add(h.component_id), a.delete(h.component_id), e.value = e.value.filter((m) => t(m) !== h.component_id)) : g && f(h.component_id, { job_id: h.deletion_job_id });
   });
   return it(() => {
-    i = !1, C(), typeof h == "function" && h();
-  }), { acceptDeletion: g };
+    v(), typeof _ == "function" && _();
+  }), { acceptDeletion: f };
 }
 var Nt = {
   name: "WindowMaximizeIcon",
@@ -1443,7 +1436,7 @@ function ot(e, t) {
   return n;
 }
 function Wn(e, t, o, n, i, a) {
-  return s(), d("svg", U({
+  return s(), d("svg", N({
     width: "14",
     height: "14",
     viewBox: "0 0 14 14",
@@ -1487,7 +1480,7 @@ function nt(e, t) {
   return n;
 }
 function Qn(e, t, o, n, i, a) {
-  return s(), d("svg", U({
+  return s(), d("svg", N({
     width: "14",
     height: "14",
     viewBox: "0 0 14 14",
@@ -1569,23 +1562,23 @@ var ar = tr.extend("focustrap", {
       return ':not(.p-hidden-focusable):not([data-p-hidden-focusable="true"])'.concat(t ?? "");
     },
     bind: function(t, o) {
-      var n = this, i = o.value || {}, a = i.onFocusIn, b = i.onFocusOut;
-      t.$_pfocustrap_mutationobserver = new MutationObserver(function(g) {
-        g.forEach(function($) {
-          if ($.type === "childList" && !t.contains(document.activeElement)) {
-            var f = function(h) {
-              var v = vt(h) ? vt(h, n.getComputedSelector(t.$_pfocustrap_focusableselector)) ? h : we(t, n.getComputedSelector(t.$_pfocustrap_focusableselector)) : we(h);
-              return It(v) ? v : h.nextSibling && f(h.nextSibling);
+      var n = this, i = o.value || {}, a = i.onFocusIn, f = i.onFocusOut;
+      t.$_pfocustrap_mutationobserver = new MutationObserver(function(v) {
+        v.forEach(function(_) {
+          if (_.type === "childList" && !t.contains(document.activeElement)) {
+            var b = function(g) {
+              var m = vt(g) ? vt(g, n.getComputedSelector(t.$_pfocustrap_focusableselector)) ? g : we(t, n.getComputedSelector(t.$_pfocustrap_focusableselector)) : we(g);
+              return It(m) ? m : g.nextSibling && b(g.nextSibling);
             };
-            me(f($.nextSibling));
+            ge(b(_.nextSibling));
           }
         });
       }), t.$_pfocustrap_mutationobserver.disconnect(), t.$_pfocustrap_mutationobserver.observe(t, {
         childList: !0
-      }), t.$_pfocustrap_focusinlistener = function(g) {
-        return a && a(g);
-      }, t.$_pfocustrap_focusoutlistener = function(g) {
-        return b && b(g);
+      }), t.$_pfocustrap_focusinlistener = function(v) {
+        return a && a(v);
+      }, t.$_pfocustrap_focusoutlistener = function(v) {
+        return f && f(v);
       }, t.addEventListener("focusin", t.$_pfocustrap_focusinlistener), t.addEventListener("focusout", t.$_pfocustrap_focusoutlistener);
     },
     unbind: function(t) {
@@ -1599,30 +1592,30 @@ var ar = tr.extend("focustrap", {
       });
     },
     autoElementFocus: function(t, o) {
-      var n = o.value || {}, i = n.autoFocusSelector, a = i === void 0 ? "" : i, b = n.firstFocusableSelector, g = b === void 0 ? "" : b, $ = n.autoFocus, f = $ === void 0 ? !1 : $, C = we(t, "[autofocus]".concat(this.getComputedSelector(a)));
-      f && !C && (C = we(t, this.getComputedSelector(g))), me(C);
+      var n = o.value || {}, i = n.autoFocusSelector, a = i === void 0 ? "" : i, f = n.firstFocusableSelector, v = f === void 0 ? "" : f, _ = n.autoFocus, b = _ === void 0 ? !1 : _, h = we(t, "[autofocus]".concat(this.getComputedSelector(a)));
+      b && !h && (h = we(t, this.getComputedSelector(v))), ge(h);
     },
     onFirstHiddenElementFocus: function(t) {
       var o, n = t.currentTarget, i = t.relatedTarget, a = i === n.$_pfocustrap_lasthiddenfocusableelement || !((o = this.$el) !== null && o !== void 0 && o.contains(i)) ? we(n.parentElement, this.getComputedSelector(n.$_pfocustrap_focusableselector)) : n.$_pfocustrap_lasthiddenfocusableelement;
-      me(a);
+      ge(a);
     },
     onLastHiddenElementFocus: function(t) {
       var o, n = t.currentTarget, i = t.relatedTarget, a = i === n.$_pfocustrap_firsthiddenfocusableelement || !((o = this.$el) !== null && o !== void 0 && o.contains(i)) ? Io(n.parentElement, this.getComputedSelector(n.$_pfocustrap_focusableselector)) : n.$_pfocustrap_firsthiddenfocusableelement;
-      me(a);
+      ge(a);
     },
     createHiddenFocusableElements: function(t, o) {
-      var n = this, i = o.value || {}, a = i.tabIndex, b = a === void 0 ? 0 : a, g = i.firstFocusableSelector, $ = g === void 0 ? "" : g, f = i.lastFocusableSelector, C = f === void 0 ? "" : f, h = function(x) {
+      var n = this, i = o.value || {}, a = i.tabIndex, f = a === void 0 ? 0 : a, v = i.firstFocusableSelector, _ = v === void 0 ? "" : v, b = i.lastFocusableSelector, h = b === void 0 ? "" : b, g = function(z) {
         return Lo("span", {
           class: "p-hidden-accessible p-hidden-focusable",
-          tabIndex: b,
+          tabIndex: f,
           role: "presentation",
           "aria-hidden": !0,
           "data-p-hidden-accessible": !0,
           "data-p-hidden-focusable": !0,
-          onFocus: x?.bind(n)
+          onFocus: z?.bind(n)
         });
-      }, v = h(this.onFirstHiddenElementFocus), u = h(this.onLastHiddenElementFocus);
-      v.$_pfocustrap_lasthiddenfocusableelement = u, v.$_pfocustrap_focusableselector = $, v.setAttribute("data-pc-section", "firstfocusableelement"), u.$_pfocustrap_firsthiddenfocusableelement = v, u.$_pfocustrap_focusableselector = C, u.setAttribute("data-pc-section", "lastfocusableelement"), t.prepend(v), t.append(u);
+      }, m = g(this.onFirstHiddenElementFocus), u = g(this.onLastHiddenElementFocus);
+      m.$_pfocustrap_lasthiddenfocusableelement = u, m.$_pfocustrap_focusableselector = _, m.setAttribute("data-pc-section", "firstfocusableelement"), u.$_pfocustrap_firsthiddenfocusableelement = m, u.$_pfocustrap_focusableselector = h, u.setAttribute("data-pc-section", "lastfocusableelement"), t.prepend(m), t.append(u);
     }
   }
 });
@@ -1922,7 +1915,7 @@ var ir = `
   provide: function() {
     var t = this;
     return {
-      dialogRef: j(function() {
+      dialogRef: A(function() {
         return t._instance;
       })
     };
@@ -1955,7 +1948,7 @@ var ir = `
     this.visible && (this.containerVisible = this.visible);
   },
   beforeUnmount: function() {
-    this.unbindDocumentState(), this.unbindGlobalListeners(), this.destroyStyle(), this.mask && this.autoZIndex && Qe.clear(this.mask), this.container = null, this.mask = null;
+    this.unbindDocumentState(), this.unbindGlobalListeners(), this.destroyStyle(), this.mask && this.autoZIndex && Je.clear(this.mask), this.container = null, this.mask = null;
   },
   mounted: function() {
     this.breakpoints && this.createStyle();
@@ -1965,7 +1958,7 @@ var ir = `
       this.$emit("update:visible", !1);
     },
     onEnter: function() {
-      this.$emit("show"), this.target = document.activeElement, this.enableDocumentSettings(), this.bindGlobalListeners(), this.autoZIndex && Qe.set("modal", this.mask, this.baseZIndex || this.$primevue.config.zIndex.modal);
+      this.$emit("show"), this.target = document.activeElement, this.enableDocumentSettings(), this.bindGlobalListeners(), this.autoZIndex && Je.set("modal", this.mask, this.baseZIndex || this.$primevue.config.zIndex.modal);
     },
     onAfterEnter: function() {
       this.focus();
@@ -1974,10 +1967,10 @@ var ir = `
       this.modal && !this.isUnstyled && No(this.mask, "p-overlay-mask-leave-active"), this.dragging && this.documentDragEndListener && this.documentDragEndListener();
     },
     onLeave: function() {
-      this.$emit("hide"), me(this.target), this.target = null, this.focusableClose = null, this.focusableMax = null;
+      this.$emit("hide"), ge(this.target), this.target = null, this.focusableClose = null, this.focusableMax = null;
     },
     onAfterLeave: function() {
-      this.autoZIndex && Qe.clear(this.mask), this.containerVisible = !1, this.unbindDocumentState(), this.unbindGlobalListeners(), this.$emit("after-hide");
+      this.autoZIndex && Je.clear(this.mask), this.containerVisible = !1, this.unbindDocumentState(), this.unbindGlobalListeners(), this.$emit("after-hide");
     },
     onMaskMouseDown: function(t) {
       this.maskMouseDownTarget = t.target;
@@ -1989,7 +1982,7 @@ var ir = `
       var t = function(i) {
         return i && i.querySelector("[autofocus]");
       }, o = this.$slots.footer && t(this.footerContainer);
-      o || (o = this.$slots.header && t(this.headerContainer), o || (o = this.$slots.default && t(this.content), o || (this.maximizable ? (this.focusableMax = !0, o = this.maximizableButton) : (this.focusableClose = !0, o = this.closeButton)))), o && me(o, {
+      o || (o = this.$slots.header && t(this.headerContainer), o || (o = this.$slots.default && t(this.content), o || (this.maximizable ? (this.focusableMax = !0, o = this.maximizableButton) : (this.focusableClose = !0, o = this.closeButton)))), o && ge(o, {
         focusVisible: !0
       });
     },
@@ -2066,8 +2059,8 @@ var ir = `
       var t = this;
       this.documentDragListener = function(o) {
         if (t.dragging) {
-          var n = Ro(t.container), i = To(t.container), a = o.pageX - t.lastPageX, b = o.pageY - t.lastPageY, g = t.container.getBoundingClientRect(), $ = g.left + a, f = g.top + b, C = Oo(), h = getComputedStyle(t.container), v = parseFloat(h.marginLeft), u = parseFloat(h.marginTop);
-          t.container.style.position = "fixed", t.keepInViewport ? ($ >= t.minX && $ + n < C.width && (t.lastPageX = o.pageX, t.container.style.left = $ - v + "px"), f >= t.minY && f + i < C.height && (t.lastPageY = o.pageY, t.container.style.top = f - u + "px")) : (t.lastPageX = o.pageX, t.container.style.left = $ - v + "px", t.lastPageY = o.pageY, t.container.style.top = f - u + "px");
+          var n = Ro(t.container), i = To(t.container), a = o.pageX - t.lastPageX, f = o.pageY - t.lastPageY, v = t.container.getBoundingClientRect(), _ = v.left + a, b = v.top + f, h = Oo(), g = getComputedStyle(t.container), m = parseFloat(g.marginLeft), u = parseFloat(g.marginTop);
+          t.container.style.position = "fixed", t.keepInViewport ? (_ >= t.minX && _ + n < h.width && (t.lastPageX = o.pageX, t.container.style.left = _ - m + "px"), b >= t.minY && b + i < h.height && (t.lastPageY = o.pageY, t.container.style.top = b - u + "px")) : (t.lastPageX = o.pageX, t.container.style.left = _ - m + "px", t.lastPageY = o.pageY, t.container.style.top = b - u + "px");
         }
       }, window.document.addEventListener("mousemove", this.documentDragListener);
     },
@@ -2159,14 +2152,14 @@ function br(e, t) {
   }
   return (t === "string" ? String : Number)(e);
 }
-var fr = ["data-p"], gr = ["aria-labelledby", "aria-modal", "data-p"], mr = ["id"], vr = ["data-p"];
+var fr = ["data-p"], mr = ["aria-labelledby", "aria-modal", "data-p"], gr = ["id"], vr = ["data-p"];
 function hr(e, t, o, n, i, a) {
-  var b = Te("Button"), g = Te("Portal"), $ = At("focustrap");
-  return s(), V(g, {
+  var f = Te("Button"), v = Te("Portal"), _ = At("focustrap");
+  return s(), H(v, {
     appendTo: e.appendTo
   }, {
-    default: H(function() {
-      return [i.containerVisible ? (s(), d("div", U({
+    default: U(function() {
+      return [i.containerVisible ? (s(), d("div", N({
         key: 0,
         ref: a.maskRef,
         class: e.cx("mask"),
@@ -2181,7 +2174,7 @@ function hr(e, t, o, n, i, a) {
           return a.onMaskMouseUp && a.onMaskMouseUp.apply(a, arguments);
         }),
         "data-p": a.dataP
-      }, e.ptm("mask")), [D(Vo, U({
+      }, e.ptm("mask")), [D(Vo, N({
         name: "p-dialog",
         onEnter: a.onEnter,
         onAfterEnter: a.onAfterEnter,
@@ -2190,8 +2183,8 @@ function hr(e, t, o, n, i, a) {
         onAfterLeave: a.onAfterLeave,
         appear: ""
       }, e.ptm("transition")), {
-        default: H(function() {
-          return [e.visible ? pe((s(), d("div", U({
+        default: U(function() {
+          return [e.visible ? ue((s(), d("div", N({
             key: 0,
             ref: a.containerRef,
             class: e.cx("root"),
@@ -2200,40 +2193,40 @@ function hr(e, t, o, n, i, a) {
             "aria-labelledby": a.ariaLabelledById,
             "aria-modal": e.modal,
             "data-p": a.dataP
-          }, e.ptmi("root")), [e.$slots.container ? ee(e.$slots, "container", {
+          }, e.ptmi("root")), [e.$slots.container ? Q(e.$slots, "container", {
             key: 0,
             closeCallback: a.close,
-            maximizeCallback: function(C) {
-              return a.maximize(C);
+            maximizeCallback: function(h) {
+              return a.maximize(h);
             },
             initDragCallback: a.initDrag
           }) : (s(), d(Y, {
             key: 1
-          }, [e.showHeader ? (s(), d("div", U({
+          }, [e.showHeader ? (s(), d("div", N({
             key: 0,
             ref: a.headerContainerRef,
             class: e.cx("header"),
             onMousedown: t[0] || (t[0] = function() {
               return a.initDrag && a.initDrag.apply(a, arguments);
             })
-          }, e.ptm("header")), [ee(e.$slots, "header", {
+          }, e.ptm("header")), [Q(e.$slots, "header", {
             class: W(e.cx("title"))
           }, function() {
-            return [e.header ? (s(), d("span", U({
+            return [e.header ? (s(), d("span", N({
               key: 0,
               id: a.ariaLabelledById,
               class: e.cx("title")
-            }, e.ptm("title")), y(e.header), 17, mr)) : _("", !0)];
-          }), l("div", U({
+            }, e.ptm("title")), x(e.header), 17, gr)) : w("", !0)];
+          }), l("div", N({
             class: e.cx("headerActions")
-          }, e.ptm("headerActions")), [e.maximizable ? ee(e.$slots, "maximizebutton", {
+          }, e.ptm("headerActions")), [e.maximizable ? Q(e.$slots, "maximizebutton", {
             key: 0,
             maximized: i.maximized,
-            maximizeCallback: function(C) {
-              return a.maximize(C);
+            maximizeCallback: function(h) {
+              return a.maximize(h);
             }
           }, function() {
-            return [D(b, U({
+            return [D(f, N({
               ref: a.maximizableRef,
               autofocus: i.focusableMax,
               class: e.cx("pcMaximizeButton"),
@@ -2244,22 +2237,22 @@ function hr(e, t, o, n, i, a) {
               pt: e.ptm("pcMaximizeButton"),
               "data-pc-group-section": "headericon"
             }), {
-              icon: H(function(f) {
-                return [ee(e.$slots, "maximizeicon", {
+              icon: U(function(b) {
+                return [Q(e.$slots, "maximizeicon", {
                   maximized: i.maximized
                 }, function() {
-                  return [(s(), V(Oe(a.maximizeIconComponent), U({
-                    class: [f.class, i.maximized ? e.minimizeIcon : e.maximizeIcon]
+                  return [(s(), H(Oe(a.maximizeIconComponent), N({
+                    class: [b.class, i.maximized ? e.minimizeIcon : e.maximizeIcon]
                   }, e.ptm("pcMaximizeButton").icon), null, 16, ["class"]))];
                 })];
               }),
               _: 3
             }, 16, ["autofocus", "class", "onClick", "tabindex", "unstyled", "pt"])];
-          }) : _("", !0), e.closable ? ee(e.$slots, "closebutton", {
+          }) : w("", !0), e.closable ? Q(e.$slots, "closebutton", {
             key: 1,
             closeCallback: a.close
           }, function() {
-            return [D(b, U({
+            return [D(f, N({
               ref: a.closeButtonRef,
               autofocus: i.focusableClose,
               class: e.cx("pcCloseButton"),
@@ -2270,32 +2263,32 @@ function hr(e, t, o, n, i, a) {
               pt: e.ptm("pcCloseButton"),
               "data-pc-group-section": "headericon"
             }), {
-              icon: H(function(f) {
-                return [ee(e.$slots, "closeicon", {}, function() {
-                  return [(s(), V(Oe(e.closeIcon ? "span" : "TimesIcon"), U({
-                    class: [e.closeIcon, f.class]
+              icon: U(function(b) {
+                return [Q(e.$slots, "closeicon", {}, function() {
+                  return [(s(), H(Oe(e.closeIcon ? "span" : "TimesIcon"), N({
+                    class: [e.closeIcon, b.class]
                   }, e.ptm("pcCloseButton").icon), null, 16, ["class"]))];
                 })];
               }),
               _: 3
             }, 16, ["autofocus", "class", "onClick", "aria-label", "unstyled", "pt"])];
-          }) : _("", !0)], 16)], 16)) : _("", !0), l("div", U({
+          }) : w("", !0)], 16)], 16)) : w("", !0), l("div", N({
             ref: a.contentRef,
             class: [e.cx("content"), e.contentClass],
             style: e.contentStyle,
             "data-p": a.dataP
-          }, Ct(Ct({}, e.contentProps), e.ptm("content"))), [ee(e.$slots, "default")], 16, vr), e.footer || e.$slots.footer ? (s(), d("div", U({
+          }, Ct(Ct({}, e.contentProps), e.ptm("content"))), [Q(e.$slots, "default")], 16, vr), e.footer || e.$slots.footer ? (s(), d("div", N({
             key: 1,
             ref: a.footerContainerRef,
             class: e.cx("footer")
-          }, e.ptm("footer")), [ee(e.$slots, "footer", {}, function() {
-            return [ae(y(e.footer), 1)];
-          })], 16)) : _("", !0)], 64))], 16, gr)), [[$, {
+          }, e.ptm("footer")), [Q(e.$slots, "footer", {}, function() {
+            return [ae(x(e.footer), 1)];
+          })], 16)) : w("", !0)], 64))], 16, mr)), [[_, {
             disabled: !e.modal
-          }]]) : _("", !0)];
+          }]]) : w("", !0)];
         }),
         _: 3
-      }, 16, ["onEnter", "onAfterEnter", "onBeforeLeave", "onLeave", "onAfterLeave"])], 16, fr)) : _("", !0)];
+      }, 16, ["onEnter", "onAfterEnter", "onBeforeLeave", "onLeave", "onAfterLeave"])], 16, fr)) : w("", !0)];
     }),
     _: 3
   }, 8, ["appendTo"]);
@@ -2428,22 +2421,22 @@ var st = {
   }
 }, Sr = ["data-p"];
 function zr(e, t, o, n, i, a) {
-  return s(), d("span", U({
+  return s(), d("span", N({
     class: e.cx("root"),
     "data-p": a.dataP
-  }, e.ptmi("root")), [e.$slots.icon ? (s(), V(Oe(e.$slots.icon), U({
+  }, e.ptmi("root")), [e.$slots.icon ? (s(), H(Oe(e.$slots.icon), N({
     key: 0,
     class: e.cx("icon")
-  }, e.ptm("icon")), null, 16, ["class"])) : e.icon ? (s(), d("span", U({
+  }, e.ptm("icon")), null, 16, ["class"])) : e.icon ? (s(), d("span", N({
     key: 1,
     class: [e.cx("icon"), e.icon]
-  }, e.ptm("icon")), null, 16)) : _("", !0), e.value != null || e.$slots.default ? ee(e.$slots, "default", {
+  }, e.ptm("icon")), null, 16)) : w("", !0), e.value != null || e.$slots.default ? Q(e.$slots, "default", {
     key: 2
   }, function() {
-    return [l("span", U({
+    return [l("span", N({
       class: e.cx("label")
-    }, e.ptm("label")), y(e.value), 17)];
-  }) : _("", !0)], 16, Sr);
+    }, e.ptm("label")), x(e.value), 17)];
+  }) : w("", !0)], 16, Sr);
 }
 st.render = zr;
 function Pr(e) {
@@ -2465,15 +2458,15 @@ function Pr(e) {
 function ce(e, t) {
   const o = Pr(e);
   if (o === null) return "";
-  const n = t?.now ?? Date.now(), i = t?.suffix ?? !0, a = t?.maxUnit ?? "day", b = t?.future ?? !1, g = 6e4, $ = 60 * g, f = 24 * $, C = 30 * f, h = 365 * f, v = n - o;
-  if (b && v < 0) {
-    const x = -v;
-    return x < g ? "in <1m" : x < $ ? `in ${Math.floor(x / g)}m` : x < f ? `in ${Math.floor(x / $)}h` : `in ${Math.floor(x / f)}d`;
+  const n = t?.now ?? Date.now(), i = t?.suffix ?? !0, a = t?.maxUnit ?? "day", f = t?.future ?? !1, v = 6e4, _ = 60 * v, b = 24 * _, h = 30 * b, g = 365 * b, m = n - o;
+  if (f && m < 0) {
+    const z = -m;
+    return z < v ? "in <1m" : z < _ ? `in ${Math.floor(z / v)}m` : z < b ? `in ${Math.floor(z / _)}h` : `in ${Math.floor(z / b)}d`;
   }
-  const u = Math.max(0, v);
-  if (u < g) return "just now";
-  const m = i ? " ago" : "";
-  return u < $ ? `${Math.floor(u / g)}m${m}` : u < f ? `${Math.floor(u / $)}h${m}` : a === "year" ? u < C ? `${Math.floor(u / f)}d${m}` : u < h ? `${Math.floor(u / C)}mo${m}` : `${Math.floor(u / h)}y${m}` : `${Math.floor(u / f)}d${m}`;
+  const u = Math.max(0, m);
+  if (u < v) return "just now";
+  const $ = i ? " ago" : "";
+  return u < _ ? `${Math.floor(u / v)}m${$}` : u < b ? `${Math.floor(u / _)}h${$}` : a === "year" ? u < h ? `${Math.floor(u / b)}d${$}` : u < g ? `${Math.floor(u / h)}mo${$}` : `${Math.floor(u / g)}y${$}` : `${Math.floor(u / b)}d${$}`;
 }
 function rt(e) {
   return String(e.description || "").trim();
@@ -2555,20 +2548,20 @@ const Ir = { class: "kx-modal-head-icon" }, Lr = { class: "kx-modal-head-text" }
       installFields: n,
       showInstall: i,
       installType: a,
-      installForm: b,
-      installing: g,
-      customSaving: $,
-      installError: f,
-      customInstallHost: C,
-      installSearchInput: h,
-      typeSearch: v,
+      installForm: f,
+      installing: v,
+      customSaving: _,
+      installError: b,
+      customInstallHost: h,
+      installSearchInput: g,
+      typeSearch: m,
       filteredTypes: u,
-      chooseType: m,
-      closeInstall: x,
-      focusInstallDialog: L,
-      onCreate: N
+      chooseType: $,
+      closeInstall: z,
+      focusInstallDialog: K,
+      onCreate: B
     } = t.flow;
-    return (J, G) => (s(), V(r(Ce), {
+    return (ne, G) => (s(), H(r(Ce), {
       visible: r(i),
       modal: !0,
       "block-scroll": !0,
@@ -2576,155 +2569,155 @@ const Ir = { class: "kx-modal-head-icon" }, Lr = { class: "kx-modal-head-text" }
       pt: e.dialogPt,
       class: W(["kx-modal kx-modal-2p", { "kx-modal-solo": !r(o) }]),
       "aria-label": "Add an automation",
-      "onUpdate:visible": G[1] || (G[1] = (A) => {
-        A || r(x)();
+      "onUpdate:visible": G[1] || (G[1] = (L) => {
+        L || r(z)();
       }),
-      onShow: r(L)
+      onShow: r(K)
     }, {
-      header: H(() => [
+      header: U(() => [
         l("span", Ir, [
-          D(r(O), {
+          D(r(T), {
             icon: r(a) && r(a).icon || "tabler:bolt",
             "aria-hidden": "true"
           }, null, 8, ["icon"])
         ]),
         l("span", Lr, [
-          l("span", Ar, y(r(a) ? r(a).title || r(a).name : "Add an automation"), 1),
+          l("span", Ar, x(r(a) ? r(a).title || r(a).name : "Add an automation"), 1),
           G[2] || (G[2] = l("span", { class: "kx-modal-head-sub" }, "Configure an automation.", -1))
         ])
       ]),
-      footer: H(() => [
-        r(f) ? (s(), d("div", oa, y(r(f)), 1)) : _("", !0),
+      footer: U(() => [
+        r(b) ? (s(), d("div", oa, x(r(b)), 1)) : w("", !0),
         D(r(X), {
           type: "button",
           label: "Cancel",
           severity: "secondary",
           outlined: "",
-          disabled: r(g) || r($),
-          onClick: r(x)
+          disabled: r(v) || r(_),
+          onClick: r(z)
         }, null, 8, ["disabled", "onClick"]),
-        r(a) ? (s(), V(r(X), {
+        r(a) ? (s(), H(r(X), {
           key: 1,
           type: "button",
           "data-testid": "automations-install-create",
-          label: r(g) || r($) ? "Creating…" : "Create",
-          loading: r(g) || r($),
-          disabled: r(g) || r($),
-          onClick: r(N)
+          label: r(v) || r(_) ? "Creating…" : "Create",
+          loading: r(v) || r(_),
+          disabled: r(v) || r(_),
+          onClick: r(B)
         }, {
-          icon: H(({ class: A }) => [
-            D(r(O), {
+          icon: U(({ class: L }) => [
+            D(r(T), {
               icon: "tabler:plus",
-              class: W(A),
+              class: W(L),
               "aria-hidden": "true"
             }, null, 8, ["class"])
           ]),
           _: 1
-        }, 8, ["label", "loading", "disabled", "onClick"])) : _("", !0)
+        }, 8, ["label", "loading", "disabled", "onClick"])) : w("", !0)
       ]),
-      default: H(() => [
+      default: U(() => [
         l("div", {
           class: W(["kx-2p", { "kx-2p-solo": !r(o) }])
         }, [
           r(o) ? (s(), d("div", jr, [
             l("div", Mr, [
-              D(r(O), {
+              D(r(T), {
                 icon: "tabler:search",
                 "aria-hidden": "true"
               }),
-              pe(l("input", {
+              ue(l("input", {
                 ref_key: "installSearchInput",
-                ref: h,
-                "onUpdate:modelValue": G[0] || (G[0] = (A) => Ko(v) ? v.value = A : null),
+                ref: g,
+                "onUpdate:modelValue": G[0] || (G[0] = (L) => Ko(m) ? m.value = L : null),
                 "data-modal-initial": "",
                 type: "text",
                 placeholder: "Search types…",
                 "aria-label": "Search automation types"
               }, null, 512), [
-                [tt, r(v)]
+                [et, r(m)]
               ])
             ]),
             r(u).length ? (s(), d("div", Tr, [
-              (s(!0), d(Y, null, oe(r(u), (A) => (s(), d("button", {
-                key: A.id,
-                class: W(["kx-cat-card", r(a)?.id === A.id && "sel"]),
-                onClick: (K) => r(m)(A)
+              (s(!0), d(Y, null, ee(r(u), (L) => (s(), d("button", {
+                key: L.id,
+                class: W(["kx-cat-card", r(a)?.id === L.id && "sel"]),
+                onClick: (V) => r($)(L)
               }, [
                 l("span", Br, [
-                  D(r(O), {
-                    icon: A.icon || "tabler:sparkles",
+                  D(r(T), {
+                    icon: L.icon || "tabler:sparkles",
                     "aria-hidden": "true"
                   }, null, 8, ["icon"])
                 ]),
                 l("span", Fr, [
-                  l("span", Nr, y(A.title || A.name), 1),
-                  r(rt)(A) ? (s(), d("span", Ur, y(r(rt)(A)), 1)) : _("", !0)
+                  l("span", Nr, x(L.title || L.name), 1),
+                  r(rt)(L) ? (s(), d("span", Ur, x(r(rt)(L)), 1)) : w("", !0)
                 ]),
-                D(r(O), {
+                D(r(T), {
                   icon: "tabler:check",
                   class: "kx-cat-check",
                   "aria-hidden": "true"
                 })
               ], 10, Or))), 128))
-            ])) : (s(), d("div", Rr, "No setups match “" + y(r(v)) + "”.", 1))
-          ])) : _("", !0),
+            ])) : (s(), d("div", Rr, "No setups match “" + x(r(m)) + "”.", 1))
+          ])) : w("", !0),
           l("div", Hr, [
-            r(o) ? (s(), d("div", Vr, "Setup")) : _("", !0),
+            r(o) ? (s(), d("div", Vr, "Setup")) : w("", !0),
             l("div", Kr, [
               r(a) ? (s(), d(Y, { key: 1 }, [
                 r(at)(r(a)) ? (s(), d("div", {
                   key: 0,
                   ref_key: "customInstallHost",
-                  ref: C,
+                  ref: h,
                   class: "kx-custom-host"
                 }, null, 512)) : r(n).length ? (s(), d("div", Yr, [
-                  (s(!0), d(Y, null, oe(r(n), ([A, K]) => (s(), d("label", {
-                    key: A,
+                  (s(!0), d(Y, null, ee(r(n), ([L, V]) => (s(), d("label", {
+                    key: L,
                     class: "kx-field"
                   }, [
                     l("span", Zr, [
-                      ae(y(K.title || A) + " ", 1),
-                      r(Qo)(r(a), A) ? (s(), d("span", Gr, "*")) : _("", !0)
+                      ae(x(V.title || L) + " ", 1),
+                      r(Qo)(r(a), L) ? (s(), d("span", Gr, "*")) : w("", !0)
                     ]),
-                    K.enum ? (s(), V(r(Go), {
+                    V.enum ? (s(), H(r(Go), {
                       key: 0,
                       class: "kx-select",
-                      "model-value": r(b)[A],
-                      options: r(en)(r(a), A, K),
+                      "model-value": r(f)[L],
+                      options: r(en)(r(a), L, V),
                       "option-label": "label",
                       "option-value": "value",
                       placeholder: "—",
-                      "aria-label": K.title || A,
-                      "onUpdate:modelValue": (S) => r(b)[A] = S
-                    }, null, 8, ["model-value", "options", "aria-label", "onUpdate:modelValue"])) : K.type === "boolean" ? pe((s(), d("input", {
+                      "aria-label": V.title || L,
+                      "onUpdate:modelValue": (C) => r(f)[L] = C
+                    }, null, 8, ["model-value", "options", "aria-label", "onUpdate:modelValue"])) : V.type === "boolean" ? ue((s(), d("input", {
                       key: 1,
-                      "onUpdate:modelValue": (S) => r(b)[A] = S,
+                      "onUpdate:modelValue": (C) => r(f)[L] = C,
                       class: "kx-check",
                       type: "checkbox"
                     }, null, 8, Xr)), [
-                      [jt, r(b)[A]]
-                    ]) : K.type === "number" || K.type === "integer" ? pe((s(), d("input", {
+                      [jt, r(f)[L]]
+                    ]) : V.type === "number" || V.type === "integer" ? ue((s(), d("input", {
                       key: 2,
-                      "onUpdate:modelValue": (S) => r(b)[A] = S,
+                      "onUpdate:modelValue": (C) => r(f)[L] = C,
                       class: "kx-input",
                       type: "number"
                     }, null, 8, Jr)), [
                       [
-                        tt,
-                        r(b)[A],
+                        et,
+                        r(f)[L],
                         void 0,
                         { number: !0 }
                       ]
-                    ]) : pe((s(), d("input", {
+                    ]) : ue((s(), d("input", {
                       key: 3,
-                      "onUpdate:modelValue": (S) => r(b)[A] = S,
+                      "onUpdate:modelValue": (C) => r(f)[L] = C,
                       class: "kx-input",
-                      type: r(tn)(K),
-                      placeholder: K.description || ""
+                      type: r(tn)(V),
+                      placeholder: V.description || ""
                     }, null, 8, Qr)), [
-                      [qo, r(b)[A]]
+                      [qo, r(f)[L]]
                     ]),
-                    K.description && !(K.type !== "boolean" && !K.enum) ? (s(), d("span", ea, y(K.description), 1)) : K.description && K.enum ? (s(), d("span", ta, y(K.description), 1)) : _("", !0)
+                    V.description && !(V.type !== "boolean" && !V.enum) ? (s(), d("span", ea, x(V.description), 1)) : V.description && V.enum ? (s(), d("span", ta, x(V.description), 1)) : w("", !0)
                   ]))), 128))
                 ])) : (s(), d("div", Wr, "This automation needs no configuration."))
               ], 64)) : (s(), d("p", qr, "Select an automation type to configure it."))
@@ -2750,47 +2743,47 @@ const Ir = { class: "kx-modal-head-icon" }, Lr = { class: "kx-modal-head-text" }
   setup(e) {
     return (t, o) => (s(), d(Y, null, [
       e.face.length ? (s(), d("div", ra, [
-        (s(!0), d(Y, null, oe(e.face, (n) => (s(), d("span", {
+        (s(!0), d(Y, null, ee(e.face, (n) => (s(), d("span", {
           key: n.label,
           class: "kx-metric"
         }, [
-          n.icon ? (s(), V(r(O), {
+          n.icon ? (s(), H(r(T), {
             key: 0,
             icon: n.icon,
             class: "kx-metric-i",
             "aria-hidden": "true"
-          }, null, 8, ["icon"])) : _("", !0),
-          l("span", aa, y(n.label), 1),
+          }, null, 8, ["icon"])) : w("", !0),
+          l("span", aa, x(n.label), 1),
           l("span", {
             class: "kx-metric-v",
             title: n.title
-          }, y(n.value), 9, ia)
+          }, x(n.value), 9, ia)
         ]))), 128))
-      ])) : _("", !0),
+      ])) : w("", !0),
       e.detail.length ? (s(), d("details", sa, [
         o[0] || (o[0] = l("summary", { class: "kx-metric-more" }, "Details", -1)),
         l("div", la, [
-          (s(!0), d(Y, null, oe(e.detail, (n) => (s(), d("span", {
+          (s(!0), d(Y, null, ee(e.detail, (n) => (s(), d("span", {
             key: n.label,
             class: "kx-metric"
           }, [
-            n.icon ? (s(), V(r(O), {
+            n.icon ? (s(), H(r(T), {
               key: 0,
               icon: n.icon,
               class: "kx-metric-i",
               "aria-hidden": "true"
-            }, null, 8, ["icon"])) : _("", !0),
-            l("span", ca, y(n.label), 1),
+            }, null, 8, ["icon"])) : w("", !0),
+            l("span", ca, x(n.label), 1),
             l("span", {
               class: "kx-metric-v",
               title: n.title
-            }, y(n.value), 9, da)
+            }, x(n.value), 9, da)
           ]))), 128))
         ])
-      ])) : _("", !0)
+      ])) : w("", !0)
     ], 64));
   }
-}), pa = /* @__PURE__ */ new Set(["pause", "resume"]), ba = /* @__PURE__ */ new Set(["reconfigure"]), zt = /* @__PURE__ */ new Set(["run_now", "trigger", "execute", "run"]), et = {
+}), pa = /* @__PURE__ */ new Set(["pause", "resume"]), ba = /* @__PURE__ */ new Set(["reconfigure"]), zt = /* @__PURE__ */ new Set(["run_now", "trigger", "execute", "run"]), Qe = {
   run_now: { label: "Run now", description: "Wake the drive to process available work. Paused drives stay paused.", group: "run", icon: "tabler:player-play" },
   discard: { label: "Discard", description: "Select uncertain item keys to discard them.", group: "recovery", icon: "tabler:trash" },
   trigger: { label: "Run now", description: "Run this automation immediately.", group: "run", icon: "tabler:player-play" },
@@ -2835,26 +2828,26 @@ function Gt(e) {
 function Xt(e) {
   const t = [];
   if (e.runNow) {
-    const n = et[e.runNow] || et.trigger;
+    const n = Qe[e.runNow] || Qe.trigger;
     t.push({ method: e.runNow, ...n, kind: "call" });
   }
   const o = /* @__PURE__ */ new Set();
   for (const n of e.declared) {
     if (pa.has(n) || n === e.runNow || e.runNow !== "run_now" && zt.has(n) || ba.has(n) || o.has(n)) continue;
     o.add(n);
-    const i = e.runNow === "run_now" && zt.has(n) ? { ...Pt(n), group: "run" } : et[n] || Pt(n);
+    const i = e.runNow === "run_now" && zt.has(n) ? { ...Pt(n), group: "run" } : Qe[n] || Pt(n);
     t.push({ method: n, ...i, kind: "call", disabled: e.requiresKeys?.includes(n) });
   }
   return e.canReconfigure && t.push({ method: "reconfigure", label: "Reconfigure", description: "Change how this automation is set up.", group: "edit", icon: "tabler:settings", kind: "reconfigure" }), e.canShare && t.push({ method: "share", label: "Share", description: "Give other people access to this automation.", group: "edit", icon: "tabler:users", kind: "share" }), e.canExport && t.push({ method: "export", label: "Export", description: "Download a portable copy to import elsewhere.", group: "edit", icon: "tabler:download", kind: "export" }), e.canDelete && t.push({ method: "delete", label: "Delete", description: "Stop it and remove its setup. This cannot be undone.", group: "delete", icon: "tabler:trash", kind: "delete", danger: !0 }), t;
 }
-const ga = ["run", "recovery", "edit", "delete"], ma = {
+const ma = ["run", "recovery", "edit", "delete"], ga = {
   run: "Run",
   recovery: "Recovery",
   edit: "Edit",
   delete: ""
 };
 function va(e) {
-  return ga.map((t) => ({ group: t, label: ma[t], items: e.filter((o) => o.group === t) })).filter((t) => t.items.length > 0);
+  return ma.map((t) => ({ group: t, label: ga[t], items: e.filter((o) => o.group === t) })).filter((t) => t.items.length > 0);
 }
 function ha(e, t) {
   return e.group === "run" ? `Run ${t} now` : e.method === "reconfigure" ? `Edit ${t}` : `${e.label} ${t}`;
@@ -2875,17 +2868,17 @@ const xa = ["aria-label"], ya = {
   },
   emits: ["select"],
   setup(e, { emit: t }) {
-    const o = e, n = t, i = B(!1), a = B(null), b = j(() => va(o.items));
-    function g() {
+    const o = e, n = t, i = O(!1), a = O(null), f = A(() => va(o.items));
+    function v() {
       i.value = !i.value;
     }
-    function $() {
+    function _() {
       i.value = !1;
     }
-    function f(C) {
-      o.disabled || C.disabled || ($(), n("select", C.method));
+    function b(h) {
+      o.disabled || h.disabled || (_(), n("select", h.method));
     }
-    return (C, h) => (s(), d("span", {
+    return (h, g) => (s(), d("span", {
       ref_key: "trigger",
       ref: a,
       class: "kx-menu"
@@ -2901,65 +2894,65 @@ const xa = ["aria-label"], ya = {
         "aria-label": e.triggerLabel || `More actions for ${e.name}`,
         title: "More actions",
         disabled: e.disabled,
-        onClick: g
+        onClick: v
       }, {
-        icon: H(({ class: v }) => [
-          D(r(O), {
+        icon: U(({ class: m }) => [
+          D(r(T), {
             icon: "tabler:dots",
             "aria-hidden": "true",
-            class: W(v)
+            class: W(m)
           }, null, 8, ["class"])
         ]),
         _: 1
       }, 8, ["size", "class", "aria-expanded", "aria-label", "disabled"]),
       D(Uo, {
         open: i.value,
-        "onUpdate:open": h[0] || (h[0] = (v) => i.value = v),
+        "onUpdate:open": g[0] || (g[0] = (m) => i.value = m),
         anchor: a.value,
         align: "right",
         width: 264,
         "max-height": 460,
         gap: 6
       }, {
-        default: H(() => [
+        default: U(() => [
           l("div", {
             class: "kx-menu-panel",
             role: "menu",
             "aria-label": `Actions for ${e.name}`
           }, [
-            (s(!0), d(Y, null, oe(b.value, (v, u) => (s(), d(Y, {
-              key: v.group
+            (s(!0), d(Y, null, ee(f.value, (m, u) => (s(), d(Y, {
+              key: m.group
             }, [
-              v.label ? (s(), d("div", {
+              m.label ? (s(), d("div", {
                 key: 0,
                 class: W(["kx-menu-group", u === 0 && "is-first"])
-              }, y(v.label), 3)) : u > 0 ? (s(), d("div", ya)) : _("", !0),
-              (s(!0), d(Y, null, oe(v.items, (m) => (s(), d("button", {
-                key: m.method,
+              }, x(m.label), 3)) : u > 0 ? (s(), d("div", ya)) : w("", !0),
+              (s(!0), d(Y, null, ee(m.items, ($) => (s(), d("button", {
+                key: $.method,
                 type: "button",
                 role: "menuitem",
-                class: W(["kx-menu-item", [m.danger && "is-danger", m.warn && "is-warn"]]),
-                "data-testid": `action-${m.method}`,
-                "aria-label": r(ha)(m, e.name),
-                disabled: e.disabled || m.disabled || e.busy && m.kind === "call",
-                onClick: (x) => f(m)
+                class: W(["kx-menu-item", [$.danger && "is-danger", $.warn && "is-warn"]]),
+                "data-testid": `action-${$.method}`,
+                "aria-label": r(ha)($, e.name),
+                disabled: e.disabled || $.disabled || e.busy && $.kind === "call",
+                onClick: (z) => b($)
               }, [
-                D(r(O), {
-                  icon: m.icon,
+                D(r(T), {
+                  icon: $.icon,
                   class: "kx-menu-item-ico",
                   "aria-hidden": "true"
                 }, null, 8, ["icon"]),
                 l("span", wa, [
                   l("span", _a, [
-                    ae(y(m.label) + " ", 1),
-                    m.warn ? (s(), V(r(O), {
+                    ae(x($.label) + " ", 1),
+                    $.warn ? (s(), H(r(T), {
                       key: 0,
                       icon: "tabler:alert-triangle",
                       class: "kx-menu-item-warn",
                       "aria-hidden": "true"
-                    })) : _("", !0)
+                    })) : w("", !0)
                   ]),
-                  l("span", $a, y(m.description), 1)
+                  l("span", $a, x($.description), 1)
                 ])
               ], 10, ka))), 128))
             ], 64))), 128))
@@ -3005,159 +2998,159 @@ const xa = ["aria-label"], ya = {
   },
   emits: ["error"],
   setup(e, { emit: t }) {
-    const o = e, n = t, i = B([]), a = B([]), b = B([]), g = B(""), $ = B(""), f = B(!1), C = B("");
-    let h = 0;
-    function v() {
-      i.value = [], a.value = [], b.value = [], g.value = "", $.value = "";
+    const o = e, n = t, i = O([]), a = O([]), f = O([]), v = O(""), _ = O(""), b = O(!1), h = O("");
+    let g = 0;
+    function m() {
+      i.value = [], a.value = [], f.value = [], v.value = "", _.value = "";
     }
-    function u(S) {
-      return b.value.find((I) => I.type === S?.kind && I.id === S?.id)?.label || "Account unavailable";
+    function u(C) {
+      return f.value.find((I) => I.type === C?.kind && I.id === C?.id)?.label || "Account unavailable";
     }
-    function m(S) {
+    function $(C) {
       return {
         recorded: "Recorded admission",
         absent: "Identity evidence absent",
         inferred: "Identity evidence inferred; unverified",
         unresolved: "Identity unresolved"
-      }[S.evidence_status];
+      }[C.evidence_status];
     }
-    function x(S) {
-      return JSON.stringify([S.drive_key, S.round_token, S.source_port, S.item_key, S.identity_key]);
+    function z(C) {
+      return JSON.stringify([C.drive_key, C.round_token, C.source_port, C.item_key, C.identity_key]);
     }
-    function L(S) {
-      return te(S, typeof S == "string" ? S : "");
+    function K(C) {
+      return re(C, typeof C == "string" ? C : "");
     }
-    async function N(S, I, P = "") {
-      const { data: R } = await de.get(
-        "/api/v1/automations/" + encodeURIComponent(S) + "/history",
+    async function B(C, I, P = "") {
+      const { data: M } = await pe.get(
+        "/api/v1/automations/" + encodeURIComponent(C) + "/history",
         { params: { kind: I, page_size: 25, ...P ? { page_token: P } : {} } }
       );
-      if (!R.success || R.kind !== I || !Array.isArray(R.entries)) throw new Error(R.error?.message || "Could not read execution history");
-      if (R.next_page_token && R.next_page_token === P) throw new Error("History page repeats its cursor");
-      return R;
+      if (!M.success || M.kind !== I || !Array.isArray(M.entries)) throw new Error(M.error?.message || "Could not read execution history");
+      if (M.next_page_token && M.next_page_token === P) throw new Error("History page repeats its cursor");
+      return M;
     }
-    async function J(S, I) {
+    async function ne(C, I) {
       const P = /* @__PURE__ */ new Map();
-      function R(T) {
-        T && (T.kind === "user" || T.kind === "group") && P.set(T.kind + ":" + T.id, { type: T.kind, id: T.id });
+      function M(R) {
+        R && (R.kind === "user" || R.kind === "group") && P.set(R.kind + ":" + R.id, { type: R.kind, id: R.id });
       }
-      for (const T of S)
-        R(T.evidence?.identity?.principal), R(T.evidence?.identity?.authorized_by);
-      for (const T of I)
-        T.initiation && R({ kind: "user", id: T.initiation.actor_id });
+      for (const R of C)
+        M(R.evidence?.identity?.principal), M(R.evidence?.identity?.authorized_by);
+      for (const R of I)
+        R.initiation && M({ kind: "user", id: R.initiation.actor_id });
       return ln([...P.values()]);
     }
-    function G(S) {
-      v(), C.value = te(S, "Could not read execution history"), n("error", { message: C.value, error: S });
+    function G(C) {
+      m(), h.value = re(C, "Could not read execution history"), n("error", { message: h.value, error: C });
     }
-    async function A() {
-      const S = ++h, I = o.root;
-      if (v(), C.value = "", f.value = !1, !!I) {
-        f.value = !0;
+    async function L() {
+      const C = ++g, I = o.root;
+      if (m(), h.value = "", b.value = !1, !!I) {
+        b.value = !0;
         try {
-          const [P, R] = await Promise.all([N(I, "deliveries"), N(I, "controls")]), T = await J(P.entries, R.entries);
-          if (S !== h) return;
-          i.value = P.entries, a.value = R.entries, b.value = T, g.value = P.next_page_token || "", $.value = R.next_page_token || "";
+          const [P, M] = await Promise.all([B(I, "deliveries"), B(I, "controls")]), R = await ne(P.entries, M.entries);
+          if (C !== g) return;
+          i.value = P.entries, a.value = M.entries, f.value = R, v.value = P.next_page_token || "", _.value = M.next_page_token || "";
         } catch (P) {
-          S === h && G(P);
+          C === g && G(P);
         } finally {
-          S === h && (f.value = !1);
+          C === g && (b.value = !1);
         }
       }
     }
-    async function K(S) {
-      if (f.value) return;
-      const I = h, P = o.root, R = S === "deliveries" ? g.value : $.value;
-      if (R) {
-        f.value = !0, C.value = "";
+    async function V(C) {
+      if (b.value) return;
+      const I = g, P = o.root, M = C === "deliveries" ? v.value : _.value;
+      if (M) {
+        b.value = !0, h.value = "";
         try {
-          const T = await N(P, S, R), c = S === "deliveries" ? [...i.value, ...T.entries] : i.value, M = S === "controls" ? [...a.value, ...T.entries] : a.value, F = await J(c, M);
-          if (I !== h) return;
-          i.value = c, a.value = M, b.value = F, S === "deliveries" ? g.value = T.next_page_token || "" : $.value = T.next_page_token || "";
-        } catch (T) {
-          I === h && G(T);
+          const R = await B(P, C, M), c = C === "deliveries" ? [...i.value, ...R.entries] : i.value, j = C === "controls" ? [...a.value, ...R.entries] : a.value, F = await ne(c, j);
+          if (I !== g) return;
+          i.value = c, a.value = j, f.value = F, C === "deliveries" ? v.value = R.next_page_token || "" : _.value = R.next_page_token || "";
+        } catch (R) {
+          I === g && G(R);
         } finally {
-          I === h && (f.value = !1);
+          I === g && (b.value = !1);
         }
       }
     }
     return Be(() => o.root, () => {
-      A();
+      L();
     }, { immediate: !0 }), it(() => {
-      h += 1;
-    }), (S, I) => (s(), d("section", Ca, [
-      f.value ? (s(), d("p", Sa, "Loading execution history…")) : _("", !0),
-      C.value ? (s(), d("p", za, y(C.value), 1)) : (s(), d(Y, { key: 2 }, [
+      g += 1;
+    }), (C, I) => (s(), d("section", Ca, [
+      b.value ? (s(), d("p", Sa, "Loading execution history…")) : w("", !0),
+      h.value ? (s(), d("p", za, x(h.value), 1)) : (s(), d(Y, { key: 2 }, [
         l("div", Pa, [
           I[4] || (I[4] = l("h3", { class: "kx-dsub-lbl" }, "Committed deliveries", -1)),
-          !f.value && !i.value.length ? (s(), d("p", Da, "No retained deliveries.")) : _("", !0),
-          (s(!0), d(Y, null, oe(i.value, (P) => (s(), d("article", {
-            key: x(P),
+          !b.value && !i.value.length ? (s(), d("p", Da, "No retained deliveries.")) : w("", !0),
+          (s(!0), d(Y, null, ee(i.value, (P) => (s(), d("article", {
+            key: z(P),
             class: "kx-history-entry"
           }, [
             l("div", Ea, [
               l("strong", {
                 class: "kx-history-title",
                 title: P.item_key
-              }, y(P.item_key), 9, Ia),
-              l("span", La, y(P.state), 1)
+              }, x(P.item_key), 9, Ia),
+              l("span", La, x(P.state), 1)
             ]),
-            l("p", Aa, "Round starts " + y(r(ce)(P.round_at, { future: !0 })), 1),
-            l("p", ja, y(m(P)), 1),
+            l("p", Aa, "Round starts " + x(r(ce)(P.round_at, { future: !0 })), 1),
+            l("p", ja, x($(P)), 1),
             P.evidence?.identity ? (s(), d("dl", Ma, [
               I[3] || (I[3] = l("dt", { class: "kx-dfact-k" }, "Executor", -1)),
               l("dd", {
                 class: "kx-history-v",
                 title: P.evidence.identity.principal.id,
                 "aria-label": "Historical executor"
-              }, y(u(P.evidence.identity.principal)), 9, Ra),
+              }, x(u(P.evidence.identity.principal)), 9, Ra),
               P.evidence.identity.authorized_by ? (s(), d(Y, { key: 0 }, [
                 I[2] || (I[2] = l("dt", { class: "kx-dfact-k" }, "Authorized by", -1)),
                 l("dd", {
                   class: "kx-history-v",
                   title: P.evidence.identity.authorized_by.id,
                   "aria-label": "Historical authorizer"
-                }, y(u(P.evidence.identity.authorized_by)), 9, Ta)
-              ], 64)) : _("", !0)
-            ])) : _("", !0),
-            L(P.error) ? (s(), d("p", Oa, y(L(P.error)), 1)) : _("", !0)
+                }, x(u(P.evidence.identity.authorized_by)), 9, Ta)
+              ], 64)) : w("", !0)
+            ])) : w("", !0),
+            K(P.error) ? (s(), d("p", Oa, x(K(P.error)), 1)) : w("", !0)
           ]))), 128)),
-          g.value ? (s(), V(r(X), {
+          v.value ? (s(), H(r(X), {
             key: 1,
             label: "More deliveries",
             severity: "secondary",
-            disabled: f.value,
-            onClick: I[0] || (I[0] = (P) => K("deliveries"))
-          }, null, 8, ["disabled"])) : _("", !0)
+            disabled: b.value,
+            onClick: I[0] || (I[0] = (P) => V("deliveries"))
+          }, null, 8, ["disabled"])) : w("", !0)
         ]),
         l("div", Ba, [
           I[6] || (I[6] = l("h3", { class: "kx-dsub-lbl" }, "Control requests", -1)),
           I[7] || (I[7] = l("p", { class: "kx-dnote" }, "Control requests and delivery admission are independent records.", -1)),
-          !f.value && !a.value.length ? (s(), d("p", Fa, "No retained control requests.")) : _("", !0),
-          (s(!0), d(Y, null, oe(a.value, (P) => (s(), d("article", {
+          !b.value && !a.value.length ? (s(), d("p", Fa, "No retained control requests.")) : w("", !0),
+          (s(!0), d(Y, null, ee(a.value, (P) => (s(), d("article", {
             key: `${P.generation}:${P.request_id}`,
             class: "kx-history-entry"
           }, [
             l("div", Na, [
-              l("span", Ua, y(P.state), 1)
+              l("span", Ua, x(P.state), 1)
             ]),
-            l("p", Ha, "Requested " + y(r(ce)(P.created_at, { future: !0 })), 1),
+            l("p", Ha, "Requested " + x(r(ce)(P.created_at, { future: !0 })), 1),
             P.initiation ? (s(), d("dl", Va, [
               I[5] || (I[5] = l("dt", { class: "kx-dfact-k" }, "Initiated by", -1)),
               l("dd", {
                 class: "kx-history-v",
                 title: P.initiation.actor_id,
                 "aria-label": "Control initiator"
-              }, y(u({ kind: "user", id: P.initiation.actor_id })), 9, Ka)
+              }, x(u({ kind: "user", id: P.initiation.actor_id })), 9, Ka)
             ])) : (s(), d("p", qa, "Initiator not recorded."))
           ]))), 128)),
-          $.value ? (s(), V(r(X), {
+          _.value ? (s(), H(r(X), {
             key: 1,
             label: "More control requests",
             severity: "secondary",
-            disabled: f.value,
-            onClick: I[1] || (I[1] = (P) => K("controls"))
-          }, null, 8, ["disabled"])) : _("", !0)
+            disabled: b.value,
+            onClick: I[1] || (I[1] = (P) => V("controls"))
+          }, null, 8, ["disabled"])) : w("", !0)
         ])
       ], 64))
     ]));
@@ -3190,7 +3183,7 @@ const Qt = {
   blocked_access: "This automation lost access to something it uses.",
   blocked_declaration: "This automation's settings need to be fixed."
 };
-function Ue(e) {
+function Ne(e) {
   return (e?.drives || []).filter((t) => t.source_kind !== "none");
 }
 function Me(e) {
@@ -3200,7 +3193,7 @@ function Dt(e) {
   return (e.source_kind === "timer" || e.source_kind === "collection") && (e.phase === "pending" || e.phase === "active") && typeof e.next_run_at == "string" && Date.parse(e.next_run_at) > Date.now();
 }
 function Xa(e) {
-  const t = Ue(e), o = (e?.delivery_failures?.count || 0) > 0;
+  const t = Ne(e), o = (e?.delivery_failures?.count || 0) > 0;
   if (!t.length) return o ? { kind: "warn", label: "Needs attention" } : null;
   if (t.some((i) => (i.phase || "") in Qt)) return { kind: "warn", label: "Needs attention" };
   if (t.every(Me)) return { kind: "off", label: "Paused" };
@@ -3214,7 +3207,7 @@ function Xa(e) {
 function Ja(e) {
   const t = e?.delivery_failures?.last_error;
   if (t) return `${t.code}: ${t.message}`;
-  const o = Ue(e);
+  const o = Ne(e);
   for (const n of o) {
     const i = Qt[n.phase || ""];
     if (i) return i;
@@ -3226,13 +3219,13 @@ function Ja(e) {
   return "";
 }
 function Qa(e) {
-  const t = Ue(e), o = [], n = $e(e).next;
+  const t = Ne(e), o = [], n = $e(e).next;
   n && o.push({ label: "Next run", value: n, time: !0 });
-  const i = t.reduce((a, b) => a + (b.unresolved_count || 0), 0);
+  const i = t.reduce((a, f) => a + (f.unresolved_count || 0), 0);
   return i > 0 && o.push({ label: "Waiting to retry", value: `${i} ${i === 1 ? "item" : "items"}` }), o;
 }
 function $e(e) {
-  const t = Ue(e), o = t.map((i) => i.last_run_at).filter((i) => typeof i == "string" && !!i).sort().at(-1), n = t.filter((i) => !Me(i)).map((i) => i.next_run_at).filter((i) => typeof i == "string" && !!i).sort()[0];
+  const t = Ne(e), o = t.map((i) => i.last_run_at).filter((i) => typeof i == "string" && !!i).sort().at(-1), n = t.filter((i) => !Me(i)).map((i) => i.next_run_at).filter((i) => typeof i == "string" && !!i).sort()[0];
   return { last: o, next: n };
 }
 const ei = /* @__PURE__ */ new Set(["status", "enabled", "last_error", "last_run_at", "next_run_at"]);
@@ -3281,20 +3274,20 @@ function li(e, t) {
 function ci(e, t) {
   const o = oi(e.label || ti(e.key));
   if (to(e.key)) {
-    const { text: a, title: b } = si(String(t));
-    return { label: o, value: a, title: b, icon: e.icon };
+    const { text: a, title: f } = si(String(t));
+    return { label: o, value: a, title: f, icon: e.icon };
   }
   const { text: n, title: i } = ai(ri(e, t));
   return { label: o, value: n, title: i, icon: e.icon };
 }
-function Ne(e, t, o) {
+function Fe(e, t, o) {
   const n = t;
   if (!e || !n) return [];
   const i = [];
   for (const a of e) {
     if (!a?.key || ei.has(a.key) || a.role === "subtitle") continue;
-    const b = n[a.key];
-    b == null || b === "" || a.hidden || a.hide_zero && b === 0 || li(a, b) === o && i.push(ci(a, b));
+    const f = n[a.key];
+    f == null || f === "" || a.hidden || a.hide_zero && f === 0 || li(a, f) === o && i.push(ci(a, f));
   }
   return i;
 }
@@ -3348,14 +3341,14 @@ async function so(e) {
   const t = [], o = /* @__PURE__ */ new Set();
   let n, i;
   do {
-    const a = n ? `?page_token=${encodeURIComponent(n)}` : "", { data: b } = await de.get(`/api/v1/automations/${encodeURIComponent(e)}/status${a}`);
-    if (!Ga(b)) throw new Error("Invalid automation status response");
-    if (t.push(...b.drives), i = b.delivery_failures, n = b.next_page_token || void 0, n && o.has(n)) throw new Error("Automation status repeated a page token");
+    const a = n ? `?page_token=${encodeURIComponent(n)}` : "", { data: f } = await pe.get(`/api/v1/automations/${encodeURIComponent(e)}/status${a}`);
+    if (!Ga(f)) throw new Error("Invalid automation status response");
+    if (t.push(...f.drives), i = f.delivery_failures, n = f.next_page_token || void 0, n && o.has(n)) throw new Error("Automation status repeated a page token");
     n && o.add(n);
   } while (n);
   return { drives: t, delivery_failures: i };
 }
-const ui = ["aria-label"], pi = { class: "kx-drawer-head" }, bi = { class: "kx-ficon" }, fi = { class: "kx-drawer-id" }, gi = ["title"], mi = { class: "kx-drawer-sub" }, vi = { class: "kx-drawer-controls" }, hi = {
+const ui = ["aria-label"], pi = { class: "kx-drawer-head" }, bi = { class: "kx-ficon" }, fi = { class: "kx-drawer-id" }, mi = ["title"], gi = { class: "kx-drawer-sub" }, vi = { class: "kx-drawer-controls" }, hi = {
   class: "kx-tabs",
   role: "tablist"
 }, xi = ["aria-selected", "data-testid", "onClick"], yi = { class: "kx-drawer-body" }, ki = {
@@ -3398,117 +3391,117 @@ const ui = ["aria-label"], pi = { class: "kx-drawer-head" }, bi = { class: "kx-f
   },
   emits: ["close", "action", "recover", "changed"],
   setup(e, { emit: t }) {
-    const o = e, n = t, i = B("overview"), a = [
+    const o = e, n = t, i = O("overview"), a = [
       { id: "overview", label: "Overview", icon: "tabler:layout-dashboard" },
       { id: "state", label: "State", icon: "tabler:chart-dots" },
       { id: "config", label: "Config", icon: "tabler:settings" },
       { id: "activity", label: "Activity", icon: "tabler:history" }
-    ], b = j(() => o.automation.title || o.automation.id), g = j(() => o.automation.icon || o.type?.icon || "tabler:bolt"), $ = j(() => o.type?.title || "Automation"), f = j(() => o.automation.public_state), C = j(() => Zt(o.type)), h = j(() => Xt(C.value)), v = j(() => C.value.declared.includes("status")), u = B(null);
-    let m = 0;
-    async function x(q) {
-      const E = ++m;
+    ], f = A(() => o.automation.title || o.automation.id), v = A(() => o.automation.icon || o.type?.icon || "tabler:bolt"), _ = A(() => o.type?.title || "Automation"), b = A(() => o.automation.public_state), h = A(() => Zt(o.type)), g = A(() => Xt(h.value)), m = A(() => h.value.declared.includes("status")), u = O(null);
+    let $ = 0;
+    async function z(q) {
+      const E = ++$;
       if (!q || !o.automation.drive_status || o.automation.availability) {
         u.value = null;
         return;
       }
       u.value = o.automation.drive_status;
-      const z = await so(q);
-      E === m && o.automation.id === q && (u.value = z);
+      const S = await so(q);
+      E === $ && o.automation.id === q && (u.value = S);
     }
     Be(() => [o.automation.id, o.automation.drive_status, o.automation.availability], ([q]) => {
-      x(q).catch((E) => Fe.handleError("other", { message: String(E) }));
+      z(q).catch((E) => tt.handleError("other", { message: String(E) }));
     }, { immediate: !0 });
-    const L = j(() => ro(f.value, v.value, u.value, o.automation.availability)), N = j(() => L.value.kind === "off"), J = j(() => oo(f.value)), G = j(() => (C.value.declared.includes("pause") || C.value.declared.includes("resume")) && !J.value), A = j(() => dt(f.value)), K = j(() => Gt(C.value.declared)), S = j(() => {
-      if (o.automation.availability) return no(f.value, o.automation.availability)?.text || "";
+    const K = A(() => ro(b.value, m.value, u.value, o.automation.availability)), B = A(() => K.value.kind === "off"), ne = A(() => oo(b.value)), G = A(() => (h.value.declared.includes("pause") || h.value.declared.includes("resume")) && !ne.value), L = A(() => dt(b.value)), V = A(() => Gt(h.value.declared)), C = A(() => {
+      if (o.automation.availability) return no(b.value, o.automation.availability)?.text || "";
       const q = Ja(u.value);
       if (q) return q;
-      const E = typeof f.value?.last_error == "string" ? f.value.last_error.trim() : "";
-      return A.value ? E : "";
-    }), I = j(() => io(o.type?.public_state_schema?.fields, f.value)), P = j(() => {
+      const E = typeof b.value?.last_error == "string" ? b.value.last_error.trim() : "";
+      return L.value ? E : "";
+    }), I = A(() => io(o.type?.public_state_schema?.fields, b.value)), P = A(() => {
       const q = o.type?.public_state_schema?.fields;
-      return [...Ne(q, f.value, !1), ...Ne(q, f.value, !0)];
-    }), R = j(() => {
-      const q = f.value, E = [];
-      E.push({ label: "Status", value: L.value.label }), o.automation.availability || E.push({ label: "Enabled", value: N.value ? "Paused" : "Yes" }), I.value && E.push({ label: "When", value: I.value }), q?.last_run_at && E.push({ label: "Last run", value: ce(q.last_run_at, { future: !0 }) }), q?.next_run_at && E.push({ label: "Next run", value: ce(q.next_run_at, { future: !0 }) });
-      for (const z of Qa(u.value))
-        E.push({ label: z.label, value: z.time ? ce(z.value, { future: !0 }) : z.value });
+      return [...Fe(q, b.value, !1), ...Fe(q, b.value, !0)];
+    }), M = A(() => {
+      const q = b.value, E = [];
+      E.push({ label: "Status", value: K.value.label }), o.automation.availability || E.push({ label: "Enabled", value: B.value ? "Paused" : "Yes" }), I.value && E.push({ label: "When", value: I.value }), q?.last_run_at && E.push({ label: "Last run", value: ce(q.last_run_at, { future: !0 }) }), q?.next_run_at && E.push({ label: "Next run", value: ce(q.next_run_at, { future: !0 }) });
+      for (const S of Qa(u.value))
+        E.push({ label: S.label, value: S.time ? ce(S.value, { future: !0 }) : S.value });
       return E;
-    }), T = j(() => {
-      const q = u.value?.drives.flatMap((z) => typeof z.last_round_at == "string" ? [z.last_round_at] : []) || [], E = u.value?.delivery_failures?.last_error?.at;
-      return E && q.push(E), q.sort().at(-1) || f.value?.last_run_at;
-    }), c = j(() => u.value?.delivery_failures), M = j(() => {
+    }), R = A(() => {
+      const q = u.value?.drives.flatMap((S) => typeof S.last_round_at == "string" ? [S.last_round_at] : []) || [], E = u.value?.delivery_failures?.last_error?.at;
+      return E && q.push(E), q.sort().at(-1) || b.value?.last_run_at;
+    }), c = A(() => u.value?.delivery_failures), j = A(() => {
       const q = c.value?.last_error;
-      return q ? `${q.code}: ${q.message}` : f.value?.last_error;
-    }), F = j(() => lt(o.type)), ie = j(() => qt(o.automation, o.type)), He = j(() => ({ location: Kt(o.type) }));
+      return q ? `${q.code}: ${q.message}` : b.value?.last_error;
+    }), F = A(() => lt(o.type)), ie = A(() => qt(o.automation, o.type)), Ue = A(() => ({ location: Kt(o.type) }));
     return Be(() => o.automation.id, () => {
       i.value = "overview";
     }), (q, E) => (s(), d(Y, null, [
       l("div", {
         class: "kx-drawer-scrim",
-        onClick: E[0] || (E[0] = (z) => n("close"))
+        onClick: E[0] || (E[0] = (S) => n("close"))
       }),
       l("aside", {
         class: "kx-drawer",
         role: "dialog",
         "aria-modal": "true",
-        "aria-label": b.value,
+        "aria-label": f.value,
         "data-testid": "detail-drawer"
       }, [
         l("header", pi, [
           l("span", bi, [
-            D(r(O), {
-              icon: g.value,
+            D(r(T), {
+              icon: v.value,
               "aria-hidden": "true"
             }, null, 8, ["icon"])
           ]),
           l("div", fi, [
             l("div", {
               class: "kx-drawer-name",
-              title: b.value
-            }, y(b.value), 9, gi),
-            l("div", mi, y($.value), 1)
+              title: f.value
+            }, x(f.value), 9, mi),
+            l("div", gi, x(_.value), 1)
           ]),
           D(r(st), {
-            severity: r(ao)(L.value.kind),
+            severity: r(ao)(K.value.kind),
             class: "kx-badge kx-tag-sm"
           }, {
-            default: H(() => [
-              L.value.kind === "live" ? (s(), V(r(O), {
+            default: U(() => [
+              K.value.kind === "live" ? (s(), H(r(T), {
                 key: 0,
                 icon: "tabler:loader-2",
                 class: "spin",
                 "aria-hidden": "true"
-              })) : _("", !0),
-              ae(" " + y(L.value.label), 1)
+              })) : w("", !0),
+              ae(" " + x(K.value.label), 1)
             ]),
             _: 1
           }, 8, ["severity"]),
           l("div", vi, [
-            G.value ? (s(), V(r(X), {
+            G.value ? (s(), H(r(X), {
               key: 0,
               type: "button",
               severity: "secondary",
               outlined: "",
               size: "small",
-              "aria-label": `${N.value ? "Resume" : "Pause"} ${b.value}`,
-              title: N.value ? "Resume" : "Pause",
+              "aria-label": `${B.value ? "Resume" : "Pause"} ${f.value}`,
+              title: B.value ? "Resume" : "Pause",
               disabled: !!e.automation.deleting_at,
-              onClick: E[1] || (E[1] = (z) => !e.automation.deleting_at && n("action", N.value ? "resume" : "pause"))
+              onClick: E[1] || (E[1] = (S) => !e.automation.deleting_at && n("action", B.value ? "resume" : "pause"))
             }, {
-              icon: H(({ class: z }) => [
-                D(r(O), {
-                  icon: N.value ? "tabler:player-play-filled" : "tabler:player-pause",
+              icon: U(({ class: S }) => [
+                D(r(T), {
+                  icon: B.value ? "tabler:player-play-filled" : "tabler:player-pause",
                   "aria-hidden": "true",
-                  class: W(z)
+                  class: W(S)
                 }, null, 8, ["icon", "class"])
               ]),
               _: 1
-            }, 8, ["aria-label", "title", "disabled"])) : _("", !0),
+            }, 8, ["aria-label", "title", "disabled"])) : w("", !0),
             D(Jt, {
-              items: h.value,
-              name: b.value,
+              items: g.value,
+              name: f.value,
               disabled: !!e.automation.deleting_at,
-              onSelect: E[2] || (E[2] = (z) => !e.automation.deleting_at && n("action", z))
+              onSelect: E[2] || (E[2] = (S) => !e.automation.deleting_at && n("action", S))
             }, null, 8, ["items", "name", "disabled"]),
             D(r(X), {
               type: "button",
@@ -3518,13 +3511,13 @@ const ui = ["aria-label"], pi = { class: "kx-drawer-head" }, bi = { class: "kx-f
               class: "kx-drawer-close",
               "aria-label": "Close details",
               title: "Close",
-              onClick: E[3] || (E[3] = (z) => n("close"))
+              onClick: E[3] || (E[3] = (S) => n("close"))
             }, {
-              icon: H(({ class: z }) => [
-                D(r(O), {
+              icon: U(({ class: S }) => [
+                D(r(T), {
                   icon: "tabler:x",
                   "aria-hidden": "true",
-                  class: W(z)
+                  class: W(S)
                 }, null, 8, ["class"])
               ]),
               _: 1
@@ -3532,139 +3525,139 @@ const ui = ["aria-label"], pi = { class: "kx-drawer-head" }, bi = { class: "kx-f
           ])
         ]),
         l("nav", hi, [
-          (s(), d(Y, null, oe(a, (z) => l("button", {
-            key: z.id,
+          (s(), d(Y, null, ee(a, (S) => l("button", {
+            key: S.id,
             type: "button",
             role: "tab",
-            class: W(["kx-tab", i.value === z.id && "is-active"]),
-            "aria-selected": i.value === z.id,
-            "data-testid": `drawer-tab-${z.id}`,
-            onClick: (ut) => i.value = z.id
+            class: W(["kx-tab", i.value === S.id && "is-active"]),
+            "aria-selected": i.value === S.id,
+            "data-testid": `drawer-tab-${S.id}`,
+            onClick: (ut) => i.value = S.id
           }, [
-            D(r(O), {
-              icon: z.icon,
+            D(r(T), {
+              icon: S.icon,
               "aria-hidden": "true"
             }, null, 8, ["icon"]),
-            ae(" " + y(z.label), 1)
+            ae(" " + x(S.label), 1)
           ], 10, xi)), 64))
         ]),
         l("div", yi, [
           i.value === "overview" ? (s(), d("section", ki, [
-            S.value ? (s(), d("div", wi, [
+            C.value ? (s(), d("div", wi, [
               l("div", _i, [
-                D(r(O), {
+                D(r(T), {
                   icon: "tabler:alert-circle",
                   "aria-hidden": "true"
                 }),
-                l("span", null, y(o.automation.availability ? "This automation is unavailable" : "This automation is failing"), 1)
+                l("span", null, x(o.automation.availability ? "This automation is unavailable" : "This automation is failing"), 1)
               ]),
-              l("p", $i, y(S.value), 1),
-              K.value ? (s(), V(r(X), {
+              l("p", $i, x(C.value), 1),
+              V.value ? (s(), H(r(X), {
                 key: 0,
                 type: "button",
                 size: "small",
                 severity: "danger",
-                "aria-label": `Recover ${b.value}`,
+                "aria-label": `Recover ${f.value}`,
                 "data-testid": "drawer-recover",
                 label: "Recover",
                 disabled: !!e.automation.deleting_at,
-                onClick: E[4] || (E[4] = (z) => !e.automation.deleting_at && n("recover"))
+                onClick: E[4] || (E[4] = (S) => !e.automation.deleting_at && n("recover"))
               }, {
-                icon: H(({ class: z }) => [
-                  D(r(O), {
+                icon: U(({ class: S }) => [
+                  D(r(T), {
                     icon: "tabler:rotate-clockwise-2",
                     "aria-hidden": "true",
-                    class: W(z)
+                    class: W(S)
                   }, null, 8, ["class"])
                 ]),
                 _: 1
-              }, 8, ["aria-label", "disabled"])) : _("", !0)
-            ])) : _("", !0),
+              }, 8, ["aria-label", "disabled"])) : w("", !0)
+            ])) : w("", !0),
             l("div", Ci, [
-              (s(!0), d(Y, null, oe(R.value, (z) => (s(), d("div", {
-                key: z.label,
+              (s(!0), d(Y, null, ee(M.value, (S) => (s(), d("div", {
+                key: S.label,
                 class: "kx-dfact"
               }, [
-                l("span", Si, y(z.label), 1),
-                l("strong", zi, y(z.value), 1)
+                l("span", Si, x(S.label), 1),
+                l("strong", zi, x(S.value), 1)
               ]))), 128))
             ]),
             P.value.length ? (s(), d("div", Pi, [
               E[9] || (E[9] = l("div", { class: "kx-dsub-lbl" }, "Progress", -1)),
               l("div", Di, [
-                (s(!0), d(Y, null, oe(P.value, (z) => (s(), d("span", {
-                  key: z.label,
+                (s(!0), d(Y, null, ee(P.value, (S) => (s(), d("span", {
+                  key: S.label,
                   class: "kx-metric"
                 }, [
-                  z.icon ? (s(), V(r(O), {
+                  S.icon ? (s(), H(r(T), {
                     key: 0,
-                    icon: z.icon,
+                    icon: S.icon,
                     class: "kx-metric-i",
                     "aria-hidden": "true"
-                  }, null, 8, ["icon"])) : _("", !0),
-                  l("span", Ei, y(z.label), 1),
+                  }, null, 8, ["icon"])) : w("", !0),
+                  l("span", Ei, x(S.label), 1),
                   l("span", {
                     class: "kx-metric-v",
-                    title: z.title
-                  }, y(z.value), 9, Ii)
+                    title: S.title
+                  }, x(S.value), 9, Ii)
                 ]))), 128))
               ])
-            ])) : _("", !0)
+            ])) : w("", !0)
           ])) : i.value === "state" ? (s(), d("section", Li, [
             P.value.length ? (s(), d("div", ji, [
-              (s(!0), d(Y, null, oe(P.value, (z) => (s(), d("div", {
-                key: z.label,
+              (s(!0), d(Y, null, ee(P.value, (S) => (s(), d("div", {
+                key: S.label,
                 class: "kx-dfact"
               }, [
-                l("span", Mi, y(z.label), 1),
+                l("span", Mi, x(S.label), 1),
                 l("strong", {
                   class: "kx-dfact-v",
-                  title: z.title
-                }, y(z.value), 9, Ri)
+                  title: S.title
+                }, x(S.value), 9, Ri)
               ]))), 128))
             ])) : (s(), d("div", Ai, "This automation reports no additional state."))
           ])) : i.value === "config" ? (s(), d("section", Ti, [
-            !e.automation.deleting_at && !e.automation.availability && ((e.automation.access_level || 0) & 8) !== 0 ? (s(), V(Re, {
+            !e.automation.deleting_at && !e.automation.availability && ((e.automation.access_level || 0) & 8) !== 0 ? (s(), H(Re, {
               key: 0,
               tag: "wc-execution-identity-editor",
               attrs: { root: e.automation.id },
-              onChange: E[5] || (E[5] = (z) => n("changed"))
-            }, null, 8, ["attrs"])) : _("", !0),
-            F.value && !e.automation.deleting_at ? (s(), V(Re, {
+              onChange: E[5] || (E[5] = (S) => n("changed"))
+            }, null, 8, ["attrs"])) : w("", !0),
+            F.value && !e.automation.deleting_at ? (s(), H(Re, {
               key: 1,
               class: "kx-manage-host",
               tag: F.value,
               config: ie.value,
-              meta: He.value,
-              onChange: E[6] || (E[6] = (z) => n("changed")),
-              onClose: E[7] || (E[7] = (z) => i.value = "overview")
+              meta: Ue.value,
+              onChange: E[6] || (E[6] = (S) => n("changed")),
+              onClose: E[7] || (E[7] = (S) => i.value = "overview")
             }, null, 8, ["tag", "config", "meta"])) : (s(), d("div", Oi, "This automation type declares no settings view."))
           ])) : (s(), d("section", Bi, [
             l("div", Fi, [
               l("div", Ni, [
                 E[10] || (E[10] = l("span", { class: "kx-dfact-k" }, "Last run", -1)),
-                l("strong", Ui, y(T.value ? r(ce)(T.value, { future: !0 }) : "Never"), 1)
+                l("strong", Ui, x(R.value ? r(ce)(R.value, { future: !0 }) : "Never"), 1)
               ]),
               l("div", Hi, [
                 E[11] || (E[11] = l("span", { class: "kx-dfact-k" }, "Last outcome", -1)),
-                l("strong", Vi, y(c.value?.count ? "Failed delivery" : f.value?.status || "—"), 1)
+                l("strong", Vi, x(c.value?.count ? "Failed delivery" : b.value?.status || "—"), 1)
               ]),
               l("div", Ki, [
                 E[12] || (E[12] = l("span", { class: "kx-dfact-k" }, "Failed deliveries", -1)),
-                l("strong", qi, y(c.value?.count ?? 0), 1)
+                l("strong", qi, x(c.value?.count ?? 0), 1)
               ])
             ]),
-            typeof M.value == "string" && M.value.trim() ? (s(), d("div", Wi, [
+            typeof j.value == "string" && j.value.trim() ? (s(), d("div", Wi, [
               E[13] || (E[13] = l("div", { class: "kx-dsub-lbl" }, "Last message", -1)),
               l("p", {
-                class: W(["kx-dmsg", A.value || c.value?.count ? "is-err" : "is-ok"])
-              }, y(M.value), 3)
-            ])) : _("", !0),
-            !e.automation.availability && ((e.automation.access_level || 0) & 8) !== 0 ? (s(), V(Wa, {
+                class: W(["kx-dmsg", L.value || c.value?.count ? "is-err" : "is-ok"])
+              }, x(j.value), 3)
+            ])) : w("", !0),
+            !e.automation.availability && ((e.automation.access_level || 0) & 8) !== 0 ? (s(), H(Wa, {
               key: 1,
               root: e.automation.id,
-              onError: E[8] || (E[8] = (z) => r(Fe).handleError("other", { message: z.message }))
-            }, null, 8, ["root"])) : _("", !0)
+              onError: E[8] || (E[8] = (S) => r(tt).handleError("other", { message: S.message }))
+            }, null, 8, ["root"])) : w("", !0)
           ]))
         ])
       ], 8, ui)
@@ -3672,82 +3665,82 @@ const ui = ["aria-label"], pi = { class: "kx-drawer-head" }, bi = { class: "kx-f
   }
 });
 function Zi(e) {
-  const t = B(!1), o = B(null), n = B({}), i = B(!1), a = B(!1), b = B(""), g = B(null), $ = B(null);
-  let f = null;
-  const C = B(""), h = j(() => e.types.value.filter(
-    (c) => c.installable !== !1 && Object.entries(e.inputPreset.value).every(([M, F]) => {
-      const ie = c.inputs?.properties?.[M];
+  const t = O(!1), o = O(null), n = O({}), i = O(!1), a = O(!1), f = O(""), v = O(null), _ = O(null);
+  let b = null;
+  const h = O(""), g = A(() => e.types.value.filter(
+    (c) => c.installable !== !1 && Object.entries(e.inputPreset.value).every(([j, F]) => {
+      const ie = c.inputs?.properties?.[j];
       return !!ie && (!ie.enum || typeof F == "string" && ie.enum.includes(F));
     })
-  )), v = j(() => !e.componentMode.value || !e.preferredTypeId.value || o.value?.id !== e.preferredTypeId.value), u = j(() => o.value ? on(o.value).filter(([c]) => !(c in e.inputPreset.value)) : []), m = j(() => {
-    const c = C.value.trim().toLowerCase();
-    return c ? h.value.filter(
-      (M) => (M.title || "").toLowerCase().includes(c) || (M.name || "").toLowerCase().includes(c) || rt(M).toLowerCase().includes(c)
-    ) : h.value;
+  )), m = A(() => !e.componentMode.value || !e.preferredTypeId.value || o.value?.id !== e.preferredTypeId.value), u = A(() => o.value ? on(o.value).filter(([c]) => !(c in e.inputPreset.value)) : []), $ = A(() => {
+    const c = h.value.trim().toLowerCase();
+    return c ? g.value.filter(
+      (j) => (j.title || "").toLowerCase().includes(c) || (j.name || "").toLowerCase().includes(c) || rt(j).toLowerCase().includes(c)
+    ) : g.value;
   });
-  function x(c) {
-    I(), C.value = "", o.value = c || null, n.value = c ? { ...ht(c), ...e.inputPreset.value } : {}, b.value = "", t.value = !0, Je(G);
+  function z(c) {
+    I(), h.value = "", o.value = c || null, n.value = c ? { ...ht(c), ...e.inputPreset.value } : {}, f.value = "", t.value = !0, Xe(G);
   }
-  function L(c) {
-    I(), o.value = c, n.value = { ...ht(c), ...e.inputPreset.value }, b.value = "", Je(G);
+  function K(c) {
+    I(), o.value = c, n.value = { ...ht(c), ...e.inputPreset.value }, f.value = "", Xe(G);
   }
-  function N() {
-    I(), t.value = !1, o.value = null, n.value = {}, b.value = "", a.value = !1, e.createMode.value && e.emitHost("close", {});
+  function B() {
+    I(), t.value = !1, o.value = null, n.value = {}, f.value = "", a.value = !1, e.createMode.value && e.emitHost("close", {});
   }
-  function J() {
-    !v.value || o.value || Je(() => $.value?.focus({ preventScroll: !0 }));
+  function ne() {
+    !m.value || o.value || Xe(() => _.value?.focus({ preventScroll: !0 }));
   }
   async function G() {
-    const c = o.value, M = at(c);
-    if (!(!M || !c || !g.value))
+    const c = o.value, j = at(c);
+    if (!(!j || !c || !v.value))
       try {
-        if (await Xo(M, { timeoutMs: 8e3 }), o.value?.id !== c.id || !g.value) return;
-        const F = document.createElement(M);
-        F.setAttribute("type-id", c.id), F.setAttribute("input", JSON.stringify(e.inputPreset.value)), e.effectiveParentId.value && F.setAttribute("parent-id", e.effectiveParentId.value), F.setAttribute("embedded", "true"), F.addEventListener("automation-installed", S), F.addEventListener("submit-state", A), g.value.innerHTML = "", g.value.appendChild(F), f = F;
+        if (await Xo(j, { timeoutMs: 8e3 }), o.value?.id !== c.id || !v.value) return;
+        const F = document.createElement(j);
+        F.setAttribute("type-id", c.id), F.setAttribute("input", JSON.stringify(e.inputPreset.value)), e.effectiveParentId.value && F.setAttribute("parent-id", e.effectiveParentId.value), F.setAttribute("embedded", "true"), F.addEventListener("automation-installed", C), F.addEventListener("submit-state", L), v.value.innerHTML = "", v.value.appendChild(F), b = F;
       } catch (F) {
         const ie = Dr(c);
-        b.value = `Failed to load setup UI (${M}${ie ? ` at ${ie}` : ""}): ` + (F instanceof Error ? F.message : String(F));
+        f.value = `Failed to load setup UI (${j}${ie ? ` at ${ie}` : ""}): ` + (F instanceof Error ? F.message : String(F));
       }
   }
-  function A(c) {
+  function L(c) {
     a.value = !!c.detail?.saving;
   }
-  function K() {
-    at(o.value) ? Er(f) : T();
+  function V() {
+    at(o.value) ? Er(b) : R();
   }
-  async function S(c) {
-    const M = c.detail;
-    if (M?.success === !1) {
-      b.value = M?.error || "Could not create the automation.", a.value = !1;
+  async function C(c) {
+    const j = c.detail;
+    if (j?.success === !1) {
+      f.value = j?.error || "Could not create the automation.", a.value = !1;
       return;
     }
     if (e.createMode.value) {
-      e.emitHost("created", { id: M?.id });
+      e.emitHost("created", { id: j?.id });
       return;
     }
-    N(), await e.reload();
+    B(), await e.reload();
   }
   function I() {
-    f && (f.removeEventListener("automation-installed", S), f.removeEventListener("submit-state", A), f.remove(), f = null), g.value && (g.value.innerHTML = "");
+    b && (b.removeEventListener("automation-installed", C), b.removeEventListener("submit-state", L), b.remove(), b = null), v.value && (v.value.innerHTML = "");
   }
   function P() {
     const c = e.preferredTypeId.value;
-    return c ? h.value.find((M) => M.id === c) : void 0;
+    return c ? g.value.find((j) => j.id === c) : void 0;
   }
-  function R() {
-    x(P());
+  function M() {
+    z(P());
   }
-  async function T() {
+  async function R() {
     const c = o.value;
     if (!c) return;
-    const M = nn(c, n.value);
-    if (M) {
-      b.value = M;
+    const j = nn(c, n.value);
+    if (j) {
+      f.value = j;
       return;
     }
-    i.value = !0, b.value = "";
+    i.value = !0, f.value = "";
     try {
-      const { data: F } = await de.post("/api/v1/automations", {
+      const { data: F } = await pe.post("/api/v1/automations", {
         type: c.id,
         input: rn(c, n.value),
         parent_id: e.effectiveParentId.value || void 0
@@ -3757,184 +3750,180 @@ function Zi(e) {
           e.emitHost("created", { id: F.id });
           return;
         }
-        N(), await e.reload();
+        B(), await e.reload();
       } else
-        b.value = te({ response: { data: F } }, "install failed");
+        f.value = re({ response: { data: F } }, "install failed");
     } catch (F) {
-      b.value = te(F, "install failed");
+      f.value = re(F, "install failed");
     } finally {
       i.value = !1;
     }
   }
   return {
-    showTypeCatalog: v,
+    showTypeCatalog: m,
     installFields: u,
     showInstall: t,
     installType: o,
     installForm: n,
     installing: i,
     customSaving: a,
-    installError: b,
-    customInstallHost: g,
-    installSearchInput: $,
-    typeSearch: C,
-    filteredTypes: m,
-    openInstall: x,
-    openPreferredInstall: R,
-    chooseType: L,
-    closeInstall: N,
-    focusInstallDialog: J,
-    onCreate: K,
+    installError: f,
+    customInstallHost: v,
+    installSearchInput: _,
+    typeSearch: h,
+    filteredTypes: $,
+    openInstall: z,
+    openPreferredInstall: M,
+    chooseType: K,
+    closeInstall: B,
+    focusInstallDialog: ne,
+    onCreate: V,
     unmountCustomInstallUi: I
   };
 }
 function Gi({ automations: e, types: t, query: o, drawerId: n }) {
-  const i = j(() => {
+  const i = A(() => {
     const c = {};
-    for (const M of t.value) c[M.id] = M;
+    for (const j of t.value) c[j.id] = j;
     return c;
-  }), a = j(() => {
+  }), a = A(() => {
     const c = o.value.trim().toLowerCase();
     return c ? e.value.filter(
-      (M) => (M.title || "").toLowerCase().includes(c) || (M.description || "").toLowerCase().includes(c) || (M.type || "").toLowerCase().includes(c)
+      (j) => (j.title || "").toLowerCase().includes(c) || (j.description || "").toLowerCase().includes(c) || (j.type || "").toLowerCase().includes(c)
     ) : e.value;
   });
-  function b(c) {
+  function f(c) {
     return c.title || c.id;
   }
-  function g(c) {
+  function v(c) {
     return c.type ? i.value[c.type] : void 0;
   }
-  function $(c) {
-    return c.icon ? c.icon : g(c)?.icon || "tabler:bolt";
+  function _(c) {
+    return c.icon ? c.icon : v(c)?.icon || "tabler:bolt";
   }
-  function f(c) {
-    return Yt(g(c));
+  function b(c) {
+    return Yt(v(c));
   }
-  function C(c, M) {
-    return f(c).has(M);
+  function h(c, j) {
+    return b(c).has(j);
   }
-  function h(c) {
-    return Wt(f(c));
-  }
-  function v(c) {
-    return Xt(Zt(g(c)));
-  }
-  function u(c) {
-    return Gt(f(c));
+  function g(c) {
+    return Wt(b(c));
   }
   function m(c) {
-    return lt(g(c));
+    return Xt(Zt(v(c)));
   }
-  function x(c) {
-    return Kt(g(c));
+  function u(c) {
+    return Gt(b(c));
   }
-  function L(c) {
-    return c ? qt(c, g(c)) : {};
+  function $(c) {
+    return lt(v(c));
   }
-  function N(c) {
-    return c.public_state;
-  }
-  function J(c) {
-    return Ne(g(c)?.public_state_schema?.fields, N(c), !1);
-  }
-  function G(c) {
-    return Ne(g(c)?.public_state_schema?.fields, N(c), !0);
-  }
-  function A(c) {
-    return oo(N(c));
+  function z(c) {
+    return Kt(v(c));
   }
   function K(c) {
-    return no(N(c), c.availability);
+    return c ? qt(c, v(c)) : {};
   }
-  function S(c) {
-    return ro(N(c), C(c, "status"), c.drive_status, c.availability);
+  function B(c) {
+    return c.public_state;
+  }
+  function ne(c) {
+    return Fe(v(c)?.public_state_schema?.fields, B(c), !1);
+  }
+  function G(c) {
+    return Fe(v(c)?.public_state_schema?.fields, B(c), !0);
+  }
+  function L(c) {
+    return oo(B(c));
+  }
+  function V(c) {
+    return no(B(c), c.availability);
+  }
+  function C(c) {
+    return ro(B(c), h(c, "status"), c.drive_status, c.availability);
   }
   function I(c) {
-    return S(c).kind === "off";
+    return C(c).kind === "off";
   }
   function P(c) {
-    return io(g(c)?.public_state_schema?.fields, N(c));
+    return io(v(c)?.public_state_schema?.fields, B(c));
   }
-  const R = j(() => e.value.find((c) => c.id === n.value) || null), T = j(() => R.value ? g(R.value) : void 0);
+  const M = A(() => e.value.find((c) => c.id === n.value) || null), R = A(() => M.value ? v(M.value) : void 0);
   return {
     typeById: i,
     filtered: a,
-    pretty: b,
-    typeFor: g,
-    iconFor: $,
-    declaredActions: f,
-    hasAction: C,
-    runNowFor: h,
-    actionItemsFor: v,
+    pretty: f,
+    typeFor: v,
+    iconFor: _,
+    declaredActions: b,
+    hasAction: h,
+    runNowFor: g,
+    actionItemsFor: m,
     recoverFor: u,
-    manageTag: m,
-    manageLocation: x,
-    manageConfig: L,
-    statusFor: N,
-    metrics: J,
+    manageTag: $,
+    manageLocation: z,
+    manageConfig: K,
+    statusFor: B,
+    metrics: ne,
     detailMetrics: G,
-    isTerminal: A,
-    rowMessage: K,
-    statusOf: S,
+    isTerminal: L,
+    rowMessage: V,
+    statusOf: C,
     isPaused: I,
     subtitleLine: P,
-    drawerAutomation: R,
-    drawerType: T
+    drawerAutomation: M,
+    drawerType: R
   };
 }
 function Xi(e, t) {
   const o = /* @__PURE__ */ new Map(), n = /* @__PURE__ */ new Set();
   let i = 0;
   const a = /* @__PURE__ */ new Map();
-  function b(h, v) {
-    const u = v.meta;
-    e.value = e.value.map((m) => {
-      if (m.id !== h) return m;
-      const x = {
-        ...m,
-        public_state: { ...m.public_state || {}, ...u }
-      };
-      return typeof u.title == "string" && (x.title = u.title), typeof u.comment == "string" && (x.description = u.comment), x;
-    }), g(h).catch((m) => Fe.handleError("other", { message: String(m) }));
+  function f(g, m) {
+    const u = m.meta, $ = e.value.find((z) => z.id === g);
+    $ && ($.public_state = { ...$.public_state || {}, ...u }, typeof u.title == "string" && ($.title = u.title), typeof u.comment == "string" && ($.description = u.comment), v(g).catch((z) => tt.handleError("other", { message: String(z) })));
   }
-  async function g(h) {
-    if (!e.value.some((m) => m.id === h && m.drive_status)) return;
-    const v = Symbol(h);
-    a.set(h, v);
-    const u = await so(h);
-    a.get(h) === v && (a.delete(h), e.value = e.value.map((m) => m.id === h ? { ...m, drive_status: u } : m));
+  async function v(g) {
+    if (!e.value.some((z) => z.id === g && z.drive_status)) return;
+    const m = Symbol(g);
+    a.set(g, m);
+    const u = await so(g);
+    if (a.get(g) !== m) return;
+    a.delete(g);
+    const $ = e.value.find((z) => z.id === g);
+    $ && ($.drive_status = u);
   }
-  function $(h) {
-    const v = {};
-    for (const u of t(h)?.public_state_schema?.fields || [])
-      u?.key && u.type && (v[u.key] = u.type);
-    return v;
+  function _(g) {
+    const m = {};
+    for (const u of t(g)?.public_state_schema?.fields || [])
+      u?.key && u.type && (m[u.key] = u.type);
+    return m;
   }
-  function f() {
+  function b() {
     i++, n.clear(), a.clear();
-    for (const h of o.values()) h();
+    for (const g of o.values()) g();
     o.clear();
   }
-  function C() {
-    const h = new Set(e.value.map((u) => u.id).filter(Boolean));
-    for (const [u, m] of o)
-      h.has(u) || (m(), o.delete(u), a.delete(u));
-    const v = i;
-    for (const u of h) {
+  function h() {
+    const g = new Set(e.value.map((u) => u.id).filter(Boolean));
+    for (const [u, $] of o)
+      g.has(u) || ($(), o.delete(u), a.delete(u));
+    const m = i;
+    for (const u of g) {
       if (o.has(u) || n.has(u)) continue;
       n.add(u);
-      const m = e.value.find((L) => L.id === u), x = Fn(u, (L) => b(u, L), m ? $(m) : void 0);
-      if (n.delete(u), !!x) {
-        if (v !== i || !e.value.some((L) => L.id === u)) {
-          x();
+      const $ = e.value.find((K) => K.id === u), z = Fn(u, (K) => f(u, K), $ ? _($) : void 0);
+      if (n.delete(u), !!z) {
+        if (m !== i || !e.value.some((K) => K.id === u)) {
+          z();
           continue;
         }
-        o.set(u, x);
+        o.set(u, z);
       }
     }
   }
-  return { syncRealtimeSubscriptions: C, clearRealtimeSubscriptions: f, refreshDriveStatus: g };
+  return { syncRealtimeSubscriptions: h, clearRealtimeSubscriptions: b, refreshDriveStatus: v };
 }
 function Ji() {
   let e = 0;
@@ -3944,47 +3933,47 @@ function Ji() {
   };
 }
 function Qi({ automations: e, types: t, loading: o, error: n, parentId: i, syncRealtimeSubscriptions: a }) {
-  async function b() {
+  async function f() {
     try {
-      const { data: C } = await de.get("/api/v1/automations/types");
-      t.value = C?.success ? C.types || [] : [];
+      const { data: h } = await pe.get("/api/v1/automations/types");
+      t.value = h?.success ? h.types || [] : [];
     } catch {
       t.value = [];
     }
   }
-  const g = Ji();
-  async function $() {
-    const C = g();
+  const v = Ji();
+  async function _() {
+    const h = v();
     o.value = !0, n.value = "";
     try {
-      const { data: h } = await de.get("/api/v1/automations", { params: { class: "automation", parent_id: i() } });
-      if (!h?.success) throw new Error(te(h?.error, "failed to load automations"));
-      if (!C()) return;
-      e.value = h.automations || [], a();
-    } catch (h) {
-      if (!C()) return;
-      a(), n.value = te(h, "failed to load automations");
+      const { data: g } = await pe.get("/api/v1/automations", { params: { class: "automation", parent_id: i() } });
+      if (!g?.success) throw new Error(re(g?.error, "failed to load automations"));
+      if (!h()) return;
+      e.value = g.automations || [], a();
+    } catch (g) {
+      if (!h()) return;
+      a(), n.value = re(g, "failed to load automations");
     } finally {
-      C() && (o.value = !1);
+      h() && (o.value = !1);
     }
   }
-  async function f() {
-    await b(), await $();
+  async function b() {
+    await f(), await _();
   }
-  return { fetchTypes: b, fetchAutomations: $, reload: f };
+  return { fetchTypes: f, fetchAutomations: _, reload: b };
 }
 function es(e, t, o) {
   async function n(i) {
     e.value = i.id, t.value = "";
     try {
-      const { data: a } = await de.get(`/api/v1/automations/${encodeURIComponent(i.id)}/export`);
+      const { data: a } = await pe.get(`/api/v1/automations/${encodeURIComponent(i.id)}/export`);
       if (!a?.success || !a.artifact)
         throw new Error(a?.error?.message || a?.error || "Automation export failed.");
-      const b = o(i).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "automation", g = new Blob([`${JSON.stringify(a.artifact, null, 2)}
-`], { type: "application/json" }), $ = URL.createObjectURL(g), f = document.createElement("a");
-      f.href = $, f.download = `${b}.automation.json`, document.body.appendChild(f), f.click(), f.remove(), URL.revokeObjectURL($);
+      const f = o(i).trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "automation", v = new Blob([`${JSON.stringify(a.artifact, null, 2)}
+`], { type: "application/json" }), _ = URL.createObjectURL(v), b = document.createElement("a");
+      b.href = _, b.download = `${f}.automation.json`, document.body.appendChild(b), b.click(), b.remove(), URL.revokeObjectURL(_);
     } catch (a) {
-      t.value = te(a, "Automation export failed.");
+      t.value = re(a, "Automation export failed.");
     } finally {
       e.value = "";
     }
@@ -4012,7 +4001,7 @@ const ts = { class: "kx" }, os = {
 }, bs = {
   key: 3,
   class: "kx-list"
-}, fs = ["aria-label", "onClick", "disabled"], gs = { class: "kx-ficon" }, ms = { class: "kx-id" }, vs = ["title"], hs = { class: "kx-sub" }, xs = { key: 0 }, ys = { key: 1 }, ks = { key: 2 }, ws = { class: "kx-actions" }, _s = {
+}, fs = ["aria-label", "onClick", "disabled"], ms = { class: "kx-ficon" }, gs = { class: "kx-id" }, vs = ["title"], hs = { class: "kx-sub" }, xs = { key: 0 }, ys = { key: 1 }, ks = { key: 2 }, ws = { class: "kx-actions" }, _s = {
   key: 0,
   class: "kx-rowfoot"
 }, $s = ["title"], Cs = { class: "kx-modal-head-icon" }, Ss = { class: "kx-modal-head-text" }, zs = { class: "kx-modal-head-title" }, Ps = { class: "kx-modal-head-sub" }, Ds = { class: "kx-modal-body" }, Es = { class: "kx-modal-head-icon" }, Is = { class: "kx-modal-head-text" }, Ls = { class: "kx-modal-head-title" }, As = { class: "kx-modal-head-sub" }, js = { class: "kx-modal-body" }, Ms = { class: "kx-modal-body" }, Rs = {
@@ -4028,214 +4017,214 @@ const ts = { class: "kx" }, os = {
       header: { class: "kx-dialog-header" },
       content: { class: "kx-dialog-content" },
       footer: { class: "kx-dialog-footer" }
-    }, o = B([]), n = B([]), i = B(!1), a = B(""), b = B(""), g = B(""), $ = /* @__PURE__ */ new Map(), f = B(""), C = B(""), h = Gi({ automations: o, types: n, query: b, drawerId: C }), {
-      filtered: v,
+    }, o = O([]), n = O([]), i = O(!1), a = O(""), f = O(""), v = O(""), _ = /* @__PURE__ */ new Map(), b = O(""), h = O(""), g = Gi({ automations: o, types: n, query: f, drawerId: h }), {
+      filtered: m,
       pretty: u,
-      typeFor: m,
-      iconFor: x,
-      hasAction: L,
-      actionItemsFor: N,
-      recoverFor: J,
+      typeFor: $,
+      iconFor: z,
+      hasAction: K,
+      actionItemsFor: B,
+      recoverFor: ne,
       manageTag: G,
-      manageLocation: A,
-      manageConfig: K,
-      metrics: S,
+      manageLocation: L,
+      manageConfig: V,
+      metrics: C,
       detailMetrics: I,
       isTerminal: P,
-      rowMessage: R,
-      statusOf: T,
+      rowMessage: M,
+      statusOf: R,
       isPaused: c,
-      subtitleLine: M,
+      subtitleLine: j,
       drawerAutomation: F,
       drawerType: ie
-    } = h, He = Xi(o, m), { syncRealtimeSubscriptions: q, clearRealtimeSubscriptions: E, refreshDriveStatus: z } = He, ut = es(f, a, u), { exportAutomation: lo } = ut, fe = zo(), co = Po(), xe = j(() => fe.value?.mode === "create"), Ve = j(() => fe.value?.mode === "component"), uo = an(fe), pt = j(() => String(fe.value?.componentId || "").trim()), po = j(() => String(fe.value?.typeId || "").trim()), bo = j(() => pt.value || uo.value), fo = Qi({
+    } = g, Ue = Xi(o, $), { syncRealtimeSubscriptions: q, clearRealtimeSubscriptions: E, refreshDriveStatus: S } = Ue, ut = es(b, a, u), { exportAutomation: lo } = ut, fe = zo(), co = Po(), xe = A(() => fe.value?.mode === "create"), He = A(() => fe.value?.mode === "component"), uo = an(fe), pt = A(() => String(fe.value?.componentId || "").trim()), po = A(() => String(fe.value?.typeId || "").trim()), bo = A(() => pt.value || uo.value), fo = Qi({
       automations: o,
       types: n,
       loading: i,
       error: a,
       parentId: () => pt.value || void 0,
       syncRealtimeSubscriptions: q
-    }), { fetchAutomations: ge, reload: Ke } = fo, ye = Zi({
+    }), { fetchAutomations: me, reload: Ve } = fo, ye = Zi({
       types: n,
       createMode: xe,
-      componentMode: Ve,
+      componentMode: He,
       effectiveParentId: bo,
       preferredTypeId: po,
-      inputPreset: j(() => sn(fe.value?.input)),
-      emitHost: (k, w) => co(k, w),
-      reload: () => Ke()
-    }), se = B(null), je = B({}), ke = B(!1), ne = B(null), ue = B(null);
-    function go(k) {
-      ue.value = k;
+      inputPreset: A(() => sn(fe.value?.input)),
+      emitHost: (y, k) => co(y, k),
+      reload: () => Ve()
+    }), se = O(null), je = O({}), ke = O(!1), te = O(null), de = O(null);
+    function mo(y) {
+      de.value = y;
     }
     function bt() {
-      ue.value = null;
+      de.value = null;
     }
-    function mo(k) {
-      const w = k?.id || "";
+    function go(y) {
+      const k = y?.id || "";
       return {
-        resource_id: w,
-        access_url: `/api/v1/component-access/grants/${encodeURIComponent(w)}`,
-        share_url: `/api/v1/component-access/share/${encodeURIComponent(w)}`,
-        title: k ? u(k) : ""
+        resource_id: k,
+        access_url: `/api/v1/component-access/grants/${encodeURIComponent(k)}`,
+        share_url: `/api/v1/component-access/share/${encodeURIComponent(k)}`,
+        title: y ? u(y) : ""
       };
     }
-    function ft(k, w) {
-      if (!k.deleting_at)
-        switch (w) {
+    function ft(y, k) {
+      if (!y.deleting_at)
+        switch (k) {
           case "reconfigure":
-            $o(k);
+            $o(y);
             break;
           case "share":
-            go(k);
+            mo(y);
             break;
           case "export":
-            lo(k);
+            lo(y);
             break;
           case "delete":
-            We(k);
+            qe(y);
             break;
           default:
-            qe(k, w);
+            Ke(y, k);
         }
     }
-    function gt(k) {
-      if (k.deleting_at) return;
-      const w = J(k);
-      w && qe(k, w);
+    function mt(y) {
+      if (y.deleting_at) return;
+      const k = ne(y);
+      k && Ke(y, k);
     }
-    function vo(k) {
-      C.value = k.id, ge();
+    function vo(y) {
+      h.value = y.id, me();
     }
     function ho() {
-      C.value = "";
+      h.value = "";
     }
-    function xo(k) {
-      const w = F.value;
-      w && ft(w, k);
+    function xo(y) {
+      const k = F.value;
+      k && ft(k, y);
     }
     function yo() {
-      const k = F.value;
-      k && gt(k);
+      const y = F.value;
+      y && mt(y);
     }
-    async function qe(k, w) {
-      if (k.deleting_at || g.value) return;
-      g.value = k.id, a.value = "";
-      const p = m(k)?.controls?.some((re) => re.name === w) === !0, Z = `${k.id}:${w}`, mt = p ? $.get(Z) || crypto.randomUUID() : "";
-      p && $.set(Z, mt);
+    async function Ke(y, k) {
+      if (y.deleting_at || v.value) return;
+      v.value = y.id, a.value = "";
+      const p = $(y)?.controls?.some((oe) => oe.name === k) === !0, Z = `${y.id}:${k}`, gt = p ? _.get(Z) || crypto.randomUUID() : "";
+      p && _.set(Z, gt);
       try {
-        const { data: re } = await de.post(
-          `/api/v1/automations/${k.id}/actions/${w}`,
-          p ? { request_id: mt } : {}
+        const { data: oe } = await pe.post(
+          `/api/v1/automations/${y.id}/actions/${k}`,
+          p ? { request_id: gt } : {}
         );
-        if (!re?.success) {
-          a.value = te({ response: { data: re } }, `${w} failed`);
+        if (!oe?.success) {
+          a.value = re({ response: { data: oe } }, `${k} failed`);
           return;
         }
-        if (p && re.result?.state === "succeeded" && $.delete(Z), re.result && typeof re.result == "object") {
-          const { success: Ge, ...So } = re.result;
-          k.public_state = { ...k.public_state || {}, ...So };
+        if (p && oe.result?.state === "succeeded" && _.delete(Z), oe.result && typeof oe.result == "object") {
+          const { success: Ze, ...So } = oe.result;
+          y.public_state = { ...y.public_state || {}, ...So };
         }
-        if (k.drive_status?.drives?.length)
-          await z(k.id);
-        else if (w === "pause" || w === "resume") {
-          const Ge = typeof re.result?.paused == "boolean" ? re.result.paused : w === "pause";
-          k.public_state = {
-            ...k.public_state || {},
-            enabled: !Ge,
-            status: re.result?.status || (Ge ? "paused" : "active")
+        if (y.drive_status?.drives?.length)
+          await S(y.id);
+        else if (k === "pause" || k === "resume") {
+          const Ze = typeof oe.result?.paused == "boolean" ? oe.result.paused : k === "pause";
+          y.public_state = {
+            ...y.public_state || {},
+            enabled: !Ze,
+            status: oe.result?.status || (Ze ? "paused" : "active")
           };
         }
-      } catch (re) {
-        a.value = te(re, `${w} failed`);
+      } catch (oe) {
+        a.value = re(oe, `${k} failed`);
       } finally {
-        g.value = "";
+        v.value = "";
       }
     }
-    async function ko(k) {
-      await qe(k, c(k) ? "resume" : "pause");
+    async function ko(y) {
+      await Ke(y, c(y) ? "resume" : "pause");
     }
-    function We(k) {
-      se.value = k;
-      const w = m(k), p = {};
-      for (const Z of w?.delete_options || []) p[Z.key] = !!Z.default;
+    function qe(y) {
+      se.value = y;
+      const k = $(y), p = {};
+      for (const Z of k?.delete_options || []) p[Z.key] = !!Z.default;
       je.value = p;
     }
-    function Ye(k) {
-      return k ? m(k)?.delete_options || [] : [];
+    function We(y) {
+      return y ? $(y)?.delete_options || [] : [];
     }
-    function wo(k) {
-      ne.value = null, We(k);
+    function wo(y) {
+      te.value = null, qe(y);
     }
     async function _o() {
-      const k = se.value;
-      if (k) {
+      const y = se.value;
+      if (y) {
         ke.value = !0, a.value = "";
         try {
-          const p = Ye(k).length ? { options: { ...je.value } } : {}, { data: Z } = await de.delete(`/api/v1/automations/${k.id}`, { data: p });
-          Z?.success ? (Co(k.id, Z), se.value = null, await ge()) : a.value = te({ response: { data: Z } }, "failed to delete automation");
-        } catch (w) {
-          a.value = te(w, "failed to delete automation");
+          const p = We(y).length ? { options: { ...je.value } } : {}, { data: Z } = await pe.delete(`/api/v1/automations/${y.id}`, { data: p });
+          Z?.success ? (Co(y.id, Z), se.value = null, await me()) : a.value = re({ response: { data: Z } }, "failed to delete automation");
+        } catch (k) {
+          a.value = re(k, "failed to delete automation");
         } finally {
           ke.value = !1;
         }
       }
     }
-    function $o(k) {
-      G(k) && (ne.value = k);
+    function $o(y) {
+      G(y) && (te.value = y);
     }
-    async function Ze(k = !0) {
-      ne.value = null, k && await Ke();
+    async function Ye(y = !0) {
+      te.value = null, y && await Ve();
     }
     Do(async () => {
       try {
-        await Ke(), xe.value && ye.openPreferredInstall();
-      } catch (k) {
-        a.value = te(k, "host API unavailable");
+        await Ve(), xe.value && ye.openPreferredInstall();
+      } catch (y) {
+        a.value = re(y, "host API unavailable");
       }
     }), it(() => {
       ye.unmountCustomInstallUi(), E();
     });
-    const { acceptDeletion: Co } = Nn(o, (k) => k.id, void 0, ge);
-    return (k, w) => (s(), d("div", ts, [
-      xe.value ? _("", !0) : (s(), d("header", os, [
-        Ve.value ? _("", !0) : (s(), d(Y, { key: 0 }, [
+    const { acceptDeletion: Co } = Nn(o, (y) => y.id, void 0, me);
+    return (y, k) => (s(), d("div", ts, [
+      xe.value ? w("", !0) : (s(), d("header", os, [
+        He.value ? w("", !0) : (s(), d(Y, { key: 0 }, [
           l("div", ns, [
-            D(r(O), {
+            D(r(T), {
               icon: "tabler:bolt",
               "aria-hidden": "true"
             })
           ]),
-          w[10] || (w[10] = l("div", { class: "kx-head-text" }, [
+          k[10] || (k[10] = l("div", { class: "kx-head-text" }, [
             l("h1", { class: "kx-head-title" }, "Automations"),
             l("p", { class: "kx-head-sub" }, "Scheduled and event-driven jobs that run on their own.")
           ], -1))
         ], 64)),
         l("div", rs, [
-          l("span", as, y(o.value.length) + " automation" + y(o.value.length !== 1 ? "s" : ""), 1),
+          l("span", as, x(o.value.length) + " automation" + x(o.value.length !== 1 ? "s" : ""), 1),
           l("div", is, [
-            D(r(O), {
+            D(r(T), {
               icon: "tabler:search",
               class: "kx-search-ico",
               "aria-hidden": "true"
             }),
-            pe(l("input", {
-              "onUpdate:modelValue": w[0] || (w[0] = (p) => b.value = p),
+            ue(l("input", {
+              "onUpdate:modelValue": k[0] || (k[0] = (p) => f.value = p),
               class: "kx-search-input",
               type: "text",
               placeholder: "Search automations…"
             }, null, 512), [
-              [tt, b.value]
+              [et, f.value]
             ])
           ]),
           D(r(X), {
             type: "button",
             "data-testid": "automations-add",
             label: "Add automation",
-            onClick: w[1] || (w[1] = (p) => r(ye).openPreferredInstall())
+            onClick: k[1] || (k[1] = (p) => r(ye).openPreferredInstall())
           }, {
-            icon: H(({ class: p }) => [
-              D(r(O), {
+            icon: U(({ class: p }) => [
+              D(r(T), {
                 icon: "tabler:plus",
                 class: W(p),
                 "aria-hidden": "true"
@@ -4245,19 +4234,19 @@ const ts = { class: "kx" }, os = {
           })
         ])
       ])),
-      !xe.value && a.value ? (s(), d("div", ss, y(a.value), 1)) : _("", !0),
-      xe.value ? _("", !0) : (s(), d("div", ls, [
+      !xe.value && a.value ? (s(), d("div", ss, x(a.value), 1)) : w("", !0),
+      xe.value ? w("", !0) : (s(), d("div", ls, [
         i.value && !o.value.length ? (s(), d("div", cs, [
-          D(r(O), {
+          D(r(T), {
             icon: "tabler:loader-2",
             class: "spin",
             "aria-hidden": "true"
           }),
-          w[11] || (w[11] = ae(" Loading… ", -1))
-        ])) : o.value.length ? r(v).length ? (s(), d("div", bs, [
-          (s(!0), d(Y, null, oe(r(v), (p) => (s(), d("div", {
+          k[11] || (k[11] = ae(" Loading… ", -1))
+        ])) : o.value.length ? r(m).length ? (s(), d("div", bs, [
+          (s(!0), d(Y, null, ee(r(m), (p) => (s(), d("div", {
             key: p.id,
-            class: W(["kx-row", C.value === p.id && "is-open"])
+            class: W(["kx-row", h.value === p.id && "is-open"])
           }, [
             l("button", {
               type: "button",
@@ -4266,86 +4255,86 @@ const ts = { class: "kx" }, os = {
               onClick: (Z) => !p.deleting_at && vo(p),
               disabled: !!p.deleting_at
             }, [
-              l("span", gs, [
-                D(r(O), {
-                  icon: r(x)(p),
+              l("span", ms, [
+                D(r(T), {
+                  icon: r(z)(p),
                   "aria-hidden": "true"
                 }, null, 8, ["icon"])
               ]),
-              l("span", ms, [
+              l("span", gs, [
                 l("span", {
                   class: "kx-name",
                   title: r(u)(p)
-                }, y(r(u)(p)), 9, vs),
+                }, x(r(u)(p)), 9, vs),
                 l("span", hs, [
-                  l("span", null, y(r(m)(p)?.title || "Automation"), 1),
-                  r(M)(p) ? (s(), d("span", xs, " · " + y(r(M)(p)), 1)) : _("", !0),
-                  r($e)(p.drive_status).last ? (s(), d("span", ys, " · last ran " + y(r(ce)(r($e)(p.drive_status).last, { future: !0 })), 1)) : _("", !0),
-                  r($e)(p.drive_status).next ? (s(), d("span", ks, " · next " + y(r(ce)(r($e)(p.drive_status).next, { future: !0 })), 1)) : _("", !0)
+                  l("span", null, x(r($)(p)?.title || "Automation"), 1),
+                  r(j)(p) ? (s(), d("span", xs, " · " + x(r(j)(p)), 1)) : w("", !0),
+                  r($e)(p.drive_status).last ? (s(), d("span", ys, " · last ran " + x(r(ce)(r($e)(p.drive_status).last, { future: !0 })), 1)) : w("", !0),
+                  r($e)(p.drive_status).next ? (s(), d("span", ks, " · next " + x(r(ce)(r($e)(p.drive_status).next, { future: !0 })), 1)) : w("", !0)
                 ])
               ])
             ], 8, fs),
             D(r(st), {
-              severity: r(ao)(r(T)(p).kind),
+              severity: r(ao)(r(R)(p).kind),
               class: "kx-badge kx-tag-sm"
             }, {
-              default: H(() => [
-                r(T)(p).kind === "live" ? (s(), V(r(O), {
+              default: U(() => [
+                r(R)(p).kind === "live" ? (s(), H(r(T), {
                   key: 0,
                   icon: "tabler:loader-2",
                   class: "spin",
                   "aria-hidden": "true"
-                })) : _("", !0),
-                ae(" " + y(r(T)(p).label), 1)
+                })) : w("", !0),
+                ae(" " + x(r(R)(p).label), 1)
               ]),
               _: 2
             }, 1032, ["severity"]),
             l("div", ws, [
-              (r(L)(p, "pause") || r(L)(p, "resume")) && !r(P)(p) ? (s(), V(r(X), {
+              (r(K)(p, "pause") || r(K)(p, "resume")) && !r(P)(p) ? (s(), H(r(X), {
                 key: 0,
                 type: "button",
                 severity: "secondary",
                 outlined: "",
                 size: "small",
-                disabled: !!p.deleting_at || g.value === p.id,
+                disabled: !!p.deleting_at || v.value === p.id,
                 "aria-label": `${r(c)(p) ? "Resume" : "Pause"} ${r(u)(p)}`,
                 title: r(c)(p) ? "Resume" : "Pause",
                 onClick: (Z) => ko(p)
               }, {
-                icon: H(({ class: Z }) => [
-                  D(r(O), {
+                icon: U(({ class: Z }) => [
+                  D(r(T), {
                     icon: r(c)(p) ? "tabler:player-play-filled" : "tabler:player-pause",
                     "aria-hidden": "true",
                     class: W(Z)
                   }, null, 8, ["icon", "class"])
                 ]),
                 _: 2
-              }, 1032, ["disabled", "aria-label", "title", "onClick"])) : _("", !0),
+              }, 1032, ["disabled", "aria-label", "title", "onClick"])) : w("", !0),
               D(Jt, {
-                items: r(N)(p),
+                items: r(B)(p),
                 name: r(u)(p),
-                busy: !!p.deleting_at || g.value === p.id,
+                busy: !!p.deleting_at || v.value === p.id,
                 onSelect: (Z) => ft(p, Z)
               }, null, 8, ["items", "name", "busy", "onSelect"])
             ]),
-            p.deleting_at || r(R)(p) || r(I)(p).length || r(S)(p).length ? (s(), d("div", _s, [
+            p.deleting_at || r(M)(p) || r(I)(p).length || r(C)(p).length ? (s(), d("div", _s, [
               D(Mn, {
                 state: p,
-                onRetry: (Z) => We(p)
+                onRetry: (Z) => qe(p)
               }, null, 8, ["state", "onRetry"]),
-              r(R)(p) ? (s(), d("div", {
+              r(M)(p) ? (s(), d("div", {
                 key: 0,
-                class: W(["kx-rowmsg", `kx-rowmsg-${r(R)(p)?.tone}`])
+                class: W(["kx-rowmsg", `kx-rowmsg-${r(M)(p)?.tone}`])
               }, [
-                D(r(O), {
-                  icon: r(R)(p)?.tone === "error" ? "tabler:alert-circle" : "tabler:circle-check",
+                D(r(T), {
+                  icon: r(M)(p)?.tone === "error" ? "tabler:alert-circle" : "tabler:circle-check",
                   "aria-hidden": "true"
                 }, null, 8, ["icon"]),
                 l("span", {
                   class: "kx-rowmsg-txt",
-                  title: r(R)(p)?.text
-                }, y(r(R)(p)?.text), 9, $s),
-                r(R)(p)?.tone === "error" && r(J)(p) ? (s(), V(r(X), {
+                  title: r(M)(p)?.text
+                }, x(r(M)(p)?.text), 9, $s),
+                r(M)(p)?.tone === "error" && r(ne)(p) ? (s(), H(r(X), {
                   key: 0,
                   type: "button",
                   severity: "danger",
@@ -4354,46 +4343,46 @@ const ts = { class: "kx" }, os = {
                   class: "kx-recover",
                   "data-testid": "row-recover",
                   "aria-label": `Recover ${r(u)(p)}`,
-                  disabled: !!p.deleting_at || g.value === p.id,
+                  disabled: !!p.deleting_at || v.value === p.id,
                   label: "Recover",
-                  onClick: (Z) => gt(p)
+                  onClick: (Z) => mt(p)
                 }, {
-                  icon: H(({ class: Z }) => [
-                    D(r(O), {
+                  icon: U(({ class: Z }) => [
+                    D(r(T), {
                       icon: "tabler:rotate-clockwise-2",
                       "aria-hidden": "true",
                       class: W(Z)
                     }, null, 8, ["class"])
                   ]),
                   _: 1
-                }, 8, ["aria-label", "disabled", "onClick"])) : _("", !0)
-              ], 2)) : _("", !0),
+                }, 8, ["aria-label", "disabled", "onClick"])) : w("", !0)
+              ], 2)) : w("", !0),
               D(ua, {
-                face: r(S)(p),
+                face: r(C)(p),
                 detail: r(I)(p)
               }, null, 8, ["face", "detail"])
-            ])) : _("", !0)
+            ])) : w("", !0)
           ], 2))), 128))
-        ])) : (s(), d("div", ps, [...w[14] || (w[14] = [
+        ])) : (s(), d("div", ps, [...k[14] || (k[14] = [
           l("div", { class: "kx-empty-title" }, "No matches", -1),
           l("div", { class: "kx-empty-sub" }, "No automations match the current search.", -1)
         ])])) : (s(), d("div", ds, [
           l("div", us, [
-            D(r(O), {
+            D(r(T), {
               icon: "tabler:bolt",
               "aria-hidden": "true"
             })
           ]),
-          w[12] || (w[12] = l("div", { class: "kx-empty-title" }, "No automations yet", -1)),
-          w[13] || (w[13] = l("div", { class: "kx-empty-sub" }, "Choose an automation type to get started.", -1)),
+          k[12] || (k[12] = l("div", { class: "kx-empty-title" }, "No automations yet", -1)),
+          k[13] || (k[13] = l("div", { class: "kx-empty-sub" }, "Choose an automation type to get started.", -1)),
           D(r(X), {
             type: "button",
             "data-testid": "automations-add",
             label: "Add automation",
-            onClick: w[2] || (w[2] = (p) => r(ye).openPreferredInstall())
+            onClick: k[2] || (k[2] = (p) => r(ye).openPreferredInstall())
           }, {
-            icon: H(({ class: p }) => [
-              D(r(O), {
+            icon: U(({ class: p }) => [
+              D(r(T), {
                 icon: "tabler:plus",
                 class: W(p),
                 "aria-hidden": "true"
@@ -4403,55 +4392,55 @@ const ts = { class: "kx" }, os = {
           })
         ]))
       ])),
-      r(F) ? (s(), V(Yi, {
+      r(F) ? (s(), H(Yi, {
         key: 3,
         automation: r(F),
         type: r(ie),
         onClose: ho,
         onAction: xo,
         onRecover: yo,
-        onChanged: r(ge)
-      }, null, 8, ["automation", "type", "onChanged"])) : _("", !0),
+        onChanged: r(me)
+      }, null, 8, ["automation", "type", "onChanged"])) : w("", !0),
       D(na, {
         flow: r(ye),
-        "component-mode": Ve.value,
+        "component-mode": He.value,
         "dialog-pt": t
       }, null, 8, ["flow", "component-mode"]),
-      ne.value ? (s(), V(r(Ce), {
+      te.value ? (s(), H(r(Ce), {
         key: 4,
-        visible: !!ne.value,
+        visible: !!te.value,
         modal: !0,
         "dismissable-mask": !0,
         pt: t,
         class: "kx-modal kx-modal-manage",
-        "aria-label": r(u)(ne.value),
-        "onUpdate:visible": w[6] || (w[6] = (p) => {
-          p || Ze(!1);
+        "aria-label": r(u)(te.value),
+        "onUpdate:visible": k[6] || (k[6] = (p) => {
+          p || Ye(!1);
         })
       }, {
-        header: H(() => [
+        header: U(() => [
           l("span", Cs, [
-            D(r(O), {
-              icon: r(x)(ne.value),
+            D(r(T), {
+              icon: r(z)(te.value),
               "aria-hidden": "true"
             }, null, 8, ["icon"])
           ]),
           l("span", Ss, [
-            l("span", zs, y(r(u)(ne.value)), 1),
-            l("span", Ps, y(r(m)(ne.value)?.title || "Automation"), 1)
+            l("span", zs, x(r(u)(te.value)), 1),
+            l("span", Ps, x(r($)(te.value)?.title || "Automation"), 1)
           ])
         ]),
-        footer: H(() => [
+        footer: U(() => [
           D(r(X), {
             type: "button",
             class: "kx-foot-delete",
             severity: "danger",
             outlined: "",
             label: "Delete",
-            onClick: w[5] || (w[5] = (p) => wo(ne.value))
+            onClick: k[5] || (k[5] = (p) => wo(te.value))
           }, {
-            icon: H(({ class: p }) => [
-              D(r(O), {
+            icon: U(({ class: p }) => [
+              D(r(T), {
                 icon: "tabler:trash",
                 "aria-hidden": "true",
                 class: W(p)
@@ -4460,58 +4449,58 @@ const ts = { class: "kx" }, os = {
             _: 1
           })
         ]),
-        default: H(() => [
+        default: U(() => [
           l("div", Ds, [
             D(Re, {
               class: "kx-manage-host",
-              tag: r(G)(ne.value),
-              config: r(K)(ne.value),
-              meta: { location: r(A)(ne.value) },
-              onCreated: w[3] || (w[3] = (p) => Ze(!0)),
-              onClose: w[4] || (w[4] = (p) => Ze(!0)),
-              onChange: r(ge)
+              tag: r(G)(te.value),
+              config: r(V)(te.value),
+              meta: { location: r(L)(te.value) },
+              onCreated: k[3] || (k[3] = (p) => Ye(!0)),
+              onClose: k[4] || (k[4] = (p) => Ye(!0)),
+              onChange: r(me)
             }, null, 8, ["tag", "config", "meta", "onChange"])
           ])
         ]),
         _: 1
-      }, 8, ["visible", "aria-label"])) : _("", !0),
-      ue.value ? (s(), V(r(Ce), {
+      }, 8, ["visible", "aria-label"])) : w("", !0),
+      de.value ? (s(), H(r(Ce), {
         key: 5,
-        visible: !!ue.value,
+        visible: !!de.value,
         modal: "",
         pt: t,
         class: "kx-modal",
-        "aria-label": `Share ${r(u)(ue.value)}`,
-        "onUpdate:visible": w[7] || (w[7] = (p) => {
+        "aria-label": `Share ${r(u)(de.value)}`,
+        "onUpdate:visible": k[7] || (k[7] = (p) => {
           p || bt();
         })
       }, {
-        header: H(() => [
+        header: U(() => [
           l("span", Es, [
-            D(r(O), {
+            D(r(T), {
               icon: "tabler:users",
               "aria-hidden": "true"
             })
           ]),
           l("span", Is, [
-            l("span", Ls, "Share " + y(r(u)(ue.value)), 1),
-            l("span", As, y(r(m)(ue.value)?.title || "Automation"), 1)
+            l("span", Ls, "Share " + x(r(u)(de.value)), 1),
+            l("span", As, x(r($)(de.value)?.title || "Automation"), 1)
           ])
         ]),
-        default: H(() => [
+        default: U(() => [
           l("div", js, [
             D(Re, {
               class: "kx-manage-host",
               tag: "kickside-share",
-              config: mo(ue.value),
+              config: go(de.value),
               onClose: bt,
-              onChange: r(ge)
+              onChange: r(me)
             }, null, 8, ["config", "onChange"])
           ])
         ]),
         _: 1
-      }, 8, ["visible", "aria-label"])) : _("", !0),
-      se.value ? (s(), V(r(Ce), {
+      }, 8, ["visible", "aria-label"])) : w("", !0),
+      se.value ? (s(), H(r(Ce), {
         key: 6,
         visible: !!se.value,
         modal: !0,
@@ -4520,18 +4509,18 @@ const ts = { class: "kx" }, os = {
         class: "kx-modal",
         header: "Delete automation",
         "aria-label": "Delete automation",
-        "onUpdate:visible": w[9] || (w[9] = (p) => {
+        "onUpdate:visible": k[9] || (k[9] = (p) => {
           p || (se.value = null);
         })
       }, {
-        footer: H(() => [
+        footer: U(() => [
           D(r(X), {
             type: "button",
             label: "Cancel",
             severity: "secondary",
             outlined: "",
             disabled: ke.value,
-            onClick: w[8] || (w[8] = (p) => se.value = null)
+            onClick: k[8] || (k[8] = (p) => se.value = null)
           }, null, 8, ["disabled"]),
           D(r(X), {
             type: "button",
@@ -4542,8 +4531,8 @@ const ts = { class: "kx" }, os = {
             disabled: ke.value,
             onClick: _o
           }, {
-            icon: H(({ class: p }) => [
-              D(r(O), {
+            icon: U(({ class: p }) => [
+              D(r(T), {
                 icon: "tabler:trash",
                 class: W(p),
                 "aria-hidden": "true"
@@ -4552,34 +4541,34 @@ const ts = { class: "kx" }, os = {
             _: 1
           }, 8, ["loading", "disabled"])
         ]),
-        default: H(() => [
+        default: U(() => [
           l("div", Ms, [
             l("p", null, [
-              w[15] || (w[15] = ae(" Delete ", -1)),
-              l("strong", null, y(r(u)(se.value)), 1),
-              w[16] || (w[16] = ae("? It will stop running and its setup will be removed. This can't be undone. ", -1))
+              k[15] || (k[15] = ae(" Delete ", -1)),
+              l("strong", null, x(r(u)(se.value)), 1),
+              k[16] || (k[16] = ae("? It will stop running and its setup will be removed. This can't be undone. ", -1))
             ]),
-            Ye(se.value).length ? (s(), d("div", Rs, [
-              (s(!0), d(Y, null, oe(Ye(se.value), (p) => (s(), d("label", {
+            We(se.value).length ? (s(), d("div", Rs, [
+              (s(!0), d(Y, null, ee(We(se.value), (p) => (s(), d("label", {
                 key: p.key,
                 class: "kx-delopt"
               }, [
-                pe(l("input", {
+                ue(l("input", {
                   "onUpdate:modelValue": (Z) => je.value[p.key] = Z,
                   type: "checkbox"
                 }, null, 8, Ts), [
                   [jt, je.value[p.key]]
                 ]),
                 l("span", Os, [
-                  l("span", Bs, y(p.title || p.key), 1),
-                  p.description ? (s(), d("span", Fs, y(p.description), 1)) : _("", !0)
+                  l("span", Bs, x(p.title || p.key), 1),
+                  p.description ? (s(), d("span", Fs, x(p.description), 1)) : w("", !0)
                 ])
               ]))), 128))
-            ])) : _("", !0)
+            ])) : w("", !0)
           ])
         ]),
         _: 1
-      }, 8, ["visible"])) : _("", !0)
+      }, 8, ["visible"])) : w("", !0)
     ]));
   }
 }), Us = ':root{--p-form-field-padding-x: .75rem;--p-form-field-padding-y: .5rem;--p-form-field-sm-padding-x: .625rem;--p-form-field-sm-padding-y: .375rem;--p-form-field-lg-padding-x: .875rem;--p-form-field-lg-padding-y: .625rem;--p-form-field-border-radius: .375rem;--p-form-field-transition-duration: .2s;--p-form-field-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), 0 1px 2px 0 rgba(18, 18, 23, .05);--p-focus-ring-width: 1px;--p-focus-ring-style: solid;--p-focus-ring-color: color-mix(in srgb, var(--p-primary-color) 100%, transparent);--p-focus-ring-offset: 2px;--p-toggleswitch-width: 2.5rem;--p-toggleswitch-height: 1.5rem;--p-toggleswitch-border-radius: 30px;--p-toggleswitch-gap: .25rem;--p-toggleswitch-border-width: 1px;--p-toggleswitch-transition-duration: .2s;--p-toggleswitch-slide-duration: .2s;--p-toggleswitch-handle-size: 1rem;--p-toggleswitch-handle-border-radius: 9999px}:root{color-scheme:light dark;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-secondary: #6f7385;--p-secondary-50: color-mix(in srgb, var(--p-secondary) 5%, white);--p-secondary-100: color-mix(in srgb, var(--p-secondary) 10%, white);--p-secondary-200: color-mix(in srgb, var(--p-secondary) 20%, white);--p-secondary-300: color-mix(in srgb, var(--p-secondary) 35%, white);--p-secondary-400: color-mix(in srgb, var(--p-secondary) 65%, white);--p-secondary-500: var(--p-secondary);--p-secondary-600: color-mix(in srgb, var(--p-secondary) 80%, black);--p-secondary-700: color-mix(in srgb, var(--p-secondary) 65%, black);--p-secondary-800: color-mix(in srgb, var(--p-secondary) 55%, black);--p-secondary-900: color-mix(in srgb, var(--p-secondary) 50%, black);--p-secondary-950: color-mix(in srgb, var(--p-secondary) 30%, black);--p-danger: rgb(239, 68, 68);--p-danger-50: color-mix(in srgb, var(--p-danger) 5%, white);--p-danger-100: color-mix(in srgb, var(--p-danger) 10%, white);--p-danger-200: color-mix(in srgb, var(--p-danger) 20%, white);--p-danger-300: color-mix(in srgb, var(--p-danger) 30%, white);--p-danger-400: color-mix(in srgb, var(--p-danger) 40%, white);--p-danger-500: var(--p-danger);--p-danger-600: color-mix(in srgb, var(--p-danger) 80%, black);--p-danger-700: color-mix(in srgb, var(--p-danger) 70%, black);--p-danger-800: color-mix(in srgb, var(--p-danger) 60%, black);--p-danger-900: color-mix(in srgb, var(--p-danger) 50%, black);--p-danger-950: color-mix(in srgb, var(--p-danger) 40%, black);--p-success: rgb(34, 197, 94);--p-success-50: color-mix(in srgb, var(--p-success) 5%, white);--p-success-100: color-mix(in srgb, var(--p-success) 10%, white);--p-success-200: color-mix(in srgb, var(--p-success) 20%, white);--p-success-300: color-mix(in srgb, var(--p-success) 30%, white);--p-success-400: color-mix(in srgb, var(--p-success) 40%, white);--p-success-500: var(--p-success);--p-success-600: color-mix(in srgb, var(--p-success) 80%, black);--p-success-700: color-mix(in srgb, var(--p-success) 70%, black);--p-success-800: color-mix(in srgb, var(--p-success) 60%, black);--p-success-900: color-mix(in srgb, var(--p-success) 50%, black);--p-success-950: color-mix(in srgb, var(--p-success) 40%, black);--p-warn: rgb(249, 115, 22);--p-warn-50: color-mix(in srgb, var(--p-warn) 5%, white);--p-warn-100: color-mix(in srgb, var(--p-warn) 10%, white);--p-warn-200: color-mix(in srgb, var(--p-warn) 20%, white);--p-warn-300: color-mix(in srgb, var(--p-warn) 30%, white);--p-warn-400: color-mix(in srgb, var(--p-warn) 40%, white);--p-warn-500: var(--p-warn);--p-warn-600: color-mix(in srgb, var(--p-warn) 80%, black);--p-warn-700: color-mix(in srgb, var(--p-warn) 70%, black);--p-warn-800: color-mix(in srgb, var(--p-warn) 60%, black);--p-warn-900: color-mix(in srgb, var(--p-warn) 50%, black);--p-warn-950: color-mix(in srgb, var(--p-warn) 40%, black);--p-info: rgb(14, 165, 233);--p-info-50: color-mix(in srgb, var(--p-info) 5%, white);--p-info-100: color-mix(in srgb, var(--p-info) 10%, white);--p-info-200: color-mix(in srgb, var(--p-info) 20%, white);--p-info-300: color-mix(in srgb, var(--p-info) 30%, white);--p-info-400: color-mix(in srgb, var(--p-info) 40%, white);--p-info-500: var(--p-info);--p-info-600: color-mix(in srgb, var(--p-info) 80%, black);--p-info-700: color-mix(in srgb, var(--p-info) 70%, black);--p-info-800: color-mix(in srgb, var(--p-info) 60%, black);--p-info-900: color-mix(in srgb, var(--p-info) 50%, black);--p-info-950: color-mix(in srgb, var(--p-info) 40%, black);--p-help: rgb(168, 85, 247);--p-help-50: color-mix(in srgb, var(--p-help) 5%, white);--p-help-100: color-mix(in srgb, var(--p-help) 10%, white);--p-help-200: color-mix(in srgb, var(--p-help) 20%, white);--p-help-300: color-mix(in srgb, var(--p-help) 30%, white);--p-help-400: color-mix(in srgb, var(--p-help) 40%, white);--p-help-500: var(--p-help);--p-help-600: color-mix(in srgb, var(--p-help) 80%, black);--p-help-700: color-mix(in srgb, var(--p-help) 70%, black);--p-help-800: color-mix(in srgb, var(--p-help) 60%, black);--p-help-900: color-mix(in srgb, var(--p-help) 50%, black);--p-help-950: color-mix(in srgb, var(--p-help) 40%, black);--p-accent: rgb(20, 184, 166);--p-accent-50: color-mix(in srgb, var(--p-accent) 5%, white);--p-accent-100: color-mix(in srgb, var(--p-accent) 10%, white);--p-accent-200: color-mix(in srgb, var(--p-accent) 20%, white);--p-accent-300: color-mix(in srgb, var(--p-accent) 30%, white);--p-accent-400: color-mix(in srgb, var(--p-accent) 40%, white);--p-accent-500: var(--p-accent);--p-accent-600: color-mix(in srgb, var(--p-accent) 80%, black);--p-accent-700: color-mix(in srgb, var(--p-accent) 70%, black);--p-accent-800: color-mix(in srgb, var(--p-accent) 60%, black);--p-accent-900: color-mix(in srgb, var(--p-accent) 50%, black);--p-accent-950: color-mix(in srgb, var(--p-accent) 40%, black);--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-content-border-radius: 6px;--p-font-heading-family: var(--v-font-family-head, Arial);--p-font-heading-scale: 1;--p-font-heading-line-height: 1.5;--p-font-heading-letter-spacing: normal;--p-font-heading-stretch: normal;--p-font-heading-variation-settings: normal;--p-font-body-scale: 1;--p-font-body-line-height: 1.5;--p-font-body-letter-spacing: normal;--p-font-body-stretch: normal;--p-font-body-variation-settings: normal;--p-font-mono-family: ui-monospace}:root{--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}@media(prefers-color-scheme:dark){:root:not(.w-theme-light){--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}}:root.w-theme-dark,.w-theme-dark{color-scheme:dark;--p-surface-D: #fff;--p-surface-0: #fff;--p-surface-50: #fafafa;--p-surface-100: #f4f4f5;--p-surface-200: #e4e4e7;--p-surface-300: #d4d4d8;--p-surface-400: #a1a1aa;--p-surface-500: #71717a;--p-surface-600: #545250;--p-surface-700: #403e3c;--p-surface-800: #2b2927;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #1c1a19;--p-surface-950: #0f0e0d;--p-primary: rgb(0, 125, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-400);--p-primary-contrast-color: var(--p-surface-900);--p-primary-hover-color: var(--p-primary-300);--p-primary-active-color: var(--p-primary-200);--p-secondary-color: var(--p-secondary-400);--p-secondary-contrast-color: var(--p-surface-900);--p-secondary-hover-color: var(--p-secondary-300);--p-secondary-active-color: var(--p-secondary-200);--p-danger-color: var(--p-danger-400);--p-danger-contrast-color: var(--p-surface-900);--p-danger-hover-color: var(--p-danger-300);--p-danger-active-color: var(--p-danger-200);--p-success-color: var(--p-success-400);--p-success-contrast-color: var(--p-surface-900);--p-success-hover-color: var(--p-success-300);--p-success-active-color: var(--p-success-200);--p-warn-color: var(--p-warn-400);--p-warn-contrast-color: var(--p-surface-900);--p-warn-hover-color: var(--p-warn-300);--p-warn-active-color: var(--p-warn-200);--p-info-color: var(--p-info-400);--p-info-contrast-color: var(--p-surface-900);--p-info-hover-color: var(--p-info-300);--p-info-active-color: var(--p-info-200);--p-help-color: var(--p-help-400);--p-help-contrast-color: var(--p-surface-900);--p-help-hover-color: var(--p-help-300);--p-help-active-color: var(--p-help-200);--p-accent-color: var(--p-accent-400);--p-accent-contrast-color: var(--p-surface-900);--p-accent-hover-color: var(--p-accent-300);--p-accent-active-color: var(--p-accent-200);--p-content-border-color: var(--p-surface-700);--p-content-hover-background: var(--p-surface-800);--p-content-hover-color: var(--p-surface-0);--p-highlight-background: color-mix(in srgb, var(--p-primary-400), transparent 84%);--p-highlight-color: rgba(255, 255, 255, 87%);--p-highlight-focus-background: color-mix(in srgb, var(--p-primary-400), transparent 76%);--p-highlight-focus-color: rgba(255, 255, 255, 87%);--p-content-background: var(--p-surface-900);--p-text-color: var(--p-surface-0);--p-text-hover-color: var(--p-surface-0);--p-text-muted-color: var(--p-surface-400);--p-text-hover-muted-color: var(--p-surface-300)}:root.w-theme-light,.w-theme-light{color-scheme:light;--p-surface-0: #ffffff;--p-surface-50: #fafafa;--p-surface-100: #f5f5f5;--p-surface-200: #e5e5e5;--p-surface-300: #d4d4d4;--p-surface-400: #a3a3a3;--p-surface-500: #737373;--p-surface-600: #525252;--p-surface-700: #404040;--p-surface-800: #262626;--p-surface-850: color-mix(in srgb, var(--p-surface-800) 50%, var(--p-surface-900));--p-surface-900: #171717;--p-surface-950: #0a0a0a;--p-primary: rgb(0, 95, 178);--p-primary-50: color-mix(in srgb, var(--p-primary) 5%, white);--p-primary-100: color-mix(in srgb, var(--p-primary) 10%, white);--p-primary-200: color-mix(in srgb, var(--p-primary) 20%, white);--p-primary-300: color-mix(in srgb, var(--p-primary) 30%, white);--p-primary-400: color-mix(in srgb, var(--p-primary) 40%, white);--p-primary-500: var(--p-primary);--p-primary-600: color-mix(in srgb, var(--p-primary) 80%, black);--p-primary-700: color-mix(in srgb, var(--p-primary) 70%, black);--p-primary-800: color-mix(in srgb, var(--p-primary) 60%, black);--p-primary-900: color-mix(in srgb, var(--p-primary) 50%, black);--p-primary-950: color-mix(in srgb, var(--p-primary) 40%, black);--p-primary-color: var(--p-primary-500);--p-primary-contrast-color: var(--p-surface-0);--p-primary-hover-color: var(--p-primary-600);--p-primary-active-color: var(--p-primary-700);--p-secondary-color: var(--p-secondary-500);--p-secondary-contrast-color: var(--p-surface-0);--p-secondary-hover-color: var(--p-secondary-600);--p-secondary-active-color: var(--p-secondary-700);--p-danger-color: var(--p-danger-500);--p-danger-contrast-color: var(--p-surface-0);--p-danger-hover-color: var(--p-danger-600);--p-danger-active-color: var(--p-danger-700);--p-success-color: var(--p-success-500);--p-success-contrast-color: var(--p-surface-0);--p-success-hover-color: var(--p-success-600);--p-success-active-color: var(--p-success-700);--p-warn-color: var(--p-warn-500);--p-warn-contrast-color: var(--p-surface-0);--p-warn-hover-color: var(--p-warn-600);--p-warn-active-color: var(--p-warn-700);--p-info-color: var(--p-info-500);--p-info-contrast-color: var(--p-surface-0);--p-info-hover-color: var(--p-info-600);--p-info-active-color: var(--p-info-700);--p-help-color: var(--p-help-500);--p-help-contrast-color: var(--p-surface-0);--p-help-hover-color: var(--p-help-600);--p-help-active-color: var(--p-help-700);--p-accent-color: var(--p-accent-500);--p-accent-contrast-color: var(--p-surface-0);--p-accent-hover-color: var(--p-accent-600);--p-accent-active-color: var(--p-accent-700);--p-content-border-color: var(--p-surface-200);--p-content-hover-background: var(--p-surface-100);--p-content-hover-color: var(--p-surface-800);--p-highlight-background: var(--p-primary-50);--p-highlight-color: var(--p-primary-700);--p-highlight-focus-background: var(--p-primary-100);--p-highlight-focus-color: var(--p-primary-800);--p-content-background: var(--p-surface-0);--p-text-color: var(--p-surface-700);--p-text-hover-color: var(--p-surface-800);--p-text-muted-color: var(--p-surface-500);--p-text-hover-muted-color: var(--p-surface-600)}.component-deletion{display:inline-flex;align-items:center;gap:.5rem;color:var(--p-text-muted-color)}.component-deletion-spinner{width:1rem;height:1rem;margin:0}:host{--kx-picker-shadow: var(--p-select-overlay-shadow);--kx-picker-option-icon-size: 17px;--kx-picker-option-icon-gap: 10px;--kx-picker-option-stack-gap: 1px;--kx-picker-option-title-size: 13px;--kx-picker-option-title-weight: 600;--kx-picker-option-subtitle-size: 11.5px;--kx-picker-option-subtitle-line-height: 1.4}.kx-ps{width:100%;text-align:start;font:inherit}.anchored-panel>.p-select-overlay.kx-ps-panel{position:static;width:100%;display:flex;flex-direction:column;max-height:var(--anchored-panel-available-height);overflow:hidden}.kx-ps-panel>.p-select-header{flex:none}.kx-ps-options{min-height:0;overflow-y:auto}.kx-ps-options>li{flex:none}.kx-ps-val{display:flex;align-items:center;gap:8px;min-width:0}.kx-ps-val-ico{width:16px;height:16px;color:var(--p-primary-color);flex:none}.kx-ps-val-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-ps-ph{color:var(--p-text-muted-color)}.kx-ps-option{gap:var(--kx-picker-option-icon-gap)}.kx-ps-opt-ico{width:var(--kx-picker-option-icon-size);height:var(--kx-picker-option-icon-size);flex:none}.kx-ps-opt-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:var(--kx-picker-option-stack-gap)}.kx-ps-opt-title{font-size:var(--kx-picker-option-title-size);font-weight:var(--kx-picker-option-title-weight);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.kx-ps-opt-sub{font-size:var(--kx-picker-option-subtitle-size);line-height:var(--kx-picker-option-subtitle-line-height);color:var(--p-text-muted-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.spin{animation:kx-spin 1s linear infinite}@keyframes kx-spin{to{transform:rotate(360deg)}}@media(prefers-reduced-motion:reduce){.spin{animation:none}}.kx-head{display:flex;align-items:center;gap:12px;padding:20px 24px 14px;flex-wrap:wrap}.kx-head-icon{width:40px;height:40px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);color:var(--p-primary-color)}.kx-head-icon svg{width:22px;height:22px}.kx-head-text{min-width:0}.kx-title{font-size:17px;font-weight:700;color:var(--p-text-color);margin:0}.kx-head-sub{font-size:13px;color:var(--p-text-muted-color);margin:2px 0 0}.kx-head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto}.kx-modal-head-icon{width:38px;height:38px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);color:var(--p-primary-color)}.kx-modal-head-icon svg{width:20px;height:20px}.kx-modal-head-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.kx-modal-head-title{font-size:15.5px;font-weight:700;color:var(--p-text-color);line-height:1.2}.kx-modal-head-sub{font-size:12.5px;font-weight:400;color:var(--p-text-muted-color);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-empty{text-align:center;padding:44px 24px;display:flex;flex-direction:column;align-items:center;gap:8px}.kx-empty-ico{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 12%,transparent);color:var(--p-primary-color);margin-bottom:4px}.kx-empty-ico svg{width:28px;height:28px}.kx-empty-title{font-size:15px;font-weight:700;color:var(--p-text-color);margin:0}.kx-empty-sub{font-size:13px;color:var(--p-text-muted-color);max-width:380px;margin:0}.kx-empty>.p-button{margin-top:6px}.kx-empty-actions{display:flex;gap:8px;margin-top:6px}.kx-loading{display:flex;align-items:center;gap:8px;color:var(--p-text-muted-color);font-size:13px;padding:24px}.kx-err{margin:0 20px 8px;padding:9px 12px;border-radius:10px;font-size:13px;background:color-mix(in srgb,var(--p-danger-500) 12%,transparent);color:var(--p-danger-600, var(--p-danger-500))}.kx-err.inline{margin:12px 0 0}.kx-empty.kx-empty-spacious{padding:60px 24px;gap:9px}.kx-empty-spacious .kx-empty-ico{width:58px;height:58px;margin-bottom:5px}.kx-empty-spacious .kx-empty-ico svg{width:27px;height:27px}.kx-empty-spacious .kx-empty-title{font-size:14.5px}.kx-empty-spacious .kx-empty-sub{font-size:12.5px;max-width:360px;line-height:1.55}.kx-empty-ico.primary{background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);border:1px solid color-mix(in srgb,var(--p-primary-color) 28%,transparent)}.kx-empty-ico.muted{background:var(--kx-surface-2);color:color-mix(in srgb,var(--p-text-color) 45%,transparent);border:1px solid var(--p-content-border-color)}.kx-empty>.kx-empty-cta{margin-top:8px;padding-inline:16px}.kx-loading.kx-loading-centered{flex:1;display:grid;place-items:center;padding:64px 20px}.kx-loading-inner{display:flex;flex-direction:column;align-items:center;gap:12px;font-size:13px}.kx-loading-inner svg{width:24px;height:24px}.kx-tag-sm,.kx-tag-sm.kx-tag-sm{display:inline-flex;align-items:center;gap:4px;padding:1px 7px;border-radius:var(--kx-radius-tag, 6px);font-size:10.5px;font-weight:600;line-height:1.5;white-space:nowrap}.kx-tag-sm svg,.kx-tag-sm.kx-tag-sm svg{width:12px;height:12px}.kx-tag-caps,.kx-tag-caps.kx-tag-caps{display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:var(--kx-radius-tag, 6px);font-size:9px;font-weight:700;line-height:1.5;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}.kx-tag-caps svg,.kx-tag-caps.kx-tag-caps svg{width:11px;height:11px}:host,:root{--kx-surface-1: color-mix(in srgb, var(--p-content-background) 96%, var(--p-text-color) 4%);--kx-surface-2: color-mix(in srgb, var(--p-content-background) 92%, var(--p-text-color) 8%);--kx-surface-3: color-mix(in srgb, var(--p-content-background) 86%, var(--p-text-color) 14%);--kx-surface-4: color-mix(in srgb, var(--p-content-background) 78%, var(--p-text-color) 22%);--kx-border-strong: color-mix(in srgb, var(--p-content-border-color) 60%, var(--p-text-color) 40%);--kx-border-stronger: color-mix(in srgb, var(--p-content-border-color) 30%, var(--p-text-color) 70%);--kx-text-faint: color-mix(in srgb, var(--p-text-muted-color) 70%, var(--p-content-background) 30%);--kx-text-fainter: color-mix(in srgb, var(--p-text-muted-color) 45%, var(--p-content-background) 55%);--kx-wash-primary: color-mix(in srgb, var(--p-primary-color) 12%, var(--p-content-background) 88%);--kx-wash-success: color-mix(in srgb, var(--p-success-500) 12%, var(--p-content-background) 88%);--kx-wash-info: color-mix(in srgb, var(--p-info-500) 12%, var(--p-content-background) 88%);--kx-wash-warn: color-mix(in srgb, var(--p-warn-500) 12%, var(--p-content-background) 88%);--kx-wash-danger: color-mix(in srgb, var(--p-danger-500) 12%, var(--p-content-background) 88%);--kx-wash-help: color-mix(in srgb, var(--p-help-500) 12%, var(--p-content-background) 88%);--kx-font-heading: "Outfit", system-ui, sans-serif;--kx-font-body: "Inter", system-ui, sans-serif;--kx-radius-4: 4px;--kx-radius-6: 6px;--kx-radius-8: 8px;--kx-radius-10: 10px;--kx-radius-14: 14px;--kx-radius-16: 16px;--kx-radius-tag: var(--p-content-border-radius, 6px);--kx-control-height: 34px;--kx-control-height-sm: 30px;--kx-rail-width: 264px;--kx-reading-measure: 880px;--kx-row-height: 32px;--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .08);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .12);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .18);--kx-overlay-hover: color-mix(in srgb, var(--p-text-color) 7%, transparent);--kx-overlay-subtle: color-mix(in srgb, var(--p-text-color) 4%, transparent)}@media(prefers-color-scheme:dark){:host(:not(.w-theme-light)),:root:not(.w-theme-light){--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .45);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .6)}}:host(.w-theme-dark),:root.w-theme-dark{--kx-shadow-sm: 0 1px 2px rgba(0, 0, 0, .35);--kx-shadow-md: 0 4px 24px rgba(0, 0, 0, .45);--kx-shadow-lg: 0 16px 60px rgba(0, 0, 0, .6)}.kx-wcmount{display:block;width:100%;min-width:0;max-width:100%;overflow-x:clip;--p-border-radius: var(--wf-radius-sm, 8px);--p-content-border-radius: var(--wf-radius-sm, 8px)}.kx-wcmount .kx-wcmount-surface{display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box;color:inherit}.kx-wcmount-fail{display:flex;align-items:center;flex-wrap:wrap;gap:8px;font-size:12px;color:var(--p-danger-600, var(--p-danger-500));padding:9px 10px;border:1px solid color-mix(in srgb,var(--p-danger-500) 32%,transparent);border-radius:10px;background:color-mix(in srgb,var(--p-danger-500) 7%,transparent)}.kx-wcmount-fail>span{min-width:0;flex:1}.kx-wcmount-fail button{border:1px solid currentColor;border-radius:8px;padding:5px 9px;background:transparent;color:inherit;font:inherit;font-weight:600;cursor:pointer}.anchored-panel{position:fixed;min-width:0;overflow:auto}*,:before,:after{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x: 0;--tw-border-spacing-y: 0;--tw-translate-x: 0;--tw-translate-y: 0;--tw-rotate: 0;--tw-skew-x: 0;--tw-skew-y: 0;--tw-scale-x: 1;--tw-scale-y: 1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness: proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width: 0px;--tw-ring-offset-color: #fff;--tw-ring-color: rgb(59 130 246 / .5);--tw-ring-offset-shadow: 0 0 #0000;--tw-ring-shadow: 0 0 #0000;--tw-shadow: 0 0 #0000;--tw-shadow-colored: 0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }*,:before,:after{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}:before,:after{--tw-content: ""}html,:host{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,sans-serif,"Apple Color Emoji","Segoe UI Emoji",Segoe UI Symbol,"Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dl,dd,h1,h2,h3,h4,h5,h6,hr,figure,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}ol,ul,menu{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}button,[role=button]{cursor:pointer}:disabled{cursor:default}img,svg,video,canvas,audio,iframe,embed,object{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}@supports (-moz-appearance:none){*{scrollbar-color:initial;scrollbar-width:initial}}:host{--kx-modal-shadow: var(--kx-shadow-lg);display:block;height:100%;min-height:0}:host>div{height:100%;min-height:0}*,*:before,*:after{box-sizing:border-box}.kx{font-family:inherit;color:var(--p-text-color);background:var(--p-content-background);height:100%;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}.kx-head-title{font-size:17px;font-weight:700;color:var(--p-text-color);margin:0}.kx-count{font-size:12.5px;color:var(--p-text-muted-color);display:inline-flex;align-items:center;gap:5px}.kx-search{position:relative;display:flex;align-items:center}.kx-search-ico{position:absolute;left:10px;width:15px;height:15px;color:var(--p-text-muted-color);pointer-events:none}.kx-search-input{height:34px;width:220px;max-width:40vw;padding:0 10px 0 30px;font:inherit;font-size:13px;color:var(--p-text-color);background:var(--p-content-background);border:1px solid var(--p-content-border-color);border-radius:8px;transition:border-color .15s}.kx-body{flex:1 0 auto;padding:6px 20px 20px;display:flex;flex-direction:column;gap:14px}.kx-list{display:flex;flex-direction:column;border:1px solid var(--p-content-border-color);border-radius:14px;overflow:hidden;background:var(--p-content-background);max-width:1100px}.kx-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;grid-template-areas:"main status actions" "foot foot   foot";align-items:center;column-gap:14px;row-gap:6px;padding:10px 14px;border-bottom:1px solid var(--p-content-border-color)}.kx-row:last-child{border-bottom:none}.kx-row.is-open{background:var(--kx-wash-primary)}.kx-row:hover{background:var(--kx-overlay-subtle)}.kx-row.is-open:hover{background:var(--kx-wash-primary)}.kx-open{grid-area:main;display:flex;align-items:center;gap:12px;min-width:0;padding:0;margin:0;border:none;background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer}.kx-ficon{width:38px;height:38px;flex:none;border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--kx-wash-primary);color:var(--p-primary-color)}.kx-ficon svg{width:20px;height:20px}.kx-id{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}.kx-name{display:block;font-size:14px;font-weight:600;color:var(--p-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-sub{display:block;font-size:12px;color:var(--p-text-muted-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-open:focus-visible{outline:none}.kx-open:focus-visible .kx-name{text-decoration:underline;text-underline-offset:2px;text-decoration-color:var(--p-primary-color)}.kx-rowfoot{grid-area:foot;padding-left:50px;display:flex;flex-direction:column;gap:4px;min-width:0}.kx-rowfoot:empty{display:none}.kx-rowmsg{font-size:11.5px;display:flex;align-items:center;gap:5px;min-width:0}.kx-rowmsg-txt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-rowmsg svg{width:13px;height:13px;flex:none}.kx-rowmsg-error{color:var(--p-danger-600, var(--p-danger-500))}.kx-rowmsg-success{color:var(--p-success-600, var(--p-success-500))}.kx-recover{flex:none;margin-left:2px}.kx-badge{grid-area:status;border:1px solid color-mix(in srgb,currentColor 28%,transparent)}.kx-badge:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}.kx-badge:has(svg):before{display:none}.kx-actions{grid-area:actions;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;min-width:0}.kx-actions .is-active{color:var(--p-primary-color);border-color:color-mix(in srgb,var(--p-primary-color) 38%,var(--p-content-border-color));background:color-mix(in srgb,var(--p-primary-color) 10%,transparent)}.kx-admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}.kx-admin-item{min-width:0;padding:10px 11px;border:1px solid var(--p-content-border-color);border-radius:10px;background:var(--p-content-background)}.kx-admin-item>span{display:block;margin-bottom:4px;color:var(--p-text-muted-color);font-size:10.5px;font-weight:700;letter-spacing:.055em;text-transform:uppercase}.kx-admin-item strong{display:block;overflow:hidden;color:var(--p-text-color);font-size:12.5px;text-overflow:ellipsis;white-space:nowrap}.kx-admin-item strong em{color:var(--p-text-muted-color);font-size:11px;font-style:normal;font-weight:600}.kx-admin-item code{display:block;margin-top:4px;overflow:hidden;color:var(--p-text-muted-color);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;text-overflow:ellipsis;white-space:nowrap}.kx-admin-item a{display:inline-block;margin-top:4px;color:var(--p-primary-color);font-size:11px;font-weight:650;text-decoration:none}.kx-admin-item a:hover{text-decoration:underline}@media(max-width:560px){.kx-row{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"main   actions" "status status" "foot   foot";align-items:center;row-gap:8px}.kx-badge{justify-self:start}.kx-rowfoot{padding-left:0}}@media(max-width:640px){.kx-admin-grid{grid-template-columns:1fr}}.kx-modal{--p-dialog-content-padding: 0;max-width:calc(100vw - 32px);max-height:90vh}.kx-modal>.kx-dialog-header{padding:16px 18px;border-bottom:1px solid var(--p-content-border-color);gap:10px}.kx-modal>.kx-dialog-content{padding:0;display:flex;flex-direction:column;min-height:0;overflow:hidden}.kx-modal>.kx-dialog-footer{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--p-content-border-color)}.kx-2p-r-body>*{animation:kx-pane-fade .28s ease both}@keyframes kx-pane-fade{0%{opacity:0}to{opacity:1}}@media(prefers-reduced-motion:reduce){.kx-2p-r-body>*{animation:none}}.kx-modal-body{padding:18px;font-size:13.5px;line-height:1.5;color:var(--p-text-color);overflow-y:auto}.kx-modal-body p{margin:0 0 10px}.kx-modal-body p:last-child{margin-bottom:0}.kx-form{display:flex;flex-direction:column;gap:14px}.kx-field{display:flex;flex-direction:column;gap:5px}.kx-field-lbl{font-size:12.5px;font-weight:600;color:var(--p-text-color)}.kx-req{color:var(--p-danger-500)}.kx-input{height:36px;padding:0 10px;font:inherit;font-size:13px;color:var(--p-text-color);background:var(--p-content-background);border:1px solid var(--p-content-border-color);border-radius:8px;transition:border-color .15s;width:100%}.kx-select{width:100%;min-width:0}.kx-check,.kx-delopt input{appearance:none;-webkit-appearance:none;width:18px;height:18px;margin:0;flex:none;display:grid;place-content:center;border:1px solid var(--p-content-border-color);border-radius:8px;background:var(--p-content-background);cursor:pointer;transition:border-color .15s,background-color .15s,box-shadow .15s,opacity .15s}.kx-check:before,.kx-delopt input:before{content:"";width:5px;height:9px;border:solid var(--p-button-primary-color);border-width:0 2px 2px 0;transform:rotate(45deg) scale(0);transform-origin:center;transition:transform .12s ease-out}.kx-check:checked,.kx-delopt input:checked{border-color:var(--p-primary-color);background:var(--p-primary-color)}.kx-check:focus-visible{outline:var(--p-focus-ring-width) var(--p-focus-ring-style) var(--p-focus-ring-color);outline-offset:var(--p-focus-ring-offset)}.kx-check:checked:before,.kx-delopt input:checked:before{transform:rotate(45deg) scale(1)}.kx-check:disabled,.kx-delopt input:disabled{opacity:.55;cursor:not-allowed}.kx-field-hint{font-size:11px;line-height:1.3;color:var(--p-text-muted-color);margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.kx-custom-host{min-height:180px;width:100%}.kx-custom-host>*{display:block;width:100%}.kx-delopts{display:flex;flex-direction:column;gap:10px;margin-top:14px}.kx-delopt{display:flex;align-items:flex-start;gap:10px;cursor:pointer}.kx-delopt input{margin-top:2px}.kx-delopt-copy{min-width:0;display:flex;flex-direction:column;gap:2px}.kx-delopt-t{display:block;font-size:13px;font-weight:600;color:var(--p-text-color)}.kx-delopt-d{display:block;font-size:11.5px;line-height:1.35;color:var(--p-text-muted-color)}.kx-modal-2p{width:min(880px,calc(100vw - 40px));max-width:100%}.kx-modal-solo{width:min(620px,calc(100vw - 40px));max-width:100%}.kx-modal-manage{width:min(760px,calc(100vw - 40px));max-width:100%}.kx-manage-host{display:block;min-height:180px}.kx-2p{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);min-height:0;flex:1;overflow:hidden}.kx-2p-solo{grid-template-columns:minmax(0,1fr)}.kx-2p-solo .kx-2p-r-body{padding-top:16px}.kx-2p-l{padding:16px;overflow-y:auto;border-right:1px solid var(--p-content-border-color);display:flex;flex-direction:column;gap:10px}.kx-2p-r{display:flex;flex-direction:column;min-width:0;min-height:0;background:color-mix(in srgb,var(--p-text-color) 2.5%,var(--p-content-background))}.kx-2p-r-head{padding:14px 18px 10px;font-size:12.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-2p-r-body{padding:0 18px 18px;overflow-y:auto;flex:1;min-height:0}.kx-2p-r-note{margin:0;font-size:12.5px;color:var(--p-text-muted-color)}.kx-foot-err{order:-1;flex:1 0 100%;margin:0;max-width:none}.kx-foot-err+.p-button{margin-left:auto}.kx-foot-delete{margin-right:auto}.kx-cat-search{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;flex:none;border:1px solid var(--p-content-border-color);border-radius:8px;color:var(--p-text-muted-color)}.kx-cat-search svg{width:15px;height:15px;flex:none}.kx-cat-search input{flex:1;border:none;background:transparent;outline:none;font:inherit;font-size:13px;color:var(--p-text-color)}.kx-cat{display:flex;flex-direction:column;gap:6px}.kx-cat-card{display:flex;align-items:center;gap:11px;text-align:left;width:100%;padding:10px 12px;border:1px solid var(--p-content-border-color);border-radius:14px;background:transparent;color:var(--p-text-color);cursor:pointer;transition:border-color .14s,background .14s}.kx-cat-card:hover{background:color-mix(in srgb,var(--p-text-color) 5%,transparent)}.kx-cat-card.sel{border-color:var(--p-primary-color);background:color-mix(in srgb,var(--p-primary-color) 9%,transparent)}.kx-cat-ico{width:34px;height:34px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:11px;background:color-mix(in srgb,var(--p-primary-color) 12%,transparent);color:var(--p-primary-color)}.kx-cat-ico svg{width:18px;height:18px}.kx-cat-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}.kx-cat-name{font-size:13px;font-weight:600}.kx-cat-desc{font-size:11px;line-height:1.3;color:var(--p-text-muted-color);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.kx-cat-check{width:17px;height:17px;flex:none;color:var(--p-primary-color);visibility:hidden}.kx-cat-card.sel .kx-cat-check{visibility:visible}.kx-cat-empty{font-size:12.5px;color:var(--p-text-muted-color);padding:4px 2px}@media(max-width:760px){.kx-modal-2p{width:560px}.kx-2p{grid-template-columns:1fr}.kx-2p-l{border-right:none;border-bottom:1px solid var(--p-content-border-color)}}.kx-flow{display:flex;flex-direction:column;gap:14px;padding:6px 0 0}.kx-pipe,.kx-stage{display:flex;flex-direction:column;gap:8px}.kx-stage-mid{background:transparent}.kx-stage-head{display:flex;align-items:center;gap:8px}.kx-stage-ico{width:26px;height:26px;border-radius:11px;flex:none;display:inline-flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--p-primary-color) 14%,transparent);color:var(--p-primary-color)}.kx-stage-ico svg{width:15px;height:15px}.kx-stage-lbl{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-stage-cfg{margin-top:2px}.kx-stage-badges{display:flex;flex-wrap:wrap;gap:6px}.kx-stage-desc{margin:0;font-size:12px;line-height:1.4;color:var(--p-text-muted-color)}.kx-stage-opts{display:flex;flex-direction:column;gap:6px;margin-top:10px;padding-top:10px;border-top:1px dashed var(--p-content-border-color)}.kx-opts-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-pipe-conn{display:flex;align-items:center;justify-content:center;gap:6px;padding:5px 0;color:var(--p-text-muted-color);font-size:11px}.kx-pipe-conn svg{width:16px;height:16px}.kx-runopts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.kx-detect{display:flex;align-items:center;gap:6px;font-size:11.5px;line-height:1.35;padding:7px 9px;border-radius:8px;color:var(--p-success-600, var(--p-success-500));background:color-mix(in srgb,var(--p-success-500) 10%,transparent)}.kx-detect svg{width:14px;height:14px;flex:none}.kx-detect-warn{color:var(--p-warn-600, var(--p-warn-500));background:color-mix(in srgb,var(--p-warn-500) 12%,transparent)}.kx-flow-enable{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--p-text-muted-color);cursor:pointer}.kx-flow-enable input{width:16px;height:16px;accent-color:var(--p-primary-color)}.kx-textarea{height:auto;min-height:72px;padding:8px 10px;line-height:1.4;resize:vertical}.kx-wcmount{width:100%}.kx-wcmount>div{display:block;width:100%}.kx-metrics{display:flex;flex-wrap:wrap;gap:5px 6px;margin-top:5px;min-width:0}.kx-metric{display:inline-flex;align-items:center;gap:5px;max-width:100%;font-size:11.5px;line-height:1.6;padding:2px 9px;border-radius:6px;background:color-mix(in srgb,var(--p-text-color) 6%,transparent);color:var(--p-text-color)}.kx-metric-i{width:13px;height:13px;color:var(--p-text-muted-color);flex:none}.kx-metric-k{color:var(--p-text-muted-color);font-weight:600;flex:none}.kx-metric-v{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-metric-details{margin-top:5px}.kx-metric-more{display:inline-flex;align-items:center;gap:4px;cursor:pointer;list-style:none;font-size:11.5px;font-weight:600;color:var(--p-text-muted-color);user-select:none}.kx-metric-more::-webkit-details-marker{display:none}.kx-metric-more:before{content:"";width:0;height:0;border-left:4px solid currentColor;border-top:3px solid transparent;border-bottom:3px solid transparent;transition:transform .15s;flex:none}.kx-metric-details[open] .kx-metric-more:before{transform:rotate(90deg)}.kx-metric-more:hover{color:var(--p-text-color)}.kx-metrics-detail{margin-top:4px}@media(prefers-reduced-motion:reduce){.kx-modal{transition:none}}.kx-cat-search:focus-within{border-color:var(--p-focus-ring-color);box-shadow:var(--p-focus-ring-shadow)}.kx-cat-search input:focus{box-shadow:none}.kx-cat-card:focus-visible{border-color:var(--p-focus-ring-color);outline:none;box-shadow:var(--p-focus-ring-shadow)}.kx-menu{position:relative;display:inline-flex}.kx-menu-trigger.is-active{color:var(--p-primary-color);border-color:color-mix(in srgb,var(--p-primary-color) 38%,var(--p-content-border-color));background:var(--kx-wash-primary)}.kx-menu-panel{display:flex;flex-direction:column;gap:1px;padding:6px;border:1px solid var(--p-content-border-color);border-radius:var(--kx-radius-14);background:var(--p-content-background);box-shadow:var(--kx-shadow-lg);max-height:min(70vh,460px);overflow-y:auto}.kx-menu-group{padding:8px 10px 4px;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-menu-group.is-first{padding-top:4px}.kx-menu-sep{height:1px;margin:5px 6px;background:var(--p-content-border-color)}.kx-menu-item{display:flex;align-items:flex-start;gap:10px;width:100%;padding:8px 10px;text-align:left;border:none;border-radius:var(--kx-radius-10);background:transparent;color:var(--p-text-color);cursor:pointer;transition:background .12s}.kx-menu-item:hover,.kx-menu-item:focus-visible{background:var(--kx-overlay-hover);outline:none}.kx-menu-item:disabled{opacity:.5;cursor:not-allowed}.kx-menu-item-ico{width:17px;height:17px;flex:none;margin-top:1px;color:var(--p-text-muted-color)}.kx-menu-item-body{display:flex;flex-direction:column;gap:1px;min-width:0}.kx-menu-item-label{display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600}.kx-menu-item-desc{font-size:11px;line-height:1.35;color:var(--p-text-muted-color)}.kx-menu-item-warn{width:12px;height:12px;color:var(--p-warn-600, var(--p-warn-500))}.kx-menu-item.is-warn .kx-menu-item-ico{color:var(--p-warn-600, var(--p-warn-500))}.kx-menu-item.is-danger .kx-menu-item-ico{color:var(--p-danger-600, var(--p-danger-500))}.kx-menu-item.is-danger:hover,.kx-menu-item.is-danger:focus-visible{background:var(--kx-wash-danger)}.kx-menu-item.is-danger .kx-menu-item-label{color:var(--p-danger-600, var(--p-danger-500))}.kx-drawer-scrim{position:fixed;inset:0;z-index:60;background:color-mix(in srgb,var(--p-text-color) 40%,transparent);animation:kx-fade .18s ease both}.kx-drawer{position:fixed;top:0;right:0;height:100%;width:min(468px,100vw);z-index:61;display:flex;flex-direction:column;min-height:0;background:var(--p-content-background);border-left:1px solid var(--p-content-border-color);box-shadow:var(--kx-shadow-lg);animation:kx-slide-in .22s cubic-bezier(.22,.61,.36,1) both}@keyframes kx-fade{0%{opacity:0}to{opacity:1}}@keyframes kx-slide-in{0%{transform:translate(24px);opacity:0}to{transform:none;opacity:1}}@media(prefers-reduced-motion:reduce){.kx-drawer,.kx-drawer-scrim{animation:none}}.kx-drawer-head{display:flex;align-items:center;gap:11px;padding:16px 16px 14px;border-bottom:1px solid var(--p-content-border-color);flex:none}.kx-drawer-id{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}.kx-drawer-name{font-size:15px;font-weight:700;color:var(--p-text-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-drawer-sub{font-size:12px;color:var(--p-text-muted-color);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.kx-drawer-controls{display:flex;align-items:center;gap:6px;flex:none}.kx-drawer .kx-badge{flex:none}.kx-tabs{display:flex;gap:2px;padding:6px 12px 0;border-bottom:1px solid var(--p-content-border-color);flex:none}.kx-tab{display:inline-flex;align-items:center;gap:6px;padding:8px 12px 10px;margin-bottom:-1px;border:none;border-bottom:2px solid transparent;background:transparent;cursor:pointer;font:inherit;font-size:12.5px;font-weight:600;color:var(--p-text-muted-color);transition:color .12s}.kx-tab svg{width:15px;height:15px}.kx-tab:hover{color:var(--p-text-color)}.kx-tab.is-active{color:var(--p-primary-color);border-bottom-color:var(--p-primary-color)}.kx-tab:focus-visible{outline:none;color:var(--p-primary-color)}.kx-drawer-body{flex:1;min-height:0;overflow-y:auto;padding:16px}.kx-dsec{display:flex;flex-direction:column;gap:16px}.kx-dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}.kx-dfact{padding:10px 11px;border:1px solid var(--p-content-border-color);border-radius:var(--kx-radius-10);background:var(--kx-surface-1);min-width:0}.kx-dfact-k{display:block;margin-bottom:4px;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-dfact-v{display:block;font-size:13px;color:var(--p-text-color);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-dsub{display:flex;flex-direction:column;gap:8px}.kx-dsub-lbl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-dnote{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--p-text-muted-color);padding:4px 0}.kx-dnote-err{color:var(--p-danger-600, var(--p-danger-500))}.kx-dsec-foot{padding-top:4px}.kx-dmsg{margin:0;font-size:12.5px;line-height:1.5;padding:10px 12px;border-radius:var(--kx-radius-10);background:var(--kx-surface-1);color:var(--p-text-color);word-break:break-word}.kx-dmsg.is-err{background:var(--kx-wash-danger);color:var(--p-danger-700, var(--p-danger-600, var(--p-danger-500)))}.kx-dmsg.is-ok{background:var(--kx-wash-success);color:var(--p-success-700, var(--p-success-600, var(--p-success-500)))}.kx-errcard{display:flex;flex-direction:column;gap:9px;padding:13px 14px;border:1px solid color-mix(in srgb,var(--p-danger-500) 40%,var(--p-content-border-color));border-radius:var(--kx-radius-14);background:var(--kx-wash-danger)}.kx-errcard-head{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:var(--p-danger-700, var(--p-danger-600, var(--p-danger-500)))}.kx-errcard-head svg{width:17px;height:17px;flex:none}.kx-errcard-cause{margin:0;font-size:12.5px;line-height:1.5;color:var(--p-text-color);word-break:break-word}.kx-errcard .p-button{align-self:flex-start}.kx-hint{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:var(--kx-radius-10);background:var(--kx-wash-info);font-size:12px;line-height:1.45;color:var(--p-text-color)}.kx-hint svg{width:16px;height:16px;flex:none;margin-top:1px;color:var(--p-info-600, var(--p-info-500))}.kx-history{display:flex;flex-direction:column;gap:20px}.kx-history-group{display:flex;flex-direction:column;gap:8px}.kx-history-group>h3{margin:0}.kx-history-entry{display:flex;flex-direction:column;gap:6px;padding:10px 11px;border:1px solid var(--p-content-border-color);border-radius:var(--kx-radius-10);background:var(--kx-surface-1);min-width:0}.kx-history-head{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}.kx-history-title{font-size:13px;color:var(--p-text-color);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.kx-history-state{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--p-text-muted-color)}.kx-history-meta{margin:0;font-size:12px;color:var(--p-text-muted-color)}.kx-history-kv{margin:0;display:grid;grid-template-columns:max-content 1fr;gap:4px 12px;align-items:baseline}.kx-history-kv .kx-dfact-k{margin:0}.kx-history-v{margin:0;font-size:13px;color:var(--p-text-color);overflow-wrap:anywhere}', Hs = { props: { type: "object", properties: { mode: { type: "string", default: "", description: '"create" when mounted as the workspace "+" -> Automation create view: opens straight into the install popup and emits created/close. Unset renders the full Automations page.' }, "parent-id": { type: "string", default: "", description: "Workspace folder to place the new automation under (create mode; empty = root)." }, "component-id": { type: "string", default: "", description: "Optional owning component; scopes rows and places newly created Automations under that component." }, input: { type: "string", default: "", description: "Initial declared install inputs as a JSON object, supplied by the owning component." }, "type-id": { type: "string", default: "", description: "Optional registry automation type id to preselect in create or component mode. The manager treats the id opaquely and mounts that type's declared create view." } } } }, Vs = {
