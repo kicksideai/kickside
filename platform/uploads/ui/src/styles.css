@@ -98,9 +98,6 @@
   100% { transform: translateX(380%); }
 }
 .kx-name { font-size: 14px; font-weight: 600; color: var(--p-text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* An upload with no filename falls back to a neutral name; the raw uuid still
-   rides along here, as a small mono secondary — never the primary name itself. */
-.kx-uuid { font-family: ui-monospace, Menlo, monospace; font-size: 11px; font-weight: 400; color: var(--p-text-muted-color); }
 .kx-sub { font-size: 12px; color: var(--p-text-muted-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kx-err-reason { font-size: 12px; color: var(--p-danger-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kx-type { color: var(--p-text-color); font-weight: 600; }
