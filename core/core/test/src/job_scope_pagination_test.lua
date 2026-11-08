@@ -10,14 +10,19 @@ return { run = test.run_cases(function()
             local seen: { [string]: any } = {}
             local svc = { list = function(_, args)
                 seen = args
-                return { components = { { component_id = "page-a" }, { component_id = "page-b" } }, has_more = true }, nil
+                return { components = { { component_id = "page-a", deleting_at = "marked", deletion_job_id = "job", deletion_job = {status = "dead", attempts = 3, last_error = "cleanup refused"} }, { component_id = "page-b" } }, has_more = true }, nil
             end }
             local definition = { with_actor = function(self) return self end,
                 with_scope = function(self) return self end, open = function() return svc, nil end }
             local instance = component.new({ contract = { get = function() return definition, nil end },
                 security = { actor = function() return {} end, scope = function() return {} end } })
-            local ids, err, _, page = instance.list_thread_components(nil, 1, 2, 100)
+            local ids, err, display, page = instance.list_thread_components(nil, 1, 2, 100)
             test.is_nil(err)
+            test.eq(display["page-a"].deleting_at, "marked")
+            test.eq(display["page-a"].deletion_job_id, "job")
+            test.eq(display["page-a"].deletion_job.status, "dead")
+            test.eq(display["page-a"].deletion_job.attempts, 3)
+            test.eq(display["page-a"].deletion_job.last_error, "cleanup refused")
             test.eq(ids[1], "page-a")
             test.eq(ids[2], "page-b")
             test.eq(seen.pagination.offset, 100)

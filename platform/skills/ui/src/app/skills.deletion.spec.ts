@@ -5,17 +5,12 @@ import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
 import { api, host, loadByTagName, on } from '@wippy-fe/proxy'
 import Skills from './skills.vue'
 
-vi.hoisted(() => {
-  Object.defineProperty(window, '__WIPPY_APP_API__', {
-    configurable: true,
-    value: {
-      api: { get: vi.fn(), delete: vi.fn() },
-      on: vi.fn(),
-      host: { confirm: vi.fn(), handleError: vi.fn(), toast: vi.fn() },
-      loadByTagName: vi.fn(),
-    },
-  })
-})
+vi.mock('@wippy-fe/proxy', () => ({
+  api: {get: vi.fn(), delete: vi.fn()},
+  on: vi.fn(),
+  host: {confirm: vi.fn(), handleError: vi.fn(), toast: vi.fn()},
+  loadByTagName: vi.fn(),
+}))
 vi.mock('@wippy-fe/webcomponent-vue', () => ({
   useProps: () => ({ value: {} }),
   useEvents: () => vi.fn(),

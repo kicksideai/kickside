@@ -296,6 +296,12 @@ function jobs.get_job(id: string): (table?, error?)
     end)
 end
 
+function jobs.get_jobs(ids: string[]): (table?, error?)
+    return with_db(function(db: sql.DB, _dbtype: string): (table?, error?)
+        return lifecycle.get_jobs(db, ids)
+    end)
+end
+
 function jobs.get_job_statuses(ids: string[]): (table?, error?)
     return with_db(function(db: sql.DB, _dbtype: string): (table?, error?)
         return lifecycle.get_job_statuses(db, ids)

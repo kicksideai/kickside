@@ -158,6 +158,7 @@ entries:
     source: file://persist/repo.lua
     modules: [sql, hash, crypto, uuid, time, json, contract, security]
     imports:
+      deletion_progress: kickside.component:deletion_progress
       component_read_port: kickside.component.persist:read_port
       component_query: kickside.component.persist:component_query
       implementation_access: kickside.component.persist:implementation_access

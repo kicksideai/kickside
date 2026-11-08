@@ -1,6 +1,7 @@
 local security = require("security")
 local component_reader = require("component_reader")
 local envelope = require("envelope")
+local deletion_progress = require("deletion_progress")
 
 local PAGINATION = {
     MIN_LIMIT = 1,
@@ -60,6 +61,8 @@ local function handle(request_dto)
         return envelope.from_error(list_err)
     end
     children = children or {}
+    local _, progress_err = deletion_progress.enrich(children :: {any})
+    if progress_err then return envelope.from_error(progress_err) end
 
     local total_count, count_err = reader:count()
     if count_err then
