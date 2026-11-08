@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.33](https://github.com/kicksideai/kickside/compare/kickside-v0.2.32...kickside-v0.2.33) (2026-11-08)
+
+
+### Features
+
+* **ui:** let a title-less component splash step own its heading ([#369](https://github.com/kicksideai/kickside/issues/369)) ([38c9439](https://github.com/kicksideai/kickside/commit/38c9439088a70e3a2e65a6d21ab1cfcc142de099))
+
 ## [0.2.32](https://github.com/kicksideai/kickside/compare/kickside-v0.2.31...kickside-v0.2.32) (2026-11-06)
 
 
