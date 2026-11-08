@@ -4,7 +4,7 @@ import { s as S, e as B, _ as ue, l as pe } from "./toolCatalog-DTcZpeT0.js";
 import { s as ve } from "./index-BvJc5yvO.js";
 import { on as me, api as U, host as X, loadByTagName as fe, define as _e } from "@wippy-fe/proxy";
 import { Icon as k } from "@iconify/vue";
-import { s as ge } from "./styles-BB131pAp.js";
+import { s as ge } from "./styles-DOudO97m.js";
 const he = { key: 0 }, be = /* @__PURE__ */ F({
   __name: "ComponentDeletion",
   props: {

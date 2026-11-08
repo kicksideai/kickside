@@ -4,7 +4,7 @@ import { openBlock as g, createElementBlock as m, mergeProps as ie, createElemen
 import { on as Ke, api as J, host as Ne, loadByTagName as Re, define as et } from "@wippy-fe/proxy";
 import { c as tt, a as nt, s as ot, u as at, b as it } from "./constants-Cgcp0OGP.js";
 import { Icon as D } from "@iconify/vue";
-import { s as st } from "./styles-BYv45jhF.js";
+import { s as st } from "./styles-LTn7pQ7q.js";
 var rt = `
     .p-progressspinner {
         position: relative;

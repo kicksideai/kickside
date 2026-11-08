@@ -500,10 +500,8 @@ select.kx-input { appearance: none; padding-right: 28px; cursor: pointer; }
   }
   .kx-2p-l > .kx-form { gap: 10px; }
   .kx-2p-l .kx-textarea-sm { min-height: 52px; }
-  .kx-nav {
-    flex-direction: row; gap: 4px; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain;
-    padding-bottom: 2px; scrollbar-width: thin;
-  }
+  /* Sections wrap onto a second line rather than scrolling out of view. */
+  .kx-nav { flex-direction: row; flex-wrap: wrap; gap: 4px; max-width: 100%; }
   .kx-nav-item { flex: 0 0 auto; width: auto; gap: 6px; padding: 7px 9px; }
   .kx-nav-ico { width: 18px; height: 18px; }
   .kx-nav-ico svg { width: 16px; height: 16px; }

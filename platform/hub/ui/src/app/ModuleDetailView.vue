@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
+import Button from 'primevue/button'
 import { relativeTime } from '@widgets/app/datetime'
 import { fmtNum, fmtBytes, formatLicense, moduleAccent, moduleIcon, isAppModule } from '../lib.ts'
 import type { useModulesPage } from './useModulesPage.ts'
@@ -38,22 +39,22 @@ const selected = computed(() => props.page.selected.value!)
             <p v-if="selected.description" class="d-hero-desc">{{ selected.description }}</p>
             <div class="d-hero-actions">
               <template v-if="selected.installed">
-                <button v-if="selectedCanUpdate" class="km-btn km-btn-secondary km-btn-outlined km-btn-sm" @click="detailUpdate">
+                <Button v-if="selectedCanUpdate" size="small" severity="secondary" outlined @click="detailUpdate">
                   <Icon icon="tabler:refresh-dot" class="km-i" aria-hidden="true" /> Update
-                </button>
-                <button v-else class="km-btn km-btn-secondary km-btn-outlined km-btn-sm" disabled :title="selectedUpdateDisabledReason || undefined">
+                </Button>
+                <Button v-else size="small" severity="secondary" outlined disabled :title="selectedUpdateDisabledReason || undefined">
                   <Icon icon="tabler:refresh-off" class="km-i" aria-hidden="true" /> Update
-                </button>
-                <button v-if="selectedCanUninstall" class="km-btn km-btn-text km-btn-danger km-btn-sm" @click="detailUninstall">
+                </Button>
+                <Button v-if="selectedCanUninstall" size="small" severity="danger" text @click="detailUninstall">
                   <Icon icon="tabler:trash" class="km-i" aria-hidden="true" /> Uninstall
-                </button>
-                <button v-else-if="selectedUninstallBlockedReason" class="km-btn km-btn-text km-btn-danger km-btn-sm" disabled :title="selectedUninstallBlockedReason">
+                </Button>
+                <Button v-else-if="selectedUninstallBlockedReason" size="small" severity="danger" text disabled :title="selectedUninstallBlockedReason">
                   <Icon icon="tabler:trash-off" class="km-i" aria-hidden="true" /> Uninstall
-                </button>
+                </Button>
               </template>
-              <button v-else class="km-btn km-btn-sm" @click="detailInstall">
+              <Button v-else size="small" @click="detailInstall">
                 <Icon icon="tabler:download" class="km-i" aria-hidden="true" /> Install
-              </button>
+              </Button>
               <a v-if="selectedModule?.repository" :href="String(selectedModule.repository)" target="_blank" rel="noopener" class="d-link"><Icon icon="tabler:brand-github" class="km-i-sm" aria-hidden="true" /> Repository</a>
               <a v-if="selectedModule?.homepage" :href="String(selectedModule.homepage)" target="_blank" rel="noopener" class="d-link"><Icon icon="tabler:home" class="km-i-sm" aria-hidden="true" /> Homepage</a>
             </div>

@@ -399,12 +399,16 @@
   align-items: center;
   gap: 1px;
   padding-right: 6px;
-  opacity: 0;
-  transition: opacity .12s ease;
 }
 
-.km-prow:hover .km-prow-acts,
-.km-prow:focus-within .km-prow-acts { opacity: 1; }
+/* Where rows can be hovered, the actions take no width until the row is hovered
+   or focused, so the provider name uses the whole rail at rest. Touch rows keep
+   them in place. */
+@media (hover: hover) {
+  .km-prow-acts { max-width: 0; padding-right: 0; overflow: hidden; opacity: 0; transition: opacity .12s ease; }
+  .km-prow:hover .km-prow-acts,
+  .km-prow:focus-within .km-prow-acts { max-width: none; padding-right: 6px; overflow: visible; opacity: 1; }
+}
 
 .km-prow-msg {
   grid-column: 1 / -1;
@@ -480,9 +484,10 @@
   display: flex;
   flex-direction: column;
   /* Single source of truth for the table grid so the header and every row align.
-     The actions column is fixed-width so one- vs two-button rows never shift the
+     The actions column is fixed-width so rows with fewer actions never shift the
      other columns. */
-  --km-cols: 32px minmax(0, 1.3fr) minmax(0, 1.75fr) 76px 122px;
+  --km-cols: 32px minmax(0, 1.75fr) minmax(0, 1.3fr) 76px var(--km-acts-w);
+  --km-acts-w: 138px;
 }
 
 .km-pool-head {
@@ -609,7 +614,8 @@
 
 .km-mrow-limit-chips { display: none; }
 
-.km-mrow-acts { display: flex; align-items: center; gap: 1px; justify-self: end; }
+.km-mrow-acts { display: flex; align-items: center; gap: 6px; justify-self: end; }
+.km-mrow-acts .p-button svg { flex: none; width: 15px; height: 15px; }
 
 .km-mrow-probe {
   grid-column: 1 / -1;
@@ -1065,10 +1071,11 @@
   .km-shell { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
   .km-rail { border-right: 0; border-bottom: 1px solid var(--p-content-border-color); max-height: 40vh; }
   .km-pool-cols { display: none; }
-  .km-mrow { grid-template-columns: 34px minmax(0, 1fr) 122px; gap: 6px 10px; align-items: center; }
+  .km-mrow { grid-template-columns: 34px minmax(0, 1fr); gap: 6px 10px; align-items: center; }
   .km-mrow .km-avatar { grid-column: 1; grid-row: 1; }
   .km-mrow-id { grid-column: 2; grid-row: 1; }
-  .km-mrow-acts { grid-column: 3; grid-row: 1; align-self: start; justify-content: flex-end; }
+  /* The actions take their own row so the model name keeps the full width. */
+  .km-mrow-acts { grid-column: 2; grid-row: 4; justify-self: end; }
   .km-mrow-limits { display: none; }
   .km-mrow-limit-chips {
     grid-column: 2 / 3;
@@ -1180,6 +1187,7 @@
 
 /* Auto-select bar above the tier sections */
 .ob-autobar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ob-autobar .p-button { flex: none; white-space: nowrap; }
 .ob-auto-hint { font-size: 12px; color: var(--p-text-muted-color); }
 
 /* Review blocks */

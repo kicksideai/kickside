@@ -236,8 +236,10 @@
   .kx-bar-l { width: 100%; flex-wrap: wrap; }
   .kx-bar-l .kx-title { flex: 1; }
   .kx-bar-l .kx-header-stats { flex-basis: 100%; order: 1; }
-  .kx-2p { grid-template-columns: 1fr; }
-  .kx-2p-l { border-right: none; border-bottom: 1px solid var(--p-content-border-color); }
+  /* Stacked: the identity pane keeps its full height and the configuration
+     pane scrolls in the rest, so the type list is never clipped. */
+  .kx-2p { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+  .kx-2p-l { overflow: visible; border-right: none; border-bottom: 1px solid var(--p-content-border-color); }
 }
 .kx-dialog > .kx-modal-foot {
   display: flex; justify-content: flex-end; gap: 8px; padding: 14px 18px;

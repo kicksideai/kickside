@@ -128,6 +128,7 @@ function onProbeAction() {
         :icon="probeIcon"
         :label="probeButtonLabel"
         size="sm"
+        variant="bordered"
         :severity="probeSeverity"
         :active="hasProbeResult && probeDetailsOpen"
         :spin="probing"
@@ -138,17 +139,18 @@ function onProbeAction() {
         :icon="model.enabled === false ? 'tabler:circle-check' : 'tabler:circle-minus'"
         :label="model.enabled === false ? 'Enable model' : 'Disable model'"
         size="sm"
-        :variant="model.enabled === false ? 'bordered' : 'danger'"
+        variant="bordered"
         :disabled="busy"
         @click="emit('toggle-enabled')"
       />
-      <IconButton icon="tabler:adjustments" label="Edit model" size="sm" @click="emit('edit')" />
+      <IconButton icon="tabler:adjustments" label="Edit model" size="sm" variant="bordered" @click="emit('edit')" />
       <IconButton
         v-if="model.source !== 'registry'"
         icon="tabler:trash"
         label="Delete model"
         size="sm"
-        variant="danger"
+        variant="bordered"
+        severity="danger"
         @click="emit('delete')"
       />
     </div>
