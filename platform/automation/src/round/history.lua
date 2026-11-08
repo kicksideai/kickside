@@ -13,46 +13,44 @@ local function internal(message: string, cause: any): error
     return errors.new({kind=errors.INTERNAL,retryable=true,message=message .. ": " .. tostring(cause)})
 end
 
-local function latest_states(tx: any, round: Map, outcomes: {Map}, deliveries: {Map}?): (Map?,error?)
+-- Initial skips need no item-ledger row: later scans must reevaluate filters.
+-- Their retained evidence is limited to one page-index window per automation.
+local function latest_states(tx: any, round: Map, outcomes: {Map}, deliveries: {Map}?, prior: Map?): (Map?,error?)
     local delivered: Map={}
     for _,entry in ipairs(deliveries or {}) do delivered[entry.key]=true end
-    local candidates: {Map}={}
+    local states: Map={}
+    for key,state in pairs(prior or {}) do states[key]=state end
+    local candidates: Map={}
     for _,entry in ipairs(outcomes) do
-        if entry.state == "resolved" and not delivered[entry.item.delivery_key] then
-            candidates[#candidates+1]=entry.item
+        local key=entry.item.item_key .. "\n" .. entry.item.delivery_key
+        if entry.state == "resolved" and not delivered[entry.item.delivery_key] and states[key] == nil then
+            candidates[key]=true
         end
     end
-    local states: Map={}
-    for first=1,#candidates,100 do
-        local params: {any}={round.automation_id,round.drive_key,round.source_port}
-        local matches: {string}={}
-        for index=first,math.min(#candidates,first+99) do
-            params[#params+1]=candidates[index].item_key
-            params[#params+1]=candidates[index].delivery_key
-            matches[#matches+1]="(item_key=$" .. tostring(#params-1) .. " AND identity_key=$" .. tostring(#params) .. ")"
-        end
-        local rows,err=tx:query("SELECT item_key,identity_key,state,round_token FROM (SELECT item_key,identity_key,state,round_token,"
-            .. " ROW_NUMBER() OVER (PARTITION BY item_key,identity_key ORDER BY round_at DESC,drive_key DESC,round_token DESC) AS position"
-            .. " FROM " .. TABLE .. " WHERE automation_id=$1 AND drive_key=$2 AND source_port=$3 AND ("
-            .. table.concat(matches," OR ") .. ")) AS latest WHERE position=1",params)
-        if err then return nil,internal("delivery history state read fails",err) end
-        for _,row in ipairs(rows :: {Map}) do
-            local item_states=states[row.item_key] or {}
-            item_states[row.identity_key]=row
-            states[row.item_key]=item_states
+    for _,entry in ipairs(outcomes) do
+        if delivered[entry.item.delivery_key] then states[entry.item.item_key .. "\n" .. entry.item.delivery_key]=nil end
+    end
+    if next(candidates) == nil then return states,nil end
+    local rows,err=tx:query("SELECT drive_key,source_port,item_key,identity_key,state,round_token FROM " .. TABLE
+        .. " WHERE automation_id=$1 ORDER BY round_at DESC,drive_key DESC,round_token DESC,"
+        .. "source_port DESC,item_key DESC,identity_key DESC LIMIT $2",{round.automation_id,M.MAX_ROWS})
+    if err then return nil,internal("delivery history state read fails",err) end
+    for _,row in ipairs(rows :: {Map}) do
+        local key=row.item_key .. "\n" .. row.identity_key
+        if row.drive_key == round.drive_key and row.source_port == round.source_port and candidates[key] and states[key] == nil then
+            states[key]=row
         end
     end
     return states,nil
 end
 
-function M.record_tx(tx: any, round: Map, outcomes: {Map}, deliveries: {Map}?): error?
-    local states,state_err=latest_states(tx,round,outcomes,deliveries)
+function M.record_tx(tx: any, round: Map, outcomes: {Map}, deliveries: {Map}?, prior: Map?): error?
+    local states,state_err=latest_states(tx,round,outcomes,deliveries,prior)
     if state_err or not states then return state_err end
     local rows: {Map} = {}
     for _,outcome in ipairs(outcomes) do
-        local item_states=states[outcome.item.item_key]
-        local prior=item_states and item_states[outcome.item.delivery_key] or nil
-        if not prior or prior.state ~= outcome.state or prior.round_token == round.captured.round_token then
+        local prior=states[outcome.item.item_key .. "\n" .. outcome.item.delivery_key]
+        if outcome.state ~= "resolved" or not prior or prior.state ~= outcome.state or prior.round_token == round.captured.round_token then
             local error_json: string? = nil
             if outcome.error ~= nil then
                 local encoded,err=json.encode(outcome.error)

@@ -4,16 +4,6 @@ namespace: kickside.automation.migrations
 # target_db is injected by the root kickside.automation:target_db requirement.
 
 entries:
-  - name: 17_delivery_history_lookup
-    kind: function.lua
-    meta:
-      type: migration
-      depends_on: [ns:wippy.migration, kickside.automation.migrations:12_delivery_history]
-    source: file://17_delivery_history_lookup.lua
-    method: migration
-    imports:
-      migration: wippy.migration:migration
-
   - name: 15_prepared_settlement_index
     kind: function.lua
     meta:

@@ -282,10 +282,10 @@ function M.commit_tx(tx: any, round: Map, result: Map): (Map?, error?)
     end
     local admission_json,admission_err=json.encode(journal)
     if admission_err then return nil,internal("admission settlement encoding fails",admission_err) end
-    local delta, ledger_err, retention_work = ledger.record_tx(tx, round.automation_id, round.source_port, result.outcomes or {},
+    local delta, ledger_err, retention_work, prior = ledger.record_tx(tx, round.automation_id, round.source_port, result.outcomes or {},
         round.now, round.resolved_expires_at)
     if ledger_err then return nil, ledger_err end
-    local history_err=history.record_tx(tx,round,result.outcomes or {},result.deliveries)
+    local history_err=history.record_tx(tx,round,result.outcomes or {},result.deliveries,prior)
     if history_err then return nil,history_err end
     local receipt_err = record_receipts_tx(tx, round, result.receipts or {}, pass_id)
     if receipt_err then return nil, receipt_err end

@@ -7,6 +7,9 @@ local uuid = require("uuid")
 local commit = require("round_commit")
 local automation_db = require("automation_db")
 local sql = require("sql")
+local registry = require("registry")
+local time = require("time")
+local runner = require("migration_runner")
 
 type Map = { [string]: any }
 local NOW = "2026-10-11T00:00:00Z"
@@ -27,15 +30,43 @@ local function rows(id: string): {Map}
 end
 
 local function seed(id: string, count: integer, expiry: string): ()
+    local db=h.db()
+    local postgres=tostring(db:type()) == sql.type.POSTGRES
+    db:release()
+    local at=postgres and [[to_char(TIMESTAMP '1800-01-01' + CAST((n-1)/50 AS INTEGER) * INTERVAL '1 second','YYYY-MM-DD"T"HH24:MI:SS"Z"')]]
+        or [[strftime('%Y-%m-%dT%H:%M:%SZ','1800-01-01','+' || CAST((n-1)/50 AS INTEGER) || ' seconds')]]
     h.exec("WITH RECURSIVE numbers(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM numbers WHERE n<$1)"
         .. " INSERT INTO kickside_automation_delivery_history (automation_id,drive_key,round_token,source_port,item_key,identity_key,state,round_at,expires_at)"
-        .. " SELECT $2,'history','seed','source',CAST(n AS TEXT),CAST(n AS TEXT),'resolved','1800-01-01T00:00:00Z',$3 FROM numbers",
-        {count,id,expiry})
+        .. " SELECT $2,'history','seed-' || CAST(CAST((n-1)/50 AS INTEGER) AS TEXT),'source',CAST(n AS TEXT),CAST(n AS TEXT),'resolved',"
+        .. at .. ",$3 FROM numbers",{count,id,expiry})
 end
 
 local function define_tests()
     test.describe("AUTOMATION-DELIVERY-HISTORY atomic append and retention",function()
         test.before_each(function() h.ensure_log() end)
+
+        test.it("uses known ledger states without reading retained history",function()
+            local id=uuid.v7()
+            local queries=0
+            local retry=item("attempt")
+            retry.state="retrying"
+            local _,err=automation_db.in_tx(function(tx)
+                local executor={execute=function(_,statement,params) return tx:execute(statement,params) end,
+                    query=function() queries=queries+1;return nil,errors.new({kind=errors.INTERNAL,message="known ledger states must not read history"}) end}
+                return true,history.record_tx(executor,round(id),{item("unchanged"),item("transition"),retry,item("delivery")},
+                    {{key="delivery"}},{["unchanged\nunchanged"]={state="resolved"},["transition\ntransition"]={state="retrying"},
+                        ["attempt\nattempt"]={state="retrying"},["delivery\ndelivery"]={state="resolved"}})
+            end)
+            test.is_nil(err,tostring(err))
+            test.eq(queries,0)
+            local states: Map={}
+            for _,row in ipairs(rows(id)) do states[row.item_key]=row.state end
+            test.eq(#rows(id),3)
+            test.is_nil(states.unchanged)
+            test.eq(states.transition,"resolved")
+            test.eq(states.attempt,"retrying")
+            test.eq(states.delivery,"resolved")
+        end)
 
         test.it("stores absent, unresolved and inferred evidence exactly without a current identity read",function()
             local id=uuid.v7()
@@ -224,6 +255,94 @@ local function define_tests()
             test.eq(#h.query("SELECT item_key FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id}),0)
             test.eq(#rows(id),0)
             h.exec("UPDATE kickside_job SET status='done',lease_token=NULL,lease_until=NULL WHERE id=$1",{job.id})
+        end)
+
+        test.it("updates a million retained rows without history DDL and bounds each append",function()
+            local removed=registry.get("kickside.automation.migrations:17_delivery_history_lookup")
+            test.is_nil(removed,"history updates must not build an index")
+            local id=uuid.v7()
+            seed(id,1000000,"2099-01-01T00:00:00Z")
+            h.exec("ANALYZE kickside_automation_delivery_history")
+            local db=h.db()
+            local postgres=tostring(db:type()) == sql.type.POSTGRES
+            db:release()
+            local schema=postgres and "SELECT c.relname,c.relfilenode FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace"
+                .. " WHERE n.nspname=current_schema() AND (c.oid='kickside_automation_delivery_history'::regclass"
+                .. " OR c.oid IN (SELECT indexrelid FROM pg_index WHERE indrelid='kickside_automation_delivery_history'::regclass)) ORDER BY c.relname"
+                or "SELECT name,rootpage,sql FROM sqlite_master WHERE tbl_name='kickside_automation_delivery_history' ORDER BY name"
+            local storage=h.query(schema)
+            test.eq(#storage,4,"only the published history table and its three indexes exist")
+            local before=h.encoded(storage)
+            local started=time.now():unix_nano()
+            local result=runner.setup(h.DB):run()
+            local update_ms=(time.now():unix_nano()-started)/1000000
+            test.eq(result.status,"complete",tostring(result.error))
+            test.eq(result.migrations_applied,0)
+            test.eq(h.encoded(h.query(schema)),before,"update changes history storage or indexes")
+            local function count(): number
+                return assert(tonumber(h.query("SELECT COUNT(*) AS n FROM kickside_automation_delivery_history WHERE automation_id=$1",{id})[1].n))
+            end
+            test.eq(count(),1000000)
+            local outcomes: {Map}={}
+            local deliveries: {Map}={}
+            for index=1,205 do
+                local key="recent-" .. tostring(index)
+                outcomes[#outcomes+1]=item(key)
+                deliveries[#deliveries+1]={key=key}
+            end
+            local writes,trimmed,reads=0,0,0
+            local plans: Map={}
+            local function append(delivered: {Map}): error?
+                local _,err=automation_db.in_tx(function(tx)
+                    local executor={execute=function(_,statement,params)
+                        if statement:find("DELETE FROM",1,true) then
+                            if plans.trim == nil then plans.trim=tx:query("EXPLAIN " .. (postgres and "" or "QUERY PLAN ") .. statement,params) end
+                        end
+                        local changed,write_err=tx:execute(statement,params)
+                        if changed then
+                            local affected=tonumber(changed.rows_affected)
+                            test.is_true(affected <= 50,"a history write exceeds its batch bound")
+                            if statement:find("DELETE FROM",1,true) then trimmed=trimmed+affected else writes=writes+affected end
+                        end
+                        return changed,write_err
+                    end,query=function(_,statement,params)
+                        local plan,plan_err=tx:query("EXPLAIN " .. (postgres and "" or "QUERY PLAN ") .. statement,params)
+                        test.is_nil(plan_err,tostring(plan_err))
+                        plans.lookup=plan
+                        local page,read_err=tx:query(statement,params)
+                        if page then test.is_true(#page <= history.MAX_ROWS);reads=reads+#page end
+                        return page,read_err
+                    end}
+                    return true,history.record_tx(executor,round(id),outcomes,delivered)
+                end)
+                return err
+            end
+            started=time.now():unix_nano()
+            local write_err=append(deliveries)
+            local append_ms=(time.now():unix_nano()-started)/1000000
+            test.is_nil(write_err,tostring(write_err))
+            test.eq(writes,205)
+            test.eq(trimmed,205)
+            test.eq(reads,0)
+            test.eq(count(),1000000)
+            started=time.now():unix_nano()
+            local skip_err=append({})
+            local skip_ms=(time.now():unix_nano()-started)/1000000
+            test.is_nil(skip_err,tostring(skip_err))
+            test.eq(writes,205,"unchanged skips write no history")
+            test.eq(trimmed,205,"unchanged skips trim no history")
+            test.eq(reads,history.MAX_ROWS)
+            test.eq(count(),1000000)
+            h.exec("INSERT INTO round_fixture_log (automation_id,drive_key,item_key,attempts,detail_json) VALUES ($1,'history','scale',0,$2)",
+                {id,h.encoded({engine=postgres and "postgres" or "sqlite",rows=1000000,
+                update_ms=update_ms,append_ms=append_ms,skip_ms=skip_ms,writes=writes,trimmed=trimmed,reads=reads,plans=plans,
+                migrations_applied=result.migrations_applied,storage_before=before,storage_after=h.encoded(h.query(schema))})})
+            test.is_true(h.encoded(plans.lookup):find("idx_automation_delivery_history_page",1,true) ~= nil,h.encoded(plans))
+            test.is_true(h.encoded(plans.trim):find("idx_automation_delivery_history_page",1,true) ~= nil,h.encoded(plans))
+            for _,plan in ipairs({plans.lookup,plans.trim}) do
+                local full_sort=postgres and "sort" or "temp b-tree for order by"
+                test.is_nil(h.encoded(plan):lower():find(full_sort,1,true),"history must not sort the retained table")
+            end
         end)
 
         test.it("rejects invalid prune bounds and propagates missing storage proof",function()

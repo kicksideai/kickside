@@ -262,7 +262,7 @@ end
 
 -- record_tx keeps the drive's ledger count and all item writes in the caller's
 -- fenced transaction. Reads use bounded key lists; writes use bounded batches.
-function M.record_tx(tx: any, owner_id: string, source_port: string, outcomes: { Map }, now: string, resolved_expires_at: string): (integer?, error?, boolean?)
+function M.record_tx(tx: any, owner_id: string, source_port: string, outcomes: { Map }, now: string, resolved_expires_at: string): (integer?, error?, boolean?, Map?)
     local dbtype, type_err = dialect(tx)
     if type_err or not dbtype then return nil, type_err end
     for _, o in ipairs(outcomes) do identity.bind({ automation_id = owner_id, source_port = source_port }, o.item) end
@@ -321,7 +321,7 @@ function M.record_tx(tx: any, owner_id: string, source_port: string, outcomes: {
     if resolve_err then return nil, resolve_err end
     local upsert_err = upsert_rows(tx, upserts, dbtype)
     if upsert_err then return nil, upsert_err end
-    return delta, nil, terminal_work or #resolves > 0
+    return delta, nil, terminal_work or #resolves > 0, prior
 end
 
 -- Drive and ledger locks keep the reservation and the drive's unresolved

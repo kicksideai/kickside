@@ -11,5 +11,7 @@ entries:
     modules: [json, time, channel]
     imports:
       drive: kickside.automation:drive
+      round_claim: kickside.automation:round_claim
+      automation_db: kickside.automation:automation_db
       test: wippy.test:test
       round_harness: kickside.automation:round_harness
