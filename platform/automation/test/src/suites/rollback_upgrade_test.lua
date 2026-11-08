@@ -62,6 +62,24 @@ local function store_legacy(id: string, steps: { Map }): ()
         { json.encode(ctx), id })
 end
 
+-- legacy_projection(env) -> the id of a trigger projection on the source
+-- thread, with its cursor, in the shape the watch mode registered it.
+local function legacy_projection(env: Map): string
+    local projection_id = uuid.v7()
+    h.exec([[INSERT INTO kickside_projection (id,thread_id,kind,projection_key,body)
+        VALUES ($1,$2,$3,'default',$4)]], { projection_id, env.thread_id,
+        "kickside.automation.trigger:" .. env.automation_id,
+        json.encode({ worker_ref = "proc://kickside.automation:trigger_worker",
+            worker_config = { source = "kickside.crm.ports:record_created" } }) })
+    h.exec([[INSERT INTO kickside_projection_cursor (id,projection_id,thread_id,cursor_key)
+        VALUES ($1,$2,$3,'default')]], { uuid.v7(), projection_id, env.thread_id })
+    return projection_id
+end
+
+local function watch_teardown(env: Map, projection_id: string): Map
+    return trigger_teardown(env.automation_id, "watch", { projection_id = projection_id, thread_id = env.thread_id })
+end
+
 -- subscribe(env) gives the automation an event drive on its source thread,
 -- retained by the drive's pin, and item ledger and receipt rows.
 local function subscribe(env: Map): ()
@@ -215,21 +233,49 @@ local function define_tests()
             test.eq(json.encode(context(id)._rollback or {}), chain)
         end)
 
-        test.it("keeps a retired watch teardown whose source-thread projection the owner delete leaves in place", function()
+        test.it("uninstalls a watch automation once the upgrade removes its legacy trigger projection", function()
             local env = installed("rollback_watch")
             local id = env.automation_id
-            local before = targets(context(id)._rollback)
-            store_legacy(id, { trigger_teardown(id, "watch", { projection_id = uuid.v7(), thread_id = env.thread_id }) })
-            local stored = revision(id)
+            subscribe(env)
+            local projection_id = legacy_projection(env)
+            store_legacy(id, { watch_teardown(env, projection_id) })
+            local entry = entry_of(run_upgrade().upgraded, id)
+            test.not_nil(entry, "the watch teardown is upgraded")
+            test.eq(table.concat((entry :: Map).removed, ","), TRIGGER_TEARDOWN)
+            test.eq(count("SELECT id FROM kickside_projection WHERE id=$1", { projection_id }), 0)
+            test.eq(count("SELECT id FROM kickside_projection_cursor WHERE projection_id=$1", { projection_id }), 0)
+            test.eq(targets(context(id)._rollback):find(TRIGGER_TEARDOWN, 1, true), nil)
+
+            uninstall(env)
+            assert_deleted(env)
+        end)
+
+        test.it("uninstalls a watch automation whose legacy trigger projection is already gone", function()
+            local env = installed("rollback_watch_gone")
+            local id = env.automation_id
+            subscribe(env)
+            store_legacy(id, { watch_teardown(env, uuid.v7()) })
             local report = run_upgrade()
-            test.is_nil(entry_of(report.upgraded, id))
-            local kept = entry_of(report.retained, id)
-            test.not_nil(kept, "the watch teardown is reported as kept")
-            test.eq((kept :: Map).mode, "watch")
-            test.eq((kept :: Map).target, TRIGGER_TEARDOWN)
-            test.eq(revision(id), stored)
-            local expected = before == "" and TRIGGER_TEARDOWN or TRIGGER_TEARDOWN .. "," .. before
-            test.eq(targets(context(id)._rollback), expected)
+            test.is_nil(entry_of(report.failed, id))
+            test.is_nil(entry_of(report.retained, id))
+            test.not_nil(entry_of(report.upgraded, id), "an absent projection counts as removed")
+            uninstall(env)
+            assert_deleted(env)
+        end)
+
+        test.it("completes a watch automation's failed deletion when it is retried after the upgrade", function()
+            local env = installed("rollback_watch_retry")
+            local id = env.automation_id
+            local projection_id = legacy_projection(env)
+            store_legacy(id, { watch_teardown(env, projection_id) })
+            uninstall(env)
+            local failed, fail_err = deletion_worker.run(id)
+            test.is_nil(failed)
+            test.contains(tostring(fail_err), "no handler registered for target", tostring(fail_err))
+            test.not_nil(entry_of(run_upgrade().upgraded, id), "an automation in deletion is upgraded")
+            test.eq(count("SELECT id FROM kickside_projection WHERE id=$1", { projection_id }), 0)
+            uninstall(env)
+            assert_deleted(env)
         end)
     end)
 end

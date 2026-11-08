@@ -17,8 +17,9 @@
 -- applies the configured delay.
 --
 -- Stored rollback upgrade: brings every automation's stored rollback chain to
--- the current cleanup targets through the rollback writer, which applies the
--- engine's rollback rule under the component row lock.
+-- the current cleanup targets through the rollback writer, which retires the
+-- legacy trigger projections the chain names and applies the engine's
+-- rollback rule under the component row lock.
 
 local support = require("engine_support")
 local declaration_mod = require("engine_declaration")
@@ -219,7 +220,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
     -- cleanup targets through the rollback writer, an automation in deletion
     -- included, so its next deletion attempt replays the upgraded chain.
     -- upgraded lists { id, removed }; retained lists { id, target, mode } for
-    -- a retired step the owner delete leaves in place; failed lists { id,
+    -- a retired step that stays in the chain; failed lists { id,
     -- error } for an automation whose upgrade is refused, which the next run
     -- retries; current counts the automations already current. Each change,
     -- retained step and refusal is logged.
@@ -246,7 +247,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
                 local context = type(row.private_context) == "table" and (row.private_context :: Map) or {}
                 local _, changes = declaration_mod.upgrade_rollback(context._rollback)
                 local refused = false
-                if #changes.removed > 0 then
+                if #changes.removed > 0 or #declaration_mod.watch_projections(context._rollback) > 0 then
                     local result, err = upgrade_rollback(id)
                     if err or not result then
                         refused = true
@@ -266,7 +267,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
                     end
                     for _, step in ipairs(changes.retained) do
                         report.retained[#report.retained + 1] = { id = id, target = step.target, mode = step.mode }
-                        log:warn("stored rollback step of the retired trigger runtime kept: the owner delete leaves its effect in place",
+                        log:warn("stored rollback step of the retired trigger runtime kept",
                             { automation_id = id, target = step.target, mode = tostring(step.mode) })
                     end
                 end

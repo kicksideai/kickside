@@ -48,6 +48,13 @@ M.ALLOW = {
             entry = "kickside.automation:declaration_writer_verify",
         },
     },
+    ["platform/automation/src/rollback_writer.lua"] = {
+        get_private_context = {
+            count = 1,
+            why = "the rollback upgrade writer reads the stored rollback chain to retire the legacy trigger projections its watch steps name; it never returns private context",
+            entry = "kickside.automation:rollback_writer_upgrade",
+        },
+    },
     ["platform/automation/src/identity_writer.lua"] = {
         list_system = {
             count = 1,

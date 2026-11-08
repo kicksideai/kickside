@@ -299,36 +299,83 @@ end
 --   * The trigger service's install teardown detached the trigger mode's
 --     registration: a poll or timer mode deleted its Cron schedule row, a poll
 --     mode also dropped the owner's item ledger rows, and a watch mode removed
---     its projection on the source thread and dropped the item ledger rows.
+--     its trigger projection on the source thread and dropped the item ledger
+--     rows.
 --   * The schedule deletion removed a Cron schedule row.
 -- Cron is retired together with that runtime: its rows run nothing. The
 -- automation's owner delete removes its drives with their job slots and
 -- retention pins and its item ledger rows, so the poll and timer teardown and
--- the schedule deletion are covered by it and leave the chain. A watch
--- teardown's source-thread projection is outside the owner delete; that step
--- stays in the chain.
+-- the schedule deletion are covered by it and leave the chain. The drive
+-- model never reads a watch mode's trigger projection; the rollback upgrade
+-- removes it from the source thread, and its teardown step then leaves the
+-- chain.
 local RETIRED_TRIGGER_TEARDOWN = "kickside.automation.trigger:trigger_service_install_rollback"
 local RETIRED_SCHEDULE_DELETE = "kickside.automation.schedule:delete_schedule"
 local COVERED_TRIGGER_MODES: { [string]: boolean } = { poll = true, timer = true }
 
--- upgrade_rollback(chain) -> upgraded, changes: a stored rollback chain
--- brought to the current cleanup targets. changes = { removed, retained }:
--- removed lists the targets of the steps it removed, empty when the chain is
--- already current; retained lists { target, mode } for a retired step whose
--- effect the owner delete leaves in place. The upgraded chain is a copy in
--- the stored order; the input stays as given.
-local function upgrade_rollback(chain: any): ({ automation_types.RollbackStep }, Map)
+local function trimmed(value: any): string
+    if type(value) ~= "string" then return "" end
+    return (value:gsub("^%s+", ""):gsub("%s+$", ""))
+end
+
+-- watch_projection(step) -> { thread_id, projection_id }? for a retired
+-- watch teardown step whose registration names its trigger projection.
+local function watch_projection(step: any): Map?
+    if type(step) ~= "table" or (step :: Map).target ~= RETIRED_TRIGGER_TEARDOWN then return nil end
+    local args = type((step :: Map).args) == "table" and ((step :: Map).args :: Map) or {}
+    if args.mode ~= "watch" then return nil end
+    local registration = type(args.registration) == "table" and (args.registration :: Map) or {}
+    local thread_id, projection_id = trimmed(registration.thread_id), trimmed(registration.projection_id)
+    if thread_id == "" or projection_id == "" then return nil end
+    return { thread_id = thread_id, projection_id = projection_id }
+end
+
+local function projection_key(projection: Map): string
+    return tostring(projection.thread_id) .. "\0" .. tostring(projection.projection_id)
+end
+
+-- watch_projections(chain) -> the { thread_id, projection_id } of every
+-- trigger projection the chain's watch teardown steps name, which the
+-- rollback upgrade removes before the steps leave the chain.
+local function watch_projections(chain: any): { Map }
+    local out: { Map } = {}
+    for _, step in ipairs(type(chain) == "table" and (chain :: { any }) or {}) do
+        local projection = watch_projection(step)
+        if projection then out[#out + 1] = projection end
+    end
+    return out
+end
+
+-- upgrade_rollback(chain, removed_projections?) -> upgraded, changes: a stored
+-- rollback chain brought to the current cleanup targets. removed_projections
+-- lists the { thread_id, projection_id } trigger projections confirmed absent
+-- from their source threads; a watch teardown step leaves the chain once its
+-- projection is among them, or when its registration names none. changes =
+-- { removed, retained }: removed lists the targets of the steps it removed,
+-- empty when the chain is already current; retained lists { target, mode,
+-- thread_id?, projection_id? } for a retired step that stays. The upgraded
+-- chain is a copy in the stored order; the input stays as given.
+local function upgrade_rollback(chain: any, removed_projections: { Map }?): ({ automation_types.RollbackStep }, Map)
+    local absent: { [string]: boolean } = {}
+    for _, projection in ipairs(removed_projections or {}) do absent[projection_key(projection)] = true end
     local upgraded: { automation_types.RollbackStep } = {}
     local changes: Map = { removed = {}, retained = {} }
     for _, step in ipairs(type(chain) == "table" and (chain :: { any }) or {}) do
         local target = type(step) == "table" and (step :: Map).target or nil
         local args = type(step) == "table" and type((step :: Map).args) == "table" and ((step :: Map).args :: Map) or {}
-        if target == RETIRED_SCHEDULE_DELETE
-            or target == RETIRED_TRIGGER_TEARDOWN and COVERED_TRIGGER_MODES[tostring(args.mode)] then
+        local remove = target == RETIRED_SCHEDULE_DELETE
+            or target == RETIRED_TRIGGER_TEARDOWN and COVERED_TRIGGER_MODES[tostring(args.mode)] == true
+        local projection = watch_projection(step)
+        if target == RETIRED_TRIGGER_TEARDOWN and args.mode == "watch" then
+            remove = projection == nil or absent[projection_key(projection :: Map)] == true
+        end
+        if remove then
             changes.removed[#changes.removed + 1] = target
         else
             if target == RETIRED_TRIGGER_TEARDOWN then
-                changes.retained[#changes.retained + 1] = { target = target, mode = args.mode }
+                changes.retained[#changes.retained + 1] = { target = target, mode = args.mode,
+                    thread_id = projection and projection.thread_id or nil,
+                    projection_id = projection and projection.projection_id or nil }
             end
             upgraded[#upgraded + 1] = step
         end
@@ -338,6 +385,7 @@ end
 
 P.normalize_rollback_chain = normalize_rollback_chain
 P.upgrade_rollback = upgrade_rollback
+P.watch_projections = watch_projections
 P.trigger_overrides = trigger_overrides
 P.upgrade_trigger = upgrade_trigger
 P.validate_result = validate_result
