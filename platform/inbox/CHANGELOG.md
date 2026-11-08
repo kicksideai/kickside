@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.72](https://github.com/kicksideai/kickside/compare/inbox-v0.1.71...inbox-v0.1.72) (2026-11-08)
+
+
+### Bug Fixes
+
+* **inbox:** remove the New notice test button from the inbox header ([#365](https://github.com/kicksideai/kickside/issues/365)) ([af09fc6](https://github.com/kicksideai/kickside/commit/af09fc6442ab0fbf820e29f4aa7c757500eabd9c))
+
 ## [0.1.71](https://github.com/kicksideai/kickside/compare/inbox-v0.1.70...inbox-v0.1.71) (2026-11-07)
 
 
