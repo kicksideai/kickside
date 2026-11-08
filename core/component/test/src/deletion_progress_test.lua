@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
 local progress = require("progress")
 local jobs = require("jobs")
@@ -8,7 +9,7 @@ M.run = test.run_cases(function()
             jobs.calls, jobs.err = 0, nil
             jobs.rows = {first = {status = "dead", attempts = "3", last_error = "cleanup refused", payload = {secret = true}},
                 second = {status = "running", attempts = 1}}
-            local rows = {{deletion_job_id = "first"}, {deletion_job_id = "second"},
+            local rows: {any} = {{deletion_job_id = "first"}, {deletion_job_id = "second"},
                 {deletion_job_id = "first"}, {deletion_job_id = "missing", deletion_job = {status = "pending", attempts = 0}}, {}}
             local ok, err = progress.enrich(rows)
             test.is_nil(err)

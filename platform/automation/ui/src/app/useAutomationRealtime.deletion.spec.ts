@@ -7,6 +7,17 @@ import { useComponentDeletion } from '@kickside/ui-kit/useComponentDeletion'
 import { useAutomationRealtime } from './useAutomationRealtime'
 import type { Automation } from './automation-types'
 
+vi.hoisted(() => {
+  Object.defineProperty(window, '__WIPPY_APP_API__', {
+    configurable: true,
+    value: {
+      api: { get: vi.fn() },
+      on: vi.fn(),
+      host: { handleError: vi.fn() },
+    },
+  })
+})
+
 let wrapper: ReturnType<typeof mount> | undefined
 afterEach(() => { wrapper?.unmount(); vi.clearAllMocks() })
 
