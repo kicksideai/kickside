@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.11](https://github.com/kicksideai/kickside/compare/component-v0.3.10...component-v0.3.11) (2026-11-08)
+
+
+### Bug Fixes
+
+* **automation:** upgrade stored rollback steps of the retired trigger runtime on module update ([#367](https://github.com/kicksideai/kickside/issues/367)) ([26b9e6b](https://github.com/kicksideai/kickside/commit/26b9e6b3aefc32459cab739d74a44f881e03113f))
+
 ## [0.3.10](https://github.com/kicksideai/kickside/compare/component-v0.3.9...component-v0.3.10) (2026-11-07)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.20](https://github.com/kicksideai/kickside/compare/automation-v0.2.19...automation-v0.2.20) (2026-11-08)
+
+
+### Bug Fixes
+
+* **automation:** upgrade stored rollback steps of the retired trigger runtime on module update ([#367](https://github.com/kicksideai/kickside/issues/367)) ([26b9e6b](https://github.com/kicksideai/kickside/commit/26b9e6b3aefc32459cab739d74a44f881e03113f))
+
 ## [0.2.19](https://github.com/kicksideai/kickside/compare/automation-v0.2.18...automation-v0.2.19) (2026-11-08)
 
 
