@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.19](https://github.com/kicksideai/kickside/compare/automation-v0.2.18...automation-v0.2.19) (2026-11-08)
+
+
+### Bug Fixes
+
+* **automation:** re-prepare a replayed delivery after its declaration changes ([#362](https://github.com/kicksideai/kickside/issues/362)) ([17ddf5d](https://github.com/kicksideai/kickside/commit/17ddf5df2a034e835c992ad14815b02487e59fe2))
+* **sync:** upgrade stored declarations to the current trigger spec on module update ([#361](https://github.com/kicksideai/kickside/issues/361)) ([cd6b101](https://github.com/kicksideai/kickside/commit/cd6b101aa994a3609709c1e293a808cb2d95f0d2))
+
 ## [0.2.18](https://github.com/kicksideai/kickside/compare/automation-v0.2.17...automation-v0.2.18) (2026-11-07)
 
 
