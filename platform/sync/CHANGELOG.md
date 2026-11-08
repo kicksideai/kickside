@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.95](https://github.com/kicksideai/kickside/compare/sync-v0.1.94...sync-v0.1.95) (2026-11-08)
+
+
+### Bug Fixes
+
+* **sync:** upgrade stored declarations to the current trigger spec on module update ([#361](https://github.com/kicksideai/kickside/issues/361)) ([cd6b101](https://github.com/kicksideai/kickside/commit/cd6b101aa994a3609709c1e293a808cb2d95f0d2))
+
 ## [0.1.94](https://github.com/kicksideai/kickside/compare/sync-v0.1.93...sync-v0.1.94) (2026-11-07)
 
 
