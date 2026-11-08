@@ -94,6 +94,9 @@ const mcpErr = ref('')
 const copied = ref('')
 
 const brand = computed(() => props.splash.title || 'Welcome')
+// A component step without a declared title owns its heading; the host then
+// renders none and labels the modal with the splash title.
+const componentHeading = computed(() => !!step.value?.component_tag && !step.value?.title)
 // Server-resolved MCP URL (env-derived). The SPA runs in a sandboxed iframe where
 // window.location.origin is "null", so the URL must come from the backend.
 const mcpUrl = ref('')
@@ -327,7 +330,8 @@ function goTo(i: number) {
 <template>
   <component :is="isDialog ? 'dialog' : 'div'" ref="dialogEl"
     :class="isDialog ? 'sp-dialog' : 'sp-screen'" role="dialog" aria-modal="true"
-    aria-labelledby="sp-title" @cancel.prevent="dismissDialog" @keydown.capture="handleDialogKeydown">
+    :aria-labelledby="componentHeading ? undefined : 'sp-title'" :aria-label="componentHeading ? brand : undefined"
+    @cancel.prevent="dismissDialog" @keydown.capture="handleDialogKeydown">
     <button v-if="isDialog" type="button" class="sp-close" aria-label="Close onboarding"
       :disabled="dismissing" autofocus @click="dismissDialog">
       <Icon icon="tabler:x" :width="20" :height="20" aria-hidden="true" />
@@ -348,11 +352,13 @@ function goTo(i: number) {
           <Icon icon="tabler:check" :width="30" :height="30" aria-hidden="true" />
         </div>
         <div v-if="!isDialog" class="sp-eyebrow">Step {{ idx + 1 }} of {{ steps.length }}</div>
-        <h1 id="sp-title" class="sp-h">{{ step?.title || brand }}</h1>
-        <p v-if="step?.subtitle" class="sp-sub">{{ step.subtitle }}</p>
+        <template v-if="!componentHeading">
+          <h1 id="sp-title" class="sp-h">{{ step?.title || brand }}</h1>
+          <p v-if="step?.subtitle" class="sp-sub">{{ step.subtitle }}</p>
+        </template>
 
         <!-- A step's own web component, when declared. -->
-        <div v-show="step?.component_tag" ref="hostEl" class="sp-step-host" />
+        <div v-show="step?.component_tag" ref="hostEl" class="sp-step-host" :class="componentHeading && 'sp-step-host-lead'" />
         <div v-if="componentLoading" class="sp-component-state" role="status">Loading setup choices…</div>
         <div v-else-if="componentLoadError" class="sp-component-state sp-component-error" role="alert">
           <span>{{ componentLoadError }}</span>
