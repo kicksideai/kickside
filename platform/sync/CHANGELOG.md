@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.94](https://github.com/kicksideai/kickside/compare/sync-v0.1.93...sync-v0.1.94) (2026-11-07)
+
+
+### Bug Fixes
+
+* **sync:** decide reconfigure reconcile mode from the installed reconcile drive ([#357](https://github.com/kicksideai/kickside/issues/357)) ([25bcf0b](https://github.com/kicksideai/kickside/commit/25bcf0bebab28942ff368a21a38176e14e32b061))
+
 ## [0.1.93](https://github.com/kicksideai/kickside/compare/sync-v0.1.92...sync-v0.1.93) (2026-11-07)
 
 
