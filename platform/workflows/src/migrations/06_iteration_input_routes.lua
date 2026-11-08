@@ -59,6 +59,8 @@ return require("migration").define(function()
         for _, engine in ipairs({ "sqlite", "postgres" }) do
             database(engine, function()
                 up(recompile)
+                -- The base migration removes these derived artifacts with their table.
+                down(function() end)
             end)
         end
     end)

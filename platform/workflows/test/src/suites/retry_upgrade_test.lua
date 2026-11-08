@@ -3,6 +3,7 @@ local test = require("test")
 local sql = require("sql")
 local funcs = require("funcs")
 local uuid = require("uuid")
+local registry = require("registry")
 
 local function run()
     test.describe("Optional retry field migration", function()
@@ -50,6 +51,34 @@ local function run()
             execute("DROP TABLE workflow_def_nodes")
             execute("DROP TABLE workflow_versions")
             db:release()
+        end)
+        test.it("uninstalls every migration and reinstalls the schema", function()
+            local entries, find_err = registry.find({
+                [".kind"] = "function.lua", [".ns"] = "kickside.workflows.migrations", ["meta.type"] = "migration",
+            })
+            test.is_nil(find_err)
+            test.ok(#entries > 0)
+            table.sort(entries, function(a, b) return a.id < b.id end)
+            local function migrate(entry, direction)
+                local result, err = funcs.call(entry.id, {
+                    database_id = "app:retry_upgrade_db", direction = direction, id = uuid.v4(),
+                })
+                test.is_nil(err, tostring(err))
+                test.eq(result.failed, 0, entry.id .. ": " .. tostring(result.error))
+            end
+            for _, entry in ipairs(entries) do migrate(entry, "up") end
+            for index = #entries, 1, -1 do migrate(entries[index], "down") end
+            local db, db_err = sql.get("app:retry_upgrade_db")
+            test.is_nil(db_err)
+            local query = db:type() == sql.type.POSTGRES
+                and "SELECT tablename AS name FROM pg_tables WHERE schemaname=current_schema() AND tablename LIKE 'workflow_%'"
+                or "SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'workflow_%'"
+            local rows, read_err = db:query(query)
+            test.is_nil(read_err)
+            test.eq(#rows, 0, "uninstall removes the Workflow schema")
+            db:release()
+            for _, entry in ipairs(entries) do migrate(entry, "up") end
+            for index = #entries, 1, -1 do migrate(entries[index], "down") end
         end)
     end)
 end
