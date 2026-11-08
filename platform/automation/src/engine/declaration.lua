@@ -111,6 +111,62 @@ local function trigger_overrides(trigger: any): (Map?, Map?)
     return next(round) and round or nil, next(delivery) and delivery or nil
 end
 
+-- The fields an earlier Trigger Spec v2 carried that the current spec removes,
+-- by trigger block. The per-item retry delay an earlier spec held at
+-- poll.delivery.retry_after_ms has its current place at
+-- delivery.retry_after_ms; the other fields have no current equivalent.
+local REMOVED_TRIGGER_FIELDS: { { string } } = {
+    { "poll", "continue_after_ms" },
+    { "poll", "delivery" },
+    { "schedule", "max_retries" },
+    { "schedule", "timeout_seconds" },
+}
+
+-- upgrade_trigger(trigger) -> upgraded, changes: a stored trigger brought to
+-- the current Trigger Spec v2. changes = { removed, retry_after_ms?,
+-- superseded_retry_after_ms? }: removed lists the dotted paths it removed,
+-- empty when the trigger is already current; retry_after_ms is the legacy
+-- poll.delivery delay carried to delivery.retry_after_ms; superseded_retry_after_ms
+-- is a legacy delay set aside because delivery.retry_after_ms already declares
+-- one. A poll block left without fields is removed with them. The upgraded
+-- trigger is a copy; the input stays as given.
+local function upgrade_trigger(trigger: any): (any, Map)
+    local removed: { string } = {}
+    local changes: Map = { removed = removed }
+    if type(trigger) ~= "table" then return trigger, changes end
+    local out: Map = {}
+    for key, value in pairs(trigger :: Map) do out[key] = value end
+    local poll = type(out.poll) == "table" and (out.poll :: Map) or {}
+    local legacy_delivery = type(poll.delivery) == "table" and (poll.delivery :: Map) or {}
+    local legacy_retry = legacy_delivery.retry_after_ms
+    for _, field in ipairs(REMOVED_TRIGGER_FIELDS) do
+        local block_key, field_key = field[1], field[2]
+        local block = out[block_key]
+        if type(block) == "table" and (block :: Map)[field_key] ~= nil then
+            local next_block: Map = {}
+            for key, value in pairs(block :: Map) do
+                if key ~= field_key then next_block[key] = value end
+            end
+            out[block_key] = next_block
+            removed[#removed + 1] = "trigger." .. block_key .. "." .. field_key
+        end
+    end
+    if #removed > 0 and type(out.poll) == "table" and next(out.poll :: Map) == nil then out.poll = nil end
+    if legacy_retry ~= nil then
+        local current = type(out.delivery) == "table" and (out.delivery :: Map) or {}
+        if current.retry_after_ms == nil then
+            local delivery: Map = {}
+            for key, value in pairs(current) do delivery[key] = value end
+            delivery.retry_after_ms = legacy_retry
+            out.delivery = delivery
+            changes.retry_after_ms = legacy_retry
+        else
+            changes.superseded_retry_after_ms = legacy_retry
+        end
+    end
+    return out, changes
+end
+
 local function validate_result(result: any): any
     if type(result) ~= "table" then
         return errors.new({
@@ -239,6 +295,7 @@ end
 
 P.normalize_rollback_chain = normalize_rollback_chain
 P.trigger_overrides = trigger_overrides
+P.upgrade_trigger = upgrade_trigger
 P.validate_result = validate_result
 P.validate_source = validate_source
 

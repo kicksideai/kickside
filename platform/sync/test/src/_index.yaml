@@ -69,6 +69,40 @@ entries:
       automations_lib: kickside.automation:automation
       binding_validation: kickside.automation:binding_validation
       drive: kickside.automation:drive
+      engine_schema: kickside.automation.engine:schema
+      upgrade_engine: app:upgrade_engine
+      component: kickside.component:component
+
+  - name: upgrade_engine
+    kind: library.lua
+    meta: { comment: Harness-only automation engine over the production dependencies with named ones replaced. }
+    source: file://upgrade_engine.lua
+    modules: [contract, funcs, registry, logger, security, uuid, json, sql, time, expr, ctx, hash]
+    imports:
+      automation_engine: kickside.automation.engine:engine
+      drive: kickside.automation:drive
+      command: kickside.automation:command
+      declaration_references: kickside.automation:declaration_references
+      declaration_authority: kickside.automation:declaration_authority
+      jobs_config: kickside.core.jobs:config
+      types: kickside.automation:types
+      automation_ref: kickside.automation:automation_ref
+      execution_identity: kickside.execution:execution_identity
+      component: kickside.component:component
+      autoinit: kickside.component:autoinit
+      slot: kickside.automation:slot
+      runtime_policy: kickside.automation:runtime_policy
+      failure_classification: kickside.automation:failure_classification
+      round_ledger: kickside.automation:round_ledger
+      round_history: kickside.automation:round_history
+      prepared_retention: kickside.automation:prepared_retention
+      receipt_retention: kickside.automation:receipt_retention
+      round_outcome: kickside.automation:round_outcome
+      canonical_json: kickside.contract:canonical_json
+      automation_db: kickside.automation:automation_db
+      retention_pin: kickside.core.retention:pin
+      core_db: kickside.core:db
+      view_components: wippy.views:component_registry
 
   - name: round_delivery_test
     kind: function.lua

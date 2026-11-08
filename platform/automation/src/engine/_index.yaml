@@ -24,6 +24,7 @@ entries:
       engine_observe: kickside.automation.engine:observe
       engine_recovery: kickside.automation.engine:recovery
       engine_controls: kickside.automation.engine:controls
+      engine_upgrade: kickside.automation.engine:upgrade
 
   - name: support
     kind: library.lua
@@ -145,6 +146,17 @@ entries:
       engine_schema: kickside.automation.engine:schema
       engine_support: kickside.automation.engine:support
       types: kickside.automation:types
+
+  - name: upgrade
+    kind: library.lua
+    meta:
+      comment: "Automation engine part: stored declarations brought to the current Trigger Spec through the automation's own reconfigure command."
+    source: file://upgrade.lua
+    imports:
+      engine_declaration: kickside.automation.engine:declaration
+      engine_drive_plan: kickside.automation.engine:drive_plan
+      engine_schema: kickside.automation.engine:schema
+      engine_support: kickside.automation.engine:support
 
   - name: artifact
     kind: library.lua

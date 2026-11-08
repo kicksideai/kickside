@@ -9,9 +9,10 @@
 -- artifact (export/import), actions (call_action, reconfigure,
 -- uninstall/delete, resource ownership), control (execution-identity change), controls
 -- (drive pause, resume, run_now, replay, resync), observe
--- (status, health) and recovery (pending command recovery, the command
--- dispatcher pass). The parts share private helpers through one table, so each
--- helper keeps one definition.
+-- (status, health), recovery (pending command recovery, the command
+-- dispatcher pass) and upgrade (stored declarations brought to the current
+-- Trigger Spec through their own reconfigure command). The parts share
+-- private helpers through one table, so each helper keeps one definition.
 
 local support = require("engine_support")
 local declared = require("engine_declared")
@@ -29,6 +30,7 @@ local selected_install = require("engine_selected_install")
 local observe = require("engine_observe")
 local recovery = require("engine_recovery")
 local controls = require("engine_controls")
+local upgrade = require("engine_upgrade")
 
 type Dependencies = {
     types: any,
@@ -65,7 +67,7 @@ type Dependencies = {
     jobs_config: any,
 }
 
-local PARTS = { declared, pins, install, catalog, ports, sink_writer, state, state_write, artifact, actions, control, selected_install, controls, observe, recovery }
+local PARTS = { declared, pins, install, catalog, ports, sink_writer, state, state_write, artifact, actions, control, selected_install, controls, observe, recovery, upgrade }
 
 local function new(dependencies: Dependencies): any
     local M: any = {

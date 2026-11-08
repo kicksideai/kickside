@@ -63,6 +63,7 @@ type Reservation = {
     step: string?,
     next_attempt_at: string?,
     require_authority_failure: boolean?,
+    expected_generation: integer?,
 }
 
 local function invalid(message: string): error
@@ -155,6 +156,10 @@ local function check_reservation(req: any): (Reservation?, error?)
         if err then return nil, err end
     end
     if type(r.input) ~= "table" then return nil, invalid("input is required") end
+    if r.expected_generation ~= nil and (type(r.expected_generation) ~= "number" or r.expected_generation < 0
+        or r.expected_generation ~= math.floor(r.expected_generation)) then
+        return nil, invalid("expected_generation must be a non-negative integer")
+    end
     if type(r.drive_keys) ~= "table" or (#(r.drive_keys :: { any }) == 0 and r.kind ~= command.OWNER_DELETE_KIND) then
         return nil, invalid("drive_keys are required")
     end
@@ -172,7 +177,9 @@ local function replay_or_conflict(op: Map, digest: string): (Map?, error?)
 end
 
 -- reserve_tx reserves a command. Returns { request_id, generation, state,
--- existing } where existing marks a replayed request.
+-- existing } where existing marks a replayed request. A request naming
+-- expected_generation reserves only while the automation's last command
+-- generation is still that baseline; a newer command conflicts as stale.
 function command.reserve_tx(tx: sql.Transaction, request: any, prepare_tx: any?): (Map?, error?)
     local req, req_err = check_reservation(request)
     if req_err or not req then return nil, req_err end
@@ -185,6 +192,11 @@ function command.reserve_tx(tx: sql.Transaction, request: any, prepare_tx: any?)
     if row.pending_request_id ~= nil then
         return nil, conflict("automation " .. req.automation_id .. " has pending command " .. tostring(row.pending_request_id),
             command.REASON.PENDING, { pending_request_id = row.pending_request_id, retry_after = row.next_attempt_at })
+    end
+    if req.expected_generation ~= nil and row.generation ~= req.expected_generation then
+        return nil, conflict("automation " .. req.automation_id .. " is at command generation " .. tostring(row.generation)
+            .. ", past the request's baseline " .. tostring(req.expected_generation), command.REASON.STALE,
+            { generation = row.generation, expected_generation = req.expected_generation })
     end
     if prepare_tx ~= nil then
         if type(prepare_tx) ~= "function" then return nil, invalid("reservation preparation must be callable") end
