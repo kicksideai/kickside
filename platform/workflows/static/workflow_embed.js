@@ -1,8 +1,8 @@
 import { u as ue, a as ie, s as w, W as de, P as ce } from "./index-BhiG6P-P.js";
 import { defineComponent as fe, defineAsyncComponent as ve, computed as _, ref as h, onBeforeUnmount as pe, watch as me, openBlock as n, createElementBlock as m, createVNode as d, unref as a, createElementVNode as u, createBlock as v, withCtx as c, createTextVNode as b, toDisplayString as k, withModifiers as be, createCommentVNode as I, Fragment as he } from "vue";
 import { L as ye, Z as we, f as A, m as ke, J as ge, h as _e, X as Ce, Y as Ee } from "./wc-mount-krbIT6pk.js";
-import { s as K } from "./index-BpA9WGJi.js";
-import { a as Re, b as Se, C as We, s as Ie, _ as z, g as Pe, D as Oe, A as Ae, i as je } from "./http-error-DTRJ-0zq.js";
+import { s as z } from "./index-BpA9WGJi.js";
+import { a as Re, b as Se, C as We, s as Ie, _ as K, g as Pe, D as Oe, z as Ae, i as je } from "./http-error-Z5dIGHrb.js";
 import { on as Y, define as Ve } from "@wippy-fe/proxy";
 import { Icon as j } from "@iconify/vue";
 import { _ as $e, s as Le } from "./workflow-embed-BXNW4FQr.js";
@@ -80,7 +80,7 @@ const Be = { class: "wf-embed" }, He = {
 }, Me = {
   key: 3,
   class: "wf-embed-run"
-}, qe = { class: "wf-embed-hd" }, Ke = { class: "wf-embed-hd-ico" }, ze = { class: "wf-embed-hd-main" }, Ye = { class: "wf-embed-hd-title" }, Ge = { class: "wf-embed-input" }, Xe = {
+}, qe = { class: "wf-embed-hd" }, ze = { class: "wf-embed-hd-ico" }, Ke = { class: "wf-embed-hd-main" }, Ye = { class: "wf-embed-hd-title" }, Ge = { class: "wf-embed-input" }, Xe = {
   key: 3,
   class: "wf-embed-subtle"
 }, Ze = { class: "wf-embed-actions" }, Qe = {
@@ -107,7 +107,7 @@ const Be = { class: "wf-embed" }, He = {
 }, ut = { class: "wf-embed-actions" }, it = /* @__PURE__ */ fe({
   __name: "EmbedWorkflow",
   setup(t) {
-    const r = ve(() => import("./SchemaEditor-h6d9aJvC.js")), l = ue(), f = ie(), i = _(() => Te(l.value)), o = h(null), S = h(!1), C = h(""), P = h({}), B = h(0), L = h(!0), p = h("ready"), V = h(!1), E = h(""), g = h(""), y = h(null);
+    const r = ve(() => import("./SchemaEditor-DPgFQBVt.js")), l = ue(), f = ie(), i = _(() => Te(l.value)), o = h(null), S = h(!1), C = h(""), P = h({}), B = h(0), L = h(!0), p = h("ready"), V = h(!1), E = h(""), g = h(""), y = h(null);
     let N = null, H = null, x = !1;
     const X = _(() => o.value ? `/workflows/${o.value.id}` : "");
     function Z() {
@@ -202,7 +202,7 @@ const Be = { class: "wf-embed" }, He = {
       { immediate: !0 }
     ), (s, e) => (n(), m("div", Be, [
       S.value ? (n(), m("div", He, [
-        d(a(K), {
+        d(a(z), {
           class: "wf-status-spinner",
           "stroke-width": "4",
           "aria-label": "Loading Workflow"
@@ -220,13 +220,13 @@ const Be = { class: "wf-embed" }, He = {
         _: 1
       })) : o.value ? (n(), m("div", Me, [
         u("header", qe, [
-          u("span", Ke, [
+          u("span", ze, [
             d(a(j), {
               icon: "tabler:route",
               "aria-hidden": "true"
             })
           ]),
-          u("span", ze, [
+          u("span", Ke, [
             u("span", Ye, k(o.value.title), 1),
             d(a(Ie), {
               class: "wf-embed-hd-sub",
@@ -278,7 +278,7 @@ const Be = { class: "wf-embed" }, He = {
                 b(k(i.value.inputError), 1)
               ]),
               _: 1
-            })) : ee.value ? (n(), v(z, {
+            })) : ee.value ? (n(), v(K, {
               key: 1,
               value: P.value,
               label: "Input",
@@ -339,7 +339,7 @@ const Be = { class: "wf-embed" }, He = {
             _: 1
           })) : I("", !0)
         ], 64)) : p.value === "running" ? (n(), m("div", Qe, [
-          d(a(K), {
+          d(a(z), {
             class: "wf-status-spinner",
             "stroke-width": "4",
             "aria-label": "Workflow running"
@@ -389,7 +389,7 @@ const Be = { class: "wf-embed" }, He = {
             ])]),
             _: 1
           }),
-          y.value && y.value.hasOutput ? (n(), v(z, {
+          y.value && y.value.hasOutput ? (n(), v(K, {
             key: 0,
             value: y.value.output,
             label: "Result",
