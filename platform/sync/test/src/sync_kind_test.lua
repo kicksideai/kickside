@@ -632,7 +632,11 @@ local function define_tests()
         -- current Trigger Spec v2: poll pacing and delivery attempts, schedule
         -- retries and timeout.
         local function legacy_trigger(trigger: Map): Map
-            local out = json.decode(json.encode(trigger)) :: Map
+            local raw, encode_err = json.encode(trigger)
+            test.is_nil(encode_err)
+            local decoded_trigger, decode_err = json.decode(raw)
+            test.is_nil(decode_err)
+            local out = decoded_trigger :: Map
             out.poll = out.poll or {}
             out.poll.continue_after_ms = 10000
             out.poll.delivery = { max_attempts = 3, retry_after_ms = LEGACY_RETRY_MS, on_exhausted = "skip" }

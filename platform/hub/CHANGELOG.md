@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.72](https://github.com/kicksideai/kickside/compare/hub-v0.1.71...hub-v0.1.72) (2026-11-08)
+
+
+### Bug Fixes
+
+* UI artifacts in buttons, headings, dialogs and tables ([#371](https://github.com/kicksideai/kickside/issues/371)) ([ea55ea8](https://github.com/kicksideai/kickside/commit/ea55ea8a17ee5802cb73a4dbcf39878d7f56cd2e))
+
 ## [0.1.71](https://github.com/kicksideai/kickside/compare/hub-v0.1.70...hub-v0.1.71) (2026-11-07)
 
 
