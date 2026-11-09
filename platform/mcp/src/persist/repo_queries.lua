@@ -5,7 +5,7 @@ local consts = require("mcp_consts")
 return function(M: any, db_open: any, now_unix: any, decode_restrictions: any)
     -- The old credential remains visible for 30 days after revocation or
     -- expiration, then the retention tick reclaims it. Active rows are retained.
-    function M.prune_retired(limit: integer): (integer?, error?)
+    function M.prune_retired(limit: integer): (integer?, error?, any?)
         if type(limit) ~= "number" or limit ~= math.floor(limit) or limit < 1 or limit > 500 then
             return nil, (errors.new({ message = "credential prune limit must be in [1,500]",
                 kind = errors.INVALID, retryable = false }) :: error)
@@ -17,6 +17,8 @@ return function(M: any, db_open: any, now_unix: any, decode_restrictions: any)
         end
         local cutoff = now_unix() - 30 * 86400
         local total = 0
+        local needs_continue = false
+        local deadline: number? = nil
         for _, spec in ipairs({
             { predicate = "status='revoked' AND revoked_at IS NOT NULL AND revoked_at <= $1",
                 ordering = "revoked_at", cap = math.floor(limit / 2) },
@@ -28,7 +30,7 @@ return function(M: any, db_open: any, now_unix: any, decode_restrictions: any)
                 local result, err = db:execute("WITH expired AS (SELECT credential_id FROM " .. table_name
                     .. " WHERE " .. spec.predicate .. " ORDER BY " .. spec.ordering
                     .. ",credential_id LIMIT $2) DELETE FROM " .. table_name
-                    .. " WHERE credential_id IN (SELECT credential_id FROM expired)", { cutoff, spec.cap })
+                    .. " WHERE credential_id IN (SELECT credential_id FROM expired) AND " .. spec.predicate, { cutoff, spec.cap })
                 if err then
                     db:release()
                     return nil, (errors.new({ message = "credential prune failed: " .. tostring(err),
@@ -41,10 +43,29 @@ return function(M: any, db_open: any, now_unix: any, decode_restrictions: any)
                         kind = errors.INTERNAL, retryable = true }) :: error)
                 end
                 total = total + count
+                needs_continue = needs_continue or count >= spec.cap
+                local predicate = spec.ordering == "revoked_at"
+                    and "status='revoked' AND revoked_at > $1" or "expires_at > $1"
+                local rows, read_err = db:query("SELECT " .. spec.ordering .. " AS stamp FROM " .. table_name
+                    .. " WHERE " .. predicate .. " ORDER BY " .. spec.ordering .. ",credential_id LIMIT 1", {cutoff})
+                if read_err or type(rows) ~= "table" then
+                    db:release()
+                    return nil, (errors.new({message = "credential retention deadline read failed: " .. tostring(read_err),
+                        kind = errors.INTERNAL, retryable = true}) :: error)
+                end
+                if rows[1] then
+                    local stamp = tonumber(rows[1].stamp)
+                    if stamp == nil then
+                        db:release()
+                        return nil, (errors.new({message = "credential retention deadline is invalid", kind = errors.INTERNAL}) :: error)
+                    end
+                    local next_ms = (stamp + 30 * 86400) * 1000
+                    deadline = deadline == nil and next_ms or math.min(deadline, next_ms)
+                end
             end
         end
         db:release()
-        return total, nil
+        return total, nil, { needs_continue = needs_continue, deadline_ms = deadline }
     end
 
     function M.delete_for_actor(actor_id: any): (boolean, error?)

@@ -20,7 +20,7 @@ local function define_tests()
                 client_id = "gc-client", actor_id = "gc-actor", redirect_uri = "https://example.test/cb",
                 code_challenge = "gc-challenge", grant = { actor = "gc-actor" },
             }
-            args.ttl = -1
+            args.ttl = 3
             test.is_nil(oauth_repo.put_code(expired, args))
             args.ttl = 3600
             test.is_nil(oauth_repo.put_code(live, args))
@@ -32,10 +32,17 @@ local function define_tests()
             test.eq(count(db, live_hash), 1)
             db:release()
 
+            local scheduled, schedule_err = owner_hooks.run()
+            test.is_nil(schedule_err, tostring(schedule_err))
+            test.eq(#scheduled.failures, 0)
+            test.not_nil(scheduled.deadline_ms)
+            local delay = assert(scheduled.deadline_ms) - math.floor(time.now():unix_nano()/1000000)
+            test.is_true(delay > 0)
+            time.sleep(tostring(delay + 50) .. "ms")
             local report, prune_err = owner_hooks.run()
             test.is_nil(prune_err)
             test.eq(#report.failures, 0, "no retention owner fails")
-            test.is_true(report.deleted >= 1)
+            test.not_nil(report.deadline_ms,"the live grant retains its expiry deadline")
             db, db_err = sql.get("app:db")
             test.is_nil(db_err)
             if db == nil then error("database unavailable") end
@@ -69,7 +76,7 @@ local function define_tests()
             local report, prune_err = owner_hooks.run()
             test.is_nil(prune_err)
             test.eq(#report.failures, 0, "no retention owner fails")
-            test.is_true(report.deleted >= 1)
+            test.not_nil(report.deadline_ms,"the active client retains its idle deadline")
 
             db, db_err = sql.get("app:db")
             test.is_nil(db_err)

@@ -13,6 +13,7 @@ entries:
     modules: [sql, uuid, time, funcs, channel]
     imports:
       test: wippy.test:test
+      uploads_resources: kickside.uploads.binding:uploads_resources
       upload_read_model_retention: kickside.uploads.persist:read_model_retention
       upload_read_model: kickside.uploads.persist:upload_read_model
       upload_types: kickside.uploads:types
@@ -26,8 +27,9 @@ entries:
       comment: Existing retention callback reclaims old unreferenced artifact blobs and bytes.
     source: file://orphan_blob_retention_test.lua
     method: run
-    modules: [sql, uuid, fs, funcs]
+    modules: [sql, uuid, fs, funcs, time]
     imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
       test: wippy.test:test
       artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo
 
