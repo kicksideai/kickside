@@ -764,6 +764,7 @@ entries:
     imports:
       test: wippy.test:test
       worker_pool: kickside.core.jobs.service:worker_pool
+      job_fixture: app:job_fixture
 
   - name: awaited_capacity_test
     kind: function.lua
@@ -799,6 +800,7 @@ entries:
       clock: kickside.core.jobs:clock
       claim: kickside.core.jobs.persist:claim
       lifecycle: kickside.core.jobs.persist:lifecycle
+      retention: kickside.core.jobs.persist:retention
 
   - name: idle_report_test
     kind: function.lua
@@ -4156,3 +4158,35 @@ entries:
     imports:
       runtime_policy: kickside.core.jobs.policy:runtime
       jobs: kickside.core.jobs:jobs
+
+  - name: retention_pace_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_retention_pace, timeout: 600s}
+    source: file://retention_pace_test.lua
+    method: run
+    modules: [sql, uuid, time]
+    imports:
+      test: wippy.test:test
+      config: kickside.core.jobs:config
+      retention: kickside.core.jobs.persist:retention
+      retention_schedule: kickside.core.jobs.service:retention_schedule
+      retention_order_migration: app:retention_order_migration
+      worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+      job_fixture: app:job_fixture
+
+  - name: private_queue_retention_pace
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: retention_order_migration
+    kind: library.lua
+    source: file://retention_order_migration.lua
+    imports:
+      migration: wippy.migration:core
+      run_status: kickside.core.jobs:run_status
+
+  - name: private_queue_retention_dispatch
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
