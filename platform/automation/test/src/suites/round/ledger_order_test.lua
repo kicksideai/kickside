@@ -7,8 +7,8 @@ local round_ledger = require("round_ledger")
 
 type Map = { [string]: any }
 local DB = "app:db"
--- The upsert includes expires_at, so each item contributes 19 values.
-local LAST_KEY_IN_50_ROW_BATCH = 3 + 49 * 19
+-- The upsert includes classification, so each item contributes 20 values.
+local LAST_KEY_IN_BATCH = 3 + 48 * 20
 
 local function define_tests()
     test.describe("round ledger lock order", function()
@@ -71,6 +71,31 @@ local function define_tests()
             end
         end)
 
+        test.it("keeps a delivery reserved after an initial skip terminal for admission",function()
+            local owner=uuid.v7()
+            local db=assert(sql.get(DB))
+            local tx=assert(db:begin())
+            local item={item_key="observed",dedup_key="observed",op="upsert",payload={}}
+            local now="2026-01-01T00:00:00Z"
+            local _,initial_err=round_ledger.record_tx(tx,owner,"fixture:reservation",{
+                {item=item,state="resolved",classification="skipped"}},now,now)
+            test.is_nil(initial_err,tostring(initial_err))
+            local reserved,delta,reserve_err=round_ledger.reserve_uncertain_tx(tx,owner,"fixture:reservation",item,
+                {key="reservation",op="upsert",hash="payload"},now)
+            test.is_nil(reserve_err,tostring(reserve_err))
+            test.is_true(reserved.send)
+            test.eq(delta,1)
+            local resolved,resolve_err=round_ledger.record_tx(tx,owner,"fixture:reservation",{
+                {item=item,state="resolved",classification="delivered"}},now,now)
+            test.is_nil(resolve_err,tostring(resolve_err))
+            test.eq(resolved,-1)
+            local admitted,admit_err=round_ledger.admit(tx,owner,"fixture:reservation",{item},2)
+            test.is_nil(admit_err,tostring(admit_err))
+            test.eq(#admitted.items,0,"a reserved delivery retains its admission barrier")
+            tx:rollback()
+            db:release()
+        end)
+
         test.it("acquires ledger keys in primary-key order across SQL batches", function()
             local queries: { Map } = {}
             local writes: { Map } = {}
@@ -95,18 +120,18 @@ local function define_tests()
                 "2026-09-27T00:00:00Z", "2099-01-01T00:00:00Z")
             test.is_nil(err, tostring(err))
             test.eq(delta, 120)
-            test.contains(queries[1].statement, "ORDER BY owner_id, source_port, item_key, identity_key FOR UPDATE")
+            test.contains(queries[1].statement, "ORDER BY l.owner_id, l.source_port, l.item_key, l.identity_key FOR UPDATE OF l")
             test.eq(queries[1].params[3], "key-001")
-            test.eq(queries[1].params[4], "key-002")
-            test.eq(queries[1].params[122], "key-120")
+            test.eq(queries[1].params[5], "key-002")
+            test.eq(queries[1].params[241], "key-120")
             test.eq(#writes, 3)
             for index = 1, 3 do
                 test.contains(writes[index].statement, "ORDER BY 1, 2, 3, 5")
             end
             test.eq(writes[1].params[3], "key-001")
-            test.eq(writes[1].params[LAST_KEY_IN_50_ROW_BATCH], "key-050")
-            test.eq(writes[2].params[3], "key-051")
-            test.eq(writes[3].params[3], "key-101")
+            test.eq(writes[1].params[LAST_KEY_IN_BATCH], "key-049")
+            test.eq(writes[2].params[3], "key-050")
+            test.eq(writes[3].params[3], "key-099")
         end)
 
         test.it("serializes opposite-order overlapping ledger pages on PostgreSQL", function()
@@ -159,7 +184,7 @@ local function define_tests()
                             writes = writes + 1
                             if writes == 1 and not err then
                                 stages:send({ label = label, phase = "write", first_key = params[3],
-                                    last_key = params[LAST_KEY_IN_50_ROW_BATCH] })
+                                    last_key = params[LAST_KEY_IN_BATCH] })
                                 permit:receive()
                             end
                             return result, err
@@ -177,7 +202,7 @@ local function define_tests()
             test.eq(a.label, "a")
             test.eq(a.phase, "write")
             test.eq(a.first_key, "overlap-001")
-            test.eq(a.last_key, "overlap-050")
+            test.eq(a.last_key, "overlap-049")
             run("b", reverse, permit_b)
             -- Under the old order B must return from its disjoint first
             -- write before A is released. The fixed order reaches B's
@@ -186,7 +211,7 @@ local function define_tests()
             test.eq(b.label, "b")
             if b.phase == "write" then
                 test.eq(b.first_key, "overlap-100")
-                test.eq(b.last_key, "overlap-051")
+                test.eq(b.last_key, "overlap-052")
             else
                 test.eq(b.phase, "prelock")
             end

@@ -1,0 +1,17 @@
+version: '1.0'
+namespace: kickside.automation
+entries:
+  - name: round_scale_test
+    kind: function.lua
+    source: file://scale_test.lua
+    method: run
+    meta:
+      type: test
+      suite: kickside_automation_scale
+    modules: [sql, uuid, time, json]
+    imports:
+      test: wippy.test:test
+      round_harness: kickside.automation:round_harness
+      round_history: kickside.automation:round_history
+      round_ledger: kickside.automation:round_ledger
+      automation_db: kickside.automation:automation_db

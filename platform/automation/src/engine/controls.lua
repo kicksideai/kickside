@@ -137,15 +137,12 @@ function part.attach(M: any, dependencies: any, P: any): ()
         local ledger = dependencies.round_ledger :: any
         local port = ledger.source_port(d)
         local now = (dependencies.drive :: any).utc_now()
-        local policy, policy_err = (dependencies.policy :: any).policy()
-        if policy_err then return nil, policy_err end
-        local expires = (dependencies.drive :: any).utc_after(policy.ledger_resolved_ms)
         local discarded = 0
         for _, key in ipairs(keys) do
             local result, err = tx:execute("UPDATE " .. ledger.TABLE
-                .. " SET state='resolved',error_code='discarded',next_attempt_at=NULL,resolved_at=$1,expires_at=$2,updated_at=$1"
-                .. " WHERE owner_id=$3 AND source_port=$4 AND item_key=$5 AND state='uncertain'",
-                { now, expires, d.automation_id, port, tostring(key) })
+                .. " SET state='resolved',error_code='discarded',next_attempt_at=NULL,resolved_at=$1,expires_at=NULL,updated_at=$1"
+                .. " WHERE owner_id=$2 AND source_port=$3 AND item_key=$4 AND state='uncertain'",
+                { now, d.automation_id, port, tostring(key) })
             if err then return nil, err end
             discarded = discarded + math.floor(tonumber(result.rows_affected) or 0)
         end

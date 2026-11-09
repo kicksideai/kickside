@@ -13,6 +13,12 @@ function M.keys(d: Map, item: Map, slot: string?): Map
         tostring(item.op or "upsert"), tostring(item.delivery_generation or d.delivery_revision or 1),
         tostring(item.attempt_generation or 0) }) }
 end
+function M.family(d: Map, item: Map): string
+    local original: Map={}
+    for key,value in pairs(item) do original[key]=value end
+    original.attempt_generation=0
+    return M.keys(d,original).idempotency_key
+end
 function M.bind(d: Map, item: Map): ()
     item.source_port = item.source_port or d.source_port or d.source_ref or ("timer:" .. tostring(d.drive_key))
     item.delivery_generation = item.delivery_generation or d.delivery_revision or 1

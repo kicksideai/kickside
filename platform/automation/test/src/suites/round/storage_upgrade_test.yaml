@@ -1,0 +1,16 @@
+version: '1.0'
+namespace: app
+entries:
+  - name: history_upgrade_db
+    kind: db.sql.sqlite
+    file: ':memory:'
+    pool: {max_open: 1, max_idle: 1}
+  - name: delivery_storage_upgrade_test
+    kind: function.lua
+    source: file://storage_upgrade_test.lua
+    method: run
+    meta: {type: test, suite: automation_storage_upgrade}
+    modules: [sql, funcs, time, json]
+    imports:
+      test: wippy.test:test
+      round_harness: kickside.automation:round_harness

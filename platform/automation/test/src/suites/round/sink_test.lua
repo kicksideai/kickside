@@ -82,7 +82,7 @@ local function define_tests(group: integer)
                 { identity })
             test.eq(#writes, 1)
             test.eq(json.decode(writes[1].detail_json).deadline, expected, "the sink write opens under the round's work deadline")
-            test.is_nil(ledger_row(automation_id, "b-1"), "a first-attempt delivery writes no ledger row")
+            test.eq((ledger_row(automation_id, "b-1") :: Map).state,"resolved","a first delivery retains its classification")
         end)
 
         test.it("writes through the kind's sink, records receipts, settles prepared output and updates in place on redelivery", function()

@@ -33,7 +33,7 @@ local function define_tests()
             {directive="skip",state="resolved"},{directive="fail_dead",state="dead"},
             {directive="fail_always",state="retrying"},{directive="wait",state="waiting"},
             {directive="uncertain",state="uncertain"}}) do
-            test.it("retains " .. case.directive .. " without changing ledger behavior",function()
+            test.it("retains " .. case.directive .. " and authoritative ledger state",function()
                 local env=setup({{key="one",directive=case.directive}})
                 round(env)
                 local rows=history(env.automation_id)
@@ -51,11 +51,7 @@ local function define_tests()
                 test.eq(admitted.identity.principal.id,env.owner)
                 test.eq(admitted.identity.authorized_by.id,env.owner)
                 test.is_nil(admitted.inferred)
-                if case.state == "resolved" then
-                    test.eq(#h.query("SELECT item_key FROM kickside_trigger_item_ledger WHERE owner_id=$1",{env.automation_id}),0)
-                else
-                    test.eq(h.ledger_row(env.automation_id,"one").state,case.state)
-                end
+                test.eq(h.ledger_row(env.automation_id,"one").state,case.state)
                 test.eq(next(h.read_drive(env.automation_id,"history").admission),nil)
                 local before=h.encoded(rows)
                 round(env)
@@ -78,6 +74,36 @@ local function define_tests()
                 test.is_nil(err,tostring(err))
             end
             test.eq(#history(env.automation_id),1,"unchanged skips append no delivery or state transition")
+            local before=h.encoded(h.ledger_row(env.automation_id,"unchanged"))
+            h.exec("DELETE FROM kickside_automation_delivery_history WHERE automation_id=$1",{env.automation_id})
+            h.set_drive(env.automation_id,"history","next_run_at=$1",{h.PAST})
+            local _,err=env.run(env.automation_id,"history",source)
+            test.is_nil(err,tostring(err))
+            test.eq(#history(env.automation_id),0,"history eviction preserves unchanged classification")
+            test.eq(h.encoded(h.ledger_row(env.automation_id,"unchanged")),before,"unchanged classifications write no ledger state")
+        end)
+
+        test.it("reevaluates a retained skip and records a later delivery of the same identity",function()
+            local env=setup({})
+            local skip=true
+            local function source(identity: any,target: string,args: any,opts: any): (any?,any)
+                if target == "kickside.automation:round_acquire" then
+                    return {success=true,items={{item_key="filtered",dedup_key="filtered",op="upsert",
+                        payload=skip and {directive="skip"} or {}}},next_cursor={},has_more=false},nil
+                end
+                return env.run_as(identity,target,args,opts)
+            end
+            for scan=1,2 do
+                h.set_drive(env.automation_id,"history","next_run_at=$1",{h.PAST})
+                local _,err=env.run(env.automation_id,"history",source)
+                test.is_nil(err,tostring(err))
+                skip=false
+            end
+            local rows=history(env.automation_id)
+            test.eq(#rows,2)
+            test.eq(rows[1].identity_key,rows[2].identity_key)
+            test.eq(h.ledger_row(env.automation_id,"filtered").state,"resolved")
+            test.eq(h.query("SELECT classification FROM kickside_trigger_item_ledger WHERE owner_id=$1 AND item_key='filtered'",{env.automation_id})[1].classification,"delivered")
         end)
 
         test.it("retains actual deliveries even when their resolved state repeats",function()

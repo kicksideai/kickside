@@ -104,7 +104,7 @@ function M.ledger_outcomes(items: { Map }, outcomes: Map, delivery: Map): ({ Map
     local receipts: { Map } = {}
     for _, name in ipairs({ "delivered", "skipped" }) do
         for _, o in ipairs(outcomes[name] :: { Map }) do
-            recorded[#recorded + 1] = { item = by_key[o.key], state = ledger.STATE.RESOLVED }
+            recorded[#recorded + 1] = { item = by_key[o.key], state = ledger.STATE.RESOLVED, classification = name }
             if type(o.receipts) == "table" or type(o.prepared_key) == "string" then
                 receipts[#receipts + 1] = { item = by_key[o.key], receipts = o.receipts or {},
                     prepared_key = o.prepared_key }

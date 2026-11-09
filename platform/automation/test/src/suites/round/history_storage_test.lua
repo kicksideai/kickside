@@ -29,15 +29,16 @@ local function rows(id: string): {Map}
     return h.query("SELECT * FROM kickside_automation_delivery_history WHERE automation_id=$1 ORDER BY drive_key,round_token,source_port,item_key,identity_key",{id})
 end
 
-local function seed(id: string, count: integer, expiry: string): ()
+local function seed(id: string, count: integer, expiry: string, split_drive: boolean?): ()
     local db=h.db()
     local postgres=tostring(db:type()) == sql.type.POSTGRES
     db:release()
     local at=postgres and [[to_char(TIMESTAMP '1800-01-01' + CAST((n-1)/50 AS INTEGER) * INTERVAL '1 second','YYYY-MM-DD"T"HH24:MI:SS"Z"')]]
         or [[strftime('%Y-%m-%dT%H:%M:%SZ','1800-01-01','+' || CAST((n-1)/50 AS INTEGER) || ' seconds')]]
+    local drive=split_drive and "CASE WHEN n%2=0 THEN 'history' ELSE 'other' END" or "'history'"
     h.exec("WITH RECURSIVE numbers(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM numbers WHERE n<$1)"
         .. " INSERT INTO kickside_automation_delivery_history (automation_id,drive_key,round_token,source_port,item_key,identity_key,state,round_at,expires_at)"
-        .. " SELECT $2,'history','seed-' || CAST(CAST((n-1)/50 AS INTEGER) AS TEXT),'source',CAST(n AS TEXT),CAST(n AS TEXT),'resolved',"
+        .. " SELECT $2," .. drive .. ",'seed-' || CAST(CAST((n-1)/50 AS INTEGER) AS TEXT),'source',CAST(n AS TEXT),CAST(n AS TEXT),'resolved',"
         .. at .. ",$3 FROM numbers",{count,id,expiry})
 end
 
@@ -261,7 +262,7 @@ local function define_tests()
             local removed=registry.get("kickside.automation.migrations:17_delivery_history_lookup")
             test.is_nil(removed,"history updates must not build an index")
             local id=uuid.v7()
-            seed(id,1000000,"2099-01-01T00:00:00Z")
+            seed(id,1000000,"2099-01-01T00:00:00Z",true)
             h.exec("ANALYZE kickside_automation_delivery_history")
             local db=h.db()
             local postgres=tostring(db:type()) == sql.type.POSTGRES
@@ -271,7 +272,7 @@ local function define_tests()
                 .. " OR c.oid IN (SELECT indexrelid FROM pg_index WHERE indrelid='kickside_automation_delivery_history'::regclass)) ORDER BY c.relname"
                 or "SELECT name,rootpage,sql FROM sqlite_master WHERE tbl_name='kickside_automation_delivery_history' ORDER BY name"
             local storage=h.query(schema)
-            test.eq(#storage,4,"only the published history table and its three indexes exist")
+            test.eq(#storage,7,"the replacement table has only its access-path indexes")
             local before=h.encoded(storage)
             local started=time.now():unix_nano()
             local result=runner.setup(h.DB):run()
@@ -292,7 +293,7 @@ local function define_tests()
             end
             local writes,trimmed,reads=0,0,0
             local plans: Map={}
-            local function append(delivered: {Map}): error?
+            local function append(delivered: {Map}, prior: Map?): error?
                 local _,err=automation_db.in_tx(function(tx)
                     local executor={execute=function(_,statement,params)
                         if statement:find("DELETE FROM",1,true) then
@@ -313,7 +314,7 @@ local function define_tests()
                         if page then test.is_true(#page <= history.MAX_ROWS);reads=reads+#page end
                         return page,read_err
                     end}
-                    return true,history.record_tx(executor,round(id),outcomes,delivered)
+                    return true,history.record_tx(executor,round(id),outcomes,delivered,prior)
                 end)
                 return err
             end
@@ -326,20 +327,22 @@ local function define_tests()
             test.eq(reads,0)
             test.eq(count(),1000000)
             started=time.now():unix_nano()
-            local skip_err=append({})
+            local prior: Map={}
+            for _,outcome in ipairs(outcomes) do prior[outcome.item.item_key .. "\n" .. outcome.item.delivery_key]={state="resolved"} end
+            local skip_err=append({},prior)
             local skip_ms=(time.now():unix_nano()-started)/1000000
             test.is_nil(skip_err,tostring(skip_err))
             test.eq(writes,205,"unchanged skips write no history")
             test.eq(trimmed,205,"unchanged skips trim no history")
-            test.eq(reads,history.MAX_ROWS)
+            test.eq(reads,0)
             test.eq(count(),1000000)
             h.exec("INSERT INTO round_fixture_log (automation_id,drive_key,item_key,attempts,detail_json) VALUES ($1,'history','scale',0,$2)",
                 {id,h.encoded({engine=postgres and "postgres" or "sqlite",rows=1000000,
                 update_ms=update_ms,append_ms=append_ms,skip_ms=skip_ms,writes=writes,trimmed=trimmed,reads=reads,plans=plans,
                 migrations_applied=result.migrations_applied,storage_before=before,storage_after=h.encoded(h.query(schema))})})
-            test.is_true(h.encoded(plans.lookup):find("idx_automation_delivery_history_page",1,true) ~= nil,h.encoded(plans))
-            test.is_true(h.encoded(plans.trim):find("idx_automation_delivery_history_page",1,true) ~= nil,h.encoded(plans))
-            for _,plan in ipairs({plans.lookup,plans.trim}) do
+            test.is_nil(plans.lookup,"prior classifications never read history")
+            test.is_true(h.encoded(plans.trim):find("idx_automation_delivery_history_drive",1,true) ~= nil,h.encoded(plans))
+            for _,plan in ipairs({plans.trim}) do
                 local full_sort=postgres and "sort" or "temp b-tree for order by"
                 test.is_nil(h.encoded(plan):lower():find(full_sort,1,true),"history must not sort the retained table")
             end

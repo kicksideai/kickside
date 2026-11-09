@@ -154,6 +154,7 @@ entries:
     source: file://../round/history.lua
     modules: [json, sql]
     imports:
+      delivery_identity: kickside.automation:delivery_identity
       row_limit: kickside.automation:row_limit
 
   - name: round_acquire

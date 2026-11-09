@@ -339,8 +339,11 @@ jobs:
             database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_1"
             createdb "$database"
             databases+=("$database")
-            wippy lint  --profile postgres --set "vars.pg_database=${databases[0]}" --set "vars.pg_prepared_upgrade_database=${databases[1]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433
-            wippy test --profile postgres --set "vars.pg_database=${databases[0]}" --set "vars.pg_prepared_upgrade_database=${databases[1]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
+            database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_history"
+            createdb "$database"
+            databases+=("$database")
+            wippy lint  --profile postgres --set "vars.pg_database=${databases[0]}" --set "vars.pg_prepared_upgrade_database=${databases[1]}" --set "vars.pg_history_upgrade_database=${databases[2]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433
+            wippy test --profile postgres --set "vars.pg_database=${databases[0]}" --set "vars.pg_prepared_upgrade_database=${databases[1]}" --set "vars.pg_history_upgrade_database=${databases[2]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
             sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-test.log > .wippy-test.clean.log
             awk '/No tests found/ { empty=1 } /^[[:space:]]*FAILED([[:space:]]|$)/ { failed=1 } /^[[:space:]]*PASSED([[:space:]]|$)/ { passed=1 } END { exit(empty || failed || !passed) }' .wippy-test.clean.log
             cd ../live-test
@@ -1674,7 +1677,7 @@ jobs:
         node-version: '22'
     - uses: kicksideai/.github/actions/setup-wippy@5401fa65bed7d8648125957520e94206ed1ffd0b
       with:
-        version: 0.3.56a
+        version: 0.3.59a
         hub-url: https://hub.wippy.ai
     - name: Check out components module sources
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -1722,7 +1725,7 @@ jobs:
         node-version: '22'
     - uses: kicksideai/.github/actions/setup-wippy@5401fa65bed7d8648125957520e94206ed1ffd0b
       with:
-        version: 0.3.56a
+        version: 0.3.59a
         hub-url: https://hub.wippy.ai
     - name: Test missing and incomplete application bundles
       run: node --test app/scripts/check-app-bundle.test.mjs

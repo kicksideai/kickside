@@ -104,6 +104,10 @@ entries:
         path: .meta.target_db
       - entry: kickside.automation.migrations:16_prepared_declaration
         path: .meta.target_db
+      - entry: kickside.automation.migrations:17_bounded_delivery_storage
+        path: .meta.target_db
+      - entry: kickside.automation.migrations:18_ledger_eligibility
+        path: .meta.target_db
       - entry: kickside.automation:db_config
         path: .meta.db_id
 

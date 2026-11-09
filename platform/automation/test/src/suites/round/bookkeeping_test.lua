@@ -1,10 +1,4 @@
--- Bookkeeping rows a round writes per delivered item (Design A, 2026-10-03),
--- counted by row triggers on the automation ledger, receipt and prepared
--- tables: a new destination writes its one receipt, a change to a mapped
--- destination writes nothing, replay-unsafe output adds its prepared insert
--- and settlement, an item that fails once writes its ledger row and its
--- resolution, and a round holding an unresolved item writes only that item's
--- row whatever the port's terminal history. Runs on SQLite and PostgreSQL.
+-- Count exact classified-item, eligibility, receipt and prepared writes per round.
 
 local test = require("test")
 local json = require("json")
@@ -119,18 +113,18 @@ local function define_tests()
             local items: { Map } = { { key = "rec-1" } }
             sink_drive("replay_safe", items, true)
             local created = counted(function() round("replay_safe") end)
-            test.eq(shape(created), "ledger=0/0/0 receipt=1/0/0 prepared=0/0/0", "new record")
+            test.eq(shape(created), "ledger=1/0/0 receipt=1/0/0 prepared=0/0/0", "new record")
             items[1] = { key = "rec-1", dedup_key = "rec-1:revision-2" }
             set_drive(automation_id, "replay_safe", "action_json=$1, cursor=NULL, next_run_at=$2", { json.encode({
                 source_ref = PORT, config = { items = items }, schedule = { type = "interval", expression = "1h" } }), PAST })
             local changed = counted(function() round("replay_safe") end)
-            test.eq(shape(changed), "ledger=0/0/0 receipt=0/0/0 prepared=0/0/0", "change to a mapped record")
+            test.eq(shape(changed), "ledger=1/0/0 receipt=0/0/0 prepared=0/0/0", "change to a mapped record")
         end)
 
         test.it("adds the prepared insert and settlement for replay-unsafe output", function()
             sink_drive("replay_unsafe", { { key = "rec-u" } }, false)
             local created = counted(function() round("replay_unsafe") end)
-            test.eq(shape(created), "ledger=0/0/0 receipt=1/0/0 prepared=1/0/1", "new record, replay-unsafe transform")
+            test.eq(shape(created), "ledger=1/0/0 receipt=1/0/0 prepared=1/0/1", "new record, replay-unsafe transform")
         end)
 
         test.it("writes the ledger row of an item that fails once and its resolution", function()
@@ -141,8 +135,23 @@ local function define_tests()
             local failed = counted(function() round("fails_once") end)
             exec("UPDATE kickside_trigger_item_ledger SET next_attempt_at=$1 WHERE owner_id=$2", { PAST, automation_id })
             local resolved = counted(function() round("fails_once") end)
-            test.eq(shape(failed), "ledger=1/0/0 receipt=0/0/0 prepared=0/0/0", "the failed attempt")
-            test.eq(shape(resolved), "ledger=0/1/0 receipt=0/0/0 prepared=0/0/0", "the delivered retry")
+            test.eq(shape(failed), "ledger=1/1/0 receipt=0/0/0 prepared=0/0/0", "the failed attempt")
+            test.eq(shape(resolved), "ledger=0/2/0 receipt=0/0/0 prepared=0/0/0", "the delivered retry")
+        end)
+
+        test.it("writes no classified-item or eligibility row for an unchanged skip",function()
+            new_drive({automation_id=automation_id,drive_key="unchanged",source_kind="collection",
+                action={source_ref=PORT,config={items={{key="stable",directive="skip"}}},
+                    schedule={type="interval",expression="1h"}}})
+            set_drive(automation_id,"unchanged","next_run_at=$1",{PAST})
+            local initial=counted(function() round("unchanged") end)
+            test.eq(shape(initial),"ledger=1/0/0 receipt=0/0/0 prepared=0/0/0")
+            for scan=1,3 do
+                set_drive(automation_id,"unchanged","cursor=NULL,next_run_at=$1",{PAST})
+                local repeated=counted(function() round("unchanged") end)
+                test.eq(shape(repeated),"ledger=0/0/0 receipt=0/0/0 prepared=0/0/0")
+            end
+            test.eq(tonumber(query("SELECT COUNT(*) AS n FROM kickside_automation_delivery_history WHERE automation_id=$1",{automation_id})[1].n),1)
         end)
 
         test.it("writes only the held item's row in a round over a port with terminal history", function()
@@ -155,7 +164,7 @@ local function define_tests()
             round("held_round")
             exec("UPDATE kickside_trigger_item_ledger SET next_attempt_at=$1 WHERE owner_id=$2 AND item_key='held'", { PAST, automation_id })
             local retried = counted(function() round("held_round") end)
-            test.eq(shape(retried), "ledger=0/1/0 receipt=0/0/0 prepared=0/0/0", "a redelivery round holding one item")
+            test.eq(shape(retried), "ledger=0/2/0 receipt=0/0/0 prepared=0/0/0", "a redelivery round holding one item")
         end)
     end)
 end

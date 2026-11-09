@@ -1,17 +1,7 @@
--- The round's side of the item delivery ledger (design v5 §5.2). A row holds
--- one item that a round could not deliver: its item, attempts, pacing and
--- state. Items that deliver on their first attempt never touch the ledger.
---
---   retrying   -- a retriable failure; redelivered when next_attempt_at passes
---   waiting    -- a capacity wait (not an attempt); redelivered likewise
---   uncertain  -- an effect that may have been sent; never redelivered
---                 automatically, only by explicit replay or reconciliation
---   dead       -- a terminal failure, kept visible
---   resolved   -- a formerly unresolved item that delivered or was skipped;
---                 a tombstone until its expiry
---
--- Every function runs on the caller's automation-DB executor. The unresolved
--- count lives on the drive: record_tx returns the change it made.
+-- The authoritative latest classification of each delivery identity. Initial
+-- skips and deliveries remain observable without changing admission semantics.
+-- Active identities persist for deduplication; retention reclaims orphaned
+-- owners and legacy expiring settlements, never active classification evidence.
 
 local json = require("json")
 local time = require("time")
@@ -65,16 +55,13 @@ function M.source_port(d: Map): string
 end
 
 -- due_tx(executor, owner_id, source_port, now, limit) -> the retrying and
--- waiting items whose next attempt is due, oldest first, as round items.
+-- waiting record fronts whose next attempt is due, earliest deadline first.
 function M.due_tx(executor: any, owner_id: string, source_port: string, now: string, limit: integer): ({ Map }?, error?)
-    local at, at_err = drive.time_sql(executor, "next_attempt_at")
-    if at_err then return nil, at_err end
     local now_expr, now_err = drive.time_sql(executor, "$3")
     if now_err then return nil, now_err end
     local rows, err = executor:query("SELECT item_key, dedup_key, envelope_json, attempts, identity_key, delivery_order FROM " .. M.TABLE
-        .. " l WHERE owner_id = $1 AND source_port = $2 AND state IN ('retrying', 'waiting', 'parked') AND identity_parked=false AND (" .. at .. " <= " .. now_expr .. " OR next_attempt_at IS NULL)"
-        .. " AND NOT EXISTS (SELECT 1 FROM " .. M.TABLE .. " p WHERE p.owner_id=l.owner_id AND p.source_port=l.source_port AND p.item_key=l.item_key AND p.state IN ('retrying','waiting','uncertain','parked') AND (p.delivery_order<l.delivery_order OR (p.delivery_order=l.delivery_order AND p.identity_key<l.identity_key)))"
-        .. " ORDER BY delivery_order, item_key, identity_key LIMIT $4", { owner_id, source_port, now, limit })
+        .. " WHERE owner_id=$1 AND source_port=$2 AND eligible_at IS NOT NULL AND eligible_at <= " .. now_expr
+        .. " ORDER BY eligible_at,delivery_order,item_key,identity_key LIMIT $4", {owner_id,source_port,now,limit})
     if err then return nil, internal("failed to scan due ledger items", err) end
     local items: { Map } = {}
     for _, row in ipairs(rows :: { Map }) do
@@ -89,27 +76,36 @@ function M.due_tx(executor: any, owner_id: string, source_port: string, now: str
     return items, nil
 end
 
--- observe(executor, owner, port, items) -> every ledger row of the records
--- in this bounded page, in delivery order.
-local function observe(executor: any, owner: string, port: string, items: { Map }): ({ Map }?, error?)
-    local keys: { string } = {}
-    local seen: { [string]: boolean } = {}
-    for _, item in ipairs(items) do
-        if not seen[item.item_key] then seen[item.item_key] = true; keys[#keys + 1] = item.item_key end
+-- Exact delivery reads never traverse the retained versions of an item.
+local function read_identities(executor: any, owner: string, port: string, items: {Map}, lock: boolean): ({Map}?,error?)
+    local ordered: {Map}={}
+    local seen: Map={}
+    for _,item in ipairs(items) do
+        local key=item.item_key .. "\n" .. item.delivery_key
+        if not seen[key] then seen[key]=true;ordered[#ordered+1]=item end
     end
-    local rows: { Map } = {}
-    for first = 1, #keys, 200 do
-        local params: { any } = { owner, port }
-        local marks: { string } = {}
-        for i = first, math.min(#keys, first + 199) do
-            params[#params + 1] = keys[i]; marks[#marks + 1] = "$" .. tostring(#params)
+    table.sort(ordered,function(a: Map,b: Map): boolean
+        if a.item_key ~= b.item_key then return a.item_key < b.item_key end
+        return a.delivery_key < b.delivery_key
+    end)
+    local rows: {Map}={}
+    for first=1,#ordered,200 do
+        local params: {any}={owner,port}
+        local matches: {string}={}
+        for index=first,math.min(#ordered,first+199) do
+            params[#params+1]=ordered[index].item_key
+            params[#params+1]=ordered[index].delivery_key
+            matches[#matches+1]="($" .. tostring(#params-1) .. ",$" .. tostring(#params) .. ")"
         end
-        local page, err = executor:query("SELECT item_key,identity_key,state,attempts,next_attempt_at,delivery_order,envelope_json,identity_parked FROM " .. M.TABLE
-            .. " WHERE owner_id=$1 AND source_port=$2 AND item_key IN (" .. table.concat(marks, ",") .. ") ORDER BY delivery_order,identity_key", params)
-        if err then return nil, internal("failed to observe ordered deliveries", err) end
-        for _, row in ipairs(page :: { Map }) do rows[#rows + 1] = row end
+        local page,err=executor:query("WITH scope(owner_id,source_port) AS (VALUES ($1,$2)), requested(item_key,identity_key) AS (VALUES "
+            .. table.concat(matches,",") .. ") SELECT l.item_key,l.identity_key,l.state,l.attempts,l.first_failed_at,l.envelope_json,"
+            .. "l.next_attempt_at,l.delivery_order,l.identity_parked,l.classification FROM scope CROSS JOIN requested r CROSS JOIN " .. M.TABLE .. " l"
+            .. " WHERE l.owner_id=scope.owner_id AND l.source_port=scope.source_port AND l.item_key=r.item_key AND l.identity_key=r.identity_key"
+            .. " ORDER BY l.owner_id, l.source_port, l.item_key, l.identity_key" .. (lock and " FOR UPDATE OF l" or ""),params)
+        if err then return nil,internal("failed to read ledger identities",err) end
+        for _,row in ipairs(page :: {Map}) do rows[#rows+1]=row end
     end
-    return rows, nil
+    return rows,nil
 end
 
 -- admit(executor, owner, port, items, round_seq) -> { items, fronts }: the
@@ -118,20 +114,31 @@ end
 -- the earliest undelivered change every later change of it waits behind. A
 -- change the ledger holds as resolved or dead is not delivered again.
 function M.admit(executor: any, owner: string, port: string, items: { Map }, round_seq: integer): (Map?, error?)
-    local observed, observe_err = observe(executor, owner, port, items)
+    local observed, observe_err = read_identities(executor, owner, port, items, false)
     if observe_err or not observed then return nil, observe_err end
     local by_delivery: Map = {}
     local fronts: Map = {}
     for _, row in ipairs(observed) do
         by_delivery[row.identity_key] = row
-        if UNRESOLVED[tostring(row.state)] and fronts[row.item_key] == nil then fronts[row.item_key] = row end
+    end
+    local seen: Map={}
+    for _,item in ipairs(items) do
+        if not seen[item.item_key] then
+            seen[item.item_key]=true
+            local head,head_err=executor:query("SELECT item_key,identity_key,state,delivery_order FROM " .. M.TABLE
+                .. " WHERE owner_id=$1 AND source_port=$2 AND item_key=$3"
+                .. " AND state IN ('retrying','waiting','uncertain','parked')"
+                .. " ORDER BY delivery_order,identity_key LIMIT 1",{owner,port,item.item_key})
+            if head_err then return nil,internal("failed to read ledger front",head_err) end
+            fronts[item.item_key]=(head :: {Map})[1]
+        end
     end
     local pending: { Map } = {}
     for index, item in ipairs(items) do
         local prior = by_delivery[item.delivery_key]
         if prior then item.attempts = tonumber(prior.attempts) or 0 end
         item.delivery_order = prior and tonumber(prior.delivery_order) or (round_seq * 1000000 + index)
-        if not prior or (prior.state ~= M.STATE.RESOLVED and prior.state ~= M.STATE.DEAD
+        if not prior or ((prior.state ~= M.STATE.RESOLVED or prior.classification == "skipped" or prior.classification == "delivered") and prior.state ~= M.STATE.DEAD
             and prior.identity_parked ~= true and prior.identity_parked ~= 1) then
             pending[#pending + 1] = item
         end
@@ -143,11 +150,10 @@ end
 -- pending redelivery time, or nil. Deadline-free work is due at the caller's
 -- captured decision time, even when the query crosses a clock boundary.
 function M.next_attempt(executor: any, owner_id: string, source_port: string, decision_at: string?): (string?, error?)
-    local order, order_err = drive.time_sql(executor, "COALESCE(next_attempt_at,$1)")
-    if order_err then return nil, order_err end
     local rows, err = executor:query("SELECT COALESCE(next_attempt_at,$1) AS next_at FROM " .. M.TABLE
-        .. " l WHERE owner_id = $2 AND source_port = $3 AND state IN ('retrying', 'waiting', 'parked') AND identity_parked=false"
-        .. " AND NOT EXISTS (SELECT 1 FROM " .. M.TABLE .. " p WHERE p.owner_id=l.owner_id AND p.source_port=l.source_port AND p.item_key=l.item_key AND p.state IN ('retrying','waiting','uncertain','parked') AND (p.delivery_order<l.delivery_order OR (p.delivery_order=l.delivery_order AND p.identity_key<l.identity_key))) ORDER BY " .. order .. " LIMIT 1", { decision_at or time.now():utc():format(time.RFC3339), owner_id, source_port })
+        .. " WHERE owner_id=$2 AND source_port=$3 AND eligible_at IS NOT NULL"
+        .. " ORDER BY eligible_at,delivery_order,item_key,identity_key LIMIT 1",
+        {decision_at or time.now():utc():format(time.RFC3339),owner_id,source_port})
     if err then return nil, internal("failed to read the next ledger attempt", err) end
     local row = (rows :: { Map })[1]
     if not row or row.next_at == nil then return nil, nil end
@@ -164,43 +170,25 @@ local function dialect(tx: any): (string?, error?)
 end
 
 local function prior_states(tx: any, owner_id: string, source_port: string, outcomes: { Map }, dbtype: string): ({ [string]: Map }?, error?)
-    local keys: { string } = {}
-    local seen: { [string]: boolean } = {}
-    for _, o in ipairs(outcomes) do
-        local key = tostring(o.item.item_key)
-        if not seen[key] then seen[key] = true; keys[#keys + 1] = key end
-    end
-    table.sort(keys)
-    local out: { [string]: Map } = {}
-    for first = 1, #keys, 200 do
-        local marks: { string } = {}
-        local params: { any } = { owner_id, source_port }
-        for index = first, math.min(#keys, first + 199) do
-            params[#params + 1] = keys[index]
-            marks[#marks + 1] = "$" .. tostring(#params)
-        end
-        local rows, err = tx:query("SELECT item_key, identity_key, state, attempts, first_failed_at, envelope_json FROM " .. M.TABLE
-            .. " WHERE owner_id = $1 AND source_port = $2 AND item_key IN (" .. table.concat(marks, ", ") .. ")"
-            .. " ORDER BY owner_id, source_port, item_key, identity_key"
-            .. (dbtype == sql.type.POSTGRES and " FOR UPDATE" or ""), params)
-        if err then return nil, internal("failed to read ledger rows", err) end
-        for _, row in ipairs(rows :: { Map }) do
-            out[tostring(row.item_key) .. "\n" .. tostring(row.identity_key)] = row
-        end
-    end
-    return out, nil
+    local items: {Map}={}
+    for _,outcome in ipairs(outcomes) do items[#items+1]=outcome.item end
+    local rows,err=read_identities(tx,owner_id,source_port,items,dbtype == sql.type.POSTGRES)
+    if err or not rows then return nil,err end
+    local out: {[string]: Map}={}
+    for _,row in ipairs(rows) do out[row.item_key .. "\n" .. row.identity_key]=row end
+    return out,nil
 end
 
-local BATCH = 50 -- 19 per-item binds and two shared binds stay below SQLite's 999-variable floor.
+local BATCH = 49 -- 20 per-item binds and two shared binds stay below SQLite's 999-variable floor.
 
 local function resolve_rows(tx: any, owner_id: string, source_port: string, rows: { Map },
-        now: string, expires_at: string): error?
+        now: string): error?
     table.sort(rows, function(a: Map, b: Map): boolean
         if a.key ~= b.key then return a.key < b.key end
         return a.identity < b.identity
     end)
     for first = 1, #rows, BATCH do
-        local params: { any } = { now, expires_at, now, owner_id, source_port }
+        local params: { any } = { now, owner_id, source_port }
         local matches: { string } = {}
         for index = first, math.min(#rows, first + BATCH - 1) do
             local row = rows[index]
@@ -210,7 +198,7 @@ local function resolve_rows(tx: any, owner_id: string, source_port: string, rows
                 .. " AND identity_key = $" .. tostring(#params) .. ")"
         end
         local _, err = tx:execute("UPDATE " .. M.TABLE .. " SET state='resolved', next_attempt_at=NULL,"
-            .. " resolved_at=$1, expires_at=$2, updated_at=$3 WHERE owner_id=$4 AND source_port=$5 AND ("
+            .. " resolved_at=$1, expires_at=NULL, updated_at=$1 WHERE owner_id=$2 AND source_port=$3 AND ("
             .. table.concat(matches, " OR ") .. ")", params)
         if err then return internal("failed to resolve ledger items", err) end
     end
@@ -243,7 +231,7 @@ local function upsert_rows(tx: any, rows: { { any } }, dbtype: string): error?
             values[#values + 1] = "(" .. table.concat(marks, ",") .. ")"
         end
         local columns="item_key,dedup_key,identity_key,envelope_json,state,attempts,first_failed_at,last_failed_at,"
-            .. "next_attempt_at,error_code,error_message,retriable,terminal,created_at,updated_at,expires_at,delivery_order,execution_identity_json,identity_parked"
+            .. "next_attempt_at,error_code,error_message,retriable,terminal,created_at,updated_at,expires_at,delivery_order,execution_identity_json,identity_parked,classification"
         local _, err = tx:execute("WITH shared(owner_id,source_port) AS (VALUES ($1,$2)), input(" .. columns
             .. ") AS (VALUES " .. table.concat(values,",") .. ") INSERT INTO " .. M.TABLE
             .. " (owner_id,source_port," .. columns .. ") SELECT shared.owner_id,shared.source_port,input.* FROM shared CROSS JOIN input"
@@ -254,7 +242,7 @@ local function upsert_rows(tx: any, rows: { { any } }, dbtype: string): error?
             .. " error_code=excluded.error_code, error_message=excluded.error_message,"
             .. " retriable=excluded.retriable, terminal=excluded.terminal,"
             .. " resolved_at=NULL, expires_at=excluded.expires_at, updated_at=excluded.updated_at,delivery_order=excluded.delivery_order,"
-            .. " execution_identity_json=COALESCE(" .. M.TABLE .. ".execution_identity_json,excluded.execution_identity_json),identity_parked=excluded.identity_parked", params)
+            .. " execution_identity_json=COALESCE(" .. M.TABLE .. ".execution_identity_json,excluded.execution_identity_json),identity_parked=excluded.identity_parked,classification=excluded.classification", params)
         if err then return internal("failed to record ledger items", err) end
     end
     return nil
@@ -278,11 +266,22 @@ function M.record_tx(tx: any, owner_id: string, source_port: string, outcomes: {
         local existing = prior[tostring(item.item_key) .. "\n" .. identity]
         local was_unresolved = existing ~= nil and UNRESOLVED[tostring(existing.state)] == true
         if o.state == M.STATE.RESOLVED then
-            -- A delivered or skipped item writes a row only to resolve the
-            -- one it already holds; a first-attempt delivery writes none.
-            if existing ~= nil and existing.state ~= M.STATE.RESOLVED then
+            if existing == nil then
+                local envelope,encode_err=json.encode(item)
+                if encode_err then return nil,internal("failed to encode a classified item",encode_err) end
+                local bound_err=row_limit.check(envelope,"ledger_row",owner_id)
+                if bound_err then return nil,bound_err end
+                upserts[#upserts+1]={owner_id,source_port,item.item_key,item.dedup_key,identity,envelope,
+                    M.STATE.RESOLVED,0,now,now,sql.NULL,"unknown",sql.NULL,false,false,now,now,
+                    sql.NULL,item.delivery_order or 0,o.execution_identity_json or sql.NULL,false,o.classification or "skipped"}
+            elseif existing.state ~= M.STATE.RESOLVED then
                 resolves[#resolves + 1] = { key = item.item_key, identity = identity }
                 if was_unresolved then delta = delta - 1 end
+            elseif existing.classification ~= nil and o.classification ~= nil and existing.classification ~= o.classification then
+                local _,classify_err=tx:execute("UPDATE " .. M.TABLE .. " SET classification=$1,updated_at=$2"
+                    .. " WHERE owner_id=$3 AND source_port=$4 AND item_key=$5 AND identity_key=$6",
+                    {o.classification,now,owner_id,source_port,item.item_key,identity})
+                if classify_err then return nil,internal("failed to update item classification",classify_err) end
             end
         else
             local stored: Map = {}
@@ -310,14 +309,14 @@ function M.record_tx(tx: any, owner_id: string, source_port: string, outcomes: {
                 tostring(e.code or e.kind or "unknown"), e.message and tostring(e.message) or sql.NULL,
                 e.retriable ~= false, o.state == M.STATE.DEAD, now, now,
                 sql.NULL,
-                item.delivery_order or 0, o.execution_identity_json or sql.NULL, o.identity_parked == true }
+                item.delivery_order or 0, o.execution_identity_json or sql.NULL, o.identity_parked == true, sql.NULL }
             if o.state == M.STATE.DEAD then terminal_work = true end
             local is_unresolved = UNRESOLVED[tostring(o.state)] == true
             if is_unresolved and not was_unresolved then delta = delta + 1 end
             if was_unresolved and not is_unresolved then delta = delta - 1 end
         end
     end
-    local resolve_err = resolve_rows(tx, owner_id, source_port, resolves, now, resolved_expires_at)
+    local resolve_err = resolve_rows(tx, owner_id, source_port, resolves, now)
     if resolve_err then return nil, resolve_err end
     local upsert_err = upsert_rows(tx, upserts, dbtype)
     if upsert_err then return nil, upsert_err end
@@ -375,7 +374,7 @@ function M.reserve_uncertain_tx(tx: any, owner: string, port: string, item: Map,
         .. " first_failed_at,last_failed_at,error_code,retriable,terminal,created_at,updated_at,delivery_order,execution_identity_json)"
         .. " VALUES ($1,$2,$3,$4,$5,$6,'uncertain',1,$7,$7,'uncertain',false,false,$7,$7,$8,$9)"
         .. " ON CONFLICT(owner_id,source_port,item_key,identity_key) DO UPDATE SET"
-        .. " envelope_json=excluded.envelope_json,state='uncertain',attempts=" .. M.TABLE .. ".attempts+1,"
+        .. " envelope_json=excluded.envelope_json,state='uncertain',classification=NULL,attempts=" .. M.TABLE .. ".attempts+1,"
         .. " last_failed_at=excluded.last_failed_at,next_attempt_at=NULL,error_code='uncertain',"
         .. " error_message=NULL,retriable=false,terminal=false,resolved_at=NULL,expires_at=NULL,updated_at=excluded.updated_at,execution_identity_json=COALESCE(" .. M.TABLE .. ".execution_identity_json,excluded.execution_identity_json)"
         .. " WHERE " .. M.TABLE .. ".state<>'uncertain' AND NOT (" .. M.TABLE
@@ -428,13 +427,9 @@ function M.unsent(executor: any, d: Map, delivery_key: string): (boolean?, error
     if decode_err or type(envelope) ~= "table" then return nil, internal("retained delivery is not JSON", decode_err) end
     local item: Map = {}
     for k, v in pairs(envelope :: Map) do item[k] = v end
-    local keys: { string } = {}
-    for generation = 0, math.floor(tonumber(item.attempt_generation) or 0) do
-        item.attempt_generation = generation
-        keys[#keys + 1] = identity.keys(d, item).idempotency_key
-    end
-    local outcomes, outcomes_err = history.outcomes(executor, owner, port, tostring(row.item_key), keys)
+    local outcomes, outcomes_err, complete = history.attempts(executor, owner, port, tostring(row.item_key), identity.family(d,item))
     if outcomes_err or not outcomes then return nil, outcomes_err end
+    if complete == false or #outcomes == 0 then return false,nil end
     local attempts = 0
     for _, outcome in ipairs(outcomes) do
         if not refusal(outcome) then return false, nil end
