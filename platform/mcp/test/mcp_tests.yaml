@@ -48,6 +48,7 @@ entries:
   - sql
   - time
   imports:
+    retention_notifier: kickside.core.retention:notifier
     test: wippy.test:test
     mcp_oauth_repo: kickside.mcp.oauth:repo
     owner_hooks: kickside.core.retention.service:owner_hooks
@@ -220,7 +221,9 @@ entries:
   meta: { type: test, suite: mcp, group: MCP }
   source: file://retention_install_test.lua
   method: run
-  modules: [sql, uuid]
+  modules: [sql, uuid, time]
   imports:
     test: wippy.test:test
     owner_hooks: kickside.core.retention.service:owner_hooks
+    oauth_repo: kickside.mcp.oauth:repo
+    mcp_repo: kickside.mcp.persist:repo

@@ -24,6 +24,7 @@ local presets = require("mcp_presets")
 
 local authority_snapshot = require("authority_snapshot")
 local credential_eligibility = require("credential_eligibility")
+local retention_notifier = require("retention_notifier")
 local M = {}
 
 -- sha256 hex of a raw token. Lookups hash on the way in; the raw value is never
@@ -166,6 +167,8 @@ function M.mint(args: any): (any?, any?)
         return nil, "failed to persist credential: " .. tostring(ins_err)
     end
 
+    local _, wake_err = retention_notifier.notify({kind = "mcp_credential"})
+    if wake_err then return nil, wake_err end
     return {
         credential_id = credential_id,
         token = raw, -- returned ONCE; never stored
@@ -464,6 +467,8 @@ function M.revoke(credential_id: any, revoked_by: any): (boolean, string?)
         :run_with(db):exec()
     db:release()
     if upd_err then return false, "revoke update failed: " .. tostring(upd_err) end
+    local _, wake_err = retention_notifier.notify({kind = "mcp_credential"})
+    if wake_err then return false, tostring(wake_err) end
     return true, nil
 end
 

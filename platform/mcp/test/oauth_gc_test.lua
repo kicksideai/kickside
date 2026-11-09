@@ -3,6 +3,7 @@ local sql = require("sql")
 local time = require("time")
 local oauth_repo = require("mcp_oauth_repo")
 local owner_hooks = require("owner_hooks")
+local retention_notifier = require("retention_notifier")
 
 local function count(db, hash)
     if db == nil then error("database unavailable") end
@@ -20,7 +21,7 @@ local function define_tests()
                 client_id = "gc-client", actor_id = "gc-actor", redirect_uri = "https://example.test/cb",
                 code_challenge = "gc-challenge", grant = { actor = "gc-actor" },
             }
-            args.ttl = -1
+            args.ttl = 3
             test.is_nil(oauth_repo.put_code(expired, args))
             args.ttl = 3600
             test.is_nil(oauth_repo.put_code(live, args))
@@ -32,10 +33,19 @@ local function define_tests()
             test.eq(count(db, live_hash), 1)
             db:release()
 
+            local deadline = time.now():unix_nano() + 5000000000
+            repeat
+                db = assert(sql.get("app:db"))
+                local remaining = count(db,expired_hash)
+                db:release()
+                if remaining == 0 then break end
+                test.is_true(time.now():unix_nano() < deadline,"the live sweeper expires the grant")
+                time.sleep("50ms")
+            until false
             local report, prune_err = owner_hooks.run()
             test.is_nil(prune_err)
             test.eq(#report.failures, 0, "no retention owner fails")
-            test.is_true(report.deleted >= 1)
+            test.not_nil(report.deadline_ms,"the live grant retains its expiry deadline")
             db, db_err = sql.get("app:db")
             test.is_nil(db_err)
             if db == nil then error("database unavailable") end
@@ -66,10 +76,21 @@ local function define_tests()
             local active, active_err = oauth_repo.get_client(live.client_id)
             test.is_nil(active_err)
             test.not_nil(active)
+            local _,wake_err = retention_notifier.notify({kind="mcp_client_retention_test"})
+            test.is_nil(wake_err,tostring(wake_err))
+            local deadline = time.now():unix_nano() + 5000000000
+            repeat
+                db = assert(sql.get("app:db"))
+                local rows = assert(db:query("SELECT client_id FROM kickside_mcp_oauth_clients WHERE client_id=$1",{stale.client_id}))
+                db:release()
+                if #rows == 0 then break end
+                test.is_true(time.now():unix_nano() < deadline,"the live sweeper retires the idle client")
+                time.sleep("50ms")
+            until false
             local report, prune_err = owner_hooks.run()
             test.is_nil(prune_err)
             test.eq(#report.failures, 0, "no retention owner fails")
-            test.is_true(report.deleted >= 1)
+            test.not_nil(report.deadline_ms,"the active client retains its idle deadline")
 
             db, db_err = sql.get("app:db")
             test.is_nil(db_err)
