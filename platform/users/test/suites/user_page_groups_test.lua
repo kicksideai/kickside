@@ -5,9 +5,10 @@ local uuid = require("uuid")
 local users = require("user_repo")
 local groups = require("user_groups_repo")
 local list = require("list_users")
+local support = require("user_repo_support")
 
-local function execute(statement: string, params: any): any?
-    local db, err = sql.get("app:db")
+local function execute(statement: string, params: any, resource: string?): any?
+    local db, err = sql.get(resource or "app:db")
     if err then return err end
     local _, write_err = db:execute(statement, params)
     db:release()
@@ -60,6 +61,105 @@ local function run()
             end)
             list._user_repo, list._user_groups_repo = old_users, old_groups
             if not ok then error(err) end
+        end)
+
+        for _, stage in ipairs({ "begin", "commit", "users", "memberships", "rollback" }) do
+            test.it("releases the database and propagates a " .. stage .. " failure", function()
+                local old_db, old_users, old_groups = support.get_db, list._user_repo, list._user_groups_repo
+                local source = errors.new({kind = errors.UNAVAILABLE, retryable = false, message = stage .. " failure"})
+                local repository_error = errors.new({kind = errors.INTERNAL, retryable = false, message = "account read failure"})
+                local calls = {}
+                local function hit(name: string) calls[#calls + 1] = name end
+                local tx = {
+                    commit = function(self)
+                        hit("commit")
+                        if stage == "commit" then return nil, source end
+                        return true, nil
+                    end,
+                    rollback = function(self)
+                        hit("rollback")
+                        if stage == "rollback" then return nil, source end
+                        return true, nil
+                    end,
+                }
+                support.get_db = function()
+                    hit("get")
+                    return {
+                        begin = function(self, options)
+                            hit("begin")
+                            test.eq(options.isolation, sql.isolation.REPEATABLE_READ)
+                            if stage == "begin" then return nil, source end
+                            return tx, nil
+                        end,
+                        release = function(self) hit("release") end,
+                    }, nil
+                end
+                list._user_repo = {list = function(options, executor)
+                    hit("users")
+                    test.eq(executor, tx)
+                    if stage == "rollback" then return nil, repository_error end
+                    if stage == "users" then return nil, source end
+                    return {{user_id = "transaction-test-user"}}, nil
+                end}
+                list._user_groups_repo = {get_user_groups_batch = function(ids, executor)
+                    hit("memberships")
+                    test.eq(executor, tx)
+                    test.eq(ids[1], "transaction-test-user")
+                    if stage == "memberships" then return nil, source end
+                    return {[ids[1]] = {}}, nil
+                end}
+                local ok, failure = pcall(function()
+                    local status, body = list.process(100, 0)
+                    test.eq(status, 500)
+                    test.is_false(body.success)
+                    if stage == "rollback" then
+                        test.eq(body.error, tostring(repository_error) .. "; rollback failed: " .. tostring(source))
+                    else
+                        test.eq(body.error, source)
+                    end
+                    local expected = stage == "begin" and "get,begin,release"
+                        or stage == "commit" and "get,begin,users,memberships,commit,release"
+                        or stage == "memberships" and "get,begin,users,memberships,rollback,release"
+                        or "get,begin,users,rollback,release"
+                    test.eq(table.concat(calls, ","), expected)
+                end)
+                support.get_db, list._user_repo, list._user_groups_repo = old_db, old_users, old_groups
+                if not ok then error(failure) end
+            end)
+        end
+
+        test.it("keeps the listed account and its memberships in one snapshot during deletion", function()
+            with_users(1, function(ids)
+                local id = ids[1]
+                local assigned, assign_err = groups.assign_user_to_group(id, "app.security:user")
+                test.is_nil(assign_err)
+                test.not_nil(assigned)
+                local old_users = list._user_repo
+                list._user_repo = { list = function(options, executor)
+                    local rows, read_err = users.list(options, executor)
+                    if read_err then return nil, read_err end
+                    local delete_err = execute("DELETE FROM app_users WHERE user_id=$1", { id }, "kickside.users:user_page_deletion_db")
+                    if delete_err then return nil, delete_err end
+                    return rows, nil
+                end }
+                local ok, failure = pcall(function()
+                    local status, body = list.process(100, 0)
+                    test.eq(status, 200, tostring(body.error))
+                    local found = false
+                    for _, row in ipairs(body.users) do
+                        if row.user_id == id then
+                            found = true
+                            test.eq(row.security_groups[1], "app.security:user")
+                        end
+                    end
+                    test.is_true(found, "the page loses the account from its read snapshot")
+                end)
+                list._user_repo = old_users
+                if not ok then error(failure) end
+                local status, body = list.process(100, 0)
+                test.eq(status, 200)
+                for _, row in ipairs(body.users) do test.is_true(row.user_id ~= id) end
+            end)
         end)
 
         test.it("matches complete singular membership order and retains users with no groups", function()

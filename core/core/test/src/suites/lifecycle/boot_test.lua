@@ -21,6 +21,81 @@ local function log_pid(data: any): string?
     return nil
 end
 
+local function define_startup_tests()
+    test.describe("lifecycle boot startup upgrade", function()
+        test.it("applies an update delivered while the named boot is still converging", function()
+            local original_version = assert(registry.current_version())
+            local topic = "test.lifecycle.startup:" .. uuid.v7()
+            local name = topic .. ":owner"
+            local entry_id = "app:startup_boot_" .. uuid.v7():gsub("-", "_")
+            local replies = assert(process.listen(topic))
+            local notifications = process.events()
+            local pid, exited
+            local ok, failure = pcall(function()
+                local entry = assert(registry.get("kickside.core.lifecycle:boot_process"))
+                local source, names = entry.data.source:gsub("consts.BOOT_NAME", string.format("%q", name))
+                test.eq(names, 1)
+                local barrier = "    local release = assert(process.listen(" .. string.format("%q", topic .. ":release") .. "))\n"
+                    .. "    assert(process.send(" .. string.format("%q", tostring(process.pid())) .. ", "
+                    .. string.format("%q", topic) .. ", {phase = 'converging', pid = tostring(process.pid())}))\n"
+                    .. "    local selected = channel.select({release:case_receive(), time.after('10s'):case_receive()})\n"
+                    .. "    assert(selected.channel == release, 'initial convergence barrier is not released')\n"
+                    .. "    process.unlisten(release)\n"
+                local blocked, count = source:gsub("    local converged, converge_err = provision.converge%(actor, scope%)", function(line)
+                    return barrier .. line
+                end, 1)
+                test.eq(count, 1, "the barrier holds the first convergence open")
+                local data = {}
+                for key, value in pairs(entry.data) do data[key] = value end
+                data.source = blocked
+                local changes = assert(registry.snapshot()):changes()
+                changes:create({id = entry_id, kind = entry.kind, data = data})
+                test.is_nil(select(2, changes:apply()))
+                pid = assert(process.spawn_monitored(entry_id, "app:processes"))
+                local function phase(expected: string)
+                    local selected = channel.select({replies:case_receive(), notifications:case_receive(), time.after("10s"):case_receive()})
+                    if selected.channel == notifications and selected.value.kind == process.event.EXIT
+                        and tostring(selected.value.from) == tostring(pid) then exited = true end
+                    test.eq(selected.channel, replies, "boot exits or times out before " .. expected)
+                    if selected.channel ~= replies then error("startup upgrade does not reach " .. expected) end
+                    test.eq(selected.value.phase, expected)
+                    test.eq(selected.value.pid, tostring(pid))
+                    test.eq(tostring(assert(process.registry.lookup(name, process.registry.CONSISTENT))), tostring(pid))
+                end
+                phase("converging")
+                local activation = "    assert(process.send(" .. string.format("%q", tostring(process.pid())) .. ", "
+                    .. string.format("%q", topic) .. ", {phase = 'upgraded', pid = tostring(process.pid())}))\n"
+                data.source, count = source:gsub("local function main%(_args: any%): any\n", function(line)
+                    return line .. activation
+                end, 1)
+                test.eq(count, 1, "the update identifies the new code generation")
+                changes = assert(registry.snapshot()):changes()
+                changes:update({id = entry_id, kind = entry.kind, data = data})
+                test.is_nil(select(2, changes:apply()))
+                test.is_nil(select(2, process.send(pid, topic .. ":release", true)))
+                phase("upgraded")
+            end)
+            if pid and not exited then
+                test.is_nil(select(2, process.cancel(pid)))
+                local deadline = time.after("10s")
+                while true do
+                    local selected = channel.select({notifications:case_receive(), deadline:case_receive()})
+                    test.eq(selected.channel, notifications, "the owned startup boot does not stop")
+                    if selected.channel ~= notifications then error("startup boot cleanup times out") end
+                    if tostring(selected.value.from) == tostring(pid) and selected.value.kind == process.event.EXIT then
+                        test.is_nil(selected.value.result.error)
+                        break
+                    end
+                end
+            end
+            process.unlisten(replies)
+            test.is_nil(select(2, registry.apply_version(original_version)))
+            if not ok then error(failure) end
+        end)
+    end)
+
+end
+
 local function define_tests()
     test.describe("lifecycle boot convergence", function()
         local original, subscription, logs, boot_pid, trigger_name, postgres
@@ -143,11 +218,25 @@ local function define_tests()
             test.eq(type(result) == "table" and result.status, "success")
         end
 
-        test.it("converges an upgraded boot only once the install's migrations are applied", function()
+        test.before_each(function()
             subscription = assert(events.subscribe("logs", "logs.entry"))
             logs = subscription:channel()
-            local pid = service_pid()
-            boot_pid = pid
+            boot_pid = service_pid()
+            local entry = assert(registry.get("kickside.core.lifecycle:boot_process"))
+            local changes = assert(registry.snapshot()):changes()
+            entry.meta.comment = tostring(entry.meta.comment or "") .. " startup upgrade " .. uuid.v7()
+            changes:update(entry)
+            test.is_nil(select(2, changes:apply()))
+            test.is_false(await_boot(logs, boot_pid, "system lifecycle resident"),
+                "the startup upgrade fails initial convergence")
+            test.eq(service_pid(), boot_pid, "a startup upgrade preserves the registered process")
+            migrations_applied()
+            test.is_false(await_boot(logs, boot_pid, "system lifecycle converged after migrations"),
+                "initial lifecycle convergence fails before the fixture starts")
+        end)
+
+        test.it("converges an upgraded boot only once the install's migrations are applied", function()
+            local pid = boot_pid :: string
             local id, declared_days = diverge_with_refusal("lifecycle_boot_pending_schema")
             -- The shared stream carries resident logs from other processes.
             logger:info("system lifecycle resident")
@@ -176,10 +265,7 @@ local function define_tests()
         end
 
         test.it("keeps convergence parked on a migrations-applied message while a migration is pending, then converges on the retry", function()
-            subscription = assert(events.subscribe("logs", "logs.entry"))
-            logs = subscription:channel()
-            local pid = service_pid()
-            boot_pid = pid
+            local pid = boot_pid :: string
             local id, declared_days = diverge_with_refusal("lifecycle_boot_pending_schema")
             logger:info("system lifecycle resident")
             upgrade_boot_with_migration("kickside.core.migrations")
@@ -197,10 +283,7 @@ local function define_tests()
         -- installs whose changed modules exclude core, so no message follows.
         for _, namespace in ipairs({ "kickside.component.migrations", "kickside.users.migrations" }) do
             test.it("converges after a dependency-only upgrade's " .. namespace .. " migration without a migrations-applied message", function()
-                subscription = assert(events.subscribe("logs", "logs.entry"))
-                logs = subscription:channel()
-                local pid = service_pid()
-                boot_pid = pid
+                local pid = boot_pid :: string
                 local id, declared_days = diverge_with_refusal("lifecycle_boot_pending_schema")
                 logger:info("system lifecycle resident")
                 upgrade_boot_with_migration(namespace)
@@ -213,10 +296,7 @@ local function define_tests()
         end
 
         test.it("converges on upgrade while a migration outside the convergence schema is pending", function()
-            subscription = assert(events.subscribe("logs", "logs.entry"))
-            logs = subscription:channel()
-            local pid = service_pid()
-            boot_pid = pid
+            local pid = boot_pid :: string
             local id, declared_days = diverge_with_refusal(nil)
             logger:info("system lifecycle resident")
             upgrade_boot_with_migration("app.unrelated.migrations")
@@ -225,10 +305,7 @@ local function define_tests()
         end)
 
         test.it("stays resident after failed convergence and repairs it on the next migrations-applied message", function()
-            subscription = assert(events.subscribe("logs", "logs.entry"))
-            logs = subscription:channel()
-            local pid = service_pid()
-            boot_pid = pid
+            local pid = boot_pid :: string
             local id, declared_days = diverge_with_refusal("boot_refusal_" .. uuid.v7():gsub("-", ""))
             migrations_applied()
             test.eq(await_boot(logs, pid, "system lifecycle converged after migrations"), true, "refused convergence is reported")
@@ -266,4 +343,4 @@ local function define_tests()
     end)
 end
 
-return { run = test.run_cases(define_tests) }
+return { run = test.run_cases(define_tests), run_startup = test.run_cases(define_startup_tests) }
