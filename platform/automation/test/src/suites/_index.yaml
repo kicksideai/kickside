@@ -410,6 +410,7 @@ entries:
     round_harness: kickside.automation:round_harness
     round_write: kickside.automation:round_write
     round_ledger: kickside.automation:round_ledger
+    round_commit: kickside.automation:round_commit
     runtime_policy: kickside.automation:runtime_policy
 - name: round_control_test
   kind: function.lua

@@ -15,6 +15,7 @@ local json = require("json")
 local h = require("round_harness")
 local round_write = require("round_write")
 local round_ledger = require("round_ledger")
+local round_commit = require("round_commit")
 local time = require("time")
 local runtime_policy = require("runtime_policy")
 
@@ -331,6 +332,96 @@ local function define_tests()
             run(id)
             test.eq(transforms(id,"expiring"),2,"a new source version is a fresh delivery")
             test.eq(#sink_writes(id,"expiring"),3)
+        end)
+
+        for _,mode in ipairs({"retrying","waiting","uncertain","parked","in_flight","mirror"}) do
+            test.it("retains shared prepared output until its last reference settles: " .. mode,function()
+                local key="shared-" .. mode
+                local id=install({{key=key,directive="invalid"}})
+                run(id)
+                local original=h.query("SELECT identity_key FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})[1].identity_key
+                test.eq(replay(id,key .. "-replay").outcome.replayed,1)
+                run(id)
+                local replayed=h.query("SELECT identity_key,execution_identity_json FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})[1]
+                test.is_true(replayed.identity_key~=original)
+                test.eq(json.decode(replayed.execution_identity_json).prepared_key,original)
+                h.set_drive(id,"main","cursor=NULL",{})
+                run(id)
+                test.eq(#h.query("SELECT 1 FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id}),2,
+                    "the source can re-present the original delivery after replay changes its ledger key")
+                test.eq(transforms(id,key),1)
+                local live=mode=="mirror" and replayed.identity_key or original
+                local expired=mode=="mirror" and original or replayed.identity_key
+                local state=(mode=="in_flight" or mode=="mirror") and "retrying" or mode
+                h.exec("UPDATE kickside_trigger_item_ledger SET state=$1,expires_at=NULL,next_attempt_at=$2 WHERE owner_id=$3 AND identity_key=$4",
+                    {state,h.PAST,id,live})
+                h.set_drive(id,"main","unresolved_count=1",{})
+                h.exec("UPDATE kickside_trigger_item_ledger SET expires_at='1800-01-01T00:00:00Z' WHERE owner_id=$1 AND identity_key=$2",{id,expired})
+                local function prune(): ()
+                    local _,err=automation_db.in_tx(function(tx) return round_ledger.prune_tx(tx,"1850-01-01T00:00:00Z",100) end)
+                    test.is_nil(err,tostring(err))
+                    test.eq(#h.query("SELECT 1 FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id}),1)
+                    test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1 AND idempotency_key=$2",{id,original}),1,
+                        "another delivery still references the original prepared result")
+                end
+                if mode=="in_flight" then
+                    h.set_drive(id,"main","next_run_at=$1",{h.PAST})
+                    local observed=false
+                    local _,err=env.run(id,"main",function(identity,target,args,options)
+                        if target=="kickside.automation:round_deliver" then
+                            observed=true
+                            test.not_nil(h.read_drive(id,"main").round_token)
+                            prune()
+                        end
+                        return env.run_as(identity,target,args,options)
+                    end)
+                    test.is_nil(err,tostring(err));test.is_true(observed)
+                else
+                    prune()
+                    h.exec("UPDATE kickside_trigger_item_ledger SET state='retrying',identity_parked=false,next_attempt_at=$1 WHERE owner_id=$2 AND identity_key=$3",{h.PAST,id,live})
+                    run(id)
+                end
+                test.eq(transforms(id,key),1,"the retry reuses replay-unsafe output without recomputation")
+                test.eq(#sink_writes(id,key),4)
+                h.exec("UPDATE kickside_trigger_item_ledger SET expires_at='1800-01-01T00:00:00Z' WHERE owner_id=$1",{id})
+                local _,err=automation_db.in_tx(function(tx) return round_ledger.prune_tx(tx,"1850-01-01T00:00:00Z",100) end)
+                test.is_nil(err,tostring(err))
+                test.eq(#h.query("SELECT 1 FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id}),0)
+                test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),0,
+                    "expiry of the final reference reclaims the prepared output")
+            end)
+        end
+
+        test.it("settles shared prepared output only after its last delivery resolves",function()
+            local id=install({{key="shared-resolution",directive="invalid"}})
+            run(id)
+            local original=h.query("SELECT identity_key FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})[1].identity_key
+            test.eq(replay(id,"shared-resolution-replay").outcome.replayed,1)
+            run(id)
+            h.set_drive(id,"main","cursor=NULL",{})
+            run(id)
+            h.exec("UPDATE kickside_trigger_item_ledger SET state='waiting',expires_at=NULL WHERE owner_id=$1",{id})
+            h.set_drive(id,"main","unresolved_count=2",{})
+            local retained=h.query("SELECT envelope_json FROM kickside_trigger_item_ledger WHERE owner_id=$1 ORDER BY identity_key",{id})
+            for index,row in ipairs(retained) do
+                local item=json.decode(row.envelope_json)
+                local job=h.running_job()
+                local token="settle-" .. tostring(index)
+                h.set_drive(id,"main","round_token=$1,round_until=$2",{token,job.lease_until})
+                local before=h.read_drive(id,"main")
+                local round={automation_id=id,drive_key="main",source_port=RECORDS,receipt_port=RECORDS,
+                    now=h.PAST,resolved_expires_at="2099-01-01T00:00:00Z",
+                    captured={round_token=token,round_until=job.lease_until,revision=before.revision,
+                        rewind_generation=before.rewind_generation,command_generation=before.command_generation}}
+                local result,err=automation_db.in_tx(function(tx)
+                    return round_commit.commit_tx(tx,round,{outcomes={{item=item,state="resolved"}},
+                        receipts={{item=item,receipts={},prepared_key=item.delivery_key,original_prepared_key=original}}})
+                end)
+                test.is_nil(err,tostring(err));test.is_true(result.committed)
+                test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),index==1 and 1 or 0,
+                    "settlement protects the other delivery and releases the last reference")
+                h.exec("UPDATE kickside_job SET status='done',lease_token=NULL,lease_until=NULL WHERE id=$1",{job.id})
+            end
         end)
 
         test.it("bounds permanently rejected prepared items by arrival rate times the dedupe window",function()

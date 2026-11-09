@@ -480,14 +480,50 @@ function M.unsent(executor: any, d: Map, delivery_key: string): (boolean?, error
     return true,nil
 end
 
+-- Resolved rows no longer need prepared output. Other deliveries may share
+-- a replay's original key, so both expiry and settlement check remaining
+-- references through the identity index and the same item's primary key.
+function M.reclaim_prepared_tx(tx: any, prepared: {Map}): error?
+    if #prepared == 0 then return nil end
+    local dbtype,dbtype_err=dialect(tx)
+    if dbtype_err then return dbtype_err end
+    local reference=dbtype == sql.type.POSTGRES and "(l.execution_identity_json::json ->> 'prepared_key')"
+        or "json_extract(l.execution_identity_json,'$.prepared_key')"
+    table.sort(prepared,function(a: Map,b: Map): boolean
+        if a.owner ~= b.owner then return a.owner < b.owner end
+        return a.key < b.key
+    end)
+    for first=1,#prepared,100 do
+        local params: {any}={}
+        local values: {string}={}
+        for index=first,math.min(#prepared,first+99) do
+            local entry=prepared[index]
+            local marks: {string}={}
+            for _,value in ipairs({entry.owner,entry.port,entry.item,entry.key}) do
+                params[#params+1]=value
+                marks[#marks+1]="$" .. tostring(#params)
+            end
+            values[#values+1]="(" .. table.concat(marks,",") .. ")"
+        end
+        local _,err=tx:execute("WITH candidates(owner_id,source_port,item_key,prepared_key) AS (VALUES "
+            .. table.concat(values,",") .. ") DELETE FROM kickside_automation_prepared"
+            .. " WHERE (automation_id,idempotency_key) IN (SELECT c.owner_id,c.prepared_key FROM candidates c"
+            .. " WHERE NOT EXISTS (SELECT 1 FROM " .. M.TABLE .. " l WHERE l.owner_id=c.owner_id"
+            .. " AND l.identity_key=c.prepared_key AND l.state<>'resolved')"
+            .. " AND NOT EXISTS (SELECT 1 FROM " .. M.TABLE .. " l WHERE l.owner_id=c.owner_id"
+            .. " AND l.source_port=c.source_port AND l.item_key=c.item_key AND l.state<>'resolved'"
+            .. " AND " .. reference .. "=c.prepared_key))",params)
+        if err then return internal("prepared reference cleanup failed",err) end
+    end
+    return nil
+end
+
 -- Settled tombstones expire by age; unresolved admission and retry evidence persists.
 local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boolean): (integer?, error?)
     local predicate = orphan and "updated_at <= $1 AND expires_at IS NULL AND state IN ('resolved','dead')"
         or "expires_at <= $1 AND state IN ('resolved','dead')"
     local prepared_guard = [[ AND (l.state='dead' OR NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p
-        WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key))
-        AND (l.state<>'dead' OR NOT EXISTS (SELECT 1 FROM kickside_automation_command c
-            WHERE c.automation_id=l.owner_id AND c.pending_request_id IS NOT NULL))]]
+        WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key))]]
     local order=orphan and "updated_at" or "state,expires_at"
     local rows, read_err=tx:query("SELECT owner_id,source_port,item_key,identity_key FROM " .. M.TABLE
         .. " l WHERE " .. predicate .. prepared_guard .. " ORDER BY " .. order .. " LIMIT $2",{cutoff,limit})
@@ -501,11 +537,12 @@ local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boole
     local count=0
     local prepared: {Map}={}
     local seen: Map={}
-    local function reclaim(owner: string,key: string): ()
+    local function reclaim(row: Map,key: string): ()
+        local owner=row.owner_id
         if not seen[owner] then seen[owner]={} end
         if not seen[owner][key] then
             seen[owner][key]=true
-            prepared[#prepared+1]={owner=owner,key=key}
+            prepared[#prepared+1]={owner=owner,port=row.source_port,item=row.item_key,key=key}
         end
     end
     local orphan_guard=orphan and " AND expires_at IS NULL" or ""
@@ -528,30 +565,14 @@ local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boole
                     if decode_err then return nil,internal("dead prepared identity decode failed",decode_err) end
                     if evidence.prepared_key then prepared_key=evidence.prepared_key end
                 end
-                reclaim(row.owner_id,row.identity_key)
-                reclaim(row.owner_id,prepared_key)
+                reclaim(row,row.identity_key)
+                reclaim(row,prepared_key)
             end
             count=count+1
         end
     end
-    -- Ledger deletes lock and recheck state before their prepared output.
-    -- The transaction commits both halves together, including original replay keys.
-    table.sort(prepared,function(a: Map,b: Map): boolean
-        if a.owner ~= b.owner then return a.owner < b.owner end
-        return a.key < b.key
-    end)
-    for first=1,#prepared,100 do
-        local params: {any}={}
-        local values: {string}={}
-        for index=first,math.min(#prepared,first+99) do
-            params[#params+1]=prepared[index].owner
-            params[#params+1]=prepared[index].key
-            values[#values+1]="($" .. tostring(#params-1) .. ",$" .. tostring(#params) .. ")"
-        end
-        local _,prepared_err=tx:execute("DELETE FROM kickside_automation_prepared"
-            .. " WHERE (automation_id,idempotency_key) IN (VALUES " .. table.concat(values,",") .. ")",params)
-        if prepared_err then return nil,internal("dead prepared output prune failed",prepared_err) end
-    end
+    local prepared_err=M.reclaim_prepared_tx(tx,prepared)
+    if prepared_err then return nil,prepared_err end
     return count, nil
 end
 
@@ -561,7 +582,6 @@ function M.retention_deadlines(executor: any,limit: integer): ({Map}?,error?)
         local rows,err=executor:query("SELECT MIN(expires_at) AS expires_at FROM (SELECT expires_at FROM " .. M.TABLE
             .. " l WHERE state='" .. state .. "' AND expires_at IS NOT NULL"
             .. (state == "resolved" and " AND NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key)" or "")
-            .. " AND (l.state<>'dead' OR NOT EXISTS (SELECT 1 FROM kickside_automation_command c WHERE c.automation_id=l.owner_id AND c.pending_request_id IS NOT NULL))"
             .. " ORDER BY expires_at LIMIT $1) eligible",{limit})
         if err then return nil,internal("ledger retention deadline read fails",err) end
         if rows[1] then deadlines[#deadlines+1]=rows[1] end
@@ -569,7 +589,6 @@ function M.retention_deadlines(executor: any,limit: integer): ({Map}?,error?)
     local rows,err=executor:query("SELECT MIN(updated_at) AS updated_at FROM (SELECT updated_at FROM " .. M.TABLE
         .. " l WHERE state IN ('resolved','dead') AND expires_at IS NULL"
         .. " AND (l.state='dead' OR NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key))"
-        .. " AND (l.state<>'dead' OR NOT EXISTS (SELECT 1 FROM kickside_automation_command c WHERE c.automation_id=l.owner_id AND c.pending_request_id IS NOT NULL))"
         .. " ORDER BY updated_at LIMIT $1) eligible",{limit})
     if err then return nil,internal("legacy ledger retention deadline read fails",err) end
     if rows[1] then deadlines[#deadlines+1]=rows[1] end

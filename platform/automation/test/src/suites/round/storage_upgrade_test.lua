@@ -118,7 +118,7 @@ return test.run_cases(function()
             local legacy_plans={}
             local tx=assert(db:begin())
             started=time.now():unix_nano()
-            local executor={query=function(_,statement,params)
+            local executor={db_type=function() return tx:db_type() end,query=function(_,statement,params)
                     legacy_plans[#legacy_plans+1]={sql=statement,params=params}
                     return tx:query(statement,params)
                 end,execute=function(_,statement,params)

@@ -238,6 +238,7 @@ local function define_tests()
                 local round_ms=round()
                 drain[#drain+1]={rows=count,ms=elapsed,round_ms=round_ms,statements=statements,wal=wal}
             end
+            h.exec("UPDATE kickside_trigger_item_ledger SET state='dead',next_attempt_at=NULL WHERE owner_id=$1 AND state='retrying'",{ledger_owner})
             -- Keep the million-row fixture within its budget: 100,000 dead items
             -- retain output; all other tombstones remain outside the cutoff.
             h.exec([[INSERT INTO kickside_automation_prepared
@@ -253,6 +254,13 @@ local function define_tests()
                 {ledger_owner,UNRESOLVED+90000,UNRESOLVED+100000})
             h.exec("ANALYZE kickside_trigger_item_ledger")
             h.exec("ANALYZE kickside_automation_prepared")
+            -- Pending controls do not hold expired dead work or hide its deadline.
+            h.exec([[INSERT INTO kickside_automation_command
+                (automation_id,generation,pending_request_id,pending_digest,pending_kind,pending_input_json,pending_drives_json,pending_step)
+                VALUES ($1,1,'pending-replay','digest','control','{}','[]','control')
+                ON CONFLICT(automation_id) DO UPDATE SET pending_request_id=excluded.pending_request_id,
+                    pending_digest=excluded.pending_digest,pending_kind=excluded.pending_kind,
+                    pending_input_json=excluded.pending_input_json,pending_drives_json=excluded.pending_drives_json,pending_step=excluded.pending_step]],{ledger_owner})
             local dead_drain={}
             local candidate_plans={}
             local prepared_plans={}
@@ -269,7 +277,7 @@ local function define_tests()
                 local size=1000
                 local started=time.now():unix_nano()
                 local count,err=automation_db.in_tx(function(tx)
-                    local executor={query=function(_,statement,params)
+                    local executor={db_type=function() return tx:db_type() end,query=function(_,statement,params)
                         if statement:find("SELECT owner_id,source_port,item_key,identity_key",1,true) and (pass==1 or pass==91) then
                             local plan,plan_err=tx:query("EXPLAIN " .. (postgres and "(ANALYZE,BUFFERS,WAL,FORMAT JSON) " or "QUERY PLAN ") .. statement,params)
                             if plan_err then return nil,plan_err end
@@ -278,8 +286,14 @@ local function define_tests()
                         return tx:query(statement,params)
                     end,execute=function(_,statement,params)
                         if #prepared_plans==0 and statement:find("DELETE FROM kickside_automation_prepared",1,true) then
-                            local plan,plan_err=tx:query("EXPLAIN " .. (postgres and "(FORMAT JSON) " or "QUERY PLAN ") .. statement,params)
+                            local _,save_err=tx:execute("SAVEPOINT prepared_plan")
+                            if save_err then return nil,save_err end
+                            local plan,plan_err=tx:query("EXPLAIN " .. (postgres and "(ANALYZE,BUFFERS,WAL,FORMAT JSON) " or "QUERY PLAN ") .. statement,params)
                             if plan_err then return nil,plan_err end
+                            local _,rollback_err=tx:execute("ROLLBACK TO SAVEPOINT prepared_plan")
+                            if rollback_err then return nil,rollback_err end
+                            local _,release_err=tx:execute("RELEASE SAVEPOINT prepared_plan")
+                            if release_err then return nil,release_err end
                             prepared_plans[#prepared_plans+1]={sql=statement,params=params,plan=plan}
                         end
                         return tx:execute(statement,params)
@@ -306,7 +320,15 @@ local function define_tests()
             local prepared_index=postgres and "kickside_automation_prepared_pkey" or "sqlite_autoindex_kickside_automation_prepared_1"
             test.is_true(h.encoded(prepared_plans[1].plan):find(prepared_index,1,true)~=nil,
                 "prepared cleanup uses bounded primary-key probes")
-            local dead_proof={prepared_items=100000,total_ledger_items=TOTAL,remaining_prepared=0,
+            if postgres then
+                test.is_true(postgres_rows(prepared_plans[1].plan)<=100,"prepared reference checks examine only their candidate keys")
+            else
+                local plan=h.encoded(prepared_plans[1].plan)
+                test.is_true(plan:find("idx_trigger_ledger_identity",1,true)~=nil,"identity references use the existing identity index")
+                test.is_true(plan:find("owner_id=? AND source_port=? AND item_key=?",1,true)~=nil,
+                    "replay aliases use the same item primary-key range")
+            end
+            local dead_proof={prepared_items=100000,total_ledger_items=TOTAL,remaining_prepared=0,pending_command=true,
                 candidate_plans=candidate_plans,prepared_plans=prepared_plans,deadline_plans=deadline_plans,batches=dead_drain}
             local violations: {string}={}
             local last=samples[#samples]
@@ -335,6 +357,7 @@ local function define_tests()
             test.eq(#violations,0,table.concat(violations,"; "))
             h.exec("DELETE FROM kickside_automation_delivery_history WHERE automation_id=$1",{id})
             h.exec("DELETE FROM kickside_trigger_item_ledger WHERE owner_id=$1",{ledger_owner})
+            h.exec("DELETE FROM kickside_automation_command WHERE automation_id=$1",{ledger_owner})
         end)
     end)
 end

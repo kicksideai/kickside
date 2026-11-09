@@ -104,7 +104,7 @@ return test.run_cases(function()
                 SELECT owner_id,identity_key,'hash','{}',updated_at FROM kickside_trigger_item_ledger WHERE owner_id=$1]],{id})
             local tx=assert(db:begin())
             local statements=0
-            local executor={query=function(_,statement,params) return tx:query(statement,params) end,
+            local executor={db_type=function() return tx:db_type() end,query=function(_,statement,params) return tx:query(statement,params) end,
                 execute=function(_,statement,params)
                     if statement:find("DELETE FROM kickside_automation_prepared",1,true) then statements=statements+1 end
                     return tx:execute(statement,params)
@@ -127,7 +127,7 @@ return test.run_cases(function()
                 (automation_id,idempotency_key,payload_hash,prepared_json,created_at)
                 VALUES ($1,$2,'hash','{}','1900-01-01T00:00:00Z')]],{id,key})
             local tx=assert(db:begin())
-            local executor={query=function(_,statement,params) return tx:query(statement,params) end,
+            local executor={db_type=function() return tx:db_type() end,query=function(_,statement,params) return tx:query(statement,params) end,
                 execute=function(_,statement,params)
                     if statement:find("DELETE FROM kickside_automation_prepared",1,true) then
                         return nil,errors.new({kind=errors.INTERNAL,message="injected prepared delete failure"})
@@ -142,7 +142,7 @@ return test.run_cases(function()
             execute(db,"DELETE FROM kickside_automation_prepared WHERE automation_id=$1",{id})
             cleanup(db,id);db:release()
         end)
-        test.it("preserves unresolved output and output needed by pending commands",function()
+        test.it("preserves unresolved output while expiring dead items despite pending commands",function()
             local db=assert(sql.get("app:db"))
             local id,pending=owner(db),owner(db)
             for _,state in ipairs({"retrying","waiting","uncertain","parked"}) do
@@ -163,8 +163,8 @@ return test.run_cases(function()
                 VALUES ($1,1,'install','digest','install','{}','[]','install')]],{pending})
             prune(db)
             test.eq(#rows(db,id),4)
-            test.eq(#rows(db,pending),1)
-            test.eq(#assert(db:query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id IN ($1,$2)",{id,pending})),5)
+            test.eq(#rows(db,pending),0,"a pending command does not retain expired dead items")
+            test.eq(#assert(db:query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id IN ($1,$2)",{id,pending})),4)
             execute(db,"DELETE FROM kickside_automation_command WHERE automation_id=$1",{pending})
             prune(db)
             test.eq(#rows(db,pending),0)
@@ -172,6 +172,34 @@ return test.run_cases(function()
             execute(db,"DELETE FROM kickside_automation_prepared WHERE automation_id=$1",{id})
             cleanup(db,id);cleanup(db,pending);db:release()
         end)
+        for _,legacy in ipairs({false,true}) do
+            test.it("keeps dead cleanup due behind a pending command " .. tostring(legacy),function()
+                local db=assert(sql.get("app:db"))
+                local id=owner(db)
+                record(db,id,ledger.STATE.DEAD)
+                if legacy then execute(db,"UPDATE kickside_trigger_item_ledger SET expires_at=NULL WHERE owner_id=$1",{id}) end
+                execute(db,[[INSERT INTO kickside_automation_command
+                    (automation_id,generation,pending_request_id,pending_digest,pending_kind,pending_input_json,pending_drives_json,pending_step)
+                    VALUES ($1,1,'replay','digest','control','{}','[]','control')]],{id})
+                local deadlines,err=ledger.retention_deadlines(db,2)
+                test.is_nil(err,tostring(err))
+                local found=false
+                for _,entry in ipairs(deadlines) do
+                    if (legacy and entry.updated_at=="2000-01-01T00:00:00Z")
+                        or (not legacy and entry.expires_at=="2001-01-01T00:00:00Z") then found=true end
+                end
+                local tx=assert(db:begin())
+                local removed,prune_err
+                if legacy then removed,prune_err=ledger.prune_orphans_tx(tx,"2002-01-01T00:00:00Z",2)
+                else removed,prune_err=ledger.prune_tx(tx,"2002-01-01T00:00:00Z",2) end
+                if prune_err then tx:rollback() else tx:commit() end
+                execute(db,"DELETE FROM kickside_automation_command WHERE automation_id=$1",{id})
+                cleanup(db,id);db:release()
+                test.is_nil(prune_err,tostring(prune_err))
+                test.is_true(found,"pending commands cannot hide an expiry deadline")
+                test.eq(removed,1)
+            end)
+        end
         test.it("expires failed delivery tombstones after their dedupe window", function()
             local db = assert(sql.get("app:db"))
             local id = owner(db)

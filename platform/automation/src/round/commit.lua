@@ -98,6 +98,7 @@ local function record_receipts_tx(tx: any, round: Map, delivered: { Map }, pass_
     local upserts: { { any } } = {}
     local removals: { { any } } = {}
     local prepared: { string } = {}
+    local prepared_refs: {Map} = {}
     local seen_prepared: { [string]: boolean } = {}
     local receipt_keys: { string } = {}
     local seen_receipt: { [string]: boolean } = {}
@@ -105,16 +106,17 @@ local function record_receipts_tx(tx: any, round: Map, delivered: { Map }, pass_
     -- identities of one item naming the same slot have no defined order.
     local seen_slots: { [string]: boolean } = {}
     local applied_hash = type(declaration_hash) == "string" and declaration_hash ~= "" and declaration_hash or sql.NULL
-    local function add_prepared(key: any): ()
+    local function add_prepared(key: any, item: Map): ()
         if type(key) == "string" and key ~= "" and not seen_prepared[key] then
             seen_prepared[key] = true
             prepared[#prepared + 1] = key
+            prepared_refs[#prepared_refs+1]={owner=round.automation_id,port=round.source_port,item=item.item_key,key=key}
         end
     end
     for _, entry in ipairs(delivered) do
         local item = entry.item :: Map
-        add_prepared(entry.prepared_key)
-        add_prepared(entry.original_prepared_key)
+        add_prepared(entry.prepared_key,item)
+        add_prepared(entry.original_prepared_key,item)
         for _, r in ipairs((entry.receipts or {}) :: { Map }) do
             local slot_key = tostring(item.item_key) .. "\n" .. tostring(r.map_slot or "")
             if seen_slots[slot_key] then return internal("duplicate receipt slot in one round", slot_key) end
@@ -241,14 +243,8 @@ local function record_receipts_tx(tx: any, round: Map, delivered: { Map }, pass_
             if lock_err then return internal("failed to lock prepared output for settlement", lock_err) end
         end
     end
-    for first = 1, #prepared, CHUNK do
-        local count = math.min(#prepared, first + CHUNK - 1) - first + 1
-        local params: { any } = { round.automation_id }
-        for index = first, first + count - 1 do params[#params + 1] = prepared[index] end
-        local _, err = tx:execute("DELETE FROM kickside_automation_prepared WHERE automation_id = $1 AND idempotency_key IN ("
-            .. placeholders(2, count) .. ")", params)
-        if err then return internal("failed to settle prepared output", err) end
-    end
+    local prepared_err=ledger.reclaim_prepared_tx(tx,prepared_refs)
+    if prepared_err then return prepared_err end
     return nil
 end
 
