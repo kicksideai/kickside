@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: kickside.automation
+entries:
+  - name: round_backlog_job
+    kind: function.lua
+    source: file://test_src/suites/round/backlog_job.lua
+    method: run
+    modules: [process, time, channel]
+  - name: round_backlog_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_automation_round_backlog }
+    source: file://test_src/suites/round/backlog_test.lua
+    method: run
+    modules: [time, channel, process, uuid]
+    security:
+      groups: [wippy.security:process]
+    imports:
+      test: wippy.test:test
+      clock: kickside.core.jobs:clock
+      jobs: kickside.core.jobs:jobs
+      slot: kickside.automation:slot
+      jobs_config: kickside.core.jobs:config
+      round_harness: kickside.automation:round_harness
