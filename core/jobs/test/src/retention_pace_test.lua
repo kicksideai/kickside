@@ -47,6 +47,94 @@ end
 
 local function define_tests()
     test.describe("retention keeps pace with expired writes", function()
+        test.it("bounds job selection when runs have a longer retention window", function()
+            local db = open_queue()
+            local dbtype = tostring(db:type())
+            local policy = required(config.policy())
+            local original = config.policy
+            policy.retention_jobs_ms = 86400000
+            policy.retention_job_runs_ms = 30 * 86400000
+            config.policy = function() return policy, nil end
+            local ok, err = pcall(function()
+                local total = 100000
+                local owner = uuid.v7()
+                local finished = time.now():add(-10 * 86400000 * time.MILLISECOND):format(time.RFC3339)
+                local numbers = dbtype == sql.type.POSTGRES
+                    and "SELECT generate_series(1," .. tostring(total) .. ") AS n"
+                    or "WITH RECURSIVE seq(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM seq WHERE n<"
+                        .. tostring(total) .. ") SELECT n FROM seq"
+                local id = dbtype == sql.type.POSTGRES and "md5($1::text || n::text)::uuid"
+                    or "lower(hex(randomblob(16)))"
+                local stamp = dbtype == sql.type.POSTGRES and "$2::timestamptz" or "$2"
+                required(db:execute([[INSERT INTO kickside_job
+                    (id,owner_kind,owner_id,job_type,status,job_identity,finished_at)
+                    SELECT ]] .. id .. ",'test',$1,'test.retention','done',CAST(n AS TEXT)," .. stamp
+                    .. " FROM (" .. numbers .. ") numbered", {owner, finished}))
+                required(db:execute([[INSERT INTO kickside_job_run
+                    (id,job_id,owner_kind,owner_id,job_type,attempt_no,execution_seq,status,lease_token,started_at,finished_at)
+                    SELECT id,id,owner_kind,owner_id,job_type,1,1,'success','seed',finished_at,finished_at
+                    FROM kickside_job WHERE owner_id=$1]], {owner}))
+                required(db:execute("ANALYZE kickside_job"))
+                required(db:execute("ANALYZE kickside_job_run"))
+                local checked = 0
+                local probe = {
+                    type = function() return db:type() end,
+                    begin = function() return db:begin() end,
+                    execute = function(_, statement, params) return db:execute(statement, params) end,
+                    query = function(_, statement, params)
+                        if string.find(statement, "SELECT id,owner_kind,owner_id FROM kickside_job ", 1, true) == 1 then
+                            checked = checked + 1
+                            if dbtype == sql.type.SQLITE then
+                                local plan = required(db:query("EXPLAIN QUERY PLAN " .. statement, params))
+                                local ranged = false
+                                for _, row in ipairs(plan) do
+                                    if string.find(row.detail, "idx_job_global_retention (finished_at>? AND finished_at<?)", 1, true) then
+                                        ranged = true
+                                    end
+                                end
+                                test.is_true(ranged, "job candidates use a bounded expiration index range")
+                                test.is_true(params[1] < finished, "the range excludes jobs whose runs stay in-window")
+                            else
+                                local plan = required(db:query("EXPLAIN (ANALYZE, BUFFERS) " .. statement, params))
+                                local measured = false
+                                for _, row in ipairs(plan) do
+                                    local detail = tostring(row["QUERY PLAN"])
+                                    local examined, loops = string.match(detail, "actual time=[^ ]+ rows=(%d+) loops=(%d+)")
+                                    if examined then
+                                        measured = true
+                                        test.is_true(required(tonumber(examined)) * required(tonumber(loops)) <= policy.retention_batch,
+                                            "job candidates examine more than one batch: " .. detail)
+                                    end
+                                    local removed = string.match(detail, "Rows Removed by [%a ]+: (%d+)")
+                                    if removed then
+                                        test.is_true(required(tonumber(removed)) <= policy.retention_batch,
+                                            "job candidates filter more than one batch: " .. detail)
+                                    end
+                                end
+                                test.is_true(measured, "the candidate plan reports execution counters")
+                            end
+                        end
+                        return db:query(statement, params)
+                    end,
+                }
+                local stats = required(retention.sweep(probe, dbtype))
+                test.eq(checked, 1)
+                test.eq(stats.jobs, 0)
+                test.eq(stats.job_runs, 0)
+                for _, name in ipairs({"kickside_job", "kickside_job_run"}) do
+                    local rows = required(db:query("SELECT COUNT(*) AS n FROM " .. name .. " WHERE owner_id=$1", {owner}))
+                    test.eq(tonumber(rows[1].n), total, "in-window run history preserves its jobs")
+                    required(db:execute("UPDATE " .. name .. " SET finished_at='2000-01-01T00:00:00Z' WHERE owner_id=$1", {owner}))
+                end
+                local totals = drain(db, time.now())
+                test.eq(totals.jobs, total)
+                test.eq(totals.job_runs, total)
+            end)
+            config.policy = original
+            db:release()
+            if not ok then error(err) end
+        end)
+
         for _, field in ipairs({ "jobs", "job_runs", "workers", "worker_pulses", "wake_rows",
                 "thread_cleanup_receipts", "thread_cleanup_fences", "thread_cleanup_leftovers" }) do
             test.it("continues a full " .. field .. " batch before the idle interval", function()

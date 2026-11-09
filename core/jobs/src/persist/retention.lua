@@ -298,10 +298,13 @@ function M.sweep(db: any, dbtype: string): (table?, error?)
     local batch = (policy :: any).retention_batch :: integer
     local job_cutoff = days_before(dbtype, (policy :: any).retention_jobs_ms)
     local run_cutoff = days_before(dbtype, (policy :: any).retention_job_runs_ms)
+    -- Jobs retain their runs, so skip the index range still protected by
+    -- either window before checking for remaining runs.
+    local job_candidate_cutoff = job_cutoff < run_cutoff and job_cutoff or run_cutoff
     local receipt_cutoff = days_before(dbtype, (policy :: any).retention_thread_cleanup_receipts_ms)
     local runs, runs_err = M.prune_runs(db, nil, run_cutoff, batch, true)
     if runs_err then return nil, runs_err end
-    local jobs, jobs_err = M.prune_jobs(db, nil, job_cutoff, batch, true)
+    local jobs, jobs_err = M.prune_jobs(db, nil, job_candidate_cutoff, batch, true)
     if jobs_err then return nil, jobs_err end
     local workers, workers_err = M.prune_workers(db, job_cutoff, batch)
     if workers_err then return nil, workers_err end
