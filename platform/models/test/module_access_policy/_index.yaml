@@ -11,5 +11,19 @@ entries:
   modules:
   - registry
   - security
+  - funcs
   imports:
     test: wippy.test:test
+    models_repo: kickside.models.persist:repo
+    llm: wippy.llm:llm
+    contract: contract
+- name: resolve_probe
+  kind: function.lua
+  source: file://test.lua
+  method: resolve_probe
+  modules: [registry, security, funcs]
+  imports:
+    test: wippy.test:test
+    models_repo: kickside.models.persist:repo
+    llm: wippy.llm:llm
+    contract: contract

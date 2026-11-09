@@ -10,6 +10,7 @@ entries:
     includes:
     - kickside.models.security:module_runtime
     - kickside.models.security:models_endpoint_access
+    - kickside.models.security:model_resolution
   groups: []
   policy:
     resources:
@@ -84,3 +85,14 @@ entries:
     path: .groups +=
   - entry: kickside.models.security:models_endpoint_access
     path: .groups +=
+  - entry: kickside.models.security:model_resolution
+    path: .groups +=
+- name: model_resolution
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources: [wippy.llm:model_resolver, resolve]
+    actions: [registry.get, contract.get, contract.open, contract.call, contract.implementations]
+    effect: allow

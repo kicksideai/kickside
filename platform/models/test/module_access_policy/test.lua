@@ -1,6 +1,8 @@
 local test = require("test")
 local registry = require("registry")
 local security = require("security")
+local funcs = require("funcs")
+local models_repo = require("models_repo")
 local function composed_scope(root)
     local policies, seen = {}, {}
     local function include(id)
@@ -17,6 +19,30 @@ local function composed_scope(root)
 end
 local function define_tests()
     test.describe("Module access composition", function()
+        test.it("resolves saved models under the member execution scope", function()
+            local name = "member-resolver-model"
+            local card, save_err = models_repo.upsert_card({name = name, title = "Member model",
+                provider_id = "wippy.llm.openai_compat:provider", provider_model = "fixture",
+                capabilities = {"embed"}, dimensions = 512, max_tokens = 8192, output_tokens = 0, enabled = true})
+            test.is_nil(save_err, tostring(save_err))
+            test.not_nil(card)
+            local actor = security.new_actor("model-member", {})
+            local scope = composed_scope("kickside.models.security:module_access")
+            test.eq(scope:evaluate(actor, "store.get", "kickside.models:cache"), "undefined")
+            test.eq(scope:evaluate(actor, "db.get", "app:db"), "undefined")
+            local resolved, err = funcs.new():with_actor(actor):with_scope(scope)
+                :call("kickside.models.catalog:model_resolver_func", {model = name})
+            local through_llm, llm_err = funcs.new():with_actor(actor):with_scope(scope)
+                :call("kickside.models.test.module_access:resolve_probe", {model = name})
+            local _, delete_err = models_repo.delete_card(name)
+            test.is_nil(delete_err, tostring(delete_err))
+            test.is_nil(err, tostring(err))
+            test.not_nil(resolved, "Member resolution loses a configured model")
+            test.eq(resolved.name, name)
+            test.is_nil(llm_err, tostring(llm_err))
+            test.not_nil(through_llm)
+            test.eq(through_llm.name, name)
+        end)
         test.it("admits exactly the listed endpoint identities", function()
             local policy_id = "kickside.models.security:models_endpoint_access"
             local declaration, declaration_err = registry.get(policy_id)
@@ -99,4 +125,13 @@ local function define_tests()
     end)
 end
 local run_cases = test.run_cases(define_tests)
-return { run = function(options) return run_cases(options) end }
+return {
+    run = function(options) return run_cases(options) end,
+    resolve_probe = function(input)
+        local definition, err = require("contract").get("wippy.llm:model_resolver")
+        if err then return nil, err end
+        local _, open_err = definition:open()
+        if open_err then return nil, open_err end
+        return require("llm").resolve_model(input.model)
+    end,
+}
