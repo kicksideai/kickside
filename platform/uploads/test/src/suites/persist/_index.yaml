@@ -26,7 +26,7 @@ entries:
       comment: Existing retention callback reclaims old unreferenced artifact blobs and bytes.
     source: file://orphan_blob_retention_test.lua
     method: run
-    modules: [sql, uuid, fs, funcs]
+    modules: [sql, uuid, fs, funcs, time]
     imports:
       test: wippy.test:test
       artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo

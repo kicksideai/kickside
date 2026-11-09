@@ -151,7 +151,7 @@ end
 -- rechecking references: PostgreSQL's FOR UPDATE excludes a concurrent FK
 -- insert, while SQLite's no-op UPDATE takes its writer lock even when foreign
 -- keys are disabled on that connection.
-function artifact_cleanup_repo.prune_orphan_blobs(cutoff: string, limit: integer): (integer?, any?)
+function artifact_cleanup_repo.prune_orphan_blobs(cutoff: string, limit: integer): (integer?, any?, any?)
     if type(cutoff) ~= "string" or cutoff == "" or type(limit) ~= "number"
         or limit ~= math.floor(limit) or limit < 1 or limit > 500 then
         return nil, retention_error("orphan blob cutoff and limit 1..500 required", errors.INVALID)
@@ -174,14 +174,15 @@ function artifact_cleanup_repo.prune_orphan_blobs(cutoff: string, limit: integer
         db:release()
         return nil, retention_error("orphan blob database type unavailable: " .. tostring(type_err or dbtype), errors.INTERNAL)
     end
+    table.sort(candidates,function(a,b) return tostring(a.blob_id) < tostring(b.blob_id) end)
+    local tx, begin_err = db:begin()
+    if begin_err or not tx then
+        db:release()
+        return nil, retention_error("orphan blob transaction failed: " .. tostring(begin_err), errors.INTERNAL)
+    end
     local removed = 0
     for _, candidate in ipairs(candidates) do
         local id = tostring(candidate.blob_id)
-        local tx, begin_err = db:begin()
-        if begin_err or not tx then
-            db:release()
-            return nil, retention_error("orphan blob transaction failed: " .. tostring(begin_err), errors.INTERNAL)
-        end
         local locked: boolean
         if dbtype == sql.type.POSTGRES then
             local rows, lock_err = tx:query([[SELECT blob_id FROM kickside_upload_artifact_blobs
@@ -208,14 +209,22 @@ function artifact_cleanup_repo.prune_orphan_blobs(cutoff: string, limit: integer
             end
             removed = removed + count
         end
-        local _, commit_err = tx:commit()
-        if commit_err then
-            db:release()
-            return nil, retention_error("orphan blob commit failed: " .. tostring(commit_err), errors.INTERNAL)
-        end
     end
+    local _, commit_err = tx:commit()
+    if commit_err then
+        db:release()
+        return nil, retention_error("orphan blob commit failed: " .. tostring(commit_err), errors.INTERNAL)
+    end
+    local remaining, remaining_err = db:query([[SELECT b.created_at
+        FROM kickside_upload_artifact_blobs b
+        WHERE NOT EXISTS (SELECT 1 FROM kickside_upload_artifacts a WHERE a.blob_id=b.blob_id)
+        ORDER BY b.created_at,b.blob_id LIMIT 1]])
     db:release()
-    return removed, nil
+    if remaining_err or type(remaining) ~= "table" then
+        return nil, retention_error("orphan blob deadline read failed: " .. tostring(remaining_err), errors.INTERNAL)
+    end
+    return removed, nil, {needs_continue = #candidates >= limit,
+        next_at = remaining[1] and remaining[1].created_at or nil}
 end
 
 return artifact_cleanup_repo
