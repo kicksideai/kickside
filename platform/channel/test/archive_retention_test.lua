@@ -57,6 +57,99 @@ local function define_tests()
             sessions.delete_result = nil
         end)
 
+        test.it("continues after a child-turn page without removing its archive", function()
+            archive("paged-old", "current", -40)
+            local db = assert(sql.get(DB))
+            local _, err = db:execute([[WITH RECURSIVE n(x) AS (
+                SELECT 1 UNION ALL SELECT x+1 FROM n WHERE x<1001)
+                INSERT INTO kickside_channel_turns(turn_id,route_json,accepted_at,appended_at)
+                SELECT 'archive-chain-' || CAST(x AS TEXT),'{"session_id":"paged-old"}',$1,$1 FROM n]], {stamp(-40)})
+            db:release()
+            test.is_nil(err, tostring(err))
+            local removed, prune_err, progress = retention.prune_archives(DB, stamp(-30), stamp(-2), 1)
+            test.is_nil(prune_err, tostring(prune_err))
+            test.eq(removed, 0)
+            test.is_true(progress.needs_continue, "partial child deletion continues the same archive")
+            local passes = 1
+            repeat
+                removed, prune_err, progress = retention.prune_archives(DB, stamp(-30), stamp(-2), 1)
+                test.is_nil(prune_err, tostring(prune_err))
+                passes = passes + 1
+                if not progress.needs_continue then break end
+                test.is_true(passes < 5)
+            until false
+            test.eq(count("kickside_channel_session_archives", "old_session_id", "paged-old"), 0)
+            test.eq(count("kickside_channel_admissions", "session_id", "paged-old"), 0)
+        end)
+
+        test.it("bounds continuous idle and archived session streams by their windows", function()
+            local base = assert(time.parse(time.RFC3339,"2099-01-01T00:00:00Z"))
+            for day = 1,36 do
+                local current = base:add(day*24*time.HOUR):format_rfc3339()
+                local cutoff = base:add((day-30)*24*time.HOUR):format_rfc3339()
+                for n = 1,3 do
+                    local id = "session-stream-" .. tostring(day) .. "-" .. tostring(n)
+                    insert([[INSERT INTO kickside_channel_sessions(provider,external_id,session_id,updated_at)
+                        VALUES ('stream',$1,$1,$2)]],{id,current})
+                    archive("archive-" .. id,"next-" .. id,0)
+                    insert("UPDATE kickside_channel_session_archives SET rotated_at=$1 WHERE old_session_id=$2",{current,"archive-" .. id})
+                    insert([[INSERT INTO kickside_channel_session_owner(session_id,provider,external_id)
+                        VALUES ($1,'discord',$2)]],{"archive-" .. id,"room-next-" .. id})
+                end
+                local pages = 0
+                repeat
+                    local _, err, progress = idle.retire_idle(DB,cutoff,2)
+                    test.is_nil(err,tostring(err))
+                    pages = pages + 1
+                    test.is_true(pages < 5)
+                    if not progress.needs_continue then break end
+                until false
+                pages = 0
+                repeat
+                    local _, err, progress = retention.prune_archives(DB,cutoff,cutoff,2)
+                    test.is_nil(err,tostring(err))
+                    pages = pages + 1
+                    test.is_true(pages < 10)
+                    if not progress.needs_continue then break end
+                until false
+                local db = assert(sql.get(DB))
+                for _,name in ipairs({"kickside_channel_sessions","kickside_channel_session_archives",
+                    "kickside_channel_admissions","kickside_channel_session_owner"}) do
+                    local rows = assert(db:query("SELECT COUNT(*) AS n FROM " .. name))
+                    test.eq(tonumber(rows[1].n),math.min(day,30)*3,name)
+                end
+                db:release()
+            end
+        end)
+
+        test.it("rolls back an idle page when a later archive write fails", function()
+            for _,id in ipairs({"atomic-a","atomic-b"}) do
+                insert([[INSERT INTO kickside_channel_sessions(provider,external_id,session_id,updated_at)
+                    VALUES ('atomic',$1,$1,$2)]],{id,stamp(-40)})
+            end
+            archive("atomic-b","existing",0)
+            local removed,err = idle.retire_idle(DB,stamp(-30),2)
+            test.is_nil(removed)
+            test.not_nil(err)
+            test.eq(count("kickside_channel_sessions","provider","atomic"),2,
+                "a bounded idle page commits as one transaction")
+            test.eq(count("kickside_channel_session_archives","old_session_id","atomic-a"),0)
+        end)
+
+        test.it("rolls back an archive page when a later child proof fails", function()
+            archive("atomic-archive-a","first",-40)
+            archive("atomic-archive-b","second",-40)
+            turn("atomic-child","atomic-archive-b",-40,true,"sent")
+            insert([[UPDATE kickside_channel_turns SET owner_provider='different',owner_external_id='different'
+                WHERE turn_id='atomic-child']],{})
+            local removed,err = retention.prune_archives(DB,stamp(-30),stamp(-2),2)
+            test.is_nil(removed)
+            test.not_nil(err)
+            test.eq(count("kickside_channel_session_archives","old_session_id","atomic-archive-a"),1,
+                "one bounded archive page commits as a unit")
+            test.eq(count("kickside_channel_admissions","session_id","atomic-archive-a"),1)
+        end)
+
         test.it("keeps an archive whose backing delete failed while rotations continue", function()
             local first, _, first_err = persist.get_or_create(DB, "kickside_channel_sessions", "discord", "rotating")
             test.is_nil(first_err)
@@ -253,6 +346,7 @@ local function define_tests()
             local result = tick.run()
             test.is_true(result.success, tostring(result.error))
             test.eq(result.deleted, 1)
+            test.not_nil(result.deadline_ms,"idle retirement schedules its new archive expiry")
             test.eq(count("kickside_channel_sessions", "external_id", "idle"), 0)
             test.eq(count("kickside_channel_session_archives", "old_session_id", "idle-session"), 1)
             test.eq(#sessions.deleted, 0)

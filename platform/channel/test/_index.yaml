@@ -75,6 +75,7 @@ entries:
     source: file://src_link/persist/repo.lua
     modules: [sql, uuid, time, json, crypto, hash]
     imports:
+      retention_notifier: app:retention_notifier_fixture
       session_acquire: app:session_acquire
       conversation_gc: app:conversation_gc
       channel_retention_policy: app:retention_policy_stub
@@ -96,6 +97,7 @@ entries:
     source: file://src_link/persist/conversation.lua
     modules: [sql, time]
     imports:
+      retention_notifier: app:retention_notifier_fixture
       row_size: app:row_size
 
   - name: conversation_gc
@@ -110,6 +112,7 @@ entries:
     source: file://src_link/persist/session_acquire.lua
     modules: [sql, uuid, time, json]
     imports:
+      retention_notifier: app:retention_notifier_fixture
       channel_retention_policy: app:retention_policy_stub
       channel_conversation: app:channel_conversation
       row_size: app:row_size
@@ -225,6 +228,7 @@ entries:
     method: run
     modules: [sql, time]
     imports:
+      retention_notifier: app:retention_notifier_fixture
       channel_conversation: app:channel_conversation
       persist: app:persist
       test: wippy.test:test
@@ -779,3 +783,7 @@ entries:
     modules: [sql, uuid, funcs, security]
     imports:
       test: wippy.test:test
+
+  - name: retention_notifier_fixture
+    kind: library.lua
+    source: file://retention_notifier_fixture.lua
