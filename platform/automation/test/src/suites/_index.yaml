@@ -143,6 +143,7 @@ entries:
   imports:
     test: wippy.test:test
     drive: kickside.automation:drive
+    canonical_json: kickside.contract:canonical_json
 - name: slot_test
   kind: function.lua
   meta:

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.23](https://github.com/kicksideai/kickside/compare/automation-v0.2.22...automation-v0.2.23) (2026-11-09)
+
+
+### Bug Fixes
+
+* **automation:** advance delivery identity when delivery inputs change ([#392](https://github.com/kicksideai/kickside/issues/392)) ([013a3c1](https://github.com/kicksideai/kickside/commit/013a3c19b5cc15e949f65314eff42701728684a7))
+
 ## [0.2.22](https://github.com/kicksideai/kickside/compare/automation-v0.2.21...automation-v0.2.22) (2026-11-09)
 
 

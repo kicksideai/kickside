@@ -220,6 +220,32 @@ entries:
     operations:
       upsert: {}
 
+  - name: write_idempotent
+    kind: function.lua
+    source: file://fixture.lua
+    method: write_idempotent
+    modules: [sql, json, ctx, process, channel, time, uuid, security]
+    imports:
+      round_write: kickside.automation:round_write
+      automations_lib: kickside.automation:automation
+
+  - name: idempotent_store_binding
+    kind: contract.binding
+    meta: {delivery: exactly_once, input_shape: record}
+    contracts:
+      - contract: kickside.data:writable
+        methods:
+          write: kickside.automation.round.fixture:write_idempotent
+
+  - name: idempotent_store
+    kind: registry.entry
+    meta: {type: kickside.automation.port, title: Idempotent fixture store}
+    binding: kickside.automation.round.fixture:idempotent_store_binding
+    input_schema: '{ "type": "object" }'
+    operations:
+      upsert: {}
+      delete: {}
+
   - name: notify_binding
     kind: contract.binding
     meta:

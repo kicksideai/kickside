@@ -17,6 +17,7 @@
       ]
     },
     "core/contract": {
+      "release-as": "0.3.4",
       "component": "contract",
       "changelog-path": "CHANGELOG.md",
       "exclude-paths": [
@@ -140,6 +141,7 @@
       ]
     },
     "platform/identity": {
+      "release-as": "0.1.44",
       "component": "identity",
       "changelog-path": "CHANGELOG.md",
       "exclude-paths": [
@@ -154,6 +156,7 @@
       ]
     },
     "platform/inbox": {
+      "release-as": "0.1.74",
       "component": "inbox",
       "changelog-path": "CHANGELOG.md",
       "exclude-paths": [
@@ -207,6 +210,7 @@
       ]
     },
     "platform/oauth": {
+      "release-as": "0.1.43",
       "component": "oauth",
       "changelog-path": "CHANGELOG.md",
       "exclude-paths": [
@@ -236,6 +240,7 @@
       ]
     },
     "platform/renderers": {
+      "release-as": "0.1.38",
       "component": "renderers",
       "changelog-path": "CHANGELOG.md",
       "exclude-paths": [
@@ -325,6 +330,7 @@
       ]
     },
     "platform/transfer": {
+      "release-as": "0.1.35",
       "component": "transfer",
       "changelog-path": "CHANGELOG.md",
       "exclude-paths": [
