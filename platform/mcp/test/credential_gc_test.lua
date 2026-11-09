@@ -5,6 +5,8 @@ local security = require("security")
 local funcs = require("funcs")
 local owner_hooks = require("owner_hooks")
 local subjects = require("subjects")
+local credentials = require("mcp_repo")
+local notifier = require("retention_notifier")
 
 local function insert(db, id, status, expiry, revoked_at)
     local values = {
@@ -54,18 +56,48 @@ local function define_tests()
             local report, prune_err = owner_hooks.run()
             test.is_nil(prune_err)
             test.eq(#report.failures, 0, "no retention owner fails")
-            test.is_true(report.deleted >= 2)
             db, db_err = sql.get("app:db")
             test.is_nil(db_err)
             if db == nil then error("database unavailable") end
             test.eq(count(db, ids.expired), 0)
             test.eq(count(db, ids.revoked), 0)
+            local retained = assert(db:query([[SELECT COUNT(*) AS n FROM kickside_mcp_credentials
+                WHERE credential_id IN ($1,$2,$3,$4,$5,$6)]],
+                {ids.expired,ids.revoked,ids.live,ids.recent,ids.unexpired,ids.nonexpiring}))
+            test.eq(tonumber(retained[1].n),4,"exactly the two aged fixtures are reclaimed")
             for _, id in ipairs({ ids.live, ids.recent, ids.unexpired, ids.nonexpiring }) do
                 test.eq(count(db, id), 1)
                 local _, cleanup_err = db:execute("DELETE FROM kickside_mcp_credentials WHERE credential_id=$1", { id })
                 test.is_nil(cleanup_err)
             end
             db:release()
+        end)
+
+        test.it("wakes on first revocation and leaves deadline refreshes quiet", function()
+            local id = "revoke-wake-" .. tostring(time.now():unix_nano())
+            local db = assert(sql.get("app:db"))
+            insert(db,id,"active",nil,nil)
+            db:release()
+            local notify, calls = notifier.notify, 0
+            notifier.notify = function(change)
+                calls = calls + 1
+                return notify(change)
+            end
+            local ok, first, first_err = pcall(credentials.revoke,id,"test")
+            local first_calls = calls
+            local second_ok, second, second_err = pcall(credentials.revoke,id,"test")
+            notifier.notify = notify
+            db = assert(sql.get("app:db"))
+            local _, cleanup_err = db:execute("DELETE FROM kickside_mcp_credentials WHERE credential_id=$1",{id})
+            db:release()
+            test.is_nil(cleanup_err,tostring(cleanup_err))
+            test.is_true(ok,tostring(first))
+            test.is_true(second_ok,tostring(second))
+            test.is_nil(first_err,tostring(first_err))
+            test.is_nil(second_err,tostring(second_err))
+            test.is_true(first); test.is_true(second)
+            test.eq(first_calls,1,"first revocation establishes a retention deadline")
+            test.eq(calls,1,"revocation refresh only postpones its deadline")
         end)
 
         test.it("caps active credentials per owner and admits a replacement after revoke", function()
@@ -85,12 +117,12 @@ local function define_tests()
             end
             db:release()
 
-            local function mint()
+            local function mint(expires_at)
                 local actor = security.new_actor(actor_id, { user_id = actor_id, security_groups = {} })
                 local policy = security.policy("app:mcp_suite_policy")
                 local scope = security.new_scope({ policy })
                 return funcs.new():with_actor(actor):with_scope(scope):call("app:mint_func",
-                    { whitelist_component_ids = {}, label = "quota", policy = {} })
+                    { whitelist_component_ids = {}, label = "quota", policy = {}, expires_at = expires_at })
             end
             local denied = mint()
             test.is_nil(denied.result)
@@ -107,6 +139,7 @@ local function define_tests()
             local admitted = mint()
             test.is_nil(admitted.error)
             test.not_nil(admitted.result)
+            test.eq(admitted.notifications,0,"nonexpiring credentials establish no cleanup deadline")
             db, db_err = sql.get("app:db")
             test.is_nil(db_err)
             if db == nil then error("database unavailable") end

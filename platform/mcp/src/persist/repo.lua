@@ -167,8 +167,10 @@ function M.mint(args: any): (any?, any?)
         return nil, "failed to persist credential: " .. tostring(ins_err)
     end
 
-    local _, wake_err = retention_notifier.notify({kind = "mcp_credential"})
-    if wake_err then return nil, wake_err end
+    if expires_at ~= nil and expires_at > 0 then
+        local _, wake_err = retention_notifier.notify({kind = "mcp_credential"})
+        if wake_err then return nil, wake_err end
+    end
     return {
         credential_id = credential_id,
         token = raw, -- returned ONCE; never stored
@@ -467,8 +469,10 @@ function M.revoke(credential_id: any, revoked_by: any): (boolean, string?)
         :run_with(db):exec()
     db:release()
     if upd_err then return false, "revoke update failed: " .. tostring(upd_err) end
-    local _, wake_err = retention_notifier.notify({kind = "mcp_credential"})
-    if wake_err then return false, tostring(wake_err) end
+    if rows[1].status ~= consts.STATUS.REVOKED then
+        local _, wake_err = retention_notifier.notify({kind = "mcp_credential"})
+        if wake_err then return false, tostring(wake_err) end
+    end
     return true, nil
 end
 

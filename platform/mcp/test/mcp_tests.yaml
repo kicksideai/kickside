@@ -32,6 +32,8 @@ entries:
   - security
   - funcs
   imports:
+    mcp_repo: kickside.mcp.persist:repo
+    retention_notifier: kickside.core.retention:notifier
     test: wippy.test:test
     owner_hooks: kickside.core.retention.service:owner_hooks
     subjects: app:subjects

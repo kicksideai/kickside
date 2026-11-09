@@ -196,7 +196,7 @@ function M.prune_idle_clients(limit: integer): (integer?, error?, any?)
         return nil, (errors.new({ message = "OAuth client prune returned no affected-row count",
             kind = errors.INTERNAL, retryable = true }) :: error)
     end
-    local rows, deadline_err = db:query("SELECT last_used_at AS stamp FROM kickside_mcp_oauth_clients ORDER BY last_used_at LIMIT 1")
+    local rows, deadline_err = db:query("SELECT last_used_at AS stamp FROM kickside_mcp_oauth_clients WHERE last_used_at > $1 ORDER BY last_used_at LIMIT 1", {cutoff})
     db:release()
     if deadline_err or type(rows) ~= "table" then
         return nil, (errors.new({ message = "OAuth retention deadline read failed: " .. tostring(deadline_err),
@@ -357,7 +357,7 @@ function M.prune_expired_codes(limit: integer): (integer?, error?, any?)
         return nil, (errors.new({ message = "OAuth code prune returned no affected-row count",
             kind = errors.INTERNAL, retryable = true }) :: error)
     end
-    local rows, deadline_err = db:query("SELECT expires_at AS stamp FROM kickside_mcp_oauth_codes ORDER BY expires_at LIMIT 1")
+    local rows, deadline_err = db:query("SELECT expires_at AS stamp FROM kickside_mcp_oauth_codes WHERE expires_at > $1 ORDER BY expires_at LIMIT 1", {expired_at})
     db:release()
     if deadline_err or type(rows) ~= "table" then
         return nil, (errors.new({ message = "OAuth retention deadline read failed: " .. tostring(deadline_err),

@@ -45,9 +45,9 @@ return function(M: any, db_open: any, now_unix: any, decode_restrictions: any)
                 total = total + count
                 needs_continue = needs_continue or count >= spec.cap
                 local predicate = spec.ordering == "revoked_at"
-                    and "status='revoked' AND revoked_at IS NOT NULL" or "expires_at > 0"
+                    and "status='revoked' AND revoked_at > $1" or "expires_at > $1"
                 local rows, read_err = db:query("SELECT " .. spec.ordering .. " AS stamp FROM " .. table_name
-                    .. " WHERE " .. predicate .. " ORDER BY " .. spec.ordering .. ",credential_id LIMIT 1")
+                    .. " WHERE " .. predicate .. " ORDER BY " .. spec.ordering .. ",credential_id LIMIT 1", {cutoff})
                 if read_err or type(rows) ~= "table" then
                     db:release()
                     return nil, (errors.new({message = "credential retention deadline read failed: " .. tostring(read_err),

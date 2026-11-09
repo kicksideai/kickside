@@ -24,6 +24,10 @@ return test.run_cases(function()
                 local report, run_err = owner_hooks.run()
                 test.is_nil(run_err, tostring(run_err))
                 test.eq(#report.failures, 0)
+                if report.deadline_ms ~= nil then
+                    test.is_true(report.deadline_ms > math.floor(time.now():unix_nano()/1000000),
+                        "continuation never schedules expired backlog as a deadline")
+                end
                 passes = passes + 1
                 local rows = assert(db:query("SELECT COUNT(*) AS n FROM kickside_mcp_credentials WHERE actor_id=$1", {prefix}))
                 if tonumber(rows[1].n) == 0 then break end
@@ -118,7 +122,7 @@ return test.run_cases(function()
                 test.eq(tonumber(rows[1].n),math.min(day,90))
             end
             for day = 1,36 do
-                local _, age_err = db:execute("UPDATE kickside_mcp_credentials SET revoked_at=revoked_at-86400 WHERE actor_id=$1",{prefix})
+                local _, age_err = db:execute("UPDATE kickside_mcp_credentials SET revoked_at = revoked_at - $1 WHERE actor_id=$2",{86400,prefix})
                 test.is_nil(age_err,tostring(age_err))
                 local _, seed_err = db:execute([[INSERT INTO kickside_mcp_credentials
                     (credential_id,token_hash,token_prefix,actor_id,status,created_at,updated_at,revoked_at)

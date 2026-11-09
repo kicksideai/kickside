@@ -419,6 +419,7 @@ entries:
     source: file://mint_func.lua
     method: handler
     imports:
+      retention_notifier: kickside.core.retention:notifier
       mcp_repo: kickside.mcp.persist:repo
 
   - name: oauth_grant_func
