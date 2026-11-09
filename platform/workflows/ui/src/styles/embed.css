@@ -31,6 +31,8 @@
 .wf-embed-io strong { font-weight: 700; color: var(--wf-faint); margin-right: 4px; text-transform: uppercase; letter-spacing: .04em; font-size: var(--wf-fs-label); }
 .wf-embed-go { color: var(--wf-faint); flex: none; }
 .wf-embed-empty { margin: 0; color: var(--wf-muted); font-size: var(--wf-fs-meta); text-align: center; padding: 12px; }
+/* The loading line takes the empty message's padding, so an empty list keeps the same height. */
+.wf-embed-pick > .wf-embed-note { padding-block: 12px; }
 
 /* Run surface */
 .wf-embed-run { display: flex; flex-direction: column; gap: 12px; }

@@ -2,7 +2,7 @@ import { W as e, u as o } from "./wc-runtime-KO3cNuNo.js";
 import { P as r } from "./primevue-plugin-CaP7wV_M.js";
 import { l as n } from "./lazy-Cfv2E3SG.js";
 import { p as s } from "./pickerselect-CshmdhGQ.js";
-import { s as i } from "./workflow-embed-DqDlVIkB.js";
+import { s as i } from "./workflow-embed-BX8EY-U_.js";
 import "@iconify/vue";
 import { define as p } from "@wippy-fe/proxy";
 const l = [s, i].join(`
