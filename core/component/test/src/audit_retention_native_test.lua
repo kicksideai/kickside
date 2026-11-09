@@ -10,7 +10,7 @@ end
 return {run = test.run_cases(function()
     test.describe("native component audit retention", function()
         for _, stage in ipairs({"policy", "publication_open", "publication_scan", "publication_release", "publish", "ack_open", "ack", "ack_release",
-            "retention_open", "owner_scan", "begin", "lock", "prune_read", "delete", "commit", "retention_release"}) do
+            "retention_open", "owner_scan", "begin", "lock", "prune_read", "delete", "commit", "retention_release", "deadline_scan"}) do
             for _, kind in ipairs(kinds) do
                 for _, options in ipairs({{}, {retryable = false}, {retryable = true}}) do
                     test.it(stage .. "/" .. kind .. "/" .. tostring(options.retryable), function()
@@ -46,7 +46,7 @@ return {run = test.run_cases(function()
                 end
             end
         end
-        for _, stage in ipairs({"policy", "publication_open", "publication_scan", "publish", "ack_open", "ack", "retention_open", "owner_scan", "begin", "lock", "prune_read", "delete", "commit"}) do
+        for _, stage in ipairs({"policy", "publication_open", "publication_scan", "publish", "ack_open", "ack", "retention_open", "owner_scan", "begin", "lock", "prune_read", "delete", "commit", "deadline_scan"}) do
             test.it("missing/" .. stage, function()
                 fixture.reset(stage, nil); local ok, result, err = pcall(retention.run, 1)
                 test.is_true(ok); test.is_nil(result); test.eq(type(err), "userdata")

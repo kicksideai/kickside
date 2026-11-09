@@ -20,7 +20,8 @@ function M.run(input: any?): any
         error = audit_err or component_command.response_error("audit_retention") } end
     for _, item in ipairs(reap_blocked or {}) do blocked[#blocked + 1] = item end
     return { success = true, deleted = resumed + count, audits = audits,
-        needs_continue = needs_continue or reap_continue, blocked = blocked }
+        needs_continue = needs_continue or reap_continue or audits.needs_continue,
+        deadline_ms = audits.deadline_ms, blocked = blocked }
 end
 
 return M
