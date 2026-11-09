@@ -135,8 +135,7 @@ const Je = { class: "ob" }, Xe = {
         pricing: e.pricing ?? {},
         options: e.options ?? {},
         metadata: e.metadata ?? {},
-        source: e.source === "registry" ? "overlay" : e.source || "overlay",
-        enabled: !0
+        source: e.source === "registry" ? "overlay" : e.source || "overlay"
       };
     }
     async function re(e) {
