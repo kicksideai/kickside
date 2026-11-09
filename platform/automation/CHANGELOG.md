@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.22](https://github.com/kicksideai/kickside/compare/automation-v0.2.21...automation-v0.2.22) (2026-11-09)
+
+
+### Bug Fixes
+
+* **automation:** reclaim prepared references when admission settles ([#390](https://github.com/kicksideai/kickside/issues/390)) ([241a29d](https://github.com/kicksideai/kickside/commit/241a29d2cc1e6163adc1be13202b56905ddf9f95))
+
 ## [0.2.21](https://github.com/kicksideai/kickside/compare/automation-v0.2.20...automation-v0.2.21) (2026-11-09)
 
 
