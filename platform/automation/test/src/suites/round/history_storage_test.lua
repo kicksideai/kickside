@@ -15,7 +15,16 @@ type Map = { [string]: any }
 local NOW = "2026-10-11T00:00:00Z"
 local EXPIRY = "2026-11-11T00:00:00Z"
 
+local owners: Map={}
+local function cleanup(): ()
+    for id in pairs(owners) do
+        h.exec("DELETE FROM kickside_automation_delivery_history WHERE automation_id=$1",{id})
+    end
+    owners={}
+end
+
 local function round(id: string): Map
+    owners[id]=true
     return {automation_id=id,drive_key="history",source_port="source",now=NOW,
         resolved_expires_at=EXPIRY,captured={round_token=uuid.v7()}}
 end
@@ -42,6 +51,7 @@ local function rows(id: string): {Map}
 end
 
 local function seed(id: string, count: integer, expiry: string, split_drive: boolean?): ()
+    owners[id]=true
     local db=h.db()
     local postgres=tostring(db:type()) == sql.type.POSTGRES
     db:release()
@@ -57,6 +67,7 @@ end
 local function define_tests()
     test.describe("AUTOMATION-DELIVERY-HISTORY atomic append and retention",function()
         test.before_each(function() h.ensure_log() end)
+        test.after_each(cleanup)
 
         test.it("uses known ledger states without reading retained history",function()
             local id=uuid.v7()
@@ -258,6 +269,7 @@ local function define_tests()
             local removed=registry.get("kickside.automation.migrations:17_delivery_history_lookup")
             test.is_nil(removed,"history updates must not build an index")
             local id=uuid.v7()
+            local retained_before_seed=tonumber(h.query("SELECT COUNT(*) AS n FROM kickside_automation_delivery_history")[1].n)
             seed(id,1000000,"2099-01-01T00:00:00Z",true)
             h.exec("ANALYZE kickside_automation_delivery_history")
             local db=h.db()
@@ -338,7 +350,26 @@ local function define_tests()
                 migrations_applied=result.migrations_applied,storage_before=before,storage_after=h.encoded(h.query(schema))})})
             test.is_nil(plans.lookup,"prior classifications never read history")
             test.is_nil(plans.trim,"appends never scan or trim retained history")
-            h.exec("DELETE FROM kickside_automation_delivery_history WHERE automation_id=$1",{id})
+            cleanup()
+            if postgres then
+                -- Release this bulk fixture's dead index entries before live-worker suites.
+                h.exec("VACUUM (ANALYZE) kickside_automation_delivery_history")
+                local remaining=retained_before_seed
+                local heap_fetches=0
+                local function visit(node: Map): ()
+                    heap_fetches=heap_fetches+(tonumber(node["Heap Fetches"]) or 0)
+                    for _,child in ipairs(node.Plans or {}) do visit(child) end
+                end
+                local _,oldest_err=history.oldest({query=function(_,statement,params)
+                    local explained=h.query("EXPLAIN (ANALYZE,BUFFERS,FORMAT JSON) " .. statement,params)
+                    visit(json.decode(explained[1]["QUERY PLAN"])[1].Plan)
+                    return h.query(statement,params),nil
+                end})
+                test.is_nil(oldest_err,tostring(oldest_err))
+                test.is_true(heap_fetches<=3*(remaining :: number)+2,
+                    "fixture cleanup leaves dead history tuples in later maintenance seeks: " .. tostring(heap_fetches)
+                    .. " heap fetches for " .. tostring(remaining) .. " live rows")
+            end
         end)
 
         test.it("rejects invalid prune bounds and propagates missing storage proof",function()
