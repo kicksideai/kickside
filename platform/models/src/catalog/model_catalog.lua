@@ -126,7 +126,9 @@ local function class_cards(cards: { any }, class_name: string): { any }
         end
     end
     table.sort(out, function(a, b)
-        return (tonumber(a.priority) or 0) > (tonumber(b.priority) or 0)
+        local a_priority, b_priority = tonumber(a.priority) or 0, tonumber(b.priority) or 0
+        if a_priority == b_priority then return tostring(a.name) < tostring(b.name) end
+        return a_priority > b_priority
     end)
     return out
 end
