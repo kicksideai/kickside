@@ -74,6 +74,7 @@ entries:
       round_commit: kickside.automation:round_commit
       drive: kickside.automation:drive
       row_size: kickside.core:row_size
+      row_limit: kickside.automation:row_limit
       runtime_policy: kickside.automation:runtime_policy
 
   - name: round_claim

@@ -92,7 +92,7 @@ end
 -- deletes the items' prepared output, which the delivery settled (§5.4), in
 -- the §14 round lock order: receipts, then prepared. Each is a bounded batch
 -- statement per CHUNK rows, never a statement per destination.
-local function record_receipts_tx(tx: any, round: Map, delivered: { Map }, pass_id: any, deliveries: {Map}?, declaration_hash: any): error?
+local function record_receipts_tx(tx: any, round: Map, delivered: { Map }, pass_id: any, deliveries: {Map}?, declaration_hash: any, settled_prepared: {Map}): error?
     local completed: Map={}
     for _,outcome in ipairs(deliveries or {}) do completed[outcome.key]=true end
     local upserts: { { any } } = {}
@@ -113,6 +113,7 @@ local function record_receipts_tx(tx: any, round: Map, delivered: { Map }, pass_
             prepared_refs[#prepared_refs+1]={owner=round.automation_id,port=round.source_port,item=item.item_key,key=key}
         end
     end
+    for _, entry in ipairs(settled_prepared) do add_prepared(entry.key,entry.item) end
     for _, entry in ipairs(delivered) do
         local item = entry.item :: Map
         add_prepared(entry.prepared_key,item)
@@ -279,16 +280,16 @@ function M.commit_tx(tx: any, round: Map, result: Map): (Map?, error?)
         if r and r.reconcile_pass_id ~= nil and ledger.receipt_port(r) == round.receipt_port then pass_id = r.reconcile_pass_id end
     end
     local journal: Map=d.admission or {}
-    local receipt_of: Map={}
-    for _,receipt in ipairs(result.receipts or {}) do receipt_of[receipt.item.delivery_key]=receipt end
+    local settled_prepared: {Map}={}
     for _,entry in ipairs(result.outcomes or {}) do
         local key=tostring(entry.item.delivery_key)
         if journal[key] ~= nil then
             local encoded,encode_err=json.encode(journal[key])
             if encode_err then return nil,internal("delivery provenance encoding fails",encode_err) end
             entry.execution_identity_json=encoded
-            local receipt=receipt_of[key]
-            if receipt and type(receipt.prepared_key) == "string" then receipt.original_prepared_key=journal[key].prepared_key end
+            if entry.state == ledger.STATE.RESOLVED and type(journal[key].prepared_key) == "string" then
+                settled_prepared[#settled_prepared+1]={key=journal[key].prepared_key,item=entry.item}
+            end
             journal[key]=nil
         end
     end
@@ -299,7 +300,7 @@ function M.commit_tx(tx: any, round: Map, result: Map): (Map?, error?)
     if ledger_err then return nil, ledger_err end
     local history_err=history.record_tx(tx,round,result.outcomes or {},result.deliveries,prior)
     if history_err then return nil,history_err end
-    local receipt_err = record_receipts_tx(tx, round, result.receipts or {}, pass_id, result.deliveries, d.applied_hash)
+    local receipt_err = record_receipts_tx(tx, round, result.receipts or {}, pass_id, result.deliveries, d.applied_hash, settled_prepared)
     if receipt_err then return nil, receipt_err end
     local fields: Map = {
         round_token = sql.NULL, round_until = sql.NULL, admission_json=admission_json,

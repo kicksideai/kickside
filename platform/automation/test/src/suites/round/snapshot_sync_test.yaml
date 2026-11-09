@@ -11,3 +11,8 @@ entries:
   imports:
     test: wippy.test:test
     round_harness: kickside.automation:round_harness
+    automation_db: kickside.automation:automation_db
+    round_commit: kickside.automation:round_commit
+    round_ledger: kickside.automation:round_ledger
+    round_provenance: kickside.automation:round_provenance
+    round_write: kickside.automation:round_write

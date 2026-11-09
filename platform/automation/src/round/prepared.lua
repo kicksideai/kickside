@@ -11,6 +11,7 @@ local automation_db = require("automation_db")
 local commit = require("round_commit")
 local drive = require("drive")
 local row_size = require("row_size")
+local row_limit = require("row_limit")
 local runtime_policy = require("runtime_policy")
 
 local provenance = require("round_provenance")
@@ -79,12 +80,18 @@ function M.materialize_many(d: Map, items: { Map }): (Map?, error?)
         if dbtype ~= sql.type.POSTGRES and dbtype ~= sql.type.SQLITE then
             return nil, internal("unsupported prepared dialect", dbtype)
         end
+        local journal_changed=false
         for first = 1, #ordered, CHUNK do
             local params: { any } = {}
             local values: { string } = {}
             for index = first, math.min(#ordered, first + CHUNK - 1) do
                 local item = ordered[index]
                 local marks: { string } = {}
+                local admitted=current.admission and current.admission[item.delivery]
+                if admitted and admitted.prepared_key ~= item.key then
+                    admitted.prepared_key=item.key
+                    journal_changed=true
+                end
                 local evidence,evidence_err=provenance.encoded(current,item.delivery)
                 if evidence_err then return nil,evidence_err end
                 for _, value in ipairs({ owner, item.key, item.hash, item.encoded, drive.utc_now(), evidence,
@@ -129,6 +136,15 @@ function M.materialize_many(d: Map, items: { Map }): (Map?, error?)
                     answers[item.key] = { encoded = tostring(row.prepared_json) }
                 end
             end
+        end
+        if journal_changed then
+            local encoded,encode_err=json.encode(current.admission)
+            if encode_err then return nil,internal("prepared admission encoding fails",encode_err) end
+            local size_err=row_limit.check(encoded,"delivery_admission",owner)
+            if size_err then return nil,size_err end
+            local changed,write_err=drive.update_cas_tx(tx,owner,tostring(d.drive_key),{}, {admission_json=encoded})
+            if write_err then return nil,write_err end
+            if not changed then return nil,internal("prepared admission drive disappears",d.drive_key) end
         end
         return true, nil
     end)
