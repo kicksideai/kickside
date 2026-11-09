@@ -464,8 +464,8 @@ entries:
       Use `list_knowledge_bases` before mutating an existing base.
       `upsert_knowledge_base` is idempotent by name. On an existing base it
       applies description and engine config changes through the settings update
-      path. kb_type and embedding_model may be repeated unchanged; changing them
-      or enrichment_agent_id returns a typed error naming the field.
+      path. Changing kb_type, embedding_model, or enrichment_agent_id returns a
+      typed error naming the field. Unchanged values may be repeated.
       `delete_knowledge_base` requires the returned `component_id`.
 
       `resummarize_knowledge_base` and `reembed_knowledge_base` also require

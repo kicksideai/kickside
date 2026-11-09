@@ -2,7 +2,7 @@
 -- Two bindings of kickside.knowledge:kb_store_lifecycle: the default one knows
 -- no store, the named one serves the "bound" engine's store row.
 
-local BOUND_KB = "kb-store-binding"
+local BOUND_KB = "3d9ba14d-4cd3-47b7-a63b-25868c2dcaff"
 
 local function unknown(component_id: any): (any, error?)
     return nil, errors.new({ kind = errors.NOT_FOUND, message = "store not found: " .. tostring(component_id) })
@@ -14,7 +14,7 @@ end
 
 local function bound_get(args: any): (any, error?)
     if args and args.component_id == BOUND_KB then
-        return { success = true, component_id = BOUND_KB, kb_type = "bound", embedding_model = "embed", config = { served_by = "bound" } }, nil
+        return { success = true, component_id = BOUND_KB, kb_type = "bound", embedding_model = "embed", enrichment_agent_id = "stored-agent", config = { served_by = "bound" } }, nil
     end
     return unknown(args and args.component_id)
 end

@@ -274,9 +274,14 @@ function M.upsert(args: any): (kb_types.UpsertResult?, error?)
     if err then return nil, err end
     if existing then
         local meta: any = type(existing.meta) == "table" and existing.meta or {}
+        local current: any = { kb_type = meta.kb_type, embedding_model = meta.embedding_model, parent_id = existing.parent_id }
+        if args.enrichment_agent_id ~= nil then
+            local _, store_row, _, store_err = stores.resolve_component_store(existing.component_id)
+            if store_err then return nil, store_err end
+            current.enrichment_agent_id = store_row and store_row.enrichment_agent_id or ""
+        end
         for _, field in ipairs({ "kb_type", "embedding_model", "enrichment_agent_id", "parent_id" }) do
-            local current = field == "parent_id" and existing.parent_id or meta[field]
-            if args[field] ~= nil and args[field] ~= current then
+            if args[field] ~= nil and args[field] ~= current[field] then
                 return nil, errors.new({ kind = errors.INVALID, message = field .. " cannot be changed by upsert on an existing knowledge base" })
             end
         end

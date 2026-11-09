@@ -13,7 +13,7 @@ local function exercise(args: any): (any, error?)
         store_binding = args.binding,
     })
     if err then return nil, err end
-    return store[args.method](store, {component_id = "kb-store-binding"})
+    return store[args.method](store, {component_id = "3d9ba14d-4cd3-47b7-a63b-25868c2dcaff"})
 end
 
 return { resolve = resolve, exercise = exercise }

@@ -83,8 +83,8 @@ local function define_tests()
         end)
 
         test.it("upsert refuses immutable and unsupported fields before applying changes", function()
-            local id = uuid.v7()
-            seed_component(id, "upsert-owner", "wiki", "knowledge_base")
+            local id = "3d9ba14d-4cd3-47b7-a63b-25868c2dcaff"
+            seed_component(id, "upsert-owner", "bound", "knowledge_base")
             local exec = executor("upsert-owner")
             for field, value in pairs({ kb_type = "document", embedding_model = "different-embedding", enrichment_agent_id = "another-agent" }) do
                 local args = { action = "upsert_knowledge_base", name = id, description = "Must remain unapplied" }
@@ -95,10 +95,22 @@ local function define_tests()
                 test.contains(tostring(err), field)
             end
             local same, same_err = exec:call(TOOL, { action = "upsert_knowledge_base", name = id,
-                kb_type = "wiki", embedding_model = "class:embed" })
+                kb_type = "bound", embedding_model = "class:embed" })
             test.is_nil(same_err, tostring(same_err))
             test.is_false(same.created)
             test.is_nil(same.kb.meta.comment)
+            cleanup(id)
+        end)
+
+        test.it("upsert preserves an unchanged engine-owned enrichment agent", function()
+            local id = "3d9ba14d-4cd3-47b7-a63b-25868c2dcaff"
+            seed_component(id, "upsert-agent-owner", "bound", "knowledge_base")
+            local result, err = executor("upsert-agent-owner"):call(TOOL, {
+                action = "upsert_knowledge_base", name = id, enrichment_agent_id = "stored-agent",
+            })
+            test.is_nil(err, tostring(err))
+            test.is_false(result.created)
+            test.eq(result.kb.component_id, id)
             cleanup(id)
         end)
 
