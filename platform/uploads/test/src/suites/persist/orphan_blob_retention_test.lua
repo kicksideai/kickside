@@ -5,6 +5,7 @@ local funcs = require("funcs")
 local time = require("time")
 local test = require("test")
 local cleanup = require("artifact_cleanup_repo")
+local resources = require("uploads_resources")
 
 local function db(): any
     local opened, err = sql.get("app:db")
@@ -60,7 +61,7 @@ return test.run_cases(function()
             test.is_nil(first_err, tostring(first_err))
             test.eq(first, 1)
             test.is_true(progress.needs_continue, "a full blob page continues independently")
-            test.not_nil(progress.next_at, "remaining orphan age supplies the next deadline")
+            test.is_nil(progress.next_at, "orphan eligibility does not add a deadline scan")
             local second, second_err = cleanup.prune_orphan_blobs("2998-12-31T00:00:00Z", 1)
             test.is_nil(second_err, tostring(second_err))
             test.eq(second, 1)
@@ -78,6 +79,30 @@ return test.run_cases(function()
             exec("DELETE FROM kickside_upload_artifact_blobs WHERE blob_id=$1 OR blob_id=$2", { live, recent })
             storage:remove(live_path)
             storage:remove(recent_path)
+        end)
+
+        test.it("issues only the existing candidate scan before bounded blob transactions", function()
+            local original = resources.get_db
+            local scans = 0
+            resources.get_db = function()
+                local db, err = original()
+                if not db then return nil,err end
+                return {
+                    query=function(_self,...)
+                        scans = scans + 1
+                        return db:query(...)
+                    end,
+                    type=function(_self) return db:type() end,
+                    begin=function(_self,...) return db:begin(...) end,
+                    release=function(_self) return db:release() end,
+                },nil
+            end
+            local ok, removed, err, progress = pcall(cleanup.prune_orphan_blobs,"1900-01-01T00:00:00Z",1)
+            resources.get_db = original
+            test.is_true(ok,tostring(removed))
+            test.is_nil(err,tostring(err))
+            test.eq(scans,1,"retained blobs add no cross-table deadline scan")
+            test.is_false(progress.needs_continue)
         end)
 
         test.it("bounds a continuous orphan stream by its 30-day window", function()
@@ -107,7 +132,7 @@ return test.run_cases(function()
             test.is_nil(err,tostring(err))
         end)
 
-        test.it("rolls back a blob page when a later storage lookup fails", function()
+        test.it("keeps removed bytes unreferenced after a later storage lookup fails", function()
             local id,path = blob("2099-01-01T00:00:00Z")
             local first = "atomic-a-" .. id
             local last = "atomic-z-" .. id
@@ -123,7 +148,8 @@ return test.run_cases(function()
             if bytes then test.is_nil(select(2,storage:remove(path))) end
             test.is_nil(removed)
             test.not_nil(err)
-            test.eq(first_rows,1,"one bounded orphan page commits as a unit")
+            test.eq(first_rows,0,"removed bytes have no surviving deduplication row")
+            test.is_nil(bytes, "the first blob bytes are removed before the second failure")
         end)
 
         test.it("runs orphan collection from the existing uploads retention callback", function()
