@@ -6,9 +6,11 @@ local channel = require("channel")
 local drive = require("drive")
 local claim = require("round_claim")
 local automation_db = require("automation_db")
+local deletion_worker = require("deletion_worker")
 
 type Map = { [string]: any }
 local PORT = "kickside.automation.round.fixture:records"
+local environments: {Map} = {}
 
 local function history(id: string): {Map}
     return h.query("SELECT * FROM kickside_automation_delivery_history WHERE automation_id=$1 ORDER BY round_at,round_token,source_port,item_key,identity_key", {id})
@@ -16,6 +18,7 @@ end
 
 local function setup(items: {Map}): Map
     local env = h.setup("delivery_history")
+    environments[#environments+1] = env
     h.new_drive({automation_id=env.automation_id,drive_key="history",source_kind="collection",
         action={source_ref=PORT,config={items=items},schedule={type="interval",expression="1h"}}})
     h.set_drive(env.automation_id,"history","next_run_at=$1",{h.PAST})
@@ -29,6 +32,17 @@ end
 
 local function define_tests()
     test.describe("AUTOMATION-DELIVERY-HISTORY committed admission evidence",function()
+        test.after_each(function()
+            for _,env in ipairs(environments) do
+                local _,delete_err=env.caller:call("kickside.automation.agent:automations_manage",
+                    {action="uninstall",id=env.automation_id})
+                test.is_nil(delete_err,tostring(delete_err))
+                local removed,remove_err=deletion_worker.run(env.automation_id)
+                test.is_nil(remove_err,tostring(remove_err))
+                test.is_true(removed.deleted)
+            end
+            environments={}
+        end)
         for _,case in ipairs({{directive="observe_identity",state="resolved"},
             {directive="skip",state="resolved"},{directive="fail_dead",state="dead"},
             {directive="fail_always",state="retrying"},{directive="wait",state="waiting"},
@@ -130,6 +144,7 @@ local function define_tests()
 
         test.it("waits for the next cadence when a completed idle pull outlasts its interval",function()
             local env=h.setup("idle_cadence")
+            environments[#environments+1] = env
             h.new_drive({automation_id=env.automation_id,drive_key="history",source_kind="collection",
                 action={source_ref=PORT,config={items={}},schedule={type="interval",expression="1s"}}})
             h.set_drive(env.automation_id,"history","next_run_at=$1",{h.PAST})
