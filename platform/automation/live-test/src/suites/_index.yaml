@@ -95,6 +95,8 @@ entries:
     migration_runner: wippy.migration:runner
 - name: round_live_probe
   kind: function.lua
+  meta:
+    job_class: awaited
   source: file://../test_src/suites/round/live_probe.lua
   method: run
   modules:

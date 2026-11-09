@@ -582,6 +582,7 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
         if not declared and type(key) == "string" then selected_keys[key] = true end
         return true
     end
+    -- Each phase consumes its tier quota so borrowing does not reset fairness.
     local function choose(matches: (table) -> boolean, capacity: integer, shares: table, order: ((table, table) -> boolean)?): ()
         local target = math.min(n, #selected + capacity)
         local eligible: { [string]: table[] } = {}
@@ -598,6 +599,7 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
                 if #selected >= target or taken >= shares[tier] then break end
                 if add(row) then taken = taken + 1 end
             end
+            shares[tier] = math.max(0, shares[tier] - taken)
         end
         if #selected < target then
             local spare: table[] = {}
@@ -611,7 +613,10 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
             end)
             for _, row in ipairs(spare) do
                 if #selected >= target then break end
-                add(row)
+                if add(row) then
+                    local tier = tostring(row.queue_tier)
+                    shares[tier] = math.max(0, shares[tier] - 1)
+                end
             end
         end
     end
@@ -622,32 +627,30 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
         local shares, next_step = cfg.distribute_shares(n, (policy :: any).fairness_shares, reservation.tier_step)
         -- Idle slots beyond the remaining general budget form the available reservation.
         local reserved = math.max(0, n - reservation.general_capacity)
-        local requested_capacity = math.min(reserved, (policy :: any).worker_awaited_slots)
-        local requested_shares = cfg.distribute_shares(requested_capacity,
+        local requested_left = math.min(n, (policy :: any).worker_awaited_slots)
+        local requested_shares = cfg.distribute_shares(requested_left,
             (policy :: any).fairness_shares, reservation.tier_step)
-        -- Addressed requests use reserved capacity; ordinary slots still advance.
-        choose(function(row) return row.dispatch_requested_at ~= nil and awaited_set[tostring(row.job_type)] == true end,
-            requested_capacity, requested_shares, function(a, b)
-                local at, bt = tostring(a.dispatch_requested_at), tostring(b.dispatch_requested_at)
-                if at ~= bt then return at < bt end
-                return tostring(a.id) < tostring(b.id)
-            end)
-        local reserved_start = #selected
-        choose(function(row) return awaited_set[tostring(row.job_type)] == true end, math.max(0, reserved - #selected), shares)
-        -- Borrowing uses the tier quota that reserved work leaves unconsumed.
-        local spare_shares: table = {}
-        for _, tier in ipairs(TIER_ORDER) do spare_shares[tier] = shares[tier] end
-        for index = reserved_start + 1, #selected do
-            local tier = tostring(selected[index].queue_tier)
-            spare_shares[tier] = math.max(0, spare_shares[tier] - 1)
+        local function choose_awaited(capacity: integer): ()
+            local before = #selected
+            choose(function(row) return row.dispatch_requested_at ~= nil and awaited_set[tostring(row.job_type)] == true end,
+                math.min(capacity, requested_left), requested_shares, function(a, b)
+                    local at, bt = tostring(a.dispatch_requested_at), tostring(b.dispatch_requested_at)
+                    if at ~= bt then return at < bt end
+                    return tostring(a.id) < tostring(b.id)
+                end)
+            local requested_count = #selected - before
+            requested_left = requested_left - requested_count
+            choose(function(row) return awaited_set[tostring(row.job_type)] == true end,
+                capacity - requested_count, shares)
         end
+        choose_awaited(reserved)
         general_limit = math.min(reservation.general_capacity, n - #selected) :: integer
         local general_shares = cfg.distribute_shares(general_limit, (policy :: any).fairness_shares,
             #selected > 0 and next_step or reservation.tier_step)
         choose(function(row) return awaited_set[tostring(row.job_type)] ~= true end, general_limit, general_shares)
-        choose(function(row) return awaited_set[tostring(row.job_type)] == true end, n - #selected, spare_shares)
+        choose_awaited(n - #selected)
     else
-        local shares = requested_shares or cfg.distribute_shares(n, (policy :: any).fairness_shares, 0)
+        local shares = requested_shares and cfg.copy(requested_shares) or cfg.distribute_shares(n, (policy :: any).fairness_shares, 0)
         if n == 1 and (preferred_tier == "live" or preferred_tier == "backfill" or preferred_tier == "maintenance") then
             shares = { live = 0, backfill = 0, maintenance = 0 }
             shares[preferred_tier] = 1
