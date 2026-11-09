@@ -284,6 +284,8 @@ profiles:
       "app:private_queue_retention_pace:password": "${pg_password}"
       "app:private_queue_retention_pace:options.sslmode": disable
       "app:private_queue_retention_pace:options.search_path": jobs_retention_pace
+      "app:private_queue_retention_pace:pool.max_open": 8
+      "app:private_queue_retention_pace:pool.max_idle": 4
       "app:private_queue_retention_dispatch:kind": db.sql.postgres
       "app:private_queue_retention_dispatch:host": "${pg_host}"
       "app:private_queue_retention_dispatch:port": "${pg_port}"
@@ -292,3 +294,5 @@ profiles:
       "app:private_queue_retention_dispatch:password": "${pg_password}"
       "app:private_queue_retention_dispatch:options.sslmode": disable
       "app:private_queue_retention_dispatch:options.search_path": jobs_retention_dispatch
+      "app:private_queue_retention_dispatch:pool.max_open": 8
+      "app:private_queue_retention_dispatch:pool.max_idle": 4
