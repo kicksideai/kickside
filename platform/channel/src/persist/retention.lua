@@ -19,22 +19,15 @@ function M.prune_settled(db_id: string, cutoff: string, limit: integer): (intege
     local dbtype, type_err = db:type()
     if type_err then db:release(); return nil, (errors.new({ message = tostring(type_err),
         kind = errors.INTERNAL, retryable = true }) :: error) end
-    local session_expr = dbtype == sql.type.POSTGRES and "(t.route_json::jsonb ->> 'session_id')"
-        or "json_extract(t.route_json, '$.session_id')"
-    local eligible = [[t.appended_at IS NOT NULL AND (t.reply_state IS NULL OR t.reply_state='sent')
-        AND NOT EXISTS (SELECT 1 FROM kickside_channel_conversation c
-            WHERE c.provider=t.owner_provider AND c.external_id=t.owner_external_id AND c.deleting=1)
-        AND NOT EXISTS (SELECT 1 FROM (]] .. conversation.SESSION_OWNERS_SQL .. [[) o
-            JOIN kickside_channel_conversation c ON c.provider=o.provider AND c.external_id=o.external_id
-            WHERE (t.owner_provider IS NULL OR t.owner_external_id IS NULL)
-              AND o.session_id=]] .. session_expr .. [[ AND c.deleting=1)]]
     local tx, begin_err = db:begin({ isolation = sql.isolation.SERIALIZABLE })
     if begin_err or not tx then db:release(); return nil, (errors.new({
         message = "channel retention begin failed: " .. tostring(begin_err),
         kind = errors.UNAVAILABLE, retryable = true }) :: error) end
-    local rows, read_err = tx:query("SELECT t.turn_id,t.owner_provider,t.owner_external_id"
-        .. " FROM kickside_channel_turns t WHERE t.accepted_at <= $1 AND " .. eligible
-        .. " ORDER BY t.accepted_at,t.turn_id LIMIT $2", { cutoff, limit })
+    local rows, read_err = tx:query([[SELECT turn_id,owner_provider,owner_external_id
+        FROM kickside_channel_turns
+        WHERE accepted_at <= $1 AND appended_at IS NOT NULL
+          AND (reply_state IS NULL OR reply_state = 'sent')
+        ORDER BY accepted_at, turn_id LIMIT $2]], { cutoff, limit })
     if read_err or type(rows) ~= "table" then
         tx:rollback(); db:release()
         return nil, (errors.new({ message = "channel retention read failed: " .. tostring(read_err),
@@ -88,14 +81,15 @@ function M.prune_settled(db_id: string, cutoff: string, limit: integer): (intege
     local _, commit_err = tx:commit()
     if commit_err then db:release(); return nil, (errors.new({ message = "channel retention commit failed: "
         .. tostring(commit_err), kind = errors.UNAVAILABLE, retryable = true }) :: error) end
-    local remaining, remaining_err = db:query("SELECT t.accepted_at FROM kickside_channel_turns t WHERE "
-        .. eligible .. " ORDER BY t.accepted_at,t.turn_id LIMIT 1")
+    local remaining, remaining_err = db:query([[SELECT accepted_at FROM kickside_channel_turns
+        WHERE accepted_at>$1 AND appended_at IS NOT NULL AND (reply_state IS NULL OR reply_state='sent')
+        ORDER BY accepted_at,turn_id LIMIT 1]], {cutoff})
     db:release()
     if remaining_err or type(remaining) ~= "table" then
         return nil, (errors.new({message = "channel turn deadline read failed: " .. tostring(remaining_err),
             kind = errors.INTERNAL, retryable = true}) :: error)
     end
-    return deleted, nil, {needs_continue = #rows >= limit,
+    return deleted, nil, {needs_continue = deleted >= limit,
         next_at = remaining[1] and remaining[1].accepted_at or nil}
 end
 

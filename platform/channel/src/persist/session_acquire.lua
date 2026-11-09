@@ -132,8 +132,11 @@ function M.set(db_id: string, table_name: string, provider: string,
     local _, commit_err = tx:commit()
     db:release()
     if commit_err then return commit_err end
-    local _,wake_err = retention_notifier.notify({kind="channel_session"})
-    return wake_err
+    if old_id == nil or old_id ~= session_id then
+        local _, wake_err = retention_notifier.notify({kind = "channel_session"})
+        return wake_err
+    end
+    return nil
 end
 
 function M.touch_existing(db_id: string, table_name: string, provider: string, external_id: string,

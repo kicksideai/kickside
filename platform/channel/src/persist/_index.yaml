@@ -24,7 +24,6 @@ entries:
     source: file://conversation.lua
     modules: [sql, time]
     imports:
-      retention_notifier: kickside.core.retention:notifier
       row_size: kickside.core:row_size
   - name: conversation_gc
     kind: library.lua
@@ -39,6 +38,7 @@ entries:
     source: file://turn_recovery.lua
     modules: [sql, time]
     imports:
+      retention_notifier: kickside.core.retention:notifier
       channel_conversation: kickside.channel.persist:conversation
   - name: session_acquire
     kind: library.lua

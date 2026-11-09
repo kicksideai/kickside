@@ -48,49 +48,71 @@ function M._scan_candidates(db: any, expr: string, archive_cutoff: string,
     return rows, nil
 end
 
-local function remove_archived(tx: any, dbtype: any, expr: string, old_id: string,
+local function remove_archived(db: sql.DB, dbtype: any, expr: string, old_id: string,
     provider: string, external_id: string,
-    archive_cutoff: string, turn_cutoff: string, turn_limit: integer): (boolean?, error?, boolean?, integer?)
+    archive_cutoff: string, turn_cutoff: string, turn_limit: integer): (boolean?, error?, integer?)
+    local tx, begin_err = db:begin({ isolation = sql.isolation.SERIALIZABLE })
+    if begin_err or not tx then return nil, failure("channel archive transaction failed", begin_err, errors.UNAVAILABLE) end
     local owner, lock_err = conversation.lock_tx(tx, dbtype, provider, external_id)
-    if lock_err then return nil, lock_err end
-    if tonumber(owner.deleting) == 1 then return false, nil end
+    if lock_err then tx:rollback(); return nil, lock_err end
+    if tonumber(owner.deleting) == 1 then tx:rollback(); return false, nil end
     local rows, check_err = tx:query("SELECT a.old_session_id FROM kickside_channel_session_archives a"
         .. " WHERE " .. eligible(expr) .. " AND a.old_session_id = $3",
         { archive_cutoff, turn_cutoff, old_id })
     if check_err or type(rows) ~= "table" then
-        return nil, failure("channel archive recheck failed", check_err or "missing rows", errors.INTERNAL)
+        tx:rollback(); return nil, failure("channel archive recheck failed", check_err or "missing rows", errors.INTERNAL)
     end
-    if not rows[1] then return false, nil end
+    if not rows[1] then tx:rollback(); return false, nil end
     local turn_rows, turn_read_err = tx:query([[SELECT t.turn_id,t.owner_provider,t.owner_external_id
         FROM kickside_channel_turns t WHERE ]] .. expr .. [[=$1 ORDER BY t.turn_id LIMIT $2]],
         { old_id, turn_limit })
     if turn_read_err or type(turn_rows) ~= "table" then
-        return nil, failure("channel archive turns read failed",
+        tx:rollback(); return nil, failure("channel archive turns read failed",
             turn_read_err or "missing rows", errors.INTERNAL)
     end
     for _, turn in ipairs(turn_rows) do
-        local result, turn_err = tx:execute([[DELETE FROM kickside_channel_turns
-            WHERE turn_id=$1 AND accepted_at<=$2 AND appended_at IS NOT NULL
-              AND (reply_state IS NULL OR reply_state='sent')]], { turn.turn_id, turn_cutoff })
+        local result, turn_err = tx:execute([[DELETE FROM kickside_channel_turns WHERE turn_id=$1 AND accepted_at<=$2
+                AND appended_at IS NOT NULL AND (reply_state IS NULL OR reply_state='sent')]],
+            { turn.turn_id, turn_cutoff })
         if turn_err or not result or tonumber(result.rows_affected) ~= 1 then
-            return nil, failure("channel archive turns delete failed",
+            tx:rollback(); return nil, failure("channel archive turns delete failed",
                 turn_err or "missing affected-row count", errors.INTERNAL)
         end
         if turn.owner_provider and turn.owner_external_id
             and (turn.owner_provider ~= provider or turn.owner_external_id ~= external_id) then
-            return nil, failure("channel archive turn owner mismatch", turn.turn_id, errors.INTERNAL)
+            tx:rollback(); return nil, failure("channel archive turn owner mismatch", turn.turn_id, errors.INTERNAL)
         end
     end
     local remaining, remaining_err = tx:query("SELECT t.turn_id FROM kickside_channel_turns AS t WHERE "
         .. expr .. "=$1 LIMIT 1", { old_id })
     if remaining_err or type(remaining) ~= "table" then
-        return nil, failure("channel archive turn continuation read failed",
+        tx:rollback(); return nil, failure("channel archive turn continuation read failed",
             remaining_err or "missing rows", errors.INTERNAL)
     end
     if remaining[1] then
-        return false, nil, true, #turn_rows
+        local _, partial_err = tx:commit()
+        if partial_err then return nil, failure("channel archive turn page commit failed", partial_err, errors.UNAVAILABLE) end
+        return false, nil, #turn_rows
     end
-    return true, nil, false, #turn_rows
+    local admission, admission_err = tx:execute("DELETE FROM kickside_channel_admissions WHERE session_id = $1", { old_id })
+    if admission_err or not admission or tonumber(admission.rows_affected) == nil then
+        tx:rollback(); return nil, failure("channel archive admission delete failed",
+            admission_err or "missing affected-row count", errors.INTERNAL)
+    end
+    local result, archive_err = tx:execute(
+        "DELETE FROM kickside_channel_session_archives WHERE old_session_id = $1 AND rotated_at<=$2", { old_id, archive_cutoff })
+    if archive_err then tx:rollback(); return nil, failure("channel archive pointer delete failed", archive_err, errors.INTERNAL) end
+    local count = result and tonumber(result.rows_affected)
+    if count ~= 1 then tx:rollback(); return nil, failure("channel archive pointer delete affected no row", count, errors.INTERNAL) end
+    local owned, owner_err = tx:execute([[DELETE FROM kickside_channel_session_owner
+        WHERE session_id=$1 AND provider=$2 AND external_id=$3]], { old_id, provider, external_id })
+    if owner_err or not owned or tonumber(owned.rows_affected) == nil then
+        tx:rollback(); return nil, failure("channel archive session owner delete failed",
+            owner_err or "missing affected-row count", errors.INTERNAL)
+    end
+    local _, commit_err = tx:commit()
+    if commit_err then return nil, failure("channel archive commit failed", commit_err, errors.UNAVAILABLE) end
+    return true, nil, #turn_rows
 end
 
 function M.prune_archives(db_id: string, archive_cutoff: string, turn_cutoff: string,
@@ -107,90 +129,35 @@ function M.prune_archives(db_id: string, archive_cutoff: string, turn_cutoff: st
     local expr, expr_err = session_expr(dbtype)
     if expr_err or not expr then db:release(); return nil, expr_err end
     local rows, scan_err = M._scan_candidates(db, expr :: string, archive_cutoff, turn_cutoff, limit)
-    if scan_err then db:release(); return nil, scan_err end
-    table.sort(rows,function(a,b)
-        if a.provider ~= b.provider then return tostring(a.provider) < tostring(b.provider) end
-        if a.external_id ~= b.external_id then return tostring(a.external_id) < tostring(b.external_id) end
-        return tostring(a.old_session_id) < tostring(b.old_session_id)
-    end)
-    local tx, begin_err = db:begin({isolation = sql.isolation.SERIALIZABLE})
-    if begin_err or not tx then
-        db:release(); return nil, failure("channel archive transaction failed",begin_err,errors.UNAVAILABLE)
-    end
-    local turn_budget = TURN_PAGE
-    local deleted = 0
-    local ready: {any} = {}
-    local needs_continue = #rows >= limit
+    db:release()
+    if scan_err then return nil, scan_err end
+    local deleted, turns_deleted = 0, 0
     for _, row in ipairs(rows :: { any }) do
-        if turn_budget == 0 then needs_continue = true; break end
+        if turns_deleted >= TURN_PAGE then break end
         local old_id = tostring(row.old_session_id)
         if type(row.provider) ~= "string" or type(row.external_id) ~= "string" then
-            tx:rollback(); db:release(); return nil, failure("channel archive owner is invalid", old_id, errors.INTERNAL)
+            return nil, failure("channel archive owner is invalid", old_id, errors.INTERNAL)
         end
         local session_err = session_delete_proof.delete(session_service, old_id, "channel archived")
-        if session_err then tx:rollback(); db:release(); return nil, session_err end
-        local removed, remove_err, child_continue, turns_removed = remove_archived(tx, dbtype, expr :: string, old_id,
-            row.provider :: string, row.external_id :: string, archive_cutoff, turn_cutoff,turn_budget)
-        if remove_err then tx:rollback(); db:release(); return nil, remove_err end
-        if removed then ready[#ready+1] = row end
-        needs_continue = needs_continue or child_continue == true
-        turn_budget = turn_budget - (turns_removed or 0)
+        if session_err then return nil, session_err end
+        db, open_err = sql.get(db_id)
+        if open_err or not db then return nil, failure("channel archive database unavailable", open_err, errors.UNAVAILABLE) end
+        local removed, remove_err, child_deleted = remove_archived(db, dbtype, expr :: string, old_id,
+            row.provider :: string, row.external_id :: string, archive_cutoff, turn_cutoff, TURN_PAGE - turns_deleted)
+        db:release()
+        if remove_err then return nil, remove_err end
+        turns_deleted = turns_deleted + (child_deleted or 0)
+        if removed then deleted = deleted + 1 end
     end
-    if #ready > 0 then
-        local ids: {string} = {}
-        local marks: {string} = {}
-        local owner_params: {any} = {}
-        local owner_tuples: {string} = {}
-        local owner_ids: {string} = {}
-        for _, row in ipairs(ready) do
-            ids[#ids+1] = tostring(row.old_session_id)
-            marks[#marks+1] = "$" .. tostring(#ids)
-            local offset = #owner_params
-            owner_params[#owner_params+1] = row.old_session_id
-            owner_params[#owner_params+1] = row.provider
-            owner_params[#owner_params+1] = row.external_id
-            owner_tuples[#owner_tuples+1] = "($" .. tostring(offset+1) .. ",$" .. tostring(offset+2) .. ",$" .. tostring(offset+3) .. ")"
-            owner_ids[#owner_ids+1] = "$" .. tostring(offset+1)
-        end
-        local admission, admission_err = tx:execute("DELETE FROM kickside_channel_admissions WHERE session_id IN ("
-            .. table.concat(marks,",") .. ")",ids)
-        local admission_count = admission and tonumber(admission.rows_affected)
-        if admission_err or admission_count == nil or admission_count < 0 or admission_count > #ready then
-            tx:rollback(); db:release()
-            return nil, failure("channel archive admission delete failed",admission_err or "invalid affected-row count",errors.INTERNAL)
-        end
-        local owned, owner_err = tx:execute("DELETE FROM kickside_channel_session_owner WHERE (session_id,provider,external_id) IN ("
-            .. table.concat(owner_tuples,",") .. ") AND session_id IN (" .. table.concat(owner_ids,",") .. ")",owner_params)
-        local owner_count = owned and tonumber(owned.rows_affected)
-        if owner_err or owner_count == nil or owner_count < 0 or owner_count > #ready then
-            tx:rollback(); db:release()
-            return nil, failure("channel archive session owner delete failed",owner_err or "invalid affected-row count",errors.INTERNAL)
-        end
-        local params: {any} = {archive_cutoff}
-        local archive_marks: {string} = {}
-        for _, id in ipairs(ids) do
-            params[#params+1] = id
-            archive_marks[#archive_marks+1] = "$" .. tostring(#params)
-        end
-        local archived, archive_err = tx:execute("DELETE FROM kickside_channel_session_archives WHERE rotated_at<=$1 AND old_session_id IN ("
-            .. table.concat(archive_marks,",") .. ")",params)
-        local archive_count = archived and tonumber(archived.rows_affected)
-        if archive_err or archive_count ~= #ready then
-            tx:rollback(); db:release()
-            return nil, failure("channel archive pointer delete failed",archive_err or "invalid affected-row count",errors.INTERNAL)
-        end
-        deleted = #ready
-    end
-    local _, commit_err = tx:commit()
-    if commit_err then db:release(); return nil, failure("channel archive commit failed",commit_err,errors.UNAVAILABLE) end
-    local remaining, remaining_err = db:query("SELECT a.rotated_at FROM kickside_channel_session_archives a WHERE "
-        .. eligible(expr :: string) .. " ORDER BY a.rotated_at,a.old_session_id LIMIT 1",
-        { "9999-12-31T23:59:59Z", turn_cutoff })
+    db, open_err = sql.get(db_id)
+    if open_err or not db then return nil, failure("channel archive database unavailable", open_err, errors.UNAVAILABLE) end
+    local remaining, remaining_err = db:query([[SELECT rotated_at FROM kickside_channel_session_archives
+        WHERE rotated_at>$1 ORDER BY rotated_at,old_session_id LIMIT 1]], {archive_cutoff})
     db:release()
     if remaining_err or type(remaining) ~= "table" then
         return nil, failure("channel archive deadline read failed", remaining_err, errors.INTERNAL)
     end
-    return deleted, nil, {needs_continue = needs_continue,
+    return deleted, nil, {needs_continue = deleted >= limit or turns_deleted >= TURN_PAGE,
         next_at = remaining[1] and remaining[1].rotated_at or nil}
 end
 

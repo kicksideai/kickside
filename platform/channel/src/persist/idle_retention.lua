@@ -12,30 +12,32 @@ local function failure(message: string, cause: any, kind: string): error
         retryable = kind ~= errors.INVALID }) :: error)
 end
 
-local function retire_one(tx: any, dbtype: any, candidate: any, cutoff: string): (boolean?, error?)
+local function retire_one(db: sql.DB, dbtype: any, candidate: any, cutoff: string): (boolean?, error?)
     if type(candidate.provider) ~= "string" or type(candidate.external_id) ~= "string" then
         return nil, failure("idle session owner is invalid", candidate, errors.INTERNAL)
     end
+    local tx, begin_err = db:begin({ isolation = sql.isolation.SERIALIZABLE })
+    if begin_err or not tx then return nil, failure("idle session transaction failed", begin_err, errors.UNAVAILABLE) end
     local owner, usage_err = conversation.lock_tx(tx, dbtype, candidate.provider :: string,
         candidate.external_id :: string)
-    if usage_err then return nil, usage_err end
-    if tonumber(owner.deleting) == 1 then return false, nil end
+    if usage_err then tx:rollback(); return nil, usage_err end
+    if tonumber(owner.deleting) == 1 then tx:rollback(); return false, nil end
     local lock = dbtype == sql.type.POSTGRES and " FOR UPDATE" or ""
     local rows, read_err = tx:query([[SELECT session_id FROM kickside_channel_sessions
         WHERE provider=$1 AND external_id=$2 AND session_id=$3 AND updated_at<=$4]] .. lock,
         { candidate.provider, candidate.external_id, candidate.session_id, cutoff })
-    if read_err then return nil, failure("idle session recheck failed", read_err, errors.INTERNAL) end
+    if read_err then tx:rollback(); return nil, failure("idle session recheck failed", read_err, errors.INTERNAL) end
     if type(rows) ~= "table" then
-        return nil, failure("idle session recheck returned no rows result", "missing result", errors.INTERNAL)
+        tx:rollback(); return nil, failure("idle session recheck returned no rows result", "missing result", errors.INTERNAL)
     end
-    if not rows[1] then return false, nil end
+    if not rows[1] then tx:rollback(); return false, nil end
 
     local removed, remove_err = tx:execute([[DELETE FROM kickside_channel_sessions
         WHERE provider=$1 AND external_id=$2 AND session_id=$3 AND updated_at<=$4]],
         { candidate.provider, candidate.external_id, candidate.session_id, cutoff })
-    if remove_err then return nil, failure("idle session detach failed", remove_err, errors.INTERNAL) end
+    if remove_err then tx:rollback(); return nil, failure("idle session detach failed", remove_err, errors.INTERNAL) end
     if not removed or tonumber(removed.rows_affected) ~= 1 then
-        return nil, failure("idle session detach affected no mapping", removed, errors.INTERNAL)
+        tx:rollback(); return nil, failure("idle session detach affected no mapping", removed, errors.INTERNAL)
     end
 
     -- An idle retirement has no successor: the required new_session_id field
@@ -45,7 +47,9 @@ local function retire_one(tx: any, dbtype: any, candidate: any, cutoff: string):
         VALUES ($1,$1,$2,$3,'idle_retirement',$4)]],
         { candidate.session_id, candidate.provider, candidate.external_id,
             time.now():utc():format_rfc3339() })
-    if archive_err then return nil, failure("idle session archive failed", archive_err, errors.INTERNAL) end
+    if archive_err then tx:rollback(); return nil, failure("idle session archive failed", archive_err, errors.INTERNAL) end
+    local _, commit_err = tx:commit()
+    if commit_err then return nil, failure("idle session commit failed", commit_err, errors.UNAVAILABLE) end
     return true, nil
 end
 
@@ -62,39 +66,25 @@ function M.retire_idle(db_id: string, cutoff: string, limit: integer): (integer?
         db:release(); return nil, failure("idle session dialect unsupported", dbtype, errors.INTERNAL)
     end
     local rows, scan_err = db:query([[SELECT provider,external_id,session_id
-        FROM kickside_channel_sessions s WHERE updated_at<=$1
-          AND NOT EXISTS (SELECT 1 FROM kickside_channel_conversation c
-              WHERE c.provider=s.provider AND c.external_id=s.external_id AND c.deleting=1)
+        FROM kickside_channel_sessions WHERE updated_at<=$1
         ORDER BY updated_at,provider,external_id LIMIT $2]], { cutoff, limit })
     if scan_err then db:release(); return nil, failure("idle session scan failed", scan_err, errors.INTERNAL) end
     if type(rows) ~= "table" then
         db:release(); return nil, failure("idle session scan returned no rows result", "missing result", errors.INTERNAL)
     end
-    table.sort(rows,function(a,b)
-        return a.provider == b.provider and tostring(a.external_id) < tostring(b.external_id)
-            or tostring(a.provider) < tostring(b.provider)
-    end)
-    local tx, begin_err = db:begin({isolation = sql.isolation.SERIALIZABLE})
-    if begin_err or not tx then
-        db:release(); return nil, failure("idle session transaction failed",begin_err,errors.UNAVAILABLE)
-    end
     local count = 0
     for _, candidate in ipairs(rows) do
-        local retired, retire_err = retire_one(tx, dbtype, candidate, cutoff)
-        if retire_err then tx:rollback(); db:release(); return nil, retire_err end
+        local retired, retire_err = retire_one(db, dbtype, candidate, cutoff)
+        if retire_err then db:release(); return nil, retire_err end
         if retired then count = count + 1 end
     end
-    local _, commit_err = tx:commit()
-    if commit_err then db:release(); return nil, failure("idle session commit failed",commit_err,errors.UNAVAILABLE) end
-    local remaining, remaining_err = db:query([[SELECT updated_at FROM kickside_channel_sessions s
-        WHERE NOT EXISTS (SELECT 1 FROM kickside_channel_conversation c
-            WHERE c.provider=s.provider AND c.external_id=s.external_id AND c.deleting=1)
-        ORDER BY updated_at,provider,external_id LIMIT 1]])
+    local remaining, remaining_err = db:query([[SELECT updated_at FROM kickside_channel_sessions
+        WHERE updated_at>$1 ORDER BY updated_at,provider,external_id LIMIT 1]], {cutoff})
     db:release()
     if remaining_err or type(remaining) ~= "table" then
         return nil, failure("idle session deadline read failed", remaining_err, errors.INTERNAL)
     end
-    return count, nil, {needs_continue = #rows >= limit,
+    return count, nil, {needs_continue = count >= limit,
         next_at = remaining[1] and remaining[1].updated_at or nil}
 end
 

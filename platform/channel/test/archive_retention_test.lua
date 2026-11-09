@@ -122,7 +122,7 @@ local function define_tests()
             end
         end)
 
-        test.it("rolls back an idle page when a later archive write fails", function()
+        test.it("keeps each idle retirement committed when a later archive write fails", function()
             for _,id in ipairs({"atomic-a","atomic-b"}) do
                 insert([[INSERT INTO kickside_channel_sessions(provider,external_id,session_id,updated_at)
                     VALUES ('atomic',$1,$1,$2)]],{id,stamp(-40)})
@@ -131,12 +131,12 @@ local function define_tests()
             local removed,err = idle.retire_idle(DB,stamp(-30),2)
             test.is_nil(removed)
             test.not_nil(err)
-            test.eq(count("kickside_channel_sessions","provider","atomic"),2,
-                "a bounded idle page commits as one transaction")
-            test.eq(count("kickside_channel_session_archives","old_session_id","atomic-a"),0)
+            test.eq(count("kickside_channel_sessions","provider","atomic"),1,
+                "idle retirement preserves its per-owner transaction boundary")
+            test.eq(count("kickside_channel_session_archives","old_session_id","atomic-a"),1)
         end)
 
-        test.it("rolls back an archive page when a later child proof fails", function()
+        test.it("keeps a committed archive removed when a later child proof fails", function()
             archive("atomic-archive-a","first",-40)
             archive("atomic-archive-b","second",-40)
             turn("atomic-child","atomic-archive-b",-40,true,"sent")
@@ -145,9 +145,9 @@ local function define_tests()
             local removed,err = retention.prune_archives(DB,stamp(-30),stamp(-2),2)
             test.is_nil(removed)
             test.not_nil(err)
-            test.eq(count("kickside_channel_session_archives","old_session_id","atomic-archive-a"),1,
-                "one bounded archive page commits as a unit")
-            test.eq(count("kickside_channel_admissions","session_id","atomic-archive-a"),1)
+            test.eq(count("kickside_channel_session_archives","old_session_id","atomic-archive-a"),0,
+                "an archive commits before the next backing session call")
+            test.eq(count("kickside_channel_admissions","session_id","atomic-archive-a"),0)
         end)
 
         test.it("keeps an archive whose backing delete failed while rotations continue", function()
@@ -210,6 +210,16 @@ local function define_tests()
                 "json_extract(t.route_json, '$.session_id')", stamp(-30), stamp(-2), 1)
             test.is_nil(rows)
             test.is_true(errors.is(err, errors.INTERNAL), tostring(err))
+        end)
+
+        test.it("does not schedule expired archives held by turn proofs", function()
+            archive("held-deadline", "current", -40)
+            turn("held-turn", "held-deadline", -40, false)
+            local removed, err, progress = retention.prune_archives(DB, stamp(-30), stamp(-2), 1)
+            test.is_nil(err, tostring(err))
+            test.eq(removed, 0)
+            test.is_false(progress.needs_continue)
+            test.is_nil(progress.next_at, "held expired archives wait for proof changes")
         end)
 
         test.it("retains uncertain, unappended and fresh turns before deleting backing sessions", function()

@@ -7,8 +7,6 @@ local sql = require("sql")
 local row_size = require("row_size")
 local time = require("time")
 
-local retention_notifier = require("retention_notifier")
-
 local M = {}
 
 M.SESSION_OWNERS_SQL = [[
@@ -172,17 +170,13 @@ function M.update_turn(db: sql.DB, turn_id: string, statement: string, args: { a
         end
     end
     local result, write_err = tx:execute(statement, args)
-    local changed, count_err = count(result, "channel turn update")
+    local _, count_err = count(result, "channel turn update")
     if write_err or count_err then
         tx:rollback()
         return nil, failure("channel turn update failed", write_err or count_err)
     end
     local _, commit_err = tx:commit()
     if commit_err then return nil, failure("channel turn update commit failed", commit_err) end
-    if (changed :: integer) > 0 then
-        local _,wake_err = retention_notifier.notify({kind="channel_turn"})
-        if wake_err then return nil,wake_err end
-    end
     return result, nil
 end
 

@@ -435,7 +435,12 @@ function M.complete_reply(db_id: string, proof: any, content: string, message_re
         { message_ref, proof.turn_id, digest })
     db:release()
     if write_err then return false, "reply receipt write failed: " .. tostring(write_err), "infrastructure" end
-    return tonumber(result and result.rows_affected) == 1, nil
+    local changed = tonumber(result and result.rows_affected) == 1
+    if changed then
+        local _, wake_err = retention_notifier.notify({kind = "channel_turn"})
+        if wake_err then return false, tostring(wake_err), "infrastructure" end
+    end
+    return changed, nil
 end
 
 return M

@@ -8,6 +8,7 @@ local fixture = require("receive_fixture")
 local conversation = require("channel_conversation")
 local persist = require("persist")
 local notifier = require("retention_notifier")
+local recovery = require("turn_recovery")
 
 local function resolve(retention: any): (any?, error?)
     return policy.resolve({ retention = retention, limits = { max_row_bytes = 4194304 } })
@@ -91,16 +92,24 @@ local function define_tests()
         test.it("wakes retention after committed turn settlement and session changes", function()
             notifier.calls = 0
             seed("wake-settled",stamp(-72),false)
-            local db = assert(sql.get(DB))
-            local result,err = conversation.update_turn(db,"wake-settled",
-                "UPDATE kickside_channel_turns SET appended_at=$1 WHERE turn_id=$2",{stamp(-72),"wake-settled"})
-            db:release()
+            local scheduled, schedule_err = recovery.schedule_retry(DB,"wake-settled",100)
+            test.is_nil(schedule_err,tostring(schedule_err))
+            test.is_true(scheduled)
+            test.eq(notifier.calls,0,"a retry does not create cleanup eligibility")
+            local cleared, clear_err = recovery.clear_retry(DB,"wake-settled")
+            test.is_nil(clear_err,tostring(clear_err))
+            test.is_true(cleared)
+            test.eq(notifier.calls,0,"retry bookkeeping does not advance cleanup")
+            local marked,err = recovery.mark_appended(DB,"wake-settled")
             test.is_nil(err,tostring(err))
-            test.eq(tonumber(result.rows_affected),1)
+            test.is_true(marked)
             test.eq(notifier.calls,1,"settlement establishes an expiry deadline")
             notifier.calls = 0
             test.is_nil(persist.set(DB,"kickside_channel_sessions","discord","wake-room","wake-session"))
             test.eq(notifier.calls,1,"a mapping establishes its idle deadline")
+            notifier.calls = 0
+            test.is_nil(persist.set(DB,"kickside_channel_sessions","discord","wake-room","wake-session"))
+            test.eq(notifier.calls,0,"refreshing an existing mapping only postpones its deadline")
             notifier.calls = 0
             local rotated,rotate_err = persist.rotate_with_archive(DB,"kickside_channel_sessions",
                 "discord","wake-room","wake-session","test")
