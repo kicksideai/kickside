@@ -8,6 +8,7 @@ entries:
     source: file://repo.lua
     modules: [sql, hash, crypto, uuid, time, json, security]
     imports:
+      retention_notifier: kickside.core.retention:notifier
       mcp_consts: kickside.mcp:consts
       mcp_types: kickside.mcp:mcp_types
       credential_eligibility: kickside.mcp:credential_eligibility_check
@@ -52,6 +53,7 @@ entries:
     method: cleanup_principal
     modules: [sql, hash, crypto, uuid, time, json, security]
     imports:
+      retention_notifier: kickside.core.retention:notifier
       mcp_consts: kickside.mcp:consts
       mcp_types: kickside.mcp:mcp_types
       credential_eligibility: kickside.mcp:credential_eligibility_check

@@ -13,6 +13,7 @@ local base64 = require("base64")
 local mcp_types = require("mcp_types")
 local persisted_json = require("persisted_json")
 local quota = require("credential_quota")
+local retention_notifier = require("retention_notifier")
 local limits = require("mcp_consts").OAUTH_LIMITS
 
 local M = {}
@@ -119,6 +120,8 @@ function M.register_client(args: any): (any?, any?)
     })
     db:release()
     if ins_err or not inserted then return nil, ins_err end
+    local _, wake_err = retention_notifier.notify({kind = "mcp_oauth_client"})
+    if wake_err then return nil, wake_err end
 
     return {
         client_id = client_id,
@@ -165,7 +168,7 @@ function M.get_client(client_id: string): (any?, any?)
     }, nil
 end
 
-function M.prune_idle_clients(limit: integer): (integer?, error?)
+function M.prune_idle_clients(limit: integer): (integer?, error?, any?)
     if type(limit) ~= "number" or limit ~= math.floor(limit) or limit < 1 or limit > 500 then
         return nil, (errors.new({ message = "OAuth client prune limit must be in [1,500]",
             kind = errors.INVALID, retryable = false }) :: error)
@@ -182,17 +185,29 @@ function M.prune_idle_clients(limit: integer): (integer?, error?)
     ) DELETE FROM kickside_mcp_oauth_clients
       WHERE client_id IN (SELECT client_id FROM idle) AND last_used_at <= $1]],
         { cutoff, limit })
-    db:release()
     if err then
+        db:release()
         return nil, (errors.new({ message = "OAuth client prune failed: " .. tostring(err),
             kind = errors.INTERNAL, retryable = true }) :: error)
     end
     local deleted = result and tonumber(result.rows_affected)
     if not deleted then
+        db:release()
         return nil, (errors.new({ message = "OAuth client prune returned no affected-row count",
             kind = errors.INTERNAL, retryable = true }) :: error)
     end
-    return deleted, nil
+    local rows, deadline_err = db:query("SELECT last_used_at AS stamp FROM kickside_mcp_oauth_clients ORDER BY last_used_at LIMIT 1")
+    db:release()
+    if deadline_err or type(rows) ~= "table" then
+        return nil, (errors.new({ message = "OAuth retention deadline read failed: " .. tostring(deadline_err),
+            kind = errors.INTERNAL, retryable = true }) :: error)
+    end
+    local stamp = rows[1] and tonumber(rows[1].stamp) or nil
+    if rows[1] and stamp == nil then
+        return nil, (errors.new({message = "OAuth retention deadline is invalid", kind = errors.INTERNAL}) :: error)
+    end
+    local deadline = stamp and (stamp + CLIENT_IDLE_SECONDS) * 1000 or nil
+    return deleted, nil, { needs_continue = deleted >= limit, deadline_ms = deadline }
 end
 
 local function grant_key(raw_code: string): (string?, any?)
@@ -239,7 +254,8 @@ function M.put_code(raw_code: string, args: any): string?
         :run_with(db):exec()
     db:release()
     if err then return tostring(err) end
-    return nil
+    local _, wake_err = retention_notifier.notify({kind = "mcp_oauth_code"})
+    return wake_err and tostring(wake_err) or nil
 end
 
 -- consume_code atomically marks the code used and returns its grant. A second
@@ -313,7 +329,7 @@ end
 -- Called by the existing retention process through MCP's owner callback.
 -- Selection uses the expiry index and is bounded so one tick cannot monopolize
 -- the shared database. Unexpired grants remain available for exchange.
-function M.prune_expired_codes(limit: integer): (integer?, error?)
+function M.prune_expired_codes(limit: integer): (integer?, error?, any?)
     if type(limit) ~= "number" or limit ~= math.floor(limit) or limit < 1 or limit > 500 then
         return nil, (errors.new({ message = "OAuth code prune limit must be in [1,500]",
             kind = errors.INVALID, retryable = false }) :: error)
@@ -330,17 +346,29 @@ function M.prune_expired_codes(limit: integer): (integer?, error?)
     ) DELETE FROM kickside_mcp_oauth_codes
       WHERE code_hash IN (SELECT code_hash FROM expired) AND expires_at <= $1]],
         { expired_at, limit })
-    db:release()
     if err then
+        db:release()
         return nil, (errors.new({ message = "OAuth code prune failed: " .. tostring(err),
             kind = errors.INTERNAL, retryable = true }) :: error)
     end
     local deleted = result and tonumber(result.rows_affected)
     if not deleted then
+        db:release()
         return nil, (errors.new({ message = "OAuth code prune returned no affected-row count",
             kind = errors.INTERNAL, retryable = true }) :: error)
     end
-    return deleted, nil
+    local rows, deadline_err = db:query("SELECT expires_at AS stamp FROM kickside_mcp_oauth_codes ORDER BY expires_at LIMIT 1")
+    db:release()
+    if deadline_err or type(rows) ~= "table" then
+        return nil, (errors.new({ message = "OAuth retention deadline read failed: " .. tostring(deadline_err),
+            kind = errors.INTERNAL, retryable = true }) :: error)
+    end
+    local stamp = rows[1] and tonumber(rows[1].stamp) or nil
+    if rows[1] and stamp == nil then
+        return nil, (errors.new({message = "OAuth retention deadline is invalid", kind = errors.INTERNAL}) :: error)
+    end
+    local deadline = stamp and (stamp + 0) * 1000 or nil
+    return deleted, nil, { needs_continue = deleted >= limit, deadline_ms = deadline }
 end
 
 return M
