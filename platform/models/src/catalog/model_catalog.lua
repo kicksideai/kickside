@@ -149,7 +149,12 @@ function M.resolve(model_identifier: string): (any?, any?)
         if card and card.enabled ~= false then return card end
     end
     local class_models = class_cards(sorted_values(map), class_name or model_identifier)
-    if #class_models > 0 then return class_models[1] end
+    if #class_models > 0 then
+        local selected = {}
+        for key, value in pairs(class_models[1]) do selected[key] = value end
+        selected.candidates = class_models
+        return selected
+    end
     if class_name then return nil, "No models found for class: " .. class_name end
     return nil, "Model or class not found: " .. model_identifier
 end
