@@ -21,7 +21,7 @@ function M.run(input: any?): any
     for _, item in ipairs(reap_blocked or {}) do blocked[#blocked + 1] = item end
     return { success = true, deleted = resumed + count, audits = audits,
         needs_continue = needs_continue or reap_continue or audits.needs_continue,
-        deadline_ms = audits.deadline_ms, blocked = blocked }
+        blocked = blocked }
 end
 
 return M
