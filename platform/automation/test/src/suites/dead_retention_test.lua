@@ -2,6 +2,7 @@
 local test = require("test")
 local sql = require("sql")
 local uuid = require("uuid")
+local json = require("json")
 local ledger = require("ledger")
 
 local function execute(db: sql.DB, statement: string, params: table)
@@ -89,6 +90,46 @@ return test.run_cases(function()
                 test.eq(removed,2,"expired prepared output cannot block a bounded maintenance page")
                 test.eq(#retained,4)
                 test.eq(after,"1900-01-01T00:00:00Z","maintenance remains due until the backlog drains")
+            end)
+        end
+        for _,legacy in ipairs({false,true}) do
+            test.it("expires a full journal-referenced page without retaining a past deadline " .. tostring(legacy),function()
+                local db=assert(sql.get("app:db"))
+                local id=owner(db)
+                local journal={}
+                for index=1,3 do
+                    local key="admitted-" .. tostring(index)
+                    local prepared="prepared-" .. tostring(index)
+                    journal[key]={prepared_key=prepared}
+                    execute(db,[[INSERT INTO kickside_trigger_item_ledger
+                        (owner_id,source_port,item_key,identity_key,envelope_json,state,first_failed_at,last_failed_at,created_at,updated_at,expires_at,execution_identity_json)
+                        VALUES ($1,'source',$2,$2,'{}','dead',$3,$3,$3,$3,$4,$5)]],
+                        {id,key,"1700-01-01T00:00:00Z",legacy and sql.NULL or "1700-01-01T00:00:00Z",json.encode({prepared_key=prepared})})
+                    for _,candidate in ipairs({key,prepared}) do
+                        execute(db,[[INSERT INTO kickside_automation_prepared
+                            (automation_id,idempotency_key,payload_hash,prepared_json,created_at)
+                            VALUES ($1,$2,'hash','{}','1700-01-01T00:00:00Z')]],{id,candidate})
+                    end
+                end
+                execute(db,"UPDATE kickside_automation_drive SET admission_json=$1 WHERE automation_id=$2",{json.encode(journal),id})
+                local tx=assert(db:begin())
+                local count,err
+                if legacy then count,err=ledger.prune_orphans_tx(tx,"1750-01-01T00:00:00Z",3)
+                else count,err=ledger.prune_tx(tx,"1750-01-01T00:00:00Z",3) end
+                if err then tx:rollback() else tx:commit() end
+                local retained=rows(db,id)
+                local prepared=assert(db:query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}))
+                local deadlines,deadline_err=ledger.retention_deadlines(db,3)
+                execute(db,"DELETE FROM kickside_automation_prepared WHERE automation_id=$1",{id})
+                cleanup(db,id);db:release()
+                test.is_nil(err,tostring(err));test.is_nil(deadline_err,tostring(deadline_err))
+                test.eq(count,3,"journal references protect prepared output, never expired ledger rows")
+                test.eq(#retained,0,"a full page makes full progress")
+                test.eq(#prepared,6,"both journal identity and prepared keys remain protected")
+                for _,entry in ipairs(deadlines) do
+                    test.is_true(entry.expires_at~="1700-01-01T00:00:00Z" and entry.updated_at~="1700-01-01T00:00:00Z",
+                        "the drained page cannot continuously re-arm maintenance")
+                end
             end)
         end
         test.it("deletes a prepared-output batch with one bounded statement",function()

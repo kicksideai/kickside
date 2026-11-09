@@ -706,7 +706,7 @@ entries:
   meta: {type: test, suite: kickside_automation}
   source: file://dead_retention_test.lua
   method: run
-  modules: [sql, uuid]
+  modules: [sql, uuid, json]
   imports:
     test: wippy.test:test
     ledger: kickside.automation:round_ledger

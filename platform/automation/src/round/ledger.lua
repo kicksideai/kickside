@@ -543,7 +543,7 @@ local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boole
     end
     local admitted: Map={}
     -- Admission can precede a new item's first ledger row. Lock its drive
-    -- before ledger deletes so captured prepared references remain stable.
+    -- before ledger deletes; journals protect output, not expired rows.
     for first=1,#owners,100 do
         local params: {any}={}
         local marks: {string}={}
@@ -574,7 +574,8 @@ local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boole
     local function reclaim(row: Map,key: string): ()
         local owner=row.owner_id
         if not seen[owner] then seen[owner]={} end
-        if not seen[owner][key] then
+        local refs=admitted[owner] or {}
+        if not seen[owner][key] and not refs[key] then
             seen[owner][key]=true
             prepared[#prepared+1]={owner=owner,port=row.source_port,item=row.item_key,key=key}
         end
@@ -589,23 +590,18 @@ local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boole
             if decode_err then return nil,internal("dead prepared identity decode failed",decode_err) end
             if evidence.prepared_key then prepared_key=evidence.prepared_key end
         end
-        local refs=admitted[row.owner_id] or {}
-        if not refs[row.identity_key] and not refs[prepared_key] then
-            local deleted, delete_err = tx:query("DELETE FROM " .. M.TABLE .. " AS l"
-                .. " WHERE owner_id=$1 AND source_port=$2 AND item_key=$3 AND identity_key=$4"
-                .. " AND " .. states .. " AND " .. cutoff_field .. "<=$5" .. orphan_guard .. prepared_guard
-                .. " RETURNING state",
-                { row.owner_id, row.source_port, row.item_key, row.identity_key, cutoff })
-            if delete_err or type(deleted) ~= "table" then
-                return nil, internal("ledger prune delete failed", delete_err or "missing result")
-            end
-            if deleted[1] then
-                if deleted[1].state == M.STATE.DEAD then
-                    reclaim(row,row.identity_key)
-                    reclaim(row,prepared_key)
-                end
-                count=count+1
-            end
+        local deleted, delete_err = tx:query("DELETE FROM " .. M.TABLE .. " AS l"
+            .. " WHERE owner_id=$1 AND source_port=$2 AND item_key=$3 AND identity_key=$4"
+            .. " AND " .. states .. " AND " .. cutoff_field .. "<=$5" .. orphan_guard .. prepared_guard
+            .. " RETURNING state",
+            { row.owner_id, row.source_port, row.item_key, row.identity_key, cutoff })
+        if delete_err or type(deleted) ~= "table" then
+            return nil, internal("ledger prune delete failed", delete_err or "missing result")
+        end
+        if deleted[1] then
+            reclaim(row,row.identity_key)
+            reclaim(row,prepared_key)
+            count=count+1
         end
     end
     local prepared_err=M.reclaim_prepared_tx(tx,prepared)

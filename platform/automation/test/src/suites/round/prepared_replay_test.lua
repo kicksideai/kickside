@@ -357,10 +357,10 @@ local function define_tests()
                     {state,h.PAST,id,live})
                 h.set_drive(id,"main","unresolved_count=$1",{mode=="in_flight" and 0 or 1})
                 h.exec("UPDATE kickside_trigger_item_ledger SET expires_at='1800-01-01T00:00:00Z' WHERE owner_id=$1 AND identity_key=$2",{id,expired})
-                local function prune(): ()
+                local function prune(in_flight: boolean?): ()
                     local _,err=automation_db.in_tx(function(tx) return round_ledger.prune_tx(tx,"1850-01-01T00:00:00Z",100) end)
                     test.is_nil(err,tostring(err))
-                    test.eq(#h.query("SELECT 1 FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id}),1)
+                    test.eq(#h.query("SELECT 1 FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id}),in_flight and 0 or 1)
                     test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1 AND idempotency_key=$2",{id,original}),1,
                         "another delivery still references the original prepared result")
                 end
@@ -371,7 +371,7 @@ local function define_tests()
                         if target=="kickside.automation:round_deliver" then
                             observed=true
                             test.not_nil(h.read_drive(id,"main").round_token)
-                            prune()
+                            prune(true)
                         end
                         return env.run_as(identity,target,args,options)
                     end)
@@ -392,6 +392,95 @@ local function define_tests()
                     "expiry of the final reference reclaims the prepared output")
             end)
         end
+
+        for _,finish in ipairs({"expires","resolves"}) do
+            test.it("reclaims journal-retained output when its admitted delivery " .. finish,function()
+                local key="journal-" .. finish
+                local id=install({{key=key,directive="invalid"}})
+                run(id)
+                local original=h.query("SELECT identity_key FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})[1].identity_key
+                test.eq(replay(id,key .. "-replay").outcome.replayed,1)
+                run(id)
+                h.exec("UPDATE kickside_trigger_item_ledger SET expires_at='1700-01-01T00:00:00Z' WHERE owner_id=$1",{id})
+                h.set_drive(id,"main","cursor=NULL,next_run_at=$1",{h.PAST})
+                local observed=false
+                local _,run_err=env.run(id,"main",function(identity,target,args,options)
+                    if target=="kickside.automation:round_deliver" then
+                        observed=true
+                        local n,err=automation_db.in_tx(function(tx)
+                            return round_ledger.prune_tx(tx,"1750-01-01T00:00:00Z",100)
+                        end)
+                        test.is_nil(err,tostring(err));test.eq(n,1,"expiry removes the journal-referenced tombstone")
+                        test.eq(#h.query("SELECT 1 FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id}),0)
+                        test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),1)
+                    end
+                    return env.run_as(identity,target,args,options)
+                end)
+                test.is_nil(run_err,tostring(run_err));test.is_true(observed)
+                test.eq(transforms(id,key),1,"the admitted delivery reuses the protected transform result")
+                test.eq(#sink_writes(id,key),3)
+                test.eq(ledger(id,key).state,"dead")
+                if finish=="expires" then
+                    h.exec("UPDATE kickside_trigger_item_ledger SET expires_at='1700-01-01T00:00:00Z' WHERE owner_id=$1",{id})
+                    local n,err=automation_db.in_tx(function(tx)
+                        return round_ledger.prune_tx(tx,"1750-01-01T00:00:00Z",100)
+                    end)
+                    test.is_nil(err,tostring(err));test.eq(n,1)
+                else
+                    h.exec("UPDATE kickside_trigger_item_ledger SET state='waiting',expires_at=NULL WHERE owner_id=$1",{id})
+                    h.set_drive(id,"main","unresolved_count=1",{})
+                    local item=json.decode(h.query("SELECT envelope_json FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})[1].envelope_json)
+                    local job=h.running_job()
+                    local token="journal-settlement"
+                    h.set_drive(id,"main","round_token=$1,round_until=$2",{token,job.lease_until})
+                    local before=h.read_drive(id,"main")
+                    local result,err=automation_db.in_tx(function(tx)
+                        return round_commit.commit_tx(tx,{automation_id=id,drive_key="main",source_port=RECORDS,receipt_port=RECORDS,
+                            now=h.PAST,resolved_expires_at="2099-01-01T00:00:00Z",
+                            captured={round_token=token,round_until=job.lease_until,revision=before.revision,
+                                rewind_generation=before.rewind_generation,command_generation=before.command_generation}},
+                            {outcomes={{item=item,state="resolved"}},receipts={{item=item,receipts={},prepared_key=original}}})
+                    end)
+                    test.is_nil(err,tostring(err));test.is_true(result.committed)
+                    test.eq(ledger(id,key).state,"resolved")
+                    h.exec("UPDATE kickside_job SET status='done',lease_token=NULL,lease_until=NULL WHERE id=$1",{job.id})
+                end
+                test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),0,
+                    "the admitted delivery releases its last prepared reference")
+            end)
+        end
+
+        test.it("reclaims the original prepared key when a discarded replay lineage expires",function()
+            local key="discarded-lineage"
+            local id=install({{key=key,directive="invalid"}})
+            run(id)
+            local original=h.query("SELECT identity_key FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})[1].identity_key
+            test.eq(replay(id,key .. "-replay").outcome.replayed,1)
+            run(id)
+            local lineage=h.query("SELECT identity_key FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})[1].identity_key
+            h.set_drive(id,"main","cursor=NULL,next_run_at=$1",{h.PAST})
+            local _,run_err=env.run(id,"main",function(identity,target,args,options)
+                if target=="kickside.automation:round_deliver" then
+                    local output=json.decode(h.query("SELECT prepared_json FROM kickside_automation_prepared WHERE automation_id=$1 AND idempotency_key=$2",{id,original})[1].prepared_json)
+                    output.directive="deliver"
+                    h.exec("UPDATE kickside_automation_prepared SET prepared_json=$1 WHERE automation_id=$2 AND idempotency_key=$3",
+                        {json.encode(output),id,original})
+                end
+                return env.run_as(identity,target,args,options)
+            end)
+            test.is_nil(run_err,tostring(run_err))
+            test.eq(receipts(id,key),1,"the original source delivery completes")
+            test.eq(transforms(id,key),1)
+            test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),1,
+                "the dead replay lineage still retains the original prepared result")
+            test.eq(call({action="control",id=id,control="discard",drive_key="main",request_id="discard-lineage",keys={key}}).outcome.discarded,1)
+            test.eq(ledger(id,key).state,"resolved")
+            h.exec("UPDATE kickside_trigger_item_ledger SET expires_at='1700-01-01T00:00:00Z' WHERE owner_id=$1 AND identity_key=$2",{id,lineage})
+            local n,err=automation_db.in_tx(function(tx) return round_ledger.prune_tx(tx,"1750-01-01T00:00:00Z",100) end)
+            test.is_nil(err,tostring(err));test.eq(n,1)
+            test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),0,
+                "resolved expiry releases the evidence prepared key as well as its identity")
+        end)
 
         test.it("settles shared prepared output only after its last delivery resolves",function()
             local id=install({{key="shared-resolution",directive="invalid"}})
