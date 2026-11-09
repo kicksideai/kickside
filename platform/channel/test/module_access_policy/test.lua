@@ -90,7 +90,7 @@ local function define_tests()
             test.is_nil(scope_err)
             local actor = security.new_actor("module-member", {})
             test.eq(scope:evaluate(actor, "registry.get", "kickside.channel:retention"), "allow")
-            test.eq(scope:evaluate(actor,"funcs.call","kickside.core.retention:notify"),"allow")
+            test.eq(scope:evaluate(actor,"funcs.call","kickside.core.retention:notify"),"undefined")
             test.eq(scope:evaluate(actor,"registry.get","kickside.core.retention:notify"),"undefined")
             test.eq(scope:evaluate(actor,"funcs.call","kickside.core.retention:other"),"undefined")
             for _, action in ipairs({ "access", "registry.get", "funcs.call" }) do

@@ -30,7 +30,3 @@ lockrefresh-lint-harness: policy-test-prepare
 test lint: policy-test-prepare
 policy-test-prepare:
 	cp src/security/module_access/_index.yaml test/module_access_policy/production.yaml
-	awk '/^version:|^namespace:|^entries:/ { print; next } \
-		/^  - name:/ { selected = ($$0 == "  - name: notify_access"); if (selected) found++ } \
-		selected { print } END { if (found != 1) exit 1 }' \
-		../../core/core/src/retention/_index.yaml > test/module_access_policy/retention_notify.yaml

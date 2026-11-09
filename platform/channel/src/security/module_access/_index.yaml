@@ -9,7 +9,6 @@ entries:
     intent: module_access
     includes:
     - kickside.channel.security:module_runtime
-    - kickside.core.retention:notify_access
   groups: []
   policy:
     resources:

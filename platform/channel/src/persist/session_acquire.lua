@@ -8,8 +8,6 @@ local json = require("json")
 local conversation = require("channel_conversation")
 local policy = require("channel_retention_policy")
 
-local retention_notifier = require("retention_notifier")
-
 local M = {}
 
 local function now(): string
@@ -131,12 +129,7 @@ function M.set(db_id: string, table_name: string, provider: string,
     if admit_err then tx:rollback(); db:release(); return admit_err end
     local _, commit_err = tx:commit()
     db:release()
-    if commit_err then return commit_err end
-    if old_id == nil or old_id ~= session_id then
-        local _, wake_err = retention_notifier.notify({kind = "channel_session"})
-        return wake_err
-    end
-    return nil
+    return commit_err
 end
 
 function M.touch_existing(db_id: string, table_name: string, provider: string, external_id: string,
@@ -221,8 +214,6 @@ function M.insert_new(db_id: string, table_name: string, provider: string,
     local _, commit_err = tx:commit()
     db:release()
     if commit_err then return nil, "session create commit failed: " .. tostring(commit_err) end
-    local _,wake_err = retention_notifier.notify({kind="channel_session"})
-    if wake_err then return nil,wake_err end
     return count == 1, nil
 end
 

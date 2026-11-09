@@ -12,7 +12,6 @@ entries:
     source: file://repo.lua
     modules: [sql, uuid, time, json, crypto, hash]
     imports:
-      retention_notifier: kickside.core.retention:notifier
       session_acquire: kickside.channel.persist:session_acquire
       conversation_gc: kickside.channel.persist:conversation_gc
       channel_conversation: kickside.channel.persist:conversation
@@ -38,14 +37,12 @@ entries:
     source: file://turn_recovery.lua
     modules: [sql, time]
     imports:
-      retention_notifier: kickside.core.retention:notifier
       channel_conversation: kickside.channel.persist:conversation
   - name: session_acquire
     kind: library.lua
     source: file://session_acquire.lua
     modules: [sql, uuid, time, json]
     imports:
-      retention_notifier: kickside.core.retention:notifier
       channel_conversation: kickside.channel.persist:conversation
       channel_retention_policy: kickside.channel:retention_policy
       row_size: kickside.core:row_size

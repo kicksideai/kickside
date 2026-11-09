@@ -4,8 +4,6 @@ local sql = require("sql")
 local time = require("time")
 local conversation = require("channel_conversation")
 
-local retention_notifier = require("retention_notifier")
-
 local M = {}
 
 local function open_db(db_id: string): (sql.DB?, string?)
@@ -26,10 +24,6 @@ function M.mark_appended(db_id: string, turn_id: string): (boolean, string?)
     if write_err then return false, "turn append marker failed: " .. tostring(write_err) end
     if not result or tonumber(result.rows_affected) == nil then
         return false, "turn append marker returned no affected-row count"
-    end
-    if tonumber(result.rows_affected) > 0 then
-        local _, wake_err = retention_notifier.notify({kind = "channel_turn"})
-        if wake_err then return false, tostring(wake_err) end
     end
     return true, nil
 end
