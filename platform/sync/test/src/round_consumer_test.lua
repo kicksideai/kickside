@@ -160,10 +160,10 @@ local function define_tests(section: string)
             return t
         end
 
-        local function receipt(key: string, slot: string, dest_id: string): ()
+        local function receipt(key: string, slot: string, dest_id: string, delivered_key: string?): ()
             exec("INSERT INTO kickside_automation_receipt (owner_id, source_port, item_key, map_slot, identity_key, dest_ref_json,"
-                .. " dest_version, updated_at) VALUES ($1, $2, $3, $4, $5, $6, 'v1', '2026-01-01T00:00:00Z')",
-                { automation_id, SOURCE, key, slot, identity(key), json.encode({ id = dest_id }) })
+                .. " delivery_key, dest_version, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, 'v1', '2026-01-01T00:00:00Z')",
+                { automation_id, SOURCE, key, slot, identity(key), json.encode({ id = dest_id }), delivered_key or sql.NULL })
         end
 
         test.before_all(function()
@@ -274,8 +274,7 @@ local function define_tests(section: string)
                 test.eq(#query("SELECT item_key FROM kickside_trigger_item_ledger WHERE owner_id=$1", { automation_id }), 0,
                     "a skip on first delivery creates no unresolved item")
                 local state = query("SELECT state FROM kickside_automation_delivery_history WHERE automation_id=$1", { automation_id })
-                test.eq(#state, 1)
-                test.eq(state[1].state, "resolved")
+                test.eq(#state, 0,"a skipped transform records no delivery event")
                 local progress = query("SELECT cursor,event_seq,unresolved_count FROM kickside_automation_drive WHERE automation_id=$1", { automation_id })[1]
                 test.eq(json.decode(progress.cursor).page, 2)
                 test.eq(tonumber(progress.event_seq), 9)
@@ -314,6 +313,18 @@ local function define_tests(section: string)
                 test.eq(written[1].idempotency_key, delivery_key("ok"))
                 test.eq(written[1].origin, automation_id, "the sink write names its writing origin")
                 test.eq(written[1].input.title, "record ok")
+            end)
+
+            test.it("skips a snapshot upsert already delivered to every receipt slot", function()
+                local key = "snapshot-repeat"
+                receipt(key, "", "rec:existing", delivery_key(key))
+                local out, err = deliver({ item(key, { directive = "" }) }, declaration("app.fixture:round_record", func_transform(shared)))
+                test.is_nil(err, tostring(err))
+                test.eq(#out.delivered_items, 0, json.encode(out))
+                test.eq(#out.skipped_items, 1, json.encode(out))
+                test.eq(out.skipped_items[1].reason, "already delivered")
+                test.eq(transform_calls(key), 0)
+                test.eq(#writes(identity(key)), 0)
             end)
 
             test.it("delivers for an owner holding more receipts than any former per-owner count", function()
@@ -558,6 +569,17 @@ local function define_tests(section: string)
                 test.eq(written[2].dest_ref.id, "rec:b")
                 test.is_nil(next(written[2].input), json.encode(written[2].input))
                 test.not_nil(by_key(out.skipped_items)[delivery_key("never", "delete")])
+            end)
+
+            test.it("keeps earlier slot receipts when a later destination waits for capacity",function()
+                receipt("partial-wait","a","rec:a")
+                receipt("partial-wait","b","rec:b")
+                local out,err=deliver({item("partial-wait",{wait_slot="b"})},declaration("app.fixture:round_record",{kind="none"}))
+                test.is_nil(err,tostring(err))
+                local waiting=by_key(out.waiting_items)[delivery_key("partial-wait")]
+                test.not_nil(waiting)
+                test.eq(#(waiting.receipts or {}),1)
+                test.eq(waiting.receipts[1].map_slot,"a")
             end)
 
             test.it("deletes a mapped destination whatever the filter says of a source item", function()

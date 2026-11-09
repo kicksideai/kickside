@@ -54,6 +54,7 @@ for _, kind in ipairs(WIPPY_KINDS) do KNOWN_KIND[kind] = true end
 local DATA_ERROR_KINDS: { [string]: { kind: string, deterministic: boolean } } = {}
 DATA_ERROR_KINDS.auth_expired = { kind = KIND_PERMISSION_DENIED, deterministic = true }
 DATA_ERROR_KINDS.conflict = { kind = KIND_CONFLICT, deterministic = false }
+DATA_ERROR_KINDS.replay_evidence_unavailable = { kind = KIND_INVALID, deterministic = true }
 DATA_ERROR_KINDS.idempotency_conflict = { kind = KIND_CONFLICT, deterministic = true }
 DATA_ERROR_KINDS.cursor_expired = { kind = KIND_UNAVAILABLE, deterministic = false }
 DATA_ERROR_KINDS.dependency_missing = { kind = KIND_UNAVAILABLE, deterministic = false }

@@ -1,11 +1,13 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test=require("test")
 local sql=require("sql")
 local funcs=require("funcs")
 local time=require("time")
 local json=require("json")
 local h=require("round_harness")
+local ledger=require("round_ledger")
 local DB="app:history_upgrade_db"
-local MIGRATION="17_bounded_delivery_storage"
+local MIGRATION="18_ledger_eligibility"
 
 local function migrate(name: string): any
     local result,err=funcs.call("kickside.automation.migrations:" .. name,{database_id=DB,id=name,direction="up"})
@@ -16,7 +18,7 @@ end
 
 return test.run_cases(function()
     test.describe("delivery storage upgrade",function()
-        test.it("drops a large historical store before creating indexes and retains a million ledger identities",function()
+        test.it("preserves a large historical store while indexing bounded unresolved state",function()
             for _,name in ipairs({"06_trigger_item_ledger","10_drive_schema","11_delivery_provenance","12_delivery_history"}) do migrate(name) end
             local db,open_err=sql.get(DB)
             test.is_nil(open_err)
@@ -40,7 +42,7 @@ return test.run_cases(function()
             end
             execute(numbers .. [[INSERT INTO kickside_trigger_item_ledger
                 (owner_id,source_port,item_key,identity_key,envelope_json,state,next_attempt_at,first_failed_at,last_failed_at,created_at,updated_at,delivery_order)
-                SELECT 'owner','source',CAST(x AS TEXT),CAST(x AS TEXT),'{}',CASE WHEN x%2=0 THEN 'retrying' ELSE 'dead' END,
+                SELECT 'owner','source',CAST(x AS TEXT),CAST(x AS TEXT),'{}',CASE WHEN x<=1000 THEN 'retrying' ELSE 'dead' END,
                     '2099-01-01T00:00:00Z','2000-01-01T00:00:00Z','2000-01-01T00:00:00Z',
                     '2000-01-01T00:00:00Z','2000-01-01T00:00:00Z',x FROM n]],{1,1000000})
             test.eq(tonumber(query("SELECT COUNT(*) AS n FROM kickside_automation_delivery_history")[1].n),1000000)
@@ -48,43 +50,77 @@ return test.run_cases(function()
                 if postgres then return query("SELECT pg_total_relation_size('kickside_automation_delivery_history') AS history_bytes,pg_total_relation_size('kickside_trigger_item_ledger') AS ledger_bytes") end
                 return {page_count=query("PRAGMA page_count"),freelist_count=query("PRAGMA freelist_count"),page_size=query("PRAGMA page_size")}
             end
+            local schema=postgres and "SELECT c.relname,c.relfilenode FROM pg_class c WHERE c.oid='kickside_automation_delivery_history'::regclass OR c.oid IN (SELECT indexrelid FROM pg_index WHERE indrelid='kickside_automation_delivery_history'::regclass) ORDER BY c.relname"
+                or "SELECT name,rootpage,sql FROM sqlite_master WHERE tbl_name='kickside_automation_delivery_history' ORDER BY name"
+            local schema_before=json.encode(query(schema))
             local before=storage()
             local retained=query("SELECT owner_id,source_port,item_key,identity_key,envelope_json,state,next_attempt_at,delivery_order FROM kickside_trigger_item_ledger ORDER BY owner_id,source_port,item_key,identity_key LIMIT 50")
             local original=json.encode(retained)
             db:release()
             local started=time.now():unix_nano()
             migrate(MIGRATION)
-            local history_ms=(time.now():unix_nano()-started)/1000000
-            db=assert(sql.get(DB))
-            local after_history=storage()
-            test.eq(tonumber(query("SELECT COUNT(*) AS n FROM kickside_automation_delivery_history")[1].n),0)
-            db:release()
-            started=time.now():unix_nano()
-            migrate("18_ledger_eligibility")
             local ledger_ms=(time.now():unix_nano()-started)/1000000
             db=assert(sql.get(DB))
-            test.eq(tonumber(query("SELECT COUNT(*) AS n FROM kickside_automation_delivery_history")[1].n),0)
-            test.eq(tonumber(query("SELECT COUNT(*) AS n FROM kickside_trigger_item_ledger")[1].n),1000000)
-            test.eq(tonumber(query("SELECT COUNT(*) AS n FROM kickside_trigger_item_ledger WHERE eligible_at IS NOT NULL")[1].n),500000)
             local after=storage()
+            test.eq(json.encode(query(schema)),schema_before,"the update changes no history table or index storage")
+            test.eq(tonumber(query("SELECT COUNT(*) AS n FROM kickside_automation_delivery_history")[1].n),1000000)
+            test.eq(tonumber(query("SELECT COUNT(*) AS n FROM kickside_trigger_item_ledger")[1].n),1000000)
             test.eq(json.encode(query("SELECT owner_id,source_port,item_key,identity_key,envelope_json,state,next_attempt_at,delivery_order FROM kickside_trigger_item_ledger ORDER BY owner_id,source_port,item_key,identity_key LIMIT 50")),original)
-            if postgres then
-                test.is_true(tonumber(after_history[1].history_bytes)<1048576,"the empty replacement retains no old relation storage")
-                test.is_true(tonumber(before[1].history_bytes)>=100000000,"the fixture exercises a populated physical relation")
-            else
-                local freed=(assert(tonumber(after_history.freelist_count[1].freelist_count))-assert(tonumber(before.freelist_count[1].freelist_count)))
-                    *assert(tonumber(before.page_size[1].page_size))
-                test.is_true(freed>=100000000,"drop reclaims populated history pages without vacuum or copying")
+            if postgres then test.eq(after[1].history_bytes,before[1].history_bytes) end
+            execute("INSERT INTO kickside_automation_receipt (owner_id,source_port,item_key,map_slot,identity_key,dest_ref_json,updated_at) VALUES ('owner','source','mapped','','record','{}','2000-01-01T00:00:00Z')")
+            for first=1,999999,100000 do
+                execute(numbers .. "INSERT INTO kickside_automation_receipt (owner_id,source_port,item_key,map_slot,identity_key,dest_ref_json,updated_at)"
+                    .. " SELECT 'owner','source',CAST(x AS TEXT),'','record','{}','2000-01-01T00:00:00Z' FROM n",{first,math.min(first+99999,999999)})
             end
-            execute("INSERT INTO kickside_automation_delivery_history (automation_id,drive_key,round_token,source_port,item_key,identity_key,state,round_at,expires_at) VALUES ('owner','drive','new','source','new','new','resolved','2026-01-01T00:00:00Z','2099-01-01T00:00:00Z')")
+            local receipt_schema=postgres and "SELECT c.relname,c.relfilenode FROM pg_class c WHERE c.oid='kickside_automation_receipt'::regclass OR c.oid IN (SELECT indexrelid FROM pg_index WHERE indrelid='kickside_automation_receipt'::regclass) ORDER BY c.relname"
+                or "SELECT name,rootpage FROM sqlite_master WHERE tbl_name='kickside_automation_receipt' ORDER BY name"
+            local receipt_schema_before=json.encode(query(receipt_schema))
+            local receipt_bytes_before=postgres and query("SELECT pg_total_relation_size('kickside_automation_receipt') AS bytes")[1].bytes or query("PRAGMA page_count")[1].page_count
             db:release()
-            local repeated=migrate(MIGRATION)
-            test.eq(repeated.skipped,1,"an applied upgrade never clears new history")
-            test.eq(migrate("18_ledger_eligibility").skipped,1)
+            started=time.now():unix_nano()
+            migrate("19_receipt_delivery_identity")
+            local receipt_ms=(time.now():unix_nano()-started)/1000000
             db=assert(sql.get(DB))
-            test.eq(tonumber(query("SELECT COUNT(*) AS n FROM kickside_automation_delivery_history")[1].n),1)
-            local evidence=json.encode({engine=postgres and "postgres" or "sqlite",history_rows=1000000,ledger_rows=1000000,history_ms=history_ms,ledger_ms=ledger_ms,before=before,after_history=after_history,after=after})
+            local mapped=query("SELECT identity_key,dest_ref_json,delivery_key FROM kickside_automation_receipt WHERE owner_id='owner' AND item_key='mapped'")[1]
+            test.eq(mapped.identity_key,"record");test.eq(mapped.dest_ref_json,"{}")
+            test.is_nil(mapped.delivery_key,"existing mappings retain their data with an absent delivery identity")
+            test.eq(tonumber(query("SELECT COUNT(*) AS n FROM kickside_automation_receipt")[1].n),1000000)
+            local receipt_schema_after=json.encode(query(receipt_schema))
+            local receipt_bytes_after=postgres and query("SELECT pg_total_relation_size('kickside_automation_receipt') AS bytes")[1].bytes or query("PRAGMA page_count")[1].page_count
+            test.eq(receipt_schema_after,receipt_schema_before,"nullable ADD COLUMN rewrites no receipt table or index")
+            test.eq(receipt_bytes_after,receipt_bytes_before,"nullable ADD COLUMN adds no receipt data pages")
+            test.eq(json.encode(query(schema)),schema_before)
+            local receipt_params: {any}={"owner","source"}
+            local receipt_marks: {string}={}
+            for index=1,50 do receipt_params[#receipt_params+1]=tostring(index);receipt_marks[#receipt_marks+1]="$" .. tostring(#receipt_params) end
+            local receipt_lookup="SELECT item_key,map_slot,delivery_key FROM kickside_automation_receipt WHERE owner_id=$1 AND source_port=$2 AND item_key IN (" .. table.concat(receipt_marks,",") .. ")"
+            local receipt_plan,receipt_plan_err=db:query("EXPLAIN " .. (postgres and "(ANALYZE,BUFFERS,FORMAT JSON) " or "QUERY PLAN ") .. receipt_lookup,receipt_params)
+            test.is_nil(receipt_plan_err,tostring(receipt_plan_err))
+            test.eq(#assert(db:query(receipt_lookup,receipt_params)),50)
+            local legacy_plans={}
+            local tx=assert(db:begin())
+            started=time.now():unix_nano()
+            local executor={query=function(_,statement,params)
+                    legacy_plans[#legacy_plans+1]={sql=statement,params=params}
+                    return tx:query(statement,params)
+                end,execute=function(_,statement,params)
+                    if #legacy_plans<2 then legacy_plans[#legacy_plans+1]={sql=statement,params=params} end
+                    return tx:execute(statement,params)
+                end}
+            local pruned,prune_err=ledger.prune_orphans_tx(executor,"2026-01-01T00:00:00Z",1000)
+            if prune_err then tx:rollback() else local _,commit_err=tx:commit();prune_err=commit_err end
+            local legacy_ms=(time.now():unix_nano()-started)/1000000
+            test.is_nil(prune_err,tostring(prune_err));test.eq(pruned,1000)
+            test.eq(tonumber(query("SELECT COUNT(*) AS n FROM kickside_trigger_item_ledger WHERE state='retrying'")[1].n),1000)
+            for _,call in ipairs(legacy_plans) do
+                local plan,plan_err=db:query("EXPLAIN " .. (postgres and "" or "QUERY PLAN ") .. call.sql,call.params)
+                test.is_nil(plan_err,tostring(plan_err));call.plan=plan
+            end
+            local schema_after=json.encode(query(schema))
             db:release()
+            test.eq(migrate(MIGRATION).skipped,1)
+            test.eq(migrate("19_receipt_delivery_identity").skipped,1)
+            local evidence=json.encode({engine=postgres and "postgres" or "sqlite",history_rows=1000000,ledger_rows=1000000,ledger_ms=ledger_ms,receipt_ms=receipt_ms,receipt_rows=1000000,receipt_plan=receipt_plan,receipt_schema_before=receipt_schema_before,receipt_schema_after=receipt_schema_after,receipt_bytes_before=receipt_bytes_before,receipt_bytes_after=receipt_bytes_after,legacy_ms=legacy_ms,legacy_rows_pruned=pruned,legacy_plans=legacy_plans,before=before,after=after,schema_before=schema_before,schema_after=schema_after})
             h.ensure_log()
             h.exec("INSERT INTO round_fixture_log (automation_id,drive_key,item_key,attempts,detail_json) VALUES ('storage-upgrade','history','storage_upgrade',0,$1)",{evidence})
         end)

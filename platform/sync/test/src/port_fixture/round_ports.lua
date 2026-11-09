@@ -35,7 +35,7 @@ local function write(request: any): (any, any)
     })
     if r.sink_op == "delete" then return { success = true, result = "deleted" }, nil end
     local what = tostring(input.directive or "")
-    if what == "capacity" then
+    if what == "capacity" or (type(input.wait_slot) == "string" and input.wait_slot == r.map_slot) then
         return { success = false, error = { code = "rate_limited", scope = "capacity", retry_after_ms = 30000, retriable = true, message = "busy" } }, nil
     elseif what == "timeout" then
         return { success = false, error = { code = "provider_unavailable", retriable = true, message = "timed out" } }, nil

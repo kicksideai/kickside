@@ -112,22 +112,22 @@ entries:
       jobs: kickside.core.jobs:jobs
       slot: kickside.automation:slot
 
-  - name: 17_bounded_delivery_storage
-    kind: function.lua
-    meta:
-      type: migration
-      depends_on: [ns:wippy.migration, kickside.automation.migrations:12_delivery_history, kickside.automation.migrations:11_delivery_provenance]
-    source: file://17_bounded_delivery_storage.lua
-    method: migration
-    imports:
-      migration: wippy.migration:migration
-
   - name: 18_ledger_eligibility
     kind: function.lua
     meta:
       type: migration
-      depends_on: [ns:wippy.migration, kickside.automation.migrations:17_bounded_delivery_storage, kickside.automation.migrations:11_delivery_provenance]
+      depends_on: [ns:wippy.migration, kickside.automation.migrations:11_delivery_provenance]
     source: file://18_ledger_eligibility.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration
+
+  - name: 19_receipt_delivery_identity
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on: [ns:wippy.migration, kickside.automation.migrations:10_drive_schema]
+    source: file://19_receipt_delivery_identity.lua
     method: migration
     imports:
       migration: wippy.migration:migration

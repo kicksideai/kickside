@@ -7,8 +7,8 @@ local round_ledger = require("round_ledger")
 
 type Map = { [string]: any }
 local DB = "app:db"
--- The upsert includes classification, so each item contributes 20 values.
-local LAST_KEY_IN_BATCH = 3 + 48 * 20
+-- Each item contributes 19 values after the two shared scope binds.
+local LAST_KEY_IN_BATCH = 3 + 49 * 19
 
 local function define_tests()
     test.describe("round ledger lock order", function()
@@ -78,7 +78,7 @@ local function define_tests()
             local item={item_key="observed",dedup_key="observed",op="upsert",payload={}}
             local now="2026-01-01T00:00:00Z"
             local _,initial_err=round_ledger.record_tx(tx,owner,"fixture:reservation",{
-                {item=item,state="resolved",classification="skipped"}},now,now)
+                {item=item,state="resolved"}},now,now)
             test.is_nil(initial_err,tostring(initial_err))
             local reserved,delta,reserve_err=round_ledger.reserve_uncertain_tx(tx,owner,"fixture:reservation",item,
                 {key="reservation",op="upsert",hash="payload"},now)
@@ -86,7 +86,7 @@ local function define_tests()
             test.is_true(reserved.send)
             test.eq(delta,1)
             local resolved,resolve_err=round_ledger.record_tx(tx,owner,"fixture:reservation",{
-                {item=item,state="resolved",classification="delivered"}},now,now)
+                {item=item,state="resolved"}},now,now)
             test.is_nil(resolve_err,tostring(resolve_err))
             test.eq(resolved,-1)
             local admitted,admit_err=round_ledger.admit(tx,owner,"fixture:reservation",{item},2)
@@ -129,9 +129,9 @@ local function define_tests()
                 test.contains(writes[index].statement, "ORDER BY 1, 2, 3, 5")
             end
             test.eq(writes[1].params[3], "key-001")
-            test.eq(writes[1].params[LAST_KEY_IN_BATCH], "key-049")
-            test.eq(writes[2].params[3], "key-050")
-            test.eq(writes[3].params[3], "key-099")
+            test.eq(writes[1].params[LAST_KEY_IN_BATCH], "key-050")
+            test.eq(writes[2].params[3], "key-051")
+            test.eq(writes[3].params[3], "key-101")
         end)
 
         test.it("serializes opposite-order overlapping ledger pages on PostgreSQL", function()
@@ -202,7 +202,7 @@ local function define_tests()
             test.eq(a.label, "a")
             test.eq(a.phase, "write")
             test.eq(a.first_key, "overlap-001")
-            test.eq(a.last_key, "overlap-049")
+            test.eq(a.last_key, "overlap-050")
             run("b", reverse, permit_b)
             -- Under the old order B must return from its disjoint first
             -- write before A is released. The fixed order reaches B's

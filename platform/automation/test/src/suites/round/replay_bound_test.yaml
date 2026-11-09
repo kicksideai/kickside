@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 version: '1.0'
 namespace: kickside.automation
 entries:
@@ -9,4 +10,6 @@ entries:
     modules: [json]
     imports:
       test: wippy.test:test
+      delivery_identity: kickside.automation:delivery_identity
+      drive: kickside.automation:drive
       round_ledger: kickside.automation:round_ledger

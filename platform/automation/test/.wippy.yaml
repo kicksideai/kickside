@@ -6,15 +6,23 @@ version: "1.0"
 # SQLite resource on a registry version change, so the SQLite database is a
 # per-run file named by the caller (--set vars.sqlite_path=<fresh file>).
 override:
+  kickside.users:scope_resolver_binding:data:
+    contracts:
+    - contract: kickside.contract:scope_resolver
+      methods: {resolve: "app:scope_resolver_stub"}
   "app:history_upgrade_db:file": "${sqlite_path}.history-upgrade"
   "app:db:file": "${sqlite_path}"
   "kickside.core.jobs.service:worker.service:lifecycle.auto_start": false
   "kickside.core.retention.service:sweeper.service:lifecycle.auto_start": false
 registry:
+  dispatch_internal_kinds: [registry.entry, ns.requirement, ns.dependency, ns.definition, security.scope]
   enable_history: true
   history_type: memory
 workspace:
   replacements:
+    kickside/users: ../../users
+    kickside/sync: ../../sync
+    kickside/transform: ../../transform
     kickside/realtime: ../../realtime
     kickside/realtime-dispatch: ../../../core/realtime-dispatch
     kickside/automation: ..

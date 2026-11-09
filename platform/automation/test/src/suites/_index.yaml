@@ -404,6 +404,8 @@ entries:
   method: run
   modules: [json]
   imports:
+    prepared_retention: kickside.automation:prepared_retention
+    automation_db: kickside.automation:automation_db
     test: wippy.test:test
     round_harness: kickside.automation:round_harness
     round_write: kickside.automation:round_write

@@ -310,14 +310,14 @@ end
 -- automation, the source thread with append(text), and run(), a
 -- round attempt through a runner constructed with explicit dependencies
 -- (env.completions records every slot completion).
-function M.setup(prefix: string): Map
+function M.setup(prefix: string, kind: string?): Map
     local env: Map = { completions = {}, warnings = {}, notifications = {} }
     env.owner = prefix .. "_" .. uuid.v4():sub(1, 8)
     env.actor = security.new_actor(env.owner, { security_groups = { "automation_test" } })
     env.scope = security.named_scope(PROC_SCOPE)
     env.caller = funcs.new():with_actor(env.actor):with_scope(env.scope)
     M.ensure_log()
-    local installed, install_err = env.caller:call(MANAGE_TOOL, { action = "install", type = M.FIXTURE_KIND, input = {} })
+    local installed, install_err = env.caller:call(MANAGE_TOOL, { action = "install", type = kind or M.FIXTURE_KIND, input = {} })
     if install_err or not installed or not installed.success then error("fixture install: " .. tostring(install_err or (installed and installed.error))) end
     env.automation_id = installed.id
     local def = contract.get("kickside.core:threads")

@@ -222,6 +222,7 @@ entries:
     source: file://history.lua
     modules: [json]
     imports:
+      round_history: kickside.automation:round_history
       round_provenance: kickside.automation:round_provenance
 
   - name: selected_install

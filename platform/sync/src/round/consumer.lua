@@ -66,6 +66,17 @@ local function shape(plan: Map, item: Map, value: any, owner: string, sink_op: s
     return input, nil
 end
 
+-- A receipt records the delivery identity only after the complete item
+-- delivery commits. Every current slot must agree before a repeated snapshot
+-- can bypass its transform and sink.
+local function delivered(slots: { Map }, delivery_key: any): boolean
+    if #slots == 0 or type(delivery_key) ~= "string" or delivery_key == "" then return false end
+    for _, slot in ipairs(slots) do
+        if slot.delivery_key ~= delivery_key then return false end
+    end
+    return true
+end
+
 -- deliver_item -> the outcome list the item belongs in and its entry.
 local function deliver_item(plan: Map, d: Map, item: Map, port: string, known: { Map }): (string, Map)
     local key = item.delivery_key
@@ -82,6 +93,9 @@ local function deliver_item(plan: Map, d: Map, item: Map, port: string, known: {
             message = "source item op must be upsert or delete, got " .. tostring(item.op) }) }
     end
     local slots = known
+    if item.op == "upsert" and delivered(slots, key) then
+        return "skipped_items", { key = key, reason = "already delivered", receipts = slots }
+    end
     local keys = round_write.keys(d, item, nil)
     local prepared_key: string? = nil
     local input: Map
@@ -123,7 +137,7 @@ local function deliver_item(plan: Map, d: Map, item: Map, port: string, known: {
     if outcome.state == "delivered" then
         return "delivered_items", { key = key, receipts = outcome.receipts, prepared_key = prepared_key }
     elseif outcome.state == "waiting" then
-        return "waiting_items", { key = key, retry_after_ms = outcome.retry_after_ms, error = outcome.error }
+        return "waiting_items", { key = key, retry_after_ms = outcome.retry_after_ms, error = outcome.error, receipts = outcome.receipts }
     elseif outcome.state == "uncertain" then
         return "uncertain_items", { key = key }
     end

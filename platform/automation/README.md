@@ -50,45 +50,41 @@ Open **Automations** to install an available kind. The kind declares its inputs 
 
 ## Storage and retention
 
-Delivery history retains at most 10,000 outcomes per drive and expires outcomes
-after the configured retention window, which defaults to 30 days. Initial observations, state transitions, deliveries and retries
-create history. Repeating an unchanged resolved observation creates no history.
-Each append batch contains at most 50 rows and trims at most that many rows
-through the drive's chronological index. The index walk is bounded by the fixed
-retention window plus the batch; it does not traverse other drives or the full
-table. Listing uses keyset pagination, and replay evidence uses indexed delivery
-families with a bounded result size.
+Delivery history records sink deliveries, the first failure or wait, and the final
+resolved or dead result with its attempt count. Intermediate retries overwrite
+mutable ledger state. A repeated unchanged snapshot writes no history or ledger
+row and makes no sink call once its receipt records the delivered identity.
+Receipts retain one current destination mapping per item and slot.
 
-The item ledger owns the latest state of each `(owner_id, source_port, item_key,
-identity_key)`, including initial skips and deliveries. Its size follows distinct
-delivery identities, rather than rounds or uptime. An unchanged resolved
-observation writes neither the ledger nor history. Initial observations continue to
-allow filter reevaluation; resolving a retained failure continues to prevent
-redelivery. Active terminal evidence has no age expiry because admission relies
-on it. Owner removal reclaims evidence through bounded cleanup; age retention
-reclaims eligible orphaned terminal rows after the retention window. Exact
-deduplication requires retaining the identities it distinguishes: the ledger has
-no independent count cap that silently forgets active delivery evidence.
-`retention.ledger_resolved` controls history age and orphaned terminal evidence;
-it no longer expires evidence belonging to active owners.
+`retention.history` defines the hot evidence window, which defaults to seven
+days. It is separate from `retention.ledger_resolved`, the deduplication window
+for terminal ledger tombstones, which defaults to 30 days. A complete policy
+override from an earlier release that omits `history` uses the same seven-day
+history default. In-flight ledger rows retain their retry deadline,
+attempts, payload and last failure; first-attempt successes and skips create no
+ledger row. Resolved payloads are released. A live drive retains prepared output
+regardless of age. Orphaned output expires under the existing settled-proof rule.
+Replay refuses a new transform when retained evidence cannot prove it safe.
 
-Each record's earliest unresolved delivery controls retry eligibility. Database
-triggers maintain its indexed deadline when rounds, reservations, replay or
-identity controls change the ledger. Retry reads seek this index and return at
-most the round batch, preserving ordering within each record. Admission and
-prior-state reads seek exact identities and indexed record fronts, independent
-of retained versions and total ledger size.
+History listing uses keyset pagination within the hot window. Maintenance deletes
+aged rows in bounded pages through the existing chronological index, using
+`round_at` uniformly for rows written under earlier expiry policies. Expired
+space becomes reusable in place. Appends write batches of at most 50 events and
+do not read or trim retained history. No history table rebuild, copy, rewrite or
+new index runs during the update.
 
-The delivery-storage migration clears existing delivery history by dropping its
-table before creating the empty replacement and its indexes. That migration
-commits before the separate ledger-index migration starts, releasing history
-space before the ledger needs it. Neither migration copies old history or builds
-indexes on it. PostgreSQL releases the old relation's disk
-space; SQLite makes its pages reusable within the database file. Ledger,
-receipt, prepared-output and control evidence remains available. Missing or
-incomplete historical evidence continues to refuse unsafe replay inference.
-The migration runner applies the change once and preserves new history on later
-updates and restarts.
+The unresolved ledger population is bounded by `round.max_unresolved` (1,000 by
+default). A partial index supplies record fronts and bounds eligibility scans;
+identity lookups use an index that also supports prepared-output settlement.
+Another partial index lets existing terminal rows without expiry age out through
+bounded maintenance. No database triggers maintain derived eligibility state.
+Mutable refusal counts and an event reference let replay check one history
+primary key instead of enumerating prior attempts. Missing or aged evidence
+refuses an unsafe replay.
+
+Interval polling schedules the next completed pass after its durable commit.
+Cron and timer schedules preserve one occurrence that becomes due during a round.
+Idle drives run no rounds between their scheduled pass or a real event.
 
 ## Reference
 

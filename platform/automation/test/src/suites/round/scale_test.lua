@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
 local h = require("round_harness")
 local history = require("round_history")
@@ -9,68 +10,96 @@ local time = require("time")
 local json = require("json")
 
 type Map = { [string]: any }
-local PORT="kickside.automation.round.fixture:records"
+local PORT = "kickside.automation.round.fixture:records"
 local NOW = "2026-01-01T00:00:00Z"
 local FUTURE = "2099-01-01T00:00:00Z"
+local UNRESOLVED = 1000
+local TOTAL = 1000000
+local DRIVES = 100
 
-local function seed(id: string, first: integer, last: integer): ()
-    local db=h.db()
-    local postgres=tostring(db:type()) == sql.type.POSTGRES
-    db:release()
-    local at=postgres and [[to_char((CASE WHEN n%2=0 THEN TIMESTAMP '2000-01-01' ELSE TIMESTAMP '2020-01-01' END)
-        + CAST((n-1)/50 AS INTEGER) * INTERVAL '1 second','YYYY-MM-DD"T"HH24:MI:SS"Z"')]]
-        or [[strftime('%Y-%m-%dT%H:%M:%SZ',CASE WHEN n%2=0 THEN '2000-01-01' ELSE '2020-01-01' END,
-        '+' || CAST((n-1)/50 AS INTEGER) || ' seconds')]]
-    local numbers="WITH RECURSIVE numbers(n) AS (SELECT CAST($1 AS INTEGER) UNION ALL SELECT n+1 FROM numbers WHERE n<$2)"
-    h.exec(numbers .. " INSERT INTO kickside_automation_delivery_history"
+local function seed(owner: string, ledger_owner: string, first: integer, last: integer): ()
+    local numbers = "WITH RECURSIVE n(x) AS (SELECT CAST($1 AS INTEGER) UNION ALL SELECT x+1 FROM n WHERE x<$2) "
+    h.exec(numbers .. "INSERT INTO kickside_automation_delivery_history"
         .. " (automation_id,drive_key,round_token,source_port,item_key,identity_key,state,round_at,expires_at)"
-        .. " SELECT $3,CASE WHEN n%2=0 THEN 'history' ELSE 'other' END,CAST(n AS TEXT),'kickside.automation.round.fixture:records',CAST(n AS TEXT),CAST(n AS TEXT),"
-        .. "'resolved'," .. at .. ",$4 FROM numbers",
-        {first,last,id,FUTURE})
-    h.exec(numbers .. " INSERT INTO kickside_trigger_item_ledger"
+        .. " SELECT $3,'history-' || CAST(x%" .. tostring(DRIVES) .. " AS TEXT),CAST(x AS TEXT),$4,CAST(x AS TEXT),CAST(x AS TEXT),"
+        .. " 'resolved','2000-01-01T00:00:00Z',$5 FROM n", { first, last, owner, PORT, FUTURE })
+    h.exec(numbers .. "INSERT INTO kickside_trigger_item_ledger"
         .. " (owner_id,source_port,item_key,identity_key,envelope_json,state,attempts,first_failed_at,last_failed_at,"
-        .. "next_attempt_at,created_at,updated_at,delivery_order)"
-        .. " SELECT $3,'kickside.automation.round.fixture:records',CAST(n AS TEXT),CAST(n AS TEXT),'{}',CASE WHEN n%2=0 THEN 'retrying' ELSE 'dead' END,"
-        .. "1,$4,$4,$5,$4,$4,n FROM numbers",{first,last,id,NOW,FUTURE})
+        .. " next_attempt_at,created_at,updated_at,expires_at,delivery_order)"
+        .. " SELECT $3,$4,CAST(x AS TEXT),CAST(x AS TEXT),'{}',CASE WHEN x<=$5 THEN 'retrying' ELSE 'dead' END,"
+        .. " 1,'2000-01-01T00:00:00Z','2000-01-01T00:00:00Z',CASE WHEN x<=$5 THEN $6 ELSE NULL END,"
+        .. " '2000-01-01T00:00:00Z','2000-01-01T00:00:00Z',$7,x FROM n",
+        { first, last, ledger_owner, PORT, UNRESOLVED, FUTURE, FUTURE })
+end
+
+local function explain(postgres: boolean, statement: string, params: {any}): any
+    return h.query("EXPLAIN " .. (postgres and "(ANALYZE,BUFFERS,WAL,FORMAT JSON) " or "QUERY PLAN ") .. statement, params)
+end
+
+local function runs(rows: {Map}, needle: string): boolean
+    for _,row in ipairs(rows) do if tostring(row.detail):find(needle,1,true) then return true end end
+    return false
+end
+
+local function postgres_rows(plan: any): number
+    local largest = 0
+    local function visit(node: Map): ()
+        if tostring(node["Node Type"]):find("Scan",1,true) then
+            local rows = (tonumber(node["Actual Rows"]) or 0) + (tonumber(node["Rows Removed by Filter"]) or 0)
+            largest = math.max(largest, rows * (tonumber(node["Actual Loops"]) or 1))
+        end
+        for _,child in ipairs(node.Plans or {}) do visit(child) end
+    end
+    visit(json.decode(plan[1]["QUERY PLAN"])[1].Plan)
+    return largest
 end
 
 local function define_tests()
     test.describe("AUTOMATION-ROUND-SCALE bounded work across growing tables",function()
-        test.it("keeps a fixed round batch bounded with a million items and history rows",function()
+        test.it("uses bounded indexed history and unresolved-ledger work at one million rows",function()
             h.ensure_log()
-            local env=h.setup("round_scale")
+            local env=h.setup("round_scale","kickside.automation.round.fixture:snapshot_sync_kind")
             local id=env.automation_id
             h.new_drive({automation_id=id,drive_key="history",source_kind="collection",
-                policy={round={max_unresolved=1000000}},
+                applied={title="Snapshot sync",trigger={v=2,source=PORT},sink_port="kickside.automation.round.fixture:store",sink_config={},transform={kind="none"},enabled=true},
+                action={source_ref=PORT,config={items={}},schedule={type="interval",expression="1h"}}})
+            local ledger_env=h.setup("scale_pending")
+            local ledger_owner=ledger_env.automation_id
+            h.new_drive({automation_id=ledger_owner,drive_key="pending",source_kind="collection",unresolved_count=UNRESOLVED,
                 action={source_ref=PORT,config={items={}},schedule={type="interval",expression="1h"}}})
             local stable: {Map}={}
-            for index=1,50 do stable[#stable+1]={item_key="stable-" .. tostring(index),dedup_key="stable-" .. tostring(index),
-                op="upsert",payload={directive="skip"}} end
+            for index=1,50 do
+                local key="stable-" .. tostring(index)
+                stable[#stable+1]={item_key=key,dedup_key=key,delivery_key=key,op="upsert",payload={value=index}}
+            end
             local function source(identity: any,target: string,args: any,opts: any): (any?,any)
                 if target == "kickside.automation:round_acquire" then return {success=true,items=stable,next_cursor={},has_more=false},nil end
                 return env.run_as(identity,target,args,opts)
             end
-            local function run_round(): number
+            local function round(): number
                 h.set_drive(id,"history","next_run_at=$1",{h.PAST})
                 local started=time.now():unix_nano()
                 local _,err=env.run(id,"history",source)
-                local elapsed=(time.now():unix_nano()-started)/1000000
                 test.is_nil(err,tostring(err))
-                return elapsed
+                return (time.now():unix_nano()-started)/1000000
             end
-            run_round()
+            local before_history=tonumber(h.query("SELECT COUNT(*) AS n FROM kickside_automation_delivery_history WHERE automation_id=$1",{id})[1].n)
+            local before_ledger=tonumber(h.query("SELECT COUNT(*) AS n FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})[1].n)
+            round()
+            test.eq(tonumber(h.query("SELECT COUNT(*) AS n FROM kickside_automation_delivery_history WHERE automation_id=$1",{id})[1].n),(before_history :: number)+50)
+            test.eq(tonumber(h.query("SELECT COUNT(*) AS n FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})[1].n),before_ledger)
+
             local db=h.db()
             local postgres=tostring(db:type()) == sql.type.POSTGRES
             db:release()
             local samples: {Map}={}
             local previous=0
-            for _,size in ipairs({10000,100000,1000000}) do
-                seed(id,previous+1,size)
+            for _,size in ipairs({10000,100000,TOTAL}) do
+                seed(id,ledger_owner,previous+1,size)
                 previous=size
-                h.set_drive(id,"history","unresolved_count=$1",{size // 2})
                 h.exec("ANALYZE kickside_automation_delivery_history")
                 h.exec("ANALYZE kickside_trigger_item_ledger")
-                local sample: Map={size=size,statements={}}
+                local sample: Map={size=size,plans={}}
                 local function measure(name: string, operation: (any) -> (any?,any)): ()
                     local opened=h.db()
                     local calls: {Map}={}
@@ -84,135 +113,158 @@ local function define_tests()
                     sample[name .. "_ms"]=(time.now():unix_nano()-started)/1000000
                     opened:release()
                     test.is_nil(err,tostring(err))
-                    for _,call in ipairs(calls) do
-                        call.plan=h.query("EXPLAIN " .. (postgres and "(ANALYZE,BUFFERS,FORMAT JSON) " or "QUERY PLAN ") .. call.sql,call.params)
-                    end
-                    sample.statements[name]=calls
+                    for _,call in ipairs(calls) do call.plan=explain(postgres,call.sql,call.params) end
+                    sample.plans[name]=calls
                 end
-                local admissions: {Map}={}
-                for index=1,50 do admissions[#admissions+1]={item_key="lookup-" .. tostring(index),delivery_key="lookup-" .. tostring(index)} end
-                measure("admit",function(executor) return ledger.admit(executor,id,PORT,admissions,1) end)
-                local due_keys: {string}={}
-                for index=1,50 do due_keys[#due_keys+1]="'" .. tostring(index*2) .. "'" end
-                local selected=" WHERE owner_id=$2 AND source_port=$3 AND item_key IN (" .. table.concat(due_keys,",") .. ")"
-                h.exec("UPDATE kickside_trigger_item_ledger SET next_attempt_at=$1" .. selected,{NOW,id,PORT})
+                measure("history_deadline",function(executor) return history.oldest(executor) end)
+                measure("ledger_retention_deadline",function(executor) return ledger.retention_deadlines(executor,100) end)
+                measure("ledger_retention",function(executor) return ledger.prune_tx(executor,NOW,100) end)
+                measure("ledger_legacy_retention",function(executor) return ledger.prune_orphans_tx(executor,NOW,100) end)
+                local requested: {Map}={}
+                for index=1,50 do
+                    local key=tostring(index)
+                    requested[#requested+1]={item_key=key,delivery_key=key,dedup_key=key}
+                end
+                measure("admit",function(executor) return ledger.admit(executor,ledger_owner,PORT,requested,1) end)
+                measure("provenance",function(executor): (any?,any)
+                    local params: {any}={ledger_owner,PORT}
+                    local marks: {string}={}
+                    for index=1,50 do params[#params+1]=tostring(index);marks[#marks+1]="$" .. tostring(#params) end
+                    return executor:query("SELECT item_key,identity_key,execution_identity_json,created_at FROM kickside_trigger_item_ledger"
+                        .. " WHERE owner_id=$1 AND source_port=$2 AND identity_key IN (" .. table.concat(marks,",") .. ")",params)
+                end)
+                h.exec("UPDATE kickside_trigger_item_ledger SET next_attempt_at=$1 WHERE owner_id=$2 AND source_port=$3 AND state='retrying' AND item_key IN ('1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','43','44','45','46','47','48','49','50')",{NOW,ledger_owner,PORT})
                 measure("due",function(executor)
-                    local rows,err=ledger.due_tx(executor,id,PORT,NOW,50)
+                    local rows,err=ledger.due_tx(executor,ledger_owner,PORT,NOW,50)
                     if rows then test.eq(#rows,50) end
                     return rows,err
                 end)
-                measure("next",function(executor) return ledger.next_attempt(executor,id,PORT,NOW) end)
-                h.exec("UPDATE kickside_trigger_item_ledger SET next_attempt_at=$1" .. selected,{FUTURE,id,PORT})
+                measure("next",function(executor) return ledger.next_attempt(executor,ledger_owner,PORT,NOW) end)
+                h.exec("UPDATE kickside_trigger_item_ledger SET next_attempt_at=$1 WHERE owner_id=$2 AND source_port=$3 AND state='retrying'",{FUTURE,ledger_owner,PORT})
                 measure("idle_due",function(executor)
-                    local rows,err=ledger.due_tx(executor,id,PORT,NOW,50)
+                    local rows,err=ledger.due_tx(executor,ledger_owner,PORT,NOW,50)
                     if rows then test.eq(#rows,0) end
                     return rows,err
                 end)
                 local outcomes: {Map}={}
                 local deliveries: {Map}={}
                 for index=1,50 do
-                    local key="fresh-" .. tostring(index)
+                    local key="delivery-" .. tostring(index)
                     outcomes[#outcomes+1]={item={item_key=key,dedup_key=key,delivery_key=key},state="resolved"}
                     deliveries[#deliveries+1]={key=key}
                 end
-                local r={automation_id=id,drive_key="history",source_port=PORT,now=NOW,
+                local r={automation_id=id,drive_key="history-0",source_port=PORT,now=NOW,
                     resolved_expires_at=FUTURE,captured={round_token=uuid.v7()}}
-                local trim: Map?=nil
                 local started=time.now():unix_nano()
-                local _,append_err=automation_db.in_tx(function(tx)
-                    local executor={query=function(_,statement,params) return tx:query(statement,params) end,
-                        execute=function(_,statement,params)
-                            if trim == nil and statement:find("DELETE FROM",1,true) then
-                                local sub=statement:match(" IN %((SELECT .*)%)$")
-                                trim={sql=sub,params=params}
-                            end
-                            return tx:execute(statement,params)
-                        end}
-                    return true,history.record_tx(executor,r,outcomes,deliveries)
-                end)
+                local _,record_err=automation_db.in_tx(function(tx) return true,history.record_tx(tx,r,outcomes,deliveries) end)
                 sample.append_ms=(time.now():unix_nano()-started)/1000000
-                test.is_nil(append_err,tostring(append_err))
-                if trim then
-                    trim.plan=h.query("EXPLAIN " .. (postgres and "(ANALYZE,BUFFERS,FORMAT JSON) " or "QUERY PLAN ") .. trim.sql,trim.params)
-                    sample.statements.trim={trim}
+                test.is_nil(record_err,tostring(record_err))
+                measure("history_replay",function(executor)
+                    return history.evidence(executor,id,{drive_key=r.drive_key,round_token=r.captured.round_token,source_port=PORT,
+                        item_key="delivery-1",identity_key="delivery-1",round_at=NOW},"2000-01-01T00:00:00Z")
+                end)
+                local prune_statements={}
+                started=time.now():unix_nano()
+                local count,prune_err=automation_db.in_tx(function(tx)
+                    local executor={query=function(_,statement,params)
+                        prune_statements[#prune_statements+1]={sql=statement,params=params}
+                        return tx:query(statement,params)
+                    end,execute=function(_,statement,params)
+                        prune_statements[#prune_statements+1]={sql=statement,params=params}
+                        return tx:execute(statement,params)
+                    end}
+                    return history.prune_tx(executor,NOW,50)
+                end)
+                sample.prune_ms=(time.now():unix_nano()-started)/1000000
+                test.is_nil(prune_err,tostring(prune_err));test.eq(count,50)
+                -- EXPLAIN DELETE runs inside a rollback so plan evidence removes no data.
+                for _,call in ipairs(prune_statements) do
+                    local _,plan_err=automation_db.in_tx(function(tx)
+                        local plan,err=tx:query("EXPLAIN " .. (postgres and "(ANALYZE,BUFFERS,WAL,FORMAT JSON) " or "QUERY PLAN ") .. call.sql,call.params)
+                        call.plan=plan
+                        if err then return nil,err end
+                        return nil,errors.new({kind=errors.CONFLICT,message="plan rollback"})
+                    end)
+                    test.not_nil(call.plan,tostring(plan_err))
                 end
-                local before_history=h.query("SELECT COUNT(*) AS n FROM kickside_automation_delivery_history WHERE automation_id=$1",{id})[1].n
-                local before_ledger=h.query("SELECT COUNT(*) AS n FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})[1].n
-                local before_classification=h.encoded(h.query("SELECT * FROM kickside_trigger_item_ledger WHERE owner_id=$1 AND item_key LIKE 'stable-%' ORDER BY item_key",{id}))
-                sample.round_ms={}
-                for iteration=1,3 do sample.round_ms[#sample.round_ms+1]=run_round() end
-                test.eq(h.query("SELECT COUNT(*) AS n FROM kickside_automation_delivery_history WHERE automation_id=$1",{id})[1].n,before_history)
-                test.eq(h.query("SELECT COUNT(*) AS n FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})[1].n,before_ledger)
-                test.eq(h.encoded(h.query("SELECT * FROM kickside_trigger_item_ledger WHERE owner_id=$1 AND item_key LIKE 'stable-%' ORDER BY item_key",{id})),before_classification)
-                h.exec("INSERT INTO round_fixture_log (automation_id,drive_key,item_key,attempts,detail_json) VALUES ($1,'history','scale_sample',0,$2)",
-                    {id,h.encoded(sample)})
+                sample.plans.prune=prune_statements
+                local list_sql="SELECT round_at,drive_key,round_token,source_port,item_key,identity_key FROM kickside_automation_delivery_history"
+                    .. " WHERE automation_id=$1 AND round_at>$2 ORDER BY round_at DESC,drive_key DESC,round_token DESC,source_port DESC,item_key DESC,identity_key DESC LIMIT $3"
+                measure("list",function(executor): (any?,any)
+                    return executor:query(list_sql,{id,"2000-01-01T00:00:00Z",51})
+                end)
+                sample.round_ms={round(),round(),round()}
                 samples[#samples+1]=sample
             end
-            -- Retained classification survives eviction of all outcome history.
-            local skipped={item={item_key="unchanged",dedup_key="unchanged"},state="resolved",classification="skipped"}
-            local _,seed_err=automation_db.in_tx(function(tx)
-                local _,err=ledger.record_tx(tx,id,PORT,{skipped},NOW,FUTURE)
-                return true,err
-            end)
-            test.is_nil(seed_err,tostring(seed_err))
-            local before=h.encoded(h.query("SELECT * FROM kickside_trigger_item_ledger WHERE owner_id=$1 AND item_key='unchanged'",{id}))
-            local writes=0
-            local r={automation_id=id,drive_key="history",source_port=PORT,now=NOW,
-                resolved_expires_at=FUTURE,captured={round_token=uuid.v7()}}
-            local _,err=automation_db.in_tx(function(tx)
-                local executor={query=function(_,statement,params) return tx:query(statement,params) end,
-                    execute=function(_,statement,params)
-                        local result,write_err=tx:execute(statement,params)
-                        if result and statement:find("INSERT INTO",1,true) then writes=writes+assert(tonumber(result.rows_affected)) end
-                        return result,write_err
-                    end}
-                local _,record_err,_,prior=ledger.record_tx(tx,id,PORT,{skipped},NOW,FUTURE)
-                if record_err then return nil,record_err end
-                return true,history.record_tx(executor,r,{skipped},{},prior)
-            end)
-            test.is_nil(err,tostring(err))
-            test.eq(h.encoded(h.query("SELECT * FROM kickside_trigger_item_ledger WHERE owner_id=$1 AND item_key='unchanged'",{id})),before)
-            h.exec("INSERT INTO round_fixture_log (automation_id,drive_key,item_key,attempts,detail_json) VALUES ($1,'history','scale_result',0,$2)",
-                {id,h.encoded({engine=postgres and "postgres" or "sqlite",rows=1000000,unchanged_writes=writes})})
+            test.eq(tonumber(h.query("SELECT COUNT(*) AS n FROM kickside_trigger_item_ledger WHERE owner_id=$1 AND state IN ('retrying','waiting','uncertain','parked')",{ledger_owner})[1].n),UNRESOLVED)
+            local before_history_rows=tonumber(h.query("SELECT COUNT(*) AS n FROM kickside_automation_delivery_history WHERE automation_id=$1",{id})[1].n)
+            local before_ledger_rows=tonumber(h.query("SELECT COUNT(*) AS n FROM kickside_trigger_item_ledger WHERE owner_id=$1",{ledger_owner})[1].n)
+            local idle={}
+            for _=1,3 do idle[#idle+1]=round() end
+            test.eq(tonumber(h.query("SELECT COUNT(*) AS n FROM kickside_automation_delivery_history WHERE automation_id=$1",{id})[1].n),before_history_rows)
+            test.eq(tonumber(h.query("SELECT COUNT(*) AS n FROM kickside_trigger_item_ledger WHERE owner_id=$1",{ledger_owner})[1].n),before_ledger_rows)
+            local drain={}
+            for _,batch in ipairs({100,100,100,100,100,1000,1000,1000,1000,1000}) do
+                if not postgres then h.query("PRAGMA wal_checkpoint(TRUNCATE)") end
+                local started=time.now():unix_nano()
+                local statements: {Map}={}
+                local count,err=automation_db.in_tx(function(tx)
+                    local executor={query=function(_,statement,params) return tx:query(statement,params) end,
+                        execute=function(_,statement,params)
+                            statements[#statements+1]={sql=statement,params=params}
+                            return tx:execute(statement,params)
+                        end}
+                    return history.prune_tx(executor,NOW,batch)
+                end)
+                test.is_nil(err,tostring(err));test.eq(count,batch)
+                local elapsed=(time.now():unix_nano()-started)/1000000
+                for _,call in ipairs(statements) do
+                    local _,plan_err=automation_db.in_tx(function(tx)
+                        local plan,read_err=tx:query("EXPLAIN " .. (postgres and "(ANALYZE,BUFFERS,WAL,FORMAT JSON) " or "QUERY PLAN ") .. call.sql,call.params)
+                        call.plan=plan
+                        if read_err then return nil,read_err end
+                        return nil,errors.new({kind=errors.CONFLICT,message="plan rollback"})
+                    end)
+                    test.not_nil(call.plan,tostring(plan_err))
+                end
+                local wal: Map?=nil
+                if not postgres then
+                    local checkpoint=h.query("PRAGMA wal_checkpoint(PASSIVE)")[1]
+                    local frames=assert(tonumber(checkpoint.log))
+                    test.is_true(frames>0,"the measured delete emits WAL frames")
+                    local page_size=assert(tonumber(h.query("PRAGMA page_size")[1].page_size))
+                    wal={frames=frames,bytes=32+frames*(page_size+24)}
+                end
+                local round_ms=round()
+                drain[#drain+1]={rows=count,ms=elapsed,round_ms=round_ms,statements=statements,wal=wal}
+            end
             local violations: {string}={}
-            if writes ~= 0 then violations[#violations+1]="unchanged outcomes outside the recent history window append" end
-            local largest=samples[#samples]
+            local last=samples[#samples]
             if postgres then
-                local function scan(node: Map): ()
-                    if tostring(node["Node Type"]):find("Scan",1,true) then
-                        local visited=((tonumber(node["Actual Rows"]) or 0)+(tonumber(node["Rows Removed by Filter"]) or 0))
-                            *(tonumber(node["Actual Loops"]) or 1)
-                        if visited > 50 then violations[#violations+1]="ledger scan visits " .. tostring(visited) .. " rows for a 50-item batch" end
-                    end
-                    for _,child in ipairs(node.Plans or {}) do scan(child) end
-                end
-                for _,name in ipairs({"admit","due","next","idle_due"}) do
-                    for _,call in ipairs(largest.statements[name]) do
-                        local plan=json.decode(call.plan[1]["QUERY PLAN"])
-                        scan(plan[1].Plan)
+                for _,name in ipairs({"admit","due","next","idle_due","history_deadline","provenance","ledger_retention_deadline","ledger_retention","ledger_legacy_retention","history_replay","list"}) do
+                    for _,call in ipairs(last.plans[name]) do
+                        if postgres_rows(call.plan)>UNRESOLVED then violations[#violations+1]=name .. " visits more than max_unresolved rows" end
                     end
                 end
-                local function buffers(sample: Map): number
-                    local plan=json.decode(sample.statements.trim[1].plan[1]["QUERY PLAN"])
-                    return plan[1].Plan["Shared Hit Blocks"]+plan[1].Plan["Shared Read Blocks"]
-                end
-                if buffers(largest) > buffers(samples[2])*4 then
-                    violations[#violations+1]="history trim buffer visits grow with unrelated drive history"
+                for _,call in ipairs(last.plans.prune) do
+                    if postgres_rows(call.plan)>1000 then violations[#violations+1]="history prune examines more than its page bound" end
                 end
             else
-                for _,row in ipairs(largest.statements.next[1].plan) do
-                    if tostring(row.detail):find("SCAN l",1,true) then violations[#violations+1]="next-attempt query scans the ledger" end
+                for _,name in ipairs({"due","next","idle_due"}) do
+                    local encoded=h.encoded(last.plans[name])
+                    if encoded:find("SCAN",1,true) then violations[#violations+1]=name .. " scans the ledger" end
                 end
-                local bounded=false
-                for _,row in ipairs(largest.statements.trim[1].plan) do
-                    if tostring(row.detail):find("automation_id=? AND drive_key=?",1,true) then bounded=true end
-                    if tostring(row.detail):find("TEMP B-TREE FOR ORDER BY",1,true) then
-                        violations[#violations+1]="history trim sorts retained drive history"
-                    end
-                end
-                if not bounded then violations[#violations+1]="history trim has no drive-bounded index range" end
+                local last_prune=last.plans.prune[#last.plans.prune].plan
+                if not runs(last_prune,"automation_id=? AND round_at<?") then violations[#violations+1]="history prune misses its age range" end
+                if runs(last_prune,"TEMP B-TREE FOR ORDER BY") then violations[#violations+1]="history prune sorts the retained window" end
+                if not runs(last.plans.list[1].plan,"automation_id=?") then violations[#violations+1]="history list misses its page index" end
             end
+            h.exec("INSERT INTO round_fixture_log (automation_id,drive_key,item_key,attempts,detail_json) VALUES ($1,'history-0','scale',0,$2)",
+                {id,h.encoded({engine=postgres and "postgres" or "sqlite",history_rows=TOTAL,ledger_rows=TOTAL,
+                    unresolved_rows=UNRESOLVED,samples=samples,idle_round_ms=idle,unchanged_writes=0,drain=drain})})
             test.eq(#violations,0,table.concat(violations,"; "))
+            h.exec("DELETE FROM kickside_automation_delivery_history WHERE automation_id=$1",{id})
+            h.exec("DELETE FROM kickside_trigger_item_ledger WHERE owner_id=$1",{ledger_owner})
         end)
     end)
 end

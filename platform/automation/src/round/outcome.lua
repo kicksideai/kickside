@@ -102,9 +102,15 @@ function M.ledger_outcomes(items: { Map }, outcomes: Map, delivery: Map): ({ Map
     for _, item in ipairs(items) do by_key[item.delivery_key] = item end
     local recorded: { Map } = {}
     local receipts: { Map } = {}
+    local function partial_effect(entry: Map,item: Map,failure: Map): ()
+        if type(entry.receipts) == "table" and #entry.receipts > 0 then
+            receipts[#receipts+1]={item=item,receipts=entry.receipts}
+            failure.sink_effect=true
+        end
+    end
     for _, name in ipairs({ "delivered", "skipped" }) do
         for _, o in ipairs(outcomes[name] :: { Map }) do
-            recorded[#recorded + 1] = { item = by_key[o.key], state = ledger.STATE.RESOLVED, classification = name }
+            recorded[#recorded + 1] = { item = by_key[o.key], state = ledger.STATE.RESOLVED }
             if type(o.receipts) == "table" or type(o.prepared_key) == "string" then
                 receipts[#receipts + 1] = { item = by_key[o.key], receipts = o.receipts or {},
                     prepared_key = o.prepared_key }
@@ -118,8 +124,9 @@ function M.ledger_outcomes(items: { Map }, outcomes: Map, delivery: Map): ({ Map
         if not o.parked then
             next_at = floor ~= nil and drive.utc_at_ms(floor) or o.next_attempt_at or drive.utc_after(wait_ms)
         end
-        recorded[#recorded + 1] = { item = by_key[o.key], state = ledger.STATE.WAITING,
-            next_attempt_at = next_at, error = o.error or { code = "capacity", message = "destination capacity", retriable = true } }
+        local failure=o.error or {code="capacity",message="destination capacity",retriable=true}
+        partial_effect(o,by_key[o.key] :: Map,failure)
+        recorded[#recorded + 1] = {item=by_key[o.key],state=ledger.STATE.WAITING,next_attempt_at=next_at,error=failure}
     end
     for _, o in ipairs(outcomes.uncertain :: { Map }) do
         recorded[#recorded + 1] = { item = by_key[o.key], state = ledger.STATE.UNCERTAIN,
@@ -128,12 +135,7 @@ function M.ledger_outcomes(items: { Map }, outcomes: Map, delivery: Map): ({ Map
     for _, o in ipairs(outcomes.failed :: { Map }) do
         local item = by_key[o.key]
         local failure = type(o.error) == "table" and failure_classification.classify(o.error) or M.classify(o.error)
-        -- A failure answered with receipts wrote those destinations: the
-        -- attempt had a sink effect, which its recorded failure carries.
-        if type(o.receipts) == "table" and #o.receipts > 0 then
-            receipts[#receipts+1]={item=item,receipts=o.receipts}
-            failure.sink_effect = true
-        end
+        partial_effect(o,item,failure)
         local _, parks = M.failure_phase(failure)
         if failure_classification.capacity_floor(failure) ~= nil then
             recorded[#recorded + 1] = { item = item, state = ledger.STATE.WAITING,

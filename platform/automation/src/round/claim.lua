@@ -74,6 +74,16 @@ function M.next_due(d: Map, from: string): (string?, error?)
     return due, nil
 end
 
+function M.interval_poll(d: Map): boolean
+    local schedule=M.schedule_of(d)
+    return d.source_kind == drive.SOURCE_KIND.COLLECTION and schedule ~= nil
+        and (schedule.type == "interval" or schedule.type == "ticker")
+end
+
+function M.next_after_round(d: Map, started: string, completed: string): (string?,error?)
+    return M.next_due(d,M.interval_poll(d) and completed or started)
+end
+
 local function update(tx: any, automation_id: string, drive_key: string, fields: Map): error?
     local ok, err = drive.update_cas_tx(tx, automation_id, drive_key, {}, fields)
     if err then return err end

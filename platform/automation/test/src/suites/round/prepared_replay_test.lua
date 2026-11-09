@@ -9,6 +9,8 @@
 -- fixture store sink. Runs on SQLite and PostgreSQL.
 
 local test = require("test")
+local prepared_retention = require("prepared_retention")
+local automation_db = require("automation_db")
 local json = require("json")
 local h = require("round_harness")
 local round_write = require("round_write")
@@ -75,6 +77,29 @@ local function define_tests()
             return #h.query("SELECT item_key FROM kickside_automation_receipt WHERE owner_id = $1 AND item_key = $2",
                 { id, item_key })
         end
+
+        test.it("refuses re-preparation without event summaries explicitly and permits discard",function()
+            local items={{key="earlier-delivery",directive="invalid"},{key="pending-delivery",directive="timeout"}}
+            local id=install(items)
+            run(id)
+            local stored=h.query("SELECT envelope_json FROM kickside_trigger_item_ledger WHERE owner_id=$1 AND item_key='earlier-delivery'",{id})[1]
+            local envelope=json.decode(stored.envelope_json)
+            envelope.delivery_evidence=nil
+            h.exec("UPDATE kickside_trigger_item_ledger SET envelope_json=$1 WHERE owner_id=$2 AND item_key='earlier-delivery'",{json.encode(envelope),id})
+            reconfigure(id,items,{directive="deliver"})
+            test.eq(call({action="control",id=id,control="replay",drive_key="main",request_id="earlier-replay",keys={"earlier-delivery"}}).outcome.replayed,1)
+            run(id)
+            local refused=h.query("SELECT state,error_code,error_message FROM kickside_trigger_item_ledger WHERE owner_id=$1 AND item_key='earlier-delivery'",{id})[1]
+            test.eq(refused.state,"dead")
+            test.eq(refused.error_code,"replay_evidence_unavailable")
+            test.contains(refused.error_message,"predates this version or has aged out")
+            test.eq(#sink_writes(id,"earlier-delivery"),1)
+            test.eq(transforms(id,"earlier-delivery"),1)
+            test.eq(h.read_drive(id,"main").unresolved_count,1)
+            test.eq(call({action="control",id=id,control="discard",drive_key="main",request_id="earlier-discard",keys={"earlier-delivery"}}).outcome.discarded,1)
+            test.eq(h.read_drive(id,"main").unresolved_count,1,"discarding a terminal item releases no unresolved capacity")
+            test.eq(ledger(id,"earlier-delivery").state,"resolved")
+        end)
 
         test.it("delivers a dead item's replay with the transform a reconfigure corrected", function()
             local items = { { key = "corrected", directive = "invalid" } }
@@ -201,7 +226,7 @@ local function define_tests()
 
         -- refused_after_reconfigure(id, key) reconfigures the transform, replays
         -- and asserts the replay refuses the new payload without a send.
-        local function refused_after_reconfigure(id: string, key: string, items: { Map }, sends: integer): ()
+        local function refused_after_reconfigure(id: string, key: string, items: { Map }, sends: integer, unavailable: boolean?): ()
             reconfigure(id, items, { directive = "deliver" })
             test.eq(replay(id, key .. "-replay").outcome.replayed, 1)
             run(id)
@@ -209,7 +234,7 @@ local function define_tests()
             test.eq(transforms(id, key), 1)
             local refused = ledger(id, key)
             test.eq(refused.state, "dead")
-            test.contains(tostring(refused.error_message), "has another payload")
+            test.contains(tostring(refused.error_message), unavailable and "predates this version or has aged out" or "has another payload")
         end
 
         test.it("refuses a reconfigured replay of an item the sink may have accepted", function()
@@ -257,13 +282,29 @@ local function define_tests()
             refused_after_reconfigure(id, "unacknowledged", items, 1)
         end)
 
+        test.it("retains a live drive's sole prepared output regardless of age",function()
+            local items={{key="aged-output",directive="invalid"}}
+            local id=install(items)
+            run(id)
+            h.exec("UPDATE kickside_automation_prepared SET created_at='1700-01-01T00:00:00Z' WHERE automation_id=$1",{id})
+            local removed,err=automation_db.in_tx(function(tx)
+                return prepared_retention.prune_orphans_tx(tx,"1750-01-01T00:00:00Z",100)
+            end)
+            test.is_nil(err,tostring(err));test.eq(removed,0)
+            test.eq(#h.query("SELECT idempotency_key FROM kickside_automation_prepared WHERE automation_id=$1",{id}),1)
+            test.eq(replay(id,"aged-output-replay").outcome.replayed,1)
+            run(id)
+            test.eq(#sink_writes(id,"aged-output"),2)
+            test.eq(transforms(id,"aged-output"),1,"cached prepared output remains available")
+        end)
+
         test.it("refuses a reconfigured replay once the delivery history no longer covers every attempt", function()
             local items = { { key = "pruned", directive = "invalid" } }
             local id = install(items)
             run(id)
             test.eq(ledger(id, "pruned").state, "dead")
             h.exec("DELETE FROM kickside_automation_delivery_history WHERE automation_id = $1 AND item_key = 'pruned'", { id })
-            refused_after_reconfigure(id, "pruned", items, 1)
+            refused_after_reconfigure(id, "pruned", items, 1, true)
         end)
     end)
 end

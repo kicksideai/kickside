@@ -217,7 +217,7 @@ local function define_tests()
                 } }, schedule = { type = "interval", expression = "1h" } } })
             set_drive(automation_id, key, "next_run_at=$1", { PAST })
             run(automation_id, key)
-            test.eq((ledger_row(automation_id, "completed") :: Map).state,"resolved","a first delivery retains its classification")
+            test.is_nil(ledger_row(automation_id, "completed"), "a first-attempt delivery leaves no ledger row")
             test.eq(json.decode(read_drive(automation_id, key).cursor), 2, "the cursor passes the whole page")
             exec("UPDATE kickside_trigger_item_ledger SET next_attempt_at=$1 WHERE owner_id=$2 AND source_port=$3", { PAST, automation_id, port })
             run(automation_id, key)
@@ -342,12 +342,12 @@ local function define_tests()
             test.eq(states.fail_dead, "dead")
             for _, r in ipairs(rows) do
                 if json.decode(r.detail_json).directive == "fail_dead" then
-                    test.is_nil((ledger_row(automation_id, r.item_key) :: Map).expires_at, "dead evidence has no automatic expiry")
+                    test.not_nil((ledger_row(automation_id, r.item_key) :: Map).expires_at, "dead tombstones expire by age")
                 end
             end
             test.eq(states.wait, "waiting")
             test.eq(states.uncertain, "uncertain")
-            test.eq(states.skip,"resolved","a first-attempt skip retains its classification")
+            test.eq(states.skip, "none", "a first-attempt skip writes no ledger row")
             test.eq(read_drive(automation_id, "ledger").unresolved_count, 3)
             test.not_nil(last_completion().options.rearm)
 

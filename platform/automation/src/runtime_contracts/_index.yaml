@@ -42,6 +42,7 @@ entries:
         retry_after_ms: 10000
         max_delay_ms: 86400000
       retention:
+        history: 7d
         ledger_resolved: 30d
         ops: 30d
         prepared: 7d
