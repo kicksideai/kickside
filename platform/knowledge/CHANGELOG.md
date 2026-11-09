@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.81](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.80...knowledge-v0.1.81) (2026-11-09)
+
+
+### Bug Fixes
+
+* **knowledge:** apply accepted existing-base upsert changes ([#400](https://github.com/kicksideai/kickside/issues/400)) ([ba360d2](https://github.com/kicksideai/kickside/commit/ba360d21d694db3bdc1d5eb4f94f7c207e443f51))
+
 ## [0.1.80](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.79...knowledge-v0.1.80) (2026-11-09)
 
 
