@@ -432,9 +432,10 @@ function drive.release_command_tx(tx: sql.Transaction, automation_id: string, dr
         local result, err
         if applied_json ~= nil then
             result, err = tx:execute("UPDATE " .. drive.TABLE .. " SET pending_command_id = NULL, repair_next_at = NULL, wake_generation = wake_generation + 1,"
-                .. " applied_json = $1, applied_hash = $2"
-                .. " WHERE automation_id = $3 AND drive_key = $4 AND pending_command_id = $5 AND command_generation = $6",
-                { applied_json, (applied :: Map).hash, automation_id, key, command_id, generation })
+                .. " delivery_revision = delivery_revision + CASE WHEN applied_hash = $1 THEN 0 ELSE 1 END,"
+                .. " applied_json = $2, applied_hash = $3"
+                .. " WHERE automation_id = $4 AND drive_key = $5 AND pending_command_id = $6 AND command_generation = $7",
+                { (applied :: Map).hash, applied_json, (applied :: Map).hash, automation_id, key, command_id, generation })
         else
             result, err = tx:execute("UPDATE " .. drive.TABLE .. " SET pending_command_id = NULL, repair_next_at = NULL, wake_generation = wake_generation + 1"
                 .. " WHERE automation_id = $1 AND drive_key = $2 AND pending_command_id = $3 AND command_generation = $4",

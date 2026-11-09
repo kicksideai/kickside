@@ -373,6 +373,30 @@ function M.write(request: any): (any, any)
     return { success = true, dest_ref = { id = "rec:" .. tostring(r.identity_key) }, dest_version = "v1" }, nil
 end
 
+-- Match a sink that admits one input per delivery key.
+function M.write_idempotent(request: any): (any, any)
+    local r=request :: Map
+    local encoded,encode_err=json.encode({input=r.input,config=r.config,sink_op=r.sink_op})
+    if encode_err then return nil,encode_err end
+    local db,db_err=sql.get(DB)
+    if db_err then return nil,db_err end
+    local rows,read_err=db:query("SELECT detail_json FROM round_fixture_log WHERE drive_key='idempotent-sink' AND item_key=$1 ORDER BY id LIMIT 1",
+        {r.idempotency_key})
+    db:release()
+    if read_err then return nil,read_err end
+    if #rows > 0 then
+        if rows[1].detail_json ~= encoded then
+            return {success=false,error={code="idempotency_conflict",retriable=false,message="delivery key has different input"}},nil
+        end
+        return {success=true,dest_ref={id="rec:" .. tostring(r.identity_key)},dest_version="v1"},nil
+    end
+    local result,err=M.write(request)
+    if not err and result and result.success then
+        log("sink","idempotent-sink",r.idempotency_key,0,{input=r.input,config=r.config,sink_op=r.sink_op})
+    end
+    return result,err
+end
+
 function M.pull(request: any): (any, any)
     local r = type(request) == "table" and (request :: Map) or {}
     local config = type(r.config) == "table" and (r.config :: Map) or {}
