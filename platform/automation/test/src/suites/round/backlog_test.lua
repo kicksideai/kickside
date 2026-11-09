@@ -4,7 +4,8 @@ local time = require("time")
 local channel = require("channel")
 local process = require("process")
 local uuid = require("uuid")
-local clock = require("clock")
+local registry = require("registry")
+local json = require("json")
 local jobs = require("jobs")
 local slot = require("slot")
 local config = require("jobs_config")
@@ -18,7 +19,26 @@ return { run = test.run_cases(function()
         local listener: Map? = nil
         local started: any = nil
         local scope = ""
-        test.before_all(h.await_migrations)
+        local original: any = nil
+        test.before_all(function()
+            h.await_migrations()
+            original = assert(registry.get("kickside.automation:round"))
+            local instrumented = config.copy(original)
+            local entry = assert(registry.get("kickside.automation:round_backlog_entry"))
+            instrumented.data.source = entry.data.source
+            instrumented.data.modules = entry.data.modules
+            instrumented.data.imports = entry.data.imports
+            local changes = assert(registry.snapshot()):changes()
+            changes:update(instrumented)
+            assert(changes:apply())
+        end)
+        test.after_all(function()
+            if original then
+                local changes = assert(registry.snapshot()):changes()
+                changes:update(original)
+                assert(changes:apply())
+            end
+        end)
         test.after_each(function()
             h.exec("UPDATE kickside_job SET status='cancelled', scheduled_at=NULL WHERE owner_kind='test' AND owner_id=$1 AND status='pending'", { scope })
             if worker then h.stop_worker(worker); worker = nil end
@@ -61,11 +81,12 @@ return { run = test.run_cases(function()
                 test.is_nil(enqueue_err, tostring(enqueue_err))
                 test.is_nil(slot.record(env.automation_id, "backlog", job_id :: string))
                 h.receive_logged(listener :: Map, "70s")
-                local runs = h.query("SELECT started_at FROM kickside_job_run WHERE job_id=$1 ORDER BY started_at", { job_id })
-                test.is_true(#runs > 0)
-                local began, parse_err = clock.parse(runs[1].started_at)
+                local entries = h.query("SELECT detail_json FROM round_fixture_log WHERE automation_id=$1"
+                    .. " AND drive_key='backlog' AND item_key='worker-entry' ORDER BY id", { env.automation_id })
+                test.is_true(#entries > 0, "round worker records its execution entry")
+                local began, parse_err = json.decode(entries[1].detail_json)
                 test.is_nil(parse_err, tostring(parse_err))
-                local start_ms = ((began :: any):unix_nano() - enqueued_at) / 1000000
+                local start_ms = (assert(tonumber(began.entered_at)) - enqueued_at) / 1000000
                 h.exec("INSERT INTO round_fixture_log (automation_id, drive_key, item_key, attempts, detail_json)"
                     .. " VALUES ($1, 'backlog', 'start-timing', 0, $2)",
                     { env.automation_id, h.encoded({ queued = backlog, start_ms = start_ms }) })
@@ -81,5 +102,52 @@ return { run = test.run_cases(function()
                 end
             end)
         end
+        test.it("completes general jobs while rounds keep arriving", function()
+            local env = h.setup("round_arrivals")
+            scope = uuid.v7()
+            local topic = "round.arrivals." .. scope
+            started = process.listen(topic, { message = true })
+            local ids: { string } = {}
+            for index = 1, 8 do
+                local key = "arrival-" .. tostring(index)
+                h.new_drive({ automation_id = env.automation_id, drive_key = key, source_kind = "event",
+                    source_thread_id = env.thread_id,
+                    action = { source_ref = "fixture:arrivals", event_type = h.EVENT_TYPE } })
+                local id, err = slot.enqueue(env.automation_id, key)
+                test.is_nil(err, tostring(err))
+                test.is_nil(slot.record(env.automation_id, key, id :: string))
+                ids[#ids + 1] = id :: string
+                local queued, queue_err = jobs.enqueue({ namespace = "round-arrivals", scope = scope,
+                    key = tostring(index), job_type = "kickside.automation:round_backlog_job",
+                    owner_locator = { kind = "test", id = scope },
+                    immutable_payload = { reply_pid = tostring(process.pid()), reply_topic = topic } })
+                test.is_nil(queue_err, tostring(queue_err))
+                test.not_nil(queued)
+            end
+            env.append("initial arrival")
+            worker = h.start_worker()
+            local deadline = time.after("10s")
+            local arrivals: number = 0
+            local rounds_during_progress: number = 0
+            while true do
+                env.append("arrival " .. tostring(arrivals))
+                for _, id in ipairs(ids) do
+                    local _, err = jobs.wake_job(id)
+                    test.is_nil(err, tostring(err))
+                end
+                arrivals = arrivals + 1
+                local done = h.query("SELECT COUNT(*) AS n FROM kickside_job WHERE owner_kind='test' AND owner_id=$1 AND status='done'", { scope })
+                local entries = h.query("SELECT COUNT(*) AS n FROM round_fixture_log WHERE automation_id=$1 AND item_key='worker-entry'", { env.automation_id })
+                if tonumber(done[1].n) > 0 then rounds_during_progress = tonumber(entries[1].n) :: number end
+                if tonumber(done[1].n) == 8 then break end
+                local got = channel.select({ deadline:case_receive(), time.after("10ms"):case_receive() })
+                test.is_true(got.channel ~= deadline, "general jobs finish during sustained round arrivals")
+            end
+            test.is_true(arrivals > 1, "arrivals continue after the initial round backlog")
+            test.is_true(rounds_during_progress > #ids, "rounds keep executing while general jobs complete")
+            for _, id in ipairs(ids) do
+                h.exec("UPDATE kickside_job SET scheduled_at=NULL WHERE id=$1 AND status='pending'", {id})
+            end
+        end)
     end)
 end) }

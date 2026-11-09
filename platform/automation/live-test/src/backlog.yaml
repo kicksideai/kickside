@@ -12,13 +12,23 @@ entries:
     meta: { type: test, suite: kickside_automation_round_backlog }
     source: file://test_src/suites/round/backlog_test.lua
     method: run
-    modules: [time, channel, process, uuid]
-    security:
-      groups: [wippy.security:process]
+    modules: [time, channel, process, uuid, registry, json]
     imports:
       test: wippy.test:test
-      clock: kickside.core.jobs:clock
       jobs: kickside.core.jobs:jobs
       slot: kickside.automation:slot
       jobs_config: kickside.core.jobs:config
+      round_harness: kickside.automation:round_harness
+  - name: round_backlog_worker
+    kind: library.lua
+    source: file://round_worker_source.lua
+    imports:
+      round_runner: kickside.automation:round_runner
+  - name: round_backlog_entry
+    kind: function.lua
+    source: file://test_src/suites/round/backlog_entry.lua
+    method: run
+    modules: [time]
+    imports:
+      round_worker: kickside.automation:round_backlog_worker
       round_harness: kickside.automation:round_harness

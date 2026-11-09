@@ -189,6 +189,43 @@ local function define_tests()
             end)
         end
 
+        test.it("rotates every tier of both classes across repeated mixed claims", function()
+            with_db(function(db: sql.DB)
+                local dbtype = tostring(db:type())
+                local seen: { [string]: number } = {}
+                local step: integer = 0
+                for _ = 1, 20 do
+                    for _, class in ipairs({"awaited", "general"}) do
+                        for _, tier in ipairs({"live", "backfill", "maintenance"}) do
+                            for _ = 1, 3 do
+                                local id = enqueue(db, dbtype, make_thread(db), "test." .. class)
+                                test.is_nil(select(2, db:execute("UPDATE kickside_job SET queue_tier=$1 WHERE id=$2", {tier, id})))
+                            end
+                        end
+                    end
+                    local batch, err, next_step = claim.claim_batch(db, dbtype, 3, nil, nil, nil, nil,
+                        { awaited_types = { "test.awaited" }, general_capacity = 2, tier_step = step })
+                    test.is_nil(err, tostring(err))
+                    test.eq(#batch, 3)
+                    local general: number = 0
+                    for _, job in ipairs(batch) do
+                        local key = tostring(job.job_type) .. ":" .. tostring(job.queue_tier)
+                        seen[key] = (seen[key] or 0) + 1
+                        if job.job_type == "test.general" then general = general + 1 end
+                        test.is_nil(lifecycle.complete_job(db, job, dbtype))
+                    end
+                    test.eq(general, 2)
+                    step = next_step :: integer
+                end
+                for _, class in ipairs({"awaited", "general"}) do
+                    for _, tier in ipairs({"live", "backfill", "maintenance"}) do
+                        local key = "test." .. class .. ":" .. tier
+                        test.is_true((seen[key] or 0) > 0, key .. " never runs across repeated claims")
+                    end
+                end
+            end)
+        end)
+
         test.it("keeps awaited tier shares when general work leaves capacity unused", function()
             with_db(function(db: sql.DB)
                 local dbtype = tostring(db:type())
