@@ -85,9 +85,10 @@ return test.run_cases(function()
             migrate("19_receipt_delivery_identity")
             local receipt_ms=(time.now():unix_nano()-started)/1000000
             db=assert(sql.get(DB))
-            local mapped=query("SELECT identity_key,dest_ref_json,delivery_key FROM kickside_automation_receipt WHERE owner_id='owner' AND item_key='mapped'")[1]
+            local mapped=query("SELECT identity_key,dest_ref_json,delivery_key,declaration_hash FROM kickside_automation_receipt WHERE owner_id='owner' AND item_key='mapped'")[1]
             test.eq(mapped.identity_key,"record");test.eq(mapped.dest_ref_json,"{}")
             test.is_nil(mapped.delivery_key,"existing mappings retain their data with an absent delivery identity")
+            test.is_nil(mapped.declaration_hash,"existing mappings retain their data with an absent applied declaration")
             test.eq(tonumber(query("SELECT COUNT(*) AS n FROM kickside_automation_receipt")[1].n),1000000)
             local receipt_schema_after=json.encode(query(receipt_schema))
             local receipt_bytes_after=postgres and query("SELECT " .. main_bytes("kickside_automation_receipt") .. " AS bytes")[1].bytes or query("PRAGMA page_count")[1].page_count
@@ -98,7 +99,7 @@ return test.run_cases(function()
             local receipt_marks: {string}={}
             for index=1,50 do receipt_params[#receipt_params+1]=tostring(index);receipt_marks[#receipt_marks+1]="$" .. tostring(#receipt_params) end
             execute("ANALYZE kickside_automation_receipt")
-            local receipt_lookup="SELECT item_key,map_slot,identity_key,dest_ref_json,dest_version,delivery_key,pass_id FROM kickside_automation_receipt WHERE owner_id=$1 AND source_port=$2 AND item_key IN (" .. table.concat(receipt_marks,",") .. ") ORDER BY item_key,map_slot"
+            local receipt_lookup="SELECT item_key,map_slot,identity_key,dest_ref_json,dest_version,delivery_key,declaration_hash,pass_id FROM kickside_automation_receipt WHERE owner_id=$1 AND source_port=$2 AND item_key IN (" .. table.concat(receipt_marks,",") .. ") ORDER BY item_key,map_slot"
             local receipt_plan,receipt_plan_err=db:query("EXPLAIN " .. (postgres and "(ANALYZE,BUFFERS,FORMAT JSON) " or "QUERY PLAN ") .. receipt_lookup,receipt_params)
             test.is_nil(receipt_plan_err,tostring(receipt_plan_err))
             test.eq(#assert(db:query(receipt_lookup,receipt_params)),50)

@@ -400,6 +400,7 @@ local function run(deps: Map, input: any): (Map?, error?)
         local effect_drive: Map = { automation_id=automation_id,automation_revision=d.command_generation,
             drive_key=drive_key,source_kind=d.source_kind,source_ref=action.source_ref,
             source_port=round.receipt_port,ledger_port=round.source_port,delivery_revision=d.delivery_revision,
+            applied_hash=d.applied_hash,
             fence=round.captured,deadline=work_deadline }
         local keys: {string} = {}
         for _,item in ipairs(items) do keys[#keys+1]=item.delivery_key end

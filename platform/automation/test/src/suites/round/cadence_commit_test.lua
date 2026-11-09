@@ -77,6 +77,15 @@ local function define_tests()
                     test.is_nil(expected_err,tostring(expected_err))
                     test.eq(h.read_drive(env.automation_id,"occurrence").next_run_at,expected)
                     test.is_true(expected<finish,"one overlapping occurrence remains pending")
+                    local seq=h.read_drive(env.automation_id,"occurrence").round_seq
+                    local _,pending_err=env.run(env.automation_id,"occurrence")
+                    test.is_nil(pending_err,tostring(pending_err))
+                    local after=h.read_drive(env.automation_id,"occurrence")
+                    test.eq(after.round_seq,seq+1)
+                    test.is_true(after.next_run_at>finish,"overlapping ticks leave at most one pending occurrence")
+                    local _,idle_err=env.run(env.automation_id,"occurrence")
+                    test.is_nil(idle_err,tostring(idle_err))
+                    test.eq(h.read_drive(env.automation_id,"occurrence").round_seq,after.round_seq,"no catch-up burst")
                 end)
                 drive.utc_now=original
                 if not ok then error(message) end

@@ -60,7 +60,7 @@ local function define_tests()
             h.ensure_log()
             local env=h.setup("round_scale","kickside.automation.round.fixture:snapshot_sync_kind")
             local id=env.automation_id
-            h.new_drive({automation_id=id,drive_key="history",source_kind="collection",
+            h.new_drive({automation_id=id,drive_key="history",source_kind="collection",applied_hash="scale-declaration",
                 applied={title="Snapshot sync",trigger={v=2,source=PORT},sink_port="kickside.automation.round.fixture:store",sink_config={},transform={kind="none"},enabled=true},
                 action={source_ref=PORT,config={items={}},schedule={type="interval",expression="1h"}}})
             local ledger_env=h.setup("scale_pending")

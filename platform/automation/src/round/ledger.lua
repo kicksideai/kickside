@@ -325,7 +325,10 @@ function M.record_tx(tx: any, owner_id: string, source_port: string, outcomes: {
                 proof={refused_attempts=refused + ((o.state ~= "waiting" and refusal(o)) and 1 or 0),
                     effects=(proof and tonumber(proof.effects) or 0) + (refusal(o) and 0 or 1),
                     event=proof and proof.event or nil}
-                if round and history.event(o,existing,false) then
+                if type(o.error) == "table" and o.error.code == "replay_evidence_unavailable" then
+                    -- A refusal without proof cannot create proof for a later replay.
+                    proof={refused_attempts=refused,effects=proof.effects,event=nil}
+                elseif round and history.event(o,existing,false) then
                     proof.event={drive_key=round.drive_key,round_token=round.captured.round_token,round_at=round.now,
                         source_port=source_port,item_key=item.item_key,identity_key=identity}
                 end
@@ -486,8 +489,8 @@ local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boole
     local prepared_guard = [[ AND NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p
         WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key)]]
     local order=orphan and "updated_at" or "state,expires_at"
-    local rows, read_err=tx:query("SELECT owner_id,source_port,item_key,identity_key FROM (SELECT owner_id,source_port,item_key,identity_key FROM " .. M.TABLE
-        .. " WHERE " .. predicate .. " ORDER BY " .. order .. " LIMIT $2) l WHERE 1=1" .. prepared_guard,{cutoff,limit})
+    local rows, read_err=tx:query("SELECT owner_id,source_port,item_key,identity_key FROM " .. M.TABLE
+        .. " l WHERE " .. predicate .. prepared_guard .. " ORDER BY " .. order .. " LIMIT $2",{cutoff,limit})
     if read_err or type(rows) ~= "table" then return nil,internal("ledger prune page read failed",read_err or "missing result") end
     table.sort(rows,function(a: Map,b: Map): boolean
         for _,key in ipairs({"owner_id","source_port","item_key","identity_key"}) do
@@ -515,15 +518,17 @@ end
 function M.retention_deadlines(executor: any,limit: integer): ({Map}?,error?)
     local deadlines: {Map}={}
     for _,state in ipairs({"resolved","dead"}) do
-        local rows,err=executor:query("SELECT MIN(expires_at) AS expires_at FROM (SELECT owner_id,identity_key,expires_at FROM " .. M.TABLE
-            .. " WHERE state='" .. state .. "' AND expires_at IS NOT NULL ORDER BY expires_at LIMIT $1) l"
-            .. " WHERE NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key)",{limit})
+        local rows,err=executor:query("SELECT MIN(expires_at) AS expires_at FROM (SELECT expires_at FROM " .. M.TABLE
+            .. " l WHERE state='" .. state .. "' AND expires_at IS NOT NULL"
+            .. " AND NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key)"
+            .. " ORDER BY expires_at LIMIT $1) eligible",{limit})
         if err then return nil,internal("ledger retention deadline read fails",err) end
         if rows[1] then deadlines[#deadlines+1]=rows[1] end
     end
-    local rows,err=executor:query("SELECT MIN(updated_at) AS updated_at FROM (SELECT owner_id,identity_key,updated_at FROM " .. M.TABLE
-        .. " WHERE state IN ('resolved','dead') AND expires_at IS NULL ORDER BY updated_at LIMIT $1) l"
-        .. " WHERE NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key)",{limit})
+    local rows,err=executor:query("SELECT MIN(updated_at) AS updated_at FROM (SELECT updated_at FROM " .. M.TABLE
+        .. " l WHERE state IN ('resolved','dead') AND expires_at IS NULL"
+        .. " AND NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key)"
+        .. " ORDER BY updated_at LIMIT $1) eligible",{limit})
     if err then return nil,internal("legacy ledger retention deadline read fails",err) end
     if rows[1] then deadlines[#deadlines+1]=rows[1] end
     return deadlines,nil

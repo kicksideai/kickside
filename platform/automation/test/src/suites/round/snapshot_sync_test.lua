@@ -15,6 +15,7 @@ return test.run_cases(function()
             for i=1,count do items[i]={item_key=tostring(i),dedup_key=tostring(i),op="upsert",payload={value=i}} end
             h.new_drive({automation_id=id,drive_key="snapshot",source_kind="collection",
                 applied={title="Snapshot sync",trigger={v=2,source=PORT},sink_port=STORE,sink_config={},transform={kind="none"},enabled=true},
+                applied_hash="snapshot-v1",
                 action={source_ref=PORT,config={},schedule={type="interval",expression="5m"}}})
             local passes={}
             local previous_receipts=""
@@ -75,6 +76,67 @@ return test.run_cases(function()
                 test.eq(#h.query("SELECT item_key FROM kickside_automation_delivery_history WHERE automation_id=$1",{id}),count)
             end
             h.exec("INSERT INTO round_fixture_log (automation_id,drive_key,item_key,attempts,detail_json) VALUES ($1,'snapshot','snapshot_passes',0,$2)",{id,h.encoded(passes)})
+        end)
+
+        test.it("redelivers an unchanged snapshot only when its applied declaration changes",function()
+            local env=h.setup("snapshot_declaration","kickside.automation.round.fixture:snapshot_sync_kind")
+            local id=env.automation_id
+            local items: {Map}={ {item_key="one",dedup_key="one",op="upsert",payload={value=1}} }
+            local function declaration(transform: Map, sink_config: Map, filter: string?): Map
+                local trigger: Map={v=2,source=PORT}
+                if filter then trigger.filter={expr=filter} end
+                return {title="Snapshot declaration",trigger=trigger,sink_port=STORE,sink_config=sink_config,transform=transform,enabled=true}
+            end
+            local current=declaration({kind="none"},{})
+            h.new_drive({automation_id=id,drive_key="snapshot",source_kind="collection",applied=current,applied_hash="snapshot-v1",
+                action={source_ref=PORT,config={},schedule={type="interval",expression="5m"}}})
+            local answer: Map={}
+            local pass=0
+            local function run_as(identity: any,target: string,args: any,opts: any): (any?,any)
+                if target == "kickside.automation:round_acquire" then return {success=true,items=items,next_cursor={},has_more=false},nil end
+                local result,err=env.run_as(identity,target,args,opts)
+                if target == "kickside.automation:round_deliver" and result then answer=result.outcomes end
+                return result,err
+            end
+            local function run(expected_calls: integer, expected_list: string): ()
+                pass=pass+1
+                answer={}
+                local before=#h.query("SELECT id FROM round_fixture_log WHERE drive_key='sink'",{})
+                h.set_drive(id,"snapshot","next_run_at=$1",{h.PAST})
+                local _,err=env.run(id,"snapshot",run_as)
+                test.is_nil(err,tostring(err))
+                test.eq(#h.query("SELECT id FROM round_fixture_log WHERE drive_key='sink'",{})-before,expected_calls,
+                    "sink calls for pass " .. tostring(pass) .. " (" .. expected_list .. ")")
+                for _,name in ipairs({"delivered","skipped","waiting","uncertain","failed"}) do
+                    test.eq(#(answer[name] or {}),name==expected_list and 1 or 0,h.encoded(answer))
+                end
+            end
+            local function apply(next: Map, hash: string): ()
+                current=next
+                h.set_drive(id,"snapshot","applied_json=$1,applied_hash=$2",
+                    {h.encoded({declaration=current,policy=h.drive_policy(nil)}),hash})
+            end
+
+            run(1,"delivered")
+            run(0,"skipped")
+            apply(declaration({kind="expr",expr='{"directive":"remapped"}'},{}),"snapshot-v2-transform")
+            run(1,"delivered")
+            local remapped=h.query("SELECT detail_json FROM round_fixture_log WHERE drive_key='sink' ORDER BY id DESC LIMIT 1",{})[1]
+            test.eq(json.decode(remapped.detail_json).directive,"remapped")
+            run(0,"skipped")
+            apply(declaration({kind="expr",expr='{"directive":"remapped"}'},{mapping="changed"}),"snapshot-v3-sink")
+            run(1,"delivered")
+            run(0,"skipped")
+            apply(declaration({kind="expr",expr='{"directive":"remapped"}'},{mapping="changed"},"false"),"snapshot-v4-excluded")
+            run(0,"skipped")
+            test.eq(answer.skipped[1].reason,"filtered")
+            apply(declaration({kind="expr",expr='{"directive":"remapped"}'},{mapping="changed"},"payload.value > 0"),"snapshot-v5-admitted")
+            run(1,"delivered")
+            run(0,"skipped")
+            local receipt=h.query("SELECT delivery_key,declaration_hash FROM kickside_automation_receipt WHERE owner_id=$1 AND item_key='one'",{id})
+            test.eq(#receipt,1)
+            test.not_nil(receipt[1].delivery_key)
+            test.eq(receipt[1].declaration_hash,"snapshot-v5-admitted")
         end)
     end)
 end)

@@ -53,7 +53,9 @@ Open **Automations** to install an available kind. The kind declares its inputs 
 Delivery history records sink deliveries, the first failure or wait, and the final
 resolved or dead result with its attempt count. Intermediate retries overwrite
 mutable ledger state. A repeated unchanged snapshot writes no history or ledger
-row and makes no sink call once its receipt records the delivered identity.
+row and makes no sink call once its receipt records the delivered identity and
+applied declaration. A changed transform, filter or sink configuration is
+evaluated under the new declaration.
 Receipts retain one current destination mapping per item and slot.
 
 `retention.history` defines the hot evidence window, which defaults to seven
@@ -80,10 +82,11 @@ Another partial index lets existing terminal rows without expiry age out through
 bounded maintenance. No database triggers maintain derived eligibility state.
 Mutable refusal counts and an event reference let replay check one history
 primary key instead of enumerating prior attempts. Missing or aged evidence
-refuses an unsafe replay.
+refuses an unsafe replay. Refusing unavailable proof never renews that proof.
 
 Interval polling schedules the next completed pass after its durable commit.
-Cron and timer schedules preserve one occurrence that becomes due during a round.
+Cron and timer schedules preserve at most one pending occurrence during a round;
+overlapping ticks are skipped without a catch-up burst.
 Idle drives run no rounds between their scheduled pass or a real event.
 
 ## Reference

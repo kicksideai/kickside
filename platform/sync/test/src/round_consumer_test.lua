@@ -142,6 +142,7 @@ local function define_tests(section: string)
             end
             local held: Map = { automation_id = automation_id, drive_key = "main", source_kind = who.source_kind or "collection", source_ref = SOURCE,
                 source_port = SOURCE, ledger_port = SOURCE, delivery_revision = 1,
+                applied_hash = who.applied_hash,
                 fence = { round_token = "round-" .. automation_id, revision = 1, rewind_generation = 0, command_generation = 0,
                     round_until = "2999-01-01T00:00:00Z", job = round_job },
                 operator = { kind = "user", id = who.operator or operator },
@@ -160,10 +161,10 @@ local function define_tests(section: string)
             return t
         end
 
-        local function receipt(key: string, slot: string, dest_id: string, delivered_key: string?): ()
+        local function receipt(key: string, slot: string, dest_id: string, delivered_key: string?, declaration_hash: string?): ()
             exec("INSERT INTO kickside_automation_receipt (owner_id, source_port, item_key, map_slot, identity_key, dest_ref_json,"
-                .. " delivery_key, dest_version, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, 'v1', '2026-01-01T00:00:00Z')",
-                { automation_id, SOURCE, key, slot, identity(key), json.encode({ id = dest_id }), delivered_key or sql.NULL })
+                .. " delivery_key, declaration_hash, dest_version, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'v1', '2026-01-01T00:00:00Z')",
+                { automation_id, SOURCE, key, slot, identity(key), json.encode({ id = dest_id }), delivered_key or sql.NULL, declaration_hash or sql.NULL })
         end
 
         test.before_all(function()
@@ -317,14 +318,75 @@ local function define_tests(section: string)
 
             test.it("skips a snapshot upsert already delivered to every receipt slot", function()
                 local key = "snapshot-repeat"
-                receipt(key, "", "rec:existing", delivery_key(key))
-                local out, err = deliver({ item(key, { directive = "" }) }, declaration("app.fixture:round_record", func_transform(shared)))
+                receipt(key, "", "rec:existing", delivery_key(key), "declaration-current")
+                local out, err = deliver({ item(key, { directive = "" }) }, declaration("app.fixture:round_record", func_transform(shared)),
+                    { applied_hash = "declaration-current" })
                 test.is_nil(err, tostring(err))
                 test.eq(#out.delivered_items, 0, json.encode(out))
                 test.eq(#out.skipped_items, 1, json.encode(out))
                 test.eq(out.skipped_items[1].reason, "already delivered")
                 test.eq(transform_calls(key), 0)
                 test.eq(#writes(identity(key)), 0)
+            end)
+
+            test.it("redelivers a snapshot when its receipt predates the applied declaration", function()
+                local key = "snapshot-reconfigured"
+                receipt(key, "", "rec:existing", delivery_key(key), "declaration-before")
+                local out, err = deliver({ item(key, { directive = "" }) },
+                    declaration("app.fixture:round_record", { kind = "expr", expr = '{"title":"remapped"}' }),
+                    { applied_hash = "declaration-remapped" })
+                test.is_nil(err, tostring(err))
+                test.eq(#out.delivered_items, 1, json.encode(out))
+                test.eq(#out.skipped_items, 0, json.encode(out))
+                local sent = writes(identity(key))
+                test.eq(#sent, 1)
+                test.eq(sent[1].input.title, "remapped")
+            end)
+
+            test.it("uses declaration identity for transform, sink configuration, and filter changes", function()
+                local key = "snapshot-declaration"
+                local stale = delivery_key(key)
+                local function expect_delivery(config: Map, prior_hash: string, current_hash: string): ()
+                    receipt(key, "", "rec:" .. prior_hash, stale, prior_hash)
+                    local out, err = deliver({ item(key, { keep = true, directive = "" }) }, config,
+                        { applied_hash = current_hash })
+                    test.is_nil(err, tostring(err))
+                    test.eq(#out.delivered_items, 1, json.encode(out))
+                    test.eq(#out.skipped_items, 0, json.encode(out))
+                    exec("DELETE FROM kickside_automation_receipt WHERE owner_id=$1 AND source_port=$2 AND item_key=$3",
+                        { automation_id, SOURCE, key })
+                end
+                local function expect_skip(config: Map, hash: string): ()
+                    receipt(key, "", "rec:" .. hash, stale, hash)
+                    local out, err = deliver({ item(key, { keep = true, directive = "" }) }, config, { applied_hash = hash })
+                    test.is_nil(err, tostring(err))
+                    test.eq(#out.delivered_items, 0, json.encode(out))
+                    test.eq(#out.skipped_items, 1, json.encode(out))
+                    test.eq(out.skipped_items[1].reason, "already delivered")
+                    exec("DELETE FROM kickside_automation_receipt WHERE owner_id=$1 AND source_port=$2 AND item_key=$3",
+                        { automation_id, SOURCE, key })
+                end
+
+                local remapped = declaration("app.fixture:round_record", { kind = "expr", expr = '{"title":"remapped"}' })
+                expect_delivery(remapped, "transform-before", "transform-after")
+                expect_skip(remapped, "transform-after")
+
+                local reconfigured_sink = declaration("app.fixture:round_record", RECORD_EXPR)
+                reconfigured_sink.sink_config = { mapping = "updated" }
+                expect_delivery(reconfigured_sink, "sink-before", "sink-after")
+                expect_skip(reconfigured_sink, "sink-after")
+
+                local included = declaration("app.fixture:round_record", RECORD_EXPR, "payload.keep")
+                expect_delivery(included, "filter-before", "filter-included")
+                expect_skip(included, "filter-included")
+                local excluded = declaration("app.fixture:round_record", RECORD_EXPR, "false")
+                receipt(key, "", "rec:filter-included", stale, "filter-included")
+                local out, err = deliver({ item(key, { keep = true, directive = "" }) }, excluded,
+                    { applied_hash = "filter-excluded" })
+                test.is_nil(err, tostring(err))
+                test.eq(#out.delivered_items, 0, json.encode(out))
+                test.eq(#out.skipped_items, 1, json.encode(out))
+                test.eq(out.skipped_items[1].reason, "filtered")
             end)
 
             test.it("delivers for an owner holding more receipts than any former per-owner count", function()

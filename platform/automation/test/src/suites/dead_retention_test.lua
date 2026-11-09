@@ -43,6 +43,52 @@ end
 
 return test.run_cases(function()
     test.describe("dead delivery evidence retention", function()
+        for _,legacy in ipairs({false,true}) do
+            test.it("reclaims eligible tombstones behind prepared output " .. tostring(legacy), function()
+                local db=assert(sql.get("app:db"))
+                local id=owner(db)
+                local expiry=legacy and sql.NULL or "1900-01-01T00:00:00Z"
+                for index=1,5 do
+                    local key="blocked-" .. tostring(index)
+                    execute(db, [[INSERT INTO kickside_trigger_item_ledger
+                        (owner_id,source_port,item_key,identity_key,envelope_json,state,first_failed_at,last_failed_at,created_at,updated_at,expires_at)
+                        VALUES ($1,'source',$2,$2,'{}','dead',$3,$3,$3,$3,$4)]],{id,key,"1900-01-01T00:00:00Z",expiry})
+                    execute(db, [[INSERT INTO kickside_automation_prepared
+                        (automation_id,idempotency_key,payload_hash,prepared_json,created_at)
+                        VALUES ($1,$2,'hash','{}','1900-01-01T00:00:00Z')]],{id,key})
+                end
+                execute(db, [[INSERT INTO kickside_trigger_item_ledger
+                    (owner_id,source_port,item_key,identity_key,envelope_json,state,first_failed_at,last_failed_at,created_at,updated_at,expires_at)
+                    VALUES ($1,'source','eligible','eligible','{}','dead',$2,$2,$2,$2,$3)]],
+                    {id,"1901-01-01T00:00:00Z",legacy and sql.NULL or "1901-01-01T00:00:00Z"})
+                local function deadline(): string?
+                    local deadlines,err=ledger.retention_deadlines(db,2)
+                    test.is_nil(err,tostring(err))
+                    local found: string?=nil
+                    for _,entry in ipairs(deadlines) do
+                        local at=legacy and entry.updated_at or entry.expires_at
+                        if at and (not found or at<found) then found=at end
+                    end
+                    return found
+                end
+                local before=deadline()
+                local tx=assert(db:begin())
+                local removed,err
+                if legacy then removed,err=ledger.prune_orphans_tx(tx,"1950-01-01T00:00:00Z",2)
+                else removed,err=ledger.prune_tx(tx,"1950-01-01T00:00:00Z",2) end
+                test.is_nil(err,tostring(err))
+                tx:commit()
+                local retained=rows(db,id)
+                local after=deadline()
+                execute(db,"DELETE FROM kickside_automation_prepared WHERE automation_id=$1",{id})
+                cleanup(db,id)
+                db:release()
+                test.eq(before,"1901-01-01T00:00:00Z","blocked candidates cannot hide the next eligible deadline")
+                test.eq(removed,1,"blocked candidates cannot starve a later eligible tombstone")
+                test.eq(#retained,5)
+                test.is_true(after==nil or after>"1950-01-01T00:00:00Z","blocked proof never rearms an ineffective maintenance pass")
+            end)
+        end
         test.it("expires failed delivery tombstones after their dedupe window", function()
             local db = assert(sql.get("app:db"))
             local id = owner(db)

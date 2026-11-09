@@ -114,7 +114,7 @@ function M.receipts(owner_id: string, source_port: string, item_keys: { string }
             marks[#marks + 1] = "$" .. tostring(#params)
         end
         local rows, err = with_db(function(db: any): (any?, any)
-            return db:query("SELECT item_key, map_slot, identity_key, dest_ref_json, dest_version, delivery_key, pass_id FROM kickside_automation_receipt"
+            return db:query("SELECT item_key, map_slot, identity_key, dest_ref_json, dest_version, delivery_key, declaration_hash, pass_id FROM kickside_automation_receipt"
                 .. " WHERE owner_id = $1 AND source_port = $2 AND item_key IN (" .. table.concat(marks, ", ") .. ")"
                 .. " ORDER BY item_key, map_slot", params)
         end)
@@ -129,7 +129,8 @@ function M.receipts(owner_id: string, source_port: string, item_keys: { string }
             local key = tostring(row.item_key)
             local slots = out[key] or {}
             slots[#slots + 1] = { map_slot = tostring(row.map_slot or ""), identity_key = row.identity_key,
-                dest_ref = dest_ref, dest_version = row.dest_version, delivery_key = row.delivery_key, pass_id = row.pass_id }
+                dest_ref = dest_ref, dest_version = row.dest_version, delivery_key = row.delivery_key,
+                declaration_hash = row.declaration_hash, pass_id = row.pass_id }
             out[key] = slots
         end
     end

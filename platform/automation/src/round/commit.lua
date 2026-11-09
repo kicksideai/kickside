@@ -92,7 +92,7 @@ end
 -- deletes the items' prepared output, which the delivery settled (§5.4), in
 -- the §14 round lock order: receipts, then prepared. Each is a bounded batch
 -- statement per CHUNK rows, never a statement per destination.
-local function record_receipts_tx(tx: any, round: Map, delivered: { Map }, pass_id: any, deliveries: {Map}?): error?
+local function record_receipts_tx(tx: any, round: Map, delivered: { Map }, pass_id: any, deliveries: {Map}?, declaration_hash: any): error?
     local completed: Map={}
     for _,outcome in ipairs(deliveries or {}) do completed[outcome.key]=true end
     local upserts: { { any } } = {}
@@ -104,6 +104,7 @@ local function record_receipts_tx(tx: any, round: Map, delivered: { Map }, pass_
     -- One round writes each (item_key, map_slot) at most once; two delivery
     -- identities of one item naming the same slot have no defined order.
     local seen_slots: { [string]: boolean } = {}
+    local applied_hash = type(declaration_hash) == "string" and declaration_hash ~= "" and declaration_hash or sql.NULL
     local function add_prepared(key: any): ()
         if type(key) == "string" and key ~= "" and not seen_prepared[key] then
             seen_prepared[key] = true
@@ -123,20 +124,25 @@ local function record_receipts_tx(tx: any, round: Map, delivered: { Map }, pass_
                 if r.removed == true then
                     removals[#removals + 1] = { item.item_key, r.map_slot or "" }
                 elseif r.dest_ref ~= nil and type(r.identity_key) == "string" then
+                    local is_completed = completed[item.delivery_key] == true
+                    local delivery_key = is_completed and item.delivery_key or r.delivery_key
+                    local receipt_hash = is_completed and applied_hash
+                        or (type(r.declaration_hash) == "string" and r.declaration_hash ~= "" and r.declaration_hash or sql.NULL)
                     local dest_ref, enc_err = json.encode(r.dest_ref)
                     if enc_err then return internal("failed to encode a destination ref", enc_err) end
                     local stored_row, row_err = json.encode({ owner_id = round.automation_id,
                         source_port = round.receipt_port, item_key = item.item_key,
                         map_slot = r.map_slot or "", identity_key = r.identity_key,
                         dest_ref_json = dest_ref, dest_version = r.dest_version,
-                        delivery_key = completed[item.delivery_key] and item.delivery_key or r.delivery_key,
+                        delivery_key = delivery_key,
+                        declaration_hash = receipt_hash,
                         updated_at = round.now, pass_id = type(pass_id) == "string" and pass_id or nil })
                     if row_err then return internal("failed to encode a receipt row", row_err) end
                     local row_bound = row_limit.check(stored_row, "destination_receipt", round.automation_id)
                     if row_bound then return row_bound end
                     upserts[#upserts + 1] = { item.item_key, r.map_slot or "", r.identity_key, dest_ref,
                         r.dest_version == nil and sql.NULL or r.dest_version,
-                        (completed[item.delivery_key] and item.delivery_key or r.delivery_key) or sql.NULL }
+                        delivery_key or sql.NULL, receipt_hash }
                 end
                 if not seen_receipt[item.item_key] then
                     seen_receipt[item.item_key] = true
@@ -180,6 +186,7 @@ local function record_receipts_tx(tx: any, round: Map, delivered: { Map }, pass_
         .. " OR " .. receipt .. "dest_ref_json" .. differs .. "excluded.dest_ref_json"
         .. " OR " .. receipt .. "dest_version" .. differs .. "excluded.dest_version"
         .. " OR " .. receipt .. "delivery_key" .. differs .. "excluded.delivery_key"
+        .. " OR " .. receipt .. "declaration_hash" .. differs .. "excluded.declaration_hash"
         .. " OR (excluded.pass_id IS NOT NULL AND " .. receipt .. "pass_id" .. differs .. "excluded.pass_id))"
     -- SQLite binds placeholders in order of appearance, so every row names
     -- its own consecutive placeholders.
@@ -189,7 +196,7 @@ local function record_receipts_tx(tx: any, round: Map, delivered: { Map }, pass_
         for index = first, math.min(#upserts, first + CHUNK - 1) do
             local row = upserts[index]
             local values: { any } = { round.automation_id, round.receipt_port, row[1], row[2], row[3], row[4], row[5],
-                round.now, pass_id, row[6] }
+                round.now, pass_id, row[6], row[7] }
             local marks: { string } = {}
             for _, value in ipairs(values) do
                 params[#params + 1] = value
@@ -198,11 +205,12 @@ local function record_receipts_tx(tx: any, round: Map, delivered: { Map }, pass_
             rows[#rows + 1] = "(" .. table.concat(marks, ", ") .. ")"
         end
         local inserted, err = tx:execute("INSERT INTO kickside_automation_receipt (owner_id, source_port, item_key, map_slot,"
-            .. " identity_key, dest_ref_json, dest_version, updated_at, pass_id, delivery_key)"
+            .. " identity_key, dest_ref_json, dest_version, updated_at, pass_id, delivery_key, declaration_hash)"
             .. " SELECT * FROM (VALUES " .. table.concat(rows, ", ")
             .. ") AS input WHERE true ORDER BY 1, 2, 3, 4"
             .. " ON CONFLICT (owner_id, source_port, item_key, map_slot) DO UPDATE SET identity_key = excluded.identity_key,"
             .. " dest_ref_json = excluded.dest_ref_json, dest_version = excluded.dest_version, delivery_key = excluded.delivery_key,"
+            .. " declaration_hash = excluded.declaration_hash,"
             .. " updated_at = excluded.updated_at, pass_id = COALESCE(excluded.pass_id, " .. receipt .. "pass_id)"
             .. " WHERE " .. changed, params)
         if err or not inserted or tonumber(inserted.rows_affected) == nil then
@@ -295,7 +303,7 @@ function M.commit_tx(tx: any, round: Map, result: Map): (Map?, error?)
     if ledger_err then return nil, ledger_err end
     local history_err=history.record_tx(tx,round,result.outcomes or {},result.deliveries,prior)
     if history_err then return nil,history_err end
-    local receipt_err = record_receipts_tx(tx, round, result.receipts or {}, pass_id, result.deliveries)
+    local receipt_err = record_receipts_tx(tx, round, result.receipts or {}, pass_id, result.deliveries, d.applied_hash)
     if receipt_err then return nil, receipt_err end
     local fields: Map = {
         round_token = sql.NULL, round_until = sql.NULL, admission_json=admission_json,

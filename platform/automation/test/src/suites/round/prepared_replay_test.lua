@@ -298,6 +298,30 @@ local function define_tests()
             test.eq(transforms(id,"aged-output"),1,"cached prepared output remains available")
         end)
 
+        test.it("never renews unavailable replay proof through repeated refusals",function()
+            for _,missing in ipairs({false,true}) do
+                local key=missing and "missing-proof" or "aged-proof"
+                local items={{key=key,directive="invalid"}}
+                local id=install(items)
+                run(id)
+                local stored=h.query("SELECT envelope_json FROM kickside_trigger_item_ledger WHERE owner_id=$1 AND item_key=$2",{id,key})[1]
+                local envelope=json.decode(stored.envelope_json)
+                if missing then envelope.delivery_evidence=nil
+                else envelope.delivery_evidence.event.round_at="2000-01-01T00:00:00Z" end
+                h.exec("UPDATE kickside_trigger_item_ledger SET envelope_json=$1 WHERE owner_id=$2 AND item_key=$3",{json.encode(envelope),id,key})
+                reconfigure(id,items,{directive="deliver"})
+                for attempt=1,2 do
+                    test.eq(replay(id,key .. "-replay-" .. tostring(attempt)).outcome.replayed,1)
+                    run(id)
+                    local refused=h.query("SELECT state,error_code FROM kickside_trigger_item_ledger WHERE owner_id=$1 AND item_key=$2",{id,key})[1]
+                    test.eq(refused.state,"dead")
+                    test.eq(refused.error_code,"replay_evidence_unavailable")
+                    test.eq(transforms(id,key),1,"refusal cannot authorize a later recomputation")
+                    test.eq(#sink_writes(id,key),1,"refusal cannot authorize a later effect")
+                end
+            end
+        end)
+
         test.it("refuses a reconfigured replay once the delivery history no longer covers every attempt", function()
             local items = { { key = "pruned", directive = "invalid" } }
             local id = install(items)

@@ -69,10 +69,11 @@ end
 -- A receipt records the delivery identity only after the complete item
 -- delivery commits. Every current slot must agree before a repeated snapshot
 -- can bypass its transform and sink.
-local function delivered(slots: { Map }, delivery_key: any): boolean
-    if #slots == 0 or type(delivery_key) ~= "string" or delivery_key == "" then return false end
+local function delivered(slots: { Map }, delivery_key: any, declaration_hash: any): boolean
+    if #slots == 0 or type(delivery_key) ~= "string" or delivery_key == ""
+        or type(declaration_hash) ~= "string" or declaration_hash == "" then return false end
     for _, slot in ipairs(slots) do
-        if slot.delivery_key ~= delivery_key then return false end
+        if slot.delivery_key ~= delivery_key or slot.declaration_hash ~= declaration_hash then return false end
     end
     return true
 end
@@ -93,7 +94,7 @@ local function deliver_item(plan: Map, d: Map, item: Map, port: string, known: {
             message = "source item op must be upsert or delete, got " .. tostring(item.op) }) }
     end
     local slots = known
-    if item.op == "upsert" and delivered(slots, key) then
+    if item.op == "upsert" and delivered(slots, key, d.applied_hash) then
         return "skipped_items", { key = key, reason = "already delivered", receipts = slots }
     end
     local keys = round_write.keys(d, item, nil)
