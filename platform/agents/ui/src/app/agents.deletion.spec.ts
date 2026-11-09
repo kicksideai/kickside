@@ -6,9 +6,9 @@ import { api, host, loadByTagName, on } from '@wippy-fe/proxy'
 import Agents from './agents.vue'
 
 vi.mock('@wippy-fe/proxy', () => ({
-  api: {get: vi.fn(), delete: vi.fn()},
+  api: { get: vi.fn(), delete: vi.fn() },
   on: vi.fn(),
-  host: {confirm: vi.fn(), handleError: vi.fn(), toast: vi.fn()},
+  host: { confirm: vi.fn(), handleError: vi.fn(), toast: vi.fn() },
   loadByTagName: vi.fn(),
 }))
 vi.mock('@wippy-fe/webcomponent-vue', () => ({
