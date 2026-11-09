@@ -255,6 +255,7 @@ local function define_tests()
             h.exec("ANALYZE kickside_automation_prepared")
             local dead_drain={}
             local candidate_plans={}
+            local prepared_plans={}
             local deadline_plans={}
             local opened=h.db()
             local _,deadline_err=ledger.retention_deadlines({query=function(_,statement,params)
@@ -275,7 +276,14 @@ local function define_tests()
                             candidate_plans[#candidate_plans+1]={sql=statement,params=params,plan=plan}
                         end
                         return tx:query(statement,params)
-                    end,execute=function(_,statement,params) return tx:execute(statement,params) end}
+                    end,execute=function(_,statement,params)
+                        if #prepared_plans==0 and statement:find("DELETE FROM kickside_automation_prepared",1,true) then
+                            local plan,plan_err=tx:query("EXPLAIN " .. (postgres and "(FORMAT JSON) " or "QUERY PLAN ") .. statement,params)
+                            if plan_err then return nil,plan_err end
+                            prepared_plans[#prepared_plans+1]={sql=statement,params=params,plan=plan}
+                        end
+                        return tx:execute(statement,params)
+                    end}
                     if legacy then return ledger.prune_orphans_tx(executor,NOW,size) end
                     return ledger.prune_tx(executor,NOW,size)
                 end)
@@ -294,8 +302,12 @@ local function define_tests()
                     test.is_false(encoded:find("TEMP B-TREE",1,true)~=nil,"no unexpired population is sorted")
                 end
             end
+            test.eq(#prepared_plans,1)
+            local prepared_index=postgres and "kickside_automation_prepared_pkey" or "sqlite_autoindex_kickside_automation_prepared_1"
+            test.is_true(h.encoded(prepared_plans[1].plan):find(prepared_index,1,true)~=nil,
+                "prepared cleanup uses bounded primary-key probes")
             local dead_proof={prepared_items=100000,total_ledger_items=TOTAL,remaining_prepared=0,
-                candidate_plans=candidate_plans,deadline_plans=deadline_plans,batches=dead_drain}
+                candidate_plans=candidate_plans,prepared_plans=prepared_plans,deadline_plans=deadline_plans,batches=dead_drain}
             local violations: {string}={}
             local last=samples[#samples]
             if postgres then

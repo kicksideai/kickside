@@ -91,6 +91,33 @@ return test.run_cases(function()
                 test.eq(after,"1900-01-01T00:00:00Z","maintenance remains due until the backlog drains")
             end)
         end
+        test.it("deletes a prepared-output batch with one bounded statement",function()
+            local db=assert(sql.get("app:db"))
+            local id=owner(db)
+            execute(db,[[WITH RECURSIVE n(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM n WHERE x<100)
+                INSERT INTO kickside_trigger_item_ledger
+                (owner_id,source_port,item_key,identity_key,envelope_json,state,first_failed_at,last_failed_at,created_at,updated_at,expires_at)
+                SELECT $1,'source',CAST(x AS TEXT),CAST(x AS TEXT),'{}','dead',$2,$2,$2,$2,$2 FROM n]],
+                {id,"1800-01-01T00:00:00Z"})
+            execute(db,[[INSERT INTO kickside_automation_prepared
+                (automation_id,idempotency_key,payload_hash,prepared_json,created_at)
+                SELECT owner_id,identity_key,'hash','{}',updated_at FROM kickside_trigger_item_ledger WHERE owner_id=$1]],{id})
+            local tx=assert(db:begin())
+            local statements=0
+            local executor={query=function(_,statement,params) return tx:query(statement,params) end,
+                execute=function(_,statement,params)
+                    if statement:find("DELETE FROM kickside_automation_prepared",1,true) then statements=statements+1 end
+                    return tx:execute(statement,params)
+                end}
+            local count,err=ledger.prune_tx(executor,"1850-01-01T00:00:00Z",100)
+            if err then tx:rollback() else tx:commit() end
+            test.is_nil(err,tostring(err))
+            test.eq(count,100)
+            test.eq(#rows(db,id),0)
+            test.eq(#assert(db:query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id})),0)
+            cleanup(db,id);db:release()
+            test.eq(statements,1,"prepared cleanup sends a bounded batch instead of one request per item")
+        end)
         test.it("rolls back both dead evidence deletes if prepared cleanup fails",function()
             local db=assert(sql.get("app:db"))
             local id=owner(db)

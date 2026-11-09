@@ -499,6 +499,15 @@ local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boole
         return false
     end)
     local count=0
+    local prepared: {Map}={}
+    local seen: Map={}
+    local function reclaim(owner: string,key: string): ()
+        if not seen[owner] then seen[owner]={} end
+        if not seen[owner][key] then
+            seen[owner][key]=true
+            prepared[#prepared+1]={owner=owner,key=key}
+        end
+    end
     local orphan_guard=orphan and " AND expires_at IS NULL" or ""
     local cutoff_field = orphan and "updated_at" or "expires_at"
     local states = "state IN ('resolved','dead')"
@@ -519,15 +528,29 @@ local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boole
                     if decode_err then return nil,internal("dead prepared identity decode failed",decode_err) end
                     if evidence.prepared_key then prepared_key=evidence.prepared_key end
                 end
-                -- DELETE RETURNING locks and rechecks the tombstone before its output.
-                -- Both deletes commit together, so a crash cannot orphan either half.
-                local _,prepared_err=tx:execute("DELETE FROM kickside_automation_prepared"
-                    .. " WHERE automation_id=$1 AND idempotency_key IN ($2,$3)",
-                    {row.owner_id,row.identity_key,prepared_key})
-                if prepared_err then return nil,internal("dead prepared output prune failed",prepared_err) end
+                reclaim(row.owner_id,row.identity_key)
+                reclaim(row.owner_id,prepared_key)
             end
             count=count+1
         end
+    end
+    -- Ledger deletes lock and recheck state before their prepared output.
+    -- The transaction commits both halves together, including original replay keys.
+    table.sort(prepared,function(a: Map,b: Map): boolean
+        if a.owner ~= b.owner then return a.owner < b.owner end
+        return a.key < b.key
+    end)
+    for first=1,#prepared,100 do
+        local params: {any}={}
+        local values: {string}={}
+        for index=first,math.min(#prepared,first+99) do
+            params[#params+1]=prepared[index].owner
+            params[#params+1]=prepared[index].key
+            values[#values+1]="($" .. tostring(#params-1) .. ",$" .. tostring(#params) .. ")"
+        end
+        local _,prepared_err=tx:execute("DELETE FROM kickside_automation_prepared"
+            .. " WHERE (automation_id,idempotency_key) IN (VALUES " .. table.concat(values,",") .. ")",params)
+        if prepared_err then return nil,internal("dead prepared output prune failed",prepared_err) end
     end
     return count, nil
 end
