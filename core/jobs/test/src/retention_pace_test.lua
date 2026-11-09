@@ -7,6 +7,7 @@ local config = require("config")
 local retention = require("retention")
 local schedule = require("retention_schedule")
 local job_fixture = require("job_fixture")
+local heartbeat = require("worker_heartbeat")
 local retention_order_migration = require("retention_order_migration")
 
 local function required(value: any, err: error?): any
@@ -254,6 +255,40 @@ local function define_tests()
             db:release()
         end)
 
+        test.it("reclaims stale worker pulses in the worker prune transaction", function()
+            local db = open_queue()
+            required(db:execute([[INSERT INTO kickside_job_worker(id,registry_version,last_seen_at)
+                VALUES ('retired','v1','2000-01-01T00:00:00Z')]]))
+            required(db:execute([[INSERT INTO kickside_job_worker_pulse(worker_id,registry_version,last_seen_at)
+                VALUES ('retired','v1','2000-01-01T00:00:00Z')]]))
+            local probe = {
+                type = function() return db:type() end,
+                query = function(_, statement, params) return db:query(statement, params) end,
+                begin = function()
+                    local tx = required(db:begin())
+                    return {
+                        query = function(_, statement, params) return tx:query(statement, params) end,
+                        execute = function(_, statement, params)
+                            if string.find(statement, "DELETE FROM kickside_job_worker WHERE", 1, true) then
+                                return nil, errors.new("worker deletion refused")
+                            end
+                            return tx:execute(statement, params)
+                        end,
+                        rollback = function() return tx:rollback() end,
+                    }, nil
+                end,
+            }
+            local removed, err = retention.prune_workers(probe, "2001-01-01T00:00:00Z", 1)
+            test.is_nil(removed)
+            test.not_nil(err)
+            local kept = required(db:query("SELECT worker_id FROM kickside_job_worker_pulse WHERE worker_id='retired'"))
+            test.eq(#kept, 1, "a failed worker deletion rolls its pulse deletion back")
+            test.eq(required(retention.prune_workers(db, "2001-01-01T00:00:00Z", 1)), 1)
+            local rows = required(db:query("SELECT worker_id FROM kickside_job_worker_pulse WHERE worker_id='retired'"))
+            test.eq(#rows, 0, "worker removal also reclaims its pulse")
+            db:release()
+        end)
+
         test.it("drains stale heartbeat pulses and preserves pulses inside the window", function()
             local db = open_queue()
             local total = required(config.policy()).retention_batch * 2 + 1
@@ -273,6 +308,18 @@ local function define_tests()
             test.eq(rows[1].worker_id, "current")
             rows = required(db:query("SELECT id FROM kickside_job_worker WHERE id='current'"))
             test.eq(#rows, 1, "a current pulse preserves a long-lived worker")
+            db:release()
+        end)
+
+        test.it("bounds a live worker pulse history to one current row", function()
+            local db = open_queue()
+            local dbtype = tostring(db:type())
+            local worker_id = uuid.v7()
+            test.is_nil(heartbeat.mark(db, dbtype, worker_id, "v1"))
+            for _ = 1, 20 do test.is_nil(heartbeat.pulse(db, dbtype, worker_id, "v1")) end
+            drain(db, time.now())
+            local rows = required(db:query("SELECT COUNT(*) AS n FROM kickside_job_worker_pulse WHERE worker_id=$1", {worker_id}))
+            test.eq(tonumber(rows[1].n), 1)
             db:release()
         end)
 

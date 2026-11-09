@@ -142,24 +142,61 @@ end
 -- Worker identities are process-local; an absent heartbeat older than the
 -- default jobs window cannot resume. The existing last_seen_at index bounds
 -- candidate selection even after many process restarts.
-local function prune_heartbeats(db: any, cutoff: string, limit: integer?,
-        table_name: string, key: string, eligibility: string): (integer?, error?)
+local function prune_worker_pulses(db: any, cutoff: string, limit: integer?): (integer?, error?)
     local policy, policy_err = cfg.policy()
     if policy_err or not policy then return nil, policy_err end
     local batch = math.min((policy :: any).retention_batch,
         math.max(1, math.floor(tonumber(limit) or (policy :: any).retention_batch)))
-    local predicate = "last_seen_at < $1" .. eligibility
-    local result, err = db:execute("WITH expired AS (SELECT " .. key .. " FROM " .. table_name
-        .. " WHERE " .. predicate .. " ORDER BY last_seen_at LIMIT $2) DELETE FROM " .. table_name
-        .. " WHERE " .. key .. " IN (SELECT " .. key .. " FROM expired) AND " .. predicate, { cutoff, batch })
+    local result, err = db:execute([[WITH expired AS (
+        SELECT worker_id FROM kickside_job_worker_pulse WHERE last_seen_at < $1
+        ORDER BY last_seen_at LIMIT $2
+    ) DELETE FROM kickside_job_worker_pulse WHERE worker_id IN (SELECT worker_id FROM expired)
+      AND last_seen_at < $1]], {cutoff, batch})
     if err then return nil, errors.wrap(err, "stale worker heartbeats") end
     return affected(result, "stale worker heartbeats", batch)
 end
 
 function M.prune_workers(db: any, cutoff: string, limit: integer?): (integer?, error?)
-    return prune_heartbeats(db, cutoff, limit, "kickside_job_worker", "id",
-        " AND NOT EXISTS (SELECT 1 FROM kickside_job_worker_pulse p"
-            .. " WHERE p.worker_id=kickside_job_worker.id AND p.last_seen_at >= $1)")
+    local policy, policy_err = cfg.policy()
+    if policy_err or not policy then return nil, policy_err end
+    local batch = math.min((policy :: any).retention_batch,
+        math.max(1, math.floor(tonumber(limit) or (policy :: any).retention_batch)))
+    local dbtype, type_err = db:type()
+    if type_err then return nil, errors.wrap(type_err, "stale worker dialect") end
+    local eligibility = "last_seen_at < $1 AND NOT EXISTS (SELECT 1 FROM kickside_job_worker_pulse p"
+        .. " WHERE p.worker_id=kickside_job_worker.id AND p.last_seen_at >= $1)"
+    local rows, read_err = db:query("SELECT id FROM kickside_job_worker WHERE " .. eligibility
+        .. " ORDER BY last_seen_at LIMIT $2", {cutoff, batch})
+    if read_err then return nil, errors.wrap(read_err, "stale worker selection") end
+    if type(rows) ~= "table" then return nil, response_error("candidates.rows") end
+    if #rows == 0 then return 0, nil end
+    local tx, begin_err = sql_boundary.begin(db, "stale worker prune begin", "transaction", response_error)
+    if begin_err then return nil, begin_err end
+    if not tx then return nil, response_error("transaction") end
+    local args: {any} = {cutoff}
+    local worker_ids: {string} = {}
+    for _, row in ipairs(rows) do
+        args[#args + 1] = row.id
+        worker_ids[#worker_ids + 1] = row.id
+    end
+    local lock_err = prelock_ids(tx, tostring(dbtype), "kickside_job_worker", worker_ids)
+    if lock_err then return nil, sql_boundary.rollback(tx, lock_err, "retention rollback failed") end
+    -- Registration locks worker then pulse. Recheck pulse age under its
+    -- write lock so a heartbeat that renews after selection stays live.
+    local ids = " IN (" .. placeholders(2, #rows) .. ")"
+    local pulses, pulse_err = tx:execute("DELETE FROM kickside_job_worker_pulse WHERE last_seen_at < $1 AND worker_id" .. ids, args)
+    if pulse_err then return nil, sql_boundary.rollback(tx,
+        errors.wrap(pulse_err, "stale worker pulse delete"), "retention rollback failed") end
+    local _, proof_err = affected(pulses, "stale worker pulse delete", batch)
+    if proof_err then return nil, sql_boundary.rollback(tx, proof_err, "retention rollback failed") end
+    local workers, worker_err = tx:execute("DELETE FROM kickside_job_worker WHERE " .. eligibility .. " AND id" .. ids, args)
+    if worker_err then return nil, sql_boundary.rollback(tx,
+        errors.wrap(worker_err, "stale worker delete"), "retention rollback failed") end
+    local total, count_err = affected(workers, "stale worker delete", batch)
+    if count_err then return nil, sql_boundary.rollback(tx, count_err, "retention rollback failed") end
+    local _, commit_err = tx:commit()
+    if commit_err then return nil, errors.wrap(commit_err, "stale worker prune commit") end
+    return total, nil
 end
 
 -- A wake row has no deliverable demand after its last pending/running
@@ -268,7 +305,7 @@ function M.sweep(db: any, dbtype: string): (table?, error?)
     if jobs_err then return nil, jobs_err end
     local workers, workers_err = M.prune_workers(db, job_cutoff, batch)
     if workers_err then return nil, workers_err end
-    local pulses, pulses_err = prune_heartbeats(db, job_cutoff, batch, "kickside_job_worker_pulse", "worker_id", "")
+    local pulses, pulses_err = prune_worker_pulses(db, job_cutoff, batch)
     if pulses_err then return nil, pulses_err end
     local wake_rows, wake_err = M.prune_wake_fanout(db, batch)
     if wake_err then return nil, wake_err end

@@ -4171,6 +4171,7 @@ entries:
       retention: kickside.core.jobs.persist:retention
       retention_schedule: kickside.core.jobs.service:retention_schedule
       retention_order_migration: app:retention_order_migration
+      worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
       job_fixture: app:job_fixture
 
   - name: private_queue_retention_pace
