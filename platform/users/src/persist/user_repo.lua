@@ -226,15 +226,14 @@ function user_repo.get_in(db, identifier)
     return user, nil
 end
 
-function user_repo.list(options)
+function user_repo.list(options, executor)
     options = options or {}
     local limit = options.limit or 50
     local offset = options.offset or 0
 
-    local db, err = get_db()
-    if err then
-        return nil, err
-    end
+    local db, err = executor, nil
+    if not db then db, err = get_db() end
+    if err then return nil, err end
 
     local query = sql.builder.select("user_id", "email", "full_name", "status", "created_at", "updated_at", support.BOT_ACCOUNT_PREDICATE .. " AS bot_account")
         :from("app_users")
@@ -247,10 +246,9 @@ function user_repo.list(options)
     end
     if options.bot_accounts == true then query = query:where(support.BOT_ACCOUNT_PREDICATE) end
 
-    local executor = query:run_with(db)
-    local users, err = executor:query()
+    local users, err = query:run_with(db):query()
 
-    db:release()
+    if not executor then db:release() end
 
     if err then
         return nil, consts.ERROR.DB_OPERATION_FAILED .. ": " .. err

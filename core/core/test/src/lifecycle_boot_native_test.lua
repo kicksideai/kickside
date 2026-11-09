@@ -22,10 +22,16 @@ local function invoke(): error
     return result
 end
 local function counters(stage: string): ()
+    test.eq(fixture.calls.options, 1)
+    if stage == "options" then
+        for _, step in ipairs({"events", "listen", "register", "migrations", "actor", "scope", "provision", "converge"}) do
+            test.is_nil(fixture.calls[step], "an options refusal precedes " .. step)
+        end
+        return
+    end
     test.eq(fixture.calls.actor, 1); test.eq(fixture.calls.scope, 1)
     test.eq(fixture.calls.provision or 0, stage ~= "scope" and 1 or 0)
-    test.eq(fixture.calls.converge or 0, (stage == "converge" or stage == "options") and 1 or 0)
-    test.eq(fixture.calls.options or 0, 1)
+    test.eq(fixture.calls.converge or 0, stage == "converge" and 1 or 0)
     test.eq(fixture.calls.events, 1); test.eq(fixture.calls.listen, 1); test.eq(fixture.calls.register, 1); test.eq(fixture.calls.migrations, 1)
 end
 return {run = test.run_cases(function()
