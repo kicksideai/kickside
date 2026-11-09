@@ -49,7 +49,7 @@ it('clears a failed list read once a finished deletion is read back', async () =
   vi.mocked(api.delete).mockResolvedValue({ data: { success: true, in_progress: true, job_id: 'job' } } as never)
   vi.mocked(loadByTagName).mockResolvedValue(undefined as never)
 
-  wrapper = mount(Automations, { attachTo: document.body, global: { plugins: [PrimeVuePlugin], stubs: { WcMount: true } } })
+  wrapper = mount(Automations, { attachTo: document.body, global: { plugins: [PrimeVuePlugin], stubs: { WcMount: true, teleport: false } } })
   await flushPromises()
   expect(wrapper.findAll('.kx-row')).toHaveLength(1)
 
@@ -91,7 +91,7 @@ it('keeps the latest list read when an earlier read fails after it', async () =>
   vi.mocked(api.delete).mockResolvedValue({ data: { success: true, in_progress: true, job_id: 'job' } } as never)
   vi.mocked(loadByTagName).mockResolvedValue(undefined as never)
 
-  wrapper = mount(Automations, { attachTo: document.body, global: { plugins: [PrimeVuePlugin], stubs: { WcMount: true } } })
+  wrapper = mount(Automations, { attachTo: document.body, global: { plugins: [PrimeVuePlugin], stubs: { WcMount: true, teleport: false } } })
   await flushPromises()
   expect(wrapper.findAll('.kx-row')).toHaveLength(1)
 
@@ -135,7 +135,7 @@ it('refreshes after one deletion finishes without reading another component duri
     return { data: { success: false, error: 'Component not found or access denied' } } as never
   })
   vi.mocked(loadByTagName).mockResolvedValue(undefined as never)
-  wrapper = mount(Automations, { attachTo: document.body, global: { plugins: [PrimeVuePlugin], stubs: { WcMount: true } } })
+  wrapper = mount(Automations, { attachTo: document.body, global: { plugins: [PrimeVuePlugin], stubs: { WcMount: true, teleport: false } } })
   await flushPromises()
   const receive = vi.mocked(on).mock.calls.find(([topic]) => topic === '@message')?.[1] as (message: unknown) => void
   expect(receive).toBeTypeOf('function')

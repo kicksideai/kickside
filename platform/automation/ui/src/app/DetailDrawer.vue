@@ -33,11 +33,10 @@ const emit = defineEmits<{
   (e: 'changed'): void
 }>()
 
-type Tab = 'overview' | 'state' | 'config' | 'activity'
+type Tab = 'overview' | 'config' | 'activity'
 const tab = ref<Tab>('overview')
 const TABS: Array<{ id: Tab; label: string; icon: string }> = [
   { id: 'overview', label: 'Overview', icon: 'tabler:layout-dashboard' },
-  { id: 'state', label: 'State', icon: 'tabler:chart-dots' },
   { id: 'config', label: 'Config', icon: 'tabler:settings' },
   { id: 'activity', label: 'Activity', icon: 'tabler:history' },
 ]
@@ -86,12 +85,12 @@ interface OverviewFact { label: string; value: string }
 const overviewFacts = computed<OverviewFact[]>(() => {
   const s = state.value
   const facts: OverviewFact[] = []
-  facts.push({ label: 'Status', value: pill.value.label })
-  if (!props.automation.availability) facts.push({ label: 'Enabled', value: paused.value ? 'Paused' : 'Yes' })
   if (when.value) facts.push({ label: 'When', value: when.value })
-  if (s?.last_run_at) facts.push({ label: 'Last run', value: relativeTime(s.last_run_at, { future: true }) })
-  if (s?.next_run_at) facts.push({ label: 'Next run', value: relativeTime(s.next_run_at, { future: true }) })
-  for (const f of driveFacts(drives.value)) {
+  const runtimeFacts = driveFacts(drives.value)
+  if (s?.next_run_at && !runtimeFacts.some(f => f.label === 'Next run')) {
+    facts.push({ label: 'Next run', value: relativeTime(s.next_run_at, { future: true }) })
+  }
+  for (const f of runtimeFacts) {
     facts.push({ label: f.label, value: f.time ? relativeTime(f.value, { future: true }) : f.value })
   }
   return facts
@@ -217,17 +216,6 @@ watch(() => props.automation.id, () => { tab.value = 'overview' })
               <span class="kx-metric-k">{{ m.label }}</span>
               <span class="kx-metric-v" :title="m.title">{{ m.value }}</span>
             </span>
-          </div>
-        </div>
-      </section>
-
-      <!-- State -->
-      <section v-else-if="tab === 'state'" class="kx-dsec">
-        <div v-if="!stateMetrics.length" class="kx-dnote">This automation reports no additional state.</div>
-        <div v-else class="kx-dgrid">
-          <div v-for="m in stateMetrics" :key="m.label" class="kx-dfact">
-            <span class="kx-dfact-k">{{ m.label }}</span>
-            <strong class="kx-dfact-v" :title="m.title">{{ m.value }}</strong>
           </div>
         </div>
       </section>

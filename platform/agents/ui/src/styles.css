@@ -382,7 +382,6 @@ select.kx-input { appearance: none; padding-right: 28px; cursor: pointer; }
 .kx-trait-ico svg { width: var(--kx-picker-option-icon-size); height: var(--kx-picker-option-icon-size); }
 .kx-trait-text { display: flex; flex-direction: column; gap: var(--kx-picker-option-stack-gap); min-width: 0; flex: 1; }
 .kx-trait-name { font-size: var(--kx-picker-option-title-size); font-weight: var(--kx-picker-option-title-weight); color: var(--p-text-color); }
-.kx-trait-desc { font-size: var(--kx-picker-option-subtitle-size); line-height: var(--kx-picker-option-subtitle-line-height); color: var(--p-text-muted-color); display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 .kx-trait-badges { display: inline-flex; gap: 4px; flex: none; }
 .kx-trait-x {
   flex: none; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;
@@ -455,12 +454,9 @@ select.kx-input { appearance: none; padding-right: 28px; cursor: pointer; }
 .kx-ns-group { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--p-text-muted-color); padding: 8px 8px 4px; }
 .kx-ns-opt { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 7px 8px; border: none; border-radius: 6px; background: transparent; cursor: pointer; color: var(--p-text-color); font-size: 12.5px; }
 .kx-ns-opt:hover { background: color-mix(in srgb, var(--p-text-color) 6%, transparent); }
-.kx-ns-opt-rich { align-items: flex-start; gap: var(--kx-picker-option-icon-gap); }
 .kx-ns-check { width: var(--kx-picker-option-icon-size); height: var(--kx-picker-option-icon-size); flex: none; color: var(--p-text-muted-color); }
 .kx-ns-opt-on .kx-ns-check { color: var(--p-primary-color); }
-.kx-ns-opt-text { min-width: 0; display: flex; flex-direction: column; gap: var(--kx-picker-option-stack-gap); }
 .kx-ns-opt-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--kx-picker-option-title-size); font-weight: var(--kx-picker-option-title-weight); }
-.kx-ns-opt-desc { color: var(--p-text-muted-color); font-size: var(--kx-picker-option-subtitle-size); line-height: var(--kx-picker-option-subtitle-line-height); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .kx-ns-menu-empty { padding: 10px 12px; font-size: 12px; color: var(--p-text-muted-color); }
 .kx-ns-hint { font-size: 11px; color: var(--p-text-muted-color); margin: 0; line-height: 1.4; }
 .kx-mini-btn {
@@ -620,4 +616,7 @@ select.kx-input { appearance: none; padding-right: 28px; cursor: pointer; }
 .tool-reference__description { white-space: pre-wrap; overflow-wrap: anywhere; margin: .5rem 0; line-height: 1.5; color: var(--p-text-muted-color); }
 .tool-reference summary { cursor: pointer; font-weight: 600; overflow-wrap: anywhere; }
 .tool-reference code, .tool-reference pre { font-size: .8rem; white-space: pre-wrap; overflow-wrap: anywhere; }
-.tool-reference h3 { margin: 0; }
+
+.kx-trait-description { white-space: pre-wrap; overflow-wrap: anywhere; margin: .5rem 0; line-height: 1.5; color: var(--p-text-muted-color); }
+.kx-trait-tools { list-style: none; margin: .5rem 0; padding: 0; display: grid; gap: .5rem; }
+.kx-tadd-option { border-radius: 6px; cursor: pointer; }

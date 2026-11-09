@@ -2,7 +2,7 @@ import { defineComponent as r, openBlock as t, createBlock as n } from "vue";
 import "@iconify/vue";
 import { define as o } from "@wippy-fe/proxy";
 import { P as m } from "./AnchoredPanel.vue_vue_type_script_setup_true_lang-DNnuyvEa.js";
-import { _ as i, T as a } from "./TaskCreate.vue_vue_type_script_setup_true_lang-DqN2aYrM.js";
+import { _ as i, T as a } from "./TaskCreate.vue_vue_type_script_setup_true_lang-Cf_2ZcDJ.js";
 const s = /* @__PURE__ */ r({
   __name: "RecurringTaskCreate",
   setup(e) {
