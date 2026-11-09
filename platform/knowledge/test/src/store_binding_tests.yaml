@@ -9,26 +9,31 @@ entries:
   - name: fixture
     kind: library.lua
     source: file://store_binding_fixture.lua
+    modules: [sql]
 
   - name: default_get
     kind: function.lua
     source: file://store_binding_fixture.lua
     method: default_get
+    modules: [sql]
 
   - name: bound_get
     kind: function.lua
     source: file://store_binding_fixture.lua
     method: bound_get
+    modules: [sql]
 
   - name: accepted
     kind: function.lua
     source: file://store_binding_fixture.lua
     method: accepted
+    modules: [sql]
 
   - name: bound_accepted
     kind: function.lua
     source: file://store_binding_fixture.lua
     method: bound_accepted
+    modules: [sql]
 
   - name: bound_update
     kind: function.lua
