@@ -64,8 +64,13 @@ for terminal ledger tombstones, which defaults to 30 days. A complete policy
 override from an earlier release that omits `history` uses the same seven-day
 history default. In-flight ledger rows retain their retry deadline,
 attempts, payload and last failure; first-attempt successes and skips create no
-ledger row. Resolved payloads are released. A live drive retains prepared output
-regardless of age. Orphaned output expires under the existing settled-proof rule.
+ledger row. Resolved payloads are released. Unresolved items and pending commands
+retain their prepared output. Dead tombstones and their prepared output expire
+together after the deduplication window, including on live drives; older dead
+rows without an expiry stamp age from `updated_at`. Other prepared output of a
+live drive retains its existing protection, and orphaned output expires under
+the settled-proof rule. Named replay after reclamation refuses explicitly when
+evidence is unavailable; a new source version remains a new delivery.
 Replay refuses a new transform when retained evidence cannot prove it safe.
 
 History listing uses keyset pagination within the hot window. Maintenance deletes
@@ -84,8 +89,8 @@ Mutable refusal counts and an event reference let replay check one history
 primary key instead of enumerating prior attempts. Missing or aged evidence
 refuses an unsafe replay. Refusing unavailable proof never renews that proof.
 
-Interval polling schedules the next completed pass after its durable commit.
-Cron and timer schedules preserve at most one pending occurrence during a round;
+Interval polling schedules the next completed pass after its durable commit and
+preserves a later source cooldown. Cron and timer schedules preserve at most one pending occurrence during a round;
 overlapping ticks are skipped without a catch-up burst.
 Idle drives run no rounds between their scheduled pass or a real event.
 
