@@ -51,7 +51,7 @@ local function build_card(row: any, profile: any?): (any?, any?)
         dimensions = tonumber(row.dimensions),
         source = row.source or models_types.SOURCE_MANUAL,
         provider_profile_id = row.provider_profile_id,
-        enabled = tonumber(row.enabled) ~= 0 and not (profile and profile.error),
+        enabled = tonumber(row.enabled) ~= 0 and not (profile and (profile.error or profile.enabled == false)),
         error = profile and profile.error or nil,
         metadata = metadata,
     }
