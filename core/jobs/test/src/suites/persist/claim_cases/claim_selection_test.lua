@@ -202,11 +202,18 @@ local function define_tests()
                     { awaited_types = { "test.awaited" }, general_capacity = 2, tier_step = 5 })
                 test.is_nil(err, tostring(err))
                 test.eq(#batch, 3)
-                local tiers = {live = 0, backfill = 0, maintenance = 0}
-                for _, job in ipairs(batch) do tiers[job.queue_tier] = tiers[job.queue_tier] + 1 end
-                test.eq(tiers.live, 1)
-                test.eq(tiers.backfill, 2)
-                test.eq(tiers.maintenance, 0)
+                local live, backfill, maintenance = 0, 0, 0
+                for _, job in ipairs(batch) do
+                    if job.queue_tier == "live" then live = live + 1
+                    elseif job.queue_tier == "backfill" then backfill = backfill + 1
+                    else
+                        test.eq(job.queue_tier, "maintenance")
+                        maintenance = maintenance + 1
+                    end
+                end
+                test.eq(live, 1)
+                test.eq(backfill, 2)
+                test.eq(maintenance, 0)
             end)
         end)
 
