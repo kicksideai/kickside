@@ -514,66 +514,72 @@ local function define_tests()
             end)
         end
 
-        test.it("reclaims journal-only output when a repeated snapshot is already delivered",function()
-            local key="journal-snapshot"
-            local id=install({{key=key,directive="invalid"}})
-            run(id)
-            local original=h.query("SELECT identity_key FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})[1].identity_key
-            test.eq(replay(id,key .. "-replay").outcome.replayed,1)
-            run(id)
-            local lineage=h.query("SELECT identity_key,execution_identity_json FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})[1]
-            test.is_true(lineage.identity_key~=original)
-            test.eq(json.decode(lineage.execution_identity_json).prepared_key,original)
-            test.eq(ledger(id,key).state,"dead")
-            h.set_drive(id,"main","cursor=NULL,next_run_at=$1",{h.PAST})
-            local _,delivered_err=env.run(id,"main",function(identity,target,args,options)
-                if target=="kickside.automation:round_deliver" then
-                    local output=json.decode(h.query("SELECT prepared_json FROM kickside_automation_prepared WHERE automation_id=$1 AND idempotency_key=$2",{id,original})[1].prepared_json)
-                    output.directive="deliver"
-                    h.exec("UPDATE kickside_automation_prepared SET prepared_json=$1 WHERE automation_id=$2 AND idempotency_key=$3",
-                        {json.encode(output),id,original})
+        for _,other_output in ipairs({false,true}) do
+            test.it("reclaims journal-only output when a repeated snapshot is already delivered: " .. tostring(other_output),function()
+                local key="journal-snapshot"
+                local id=install({{key=key,directive="invalid"}})
+                run(id)
+                local original=h.query("SELECT identity_key FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})[1].identity_key
+                test.eq(replay(id,key .. "-replay").outcome.replayed,1)
+                run(id)
+                local lineage=h.query("SELECT identity_key,execution_identity_json FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})[1]
+                test.is_true(lineage.identity_key~=original)
+                test.eq(json.decode(lineage.execution_identity_json).prepared_key,original)
+                test.eq(ledger(id,key).state,"dead")
+                h.set_drive(id,"main","cursor=NULL,next_run_at=$1",{h.PAST})
+                local _,delivered_err=env.run(id,"main",function(identity,target,args,options)
+                    if target=="kickside.automation:round_deliver" then
+                        local output=json.decode(h.query("SELECT prepared_json FROM kickside_automation_prepared WHERE automation_id=$1 AND idempotency_key=$2",{id,original})[1].prepared_json)
+                        output.directive="deliver"
+                        h.exec("UPDATE kickside_automation_prepared SET prepared_json=$1 WHERE automation_id=$2 AND idempotency_key=$3",
+                            {json.encode(output),id,original})
+                    end
+                    return env.run_as(identity,target,args,options)
+                end)
+                test.is_nil(delivered_err,tostring(delivered_err))
+                test.eq(receipts(id,key),1)
+                test.eq(#h.query("SELECT 1 FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id}),1,
+                    "the successful original identity creates no ledger row")
+                test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),1,
+                    "the dead replay retains the prepared output after delivery")
+                if other_output then
+                    h.exec("INSERT INTO kickside_automation_prepared (automation_id,idempotency_key,payload_hash,prepared_json,created_at)"
+                        .. " VALUES ($1,'other-item','other-hash','{}',$2)",{id,h.PAST})
                 end
-                return env.run_as(identity,target,args,options)
+                h.exec("UPDATE kickside_trigger_item_ledger SET expires_at='1700-01-01T00:00:00Z' WHERE owner_id=$1",{id})
+                h.set_drive(id,"main","cursor=NULL,next_run_at=$1",{h.PAST})
+                local observed=false
+                local _,skip_err=env.run(id,"main",function(identity,target,args,options)
+                    if target=="kickside.automation:round_deliver" then
+                        observed=true
+                        test.eq(h.read_drive(id,"main").admission[original].prepared_key,original)
+                        local n,err=automation_db.in_tx(function(tx)
+                            return round_ledger.prune_tx(tx,"1750-01-01T00:00:00Z",100)
+                        end)
+                        test.is_nil(err,tostring(err));test.eq(n,1)
+                        test.eq(#h.query("SELECT 1 FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id}),0)
+                        test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),other_output and 2 or 1,
+                            "only the admitted snapshot retains the output")
+                        local answer,err=env.run_as(identity,"kickside.sync:round_deliver",{
+                            drive=args.drive,items=args.items,config={sink_port=STORE,transform={kind="none"}}},options)
+                        test.is_nil(err,tostring(err));test.not_nil(answer)
+                        test.eq(#answer.skipped_items,1)
+                        test.eq(answer.skipped_items[1].reason,"already delivered")
+                        test.is_nil(answer.skipped_items[1].prepared_key)
+                        return {success=true,outcomes={delivered=answer.delivered_items,skipped=answer.skipped_items,
+                            waiting=answer.waiting_items,uncertain=answer.uncertain_items,failed=answer.failed_items}},nil
+                    end
+                    return env.run_as(identity,target,args,options)
+                end)
+                test.is_nil(skip_err,tostring(skip_err));test.is_true(observed)
+                test.eq(transforms(id,key),1)
+                test.eq(#sink_writes(id,key),3,"the repeated snapshot calls neither transform nor sink")
+                test.is_nil(next(h.read_drive(id,"main").admission))
+                test.eq(#h.query("SELECT 1 FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id}),0)
+                test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),other_output and 1 or 0,
+                    "a skip without a prepared key releases the journal's last reference")
             end)
-            test.is_nil(delivered_err,tostring(delivered_err))
-            test.eq(receipts(id,key),1)
-            test.eq(#h.query("SELECT 1 FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id}),1,
-                "the successful original identity creates no ledger row")
-            test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),1,
-                "the dead replay retains the prepared output after delivery")
-            h.exec("UPDATE kickside_trigger_item_ledger SET expires_at='1700-01-01T00:00:00Z' WHERE owner_id=$1",{id})
-            h.set_drive(id,"main","cursor=NULL,next_run_at=$1",{h.PAST})
-            local observed=false
-            local _,skip_err=env.run(id,"main",function(identity,target,args,options)
-                if target=="kickside.automation:round_deliver" then
-                    observed=true
-                    test.eq(h.read_drive(id,"main").admission[original].prepared_key,original)
-                    local n,err=automation_db.in_tx(function(tx)
-                        return round_ledger.prune_tx(tx,"1750-01-01T00:00:00Z",100)
-                    end)
-                    test.is_nil(err,tostring(err));test.eq(n,1)
-                    test.eq(#h.query("SELECT 1 FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id}),0)
-                    test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),1,
-                        "only the admitted snapshot retains the output")
-                    local answer,err=env.run_as(identity,"kickside.sync:round_deliver",{
-                        drive=args.drive,items=args.items,config={sink_port=STORE,transform={kind="none"}}},options)
-                    test.is_nil(err,tostring(err));test.not_nil(answer)
-                    test.eq(#answer.skipped_items,1)
-                    test.eq(answer.skipped_items[1].reason,"already delivered")
-                    test.is_nil(answer.skipped_items[1].prepared_key)
-                    return {success=true,outcomes={delivered=answer.delivered_items,skipped=answer.skipped_items,
-                        waiting=answer.waiting_items,uncertain=answer.uncertain_items,failed=answer.failed_items}},nil
-                end
-                return env.run_as(identity,target,args,options)
-            end)
-            test.is_nil(skip_err,tostring(skip_err));test.is_true(observed)
-            test.eq(transforms(id,key),1)
-            test.eq(#sink_writes(id,key),3,"the repeated snapshot calls neither transform nor sink")
-            test.is_nil(next(h.read_drive(id,"main").admission))
-            test.eq(#h.query("SELECT 1 FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id}),0)
-            test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),0,
-                "a skip without a prepared key releases the journal's last reference")
-        end)
+        end
 
         for _,state in ipairs({"resolved","retrying","dead"}) do
             test.it("settles a journal prepared reference without consumer receipts: " .. state,function()
