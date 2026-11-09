@@ -4,6 +4,7 @@ MODULE := hub
 TYPE   := plugin
 VIS    := public
 EMBED  := --embed ui_fs
+UI_TEST_ARGS ?= --maxWorkers=2
 
 .PHONY: build dev publish lint test
 build:
@@ -31,3 +32,7 @@ typecheck-ui:
 .PHONY: lockrefresh
 lockrefresh:
 	cd test && wippy update $(WIPPY_UPDATE_ARGS)
+
+.PHONY: test-ui
+test-ui:
+	cd ui && npm test -- $(UI_TEST_ARGS)

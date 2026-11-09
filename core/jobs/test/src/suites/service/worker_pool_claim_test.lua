@@ -14,6 +14,7 @@ local claim = require("claim")
 local events = require("events")
 local channel = require("channel")
 local logger = require("logger")
+local retention = require("retention")
 
 local IDLE_TOPIC = "kickside.core.jobs:worker_idle"
 local WORKER_ID = "claim-worker"
@@ -31,21 +32,26 @@ end
 -- claim_batch(call) answers each claim; due_count is the due backlog every
 -- backlog read reports. The result reports what the pool did.
 local function run_pool(claim_batch: (integer) -> (table[]?, error?), queued_wakes: integer?, queued_idle: integer?,
-        awaited: boolean?, due_count: integer?, backlog: ((string?) -> (table?, error?))?, claim_at: string?): table
+        awaited: boolean?, due_count: integer?, backlog: ((string?) -> (table?, error?))?, claim_at: string?, maintenance: any?): table
     local events_ch = { case_receive = function(self) return self end }
     local registry_ch = { case_receive = function(self) return self end }
     local idle_ch = { case_receive = function(self) return self end }
     local wake_ch = { case_receive = function(self) return self end }
     local timer_ch = { case_receive = function(self) return self end }
-    local outcome = { backlog_reads = 0, claims = 0, cancels = 0, retired = 0, assignments = 0, timers = 0, max_drained = 0, trace = {} }
+    local outcome = { db_acquisitions = 0, backlog_reads = 0, claims = 0, cancels = 0, retired = 0, assignments = 0, timers = 0, max_drained = 0, trace = {} }
     local selections = 0
     local pending_wakes = queued_wakes or 0
     local pending_idle = queued_idle or 0
     local drained = 0
+    local retention_driver = job_fixture.no_retention_schedule
+    if maintenance then retention_driver = nil end
     local pool = worker_pool.new({
         job_class = { awaited_types = function() return awaited and { "awaited" } or {}, nil end },
-        retention_schedule = job_fixture.no_retention_schedule,
-        sql_get = function() return {
+        retention_schedule = retention_driver,
+        jobs = maintenance and {retention_sweep = maintenance.sweep} or nil,
+        sql_get = function()
+            outcome.db_acquisitions = outcome.db_acquisitions + 1
+            return {
             type = function() return sql.type.SQLITE end,
             query = function() outcome.trace[#outcome.trace + 1] = "deadline"; return { {} }, nil end,
             release = function() end,
@@ -54,7 +60,7 @@ local function run_pool(claim_batch: (integer) -> (table[]?, error?), queued_wak
             worker_count_postgres = 1 }), nil end,
         reclaim = {
             reclaim_expired = function() return 0, nil end,
-            reclaim_terminated = function() return 0, nil end,
+            reclaim_terminated = function() return 0, nil, 0 end,
             close_lost_runs = function() return 0, nil end,
         },
         claim = {
@@ -117,6 +123,9 @@ local function run_pool(claim_batch: (integer) -> (table[]?, error?), queued_wak
                 pending_idle = pending_idle - 1
                 return { channel = idle_ch, value = { kind = "idle", worker_id = WORKER_ID, version = "v1", epoch = 0 } }
             end
+            if selections >= 1 and maintenance and maintenance.pending() then
+                return { channel = timer_ch }
+            end
             selections = selections + 1
             if selections > 2 then
                 return { channel = events_ch, value = { kind = process.event.EXIT, from = WORKER_ID } }
@@ -142,6 +151,56 @@ end
 
 local function define_tests()
     test.describe("job pool claim refusals", function()
+        test.it("dispatches between bounded passes while draining 100000 expired runs", function()
+            local db, dbtype, db_err = job_fixture.private_queue("app:private_queue_retention_dispatch")
+            test.is_nil(db_err)
+            if not db then error("retention dispatch queue is unavailable") end
+            local owner, id = uuid.v7(), uuid.v7()
+            local _, seed_err = db:execute([[INSERT INTO kickside_job
+                (id,owner_kind,owner_id,job_type,status,job_identity)
+                VALUES ($1,'test',$2,'test.retention','done',$2)]], {id, owner})
+            test.is_nil(seed_err)
+            test.eq(job_fixture.seed_runs(db, 100000, id, owner, "2000-01-01T00:00:00Z"), 100000)
+            local pending, enqueue_err = lifecycle.enqueue_job(db, dbtype, {
+                owner_locator = {kind = "test", id = owner}, job_type = "test.retention",
+                job_identity = {namespace = "retention", scope = owner, key = "dispatch"},
+            })
+            test.is_nil(enqueue_err)
+            local _, worker_err = db:execute("INSERT INTO kickside_job_worker(id,registry_version) VALUES ($1,'v1')", {WORKER_ID})
+            test.is_nil(worker_err)
+            local deleted, passes = 0, 0
+            local started = time.now()
+            local dispatched_ms: number? = nil
+            local outcome = run_pool(function()
+                local batch, claim_err = claim.claim_batch(db, dbtype, 1, nil, nil, {WORKER_ID})
+                test.is_nil(claim_err)
+                test.eq(#batch, 1)
+                test.eq(batch[1].id, pending)
+                dispatched_ms = time.now():sub(started):nanoseconds() / 1000000
+                test.is_true(deleted > 0 and deleted < 100000, "dispatch runs before the backlog drains")
+                return batch, nil
+            end, nil, nil, nil, nil, nil, nil, {
+                sweep = function()
+                    local stats, err = retention.sweep(db, dbtype)
+                    if err then error(err) end
+                    deleted, passes = deleted + stats.job_runs, passes + 1
+                    return stats, nil
+                end,
+                pending = function() return deleted < 100000 end,
+            })
+            db:release()
+            test.eq(deleted, 100000)
+            test.eq(passes, 200)
+            test.eq(outcome.assignments, 1)
+            test.not_nil(dispatched_ms)
+            test.is_true(dispatched_ms < 5000, "dispatch exceeds the existing five-second start bound")
+        end)
+
+        test.it("coalesces ordinary wakes without extra capacity SQL", function()
+            local empty = run_pool(function() return {}, nil end)
+            local waking = run_pool(function() return {}, nil end, 3)
+            test.eq(waking.db_acquisitions, empty.db_acquisitions)
+        end)
         test.it("observes both durable deadline classes in one database read", function()
             local db, dbtype, db_err = job_fixture.private_queue("app:private_queue_claim_selection_test")
             test.is_nil(db_err)
@@ -244,7 +303,15 @@ local function define_tests()
             local probe: sql.DB = job_fixture.observe_db(db)
             probe.query = function(_, statement: string, params: table?)
                 if not params then error("claim candidate parameters are absent") end
-                observed = tostring(params[2])
+                if statement:find("AS candidates ORDER", 1, true) then
+                    observed = nil
+                    for _, value in ipairs(params) do
+                        if type(value) == "string" and value:match("^%d%d%d%d%-%d%d%-%d%d[ T]") then
+                            observed = value
+                        end
+                    end
+                    test.not_nil(observed, "candidate query binds the observation cutoff")
+                end
                 return db:query(statement, params)
             end
             local empty, empty_err, _, _, empty_at = claim.claim_batch(probe, dbtype, 1)

@@ -208,7 +208,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
             replay_failed = 0,
             discarded = del_result.discarded,
             status = del_result.status,
-            in_progress = del_result.in_progress,
+            job_id = del_result.job_id, notification_error = del_result.notification_error, in_progress = del_result.in_progress,
             deleted = del_result.deleted,
             cleanup_pending = del_result.cleanup_pending,
             retryable = del_result.retryable,

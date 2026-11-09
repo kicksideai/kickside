@@ -2,6 +2,7 @@ local test = require("test")
 local sql = require("sql")
 local funcs = require("funcs")
 local uuid = require("uuid")
+local json = require("json")
 
 local DATABASE = "app:metadata_migration_db"
 local PREFIX = "kickside.component.migrations:"
@@ -106,6 +107,42 @@ local function define_tests()
             db:release()
             test.eq(migrate(UNIQUE).failed, 0)
         end)
+        test.it("adds deletion intent to earlier data and resumes without rewriting it", function()
+            test.eq(migrate("01_create_components_table").failed, 0)
+            local db = assert(sql.get(DATABASE))
+            local live, marked = uuid.v7(), uuid.v7()
+            for _, id in ipairs({live, marked}) do
+                execute(db, "INSERT INTO kickside_components(component_id,impl_id,position,private_context,context_revision) VALUES ($1,'test:deletion','n',$2,7)",
+                    {id, '{"fixture":"preserved"}'})
+            end
+            execute(db, "UPDATE kickside_components SET deleting_at=$1 WHERE component_id=$2", {"2026-01-01T00:00:00Z", marked})
+            test.eq(migrate("15_delete_intent").failed, 0)
+            local function verify()
+                local values, read_err = db:query("SELECT component_id,impl_id,private_context,context_revision,deleting_at,delete_intent FROM kickside_components WHERE component_id IN ($1,$2) ORDER BY component_id", {live, marked})
+                test.is_nil(read_err)
+                test.eq(#values, 2)
+                for _, row in ipairs(values) do
+                    test.eq(row.impl_id, "test:deletion")
+                    test.eq(tonumber(row.context_revision), 7)
+                    local context = type(row.private_context) == "table" and row.private_context or assert(json.decode(row.private_context))
+                    test.eq(context.fixture, "preserved")
+                    if row.component_id == live then test.is_nil(row.deleting_at); test.is_nil(row.delete_intent)
+                    else test.eq(row.deleting_at, "2026-01-01T00:00:00Z") end
+                end
+                return values
+            end
+            verify()
+            execute(db, "UPDATE kickside_components SET delete_intent=$1 WHERE component_id=$2", {'{"options":{"fixture":"saved"}}', marked})
+            execute(db, "DELETE FROM _migrations WHERE id=$1", {"15_delete_intent"})
+            test.eq(migrate("15_delete_intent").failed, 0)
+            local values = verify()
+            for _, row in ipairs(values) do
+                if row.component_id == marked then test.eq(row.delete_intent, '{"options":{"fixture":"saved"}}') end
+            end
+            execute(db, "DELETE FROM kickside_components WHERE component_id IN ($1,$2)", {live, marked})
+            db:release()
+        end)
+
     end)
 end
 

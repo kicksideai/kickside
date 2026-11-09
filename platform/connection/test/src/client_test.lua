@@ -5,7 +5,7 @@ local schema = require("schema")
 local json = require("json")
 local types = require("types")
 
-local request = {method = "POST", url = "https://provider.example/v1/items", headers = {}, body = "{}"}
+local request: types.Request = {method = "POST", url = "https://provider.example/v1/items", headers = {}, body = "{}"}
 local function passthrough()
     return {new = function() return {invoke = function(_, fn) return fn() end} end,
         retry_after = function() return 2000 end}
@@ -52,11 +52,12 @@ local function cases()
                 test.eq(opts.headers.Authorization, requests == 1 and "Bearer old-token" or "Bearer new-token")
                 return {status_code = requests == 1 and 401 or 200, body = "{\"id\":\"ok\"}"}
             end}})
-            local conn = {component_id = "oauth", oauth = {get_access_token = function(_, args)
+            local source: types.TokenSource = {get_access_token = function(_, args): (types.Token?, error?)
                 tokens = tokens + 1
                 if tokens == 2 then test.eq(args.rejected_access_token, "old-token") end
                 return {success = true, access_token = tokens == 1 and "old-token" or "new-token"}
-            end}}
+            end}
+            local conn: types.Connection = {component_id = "oauth", oauth = source}
             local result, err = client.request(conn, request)
             test.is_nil(err); test.eq(result.data.id, "ok"); test.eq(tokens, 2); test.eq(requests, 2)
         end)
@@ -65,9 +66,11 @@ local function cases()
             local client = transport.new({capacity = passthrough(), http = {request = function()
                 requests = requests + 1; return {status_code = 401, body = "{}"}
             end}})
-            local result, err = client.request({component_id = "oauth", oauth = {get_access_token = function()
+            local source: types.TokenSource = {get_access_token = function(): (types.Token?, error?)
                 return {success = true, access_token = "revoked"}
-            end}}, request)
+            end}
+            local conn: types.Connection = {component_id = "oauth", oauth = source}
+            local result, err = client.request(conn, request)
             test.is_nil(err); test.eq(result.success, false); test.eq(result.status_code, 401); test.eq(requests, 2)
         end)
         test.it("does not replay a write after a network failure or disclose its error body", function()
@@ -76,21 +79,24 @@ local function cases()
                 requests = requests + 1
                 return nil, errors.new({kind = errors.UNAVAILABLE, message = "Authorization: Bearer secret"})
             end}})
-            local result, err = client.request({component_id = "token", access_token = "secret"}, request)
+            local conn: types.Connection = {component_id = "token", access_token = "secret"}
+            local result, err = client.request(conn, request)
             test.is_nil(result); test.is_true(errors.is(err, errors.UNAVAILABLE)); test.eq(err:retryable(), false)
-            test.is_nil(err:message():find("secret", 1, true)); test.eq(requests, 1)
+            test.is_nil((err:message():find("secret", 1, true))); test.eq(requests, 1)
         end)
         test.it("preserves rate-limit classification while redacting an echoed credential", function()
             local client = transport.new({capacity = passthrough(), http = {request = function()
                 return {status_code = 429, body = "Authorization: Bearer secret", headers = {["Retry-After"] = "2"}}
             end}})
-            local result, err = client.request({component_id = "token", access_token = "secret"}, request)
+            local conn: types.Connection = {component_id = "token", access_token = "secret"}
+            local result, err = client.request(conn, request)
             test.is_nil(err); test.eq(result.status_code, 429); test.eq(result.retry_after_ms, 2000)
-            test.is_nil(result.error:find("secret", 1, true)); test.is_nil(result.data)
+            test.is_nil((result.error:find("secret", 1, true))); test.is_nil(result.data)
         end)
         test.it("rejects an expired deadline before contacting the provider", function()
             local client = transport.new({capacity = passthrough(), http = {request = function() error("must not send") end}})
-            local result, err = client.request({component_id = "token", access_token = "secret", deadline = "2000-01-01T00:00:00Z"}, request)
+            local conn: types.Connection = {component_id = "token", access_token = "secret", deadline = "2000-01-01T00:00:00Z"}
+            local result, err = client.request(conn, request)
             test.is_nil(result); test.is_true(errors.is(err, errors.TIMEOUT))
         end)
         test.it("permits HTTPS and loopback demos and rejects unsafe endpoints", function()
@@ -100,10 +106,10 @@ local function cases()
     end)
     test.describe("provider DTO boundaries", function()
         test.it("prepares bounded binary content without provider-specific headers", function()
-            local operation = {method = "POST", path = "/files/upload", write = true, mode = "upload",
+            local operation: types.Operation = {method = "POST", path = "/files/upload", write = true, mode = "upload",
                 endpoint = "content", schema = {type = "object", properties = {
                     path = {type = "string"}, content_base64 = {type = "string"}}, additionalProperties = false}}
-            local config = {provider = "example", title = "Example", endpoints = {content = "https://content.example.test/v1"},
+            local config: types.Config = {provider = "example", title = "Example", endpoints = {content = "https://content.example.test/v1"},
                 health_action = "health", discovery_action = "list", operations = {}}
             local prepared, err = driver.prepare(config, operation, {path = "/报告🚀.txt", content_base64 = "aGk="})
             test.is_nil(err)

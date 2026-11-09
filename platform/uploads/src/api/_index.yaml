@@ -132,6 +132,7 @@ entries:
       - http
       - security
     imports:
+      component: kickside.component:component
       http_errors: kickside.contract:http_errors
       upload_response: kickside.uploads.api:upload_response
       upload_read_model: kickside.uploads.persist:upload_read_model
@@ -156,10 +157,12 @@ entries:
       comment: Formats public upload API response bodies.
     source: file://response.lua
     modules:
+      - registry
       - time
     imports:
       http_errors: kickside.contract:http_errors
       metadata_sanitizer: kickside.uploads:metadata_sanitizer
+      uploads_resources: kickside.uploads.binding:uploads_resources
 
   # kickside.uploads.api:presigned_handler
   - name: presigned_handler
@@ -257,6 +260,7 @@ entries:
       comment: List upload artifact metadata for the uploads UI.
     source: file://artifacts.lua
     imports:
+      upload_response: kickside.uploads.api:upload_response
       component: kickside.component:component
       types: kickside.uploads:types
       http_errors: kickside.contract:http_errors
@@ -289,6 +293,7 @@ entries:
       comment: Serve stored upload artifact bytes for inline preview.
     source: file://artifacts.lua
     imports:
+      upload_response: kickside.uploads.api:upload_response
       component: kickside.component:component
       types: kickside.uploads:types
       http_errors: kickside.contract:http_errors

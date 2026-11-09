@@ -1,5 +1,64 @@
 # Changelog
 
+## [0.1.72](https://github.com/kicksideai/kickside/compare/hub-v0.1.71...hub-v0.1.72) (2026-11-08)
+
+
+### Bug Fixes
+
+* UI artifacts in buttons, headings, dialogs and tables ([#371](https://github.com/kicksideai/kickside/issues/371)) ([ea55ea8](https://github.com/kicksideai/kickside/commit/ea55ea8a17ee5802cb73a4dbcf39878d7f56cd2e))
+
+## [0.1.71](https://github.com/kicksideai/kickside/compare/hub-v0.1.70...hub-v0.1.71) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
+## [0.1.70](https://github.com/kicksideai/kickside/compare/hub-v0.1.69...hub-v0.1.70) (2026-10-31)
+
+
+### Bug Fixes
+
+* **hub:** style the version and migration pickers in the install dialog ([#272](https://github.com/kicksideai/kickside/issues/272)) ([7d88cfb](https://github.com/kicksideai/kickside/commit/7d88cfb6cc9ca42e37240a39e502cb9f8931990b))
+
+## [0.1.69](https://github.com/kicksideai/kickside/compare/hub-v0.1.68...hub-v0.1.69) (2026-10-28)
+
+
+### Bug Fixes
+
+* **hub:** retain scans for current plan artifacts ([#189](https://github.com/kicksideai/kickside/issues/189)) ([2800797](https://github.com/kicksideai/kickside/commit/2800797a860a01057ae91413e395b61963450c14))
+* **hub:** show loading throughout initial module discovery ([#199](https://github.com/kicksideai/kickside/issues/199)) ([e30a0b0](https://github.com/kicksideai/kickside/commit/e30a0b00036f7a31e5c2866e9ad6c8c626faeddb))
+
+## [0.1.68](https://github.com/kicksideai/kickside/compare/hub-v0.1.67...hub-v0.1.68) (2026-10-28)
+
+
+### Bug Fixes
+
+* **hub:** preflight all module updates as one batch ([#167](https://github.com/kicksideai/kickside/issues/167)) ([dff3e0a](https://github.com/kicksideai/kickside/commit/dff3e0a6c7963d2f1a2441171de44097d6d13da5))
+
+## [0.1.67](https://github.com/kicksideai/kickside/compare/hub-v0.1.66...hub-v0.1.67) (2026-10-26)
+
+
+### Bug Fixes
+
+* **hub:** require released sequential-update planner ([0e7d001](https://github.com/kicksideai/kickside/commit/0e7d00102e5ae272ae8d5cfdf918af4304ea584b))
+* **hub:** update modules one by one in dependency order ([98e5a49](https://github.com/kicksideai/kickside/commit/98e5a496080ea62e893d321d1a7b6214e6c3330f))
+
+## [0.1.66](https://github.com/kicksideai/kickside/compare/hub-v0.1.65...hub-v0.1.66) (2026-10-25)
+
+
+### Bug Fixes
+
+* **hub:** require typed recommender completion ([#145](https://github.com/kicksideai/kickside/issues/145)) ([b93bc77](https://github.com/kicksideai/kickside/commit/b93bc77a6f2835548592816a8e46591e7d72bbb1))
+* **hub:** resolve shared widget dependencies in clean builds ([#150](https://github.com/kicksideai/kickside/issues/150)) ([38ee765](https://github.com/kicksideai/kickside/commit/38ee7655adbce4ae32486381ccbf2e5ba7171e2c))
+
+## [0.1.65](https://github.com/kicksideai/kickside/compare/hub-v0.1.64...hub-v0.1.65) (2026-10-23)
+
+
+### Bug Fixes
+
+* **hub:** display readable custom license references ([#118](https://github.com/kicksideai/kickside/issues/118)) ([252820d](https://github.com/kicksideai/kickside/commit/252820d476db7b6d9344e6c50bd1778d9ecf5b1b))
+
 ## [0.1.64](https://github.com/kicksideai/kickside/compare/hub-v0.1.63...hub-v0.1.64) (2026-10-22)
 
 

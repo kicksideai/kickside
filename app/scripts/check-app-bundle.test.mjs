@@ -66,6 +66,36 @@ test('checks font references supplied by facade CSS as well as page CSS', async 
   await assert.rejects(checkAppBundle(root), /ENOENT/)
 })
 
+test('checks page CSS outside the vendor integrity manifest', async t => {
+  const { root, bundle, manifest } = await fixture(t)
+  delete manifest.files['app.css']
+  await writeFile(join(bundle, 'vendor/manifest.json'), JSON.stringify(manifest))
+  await writeFile(join(bundle, 'app.css'), '@font-face{src:url(./fonts/page.woff2)}')
+  await assert.rejects(checkAppBundle(root), /page\.woff2/)
+  await writeFile(join(bundle, 'fonts/page.woff2'), 'page-font')
+  assert.equal(await checkAppBundle(root), 2)
+})
+
+test('rejects font paths escaping the bundle from page CSS', async t => {
+  const { root, bundle, manifest } = await fixture(t)
+  delete manifest.files['app.css']
+  await writeFile(join(bundle, 'vendor/manifest.json'), JSON.stringify(manifest))
+  await writeFile(join(bundle, 'app.css'), '@font-face{src:url(../../../outside.woff2)}')
+  await assert.rejects(checkAppBundle(root), /invalid local asset path/)
+})
+
+test('resolves cache query strings before checking page assets and CSS fonts', async t => {
+  const { root, bundle, manifest } = await fixture(t)
+  delete manifest.files['app.html']
+  delete manifest.files['app.css']
+  await writeFile(join(bundle, 'vendor/manifest.json'), JSON.stringify(manifest))
+  await writeFile(join(bundle, 'app.html'), '<script type="importmap">{"imports":{"vue":"/app/app/main/vendor/vue.js"}}</script><div id="app"></div><script src="./app.js?v=1"></script><link href="./app.css?v=1" rel="stylesheet">')
+  await writeFile(join(bundle, 'app.css'), '@font-face{src:url(./fonts/page.woff2?v=1)}')
+  await assert.rejects(checkAppBundle(root), /page\.woff2/)
+  await writeFile(join(bundle, 'fonts/page.woff2'), 'page-font')
+  assert.equal(await checkAppBundle(root), 2)
+})
+
 test('rejects paths escaping the application bundle', async t => {
   const { root, bundle, manifest } = await fixture(t)
   manifest.files['../outside.js'] = 'sha256-unsafe'

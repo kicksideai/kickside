@@ -13,6 +13,21 @@ entries:
   imports:
     test: wippy.test:test
     cadence: kickside.automation:cadence
+- name: round_cadence_commit_test
+  kind: function.lua
+  meta:
+    title: Durable round cadence
+    type: test
+    suite: kickside_automation_round
+    comment: Interval polling schedules after durable commit; cron and timers retain occurrences due during a round.
+  source: file://../round/cadence_commit_test.lua
+  method: run
+  modules: [channel, time]
+  imports:
+    test: wippy.test:test
+    drive: kickside.automation:drive
+    round_claim: kickside.automation:round_claim
+    round_harness: kickside.automation:round_harness
 - name: round_timer_pullable_test
   kind: function.lua
   meta:
@@ -49,7 +64,6 @@ entries:
   source: file://../round/write_test.lua
   method: run
   modules:
-  - funcs
   - sql
   - json
   - uuid
@@ -59,6 +73,8 @@ entries:
   imports:
     test: wippy.test:test
     round_write: kickside.automation:round_write
+    runtime_policy: kickside.automation:runtime_policy
+    round_provenance: kickside.automation:round_provenance
     drive: kickside.automation:drive
     round_harness: kickside.automation:round_harness
 - name: round_batch_test

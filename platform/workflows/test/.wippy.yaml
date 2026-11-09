@@ -1,9 +1,11 @@
 version: "1.0"
 # The admission suites drive the maintenance checker's ticks themselves; the
 # resident maintenance service would claim the same due runs under them.
+# The automation scope suite claims its own Jobs round.
 override:
   "app:db:file": "${sqlite_path}"
   "kickside.workflows.runs:maintenance.service:lifecycle.auto_start": false
+  "kickside.core.jobs.service:worker.service:lifecycle.auto_start": false
 workspace:
   replacements:
     kickside/realtime-dispatch: ../../../core/realtime-dispatch
@@ -27,11 +29,19 @@ vars:
   pg_host: localhost
   pg_port: 5433
   pg_database: kickside_test_workflows
+  pg_upgrade_database: kickside_test_workflows_upgrade
   pg_username: kickside
   pg_password: kickside
 profiles:
   postgres:
     override:
+      "app:retry_upgrade_db:kind": db.sql.postgres
+      "app:retry_upgrade_db:host": "${pg_host}"
+      "app:retry_upgrade_db:port": "${pg_port}"
+      "app:retry_upgrade_db:database": "${pg_upgrade_database}"
+      "app:retry_upgrade_db:username": "${pg_username}"
+      "app:retry_upgrade_db:password": "${pg_password}"
+      "app:retry_upgrade_db:options.sslmode": disable
       "app:db:kind": db.sql.postgres
       "app:db:host": "${pg_host}"
       "app:db:port": "${pg_port}"

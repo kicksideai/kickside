@@ -1,4 +1,5 @@
 local decision_content = require("decision_content")
+local files = require("inbox_files")
 local expr = require("expr")
 local security = require("security")
 local contract = require("contract")
@@ -113,12 +114,15 @@ local function decision_params(args: Map): (Map?, string?)
         end
         title = value
     end
+    local file_refs, files_err = files.normalize(emit.files)
+    if files_err then return nil, tostring(files_err) end
     local item_id = "workflow-decision:" .. dataflow_id .. ":" .. signal_id
     return {
         id = item_id,
         item_type = ITEM_TYPE,
         title = title,
         content = content,
+        files = file_refs,
         priority = str(emit.priority) ~= "" and str(emit.priority) or "normal",
         metadata = metadata,
         source_id = item_id,
@@ -175,14 +179,18 @@ function M.arm_decision(args: any): (any?, string?)
     local params, params_err = decision_params(a)
     if not params then return nil, params_err end
     local assignee = str(((params :: Map).metadata :: Map).assignee)
+
+    -- Assignment authority is the boundary for a cross-user target. Check it
+    -- before the directory lookup so an untrusted producer cannot use the
+    -- public Block arm as a user-existence oracle.
+    local is_self = assignee == actor_id()
+    if not is_self and security.can("inbox.assign", "user:" .. assignee) ~= true then
+        return nil, "Inbox assignment access denied"
+    end
     local assignee_err = require_assignee(assignee)
     if assignee_err then return nil, assignee_err end
 
-    if assignee == actor_id() then return M.create_decision({ params = params }) end
-
-    if security.can("inbox.assign", "user:" .. assignee) ~= true then
-        return nil, "Inbox assignment access denied"
-    end
+    if is_self then return M.create_decision({ params = params }) end
     local component_id = component.singleton_component_id(assignee, "kickside.inbox")
     local definition, get_err = contract.get("kickside.core:threads")
     if get_err or not definition then return nil, "Inbox threads unavailable: " .. tostring(get_err) end
@@ -195,7 +203,7 @@ function M.arm_decision(args: any): (any?, string?)
         type = "kickside.inbox.events:item.created",
         body = {
             id = params.id, item_type = params.item_type, title = params.title,
-            content = params.content, metadata = metadata, source_id = params.source_id,
+            content = params.content, files = params.files, metadata = metadata, source_id = params.source_id,
             priority = params.priority, actor_id = assignee, created_at = os.time(),
         },
         trace_context = params.trace_context,

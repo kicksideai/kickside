@@ -4,7 +4,9 @@
 -- INVALID for a malformed request, PERMISSION_DENIED for an access refusal
 -- (including a "not found or access denied" answer that conceals existence),
 -- NOT_FOUND / CONFLICT where the service knows them, INTERNAL for a storage,
--- transaction or lifecycle failure.
+-- transaction or lifecycle failure. A failure may also carry error_kind, the
+-- service's classification of the refusal (access, declaration, subject,
+-- infrastructure); the client keeps it in the typed error's details.
 
 local component_types = require("component_types")
 local error_envelope = require("error_envelope")
@@ -60,7 +62,9 @@ end
 
 -- Map a service result into a structured error for the client, or nil on success.
 -- The envelope's kind is the service's own classification; a failure without one
--- is INTERNAL, since only a classified refusal is evidence of denied access.
+-- is INTERNAL, since only a classified refusal is evidence of denied access. The
+-- envelope's error_kind classifies this refusal and takes precedence over one
+-- the lower layer's details carry.
 function M.error_of(result: component_types.ServiceEnvelope?, operation_name: string, context: string?): error?
     if not result then
         return (errors.new({ message = operation_name .. " returned nil result", kind = errors.INTERNAL }) :: error)
@@ -69,8 +73,15 @@ function M.error_of(result: component_types.ServiceEnvelope?, operation_name: st
         local kind = type(result.kind) == "string" and result.kind or errors.INTERNAL
         local message = result.error or (operation_name .. " failed")
         if context then message = context .. ": " .. message end
+        local details = result.details
+        if type(result.error_kind) == "string" then
+            local classified: { [string]: any } = {}
+            for key, value in pairs(details or {}) do classified[key] = value end
+            classified.error_kind = result.error_kind
+            details = classified
+        end
         return (errors.new({ message = message, kind = kind,
-            retryable = result.retryable, details = result.details }) :: error)
+            retryable = result.retryable, details = details }) :: error)
     end
     return nil
 end

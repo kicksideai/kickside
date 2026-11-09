@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- The sync's round consumer (kickside.trigger:round_consumer.deliver; design
 -- v5 §3.2, §4.6). An automation round calls it under the automation's live
 -- execution identity with one page of a drive's items and the drive's applied
@@ -65,6 +66,18 @@ local function shape(plan: Map, item: Map, value: any, owner: string, sink_op: s
     return input, nil
 end
 
+-- A receipt records the delivery identity only after the complete item
+-- delivery commits. Every current slot must agree before a repeated snapshot
+-- can bypass its transform and sink.
+local function delivered(slots: { Map }, delivery_key: any, declaration_hash: any): boolean
+    if #slots == 0 or type(delivery_key) ~= "string" or delivery_key == ""
+        or type(declaration_hash) ~= "string" or declaration_hash == "" then return false end
+    for _, slot in ipairs(slots) do
+        if slot.delivery_key ~= delivery_key or slot.declaration_hash ~= declaration_hash then return false end
+    end
+    return true
+end
+
 -- deliver_item -> the outcome list the item belongs in and its entry.
 local function deliver_item(plan: Map, d: Map, item: Map, port: string, known: { Map }): (string, Map)
     local key = item.delivery_key
@@ -81,6 +94,9 @@ local function deliver_item(plan: Map, d: Map, item: Map, port: string, known: {
             message = "source item op must be upsert or delete, got " .. tostring(item.op) }) }
     end
     local slots = known
+    if item.op == "upsert" and delivered(slots, key, d.applied_hash) then
+        return "skipped_items", { key = key, reason = "already delivered", receipts = slots }
+    end
     local keys = round_write.keys(d, item, nil)
     local prepared_key: string? = nil
     local input: Map
@@ -97,7 +113,9 @@ local function deliver_item(plan: Map, d: Map, item: Map, port: string, known: {
         if not plan.replay_safe then unsent.prepared_key = keys.idempotency_key end
         local transformed, transform_err = plan_lib.transform(plan, d, item, keys)
         if transform_err ~= nil or not transformed then
-            unsent.error = failure(transform_err)
+            unsent.error = failure(transform_err or { kind = errors.INVALID, retriable = false,
+                code = "missing_transform_result",
+                message = "transform returned no result; review its effects before replaying this item" })
             return "failed_items", unsent
         end
         local t = transformed :: Map
@@ -120,7 +138,7 @@ local function deliver_item(plan: Map, d: Map, item: Map, port: string, known: {
     if outcome.state == "delivered" then
         return "delivered_items", { key = key, receipts = outcome.receipts, prepared_key = prepared_key }
     elseif outcome.state == "waiting" then
-        return "waiting_items", { key = key, retry_after_ms = outcome.retry_after_ms, error = outcome.error }
+        return "waiting_items", { key = key, retry_after_ms = outcome.retry_after_ms, error = outcome.error, receipts = outcome.receipts }
     elseif outcome.state == "uncertain" then
         return "uncertain_items", { key = key }
     end

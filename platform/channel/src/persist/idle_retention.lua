@@ -53,7 +53,7 @@ local function retire_one(db: sql.DB, dbtype: any, candidate: any, cutoff: strin
     return true, nil
 end
 
-function M.retire_idle(db_id: string, cutoff: string, limit: integer): (integer?, error?)
+function M.retire_idle(db_id: string, cutoff: string, limit: integer): (integer?, error?, any?)
     if type(db_id) ~= "string" or db_id == "" or type(cutoff) ~= "string" or cutoff == ""
         or type(limit) ~= "number" or limit ~= math.floor(limit) or limit < 1 or limit > 50 then
         return nil, failure("idle session retention arguments invalid", "db_id, cutoff and limit 1..50 required", errors.INVALID)
@@ -78,8 +78,14 @@ function M.retire_idle(db_id: string, cutoff: string, limit: integer): (integer?
         if retire_err then db:release(); return nil, retire_err end
         if retired then count = count + 1 end
     end
+    local remaining, remaining_err = db:query([[SELECT updated_at FROM kickside_channel_sessions
+        WHERE updated_at>$1 ORDER BY updated_at,provider,external_id LIMIT 1]], {cutoff})
     db:release()
-    return count, nil
+    if remaining_err or type(remaining) ~= "table" then
+        return nil, failure("idle session deadline read failed", remaining_err, errors.INTERNAL)
+    end
+    return count, nil, {needs_continue = count >= limit,
+        next_at = remaining[1] and remaining[1].updated_at or nil}
 end
 
 return M

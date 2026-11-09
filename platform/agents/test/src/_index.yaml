@@ -98,17 +98,16 @@ entries:
     imports:
       user_agents: kickside.agents.binding:user_agents_func
 
-  - name: memory_runtime_test
+  - name: memory_host_bindings_test
     kind: function.lua
     meta:
       type: test
-      suite: kickside_memory
-      comment: Verifies the KB-backed memory trait runtime consumed by agents.
-    source: file://memory_runtime_test.lua
+      suite: memory_host_bindings
+    source: file://memory_host_bindings_test.lua
+    method: run
+    modules: [registry]
     imports:
       test: wippy.test:test
-      memory_runtime: kickside.memory:runtime
-    method: run
 
   - name: delegate_capture
     kind: function.lua
@@ -317,6 +316,8 @@ entries:
     - name: kickside.core:target_db
       value: app:db
     - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.settings:process_host
       value: app:processes
     - name: kickside.core.lifecycle:user_lifecycle_grant
       value:

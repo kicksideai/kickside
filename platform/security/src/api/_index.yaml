@@ -15,7 +15,9 @@ entries:
       policies: [kickside.security.service:group_set_registry_read, kickside.security.service:group_set_db]
     imports:
       api_errors: kickside.security.api:errors
-      scope_projection: kickside.security.service:scope_projection
+      groups: kickside.security.runtime:groups
+      execution_identity: kickside.execution:execution_identity
+      group_sets: kickside.security.persist:group_sets
   - name: projection_status.endpoint
     kind: http.endpoint
     method: GET
@@ -28,7 +30,9 @@ entries:
     method: handler_save
     modules: [http, json]
     security:
-      policies: [kickside.security.service:reconcile_request_access, kickside.security:delegation_validate_call]
+      policies: [kickside.security.service:reconcile_request_access, kickside.security:delegation_directory_get,
+        kickside.security:delegation_directory_open, kickside.security:delegation_directory_groups,
+        kickside.security:delegation_component_read]
     imports:
       delegation: kickside.security:delegation
       api_errors: kickside.security.api:errors
@@ -68,6 +72,20 @@ entries:
     method: GET
     path: /security/delegations
     func: delegation_list_http
+  - name: delegation_roots_http
+    kind: function.lua
+    source: file://delegation.lua
+    method: handler_roots
+    modules: [http, json]
+    imports:
+      delegation: kickside.security:delegation
+      api_errors: kickside.security.api:errors
+  - name: delegation_roots.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    path: /security/delegations/roots
+    func: delegation_roots_http
   - name: errors
     kind: library.lua
     source: file://errors.lua
@@ -84,6 +102,7 @@ entries:
     source: file://scope_catalog.lua
     modules: [registry]
     imports:
+      scope_key: kickside.security.projection:scope_key
       security_consts: kickside.security:security_consts
       scope_store: kickside.security.persist:scope_store
       security_types: kickside.security:security_types

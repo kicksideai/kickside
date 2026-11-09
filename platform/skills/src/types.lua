@@ -168,6 +168,9 @@ type Skill = {
 
 -- Discovery row from skill_store.list: no body (loaded on demand via get()).
 type SkillSummary = {
+    deleting_at: string?,
+    deletion_job_id: string?,
+    deletion_job: {status: string, attempts: integer, last_error: string?}?,
     skill_id: string,
     name: string?,
     description: string?,
@@ -228,7 +231,18 @@ type RefineResult = { skill_id: string, version: integer? }
 
 -- skill_store.share result.
 type ShareResult = { skill_id: string, user_id: string, action: string }
-type DeleteResult = { skill_id: string }
+-- skill_store.delete result: the component deletion receipt for the skill. While the
+-- deletion job owns completion, deleted is false and in_progress, status,
+-- cleanup_pending and job_id describe it.
+type DeleteResult = {
+    skill_id: string,
+    deleted: boolean,
+    in_progress: boolean?,
+    status: string?,
+    cleanup_pending: boolean?,
+    job_id: string?,
+    notification_error: { [string]: any }?,
+}
 
 type ComponentCommand = {
     type: string,
@@ -249,6 +263,9 @@ type ComponentMeta = Map & {
 
 type ComponentRow = {
     component_id: string,
+    deleting_at: string?,
+    deletion_job_id: string?,
+    deletion_job: {status: string, attempts: integer, last_error: string?}?,
     meta: ComponentMeta?,
 }
 

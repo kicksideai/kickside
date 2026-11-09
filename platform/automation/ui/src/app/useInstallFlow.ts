@@ -5,7 +5,7 @@
 
 import { computed, ref, nextTick, type ComputedRef, type Ref } from 'vue'
 import { api, loadByTagName } from '@wippy-fe/proxy'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import { automationTypeDescription } from './type-copy'
 import { customCreateLocation, customCreateTag, requestCustomSubmit } from './custom-view'
 import { defaultsFor, fieldsOf, installInput, validateInstall } from './install-form'

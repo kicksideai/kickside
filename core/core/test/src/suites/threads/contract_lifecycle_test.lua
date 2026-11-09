@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 -- Threads binding integration. Drives the kickside.core:threads contract under real
 -- actors through contract.get():with_actor():with_scope():open() so the component
 -- contract resolves the acting actor: create registers a component (visible via a
@@ -39,6 +40,17 @@ local TEST_WORKER = "app:test_count_worker"
 local PROCESS_SCOPE = "wippy.security:process"
 
 local fixture = require("fixture")
+
+-- The pending deletion job that owns a component's teardown.
+local function deletion_job_id(component_id: string): string?
+    local db, db_err = sql.get(DB)
+    if db_err or not db then error(tostring(db_err)) end
+    local rows, query_err = db:query("SELECT id FROM kickside_job WHERE owner_kind='component' AND owner_id=$1 AND status='pending'",
+        { component_id })
+    db:release()
+    if query_err then error(tostring(query_err)) end
+    return rows[1] and rows[1].id or nil
+end
 
 local function define_tests()
     test.describe("Threads Contract", function()
@@ -168,7 +180,16 @@ local function define_tests()
             local deleted, derr = as_owner(DELETE, { thread_id = thread_id })
             test.is_nil(derr)
             test.not_nil(deleted)
-            test.is_true(deleted.deleted == true)
+            test.is_true(deleted.in_progress)
+            test.is_false(deleted.deleted)
+            test.eq(deleted.status, "in_progress")
+            test.is_true(deleted.cleanup_pending)
+            test.eq(deleted.thread_id, thread_id)
+            test.not_nil(deleted.job_id)
+            test.eq(deleted.job_id, deletion_job_id(component_id))
+            local finished, finish_err = deletion_worker.run(deleted.component_id)
+            test.is_nil(finish_err, tostring(finish_err))
+            test.is_true(finished.deleted)
 
             test.is_nil(component_id_of(thread_id))
             test.is_nil(component_row_exists(component_id))
@@ -201,7 +222,10 @@ local function define_tests()
 
             local deleted, derr = as_owner(DELETE, { thread_id = source.thread_id })
             test.is_nil(derr)
-            test.is_true(deleted.deleted == true)
+            test.is_true(deleted.in_progress)
+            local finished, finish_err = deletion_worker.run(deleted.component_id)
+            test.is_nil(finish_err, tostring(finish_err))
+            test.is_true(finished.deleted)
 
             test.eq(event_type_count(subscriber.thread_id, DROP_TYPE), 1)
         end)
@@ -261,7 +285,11 @@ local function define_tests()
             db:release()
             test.is_nil(corrupt_err)
 
-            local _, derr = as_owner(DELETE, { thread_id = source.thread_id })
+            local accepted, accept_err = as_owner(DELETE, {thread_id = source.thread_id})
+            test.is_nil(accept_err)
+            test.is_true(accepted.in_progress)
+            local finished, derr = deletion_worker.run(source.component_id)
+            test.is_nil(finished)
             test.not_nil(derr)
             test.is_true(errors.is(derr, errors.INTERNAL))
             test.is_false(derr:retryable())
@@ -276,6 +304,12 @@ local function define_tests()
             test.eq(perr:details().field, "drop_notify")
             test.is_true(thread_exists(source.thread_id))
             test.eq(event_type_count(subscriber.thread_id, DROP_TYPE), 0)
+            db = assert(sql.get(DB))
+            local _, restore_err = db:execute("UPDATE kickside_projection SET body='{}' WHERE thread_id=$1", {source.thread_id})
+            db:release()
+            test.is_nil(restore_err)
+            local purged, purge_err = as_owner("purge", {component_id = source.thread_id})
+            test.is_nil(purge_err); test.is_true(purged.purged)
         end)
 
         test.it("a drop hook whose subscriber thread is gone notifies no one and the teardown commits", function()
@@ -284,10 +318,14 @@ local function define_tests()
             register_drop(source.thread_id, subscriber.thread_id)
             local _, sub_err = as_owner(DELETE, { thread_id = subscriber.thread_id })
             test.is_nil(sub_err)
+            test.not_nil((deletion_worker.run(subscriber.component_id)))
 
             local deleted, derr = as_owner(DELETE, { thread_id = source.thread_id })
             test.is_nil(derr)
-            test.is_true(deleted.deleted == true)
+            test.is_true(deleted.in_progress)
+            local finished, finish_err = deletion_worker.run(deleted.component_id)
+            test.is_nil(finish_err, tostring(finish_err))
+            test.is_true(finished.deleted)
             test.is_false(thread_exists(source.thread_id))
             test.is_false(thread_exists(subscriber.thread_id))
         end)

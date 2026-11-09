@@ -35,7 +35,7 @@ local function write(request: any): (any, any)
     })
     if r.sink_op == "delete" then return { success = true, result = "deleted" }, nil end
     local what = tostring(input.directive or "")
-    if what == "capacity" then
+    if what == "capacity" or (type(input.wait_slot) == "string" and input.wait_slot == r.map_slot) then
         return { success = false, error = { code = "rate_limited", scope = "capacity", retry_after_ms = 30000, retriable = true, message = "busy" } }, nil
     elseif what == "timeout" then
         return { success = false, error = { code = "provider_unavailable", retriable = true, message = "timed out" } }, nil
@@ -69,6 +69,9 @@ local function transform(args: any): (any, any)
             { input.revoke_resource, input.revoke_principal })
         db:release()
         if revoke_err then return nil, revoke_err end
+    end
+    if input.directive == "transform_error" then
+        return nil, errors.new({kind=errors.UNAVAILABLE,retryable=true,message="fixture transform unavailable"})
     end
     if input.directive == "none" then return nil, nil end
     if input.directive == "skip" then return { present = false, skip = "no matching record" }, nil end

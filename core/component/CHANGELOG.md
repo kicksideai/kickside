@@ -1,5 +1,77 @@
 # Changelog
 
+## [0.3.11](https://github.com/kicksideai/kickside/compare/component-v0.3.10...component-v0.3.11) (2026-11-08)
+
+
+### Bug Fixes
+
+* **automation:** upgrade stored rollback steps of the retired trigger runtime on module update ([#367](https://github.com/kicksideai/kickside/issues/367)) ([26b9e6b](https://github.com/kicksideai/kickside/commit/26b9e6b3aefc32459cab739d74a44f881e03113f))
+
+## [0.3.10](https://github.com/kicksideai/kickside/compare/component-v0.3.9...component-v0.3.10) (2026-11-07)
+
+
+### Bug Fixes
+
+* keep the typed access refusal of an event round's source pull ([#347](https://github.com/kicksideai/kickside/issues/347)) ([4b7a264](https://github.com/kicksideai/kickside/commit/4b7a2640d6593e7384764785e97aa4d6bdc3e4d7))
+
+## [0.3.9](https://github.com/kicksideai/kickside/compare/component-v0.3.8...component-v0.3.9) (2026-11-07)
+
+
+### Performance Improvements
+
+* **component:** read only the execution identity key for the identity receipt ([#334](https://github.com/kicksideai/kickside/issues/334)) ([d3e7670](https://github.com/kicksideai/kickside/commit/d3e767080d239d902359cf88440f9ed7628fae0d))
+
+## [0.3.8](https://github.com/kicksideai/kickside/compare/component-v0.3.7...component-v0.3.8) (2026-11-07)
+
+
+### Bug Fixes
+
+* **component:** export deeply nested contexts without overflowing the call stack ([#326](https://github.com/kicksideai/kickside/issues/326)) ([56f765d](https://github.com/kicksideai/kickside/commit/56f765ddc8079d50544de76e426522087478d108))
+
+## [0.3.7](https://github.com/kicksideai/kickside/compare/component-v0.3.6...component-v0.3.7) (2026-11-06)
+
+
+### Bug Fixes
+
+* **component:** authorize deletion dependencies and continue cleanup across error kinds ([f48c782](https://github.com/kicksideai/kickside/commit/f48c78267a60800793a40c46f8416c6ae8bb27f5))
+* **component:** authorize deletion-owned job dependencies ([416f3ab](https://github.com/kicksideai/kickside/commit/416f3abd48e5a140885ccd3d042ee1dd4a2f8c1d))
+* **component:** continue structured cleanup across error kinds ([784f8c4](https://github.com/kicksideai/kickside/commit/784f8c4502656381f588b6d040717d5935e31bc2))
+
+## [0.3.6](https://github.com/kicksideai/kickside/compare/component-v0.3.5...component-v0.3.6) (2026-11-05)
+
+
+### Bug Fixes
+
+* **component:** execute deletion cleanup through Jobs ([c034b5c](https://github.com/kicksideai/kickside/commit/c034b5c8e5cc2c92a5ced4d8ae70107361f2e9d3))
+* **component:** expose asynchronous deletion progress ([e4ca4b7](https://github.com/kicksideai/kickside/commit/e4ca4b7ab5185ecc6ecf83b336ca3e6edf5aca6e))
+* **component:** preserve published notification access ([efcbc6e](https://github.com/kicksideai/kickside/commit/efcbc6e2e8a161a96e58958662c5816ba808e429))
+* **component:** restore bounded final deletion pages ([cc5c7a5](https://github.com/kicksideai/kickside/commit/cc5c7a5ea54818c1d0a538842d1c2881a988b5b4))
+* **component:** run deletion cleanup through Jobs ([da3f7ae](https://github.com/kicksideai/kickside/commit/da3f7aee8dce4136a65d1c94bda6604820bc8355))
+* **component:** simplify deletion waiting and committed delivery ([584eae6](https://github.com/kicksideai/kickside/commit/584eae6145e5e9b4ea36bdbd6527ffe376e9f7fe))
+* **component:** wait for authorized child deletion before teardown ([94ba45d](https://github.com/kicksideai/kickside/commit/94ba45df29f52d5f7b4766dd04bd335f92771752))
+* preserve deletion view state and bind notification authority ([2ea5cf1](https://github.com/kicksideai/kickside/commit/2ea5cf1a31352ba4ba1915daeca384d06d2e7b70))
+
+## [0.3.5](https://github.com/kicksideai/kickside/compare/component-v0.3.4...component-v0.3.5) (2026-10-30)
+
+
+### Bug Fixes
+
+* make direct grants atomic and select installed task providers ([#256](https://github.com/kicksideai/kickside/issues/256)) ([2e51908](https://github.com/kicksideai/kickside/commit/2e519081e032aabb2137ede2e5f3903e55012566))
+
+## [0.3.4](https://github.com/kicksideai/kickside/compare/component-v0.3.3...component-v0.3.4) (2026-10-29)
+
+
+### Bug Fixes
+
+* **component:** keep trusted existence reads under owner authority ([#240](https://github.com/kicksideai/kickside/issues/240)) ([c998e6c](https://github.com/kicksideai/kickside/commit/c998e6c8da40b5ceacd71bfc9a9d415225977053))
+
+## [0.3.3](https://github.com/kicksideai/kickside/compare/component-v0.3.2...component-v0.3.3) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** resolve live scopes through Security-owned projections ([adad7ee](https://github.com/kicksideai/kickside/commit/adad7ee499f7dfbd1134c57c06368aa440a0ab07))
+
 ## [0.3.2](https://github.com/kicksideai/kickside/compare/component-v0.3.1...component-v0.3.2) (2026-10-22)
 
 

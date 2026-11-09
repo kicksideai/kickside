@@ -19,13 +19,18 @@ entries:
     kind: function.lua
     source: file://client_e2e.lua
     method: receive
-    modules: [http, json]
+    # client_e2e.lua is compiled as a unit, so every entry that uses it needs
+    # the complete set of runtime modules referenced by that source file.
+    modules: [http, json, registry]
     imports:
       driver: kickside.connection.client:driver
   - name: health
     kind: function.lua
     source: file://client_e2e.lua
     method: health
+    # client_e2e.lua is compiled as a unit, so every entry that uses it needs
+    # the complete set of runtime modules referenced by that source file.
+    modules: [http, json, registry]
     imports:
       driver: kickside.connection.client:driver
   - name: binding
@@ -57,7 +62,7 @@ entries:
       driver: kickside.connection.client:driver
     meta:
       endpoint: http://127.0.0.1:19185/provider
-    modules: [registry, json]
+    modules: [http, json, registry]
   - name: test
     kind: function.lua
     source: file://client_e2e_test.lua

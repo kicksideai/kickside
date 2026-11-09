@@ -21,7 +21,7 @@ import { idleRunState, type RunState } from '../runs/run-overlay'
 import { humanTitle } from '../domain/labels'
 import type { CatalogItem } from '../catalog/catalog'
 import * as C from '../api/commands'
-import { applyCommands, getState, humanError, redo, undo, type RunExecution, type RunNodeHeader, type RunRow } from '../api/api'
+import { applyCommands, getState, humanError, redo, undo, type RunNodeHeader, type RunRow } from '../api/api'
 import { useCanvasConnect } from './canvas-connect'
 import { useCanvasPlacement } from './canvas-placement'
 import { useCanvasKeyboard } from './canvas-keyboard'
@@ -41,7 +41,7 @@ import { useWorkflowCanvasRealtime } from './useWorkflowCanvasRealtime'
 import WorkflowCanvasView from './WorkflowCanvasView.vue'
 
 const props = defineProps<{ workflowId: string }>()
-const emit = defineEmits<{ (e: 'back'): void; (e: 'open-workflow', id: string): void }>()
+const emit = defineEmits<{ (e: 'back'): void; (e: 'open-workflow', id: string): void; (e: 'published', reference: {kind: 'flow'; id: string; version: number}): void }>()
 
 const engine = new SyncEngine()
 const rev = ref(0)
@@ -118,7 +118,6 @@ watch(notice, (message) => {
 })
 
 const viewingRun = ref<RunRow | null>(null)
-const viewingExecution = ref<RunExecution | null>(null)
 const viewingNodeHeaders = ref<RunNodeHeader[]>([])
 
 const {
@@ -183,6 +182,7 @@ const {
   publishIssues,
   rebuild,
   select,
+  published: (version) => emit('published', {kind: 'flow', id: props.workflowId, version}),
 })
 
 // VueFlow's NodeComponent typing is stricter than a plain SFC; the runtime only
@@ -202,7 +202,7 @@ let didInitialFit = false
 onNodesInitialized(() => {
   if (didInitialFit || loading.value) return
   didInitialFit = true
-  nextTick(() => fit())
+  nextTick(() => fitView(canvasFitOptions()))
 })
 
 const inspector = useCanvasInspectorState({
@@ -212,7 +212,6 @@ const inspector = useCanvasInspectorState({
   selectedEdge,
   runState,
   viewingRun,
-  viewingNodeHeaders,
   error,
   loading,
   panelOpen,
@@ -220,7 +219,7 @@ const inspector = useCanvasInspectorState({
 })
 const {
   selectedEdgeUpstream, selectedEdgeDownstream, selectedEdgeSourceTitle, selectedEdgeTargetTitle,
-  selectedNodeUpstream, selectedCombineConflict, selectedRunStatus, selectedRunHeader,
+  selectedNodeUpstream, selectedCombineConflict, selectedRunStatus,
   failedNode, failedNodeTitle, failedReason, errorView, openFailedDetails,
   countLabel, canUndo, canRedo, isEmpty,
 } = inspector
@@ -408,7 +407,7 @@ const {
   startInputSchema, startHasFields, canRunSimulate,
   stopRun, toggleRuns: toggleRunsPanel, viewRun, openSim: openRunDialog, closeSim, rerunSameInput, onSimInput, onSimValid, runSimulate,
 } = useCanvasRun({
-  engine, workflowId: props.workflowId, rev, runState, viewingRun, viewingExecution, viewingNodeHeaders, rebuild, clearSelection, error, panelOpen, historyOpen,
+  engine, workflowId: props.workflowId, rev, runState, viewingRun, viewingNodeHeaders, rebuild, clearSelection, error, panelOpen, historyOpen,
 })
 
 const {
@@ -517,8 +516,8 @@ const viewModel = proxyRefs({
   measureAuto, openAutoMapped, dismissAutoMapped, pendingEdge, pendingAnchor,
   availableSteps, pendingOverlaySize, measurePending, acceptPending, showSuggestedNode,
   openPendingMapper, dismissPending, loading, panelOpen, hasSelection, openInspector,
-  narrowEditor, closeInspector, selectedNode, selectedRunStatus, selectedRunHeader,
-  viewingExecution, clearSelection, rerunSameInput, selectedEdge, selectedNote,
+  narrowEditor, closeInspector, selectedNode, selectedRunStatus,
+  viewingNodeHeaders, clearSelection, rerunSameInput, selectedEdge, selectedNote,
   selectedEdgeUpstream, selectedEdgeDownstream, selectedEdgeSourceTitle, selectedEdgeTargetTitle,
   selectedNodeUpstream, selectedCombineConflict, updateNode, removeSelectedNode,
   updateEdge, removeSelectedEdge, updateNote, removeSelectedNote,

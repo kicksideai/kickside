@@ -59,6 +59,7 @@ interface Setting {
   category?: string | null
   order?: number | null
   owner?: string | null
+  control?: { tag: string; props?: Record<string, unknown> } | null
   ui?: string | null
 }
 
@@ -238,9 +239,17 @@ function revalidate(s: Setting): string {
   return msg
 }
 
+function setDraft(s: Setting, value: unknown) {
+  drafts.value[idOf(s)] = s.value_type === 'json' ? JSON.stringify(value, null, 2) : (value as string | number | boolean)
+}
+
 function seedDraft(s: Setting) {
-  if (s.value_type === 'secret') { drafts.value[idOf(s)] = ''; return }
-  drafts.value[idOf(s)] = s.value_type === 'json' ? JSON.stringify(s.value, null, 2) : (s.value as never)
+  setDraft(s, s.value_type === 'secret' ? '' : s.value)
+}
+
+function onControlSelect(s: Setting, value: unknown) {
+  setDraft(s, value)
+  revalidate(s)
 }
 
 async function load() {
@@ -363,7 +372,10 @@ onMounted(load)
               <div class="ks-field">
                 <span v-if="s.editable === false" class="ks-static">{{ s.value }}</span>
                 <template v-else>
-                  <ToggleSwitch v-if="s.value_type === 'bool'"
+                  <WcMount v-if="s.control" :tag="s.control.tag"
+                    :attrs="{ ...s.control.props, value: coerce(s, drafts[idOf(s)]) }"
+                    @select="onControlSelect(s, $event)" />
+                  <ToggleSwitch v-else-if="s.value_type === 'bool'"
                     :model-value="!!drafts[idOf(s)]"
                     :aria-label="titleOf(s)"
                     @update:model-value="drafts[idOf(s)] = $event" />

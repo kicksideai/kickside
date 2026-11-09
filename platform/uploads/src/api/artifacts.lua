@@ -1,4 +1,5 @@
 local http = require("http")
+local upload_response = require("upload_response")
 local security = require("security")
 
 local upload_query_repo = require("upload_query_repo")
@@ -107,13 +108,18 @@ local function has_readable_bytes(artifact: any): boolean
         and locator.storage_path ~= ""
 end
 
-local function raw_url(upload_id: string, artifact_id: string, readable: boolean): string?
-    if not readable then return nil end
-    return "/api/v1/uploads/" .. upload_id .. "/artifacts/" .. artifact_id .. "/raw"
+local function raw_url(upload_id: string, artifact: any): (string?, any?)
+    if not has_readable_bytes(artifact) then return nil, nil end
+    local location, location_err = artifact_content_repo.resolve_storage(artifact)
+    if location_err then return nil, location_err end
+    return upload_response.delivery_url(location.storage_id, location.storage_path,
+        upload_response.raw_path(upload_id, tostring(artifact.artifact_id)))
 end
 
-local function public_artifact(upload_id: string, artifact: any): { [string]: any }
+local function public_artifact(upload_id: string, artifact: any): (any?, any?)
     local artifact_id = tostring(artifact.artifact_id or "")
+    local url, url_err = raw_url(upload_id, artifact)
+    if url_err then return nil, url_err end
     local metadata = metadata_sanitizer.public(artifact.metadata)
     return {
         artifact_id = artifact_id,
@@ -131,7 +137,7 @@ local function public_artifact(upload_id: string, artifact: any): { [string]: an
         occurrence_labels = artifact.occurrence_labels,
         locator = metadata_sanitizer.public_locator(artifact.locator),
         metadata = metadata,
-        raw_url = raw_url(upload_id, artifact_id, has_readable_bytes(artifact)),
+        raw_url = url,
         created_at = artifact.created_at,
         updated_at = artifact.updated_at,
     }
@@ -181,14 +187,24 @@ local function artifacts_handler()
 
     local public_artifacts = {}
     for i, artifact in ipairs(parts or {}) do
-        public_artifacts[i] = public_artifact(upload_id, artifact)
+        local public, delivery_err = public_artifact(upload_id, artifact)
+        if delivery_err then
+            json_error(res, http_errors.classify(delivery_err), "Failed to obtain artifact delivery URL")
+            return
+        end
+        public_artifacts[i] = public
     end
 
     -- The primary content artifact is optional (raw-renderable uploads have none).
     local primary_public: { [string]: any }? = nil
     local primary = artifact_parts_repo.get_primary_content_artifact(upload.uuid)
     if primary then
-        primary_public = public_artifact(upload_id, primary)
+        local delivery_err
+        primary_public, delivery_err = public_artifact(upload_id, primary)
+        if delivery_err then
+            json_error(res, http_errors.classify(delivery_err), "Failed to obtain artifact delivery URL")
+            return
+        end
     end
 
     res:set_status(http.STATUS.OK)

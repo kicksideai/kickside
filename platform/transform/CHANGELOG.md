@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.52](https://github.com/kicksideai/kickside/compare/transform-v0.1.51...transform-v0.1.52) (2026-11-07)
+
+
+### Performance Improvements
+
+* **automation:** resolve fixed registry entries once per round ([#335](https://github.com/kicksideai/kickside/issues/335)) ([cee0468](https://github.com/kicksideai/kickside/commit/cee0468266db65f6ee629082833e03afef87c387))
+
 ## 0.1.51 (2026-10-17)
 
 - Refresh packaged module descriptions and documentation.

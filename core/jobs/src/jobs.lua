@@ -5,6 +5,7 @@ local lifecycle = require("lifecycle")
 local lifecycle_cancel = require("lifecycle_cancel")
 local enqueue = require("lifecycle_enqueue")
 local wake = require("wake")
+local slot_purge = require("slot_purge")
 local clock = require("clock")
 local completion = require("completion")
 local lease_status = require("lease_status")
@@ -17,6 +18,7 @@ local error_envelope = require("error_envelope")
 local committed_error = require("committed_error")
 local sql_boundary = require("sql_boundary")
 
+local runtime_policy = require("runtime_policy")
 local jobs = {}
 
 local function response_error(field: string): error
@@ -85,6 +87,9 @@ local function prepare_enqueue_params(params: table?): (lifecycle.EnqueueParams?
         return nil, (errors.new({ message = "jobs.enqueue params must be an object", kind = errors.INVALID }) :: error)
     end
     local p = params :: any
+    if p.replace ~= nil and type(p.replace) ~= "boolean" then
+        return nil, errors.new({message = "enqueue replace must be a boolean", kind = errors.INVALID, retryable = false})
+    end
     if p.demand ~= nil and type(p.demand) ~= "boolean" then
         return nil, (errors.new({ message = "enqueue demand must be a boolean", kind = errors.INVALID }) :: error)
     end
@@ -128,23 +133,24 @@ local function prepare_enqueue_params(params: table?): (lifecycle.EnqueueParams?
         wake_key = opt_string(p.wake_key),
         parked = p.parked == true,
         demand = p.demand == true,
+        replace = p.replace == true,
     }, nil
 end
 
-local function enqueue_result(params: lifecycle.EnqueueParams, id: string, inserted: boolean?): (table?, error?)
+local function enqueue_result(params: lifecycle.EnqueueParams, id: string, inserted: boolean?, replaced_job_id: string?): (table?, error?)
     local identity, identity_err = lifecycle.identity_parts(params, id)
     if identity_err then return nil, identity_err end
-    return { id = id, job_identity = identity, existing = inserted == false }, nil
+    return { id = id, job_identity = identity, existing = inserted == false, replaced_job_id = replaced_job_id }, nil
 end
 
 local function enqueue_tx(tx: sql.Transaction, dbtype: string, job_params: lifecycle.EnqueueParams): (table?, error?)
-    local id, enqueue_err, inserted = lifecycle.enqueue_job(tx, dbtype, job_params)
+    local id, enqueue_err, inserted, replaced_job_id = lifecycle.enqueue_job(tx, dbtype, job_params)
     if enqueue_err or not id then return nil, enqueue_err end
     if job_params.demand then
         local _, demand_err = wake.wake_job(tx, id, { control = true }, dbtype)
         if demand_err then return nil, demand_err end
     end
-    return enqueue_result(job_params, id, inserted)
+    return enqueue_result(job_params, id, inserted, replaced_job_id)
 end
 
 function jobs.enqueue(params: table?): (table?, error?)
@@ -172,6 +178,16 @@ function jobs.enqueue_tx(tx: sql.Transaction, dbtype: string, params: table): (t
     local job_params, params_err = prepare_enqueue_params(params)
     if params_err or not job_params then return nil, params_err end
     return enqueue_tx(tx, dbtype, job_params)
+end
+
+-- Call only after the owning transaction commits; durable demand survives an absent pool.
+function jobs.nudge_workers(): (integer, error?)
+    return wake.notify_workers("kickside.core.jobs:nudge_workers")
+end
+
+-- The owner authorizes retirement before deleting its exact slot and settled history.
+function jobs.purge_slot(params: table): (integer?, error?)
+    return slot_purge.purge_slot(params)
 end
 
 function jobs.cancel(id: string, expected_lease_token: string?): (table?, error?)
@@ -280,6 +296,12 @@ function jobs.get_job(id: string): (table?, error?)
     end)
 end
 
+function jobs.get_jobs(ids: string[]): (table?, error?)
+    return with_db(function(db: sql.DB, _dbtype: string): (table?, error?)
+        return lifecycle.get_jobs(db, ids)
+    end)
+end
+
 function jobs.get_job_statuses(ids: string[]): (table?, error?)
     return with_db(function(db: sql.DB, _dbtype: string): (table?, error?)
         return lifecycle.get_job_statuses(db, ids)
@@ -316,7 +338,7 @@ end
 
 function jobs.health(): (table?, error?)
     local result, err = with_db(function(db: sql.DB, dbtype: string): (table?, error?)
-        local policy, policy_err = cfg.policy()
+        local policy, policy_err = runtime_policy.resolve()
         if policy_err then return nil, policy_err end
         if type(policy) ~= "table" then return nil, response_error("health.policy") end
         local fresh_seconds = (policy :: any).lease_timeout_seconds
@@ -376,6 +398,14 @@ function jobs.health(): (table?, error?)
         local degraded_count, degraded_count_err = sql_boundary.query_count(degraded, degraded_err,
             "degraded job query failed", "health.degraded", response_error)
         if degraded_count_err then return nil, degraded_count_err end
+        local stranded, stranded_err = db:query([[SELECT id FROM kickside_job
+            WHERE status='pending' AND NOT slot AND last_error IS NOT NULL AND scheduled_at IS NULL
+            ORDER BY id ASC]])
+        stranded, stranded_err = sql_boundary.rows(stranded, stranded_err,
+            "stranded job query failed", "health.stranded", response_error)
+        if stranded_err then return nil, stranded_err end
+        local stranded_ids: string[] = {}
+        for _, row in ipairs(stranded) do stranded_ids[#stranded_ids + 1] = tostring(row.id) end
         local control_age_sql = dbtype == sql.type.POSTGRES
             and "SELECT EXTRACT(EPOCH FROM (NOW() - MIN(updated_at))) * 1000 AS age_ms FROM kickside_job WHERE wake_control_pending = TRUE"
             or "SELECT (julianday('now') - julianday(MIN(updated_at))) * 86400000 AS age_ms FROM kickside_job WHERE wake_control_pending = 1"
@@ -394,6 +424,10 @@ function jobs.health(): (table?, error?)
         if overdue_count > 0 then
             issues[#issues + 1] = { code = "due_work_unclaimed", count = overdue_count, oldest_age_ms = due_age_ms,
                 message = "claimable jobs are due past the overdue grace and no worker has claimed them" }
+        end
+        if #stranded_ids > 0 then
+            issues[#issues + 1] = {code = "stranded_jobs", count = #stranded_ids, job_ids = stranded_ids,
+                message = "one-shot jobs have errors and no schedule for another execution"}
         end
         if failed_slot_count > 0 then
             issues[#issues + 1] = { code = "slots_failed", count = failed_slot_count,

@@ -6,9 +6,12 @@ local execution_identity = require("execution_identity")
 
 local upload_record_repo = require("upload_record_repo")
 local upload_query_repo = require("upload_query_repo")
+local upload_response = require("upload_response")
+local upload_tokens = require("upload_tokens")
 local upload_read_model = require("upload_read_model")
 local upload_type = require("upload_type")
 local artifact_cleanup_repo = require("artifact_cleanup_repo")
+local relocation_cleanup = require("relocation_cleanup_repo")
 local resources = require("uploads_resources")
 local uploads_events = require("uploads_events")
 local upload_types = require("types")
@@ -21,6 +24,23 @@ local log = logger:named("upload_lib")
 local IDENTITY_META_KEY = assert(execution_identity.CONTEXT_KEY, "execution_identity.CONTEXT_KEY is required")
 
 local upload_lib = {}
+
+-- The caller authorizes read access before issuing this bearer URL.
+function upload_lib.delivery_url(upload_id: string, options: any?): (string?, any?)
+    local upload, read_err = upload_query_repo.get(upload_id)
+    if read_err then return nil, read_err end
+    if not upload then
+        return nil, errors.new({message = "Upload not found", kind = errors.NOT_FOUND, retryable = false})
+    end
+    local url, delivery_err = upload_response.delivery_url(upload.storage_id, upload.storage_path, nil,
+        options and {expiration = options.expires_in} or nil)
+    if delivery_err then return nil, delivery_err end
+    if url then return url, nil end
+    local token, token_err = upload_tokens.pack_read({upload_id = upload_id,
+        audience = options and options.audience, expires_in = options and options.expires_in})
+    if not token then return nil, token_err end
+    return upload_response.raw_path(upload_id) .. "?token=" .. token, nil
+end
 
 local function failure(message: string, kind: string, error_kind: string, retryable: boolean?): error
     return errors.new({ message = message, kind = kind, retryable = retryable == true,
@@ -113,6 +133,9 @@ end
 local function release_storage(upload: any, storage_override: any?): error?
     if type(upload) ~= "table" or type(upload.uuid) ~= "string" or upload.uuid == "" then return nil end
 
+    local _, cleanup_err = relocation_cleanup.flush(upload)
+    if cleanup_err then return cleanup_err end
+
     local storage = storage_override
     if not storage then
         local resolved, storage_err = resources.get_storage(tostring(upload.storage_id or ""))
@@ -196,13 +219,21 @@ local function persist_file(actor_id: string, file_data: string | stream.Stream,
         if rebind_err then return nil, rebind_err end
     end
 
+    local existing, lookup_err = upload_query_repo.get(upload_uuid)
+    if lookup_err and not errors.is(lookup_err, errors.NOT_FOUND) then
+        return nil, lookup_err
+    end
+    if existing then
+        return nil, failure("upload already exists", errors.CONFLICT, "declaration")
+    end
+
     local storage, err = resources.get_storage(storage_id)
     if err then
         return nil, typed(err, errors.UNAVAILABLE, "infrastructure", "")
     end
 
     local ext = get_file_extension(filename)
-    local storage_path = upload_uuid
+    local storage_path = uuid.v4()
     if ext and ext ~= "" then
         storage_path = storage_path .. "." .. ext
     end
@@ -369,7 +400,7 @@ end
 function upload_lib.retry_upload(uuid)
     local upload, err = upload_query_repo.get(uuid)
     if err then
-        if err == "Upload not found" then
+        if errors.is(err, errors.NOT_FOUND) then
             return nil, failure("upload not found", errors.NOT_FOUND, "subject")
         end
         return nil, typed(err, errors.UNAVAILABLE, "infrastructure", "")
@@ -396,7 +427,7 @@ end
 function upload_lib.delete_upload(uuid)
     local upload, err = upload_query_repo.get(uuid)
     if err then
-        if err == "Upload not found" then
+        if errors.is(err, errors.NOT_FOUND) then
             return nil, failure("upload not found", errors.NOT_FOUND, "subject")
         end
         return nil, typed(err, errors.UNAVAILABLE, "infrastructure", "")

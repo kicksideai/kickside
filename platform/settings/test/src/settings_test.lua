@@ -6,7 +6,11 @@ local security = require("security")
 local sql = require("sql")
 local time = require("time")
 local store = require("store")
+local events = require("events")
+local channel = require("channel")
+local system = require("system")
 local writer = require("settings_writer")
+local cache = require("settings_cache")
 
 -- The harness declares fixture settings in this namespace
 -- (max_items: int, default 50; api_token: secret, default "").
@@ -36,8 +40,49 @@ local function open_settings(): any
     return open_settings_as("admin", "app:settings_admin_policy")
 end
 
+local function change_keeper_state(action: string, status: string)
+    local id = "kickside.settings.service:keeper.service"
+    local updates = assert(events.subscribe("supervisor", "service.update"))
+    local inbox = updates:channel()
+    local deadline = time.after("5s")
+    local ok, err = pcall(function()
+        assert(events.send("supervisor", "service." .. action, id))
+        while true do
+            local state = assert(system.supervisor.state(id))
+            local reached = state.status == status or (status == "stopped" and state.status == "exited")
+            if reached and state.desired == status then return end
+            test.is_true(state.status ~= "failed", tostring(state.details))
+            local result = channel.select({ inbox:case_receive(), deadline:case_receive() })
+            test.is_true(result.ok and result.channel == inbox, "settings keeper does not reach " .. status .. ": " .. state.status .. "/" .. state.desired)
+        end
+    end)
+    updates:close()
+    if not ok then error(err, 0) end
+end
+
 local function define_tests()
     test.describe("KickSide Settings", function()
+        test.it("lists a value control and preserves type validation and reset", function()
+            local s = open_settings()
+            local function row(): any
+                for _, item in ipairs(s:list({ namespace = NS }).settings) do
+                    if item.key == "picker" then return item end
+                end
+                error("picker setting is missing")
+            end
+            test.not_nil(row().control)
+            test.eq(row().control.tag, "wc-model-picker")
+            test.eq(row().control.props.capability, "vision")
+            test.eq(s:set({ namespace = NS, key = "picker", value = false }).success, false)
+            test.eq(s:set({ namespace = NS, key = "picker", value = "model-one" }).success, true)
+            test.eq(row().value, "model-one")
+            test.eq(row().updated_by, "admin")
+            test.eq(row().is_default, false)
+            test.eq(s:unset({ namespace = NS, key = "picker" }).success, true)
+            test.eq(row().value, "class:fast")
+            test.eq(row().is_default, true)
+        end)
+
         test.it("get returns the declared default when there is no override", function()
             local r = open_settings():get({ namespace = NS, key = "max_items" })
             test.eq(r.success, true)
@@ -50,6 +95,18 @@ local function define_tests()
             test.eq(sr.success, true)
             test.eq(s:get({ namespace = NS, key = "max_items" }).value, 7)
             s:unset({ namespace = NS, key = "max_items" })
+        end)
+
+        test.it("get_namespace names the keys whose value comes from a stored override", function()
+            local s = open_settings()
+            test.eq(#s:get_namespace({ namespace = NS }).overridden, 0)
+            test.eq(s:set({ namespace = NS, key = "max_items", value = 50 }).success, true)
+            local r = s:get_namespace({ namespace = NS })
+            test.eq(r.values.max_items, 50)
+            test.eq(#r.overridden, 1)
+            test.eq(r.overridden[1], "max_items")
+            s:unset({ namespace = NS, key = "max_items" })
+            test.eq(#s:get_namespace({ namespace = NS }).overridden, 0)
         end)
 
         test.it("unset reverts to the declared default", function()
@@ -155,7 +212,7 @@ local function define_tests()
                     elseif row.key == "max_items" then test.eq(row.value, 7) end
                 end
                 local handle = store.get("kickside.settings:cache")
-                handle:set("overrides", "null", 0)
+                handle:set("snapshot", "null", 0)
                 handle:release()
                 test.eq(s:set({ namespace = NS, key = "max_items", value = 8 }).success, true)
                 test.eq(s:get({ namespace = NS, key = "max_items" }).value, 8)
@@ -164,7 +221,7 @@ local function define_tests()
                 test.eq(same_key.success, false)
                 test.eq(same_key.error, expected)
                 handle = store.get("kickside.settings:cache")
-                handle:set("overrides", "null", 0)
+                handle:set("snapshot", "null", 0)
                 handle:release()
                 test.eq(s:unset({ namespace = NS, key = "max_items" }).success, true)
                 test.eq(s:get({ namespace = NS, key = "max_items" }).value, 50)
@@ -299,23 +356,123 @@ local function define_tests()
             s:unset({ namespace = NS, key = "max_items" })
         end)
 
-        test.it("a read before the cache is warmed surfaces an error, never a silent DB reload", function()
-            -- Boot is the sole cache owner; a read must never provision the cache.
-            -- Force the cache cold and confirm the read fails loudly instead of
-            -- silently reloading from the DB and returning a value.
-            local s = store.get("kickside.settings:cache")
-            test.not_nil(s)
-            local sh = s :: any
-            sh:set("overrides", "null", 0)
-            sh:release()
+        local function empty_cache()
+            local handle = assert(store.get("kickside.settings:cache"))
+            local _, err = handle:delete("snapshot")
+            handle:release()
+            test.is_nil(err)
+            test.is_nil(cache.read())
+            test.is_nil(cache.revision())
+        end
 
-            local r = open_settings():get({ namespace = NS, key = "max_items" })
-            test.eq(r.success, false)
-            test.not_nil(r.error)
+        local function without_keeper(check: () -> ())
+            change_keeper_state("stop", "stopped")
+            local ok, err = pcall(check)
+            local admin = open_settings()
+            test.eq(admin:unset({ namespace = NS, key = "max_items" }).success, true)
+            test.eq(admin:unset({ namespace = NS, key = "api_token" }).success, true)
+            local _, reload_err = writer.reload()
+            local restarted, restart_err = pcall(change_keeper_state, "start", "running")
+            if not ok then error(err, 0) end
+            test.is_nil(reload_err)
+            if not restarted then error(restart_err, 0) end
+        end
 
-            -- Re-warm the cache from the DB so the remaining suite reads served state.
-            writer.reload()
-            test.eq(open_settings():get({ namespace = NS, key = "max_items" }).success, true)
+        test.it("recovers every admin read from an empty cache without changing the revision", function()
+            without_keeper(function()
+                local s = open_settings()
+                test.eq(s:set({ namespace = NS, key = "max_items", value = 17 }).success, true)
+                local revision = assert(writer.stored_revision())
+                empty_cache()
+                local one = s:get({ namespace = NS, key = "max_items" })
+                test.eq(one.success, true, tostring(one.error))
+                test.eq(one.value, 17)
+                test.eq(cache.revision(), revision)
+                empty_cache()
+                local namespace = s:get_namespace({ namespace = NS })
+                test.eq(namespace.success, true, tostring(namespace.error))
+                test.eq(namespace.values.max_items, 17)
+                test.eq(namespace.overridden[1], "max_items")
+                empty_cache()
+                local listed = s:list({ namespace = NS })
+                test.eq(listed.success, true, tostring(listed.error))
+                local found = false
+                for _, row in ipairs(listed.settings) do
+                    if row.key == "max_items" then
+                        test.eq(row.value, 17)
+                        test.eq(row.updated_by, "admin")
+                        found = true
+                    end
+                end
+                test.is_true(found)
+                test.eq(cache.revision(), revision)
+                test.eq(writer.stored_revision(), revision)
+                test.eq(s:set({ namespace = NS, key = "max_items", value = 18 }).success, true)
+                test.eq(cache.revision(), revision + 1)
+                test.eq(writer.stored_revision(), revision + 1)
+                test.eq(s:get({ namespace = NS, key = "max_items" }).value, 18)
+                test.eq(s:unset({ namespace = NS, key = "max_items" }).success, true)
+            end)
+        end)
+
+        test.it("recovers restricted reads and decrypts secrets without granting the caller resource access", function()
+            without_keeper(function()
+                env.set("ENCRYPTION_KEY", TEST_KEY)
+                local admin = open_settings()
+                test.eq(admin:set({ namespace = NS, key = "api_token", value = "cold-secret" }).success, true)
+                local member = open_settings_as("user", "app:settings_reader_policy")
+                empty_cache()
+                local one = member:get({ namespace = NS, key = "api_token" })
+                test.eq(one.success, true, tostring(one.error))
+                test.eq(one.value, "cold-secret")
+                empty_cache()
+                local namespace = member:get_namespace({ namespace = NS })
+                test.eq(namespace.success, true, tostring(namespace.error))
+                test.eq(namespace.values.api_token, "cold-secret")
+                test.eq(namespace.values.max_items, 50)
+                test.is_nil(namespace.values.admin_state)
+                test.eq(member:get({ namespace = NS, key = "admin_state" }).success, false)
+                test.eq(member:list({ namespace = NS }).success, false)
+                test.eq(member:set({ namespace = NS, key = "max_items", value = 1 }).success, false)
+                local actor = security.new_actor("user", {})
+                local caller_scope = scope("app:settings_reader_policy")
+                for _, resource in ipairs({ "app:db", "kickside.settings:cache", "ENCRYPTION_KEY" }) do
+                    for _, action in ipairs({ "db.get", "store.get", "store.key.set", "env.get" }) do
+                        test.eq(caller_scope:evaluate(actor, action, resource), "undefined")
+                    end
+                end
+                test.eq(admin:unset({ namespace = NS, key = "api_token" }).success, true)
+            end)
+        end)
+
+        test.it("returns typed read failures without partial data when a cold DB load fails", function()
+            without_keeper(function()
+                local db = assert(sql.get("app:db"))
+                assert(db:execute("ALTER TABLE kickside_settings RENAME TO unavailable_settings", {}))
+                local ok, err = pcall(function()
+                    for _, reader in ipairs({ open_settings(), open_settings_as("user", "app:settings_reader_policy") }) do
+                        empty_cache()
+                        local one = reader:get({ namespace = NS, key = "max_items" })
+                        test.eq(one.success, false)
+                        test.is_nil(one.value)
+                        test.eq(type(one.error), "string")
+                        test.is_true(string.find(one.error, "kickside_settings", 1, true) ~= nil, one.error)
+                        local namespace = reader:get_namespace({ namespace = NS })
+                        test.eq(namespace.success, false)
+                        test.eq(type(namespace.error), "string")
+                        test.is_nil(namespace.values)
+                        test.is_nil(namespace.overridden)
+                        test.is_nil(cache.read())
+                    end
+                    local listed = open_settings():list({ namespace = NS })
+                    test.eq(listed.success, false)
+                    test.eq(type(listed.error), "string")
+                    test.is_nil(listed.settings)
+                end)
+                assert(db:execute("ALTER TABLE unavailable_settings RENAME TO kickside_settings", {}))
+                db:release()
+                if not ok then error(err, 0) end
+            end)
         end)
 
         test.it("admin-only settings are denied by get and omitted by get_namespace for non-admins", function()

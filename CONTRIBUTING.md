@@ -2,8 +2,8 @@
 
 Follow the [organization contribution guide](https://github.com/kicksideai/.github/blob/main/CONTRIBUTING.md),
 [Code of Conduct](https://github.com/kicksideai/.github/blob/main/CODE_OF_CONDUCT.md), and
-[CLA](https://github.com/kicksideai/.github/blob/main/CLA.md). Send the signed CLA privately to
-[licensing@wippy.ai](mailto:licensing@wippy.ai) before merge.
+[CLA](https://github.com/kicksideai/.github/blob/main/CLA.md). The CLA check on your pull
+request explains how to sign.
 
 ## Development and testing
 
@@ -25,6 +25,14 @@ change, run its module target, for example `make -C platform/automation test`.
 Use the documented harness profiles for SQLite and PostgreSQL when persistence
 or migrations change. Frontend source and generated served assets belong in the
 same change; build through the checked-in Makefiles.
+
+Release Please owns versions and release tags. The release workflow builds each
+companion module, prepares it with native `wippy pack --module`, then publishes
+that exact file with `wippy publish --wapp`. Recovery must use the original tagged
+source and the same Wippy build: pack metadata includes the builder's identity.
+Existing versions are accepted only when their whole-file SHA-256 matches the
+prepared artifact. Never replace an existing version or mix preparation commands
+to resume a release.
 
 ## Pull requests
 

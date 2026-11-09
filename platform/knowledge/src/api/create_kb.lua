@@ -3,6 +3,7 @@ local json = require("json")
 local security = require("security")
 local contract = require("contract")
 local engines = require("engines")
+local http_errors = require("http_errors")
 
 local KB_REGISTRY = "kickside.knowledge:knowledge_bases"
 
@@ -94,7 +95,7 @@ local function handler()
         parent_id = is_str(body.parent_id) and body.parent_id or nil,
     })
     if create_err or not created then
-        res:set_status(http.STATUS.INTERNAL_ERROR)
+        res:set_status((http_errors.classify(create_err)))
         res:write_json({ success = false, error = "failed to create knowledge base: " .. tostring(create_err) })
         return
     end

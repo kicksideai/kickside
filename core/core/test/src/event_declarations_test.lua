@@ -40,6 +40,15 @@ return {run = test.run_cases(function()
             fixture.reset("", nil); local allowed, err = call(); test.is_true(allowed); test.is_nil(err)
             test.eq(fixture.reads, 1); test.eq(fixture.lookups, 4)
         end)
+        test.it("reads the component kind declaration once for every event of a write", function()
+            fixture.reset("", nil)
+            local events = {}
+            for index = 1, 5 do events[index] = {type = "guard:event", body = {marker = index}} end
+            local allowed, err = api.validate_event_types(fixture.database(), {{thread_id = fixture.ID, events = events}})
+            test.is_true(allowed); test.is_nil(err)
+            test.eq(fixture.lookups_by_id["guard:component"], 1)
+            test.eq(fixture.lookups_by_id["guard:event"], 5)
+        end)
         for _, stage in ipairs({"absent_kind", "absent_event"}) do
             test.it("undeclared input keeps its invalid classification/" .. stage, function()
                 fixture.reset(stage, nil); local allowed, err = call(); test.is_false(allowed); test.not_nil(err); test.eq(err:kind(), errors.INVALID)

@@ -2,6 +2,7 @@ local test = require("test")
 local sql = require("sql")
 local process = require("process")
 local worker_pool = require("worker_pool")
+local job_fixture = require("job_fixture")
 
 local function define_tests()
     test.describe("job pool registry version handoff", function()
@@ -22,13 +23,13 @@ local function define_tests()
             }
             local pool = worker_pool.new({
                 sql_get = function() return db, nil end,
-                policy = function() return { worker_count_sqlite = 1, worker_count_postgres = 1, worker_awaited_slots = 1,
+                policy = function() return job_fixture.pool_policy({ worker_count_sqlite = 1, worker_count_postgres = 1, worker_awaited_slots = 1,
                     worker_claim_batch = 10, fairness_shares = { live = 1 },
                     slot_retry_after_ms = 1000, slot_retry_max_delay_ms = 60000,
-                    retention_interval_ms = 3600000 }, nil end,
+                    retention_interval_ms = 3600000 }), nil end,
                 reclaim = {
                     reclaim_expired = function() return 0, nil end,
-                    reclaim_terminated = function() return 0, nil end,
+                    reclaim_terminated = function() return 0, nil, 0 end,
                     close_lost_runs = function() return 0, nil end,
                 },
                 claim = {

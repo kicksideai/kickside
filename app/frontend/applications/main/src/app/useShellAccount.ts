@@ -15,19 +15,16 @@ export function useShellAccount(
 ) {
   const currentUser = ref<{ email: string; full_name: string } | null>(null)
   const accountItems = ref<AccountItem[]>([])
-  const profileOpen = ref(false)
   const profileWcOpen = ref(false)
   const profileWcHost = ref<HTMLElement | null>(null)
   let profileEl: HTMLElement | null = null
 
-  function toggleProfile() { profileOpen.value = !profileOpen.value }
   function teardownProfile() {
     if (profileEl) { profileEl.remove(); profileEl = null }
   }
   function closeProfile() { teardownProfile(); profileWcOpen.value = false }
 
   async function openComponentModal(tag: string) {
-    profileOpen.value = false
     profileWcOpen.value = true
     await nextTick()
     if (!profileWcHost.value) return
@@ -80,10 +77,8 @@ export function useShellAccount(
   return {
     currentUser,
     accountItems,
-    profileOpen,
     profileWcOpen,
     profileWcHost,
-    toggleProfile,
     openComponentModal,
     openProfile,
     closeProfile,

@@ -61,7 +61,7 @@ return {run = test.run_cases(function()
             test.eq(calls, 1)
             local missing, read_err = query.get(id)
             test.is_nil(missing)
-            test.eq(read_err, "Upload not found")
+            test.is_true(errors.is(read_err, errors.NOT_FOUND))
         end)
     end)
 end)}

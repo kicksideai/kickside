@@ -493,6 +493,33 @@ local function define_tests()
             test.ok(summary:find("...", 1, true), summary)
         end)
 
+        test.it("preserves registry denial and read failure causes", function()
+            for _, kind in ipairs({errors.PERMISSION_DENIED, errors.UNAVAILABLE}) do
+                local cause = errors.new({kind = kind, message = "capability registry read refused: trait:public"})
+                local result, err = capability_context.validate_trait_contexts({"trait:public"}, {}, function(_id)
+                    return nil, cause
+                end)
+                test.not_nil(err)
+                test.is_false(result.ok)
+                test.is_true(errors.is(err, kind), tostring(err))
+                test.contains(tostring(err), "trait:public")
+                test.contains(tostring(err), "capability registry read refused")
+                test.contains(capability_context.error_message(result), "capability registry read refused")
+                test.eq(#result.mismatched, 0)
+            end
+        end)
+
+        test.it("reports an absent capability separately from registry read failures", function()
+            for _, cause in ipairs({false, errors.new({kind = errors.NOT_FOUND, message = "entry absent"})}) do
+                local result, err = capability_context.validate_trait_contexts({"trait:absent"}, {}, function(_id)
+                    return nil, cause or nil
+                end)
+                test.is_nil(err)
+                test.is_false(result.ok)
+                test.contains(capability_context.error_message(result), "trait:absent expected agent.trait, got missing")
+            end
+        end)
+
         test.it("validates selected trait contexts against each trait schema", function()
             local function get_entry(id: string): any
                 if id == "trait:kb" then

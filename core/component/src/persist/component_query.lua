@@ -205,7 +205,7 @@ M.filtered_query = filtered_query
 
 -- select(state) -> the main SELECT for a reader state.
 function M.select(state: ReaderState): (any?, error?)
-    local select_fields = { "c.component_id", "c.impl_id", "c.created_at", "c.updated_at" }
+    local select_fields = { "c.component_id", "c.impl_id", "c.created_at", "c.updated_at", "c.deleting_at", "c.delete_intent" }
 
     if state._include_private_context then
         table.insert(select_fields, "c.private_context")

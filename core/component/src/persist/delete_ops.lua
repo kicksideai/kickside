@@ -63,45 +63,44 @@ local function reroot_child_page(tx: Executor, db: Executor, parent_id: string, 
     return false, nil
 end
 
--- Validate the deterministic placement constraints of a component deletion without
--- mutating anything. Teardown calls this before invoking an implementation-owned
--- deletable, so a missing child policy cannot destroy side data and only then reject
--- the component-row deletion. DELETE_COMPONENT calls the same function again in its
--- write transaction to remain authoritative under concurrency.
--- Validation only reads children and explicitly handles a missing query result.
+-- Acceptance requires authority for the parent only. Marked children already
+-- have their own authorized intent; accepting the parent does not retry them.
 type ChildReader = { query: (string, ...unknown) -> ({ table }?, error?) }
-
 local function validate_delete_tx(tx: Executor | ChildReader, payload: any): ({ { component_id: string, path: string? } }?, error?)
     payload = type(payload) == "table" and payload or {}
     if not payload.component_id then
-        return nil, (errors.new({ message = "component ID is required", kind = errors.INVALID }) :: error)
+        return nil, errors.new({ message = "component ID is required", kind = errors.INVALID })
     end
-
-    -- Capture direct children before deletion so each subtree can be explicitly
-    -- orphaned to root (parent_id NULL) with re-materialized paths afterward.
-    local children, cerr = tx:query("SELECT component_id,path FROM " .. component_types.TABLES.COMPONENTS
-        .. " WHERE parent_id=$1 ORDER BY component_id ASC LIMIT 1", { payload.component_id })
-    local read_err = rows_error(children, cerr, "failed to read children", "children.rows")
+    local policy = payload.child_policy
+    if policy ~= nil and policy ~= "" and policy ~= "reparent_root" then
+        return nil, errors.new({message = "unsupported child_policy: " .. tostring(policy), kind = errors.INVALID})
+    end
+    local children, err = tx:query("SELECT component_id,path FROM " .. component_types.TABLES.COMPONENTS
+        .. " WHERE parent_id=$1" .. (policy == "reparent_root" and "" or " AND deleting_at IS NULL")
+        .. " ORDER BY component_id ASC LIMIT 1", {payload.component_id})
+    local read_err = rows_error(children, err, "failed to read children", "children.rows")
     if read_err then return nil, read_err end
-    local child_rows = children :: { { component_id: string, path: string? } }
-    if #child_rows > 0 then
-        local policy = payload.child_policy
-        if policy == nil or policy == "" then
-            return nil, (errors.new({
-                message = "component has child components; pass child_policy=reparent_root or delete children first",
-                kind = errors.CONFLICT,
-            }) :: error)
-        end
-        if policy ~= "reparent_root" then
-            return nil, (errors.new({ message = "unsupported child_policy: " .. tostring(policy), kind = errors.INVALID }) :: error)
-        end
+    if policy ~= "reparent_root" and children[1] then
+        return nil, errors.new({message = "component has live child components; pass child_policy=reparent_root or delete children first",
+            kind = errors.CONFLICT})
     end
-    return child_rows, nil
+    return children, nil
+end
+
+-- Child row absence is the only completion proof. The marked parent fences
+-- placement writes, so readiness needs no structural lock or Jobs inspection.
+local function deletion_ready_tx(tx: Executor, payload: any): (boolean?, error?)
+    if payload.child_policy == "reparent_root" then return true, nil end
+    local children, err = tx:query("SELECT 1 FROM " .. component_types.TABLES.COMPONENTS
+        .. " WHERE parent_id=$1 LIMIT 1", {payload.component_id})
+    local read_err = rows_error(children, err, "failed to read deletion dependencies", "children.rows")
+    if read_err then return nil, read_err end
+    return children[1] == nil, nil
 end
 
 -- The component's delete mark is committed before this command. Drain at most
--- 100 owned auxiliary rows in its transaction; the existing retention slot
--- retries the same command while the mark keeps new component writes fenced.
+-- 100 owned auxiliary rows in its transaction; Jobs continues the command
+-- while the mark keeps new component writes fenced.
 local function drain_owner_rows(tx: Executor, component_id: string): (boolean?, error?)
     local specs = {
         { "kickside_component_declaration_fence", "automation_id" },
@@ -132,7 +131,7 @@ local function drain_owner_rows(tx: Executor, component_id: string): (boolean?, 
 end
 
 -- DELETE_COMPONENT payload: { component_id, child_policy? }. Placement is not
--- ownership: a plain delete refuses direct children; child_policy =
+-- ownership: a plain delete waits for physical child absence; child_policy =
 -- "reparent_root" explicitly preserves the old placement behavior for ownership
 -- cascades that delete a parented component outside a workspace subtree walk.
 -- The component's own meta + access rows are deleted in the same tx:
@@ -140,10 +139,21 @@ end
 -- does not fire and these would otherwise orphan on every component deletion.
 local function delete_component(tx: Executor, db: Executor, command: component_types.Command): (component_types.CommandResult?, error?)
     local payload = command.payload or {}
-    local tree_err = placement.lock_tree(tx)
-    if tree_err then return nil, tree_err end
-    local child_rows, validation_err = validate_delete_tx(tx, payload)
-    if validation_err then return nil, validation_err end
+    local child_rows
+    if payload.child_policy == "reparent_root" then
+        local tree_err = placement.lock_tree(tx)
+        if tree_err then return nil, tree_err end
+        local validation_err
+        child_rows, validation_err = validate_delete_tx(tx, payload)
+        if validation_err then return nil, validation_err end
+    else
+        local ready, readiness_err = deletion_ready_tx(tx, payload)
+        if readiness_err then return nil, readiness_err end
+        if not ready then
+            return {component_id = payload.component_id, changes_made = false,
+                rows_affected = 0, deleted = false, pending = true, wait_for = "children"}, nil
+        end
+    end
 
     local locked, lock_err = tx:execute("UPDATE " .. component_types.TABLES.COMPONENTS
         .. " SET context_revision=context_revision WHERE component_id=$1", { payload.component_id })
@@ -156,7 +166,7 @@ local function delete_component(tx: Executor, db: Executor, command: component_t
         return { component_id = payload.component_id, changes_made = false,
             rows_affected = 0, deleted = false, pending = true }, nil
     end
-    if child_rows and child_rows[1] then
+    if payload.child_policy == "reparent_root" and child_rows and child_rows[1] then
         local child_pending, child_err = reroot_child_page(tx, db, payload.component_id :: string,
             tostring(child_rows[1].component_id))
         if child_err then return nil, child_err end
@@ -195,4 +205,4 @@ local function delete_component(tx: Executor, db: Executor, command: component_t
     }, nil
 end
 
-return { validate_delete_tx = validate_delete_tx, delete_component = delete_component }
+return { validate_delete_tx = validate_delete_tx, deletion_ready_tx = deletion_ready_tx, delete_component = delete_component }

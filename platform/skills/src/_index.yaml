@@ -343,6 +343,7 @@ entries:
     modules: [uuid, base64, contract]
     imports:
       component: kickside.component:component
+      envelope: kickside.component:envelope
       access_policy: kickside.component:access_policy
       types: kickside.skills:types
       normalize: kickside.skills.bundle:normalize
@@ -359,7 +360,9 @@ entries:
     method: get
     modules: [base64]
     imports:
+      deletion_progress: kickside.component:deletion_progress
       component: kickside.component:component
+      envelope: kickside.component:envelope
       types: kickside.skills:types
       normalize: kickside.skills.bundle:normalize
       skill_state: kickside.skills:state
@@ -373,7 +376,9 @@ entries:
     method: list
     modules: [base64]
     imports:
+      deletion_progress: kickside.component:deletion_progress
       component: kickside.component:component
+      envelope: kickside.component:envelope
       types: kickside.skills:types
       normalize: kickside.skills.bundle:normalize
       skill_state: kickside.skills:state
@@ -387,7 +392,9 @@ entries:
     method: list_files
     modules: [base64]
     imports:
+      deletion_progress: kickside.component:deletion_progress
       component: kickside.component:component
+      envelope: kickside.component:envelope
       types: kickside.skills:types
       normalize: kickside.skills.bundle:normalize
       skill_state: kickside.skills:state
@@ -401,7 +408,9 @@ entries:
     method: read_file
     modules: [base64]
     imports:
+      deletion_progress: kickside.component:deletion_progress
       component: kickside.component:component
+      envelope: kickside.component:envelope
       types: kickside.skills:types
       normalize: kickside.skills.bundle:normalize
       skill_state: kickside.skills:state
@@ -415,7 +424,9 @@ entries:
     method: list_versions
     modules: [base64]
     imports:
+      deletion_progress: kickside.component:deletion_progress
       component: kickside.component:component
+      envelope: kickside.component:envelope
       types: kickside.skills:types
       normalize: kickside.skills.bundle:normalize
       skill_state: kickside.skills:state
@@ -433,6 +444,7 @@ entries:
     modules: [uuid, base64, contract]
     imports:
       component: kickside.component:component
+      envelope: kickside.component:envelope
       access_policy: kickside.component:access_policy
       types: kickside.skills:types
       normalize: kickside.skills.bundle:normalize
@@ -450,6 +462,7 @@ entries:
     modules: [uuid, base64, contract]
     imports:
       component: kickside.component:component
+      envelope: kickside.component:envelope
       access_policy: kickside.component:access_policy
       types: kickside.skills:types
       normalize: kickside.skills.bundle:normalize
@@ -467,6 +480,7 @@ entries:
     modules: [uuid, base64, contract]
     imports:
       component: kickside.component:component
+      envelope: kickside.component:envelope
       access_policy: kickside.component:access_policy
       types: kickside.skills:types
       normalize: kickside.skills.bundle:normalize

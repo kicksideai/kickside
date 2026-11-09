@@ -22,14 +22,17 @@ local function new(dependencies: any): any
             res:write_json({ success = false, error = tostring(access_err) })
             return
         end
-        local ok, err = workflows.delete(id)
+        local ok, err, receipt = workflows.delete(id)
         if not ok then
             res:set_status((http_errors.classify(err)))
             res:write_json({ success = false, error = tostring(err or "delete failed") })
             return
         end
+        local deletion = receipt :: { [string]: any }
         res:set_status(h.STATUS.OK)
-        res:write_json({ success = true, id = id })
+        res:write_json({ success = true, id = id, deleted = deletion.deleted, in_progress = deletion.in_progress,
+            status = deletion.status, cleanup_pending = deletion.cleanup_pending, job_id = deletion.job_id,
+            notification_error = deletion.notification_error })
     end
     return { handler = handler }
 end

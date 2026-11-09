@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ComponentDeletion from '@kickside/ui-kit/ComponentDeletion.vue'
+import { useComponentDeletion } from '@kickside/ui-kit/useComponentDeletion'
 import { ref, onBeforeUnmount, nextTick } from 'vue'
 import { Icon } from '@iconify/vue'
 import Button from 'primevue/button'
@@ -6,7 +8,8 @@ import { api, loadByTagName } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import { apiError } from '../constants'
 import ConnectionPicker from './ConnectionPicker.vue'
-import { subscribeComponentMeta, type ComponentMetaEvent } from '@widgets/app/componentRealtime'
+import { subscribeComponentMeta, type ComponentMetaEvent } from '@kickside/ui-kit/componentRealtime'
+import { latestRequest } from '@kickside/ui-kit/latestRequest'
 import { CONNECTION_META_FIELD_TYPES } from '../status'
 import type { Connection } from './connections.types.ts'
 import type { Provider } from './connection-picker.types.ts'
@@ -57,11 +60,20 @@ function connectionUrl(offset: number): string {
 
 async function fetchConnections(offset: number) {
   const { data } = await api.get(connectionUrl(offset))
-  return data ?? { connections: [], total_count: 0, has_more: false }
+  // A failed read answers with the same shape as a non-2xx response, so apiError
+  // reports the server's message for both.
+  if (!data?.success) throw Object.assign(new Error('Could not load connections.'), { response: { data } })
+  return data
 }
 
+// Reloads and further pages share one read sequence: a read applies its rows, its
+// error and its loading flag only while no later read of the listing has started.
+// A reload supersedes a pending page, and a page is refused while a reload is in flight.
+const beginListingRead = latestRequest()
 async function load() {
+  const current = beginListingRead()
   loading.value = true
+  loadingMore.value = false
   error.value = ''
   loadError.value = ''
   try {
@@ -72,6 +84,7 @@ async function load() {
       api.get('/api/v1/oauth/providers/discover'),
       api.get('/api/v1/connections/providers/discover'),
     ])
+    if (!current()) return
     connections.value = (conns.connections ?? []) as Connection[]
     connectionsTotal.value = Number(conns.total_count ?? connections.value.length)
     connectionsHasMore.value = Boolean(conns.has_more)
@@ -81,32 +94,32 @@ async function load() {
       ...((credentialProvs.data?.providers ?? []) as Provider[]),
     ])
   } catch (e) {
-    loadError.value = apiError(e)
-    connections.value = []
-    providers.value = []
-    connectionsTotal.value = 0
-    connectionsHasMore.value = false
+    if (!current()) return
+    if (connections.value.length) error.value = apiError(e)
+    else loadError.value = apiError(e)
     syncComponentSubscriptions()
   } finally {
-    loading.value = false
+    if (current()) loading.value = false
   }
 }
 
 async function loadMoreConnections() {
-  if (loadingMore.value || !connectionsHasMore.value) return
+  if (loading.value || loadingMore.value || !connectionsHasMore.value) return
+  const current = beginListingRead()
   loadingMore.value = true
   error.value = ''
   try {
     const data = await fetchConnections(connections.value.length)
+    if (!current()) return
     const next = (data.connections ?? []) as Connection[]
     connections.value = [...connections.value, ...next]
     connectionsTotal.value = Number(data.total_count ?? connectionsTotal.value)
     connectionsHasMore.value = Boolean(data.has_more)
     syncComponentSubscriptions()
   } catch (e) {
-    error.value = apiError(e)
+    if (current()) error.value = apiError(e)
   } finally {
-    loadingMore.value = false
+    if (current()) loadingMore.value = false
   }
 }
 
@@ -252,6 +265,7 @@ async function remove(c: Connection) {
   try {
     const { data } = await api.delete(`/api/v1/connections/${encodeURIComponent(c.component_id)}`)
     if (!data?.success) throw new Error(data?.error || 'delete failed')
+    acceptDeletion(c.component_id, data)
     await load()
   } catch (e) {
     error.value = apiError(e)
@@ -260,6 +274,7 @@ async function remove(c: Connection) {
 
 useHostVisibilityRefresh(load)
 onBeforeUnmount(clearComponentSubscriptions)
+const {acceptDeletion} = useComponentDeletion(connections, row => row.component_id, undefined, load)
 </script>
 
 <template>
@@ -284,7 +299,7 @@ onBeforeUnmount(clearComponentSubscriptions)
     </header>
 
     <div class="conn-body">
-      <div v-if="loading" class="conn-loading">Loading…</div>
+      <div v-if="loading && !connections.length" class="conn-loading">Loading…</div>
 
       <!-- Initial load failed: a directed error with retry, not an empty list. -->
       <section v-else-if="loadError" class="conn-empty au d1">
@@ -305,13 +320,14 @@ onBeforeUnmount(clearComponentSubscriptions)
           <div class="block-head"><h2 class="lt-section-header">Your connections</h2></div>
           <div class="live-grid">
             <div v-for="c in filteredConnections" :key="c.component_id" class="live-card s-live" :class="`state-${statusClass(c)}`">
+              <ComponentDeletion :state="c" @retry="confirmId = c.component_id; remove(c)" />
               <div class="lc-top">
                 <div class="lc-ico"><Icon :icon="connIcon(c)" aria-hidden="true" /></div>
                 <div class="lc-top-r">
-                  <button class="lc-add" :title="`Share ${c.name || c.provider}`" :aria-label="`Share ${c.name || c.provider}`" @click="openShare(c)">
+                  <button class="lc-add" :title="`Share ${c.name || c.provider}`" :aria-label="`Share ${c.name || c.provider}`" @click="openShare(c)" :disabled="!!c.deleting_at">
                     <Icon icon="tabler:share" />
                   </button>
-                  <button class="lc-add" :title="`Reconnect ${c.name || c.provider}`" :aria-label="`Reconnect ${c.name || c.provider}`" @click="reconnect(c)">
+                  <button class="lc-add" :title="`Reconnect ${c.name || c.provider}`" :aria-label="`Reconnect ${c.name || c.provider}`" @click="reconnect(c)" :disabled="!!c.deleting_at">
                     <Icon icon="tabler:refresh" />
                   </button>
                   <button
@@ -320,7 +336,7 @@ onBeforeUnmount(clearComponentSubscriptions)
                     :title="confirmId === c.component_id ? 'Click again to remove' : `Remove ${c.name || c.provider}`"
                     :aria-label="`Remove ${c.name || c.provider}`"
                     @click="remove(c)"
-                  >
+                   :disabled="!!c.deleting_at">
                     <Icon :icon="confirmId === c.component_id ? 'tabler:check' : 'tabler:trash'" />
                   </button>
                 </div>
@@ -339,7 +355,7 @@ onBeforeUnmount(clearComponentSubscriptions)
             <button
               v-if="connectionsHasMore"
               class="ghost-action"
-              :disabled="loadingMore"
+              :disabled="loading || loadingMore"
               @click="loadMoreConnections"
             >
               <Icon :icon="loadingMore ? 'tabler:loader-2' : 'tabler:chevron-down'" :class="loadingMore && 'spin'" />

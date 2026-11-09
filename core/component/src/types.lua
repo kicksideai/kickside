@@ -168,6 +168,9 @@ type ComponentRow = {
     impl_id: string,
     created_at: string,
     updated_at: string,
+    deleting_at: string?,
+    deletion_job_id: string?,
+    deletion_job: {status: string, attempts: integer, last_error: string?}?,
     private_context: JsonMap?,
     context_revision: integer?,
     meta: MetadataMap?,
@@ -178,6 +181,9 @@ type ComponentRow = {
 }
 
 type AccessContextResult = {
+    deleting_at: string?,
+    deletion_job_id: string?,
+    deletion_job: {status: string, attempts: integer, last_error: string?}?,
     id: string?,
     component_id: string?,
     context: JsonMap?,
@@ -235,6 +241,7 @@ type ServiceEnvelope = {
     kind: string?,
     retryable: boolean?,
     details: { [string]: any }?,
+    error_kind: string?,
 }
 
 type UpdateResult = {

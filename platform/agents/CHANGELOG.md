@@ -1,5 +1,81 @@
 # Changelog
 
+## [0.2.14](https://github.com/kicksideai/kickside/compare/agents-v0.2.13...agents-v0.2.14) (2026-11-08)
+
+
+### Bug Fixes
+
+* UI artifacts in buttons, headings, dialogs and tables ([#371](https://github.com/kicksideai/kickside/issues/371)) ([ea55ea8](https://github.com/kicksideai/kickside/commit/ea55ea8a17ee5802cb73a4dbcf39878d7f56cd2e))
+
+## [0.2.13](https://github.com/kicksideai/kickside/compare/agents-v0.2.12...agents-v0.2.13) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
+## [0.2.12](https://github.com/kicksideai/kickside/compare/agents-v0.2.11...agents-v0.2.12) (2026-11-07)
+
+
+### Bug Fixes
+
+* **agents:** carry success on the agent deletion receipt ([#343](https://github.com/kicksideai/kickside/issues/343)) ([d33187a](https://github.com/kicksideai/kickside/commit/d33187ac2ce471efabb19c2ed9f25ee257e5c983))
+
+## [0.2.11](https://github.com/kicksideai/kickside/compare/agents-v0.2.10...agents-v0.2.11) (2026-11-07)
+
+
+### Bug Fixes
+
+* carry the component deletion receipt through thread, skill, webhook, workflow and agent deletes ([#341](https://github.com/kicksideai/kickside/issues/341)) ([98e9d03](https://github.com/kicksideai/kickside/commit/98e9d03b522828d63b284dff4174ef7543bef2cb))
+
+## [0.2.10](https://github.com/kicksideai/kickside/compare/agents-v0.2.9...agents-v0.2.10) (2026-11-07)
+
+
+### Bug Fixes
+
+* **widgets:** follow deletion events without racing the delete job ([#337](https://github.com/kicksideai/kickside/issues/337)) ([fdd6984](https://github.com/kicksideai/kickside/commit/fdd6984188d6f35cdaf4e40cd0ac8b9cd08928bc))
+
+## [0.2.9](https://github.com/kicksideai/kickside/compare/agents-v0.2.8...agents-v0.2.9) (2026-11-05)
+
+
+### Bug Fixes
+
+* **component:** expose asynchronous deletion progress ([e4ca4b7](https://github.com/kicksideai/kickside/commit/e4ca4b7ab5185ecc6ecf83b336ca3e6edf5aca6e))
+* **component:** run deletion cleanup through Jobs ([da3f7ae](https://github.com/kicksideai/kickside/commit/da3f7aee8dce4136a65d1c94bda6604820bc8355))
+* **component:** simplify deletion waiting and committed delivery ([584eae6](https://github.com/kicksideai/kickside/commit/584eae6145e5e9b4ea36bdbd6527ffe376e9f7fe))
+* preserve deletion view state and bind notification authority ([2ea5cf1](https://github.com/kicksideai/kickside/commit/2ea5cf1a31352ba4ba1915daeca384d06d2e7b70))
+* **widgets:** keep accepted deletion state across pages ([62c8e18](https://github.com/kicksideai/kickside/commit/62c8e181b0e1b60d0c3c6a80f6f9585dac6ef7cb))
+* **widgets:** preserve deletion progress across refreshes ([cd607e1](https://github.com/kicksideai/kickside/commit/cd607e14462b8421d092612cb62dce73e57f5ed8))
+
+## [0.2.8](https://github.com/kicksideai/kickside/compare/agents-v0.2.7...agents-v0.2.8) (2026-10-30)
+
+
+### Bug Fixes
+
+* **agents:** preserve capability registry read errors ([#248](https://github.com/kicksideai/kickside/issues/248)) ([7c17773](https://github.com/kicksideai/kickside/commit/7c17773cf1b486c075aa9d59d8dba32978a75570))
+
+## [0.2.7](https://github.com/kicksideai/kickside/compare/agents-v0.2.6...agents-v0.2.7) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+
+## [0.2.6](https://github.com/kicksideai/kickside/compare/agents-v0.2.5...agents-v0.2.6) (2026-10-25)
+
+
+### Bug Fixes
+
+* **hub:** require typed recommender completion ([#145](https://github.com/kicksideai/kickside/issues/145)) ([b93bc77](https://github.com/kicksideai/kickside/commit/b93bc77a6f2835548592816a8e46591e7d72bbb1))
+
+## [0.2.5](https://github.com/kicksideai/kickside/compare/agents-v0.2.4...agents-v0.2.5) (2026-10-23)
+
+
+### Bug Fixes
+
+* **agents:** clarify generated artifact tag instructions ([#130](https://github.com/kicksideai/kickside/issues/130)) ([17e539a](https://github.com/kicksideai/kickside/commit/17e539af8533a0b587378b2cccccf96a5048a5fd))
+* **automation:** retire direct agent launch controls without breaking saved tasks ([#95](https://github.com/kicksideai/kickside/issues/95)) ([86e687a](https://github.com/kicksideai/kickside/commit/86e687ad79c4d29d91c753d5e7d1ca9e7caf873a))
+
 ## [0.2.4](https://github.com/kicksideai/kickside/compare/agents-v0.2.3...agents-v0.2.4) (2026-10-22)
 
 

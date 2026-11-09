@@ -5,6 +5,7 @@ local funcs = require("funcs")
 local cfg = require("config")
 local row_bytes = require("row_bytes")
 local boundary = require("sql_boundary")
+local job_types = require("job_types")
 
 local wake = {}
 type DialectTransaction = { db_type: (any) -> (string?, error?) }
@@ -13,7 +14,7 @@ type WakePlan = { key: string, generation: number, candidates: { table }, extras
 
 -- The published demand of one wake key (CONTRACTS jobs.wake_tx).
 type WakeResult = { demand_generation: integer, touched_count: integer, continuation_id: string? }
-local CONTINUATION_TYPE = "kickside.wake.continuation"
+local CONTINUATION_TYPE = job_types.WAKE_CONTINUATION_TYPE
 local POOL_NUDGE = "kickside.core.jobs.persist:pool_nudge"
 wake.CONTINUATION_TYPE = CONTINUATION_TYPE
 
@@ -496,14 +497,21 @@ end
 -- Notify the registered pool after the transaction-owning caller commits.
 -- Durable demand is recoverable at boot; an unavailable recipient is returned
 -- to the producer instead of being hidden behind pulse-row discovery. The
--- notification runs through the Jobs-owned pool_nudge function under its own
+-- notification runs through a Jobs-owned notification entry under its own
 -- identity, independent of the producer's process authority.
-function wake.nudge_workers(_db: sql.DB?, _dbtype: string?): (integer, error?)
-    local sent, nudge_err = funcs.call(POOL_NUDGE)
+function wake.notify_workers(entry_id: string): (integer, error?)
+    local sent, nudge_err = funcs.call(entry_id)
     if nudge_err then return 0, nudge_err end
-    local count, count_err = boundary.number_value(sent, "nudge", 0, true, false, response_error)
+    local count, count_err = boundary.number_value(sent, "nudge", 0, true, false, function(field: string): error
+        return errors.new({kind = errors.INTERNAL, retryable = false, message = "Worker notification response is invalid",
+            details = {code = "job_notification_response", field = field}})
+    end)
     if count_err then return 0, count_err end
     return count :: integer, nil
+end
+
+function wake.nudge_workers(_db: sql.DB?, _dbtype: string?): (integer, error?)
+    return wake.notify_workers(POOL_NUDGE)
 end
 
 return wake

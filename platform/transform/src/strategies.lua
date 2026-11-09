@@ -5,6 +5,7 @@
 --
 --   resolve(name)          -> { id, strategy, replay_safe } of its one binding
 --   open(name)             -> the binding's contract instance
+--   open_binding(binding)  -> the contract instance of a resolved binding
 --   describe(name, config) -> the references the configuration declares, or
 --                             why its resource use cannot be enforced
 
@@ -74,6 +75,19 @@ function M.resolve(name: string): (Map?, string?)
     return binding, resolve_err
 end
 
+function M.open_binding(binding: Map): (any?, Map?)
+    local name = tostring(binding.strategy)
+    local def, def_err = contract.get(M.CONTRACT)
+    if def_err or not def then
+        return nil, infrastructure_error(name, "contract lookup failed", def_err or "contract unavailable")
+    end
+    local instance, open_err = (def :: any):open(tostring(binding.id))
+    if open_err or not instance then
+        return nil, infrastructure_error(name, "contract open failed", open_err or "binding unavailable")
+    end
+    return instance, nil
+end
+
 function M.open(name: string): (any?, Map?, any?)
     local binding, resolve_err, registry_err = resolve_binding(name)
     if resolve_err or not binding then
@@ -82,14 +96,8 @@ function M.open(name: string): (any?, Map?, any?)
         end
         return nil, nil, resolve_err
     end
-    local def, def_err = contract.get(M.CONTRACT)
-    if def_err or not def then
-        return nil, nil, infrastructure_error(name, "contract lookup failed", def_err or "contract unavailable")
-    end
-    local instance, open_err = (def :: any):open((binding :: Map).id)
-    if open_err or not instance then
-        return nil, nil, infrastructure_error(name, "contract open failed", open_err or "binding unavailable")
-    end
+    local instance, open_err = M.open_binding(binding :: Map)
+    if open_err or not instance then return nil, nil, open_err end
     return instance, binding, nil
 end
 

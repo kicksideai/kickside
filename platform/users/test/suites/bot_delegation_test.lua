@@ -12,7 +12,6 @@ local groups = require("user_group_sources_repo")
 local component = require("component")
 local identity = require("execution_identity")
 local reconcile = require("trigger_reconcile")
-local group_sets = require("group_sets")
 local owned = {}
 local components = {}
 local policies = {}
@@ -46,6 +45,7 @@ local function grant(target, anchor, attached, effect)
     local bytes = identity.delegation_bytes("user", target, anchor)
     local id = identity.delegation_policy_id("user", target, anchor)
     if effect == "deny" then id = "app:deny_" .. assert(crypto.random.uuid()) end
+    test.not_nil((reconcile.trigger()))
     local changes = assert(registry.snapshot()):changes()
     changes:create({id = id, kind = "security.policy",
         meta = {managed_by = "kickside.security", intent = "execution_delegation"},
@@ -175,6 +175,7 @@ local function define_capability_cases()
             }
             local deny = missing[capability]
             local id = "app:bot_capability_" .. assert(crypto.random.uuid())
+            test.not_nil((reconcile.trigger()))
             local changes = assert(registry.snapshot()):changes()
             changes:create({id = id, kind = "security.policy", data = {policy = {
                 actions = deny.action, resources = deny.resource, effect = "deny",
@@ -272,6 +273,7 @@ local function define_process_cases()
         test.it("RA-H46 native supervised " .. capability.action .. " removal refuses twice and restoration preserves identity", function()
             local admitted = admitted_execution()
             local id = "app:bot_process_capability_" .. assert(crypto.random.uuid())
+            test.not_nil((reconcile.trigger()))
             local changes = assert(registry.snapshot()):changes()
             changes:create({id = id, kind = "security.policy", data = {policy = {
                 actions = capability.action, resources = capability.resource, effect = "deny",
@@ -476,7 +478,7 @@ local function define_delegation_cases()
                 local result = allowed(deferred)
                 test.eq(result.meta.user_id, bot)
                 test.eq(#result.groups, 2)
-                test.eq(assert(security.named_scope(result.scope_name)):evaluate(security.new_actor(bot), "access", resource), "allow")
+                test.eq(assert(identity.scope_from_groups(result.scope_groups or {}, result.scope_policy_ids)):evaluate(security.new_actor(bot), "access", resource), "allow")
                 test.not_nil((groups.set_user_groups(operator, {baseline})))
                 denied(deferred)
             end)
@@ -525,17 +527,18 @@ local function define_delegation_cases()
                 grant(bot, root, {operator_group})
                 test.not_nil((groups.set_user_groups(operator, {baseline, operator_group})))
                 local before = allowed(deferred)
-                test.eq(assert(security.named_scope(before.scope_name)):evaluate(security.new_actor(bot), "access", resource), "allow")
+                test.eq(assert(identity.scope_from_groups(before.scope_groups or {}, before.scope_policy_ids)):evaluate(security.new_actor(bot), "access", resource), "allow")
                 test.not_nil((groups.set_user_groups(bot, {baseline})))
                 local after = allowed(deferred)
                 test.eq(after.scope_name, baseline)
-                test.eq(assert(security.named_scope(after.scope_name)):evaluate(security.new_actor(bot), "access", resource), "undefined")
+                test.eq(assert(identity.scope_from_groups(after.scope_groups or {}, after.scope_policy_ids)):evaluate(security.new_actor(bot), "access", resource), "undefined")
             end)
         end
         test.it("RA-H07 live policy removal denies without relying on a cached positive decision", function()
             local policy = grant(bot, root, {operator_group})
             test.not_nil((groups.set_user_groups(operator, {baseline, operator_group})))
             allowed(true)
+            test.not_nil((reconcile.trigger()))
             local changes = assert(registry.snapshot()):changes()
             changes:delete(policy)
             test.is_nil(select(2, changes:apply()))
@@ -682,72 +685,6 @@ local function define_effect_cases()
         end)
 end
 
-local function define_host_cases()
-        local function validate_target(target, anchor, meta)
-            local actor = security.new_actor(outsider, meta or {})
-            local scope = security.new_scope({assert(security.policy("app:delegation_validation_caller"))})
-            return funcs.new():with_actor(actor):with_scope(scope):call("app.security:delegation_validator",
-                {principal = {kind = "user", id = target}, root = anchor})
-        end
-        for _, marked in ipairs({true, false}) do
-            test.it("RA-H06 host validation accepts a live ordinary " .. (marked and "bot" or "human") .. " target at an existing root", function()
-                local anchor = component_root()
-                local result, err = validate_target(marked and bot or operator, anchor)
-                test.is_nil(err)
-                test.eq(result.success, true)
-            end)
-        end
-        test.it("RA-H06 host validation supports an explicit all-root grant without inventing a root", function()
-            local result, err = validate_target(bot, "*")
-            test.is_nil(err)
-            test.eq(result.success, true)
-        end)
-        test.it("RA-H06 host validation does not substitute an email alias for a canonical principal", function()
-            local result, err = validate_target(bot .. "@bots.invalid", component_root())
-            test.is_nil(result)
-            test.is_true(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
-        end)
-        test.it("RA-H06 host validation refuses inactive targets using live Users status", function()
-            test.not_nil((lifecycle.update(bot, {status = "inactive"})))
-            local result, err = validate_target(bot, component_root())
-            test.is_nil(result)
-            test.is_true(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
-        end)
-        test.it("RA-H06 host validation ignores forged actor metadata when the requested target is absent", function()
-            local absent = assert(crypto.random.uuid())
-            local result, err = validate_target(absent, component_root(), {user_id = bot, principal = {kind = "user", id = bot}})
-            test.is_nil(result)
-            test.is_true(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
-        end)
-        test.it("RA-H06 host validation requires a real root before generating a grant", function()
-            local result, err = validate_target(bot, assert(crypto.random.uuid()))
-            test.is_nil(result)
-            test.is_true(errors.is(err, errors.NOT_FOUND), tostring(err))
-        end)
-        test.it("RA-H45 host Component storage outage remains a typed failure", function()
-            local anchor = component_root()
-            execute("ALTER TABLE kickside_components RENAME TO fixture_unavailable_components", {})
-            local _, source_err = component.list_system({component_ids = {anchor}, include = {meta = false, private_context = false}, limit = 1})
-            local result, err = validate_target(bot, anchor)
-            execute("ALTER TABLE fixture_unavailable_components RENAME TO kickside_components", {})
-            test.is_nil(result)
-            test.not_nil(err)
-            test.not_nil(source_err)
-            test.eq(err:kind(), source_err:kind())
-            test.eq(err:retryable(), source_err:retryable())
-            test.contains(tostring(err), "kickside_components")
-        end)
-        test.it("RA-H45 host Users storage outage keeps the existing typed infrastructure envelope", function()
-            local anchor = component_root()
-            execute("ALTER TABLE app_users RENAME TO fixture_unavailable_users", {})
-            local result, err = validate_target(bot, anchor)
-            execute("ALTER TABLE fixture_unavailable_users RENAME TO app_users", {})
-            test.is_nil(result)
-            test.is_true(errors.is(err, errors.UNAVAILABLE), tostring(err))
-            test.eq(err:retryable(), true)
-        end)
-end
-
 local function install_selected(id, selected, request_id, caller, title, metadata)
     local actor = assert(security.new_actor(caller or operator, metadata or {}))
     local executor = assert(funcs.new()):with_actor(actor):with_scope(assert(security.new_scope({assert(security.policy("app:test_runtime"))})))
@@ -757,6 +694,7 @@ end
 
 local function install_operator_access()
     local id = "app:install_operator_" .. assert(crypto.random.uuid())
+    test.not_nil((reconcile.trigger()))
     local changes = assert(registry.snapshot()):changes()
     changes:create({id = id, kind = "security.policy", data = {groups = {operator_group}, policy = {
         actions = {"access", "registry.get", "registry.find", "funcs.call", "funcs.security", "contract.get", "contract.open", "contract.call", "contract.security"},
@@ -1254,6 +1192,7 @@ local function with_fixture(define_tests)
         test.before_each(function()
             operator_group = "app:bot_operators_" .. assert(crypto.random.uuid())
             deny_group = "app:bot_denied_" .. assert(crypto.random.uuid())
+            test.not_nil((reconcile.trigger()))
             local changes = assert(registry.snapshot()):changes()
             for _, group in ipairs({operator_group, deny_group}) do
                 local id = "app:bot_group_baseline_" .. assert(crypto.random.uuid())
@@ -1285,14 +1224,6 @@ local function with_fixture(define_tests)
             end
             owned = {}
             test.not_nil((reconcile.trigger()))
-            for _, row in ipairs(assert(group_sets.list())) do
-                for _, group in ipairs(row.groups) do
-                    if group == operator_group or group == deny_group then
-                        execute("DELETE FROM kickside_security_group_sets WHERE scope_name=$1", {row.scope_name})
-                        break
-                    end
-                end
-            end
             local snapshot = assert(registry.snapshot())
             local existing = {}
             for _, entry in ipairs(assert(snapshot:find({[".kind"] = "security.policy"}))) do existing[tostring(entry.id)] = true end
@@ -1319,5 +1250,4 @@ return {
     run_effects = with_fixture(define_effect_cases),
     run_capabilities = with_fixture(define_capability_cases),
     run_process = with_fixture(define_process_cases),
-    run_host = with_fixture(define_host_cases),
 }

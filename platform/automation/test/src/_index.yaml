@@ -8,6 +8,37 @@ namespace: app
 # the namespace exclude in wippy.yaml.
 
 entries:
+  - name: config_access_probe
+    kind: function.lua
+    source: file://config_access_probe.lua
+    method: run
+    imports:
+      types: kickside.automation:types
+
+  - name: config_probe_call
+    kind: security.policy
+    policy:
+      resources: app:config_access_probe
+      actions: funcs.call
+      effect: allow
+
+  - name: config_probe_read
+    kind: security.policy
+    policy:
+      resources: kickside.automation:db_config
+      actions: registry.get
+      effect: allow
+
+  - name: config_access_test
+    kind: function.lua
+    meta: {type: test, suite: automation_config_access}
+    source: file://config_access_test.lua
+    method: run
+    modules: [security, funcs]
+    imports:
+      test: wippy.test:test
+      types: kickside.automation:types
+
   - name: slot_provision_errors_test
     kind: function.lua
     meta: {type: test, suite: automation}
@@ -117,14 +148,22 @@ entries:
     component: kickside/realtime
     version: '*'
 
-  - name: dep.kickside.automation
+  - name: dep.kickside.sync
     kind: ns.dependency
     version: '*'
     meta:
       comment: Automation mounted as the single package root; qualified parameters wire every host-owned requirement in its
         transitive graph.
-    component: kickside/automation
+    component: kickside/sync
     parameters:
+    - name: kickside.sync:ui_server
+      value: app:gateway
+    - name: kickside.transform:ui_server
+      value: app:gateway
+    - name: kickside.transform:api_router
+      value: app:api
+    - name: kickside.transform.security:user_security_scope
+      value: app:user
     - name: kickside.component:target_db
       value: app:db
     - name: kickside.component:api_router
@@ -301,6 +340,13 @@ entries:
       actions: contract.call
       effect: deny
 
+  - name: round_direct_scope_policy
+    kind: security.policy
+    policy:
+      resources: app:round_direct_scope_policy
+      actions: access
+      effect: allow
+
   - name: drive_repair
     kind: library.lua
     source: file://drive_repair_source.lua
@@ -315,6 +361,7 @@ entries:
     method: run
     modules: [sql, uuid, json, process, channel, time]
     imports:
+      round_harness: kickside.automation:round_harness
       cleanup: app:drive_repair_cleanup
       test: wippy.test:test
       drive: kickside.automation:drive
@@ -377,6 +424,7 @@ entries:
       migration: wippy.migration:migration
       jobs: kickside.core.jobs:jobs
       slot: app:drive_repair_slot_boundary
+      slot_repair: kickside.automation.engine:slot_repair
 
 
   - name: drive_repair_races_test
@@ -423,3 +471,48 @@ entries:
       cleanup: app:drive_repair_cleanup
       drive: kickside.automation:drive
       types: kickside.automation:types
+
+  - name: deletion_test_worker
+    kind: library.lua
+    source: file://deletion_test_worker.lua
+    modules: [funcs, sql, time, uuid, process]
+    imports:
+      claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      completion: kickside.core.jobs.service:worker_completion
+
+  - name: dep.wippy.dataflow
+    kind: ns.dependency
+    component: wippy/dataflow
+    version: '*'
+    parameters:
+    - {name: target_db, value: 'app:db'}
+    - {name: process_host, value: 'app:processes'}
+    - {name: api_router, value: 'app:api'}
+
+  - name: dep.kickside.users
+    kind: ns.dependency
+    component: kickside/users
+    version: '*'
+    parameters:
+    - {name: 'kickside.users:env_storage', value: 'app:env_storage'}
+    - {name: 'kickside.users:public_router', value: 'app:api_public'}
+    - {name: 'kickside.users:api_router', value: 'app:api'}
+    - {name: 'kickside.users:ui_server', value: 'app:gateway'}
+    - {name: 'kickside.users:target_db', value: 'app:db'}
+    - {name: 'kickside.users:user_security_scope', value: 'app:user'}
+    - {name: 'kickside.users:admin_security_scope', value: 'app:user'}
+    - {name: 'kickside.users:login_role_resource', value: 'app:*'}
+    - {name: 'kickside.settings:target_db', value: 'app:db'}
+    - {name: 'kickside.settings:api_router', value: 'app:api'}
+    - {name: 'kickside.settings:ui_server', value: 'app:gateway'}
+
+  - name: dep.kickside.security
+    kind: ns.dependency
+    component: kickside/security
+    version: '*'
+    parameters:
+    - {name: api_router, value: 'app:api'}
+    - {name: ui_server, value: 'app:gateway'}
+    - {name: target_db, value: 'app:db'}
+    - {name: process_host, value: 'app:processes'}

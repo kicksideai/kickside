@@ -18,6 +18,7 @@ entries:
       - time
       - uuid
     imports:
+      execution_policy: kickside.core.jobs.policy:execution
       clock: kickside.core.jobs:clock
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config
@@ -55,6 +56,7 @@ entries:
       config: kickside.core.jobs:config
       lifecycle: kickside.core.jobs.persist:lifecycle
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      thread_fence: kickside.core.jobs.persist:thread_fence
 
   - name: worker_marker
     kind: library.lua
@@ -73,6 +75,7 @@ entries:
       - json
       - uuid
     imports:
+      runtime_policy: kickside.core.jobs.policy:runtime
       clock: kickside.core.jobs:clock
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config
@@ -81,6 +84,8 @@ entries:
       row_bytes: kickside.core.jobs.persist:row_bytes
       listing: kickside.core.jobs.persist:listing
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+      capacity: kickside.core.jobs:capacity
 
   - name: thread_fence
     kind: library.lua
@@ -105,6 +110,8 @@ entries:
     kind: library.lua
     source: file://row_bytes.lua
     modules: [json, sql]
+    imports:
+      job_types: kickside.core.jobs:types
 
   - name: row_mutations
     kind: library.lua
@@ -123,16 +130,28 @@ entries:
       clock: kickside.core.jobs:clock
       job_types: kickside.core.jobs:types
 
+  - name: eligibility
+    kind: library.lua
+    meta:
+      comment: Shared running-key eligibility and SQL-aggregated dispatchable backlog.
+    source: file://eligibility.lua
+    modules: [sql]
+    imports:
+      capacity: kickside.core.jobs:capacity
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+
   - name: claim
     kind: library.lua
     meta:
       comment: Atomic claim-with-lease of due pending jobs.
     source: file://claim.lua
     modules:
+      - json
       - sql
       - uuid
       - time
     imports:
+      runtime_policy: kickside.core.jobs.policy:runtime
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config
       lifecycle: kickside.core.jobs.persist:lifecycle
@@ -140,6 +159,8 @@ entries:
       lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
       row_bytes: kickside.core.jobs.persist:row_bytes
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      capacity: kickside.core.jobs:capacity
+      eligibility: kickside.core.jobs.persist:eligibility
 
   - name: reclaim
     kind: library.lua
@@ -149,6 +170,8 @@ entries:
     modules:
       - sql
     imports:
+      execution_policy: kickside.core.jobs.policy:execution
+      runtime_policy: kickside.core.jobs.policy:runtime
       lease_release: kickside.core.jobs:lease_release
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config
@@ -165,10 +188,12 @@ entries:
     source: file://claim_execution.lua
     modules: [sql]
     imports:
+      reclaim: kickside.core.jobs.persist:reclaim
       job_types: kickside.core.jobs:types
       lifecycle: kickside.core.jobs.persist:lifecycle
       worker_marker: kickside.core.jobs.persist:worker_marker
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      thread_fence: kickside.core.jobs.persist:thread_fence
 
   - name: completion
     kind: library.lua
@@ -198,6 +223,7 @@ entries:
       clock: kickside.core.jobs:clock
       thread_teardown: kickside.core.jobs.persist:thread_teardown
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      thread_fence: kickside.core.jobs.persist:thread_fence
 
   - name: wake
     kind: library.lua
@@ -208,6 +234,7 @@ entries:
       - sql
       - funcs
     imports:
+      job_types: kickside.core.jobs:types
       row_bytes: kickside.core.jobs.persist:row_bytes
       clock: kickside.core.jobs:clock
       lifecycle: kickside.core.jobs.persist:lifecycle
@@ -265,6 +292,7 @@ entries:
       - channel
       - process
     imports:
+      execution_policy: kickside.core.jobs.policy:execution
       row_bytes: kickside.core.jobs.persist:row_bytes
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config
@@ -288,3 +316,4 @@ entries:
     imports:
       error_envelope: kickside.contract:error_envelope
       committed_error: kickside.contract:committed_error
+

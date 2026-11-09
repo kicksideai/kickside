@@ -19,6 +19,8 @@ entries:
     - kickside.security.persist:*
     - kickside.security.security:*
     - kickside.security.service:*
+    - kickside.security.runtime:*
+    - kickside.security.projection:*
     - kickside.security.scopes:*
     - kickside.security.scopes.*
     actions:
@@ -46,6 +48,8 @@ entries:
     - kickside.security.persist:*
     - kickside.security.security:*
     - kickside.security.service:*
+    - kickside.security.runtime:*
+    - kickside.security.projection:*
     - kickside.security.scopes:*
     - kickside.security.scopes.*
     actions:

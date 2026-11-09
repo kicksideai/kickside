@@ -3,6 +3,8 @@ local security = require("security")
 local user_repo = require("user_repo")
 local user_groups_repo = require("user_groups_repo")
 local logger = require("logger")
+local sql = require("sql")
+local user_repo_support = require("user_repo_support")
 
 local log = logger:named("list_users")
 
@@ -17,18 +19,33 @@ M._user_groups_repo = user_groups_repo
 -- "error" as "no groups" and save a wiped membership. Returns (status, body) the
 -- HTTP shell writes verbatim.
 function M.process(limit: number, offset: number, options: any?): (number, any)
-    local users, err = M._user_repo.list({ limit = limit, offset = offset, bot_accounts = options and options.bot_accounts })
-    if err then
-        return http.STATUS.INTERNAL_ERROR, { success = false, error = err }
+    local db, db_err = user_repo_support.get_db()
+    if db_err then return http.STATUS.INTERNAL_ERROR, { success = false, error = db_err } end
+    -- Account rows and membership existence checks share the same snapshot during deletion.
+    local tx, begin_err = db:begin({ isolation = sql.isolation.REPEATABLE_READ })
+    if begin_err then
+        db:release()
+        return http.STATUS.INTERNAL_ERROR, { success = false, error = begin_err }
     end
-
+    local users, err = M._user_repo.list({ limit = limit, offset = offset,
+        bot_accounts = options and options.bot_accounts }, tx)
+    local memberships
+    if not err then
+        local user_ids = {}
+        for _, user in ipairs(users) do user_ids[#user_ids + 1] = user.user_id end
+        memberships, err = M._user_groups_repo.get_user_groups_batch(user_ids, tx)
+        if err then log:error("failed to load user groups", { user_count = #user_ids, error = err }) end
+    end
+    local _, finish_err
+    if err then _, finish_err = tx:rollback() else _, finish_err = tx:commit() end
+    db:release()
+    if err or finish_err then
+        local message = err or finish_err
+        if err and finish_err then message = tostring(err) .. "; rollback failed: " .. tostring(finish_err) end
+        return http.STATUS.INTERNAL_ERROR, { success = false, error = message }
+    end
     for _, user in ipairs(users) do
-        local groups_result, groups_err = M._user_groups_repo.get_user_groups(user.user_id)
-        if groups_err then
-            log:error("failed to load user groups", { user_id = user.user_id, error = groups_err })
-            return http.STATUS.INTERNAL_ERROR, { success = false, error = groups_err }
-        end
-        user.security_groups = groups_result and groups_result.groups or {}
+        user.security_groups = memberships[user.user_id] or {}
     end
 
     return http.STATUS.OK, { success = true, users = users, limit = limit, offset = offset, count = #users }

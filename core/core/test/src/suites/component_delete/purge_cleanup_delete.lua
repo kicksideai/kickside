@@ -10,8 +10,12 @@ local function delete(): any
     if contract_err or not definition then return { success = false, error = contract_err or "threads unavailable" } end
     local threads, open_err = definition:open()
     if open_err or not threads then return { success = false, error = open_err or "threads binding unavailable" } end
-    local found, find_err = threads:find({ thread_id = id })
-    if find_err or not found then return { success = false, error = find_err or "cleanup thread not found" } end
+    local store = assert(sql.get("app:db"))
+    local found, find_err = store:query("SELECT id FROM kickside_thread WHERE id=$1", {id})
+    store:release()
+    if find_err or type(found) ~= "table" or #found ~= 1 then
+        return {success = false, error = find_err or "cleanup thread not found"}
+    end
     local purged, purge_err = threads:purge({ component_id = id })
     if purge_err or not purged or purged.purged ~= true then
         return { success = false, error = purge_err or "thread purge has no proof" }

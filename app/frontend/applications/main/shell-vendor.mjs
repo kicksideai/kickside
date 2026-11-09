@@ -7,7 +7,7 @@ const importMapPattern = /<script\b[^>]*type="importmap"[^>]*>[\s\S]*?<\/script>
 const primevue = ['config', 'button', 'tag', 'dialog', 'checkbox', 'inputtext', 'password',
   'select', 'datatable', 'column', 'avatar', 'accordion', 'accordionpanel', 'accordionheader',
   'accordioncontent', 'chip', 'textarea', 'toggleswitch', 'radiobutton', 'inputnumber',
-  'datepicker', 'listbox', 'panel', 'card', 'toolbar', 'message', 'badge', 'divider']
+  'datepicker', 'listbox', 'panel', 'card', 'toolbar', 'message', 'badge', 'divider', 'menu']
 export const shellModules = ['@wippy-fe/proxy', 'vue', 'pinia', 'vue-router', 'luxon',
   '@iconify/vue', ...primevue.map(name => 'primevue/' + name), 'axios', 'nanoevents']
 export const shellExternal = (id, importer) => shellModules.includes(id) && !importer?.startsWith(prefix)

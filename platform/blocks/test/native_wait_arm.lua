@@ -1,15 +1,18 @@
 local security = require("security")
 local sql = require("sql")
+local funcs = require("funcs")
 
 local M = {}
 
-function M.arm(args: any): (any?, string?)
+function M.arm(args: any): (any?, string | error | nil)
     local a = type(args) == "table" and args or {}
     local actor = security.actor()
     local actor_id = actor and actor:id() or ""
     if actor_id ~= "system:native-wait-owner" then
         return nil, "wait arm did not run under the frozen Dataflow actor"
     end
+    local authorized, authority_err = funcs.call("kickside.blocks:authorize_arm", a)
+    if not authorized then return nil, authority_err end
     local idempotency_key = tostring(a.idempotency_key or "")
     if idempotency_key == "" then return nil, "wait arm idempotency key is required" end
     if type(a.input) ~= "table" or a.input.marker ~= "parked-before-restart" then

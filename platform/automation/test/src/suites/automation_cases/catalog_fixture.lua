@@ -26,6 +26,7 @@ local CATALOG_BINDINGS = {
         kind = "contract.binding",
         meta = {
             title = "Uploads", class = { "kickside.uploads" }, group = "Files",
+            thread_class = "kickside.test.uploads",
             events = { output = {
                 { type = "kickside.uploads.events:upload.completed" },
                 { type = "kickside.uploads.events:upload.deleted" },
@@ -75,6 +76,7 @@ local CATALOG_PORTS = {
         meta = { type = "kickside.automation.port", title = "Upload Completed", icon = "tabler:upload", comment = "Start after a file finishes processing and is ready to use." },
         binding = "kickside.uploads:uploads_component",
         event = "kickside.uploads.events:upload.completed",
+        config_schema = { thread_id = { picker = "wc-component-picker", required = true } },
     },
     {
         id = "kickside.webhooks:webhook_received",

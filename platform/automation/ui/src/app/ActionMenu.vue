@@ -9,6 +9,7 @@ const props = defineProps<{
   items: ActionItem[]
   name: string
   busy?: boolean
+  disabled?: boolean
   size?: 'small' | 'normal'
   triggerLabel?: string
 }>()
@@ -21,6 +22,7 @@ const groups = computed(() => groupActionItems(props.items))
 function toggle() { open.value = !open.value }
 function close() { open.value = false }
 function choose(item: ActionItem) {
+  if (props.disabled || item.disabled) return
   close()
   emit('select', item.method)
 }
@@ -39,6 +41,7 @@ function choose(item: ActionItem) {
       :aria-expanded="open"
       :aria-label="triggerLabel || `More actions for ${name}`"
       :title="'More actions'"
+      :disabled="disabled"
       @click="toggle"
     >
       <template #icon="{ class: iconClass }"><Icon icon="tabler:dots" aria-hidden="true" :class="iconClass" /></template>
@@ -58,7 +61,7 @@ function choose(item: ActionItem) {
             :class="[item.danger && 'is-danger', item.warn && 'is-warn']"
             :data-testid="`action-${item.method}`"
             :aria-label="actionAriaLabel(item, name)"
-            :disabled="item.disabled || (busy && item.kind === 'call')"
+            :disabled="disabled || item.disabled || (busy && item.kind === 'call')"
             @click="choose(item)"
           >
             <Icon :icon="item.icon" class="kx-menu-item-ico" aria-hidden="true" />

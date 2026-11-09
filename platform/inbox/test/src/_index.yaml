@@ -217,6 +217,8 @@ entries:
       value: app:db
     - name: kickside.core.lifecycle:process_host
       value: app:processes
+    - name: kickside.settings:process_host
+      value: app:processes
     - name: kickside.core.lifecycle:user_lifecycle_grant
       value:
         subject_id: app:user
@@ -319,6 +321,7 @@ entries:
       object_fields: kickside.inbox.persist:object_fields
       inbox_types: kickside.inbox:inbox_types
       inbox_item_types: kickside.inbox:inbox_item_types
+      inbox_files: kickside.inbox:inbox_files
       component: kickside.component:component
   - name: read_model_error_probe
     kind: function.lua

@@ -1,5 +1,116 @@
 # Changelog
 
+## [0.2.25](https://github.com/kicksideai/kickside/compare/security-v0.2.24...security-v0.2.25) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
+## [0.2.24](https://github.com/kicksideai/kickside/compare/security-v0.2.23...security-v0.2.24) (2026-11-07)
+
+
+### Bug Fixes
+
+* **security:** read only what the requested groups reach ([#323](https://github.com/kicksideai/kickside/issues/323)) ([36676fd](https://github.com/kicksideai/kickside/commit/36676fd486d7485b343511388f9ac33a6be7ad26))
+
+## [0.2.23](https://github.com/kicksideai/kickside/compare/security-v0.2.22...security-v0.2.23) (2026-10-30)
+
+
+### Bug Fixes
+
+* **users:** keep per-login facts in the session block of actor metadata ([ea23ac2](https://github.com/kicksideai/kickside/commit/ea23ac223ad67b31e3076930223a5d77cd79b007))
+
+## [0.2.22](https://github.com/kicksideai/kickside/compare/security-v0.2.21...security-v0.2.22) (2026-10-30)
+
+
+### Bug Fixes
+
+* **security:** resolve only live group authority ([402ec62](https://github.com/kicksideai/kickside/commit/402ec625779094efa1df0b57a83bedc0b3e32c55))
+
+## [0.2.21](https://github.com/kicksideai/kickside/compare/security-v0.2.20...security-v0.2.21) (2026-10-30)
+
+
+### Bug Fixes
+
+* **security:** resolve live compositions before projection ([#255](https://github.com/kicksideai/kickside/issues/255)) ([f2db3b4](https://github.com/kicksideai/kickside/commit/f2db3b47a6bc809c500e0d3127418286aa77fb42))
+
+## [0.2.20](https://github.com/kicksideai/kickside/compare/security-v0.2.19...security-v0.2.20) (2026-10-30)
+
+
+### Features
+
+* **security:** simplify run-as permission management ([#175](https://github.com/kicksideai/kickside/issues/175)) ([42029e5](https://github.com/kicksideai/kickside/commit/42029e5d756361a8c42cfa8dc737138c2c3079c0))
+
+## [0.2.19](https://github.com/kicksideai/kickside/compare/security-v0.2.18...security-v0.2.19) (2026-10-29)
+
+
+### Bug Fixes
+
+* **security:** isolate role source reads from caller denials ([#233](https://github.com/kicksideai/kickside/issues/233)) ([3ab6915](https://github.com/kicksideai/kickside/commit/3ab6915c56448b63a525ddcf1f8e1f7c460b4d7a))
+
+## [0.2.18](https://github.com/kicksideai/kickside/compare/security-v0.2.17...security-v0.2.18) (2026-10-29)
+
+
+### Bug Fixes
+
+* **security:** preserve native delegation through composed roles ([#218](https://github.com/kicksideai/kickside/issues/218)) ([80c8747](https://github.com/kicksideai/kickside/commit/80c87475c238d8782ad422aafef249ea24b12a2b))
+
+## [0.2.17](https://github.com/kicksideai/kickside/compare/security-v0.2.16...security-v0.2.17) (2026-10-28)
+
+
+### Bug Fixes
+
+* align System account and permission administration ([#197](https://github.com/kicksideai/kickside/issues/197)) ([fb19352](https://github.com/kicksideai/kickside/commit/fb1935229cba380343c98b252e132cf7ecbce6f3))
+
+## [0.2.16](https://github.com/kicksideai/kickside/compare/security-v0.2.15...security-v0.2.16) (2026-10-28)
+
+
+### Bug Fixes
+
+* consolidate default account roles ([aafe19c](https://github.com/kicksideai/kickside/commit/aafe19cd2ac7d58ed04f4d035cef91995eab8dce))
+* consolidate default account roles ([02b9f4b](https://github.com/kicksideai/kickside/commit/02b9f4bc47efb852b9f20c2f08edebb9c6d28972))
+
+## [0.2.15](https://github.com/kicksideai/kickside/compare/security-v0.2.14...security-v0.2.15) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** read projection readiness from native authority ([#178](https://github.com/kicksideai/kickside/issues/178)) ([ec25552](https://github.com/kicksideai/kickside/commit/ec255523e03a42f89eccb7871053c29724e7d3a5))
+
+## [0.2.14](https://github.com/kicksideai/kickside/compare/security-v0.2.13...security-v0.2.14) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** omit deleted policies from registry previews ([819712e](https://github.com/kicksideai/kickside/commit/819712e42935b0e8cc027add0dd32ba0ee1cd91d))
+* **security:** project module access in the same registry version as an install ([20152e2](https://github.com/kicksideai/kickside/commit/20152e288a994e4c48e59b43ca1bd89b55444be0))
+* **security:** project module access in the same registry version as an install ([049ff9e](https://github.com/kicksideai/kickside/commit/049ff9e6ccf9666d95274d0faebe669e2008c7e6))
+
+## [0.2.13](https://github.com/kicksideai/kickside/compare/security-v0.2.12...security-v0.2.13) (2026-10-26)
+
+
+### Bug Fixes
+
+* **security:** expose live scope resolution during staged upgrades ([db3c54d](https://github.com/kicksideai/kickside/commit/db3c54d66cc2dfc17da33040357e1decee522bf8))
+* **security:** expose live scope resolution during staged upgrades ([ed39a5e](https://github.com/kicksideai/kickside/commit/ed39a5e7f85a9a2f3669853dc63b508af5ebb9a3))
+* **security:** preserve native scopes alongside source resolution ([39de48e](https://github.com/kicksideai/kickside/commit/39de48e1964617fad60b36873f78e0cbbe6d1584))
+
+## [0.2.12](https://github.com/kicksideai/kickside/compare/security-v0.2.11...security-v0.2.12) (2026-10-26)
+
+
+### Performance Improvements
+
+* **security:** avoid hashing unchanged projection bindings ([3264022](https://github.com/kicksideai/kickside/commit/3264022b4becd082376f16dfd78be29103c35cca))
+* **security:** skip hashes for equal projected bindings ([528a6e1](https://github.com/kicksideai/kickside/commit/528a6e1c9a9e317be198993e94bbce1f4491d0f5))
+
+## [0.2.11](https://github.com/kicksideai/kickside/compare/security-v0.2.10...security-v0.2.11) (2026-10-25)
+
+
+### Bug Fixes
+
+* **security:** avoid duplicate registry projection passes ([#144](https://github.com/kicksideai/kickside/issues/144)) ([f5f0a03](https://github.com/kicksideai/kickside/commit/f5f0a030e85edcacb0cdca5e7469ee41e21f655e))
+
 ## [0.2.10](https://github.com/kicksideai/kickside/compare/security-v0.2.9...security-v0.2.10) (2026-10-22)
 
 

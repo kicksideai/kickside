@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.9](https://github.com/kicksideai/kickside/compare/mcp-v0.2.8...mcp-v0.2.9) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
+## [0.2.8](https://github.com/kicksideai/kickside/compare/mcp-v0.2.7...mcp-v0.2.8) (2026-10-29)
+
+
+### Bug Fixes
+
+* **mcp:** retain credential tool context ([#211](https://github.com/kicksideai/kickside/issues/211)) ([22dc01b](https://github.com/kicksideai/kickside/commit/22dc01b15ef8cba8329c7973a0df6b0e8a039786))
+
+## [0.2.7](https://github.com/kicksideai/kickside/compare/mcp-v0.2.6...mcp-v0.2.7) (2026-10-28)
+
+
+### Bug Fixes
+
+* **mcp:** keep credential badges inside cards ([#194](https://github.com/kicksideai/kickside/issues/194)) ([1cc3071](https://github.com/kicksideai/kickside/commit/1cc307141f19e97cb8bba98a75a7169038a43574))
+
 ## 0.2.6 (2026-10-17)
 
 - Refresh packaged frontend assets and documentation.

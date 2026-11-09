@@ -68,6 +68,12 @@ function M.update(args: any): (any?, error?)
     thread, write_err = M.finish_mutation(_db, thread, write_err, "update thread", "thread_update_result_missing")
     if write_err then return nil, write_err end
 
+    if params.has_thread_class then
+        local _, marker_err = threads_thread_crud.ensure_thread_type(
+            tostring((thread :: table).id), tostring((thread :: table).thread_class))
+        if marker_err then return nil, committed_error.new(marker_err) end
+    end
+
     local emit_err = emit_update(tostring((thread :: table).id), "kickside.threads:thread.updated")
     if emit_err then return nil, committed_error.new(emit_err) end
     return { thread_id = args.thread_id, thread = thread }, nil
@@ -93,7 +99,7 @@ function M.delete(args: any): (any?, error?)
     return result, nil
 end
 
--- list returns the threads the actor can read, optionally filtered by thread_class.
+-- list returns readable threads, optionally filtered by thread class and implementation.
 function M.list(args: any): (any?, error?)
     args = type(args) == "table" and args or {}
     local limit, limit_err = normalize_int_arg(args.limit, "limit", 1, 1000)
@@ -104,6 +110,7 @@ function M.list(args: any): (any?, error?)
 
     local rows, read_err = threads_reader.list(_db, {
         thread_class = args.thread_class,
+        impl_id = args.impl_id,
         limit = limit,
     })
     local err = error_envelope.cleanup(function() return _db:release() end, read_err, "release thread list connection")

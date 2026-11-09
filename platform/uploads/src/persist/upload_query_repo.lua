@@ -1,7 +1,9 @@
+local binding_errors = require("binding_errors")
 local sql = require("sql")
 
 local resources = require("uploads_resources")
 local persisted_json = require("persisted_json")
+local trim = require("text_trim").trim
 
 local upload_query_repo = {}
 
@@ -64,7 +66,8 @@ end
 -- Get an upload by ID
 function upload_query_repo.get(uuid)
     if not uuid or uuid == "" then
-        return nil, "Upload ID is required"
+        return nil, errors.new({kind = errors.INVALID, message = "Upload ID is required",
+            retryable = false, details = {code = "upload_id_required"}})
     end
 
     local db, err = resources.get_db()
@@ -85,11 +88,12 @@ function upload_query_repo.get(uuid)
     db:release()
 
     if err then
-        return nil, "Failed to get upload: " .. err
+        return nil, binding_errors.from(err, errors.UNAVAILABLE, "upload_lookup_failed", "Failed to get upload")
     end
 
     if #uploads == 0 then
-        return nil, "Upload not found"
+        return nil, errors.new({ kind = errors.NOT_FOUND, message = "Upload not found",
+            retryable = false, details = {code = "upload_not_found"} })
     end
 
     local upload = uploads[1]
@@ -164,7 +168,7 @@ local function apply_list_filters(query, opts)
     end
     local q = opts.q
     if type(q) == "string" then
-        q = q:gsub("^%s*(.-)%s*$", "%1")
+        q = trim(q)
         if q ~= "" then
             local like = "%" .. q .. "%"
             query = query:where("(mime_type LIKE ? OR metadata LIKE ?)", like, like)
@@ -203,7 +207,7 @@ function upload_query_repo.list_by_actor(actor_id, limit, offset, opts)
     db:release()
 
     if err then
-        return nil, "Failed to list uploads: " .. err
+        return nil, binding_errors.from(err, errors.UNAVAILABLE, "upload_list_failed", "Failed to list uploads")
     end
 
     for _, upload in ipairs(uploads) do
@@ -300,10 +304,6 @@ function upload_query_repo.list_with_filters(options)
         query = query:where("actor_id = ?", options.actor_id)
     end
 
-    if options.after_id then
-        query = query:where("uuid > ?", options.after_id)
-    end
-
     if options.filters and options.filters.content_types and #options.filters.content_types > 0 then
         local content_conditions = {}
         for _, content_type in ipairs(options.filters.content_types) do
@@ -342,6 +342,27 @@ function upload_query_repo.list_with_filters(options)
         order = "ASC"
     end
 
+    if options.after_id then
+        -- The cursor must use the same compound order as the result. Its
+        -- timestamp/size comes from the stored row, within the caller's scope.
+        local anchor = "(SELECT " .. sort_column .. " FROM kickside_uploads WHERE uuid = ?"
+        local anchor_params = { options.after_id }
+        if options.actor_id then
+            anchor = anchor .. " AND actor_id = ?"
+            anchor_params[#anchor_params + 1] = options.actor_id
+        end
+        anchor = anchor .. ")"
+        local cursor_params = {}
+        for _ = 1, 2 do
+            for _, value in ipairs(anchor_params) do cursor_params[#cursor_params + 1] = value end
+        end
+        cursor_params[#cursor_params + 1] = options.after_id
+        local comparison = order == "ASC" and ">" or "<"
+        query = query:where("(" .. sort_column .. " " .. comparison .. " " .. anchor
+            .. " OR (" .. sort_column .. " = " .. anchor .. " AND uuid > ?))",
+            table.unpack(cursor_params))
+    end
+
     query = query:order_by(sort_column .. " " .. order .. ", uuid ASC")
 
     if options.limit then
@@ -354,7 +375,7 @@ function upload_query_repo.list_with_filters(options)
     db:release()
 
     if err then
-        return nil, "Failed to list uploads: " .. err
+        return nil, binding_errors.from(err, errors.UNAVAILABLE, "upload_list_failed", "Failed to list uploads")
     end
 
     for _, upload in ipairs(uploads) do
@@ -414,7 +435,7 @@ function upload_query_repo.count_with_filters(options)
     db:release()
 
     if err then
-        return nil, "Failed to count uploads: " .. err
+        return nil, binding_errors.from(err, errors.UNAVAILABLE, "upload_count_failed", "Failed to count uploads")
     end
 
     return result[1].count

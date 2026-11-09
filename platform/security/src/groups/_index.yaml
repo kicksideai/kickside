@@ -4,8 +4,8 @@ entries:
   - name: members
     kind: security.scope
     meta:
-      title: Members
-      comment: Default module access composed from installed public module policies.
+      title: Member
+      comment: Standard access to installed applications.
     policies: []
 
   - name: members_composition

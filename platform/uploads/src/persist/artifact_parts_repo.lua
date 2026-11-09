@@ -359,7 +359,7 @@ function artifact_parts_repo.read_primary_content(upload_id)
     if content_err then return nil, content_err end
     return {
         content = content,
-        mime_type = artifact.mime_type or (blob and blob.mime_type) or "text/markdown",
+        mime_type = artifact.mime_type,
         metadata = artifact.metadata or {},
         artifact = artifact,
         blob = blob,

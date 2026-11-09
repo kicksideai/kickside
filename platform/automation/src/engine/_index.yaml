@@ -24,6 +24,7 @@ entries:
       engine_observe: kickside.automation.engine:observe
       engine_recovery: kickside.automation.engine:recovery
       engine_controls: kickside.automation.engine:controls
+      engine_upgrade: kickside.automation.engine:upgrade
 
   - name: support
     kind: library.lua
@@ -131,6 +132,7 @@ entries:
       comment: "Automation engine part: installed and runtime listings, public/private/trigger state reads, delivery options, config."
     source: file://state.lua
     imports:
+      deletion_progress: kickside.component:deletion_progress
       engine_schema: kickside.automation.engine:schema
       engine_support: kickside.automation.engine:support
       types: kickside.automation:types
@@ -145,6 +147,17 @@ entries:
       engine_schema: kickside.automation.engine:schema
       engine_support: kickside.automation.engine:support
       types: kickside.automation:types
+
+  - name: upgrade
+    kind: library.lua
+    meta:
+      comment: "Automation engine part: stored declarations brought to the current Trigger Spec through the automation's own reconfigure command, stored rollback chains to the current cleanup targets through the rollback writer."
+    source: file://upgrade.lua
+    imports:
+      engine_declaration: kickside.automation.engine:declaration
+      engine_drive_plan: kickside.automation.engine:drive_plan
+      engine_schema: kickside.automation.engine:schema
+      engine_support: kickside.automation.engine:support
 
   - name: artifact
     kind: library.lua
@@ -190,6 +203,7 @@ entries:
       comment: "Automation engine part: pending command recovery and the command dispatcher pass (wake, acknowledge, slot repair)."
     source: file://recovery.lua
     imports:
+      engine_slot_repair: kickside.automation.engine:slot_repair
       types: kickside.automation:types
       engine_support: kickside.automation.engine:support
 
@@ -208,6 +222,7 @@ entries:
     source: file://history.lua
     modules: [json]
     imports:
+      round_history: kickside.automation:round_history
       round_provenance: kickside.automation:round_provenance
 
   - name: selected_install

@@ -69,6 +69,40 @@ entries:
       automations_lib: kickside.automation:automation
       binding_validation: kickside.automation:binding_validation
       drive: kickside.automation:drive
+      engine_schema: kickside.automation.engine:schema
+      upgrade_engine: app:upgrade_engine
+      component: kickside.component:component
+
+  - name: upgrade_engine
+    kind: library.lua
+    meta: { comment: Harness-only automation engine over the production dependencies with named ones replaced. }
+    source: file://upgrade_engine.lua
+    modules: [contract, funcs, registry, logger, security, uuid, json, sql, time, expr, ctx, hash]
+    imports:
+      automation_engine: kickside.automation.engine:engine
+      drive: kickside.automation:drive
+      command: kickside.automation:command
+      declaration_references: kickside.automation:declaration_references
+      declaration_authority: kickside.automation:declaration_authority
+      jobs_config: kickside.core.jobs:config
+      types: kickside.automation:types
+      automation_ref: kickside.automation:automation_ref
+      execution_identity: kickside.execution:execution_identity
+      component: kickside.component:component
+      autoinit: kickside.component:autoinit
+      slot: kickside.automation:slot
+      runtime_policy: kickside.automation:runtime_policy
+      failure_classification: kickside.automation:failure_classification
+      round_ledger: kickside.automation:round_ledger
+      round_history: kickside.automation:round_history
+      prepared_retention: kickside.automation:prepared_retention
+      receipt_retention: kickside.automation:receipt_retention
+      round_outcome: kickside.automation:round_outcome
+      canonical_json: kickside.contract:canonical_json
+      automation_db: kickside.automation:automation_db
+      retention_pin: kickside.core.retention:pin
+      core_db: kickside.core:db
+      view_components: wippy.views:component_registry
 
   - name: round_delivery_test
     kind: function.lua
@@ -80,9 +114,12 @@ entries:
     method: run_delivery
     modules: [sql, json, uuid, funcs, contract, security]
     imports:
+      jobs_claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
       round_outcome: kickside.automation:round_outcome
       round_commit: kickside.automation:round_commit
       round_write: kickside.automation:round_write
+      round_provenance: kickside.automation:round_provenance
       test: wippy.test:test
       drive: kickside.automation:drive
       user_repo: kickside.users.persist:user_repo
@@ -98,9 +135,12 @@ entries:
     method: run_storage
     modules: [sql, json, uuid, funcs, contract, security]
     imports:
+      jobs_claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
       round_outcome: kickside.automation:round_outcome
       round_commit: kickside.automation:round_commit
       round_write: kickside.automation:round_write
+      round_provenance: kickside.automation:round_provenance
       test: wippy.test:test
       drive: kickside.automation:drive
       user_repo: kickside.users.persist:user_repo
@@ -116,13 +156,38 @@ entries:
     method: run_authorization
     modules: [sql, json, uuid, funcs, contract, security]
     imports:
+      jobs_claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
       round_outcome: kickside.automation:round_outcome
       round_commit: kickside.automation:round_commit
       round_write: kickside.automation:round_write
+      round_provenance: kickside.automation:round_provenance
       test: wippy.test:test
       drive: kickside.automation:drive
       user_repo: kickside.users.persist:user_repo
       user_groups_repo: kickside.users.persist:user_groups_repo
+
+  - name: counted_round_consumer
+    kind: library.lua
+    meta: { comment: The sync's round consumer source hosted as a library so a probe can count the registry reads of one page. }
+    source: file://counted_round_consumer_source.lua
+    imports:
+      sink_input: kickside.transform:sink_input
+      failure_classification: kickside.automation:failure_classification
+      round_write: kickside.automation:round_write
+      round_plan: kickside.sync:round_plan
+      transform_gate: kickside.transform:generator
+      sync_document: kickside.sync:document
+
+  - name: counted_round_deliver
+    kind: function.lua
+    meta: { comment: Test-only adapter that delivers one page and counts its runtime policy and transform strategy reads. }
+    source: file://counted_round_probe.lua
+    method: run
+    imports:
+      consumer: app:counted_round_consumer
+      runtime_policy: kickside.automation:runtime_policy
+      transform_strategies: kickside.transform:strategies
 
   - name: db
     kind: db.sql.sqlite
@@ -212,6 +277,8 @@ entries:
     - name: kickside.core:target_db
       value: app:db
     - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.settings:process_host
       value: app:processes
     - name: kickside.core.lifecycle:user_lifecycle_grant
       value:

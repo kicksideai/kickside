@@ -57,7 +57,10 @@ function M.main()
     -- pass returns its error to the requests it answers; the service keeps
     -- serving, so every request reaches a pass.
     local _, err, projected = projection.reconcile()
-    if err then logger:error("boot reconcile failed", { error = err }) end
+    if err then
+        projected = nil
+        logger:error("boot reconcile failed", { error = err })
+    end
 
     while true do
         local result = channel.select({
@@ -103,6 +106,13 @@ function M.main()
             for _, message in ipairs(requests) do
                 if type(message) ~= "table" or type(message.reply_pid) ~= "string" or type(message.reply_topic) ~= "string" then
                     logger:warn("scope reconcile request rejected: it names no reply destination")
+                elseif message.plan == true then
+                    local planned, plan_err = projection.plan(message.planned)
+                    if plan_err then
+                        reply_to(message, failed_reply(plan_err))
+                    else
+                        reply_to(message, { success = true, ops = planned.ops, deferred = planned.deferred })
+                    end
                 elseif message.groups ~= nil then
                     local set, set_err = projection.group_set(message.groups)
                     if not set then
@@ -114,35 +124,50 @@ function M.main()
                         if save_err then
                             reply_to(message, failed_reply(save_err))
                         else
-                            answered[#answered + 1] = { message = message, scope_name = set.scope_name }
+                            answered[#answered + 1] = { message = message, scope_name = set.scope_name,
+                                require_pass = true }
                         end
                     end
                 else
                     for _, group in ipairs(message.fence_groups or {}) do fences[#fences + 1] = group end
-                    answered[#answered + 1] = { message = message }
+                    -- Registry-only callers with a committed-version receipt
+                    -- may acknowledge the event-driven pass that already
+                    -- reached the current registry version. All DB-backed,
+                    -- group-set, and unmarked requests still require a pass.
+                    local source = message.source
+                    local registry_barrier = (source == "registry.observer" or source == "security.delegation")
+                        and type(message.observed_registry_version) == "string"
+                        and message.observed_registry_version ~= ""
+                    answered[#answered + 1] = { message = message, require_pass = not registry_barrier }
                 end
             end
             -- A commit this service applied itself needs no further pass.
-            local needs_pass = #answered > 0 or not projected
+            local needs_pass = not projected or #fences > 0
+            for _, pending in ipairs(answered) do
+                if pending.require_pass then needs_pass = true; break end
+            end
             if not needs_pass then
                 local current, version_err = registry.current_version()
-                needs_pass = version_err ~= nil or current:id() ~= projected:id()
+                needs_pass = version_err ~= nil or not current or current:id() ~= projected:id()
             end
+            local stats = {created = 0, updated = 0, deleted = 0}
+            local rerr
+            local applied
             if needs_pass then
-                local stats, rerr, applied = projection.reconcile()
+                stats, rerr, applied = projection.reconcile(fences)
+            end
+            if rerr then
+                projected = nil
+                logger:error("reconcile failed", { error = rerr })
+            elseif applied then
                 projected = applied
-                if not rerr then
-                    local _, fence_err = projection.fence(fences)
-                    rerr = fence_err
-                end
-                if rerr then logger:error("reconcile failed", { error = rerr }) end
-                for _, pending in ipairs(answered) do
-                    if rerr then
-                        reply_to(pending.message, failed_reply(rerr))
-                    else
-                        reply_to(pending.message, { success = true, created = stats.created, updated = stats.updated,
-                            deleted = stats.deleted, scope_name = pending.scope_name })
-                    end
+            end
+            for _, pending in ipairs(answered) do
+                if rerr then
+                    reply_to(pending.message, failed_reply(rerr))
+                else
+                    reply_to(pending.message, { success = true, created = stats.created, updated = stats.updated,
+                        deleted = stats.deleted, scope_name = pending.scope_name })
                 end
             end
         end

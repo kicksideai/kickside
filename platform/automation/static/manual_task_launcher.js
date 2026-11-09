@@ -1,21 +1,21 @@
-import { e as h, W as T, _ as I, u as L, a as V, b as B } from "./errMsg-CFwf-kA2.js";
-import { defineComponent as x, ref as v, computed as E, watch as D, onBeforeUnmount as N, openBlock as l, createElementBlock as _, createVNode as S, unref as c, createCommentVNode as k, createElementVNode as j, toDisplayString as q, createBlock as A } from "vue";
-import { api as U, define as Q } from "@wippy-fe/proxy";
-import { s as W } from "./execution-identity-editor-BMqd4DxB.js";
+import { e as _, _ as R, u as V, a as B, W as D } from "./errMsg-kIukmtcj.js";
+import { defineComponent as T, ref as v, computed as E, watch as I, onBeforeUnmount as L, openBlock as l, createElementBlock as h, createVNode as N, unref as c, createCommentVNode as k, createElementVNode as Q, toDisplayString as q, createBlock as S } from "vue";
+import { api as U, define as j } from "@wippy-fe/proxy";
+import { s as A } from "./execution-identity-editor-DaljeKxW.js";
 import "@iconify/vue";
-const F = {
+const W = {
   "aria-label": "Launch task",
   class: "kx-manual-launcher"
-}, J = { key: 0 }, K = ["disabled"], O = {
+}, $ = { key: 0 }, F = ["disabled"], J = {
   key: 1,
   role: "alert"
-}, P = {
+}, K = {
   key: 2,
   role: "status"
-}, $ = {
+}, O = {
   key: 3,
   role: "status"
-}, z = /* @__PURE__ */ x({
+}, P = /* @__PURE__ */ T({
   __name: "ManualTaskLauncher",
   props: {
     target: {},
@@ -32,17 +32,17 @@ const F = {
         const e = JSON.parse(n.target);
         return !e || typeof e != "object" || Array.isArray(e) ? { error: "Task target must be an object" } : { target: e, error: "" };
       } catch (e) {
-        return { error: h(e, "Could not read the task target") };
+        return { error: _(e, "Could not read the task target") };
       }
     }), w = E(() => !!t.value && !a.value && !u.value && !f.value.error);
     function C(e) {
-      o.value = h(e, "Could not queue the task"), g("error", { message: o.value, error: e });
+      o.value = _(e, "Could not queue the task"), g("error", { message: o.value, error: e });
     }
-    function M(e) {
+    function x(e) {
       const r = e;
       a.value || u.value || m || r?.principal?.kind !== "user" || !r.principal.id || (t.value = { kind: "user", id: r.principal.id }, o.value = "");
     }
-    async function R() {
+    async function M() {
       if (!w.value || !t.value || !f.value.target) return;
       const e = s;
       m ||= {
@@ -63,7 +63,7 @@ const F = {
         if (!r.installed) {
           const { data: b } = await U.post("/api/v1/automations/selected", r.body);
           if (e !== s) return;
-          if (!b.success) throw new Error(h(b.error, "Task installation is not confirmed"));
+          if (!b.success) throw new Error(_(b.error, "Task installation is not confirmed"));
           if (b.id !== r.body.component_id) throw new Error("Task installation receipt does not match the request");
           r.installed = !0;
         }
@@ -72,7 +72,7 @@ const F = {
           { request_id: r.wake }
         );
         if (e !== s) return;
-        if (!i.success) throw new Error(h(i.error, "Run admission is not confirmed"));
+        if (!i.success) throw new Error(_(i.error, "Run admission is not confirmed"));
         if (i.result?.state === "pending") {
           d.value = !0;
           return;
@@ -85,34 +85,34 @@ const F = {
         e === s && (a.value = !1);
       }
     }
-    return D(() => [n.target, n.parent, n.title], () => {
+    return I(() => [n.target, n.parent, n.title], () => {
       s += 1, m = null, t.value = null, a.value = !1, u.value = !1, d.value = !1, o.value = "";
-    }), N(() => {
+    }), L(() => {
       s += 1;
-    }), (e, r) => (l(), _("section", F, [
-      S(T, {
+    }), (e, r) => (l(), h("section", W, [
+      N(R, {
         tag: "wc-run-as-picker",
         attrs: { root: "", value: t.value?.id, disabled: a.value || u.value || !!c(m) },
-        onChange: M,
+        onChange: x,
         onError: C
       }, null, 8, ["attrs"]),
-      t.value ? k("", !0) : (l(), _("p", J, "Select the account that runs this task.")),
-      j("button", {
+      t.value ? k("", !0) : (l(), h("p", $, "Select the account that runs this task.")),
+      Q("button", {
         type: "button",
         class: "p-button",
         disabled: !w.value,
-        onClick: R
-      }, q(a.value ? "Queuing…" : d.value ? "Check run admission" : o.value ? "Retry run" : "Queue run"), 9, K),
-      f.value.error || o.value ? (l(), _("p", O, q(f.value.error || o.value), 1)) : k("", !0),
-      d.value ? (l(), _("p", P, "Run admission is pending.")) : k("", !0),
-      u.value ? (l(), _("p", $, "Run queued. Follow the task in Automations.")) : k("", !0)
+        onClick: M
+      }, q(a.value ? "Queuing…" : d.value ? "Check run status" : o.value ? "Retry run" : "Queue run"), 9, F),
+      f.value.error || o.value ? (l(), h("p", J, q(f.value.error || o.value), 1)) : k("", !0),
+      d.value ? (l(), h("p", K, "Queuing run…")) : k("", !0),
+      u.value ? (l(), h("p", O, "Run queued. Follow the task in Automations.")) : k("", !0)
     ]));
   }
-}), G = /* @__PURE__ */ I(z, [["__scopeId", "data-v-519c573d"]]), H = /* @__PURE__ */ x({
+}), z = /* @__PURE__ */ T({
   __name: "ManualTaskLauncherElement",
   setup(y) {
-    const p = L(), n = V();
-    return (g, t) => (l(), A(G, {
+    const p = V(), n = B();
+    return (g, t) => (l(), S(P, {
       target: c(p).target || "",
       parent: c(p).parent || "",
       title: c(p).title || "Manual task",
@@ -120,18 +120,18 @@ const F = {
       onError: t[1] || (t[1] = (a) => c(n)("error", a))
     }, null, 8, ["target", "parent", "title"]));
   }
-}), X = { type: "object", properties: {
+}), G = { type: "object", properties: {
   target: { type: "string", default: "" },
   parent: { type: "string", default: "" },
   title: { type: "string", default: "Manual task" }
 } };
-class Y extends B {
+class H extends D {
   static get wippyConfig() {
-    return { propsSchema: X, hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"], inlineCss: W };
+    return { propsSchema: G, hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"], inlineCss: A };
   }
   static get vueConfig() {
-    return { rootComponent: H };
+    return { rootComponent: z };
   }
 }
-Q(import.meta.url, Y);
+j(import.meta.url, H);
 //# sourceMappingURL=manual_task_launcher.js.map

@@ -1,5 +1,5 @@
+local binding_errors = require("binding_errors")
 local security = require("security")
-local json = require("json")
 local upload_query_repo = require("upload_query_repo")
 local metadata_sanitizer = require("metadata_sanitizer")
 
@@ -8,24 +8,25 @@ local function handle(args)
 
     local actor = security.actor()
     if not actor then
-        return nil, "No authenticated actor found"
+        return nil, binding_errors.new(errors.PERMISSION_DENIED, "No authenticated actor found", "actor_required")
     end
 
     local actor_id = actor:id()
     local can_view_all = security.can("view_all", "uploads")
 
     if not can_view_all and not actor_id then
-        return nil, "Access denied"
+        return nil, binding_errors.new(errors.PERMISSION_DENIED, "Access denied", "access_denied")
     end
 
     local after_upload_id = args.after_upload_id
-    local limit = args.limit or 20
+    local limit = args.limit
+    if limit == nil then limit = 20 end
     local filters = args.filters or {}
     local sort = args.sort or "created_at"
     local sort_order = args.sort_order or "desc"
 
-    if limit < 1 or limit > 100 then
-        return nil, "Limit must be between 1 and 100"
+    if type(limit) ~= "number" or limit ~= math.floor(limit) or limit < 1 or limit > 100 then
+        return nil, binding_errors.new(errors.INVALID, "Limit must be between 1 and 100", "invalid_limit")
     end
 
     local repo_options = {
@@ -39,7 +40,7 @@ local function handle(args)
 
     local uploads, err = upload_query_repo.list_with_filters(repo_options)
     if err then
-        return nil, "Failed to list uploads: " .. err
+        return nil, binding_errors.from(err, errors.UNAVAILABLE, "upload_list_failed", "Failed to list uploads")
     end
 
     local has_more = #uploads > limit

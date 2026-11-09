@@ -63,6 +63,37 @@ return test.run_cases(function()
             test.not_nil(captured.body.error)
         end)
 
+        test.it("answers workflow deletion with the component deletion receipt", function()
+            local captured: any = {}
+            local api = delete_api.new({
+                http = {
+                    CONTENT = { JSON = "application/json" },
+                    STATUS = { OK = 200, BAD_REQUEST = 400, UNAUTHORIZED = 401, FORBIDDEN = 403, INTERNAL_ERROR = 500 },
+                    request = function() return { param = function() return "workflow" end } end,
+                    response = function() return {
+                        set_content_type = function() end,
+                        set_status = function(_self: any, status: any) captured.status = status end,
+                        write_json = function(_self: any, body: any) captured.body = body end,
+                    } end,
+                },
+                security = { actor = function() return {} end },
+                repo = { ACCESS = { DELETE = 4 }, require_access = function() return nil end,
+                    delete = function(id: string)
+                        test.eq(id, "workflow")
+                        return true, nil, { success = true, component_id = id, deleted = false, in_progress = true,
+                            status = "in_progress", cleanup_pending = true, job_id = "job" }
+                    end },
+            })
+            api.handler()
+            test.eq(captured.status, 200)
+            test.eq(captured.body.success, true)
+            test.eq(captured.body.id, "workflow")
+            test.is_false(captured.body.deleted)
+            test.is_true(captured.body.in_progress)
+            test.eq(captured.body.status, "in_progress")
+            test.is_true(captured.body.cleanup_pending)
+            test.eq(captured.body.job_id, "job")
+        end)
         test.it("keeps untyped failures internal", function()
             test.eq(exec_api.error_status("version not found"), 500)
             test.eq(exec_api.error_status(nil), 500)

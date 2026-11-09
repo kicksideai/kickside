@@ -346,6 +346,23 @@ A single definition may also carry `ui: <tag>`: the generic form mounts
 that tag for just that one field, handing it a config slice. The plumbing
 is complete; no shipping definition uses it yet.
 
+A definition may instead declare a shared **value control**. Settings binds the
+current draft to its `value` attribute and consumes its `select` event detail.
+The control edits only the draft; the ordinary Save button, validation,
+provenance, overrides, and reset-to-default continue through Settings.
+
+```yaml
+control:
+  tag: wc-model-picker
+  props:
+    capability: vision
+```
+
+`control` is optional. `props` contains the control's static attributes; Settings
+owns `value`. Use `ui` for an editor that saves itself, or `control` for a shared
+picker used by the ordinary form. Shared model selection uses `wc-model-picker`
+with capability filters, so modules do not create their own model selectors.
+
 ## The Settings Contract
 
 `kickside.settings:settings` (`platform/settings/src/_index.yaml`) has five
@@ -381,13 +398,17 @@ end
 
 Writes are admin-gated in two layers:
 
-1. App-owned endpoint firewall: `app.security:user` has no
-   `kickside.settings.api:*` access; `app.security:admin` does. Handlers do
-   no in-code permission checks.
+1. The host's endpoint firewall evaluates `access` on the requested endpoint.
+   The default Member role (`kickside.security.groups:members`) has no Settings
+   administration endpoint grant; Administrator (`app.security:admin`) does.
+   Delegating Settings administration requires explicit endpoint grants;
+   module registry and contract access alone do not grant HTTP access. See
+   [Security and module access](23-security-and-module-access.md).
 2. The contract repeats the boundary so direct calls cannot bypass the
    firewall: `set`/`unset` require an authenticated actor with `access` to
    `kickside.settings.api:put_settings.endpoint`, `list` requires
-   `kickside.settings.api:list_settings.endpoint`. Non-admin callers get
+   `kickside.settings.api:list_settings.endpoint`. Callers without the
+   corresponding grant get
    exactly `"admin settings write access is required"` (set/unset) and
    `"admin settings list access is required"` (list). The writer also
    requires a non-empty `actor_id` for the audit `updated_by`.
@@ -444,10 +465,10 @@ change in a module upgrade propagates immediately, and reset-to-default is
 literally deleting the row (`unset`). Never store the default as an
 override.
 
-Reads are served from a boot-warmed `store.memory` cache. A cold cache is a
-loud error - `"settings cache is not warmed"` - not a silent DB reload.
-Consumers reading at boot must start after the cache-warm barrier or fail
-clearly; they must not switch to a second DB/env read path.
+Reads are served from a `store.memory` cache warmed at boot. A cold cache is
+normal, because a hot module update can replace the store: the read reloads from
+the DB and fills the empty cache. It returns an error only when that reload
+fails, and it never returns partial data.
 
 ## Gotchas
 

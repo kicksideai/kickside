@@ -122,11 +122,19 @@ local function define_tests()
                 function builder:with_title() return self end
                 function builder:with_metadata() return self end
                 function builder:with_input() return self end
-                function builder:agent(id: string)
+                function builder:agent(id: string, cfg: any)
                     test.eq(id, "kickside.hub.instruments:recommender")
+                    test.eq(cfg.arena.tool_calling, "any")
+                    test.is_nil(cfg.arena.tools)
+                    test.eq(cfg.arena.exit_schema.type, "object")
+                    test.eq(cfg.arena.exit_schema.additionalProperties, false)
+                    test.eq(cfg.arena.exit_schema.required[1], "component_ids")
+                    test.eq(cfg.arena.exit_schema.properties.component_ids.maxItems, 5)
+                    test.eq(cfg.arena.exit_schema.properties.component_ids.items.enum[1], "acme/alpha")
+                    test.eq(cfg.arena.exit_schema.properties.component_ids.items.enum[2], "acme/beta")
                     return self
                 end
-                function builder:run() return '["acme/alpha"]', nil end
+                function builder:run() return { component_ids = { "acme/alpha" } }, nil end
                 return builder
             end }
             local result, err = recommendations.recommend(request_body(), {
@@ -139,6 +147,7 @@ local function define_tests()
             test.eq(result.component_ids[1], "acme/alpha")
             local entry = assert(registry.get("kickside.hub.instruments:recommender"))
             test.is_true(entry.meta.palette_hidden)
+            test.is_nil(((entry.data or {}) :: any).tools)
         end)
 
         test.it("hard-codes the recommender and returns only its grounded ids", function()
@@ -154,12 +163,30 @@ local function define_tests()
             test.is_nil(err)
             test.eq(invoked.config.agent_id, "kickside.hub.instruments:recommender")
             test.eq(invoked.config.max_iterations, 1)
+            test.eq(invoked.config.exit_schema.type, "object")
+            test.eq(invoked.config.exit_schema.properties.component_ids.items.enum[1], "acme/alpha")
+            test.eq(invoked.config.exit_schema.properties.component_ids.items.enum[2], "acme/beta")
+            test.eq(invoked.config.exit_schema.properties.component_ids.maxItems, 5)
             test.eq(invoked.metadata.surface, "system_onboarding")
             local prompt_body = select(1, json.decode(invoked.input.content))
             test.eq(prompt_body.candidates[1].component, "acme/alpha")
             test.eq(#result.component_ids, 2)
             test.eq(result.component_ids[1], "acme/beta")
             test.eq(result.component_ids[2], "acme/alpha")
+        end)
+
+        test.it("accepts only the typed finish result requested by the recommender schema", function()
+            local result, err = recommendations.recommend(request_body(), {
+                agent_invoke = { invoke = function(): (any, any?)
+                    return {
+                        content = '{"component_ids":["acme/beta"]}',
+                        structured = { component_ids = { "acme/beta" } },
+                    }, nil
+                end },
+            })
+            test.is_nil(err)
+            test.eq(#result.component_ids, 1)
+            test.eq(result.component_ids[1], "acme/beta")
         end)
 
         test.it("distinguishes unavailable invocation from invalid model output", function()
@@ -176,6 +203,40 @@ local function define_tests()
             test.is_nil(invalid)
             test.eq(invalid_err.kind, "error")
             test.eq(invalid_err.code, "INVALID_RECOMMENDER_RESPONSE")
+
+            local fenced, fenced_err = recommendations.recommend(request_body(), {
+                agent_invoke = { invoke = function(): (any, any?)
+                    return { content = "```json\n[\"acme/alpha\"]\n```" }, nil
+                end },
+            })
+            test.is_nil(fenced)
+            test.eq(fenced_err.code, "INVALID_RECOMMENDER_RESPONSE")
+
+            local malformed, malformed_err = recommendations.recommend(request_body(), {
+                agent_invoke = { invoke = function(): (any, any?)
+                    return { content = '{"component_ids":["acme/alpha"]}',
+                        structured = { component_ids = { [2] = "acme/alpha" } } }, nil
+                end },
+            })
+            test.is_nil(malformed)
+            test.eq(malformed_err.code, "INVALID_RECOMMENDER_RESPONSE")
+
+            local mixed, mixed_err = recommendations.recommend(request_body(), {
+                agent_invoke = { invoke = function(): (any, any?)
+                    return { content = '["acme/alpha"]',
+                        structured = { component_ids = { "acme/alpha", "invented/module" } } }, nil
+                end },
+            })
+            test.is_nil(mixed)
+            test.eq(mixed_err.code, "INVALID_RECOMMENDER_RESPONSE")
+
+            local unknown, unknown_err = recommendations.recommend(request_body(), {
+                agent_invoke = { invoke = function(): (any, any?)
+                    return { structured = { component_ids = { "invented/module" } } }, nil
+                end },
+            })
+            test.is_nil(unknown)
+            test.eq(unknown_err.code, "INVALID_RECOMMENDER_RESPONSE")
         end)
 
         test.it("enforces the admin gate and exposes explicit HTTP semantics", function()

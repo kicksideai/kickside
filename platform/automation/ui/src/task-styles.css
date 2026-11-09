@@ -1,5 +1,7 @@
 /* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
 @import './trigger-config/styles.css';
+@import "@widgets/app/wc-mount.css";
+@import "@widgets/app/anchored-panel.css";
 
 .task-form, .task-target { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .task-form { padding: 2px; }

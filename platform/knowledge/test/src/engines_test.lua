@@ -7,6 +7,22 @@ local test = require("test")
 local engines = require("engines")
 
 local function define_tests()
+    test.describe("engine ingestion projection", function()
+        test.it("selects the first declared content consumer instead of a fixed engine kind", function()
+            local first = {kind = "fixture.ledger", projection_key = "ledger", cursor_key = "fold",
+                events = {input = {{type = "kickside.knowledge.events:content.upserted"}}}}
+            local second = {kind = "fixture.statistics", events = first.events}
+            local selected, err = engines.ingest_projection({projections = {
+                {kind = "fixture.other", events = {input = {{type = "fixture:other"}}}}, first, second}})
+            test.is_nil(err)
+            test.eq(selected, first)
+        end)
+        test.it("refuses an engine without a content consumer", function()
+            local selected, err = engines.ingest_projection({projections = {}})
+            test.is_nil(selected)
+            test.is_true(errors.is(err, errors.INVALID))
+        end)
+    end)
     test.describe("engines.format_stats", function()
         test.it("resolves dotted paths and pluralizes by count", function()
             local spec = {
@@ -68,6 +84,15 @@ local function define_tests()
             local ordinary, ordinary_err = engines.resolve("no_maintenance")
             test.is_nil(ordinary_err)
             test.is_nil(ordinary.config_maintenance)
+        end)
+
+        test.it("discovers file admission only when the descriptor opts in", function()
+            local files, files_err = engines.resolve("files")
+            test.is_nil(files_err)
+            test.eq(files.accepts_files, true)
+            local text, text_err = engines.resolve("wiki")
+            test.is_nil(text_err)
+            test.eq(text.accepts_files, false)
         end)
 
         test.it("applies descriptor defaults under explicit config without mutation", function()

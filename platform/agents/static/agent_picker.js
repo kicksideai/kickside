@@ -1,10 +1,10 @@
 import { u as f, g as m, W as g, P as y } from "./primevue-plugin-Dn0ACs8V.js";
-import { defineComponent as d, computed as i, openBlock as h, createBlock as S } from "vue";
-import { M as v } from "./MultiSelectField-CJKHhAnf.js";
-import { s as k } from "./styles-CiCzyjUM.js";
+import { defineComponent as d, computed as i, openBlock as h, createBlock as v } from "vue";
+import { _ as S } from "./MultiSelectField.vue_vue_type_script_setup_true_lang-NJY5V1IZ.js";
+import { s as _ } from "./styles-Bc_MQ_X7.js";
 import "@iconify/vue";
-import { define as C } from "@wippy-fe/proxy";
-function _(e, t) {
+import { define as k } from "@wippy-fe/proxy";
+function C(e, t) {
   if (typeof e != "string" || !e.trim()) return "";
   const r = e.trim();
   if (r.startsWith("{"))
@@ -49,7 +49,7 @@ const B = /* @__PURE__ */ d({
       return typeof n == "string" && n.trim() !== "";
     }), s = i(() => Object.keys(A(t.value?.schema)?.properties || {})[0] || "agent_id"), l = i(() => {
       if (!o.value) return P(t.value?.selected);
-      const n = _(t.value?.config, s.value);
+      const n = C(t.value?.config, s.value);
       return n ? [n] : [];
     }), c = i(() => o.value ? !1 : t.value?.multi !== !1), u = i(() => t.value?.placeholder || "Search agents…");
     function p(n, a) {
@@ -59,7 +59,7 @@ const B = /* @__PURE__ */ d({
       }
       r("change", { selected: n, labels: a });
     }
-    return (n, a) => (h(), S(v, {
+    return (n, a) => (h(), v(S, {
       source: "/api/v1/agents/list",
       "response-key": "agents",
       "id-key": "name",
@@ -87,12 +87,12 @@ class b extends g {
     return {
       propsSchema: O,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: k
+      inlineCss: _
     };
   }
   static get vueConfig() {
     return { rootComponent: B, plugins: [y] };
   }
 }
-C(import.meta.url, b);
+k(import.meta.url, b);
 //# sourceMappingURL=agent_picker.js.map

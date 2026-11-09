@@ -12,6 +12,7 @@ local uuid = require("uuid")
 local lease = require("lease")
 local lifecycle = require("lifecycle")
 local job_fixture = require("job_fixture")
+local cfg = require("config")
 
 local function execution_seq(job: table): integer
     local sequence = math.tointeger(tonumber(job.execution_seq))
@@ -82,7 +83,11 @@ local function define_tests()
                 test.eq(unchanged.heartbeat_at, before.heartbeat_at)
                 test.eq(unchanged.lease_until, before.lease_until)
 
-                local short = lifecycle.future_string(dbtype, 0.2)
+                local policy, policy_err = cfg.policy()
+                if policy_err or not policy then error("lease test policy unavailable: " .. tostring(policy_err)) end
+                -- One heartbeat is inside the two-heartbeat renewal threshold,
+                -- with enough runway for real database calls on a busy runner.
+                local short = lifecycle.future_string(dbtype, policy.lease_heartbeat_ms / 1000)
                 local _, shorten_err = db:execute("UPDATE kickside_job SET lease_until=$1 WHERE id=$2", { short, job.id })
                 test.is_nil(shorten_err)
                 local renewed, renew_err = lease.validate_for_dispatch(db, dbtype, job)
@@ -97,6 +102,26 @@ local function define_tests()
                 test.not_nil(stale_err)
                 test.eq(stale_err:kind(), errors.CONFLICT)
                 job.execution_seq = execution_seq(job) - 1
+                test.is_nil(lifecycle.complete_job(db, job, dbtype))
+            end)
+        end)
+
+        test.it("rejects an expired dispatch lease without refreshing it", function()
+            with_db(function(db: sql.DB)
+                local dbtype = tostring(db:type())
+                local job = claim_one(db, dbtype)
+                local expired = dbtype == sql.type.POSTGRES and "2000-01-01T00:00:00.000000Z"
+                    or "2000-01-01 00:00:00.000000"
+                local _, expire_err = db:execute("UPDATE kickside_job SET lease_until=$1 WHERE id=$2", { expired, job.id })
+                test.is_nil(expire_err)
+                local before = lease_row(db, job.id)
+                local alive, err = lease.validate_for_dispatch(db, dbtype, job)
+                test.is_false(alive)
+                test.not_nil(err)
+                test.eq(err:kind(), errors.CONFLICT)
+                local after = lease_row(db, job.id)
+                test.eq(after.lease_until, before.lease_until)
+                test.eq(after.heartbeat_at, before.heartbeat_at)
                 test.is_nil(lifecycle.complete_job(db, job, dbtype))
             end)
         end)

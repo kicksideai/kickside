@@ -1,5 +1,107 @@
 # Changelog
 
+## [0.1.79](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.78...knowledge-v0.1.79) (2026-11-08)
+
+
+### Bug Fixes
+
+* UI artifacts in buttons, headings, dialogs and tables ([#371](https://github.com/kicksideai/kickside/issues/371)) ([ea55ea8](https://github.com/kicksideai/kickside/commit/ea55ea8a17ee5802cb73a4dbcf39878d7f56cd2e))
+
+## [0.1.78](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.77...knowledge-v0.1.78) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
+## [0.1.77](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.76...knowledge-v0.1.77) (2026-11-07)
+
+
+### Bug Fixes
+
+* **knowledge:** answer create validation errors with their HTTP status ([#340](https://github.com/kicksideai/kickside/issues/340)) ([b78cf62](https://github.com/kicksideai/kickside/commit/b78cf62a6e8f544fb1f204ef8f4594b1ab35adb0))
+* **widgets:** follow deletion events without racing the delete job ([#337](https://github.com/kicksideai/kickside/issues/337)) ([fdd6984](https://github.com/kicksideai/kickside/commit/fdd6984188d6f35cdaf4e40cd0ac8b9cd08928bc))
+
+## [0.1.76](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.75...knowledge-v0.1.76) (2026-11-05)
+
+
+### Bug Fixes
+
+* **component:** expose asynchronous deletion progress ([e4ca4b7](https://github.com/kicksideai/kickside/commit/e4ca4b7ab5185ecc6ecf83b336ca3e6edf5aca6e))
+* **component:** run deletion cleanup through Jobs ([da3f7ae](https://github.com/kicksideai/kickside/commit/da3f7aee8dce4136a65d1c94bda6604820bc8355))
+* **component:** simplify deletion waiting and committed delivery ([584eae6](https://github.com/kicksideai/kickside/commit/584eae6145e5e9b4ea36bdbd6527ffe376e9f7fe))
+* preserve deletion view state and bind notification authority ([2ea5cf1](https://github.com/kicksideai/kickside/commit/2ea5cf1a31352ba4ba1915daeca384d06d2e7b70))
+* **widgets:** keep accepted deletion state across pages ([62c8e18](https://github.com/kicksideai/kickside/commit/62c8e181b0e1b60d0c3c6a80f6f9585dac6ef7cb))
+* **widgets:** preserve deletion progress across refreshes ([cd607e1](https://github.com/kicksideai/kickside/commit/cd607e14462b8421d092612cb62dce73e57f5ed8))
+
+## [0.1.75](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.74...knowledge-v0.1.75) (2026-11-03)
+
+
+### Bug Fixes
+
+* **knowledge:** admit content through the bound engine ([#292](https://github.com/kicksideai/kickside/issues/292)) ([759a4f7](https://github.com/kicksideai/kickside/commit/759a4f783e79a06e232ddea7c82e2238ce0790b1))
+
+## [0.1.74](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.73...knowledge-v0.1.74) (2026-10-30)
+
+
+### Bug Fixes
+
+* bound upload invalidation reads in file surfaces ([#269](https://github.com/kicksideai/kickside/issues/269)) ([6a90ddf](https://github.com/kicksideai/kickside/commit/6a90ddf86b813f273b1b0bf1609084c453764ecf))
+
+## [0.1.73](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.72...knowledge-v0.1.73) (2026-10-30)
+
+
+### Bug Fixes
+
+* preserve knowledge ingestion authority across engines ([#257](https://github.com/kicksideai/kickside/issues/257)) ([023bbe8](https://github.com/kicksideai/kickside/commit/023bbe89f5fc80700007da189a7615a93d693078))
+
+## [0.1.72](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.71...knowledge-v0.1.72) (2026-10-30)
+
+
+### Bug Fixes
+
+* **knowledge:** discover externally created libraries in mounted catalogs ([#251](https://github.com/kicksideai/kickside/issues/251)) ([1065e22](https://github.com/kicksideai/kickside/commit/1065e22df386037b92147e42c192dfe365f52ba7))
+
+## [0.1.71](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.70...knowledge-v0.1.71) (2026-10-30)
+
+
+### Bug Fixes
+
+* **knowledge:** return nested views to their previous route ([#209](https://github.com/kicksideai/kickside/issues/209)) ([c62888e](https://github.com/kicksideai/kickside/commit/c62888e42bb0008e6fd512b86145653e2f835635))
+
+## [0.1.70](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.69...knowledge-v0.1.70) (2026-10-29)
+
+
+### Features
+
+* **knowledge:** admit file references for accepting engines ([#206](https://github.com/kicksideai/kickside/issues/206)) ([fc8c6b2](https://github.com/kicksideai/kickside/commit/fc8c6b218e6a77c45cca9106931d0b5c2f7130ef))
+
+
+### Bug Fixes
+
+* **knowledge:** reuse store statistics in detail responses ([f924751](https://github.com/kicksideai/kickside/commit/f92475169765155b5d3d631e9aebcbbfb191f7b3))
+
+## [0.1.69](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.68...knowledge-v0.1.69) (2026-10-28)
+
+
+### Features
+
+* **knowledge:** show engine statistics in the shared header ([#185](https://github.com/kicksideai/kickside/issues/185)) ([029161b](https://github.com/kicksideai/kickside/commit/029161bc66d8bf0f2e30f233733664a080b9c394))
+
+## [0.1.68](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.67...knowledge-v0.1.68) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+
+## [0.1.67](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.66...knowledge-v0.1.67) (2026-10-25)
+
+
+### Bug Fixes
+
+* **knowledge:** honor singular sink picker keys ([#140](https://github.com/kicksideai/kickside/issues/140)) ([ea87659](https://github.com/kicksideai/kickside/commit/ea8765922efac3a35345ee15080c772f4ab925f2))
+
 ## [0.1.66](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.65...knowledge-v0.1.66) (2026-10-23)
 
 

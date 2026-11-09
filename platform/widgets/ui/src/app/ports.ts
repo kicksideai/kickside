@@ -7,6 +7,7 @@
 
 export interface IoFieldDef {
   picker?: string
+  class?: string
   title?: string
   detail?: string
   delete_endpoint?: string
@@ -23,6 +24,7 @@ export interface PortRowLike {
 export interface PrimaryPickerField {
   key: string
   tag: string
+  threadClass?: string
   title: string
   schema: unknown
   detail: string
@@ -63,12 +65,13 @@ export function primaryPicker(row: PortRowLike | null, logTag = 'ports'): Primar
     console.error(`${logTag}: port schema declares multiple picker fields`, pickerFields.map(([k]) => k))
   }
   const [key, def] = pickerFields[0]
+  const threadClass = typeof def.class === 'string' ? def.class : ''
   const title = typeof def.title === 'string' ? def.title : ''
   const detail = typeof def.detail === 'string' ? def.detail : ''
   const deleteEndpoint = typeof def.delete_endpoint === 'string' ? def.delete_endpoint : ''
   // Wrapping into { properties } is only for handing the field to the
   // schema-form-shaped picker mount.
-  return { key, tag: def.picker ?? '', title, schema: { properties: { [key]: def } }, detail, deleteEndpoint }
+  return { key, tag: def.picker ?? '', threadClass, title, schema: { properties: { [key]: def } }, detail, deleteEndpoint }
 }
 
 // Every field except the declared primary, as a schema-form object schema.

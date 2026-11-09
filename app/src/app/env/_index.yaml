@@ -31,7 +31,7 @@ entries:
       KICKSIDE_USERS_DEFAULT_ADMIN_PASSWORD: ""
       KICKSIDE_USERS_ADMIN_GROUP_ID: app.security:admin
       KICKSIDE_USERS_DATABASE_RESOURCE: app:db
-      KICKSIDE_USERS_DEFAULT_GROUP_ID: app.security:user
+      KICKSIDE_USERS_DEFAULT_GROUP_ID: kickside.security.groups:members
       KICKSIDE_USERS_TOKEN_EXPIRATION: 24h
       KICKSIDE_PG_HOST: ""
       KICKSIDE_PG_PORT: ""

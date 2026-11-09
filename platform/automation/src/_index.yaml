@@ -100,6 +100,14 @@ entries:
         path: .meta.target_db
       - entry: kickside.automation.migrations:14_stranded_drive_wake_recovery
         path: .meta.target_db
+      - entry: kickside.automation.migrations:15_prepared_settlement_index
+        path: .meta.target_db
+      - entry: kickside.automation.migrations:16_prepared_declaration
+        path: .meta.target_db
+      - entry: kickside.automation.migrations:18_ledger_eligibility
+        path: .meta.target_db
+      - entry: kickside.automation.migrations:19_receipt_delivery_identity
+        path: .meta.target_db
       - entry: kickside.automation:db_config
         path: .meta.db_id
 
@@ -359,8 +367,10 @@ entries:
   - name: declaration_references
     kind: library.lua
     meta:
-      comment: Resolve only x-reference annotated kind input fields into durable reference records.
+      comment: Resolve schema-declared references and validate authority-bearing declaration edits.
     source: file://declaration_references.lua
+    imports:
+      canonical_json: kickside.contract:canonical_json
 
   - name: declaration_authority
     kind: library.lua
@@ -496,6 +506,41 @@ entries:
       command: kickside.automation:command
       types: kickside.automation:types
       engine_support: kickside.automation.engine:support
+
+  - name: rollback_writer_upgrade
+    kind: function.lua
+    meta:
+      comment: Framework system actor bringing an automation component's stored rollback chain to the current cleanup targets, retiring the legacy trigger projections its watch teardown steps name.
+      private: true
+    source: file://rollback_writer.lua
+    method: upgrade
+    modules: [sql]
+    security:
+      actor:
+        id: system:kickside.automation.declaration
+      policies:
+        - kickside.automation.security:declaration_writer
+    imports:
+      component: kickside.component:component
+      component_command: kickside.component:component_command
+      engine_declaration: kickside.automation.engine:declaration
+      projection_writer: kickside.core.projections.persist:writer
+      core_db: kickside.core:db
+
+  - name: rollback_upgrade
+    kind: function.lua
+    meta:
+      type: bootloader
+      order: 50
+      requires: [wippy.migration:migration_bootloader]
+      comment: Brings every installed automation's stored rollback chain to the current cleanup targets through the rollback writer.
+    source: file://rollback_upgrade.lua
+    method: run
+    security:
+      policies:
+        - kickside.automation.security:execution_scope
+    imports:
+      automations_lib: kickside.automation:automation
 
   - name: declaration_owner_verify
     kind: function.lua

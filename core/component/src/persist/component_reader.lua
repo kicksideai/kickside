@@ -23,6 +23,9 @@ type ComponentResult = {
     impl_id: string,
     created_at: string,
     updated_at: string,
+    deleting_at: string?,
+    deletion_job_id: string?,
+    deletion_job: {status: string, attempts: integer, last_error: string?}?,
     private_context: { [string]: any }?,
     context_revision: integer?,
     meta: { [string]: string }?,
@@ -295,6 +298,12 @@ function methods._finalize_row(self: Reader, component: ComponentResult): error?
         component.context_revision = tonumber(component.context_revision) :: integer
     end
     local raw = component :: any
+    if raw.delete_intent ~= nil then
+        local intent, intent_err = persisted_json.decode_table(raw.delete_intent, "component.delete_intent")
+        if intent_err then return intent_err end
+        component.deletion_job_id = intent.job_id
+        raw.delete_intent = nil
+    end
     if self._include_access_level and raw.access_mask ~= nil then
         component.access_level = raw.access_mask
         raw.access_mask = nil

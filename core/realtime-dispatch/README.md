@@ -9,7 +9,8 @@ promise or database.
 
 ## Development
 
-Use Wippy 0.3.47a. From this module directory, run `make lockrefresh`,
+Use the Wippy release pinned in [CI](https://github.com/kicksideai/kickside/blob/main/.github/workflows/ci.yml).
+From this module directory, run `make lockrefresh`,
 `make lint`, and `make test`. The harness supplies the scalar owner fixtures.
 
 ## Reference

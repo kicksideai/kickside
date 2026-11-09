@@ -1,6 +1,7 @@
 # kickside/ui-kit
 
-Shared frontend CSS vocabulary for KickSide modules, packaged as a build-time artifact.
+Shared frontend CSS vocabulary and component deletion tracking for KickSide
+modules, packaged as a build-time artifact.
 
 The [package/](package/) directory is the deliverable. Consumers materialize it
 as `@kickside/ui-kit` and import its styles through ordinary npm resolution.
@@ -40,19 +41,45 @@ styles, animation, tag sizing, and decorative category tones. Theme severity
 colors remain the responsibility of the Wippy theme. Replace duplicated local
 rules when adopting a shared class.
 
+## Component deletion tracking
+
+The package also ships TypeScript and Vue source that consumers compile with
+their own Vite, Vitest and vue-tsc toolchain. The sources import only the peers
+`vue`, `@wippy-fe/proxy` and, for the component, `primevue`.
+
+| Export | Provides |
+|---|---|
+| `@kickside/ui-kit/useComponentDeletion` | `useComponentDeletion(rows, id, onDeleted?, onDeletionFinished?)` and `ComponentDeletionState` |
+| `@kickside/ui-kit/ComponentDeletion.vue` | The deleting/failed status with a `retry` event |
+| `@kickside/ui-kit/component-deletion.css` | Styles for that status; import into the consumer's inline stylesheet |
+| `@kickside/ui-kit/componentRealtime` | Parsing of `component.meta.changed`, `component.deleting` and `component.deleted` deliveries, and `subscribeComponentMeta` |
+| `@kickside/ui-kit/latestRequest` | Ordering of overlapping reads of one resource |
+| `@kickside/ui-kit/errMsg` | Message extraction from API error shapes |
+
+A list row extends `ComponentDeletionState` with the component's `deleting_at`,
+`deletion_job_id` and `deletion_job` fields as the components API returns them.
+The hook keeps a marked row in the list, reads its deletion progress from
+`/api/v1/components/{id}`, and removes it on `component.deleted`. Pass the list
+loader as `onDeletionFinished`; call `acceptDeletion(id, result)` with the
+delete response so the row tracks the accepted job.
+
 The application runtime graph and the build-input graph are separate.
 `build-inputs/` supplies this package to frontend builds; it has no database or
 served runtime bundle.
 
 ## Requirements
 
-Wippy 0.3.x; repository validation uses 0.3.47a. Materialization requires the
+For repository validation, use the Wippy release pinned in
+[CI](https://github.com/kicksideai/kickside/blob/main/.github/workflows/ci.yml). Materialization requires the
 runtime artifact command. Consumers use Node.js 22, npm, and Make. SQLite and
 PostgreSQL are host persistence choices; the UI kit has no SQL storage.
 
 ## Development
 
-Edit CSS in `package/` and validate a consumer through the root Makefile:
+Edit the package in `package/`. `make test` runs the package contract checks and
+the Vitest suite; `make typecheck` runs vue-tsc over the sources. The root
+`package.json` carries only that toolchain and is not published. Validate a
+consumer through the root Makefile:
 
 ```sh
 make typecheck MOD=uploads
@@ -81,4 +108,5 @@ surface uses, after `kx-tokens.css`, and delete the corresponding local rules.
 These sheets do not implement Vue components or dialog behavior.
 
 Run the package contract checks with `make test`. They validate package exports,
-theme colors, the focus contract, and the existing surface-state defaults.
+theme colors, the focus contract, the existing surface-state defaults, and the
+deletion tracking sources.

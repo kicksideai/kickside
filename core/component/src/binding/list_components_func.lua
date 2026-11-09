@@ -1,6 +1,7 @@
 local security = require("security")
 local component_reader = require("component_reader")
 local envelope = require("envelope")
+local deletion_progress = require("deletion_progress")
 
 -- Constants
 local VALIDATION_ERRORS = {
@@ -174,6 +175,8 @@ local function handle(request_dto)
         return envelope.from_error(list_err)
     end
     components = components or {}
+    local _, progress_err = deletion_progress.enrich(components :: {any})
+    if progress_err then return envelope.from_error(progress_err) end
 
     local total_count, count_err = reader:count()
     if count_err then

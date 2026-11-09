@@ -300,6 +300,22 @@ function drive.list_for(executor: any, automation_ids: { string }): ({ Map }?, e
     return out, nil
 end
 
+-- by_source reads the indexed event-source reference; caller authorization owns
+-- which of the matching automation components can be returned.
+function drive.by_source(executor: any, thread_id: string): ({ Map }?, error?)
+    local rows, err = sql.builder.select(table.unpack(COLUMNS)):from(drive.TABLE)
+        :where(sql.builder.eq({source_thread_id = thread_id}))
+        :order_by("automation_id ASC", "drive_key ASC"):run_with(executor):query()
+    if err then return nil, internal("failed to list source drives", err) end
+    local out: { Map } = {}
+    for _, row in ipairs(rows :: { Map }) do
+        local normalized, norm_err = normalize(row)
+        if norm_err then return nil, norm_err end
+        out[#out + 1] = normalized :: Map
+    end
+    return out, nil
+end
+
 -- keys(db_or_tx, automation_id) -> every drive key of the automation, ascending.
 function drive.keys(executor: any, automation_id: string): ({ string }?, error?)
     local rows, err = sql.builder.select("drive_key"):from(drive.TABLE)
@@ -336,6 +352,7 @@ end
 
 -- The fences a guarded write captured; each present field must still match.
 type Fence = {
+    round_seq: integer?,
     revision: integer?,
     rewind_generation: integer?,
     command_generation: integer?,
@@ -360,7 +377,7 @@ function drive.update_cas_tx(tx: sql.Transaction, automation_id: string, drive_k
         end
     end
     update = update:where(key_filter(automation_id, drive_key))
-    for _, column in ipairs({ "revision", "rewind_generation", "command_generation", "round_token" }) do
+    for _, column in ipairs({ "revision", "rewind_generation", "command_generation", "round_token", "round_seq" }) do
         local expected = (fence :: Map)[column]
         if expected ~= nil then update = update:where(sql.builder.eq({ [column] = expected })) end
     end
@@ -435,7 +452,7 @@ end
 -- wake_due(db_or_tx, limit) -> drives whose control wake demand has not been
 -- acknowledged, through the partial wake index.
 function drive.wake_due(executor: any, limit: integer): ({ Map }?, error?)
-    local rows, err = executor:query("SELECT automation_id, drive_key, job_id, source_kind, wake_generation, wake_applied_generation FROM "
+    local rows, err = executor:query("SELECT automation_id, drive_key, job_id, source_kind, pending_command_id, wake_generation, wake_applied_generation FROM "
         .. drive.TABLE .. " WHERE wake_generation > wake_applied_generation AND (repair_next_at IS NULL OR repair_next_at <= $1) ORDER BY CASE WHEN job_id IS NULL THEN 1 ELSE 0 END, automation_id, drive_key LIMIT $2", { drive.utc_now(), limit })
     if err then return nil, internal("failed to scan drive wake demand", err) end
     local out: { Map } = {}
@@ -445,6 +462,7 @@ function drive.wake_due(executor: any, limit: integer): ({ Map }?, error?)
             drive_key = row.drive_key,
             job_id = row.job_id,
             source_kind = row.source_kind,
+            pending_command_id = row.pending_command_id,
             wake_generation = math.floor(tonumber(row.wake_generation) :: number),
             wake_applied_generation = math.floor(tonumber(row.wake_applied_generation) :: number),
         }

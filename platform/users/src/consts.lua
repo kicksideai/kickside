@@ -1,6 +1,7 @@
 local env = require("env")
 local funcs = require("funcs")
 local errors = require("errors")
+local registry = require("registry")
 
 local consts = {
     -- Environment variable IDs
@@ -154,7 +155,17 @@ function consts.get_config()
     local admin_init_enabled, _ = env.get(consts.ENV_IDS.ADMIN_INIT_ENABLED)
     local token_expiration, _ = env.get(consts.ENV_IDS.TOKEN_EXPIRATION)
 
+    local membership, membership_err = registry.get("kickside.users:membership_config")
+    if membership_err or not membership then error("membership configuration unavailable: " .. tostring(membership_err)) end
+    local aliases = (membership.meta or {}).aliases
+    if type(aliases) ~= "table" then error("membership aliases must be a map") end
+    for from, to in pairs(aliases) do
+        if type(from) ~= "string" or from == "" or type(to) ~= "string" or to == "" or from == to then
+            error("membership aliases require distinct non-empty role ids")
+        end
+    end
     return {
+        membership_aliases = aliases,
         -- Database configuration
         database_resource = consts.get_db_resource(),
         -- User configuration
@@ -169,16 +180,38 @@ function consts.get_config()
 end
 
 -- Keep the primary scope label and return every group for effective composition.
-function consts.with_baseline_group(config, groups)
-    local out, present = {}, false
-    for _, group in ipairs(groups or {}) do
-        out[#out + 1] = group
-        if group == config.baseline_group_id then present = true end
+local function membership_groups(config, groups, signed_in)
+    local out, seen = {}, {}
+    local function append(id)
+        if type(id) == "string" and id ~= "" and not seen[id] then
+            out[#out + 1], seen[id] = id, true
+            return true
+        end
+        return false
     end
-    if type(config.baseline_group_id) == "string" and config.baseline_group_id ~= "" and not present then
-        out[#out + 1] = config.baseline_group_id
+    for _, group in ipairs(groups or {}) do append(group) end
+    if signed_in then append(config.baseline_group_id) end
+    -- Keep retired role IDs valid in existing record ACLs and sessions. These
+    -- are authority aliases, not additional account memberships or roles.
+    local changed = true
+    while changed do
+        changed = false
+        for from, to in pairs(config.membership_aliases or {}) do
+            if seen[from] or seen[to] then
+                changed = append(from) or changed
+                changed = append(to) or changed
+            end
+        end
     end
     return out
+end
+
+function consts.with_baseline_group(config, groups)
+    return membership_groups(config, groups, true)
+end
+
+function consts.with_role_aliases(config, groups)
+    return membership_groups(config, groups, false)
 end
 
 function consts.derive_scope(config, security_groups)
@@ -200,29 +233,18 @@ function consts.derive_scope(config, security_groups)
     return scope_id, is_admin, scope_groups
 end
 
-function consts.resolve_scope(config, groups, authority_only)
+function consts.resolve_scope(config, groups, authority_only, signed_in)
     local primary, is_admin, effective = consts.derive_scope(config, groups)
-    local distinct, seen, custom = {}, {}, false
-    for _, group in ipairs(effective) do
-        if not seen[group] then distinct[#distinct + 1] = group; seen[group] = true end
-        if group ~= config.admin_group_id and group ~= config.default_group_id
-            and group ~= config.baseline_group_id then custom = true end
+    if authority_only == true then
+        effective = membership_groups(config, groups, signed_in == true)
     end
-    if authority_only == true then return primary, is_admin, effective, nil end
-    local result, err = funcs.call("kickside.security.binding:materialize_group_set", {groups = distinct})
-    if err then
-        local cause = err:details() and err:details().cause
-        local native = type(cause) == "table" and errors.new(cause) or err
-        return nil, is_admin, effective, (errors.wrap(native, "group set projection failed") :: error)
+    local resolved, err = funcs.call("kickside.security.runtime:resolve_groups", {groups = effective})
+    if err then return nil, is_admin, effective, err end
+    if type(resolved) ~= "table" or type(resolved.groups) ~= "table" or type(resolved.policy_ids) ~= "table" then
+        return nil, is_admin, effective, errors.new({kind = errors.UNAVAILABLE, retryable = true,
+            message = "Security scope resolver returned no authority descriptor"})
     end
-    if type(result) ~= "table" or type(result.scope_name) ~= "string" then
-        return nil, is_admin, effective, errors.new({kind = errors.INTERNAL, retryable = false,
-            message = "group set projection returns an invalid result"})
-    end
-    if #distinct == 1 then return distinct[1], is_admin, effective, nil end
-    if not custom and is_admin then return config.admin_group_id, true, effective, nil end
-    if not custom and seen[config.default_group_id] then return config.default_group_id, false, effective, nil end
-    return result.scope_name, is_admin, effective, nil
+    return primary, is_admin, effective, nil, resolved
 end
 
 -- Validate email format

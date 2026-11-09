@@ -365,6 +365,55 @@ local run_cases = test.run_cases(function()
             test.eq(details.error_kind, "access")
         end)
 
+        test.it("upgrades a stored rollback chain only for the automation holding the declaration fence", function()
+            local d = db()
+            local id = seed(d, { other = 1, _rollback = {
+                { target = "retired:teardown", args = { mode = "poll" } },
+                { target = "current:cleanup", args = { id = "kept" } },
+            } })
+            local _, declare_err = apply_declaration(d, { component_id = id, automation_id = "automation-a", generation = 1,
+                command_id = "command-1", declaration_hash = "hash-1", declaration = { source = "initial" } })
+            test.is_nil(declare_err)
+            local _, declared_revision = context(d, id)
+            local function retire(chain)
+                local kept = {}
+                for _, step in ipairs(chain) do
+                    if step.target ~= "retired:teardown" then kept[#kept + 1] = step end
+                end
+                return kept, #kept ~= #chain
+            end
+
+            local _, owner_err = component_command.upgrade_rollback({ component_id = id, automation_id = "automation-b" }, retire)
+            test.not_nil(owner_err)
+            test.is_true(errors.is(owner_err, errors.PERMISSION_DENIED), tostring(owner_err))
+            local refused, refused_revision = context(d, id)
+            test.eq(#refused._rollback, 2)
+            test.eq(refused_revision, declared_revision)
+
+            local upgraded, upgrade_err = component_command.upgrade_rollback({ component_id = id, automation_id = "automation-a" }, retire)
+            test.is_nil(upgrade_err, tostring(upgrade_err))
+            test.is_true(upgraded.changes_made)
+            local stored, revision = context(d, id)
+            test.eq(#stored._rollback, 1)
+            test.eq(stored._rollback[1].target, "current:cleanup")
+            test.eq(stored._rollback[1].args.id, "kept")
+            test.eq(stored._portable_input.source, "initial")
+            test.eq(stored.other, 1)
+            test.eq(revision, (declared_revision :: number) + 1)
+
+            local again, again_err = component_command.upgrade_rollback({ component_id = id, automation_id = "automation-a" }, retire)
+            test.is_nil(again_err, tostring(again_err))
+            test.is_false(again.changes_made)
+            local _, same_revision = context(d, id)
+            test.eq(same_revision, revision)
+
+            local tx = d:begin()
+            local _, forged_err = ops.upgrade_rollback_tx(tx, { component_id = id, automation_id = "automation-a", upgrade = retire })
+            tx:rollback()
+            test.is_true(errors.is(forged_err, errors.PERMISSION_DENIED), tostring(forged_err))
+            d:release()
+        end)
+
         test.it("fences declaration generations and rejects a changed command", function()
             local d = db()
             local id = seed(d, { _portable_input = { source = "initial" }, other = 1 })

@@ -121,6 +121,8 @@ entries:
     suite: kickside_automation
   source: file://failure_classification_test.lua
   method: run
+  modules:
+  - funcs
   imports:
     test: wippy.test:test
     failure_classification: kickside.automation:failure_classification
@@ -224,6 +226,7 @@ entries:
     actor: { id: automation-owner-gc-test }
   modules: [sql, uuid, json, security, contract, funcs]
   imports:
+    deletion_worker: app:deletion_test_worker
     test: wippy.test:test
     drive: kickside.automation:drive
     slot: kickside.automation:slot
@@ -291,12 +294,30 @@ entries:
   source: file://round/harness.lua
   modules: [sql, json, uuid, time, funcs, contract, security, logger, process, channel]
   imports:
+    clock: kickside.core.jobs:clock
+    jobs_claim: kickside.core.jobs.persist:claim
+    lifecycle: kickside.core.jobs.persist:lifecycle
     drive: kickside.automation:drive
     round_runner: kickside.automation:round_runner
     runtime_policy: kickside.automation:runtime_policy
     jobs: kickside.core.jobs:jobs
     jobs_config: kickside.core.jobs:config
     migration_runner: wippy.migration:runner
+- name: rollback_upgrade_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_rollback_upgrade
+    comment: The stored rollback upgrade over real installed automations whose chain names the retired trigger runtime.
+    timeout: 120s
+  source: file://rollback_upgrade_test.lua
+  method: run
+  modules: [json, uuid, funcs]
+  imports:
+    test: wippy.test:test
+    round_harness: kickside.automation:round_harness
+    retention_pin: kickside.core.retention:pin
+    deletion_worker: app:deletion_test_worker
 - name: round_test
   kind: function.lua
   meta:
@@ -372,6 +393,24 @@ entries:
     drive: kickside.automation:drive
     round_harness: kickside.automation:round_harness
     round_write: kickside.automation:round_write
+    runtime_policy: kickside.automation:runtime_policy
+- name: round_prepared_replay_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_round
+    comment: Prepared output across a reconfigure and an operator replay of an installed collection automation into the fixture store sink.
+  source: file://round/prepared_replay_test.lua
+  method: run
+  modules: [json, time]
+  imports:
+    prepared_retention: kickside.automation:prepared_retention
+    automation_db: kickside.automation:automation_db
+    test: wippy.test:test
+    round_harness: kickside.automation:round_harness
+    round_write: kickside.automation:round_write
+    round_ledger: kickside.automation:round_ledger
+    round_commit: kickside.automation:round_commit
     runtime_policy: kickside.automation:runtime_policy
 - name: round_control_test
   kind: function.lua
@@ -667,7 +706,7 @@ entries:
   meta: {type: test, suite: kickside_automation}
   source: file://dead_retention_test.lua
   method: run
-  modules: [sql, uuid]
+  modules: [sql, uuid, json]
   imports:
     test: wippy.test:test
     ledger: kickside.automation:round_ledger

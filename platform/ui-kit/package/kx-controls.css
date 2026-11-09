@@ -30,8 +30,9 @@
 .kx-btn svg { width: 15px; height: 15px; }
 .kx-btn:disabled { opacity: .5; cursor: not-allowed; }
 .kx-btn.sm { height: var(--kx-control-height-sm); padding: 0 12px; }
-.kx-btn-primary { background: var(--p-primary-color); color: var(--p-primary-contrast-color); border-color: var(--p-primary-color); }
-.kx-btn-primary:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-1px); }
+.kx-btn-primary { background: var(--p-primary-color); color: var(--p-button-primary-color); border-color: var(--p-primary-color); }
+.kx-btn-primary:hover:not(:disabled) { background: var(--p-primary-hover-color); color: var(--p-button-primary-hover-color); border-color: var(--p-primary-hover-color); transform: translateY(-1px); }
+.kx-btn-primary:active:not(:disabled) { background: var(--p-primary-active-color); color: var(--p-button-primary-active-color); border-color: var(--p-primary-active-color); transform: translateY(0); }
 .kx-btn-ghost { background: transparent; color: var(--p-text-color); border-color: var(--p-content-border-color); }
 .kx-btn-ghost:hover:not(:disabled) { background: var(--kx-surface-2); border-color: color-mix(in srgb, var(--p-text-color) 18%, transparent); }
 .kx-btn-soft { background: color-mix(in srgb, var(--p-primary-color) 14%, transparent); color: var(--p-primary-color); border-color: color-mix(in srgb, var(--p-primary-color) 30%, transparent); }

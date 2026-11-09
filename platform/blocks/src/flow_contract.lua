@@ -6,6 +6,7 @@
 -- returns a clean ordinary Flow document before the normal CQRS/compiler path.
 
 local canonical_json = require("canonical_json")
+local json = require("json")
 
 local M = {}
 
@@ -60,16 +61,16 @@ local function is_array(value: any): boolean
     return count == highest
 end
 
-local function copy_tree(value: any, active: Map?, depth: number?): (any?, error?)
+local function copy_tree(value: any, active: Map?, depth: number?, legacy_checksum: boolean?): (any?, error?)
     if type(value) ~= "table" then return value, nil end
     local stack = active or {}
     local level = depth or 1
     if level > MAX_DEPTH then return nil, invalid("value exceeds the Flow artifact nesting limit") end
     if stack[value] then return nil, invalid("cyclic table is not valid Flow data") end
     stack[value] = true
-    local out: Map = {}
+    local out: Map = not legacy_checksum and next(value) == nil and json.encode(value) == "{}" and table.create(0, 1) or {}
     for key, child in pairs(value :: Map) do
-        local copied, err = copy_tree(child, stack, level + 1)
+        local copied, err = copy_tree(child, stack, level + 1, legacy_checksum)
         if err then stack[value] = nil; return nil, err end
         out[key] = copied
     end
@@ -89,9 +90,10 @@ local function normalize_document_object_fields(document: Map): Map
     document.params = normalize_empty_object(document.params)
     document.layout = normalize_empty_object(document.layout)
     for _, raw_node in ipairs(type(document.nodes) == "table" and (document.nodes :: { any }) or {}) do
-        if type(raw_node) == "table" and (raw_node :: Map).config ~= nil then
+        if type(raw_node) == "table" then
             local node = raw_node :: Map
             node.config = normalize_empty_object(node.config)
+            node.retry_policy = normalize_empty_object(node.retry_policy)
         end
     end
     for _, raw_edge in ipairs(type(document.edges) == "table" and (document.edges :: { any }) or {}) do
@@ -113,7 +115,9 @@ end
 
 local function checksum(artifact: any): (string?, error?)
     if type(artifact) ~= "table" then return nil, invalid("Flow artifact must be an object") end
-    local unsigned, copy_err = copy_tree(artifact)
+    -- v1 checksums historically erase empty-object capacity. Preserve that
+    -- wire contract while ordinary copies retain the original JSON data shape.
+    local unsigned, copy_err = copy_tree(artifact, nil, nil, true)
     if copy_err then return nil, copy_err end
     ;(unsigned :: Map).checksum = nil
     local digest, digest_err = canonical_json.hash(unsigned)

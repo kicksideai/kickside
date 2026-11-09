@@ -1,5 +1,6 @@
 version: "1.0"
 override:
+  "kickside.core.jobs.service:worker.service:lifecycle.auto_start": false
   "app.client_test:server:addr": ":${provider_http_port}"
   "app.client_test:probe:meta.endpoint": "http://127.0.0.1:${provider_http_port}/provider"
   "app:db:file": "${sqlite_path}"

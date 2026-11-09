@@ -1,6 +1,25 @@
 local test = require("test")
 local registry = require("registry")
 local security = require("security")
+
+local function composed_scope(root: string): any
+    local policies, seen = {}, {}
+    local function include(id: string)
+        if seen[id] then return end
+        seen[id] = true
+        local entry, err = registry.get(id)
+        assert(not err, tostring(err))
+        assert(entry, id)
+        policies[#policies + 1] = assert(security.policy(id))
+        for _, child in ipairs(entry.meta.includes or {}) do
+            if type(child) ~= "string" or child == "" then error("Included policy ID must be a non-empty string") end
+            include(child)
+        end
+    end
+    include(root)
+    return assert(security.new_scope(policies))
+end
+
 local function define_tests()
     test.describe("Module access composition", function()
         test.it("admits exactly the listed endpoint identities", function()
@@ -10,7 +29,9 @@ local function define_tests()
             test.not_nil(declaration)
             local expected = {
             }
-            local runtime, runtime_err = registry.get(declaration.meta.includes[1])
+            local runtime_id = declaration.meta.includes[1]
+            if type(runtime_id) ~= "string" or runtime_id == "" then error("Runtime policy ID must be a non-empty string") end
+            local runtime, runtime_err = registry.get(runtime_id)
             test.is_nil(runtime_err)
             test.not_nil(runtime)
             test.is_true(#declaration.data.policy.resources > 0)
@@ -21,7 +42,7 @@ local function define_tests()
             test.eq(#declaration.data.policy.actions, #runtime.data.policy.actions)
             for index, action in ipairs(runtime.data.policy.actions) do
                 test.eq(declaration.data.policy.actions[index], action)
-                test.is_true(action ~= "access", action)
+                test.is_true(action ~= "access", tostring(action))
             end
             test.eq(declaration.data.policy.effect, runtime.data.policy.effect)
             local runtime_policy, runtime_policy_err = security.policy(tostring(runtime.id))
@@ -50,6 +71,32 @@ local function define_tests()
                 test.eq(policy:evaluate(actor, "access", id .. ".unlisted"), "undefined", id)
             end
         end)
+        test.it("includes only the owned Await process capability", function()
+            local declaration, declaration_err = registry.get("kickside.blocks.security:module_access")
+            test.is_nil(declaration_err)
+            test.not_nil(declaration)
+            test.eq(declaration.meta.includes[2], "kickside.blocks.security:await_execution")
+
+            local execution, execution_err = registry.get("kickside.blocks.security:await_execution")
+            test.is_nil(execution_err)
+            test.not_nil(execution)
+            test.is_true(execution.meta.private == true)
+            test.eq(#execution.data.policy.resources, 1)
+            test.eq(execution.data.policy.resources[1], "kickside.blocks:await")
+            test.eq(#execution.data.policy.actions, 3)
+            test.eq(execution.data.policy.actions[1], "process.spawn")
+            test.eq(execution.data.policy.actions[2], "process.spawn.monitored")
+            test.eq(execution.data.policy.actions[3], "process.spawn.linked")
+
+            local scope = composed_scope("kickside.blocks.security:module_access")
+            local actor = security.new_actor("module-member", {})
+            for _, action in ipairs({ "process.spawn", "process.spawn.monitored", "process.spawn.linked" }) do
+                test.eq(scope:evaluate(actor, action, "kickside.blocks:await"), "allow", action)
+                test.eq(scope:evaluate(actor, action, "userspace.dataflow.runner:orchestrator"), "undefined", action)
+                test.eq(scope:evaluate(actor, action, "unrelated.module:process"), "undefined", action)
+            end
+            test.eq(scope:evaluate(actor, "registry.apply", "*"), "undefined")
+        end)
         test.it("admits owned member endpoints and rejects other modules", function()
             local policy, err = security.policy("kickside.blocks.security:module_access")
             test.is_nil(err)
@@ -68,26 +115,12 @@ local function define_tests()
             end
         end)
         test.it("includes module discovery without an application blanket grant", function()
-            local policies, seen = {}, {}
-            local function include(id)
-                if seen[id] then return end
-                seen[id] = true
-                local entry, entry_err = registry.get(id)
-                test.is_nil(entry_err, id)
-                test.not_nil(entry, id)
-                local policy, policy_err = security.policy(id)
-                test.is_nil(policy_err, id)
-                policies[#policies + 1] = policy
-                for _, child in ipairs(entry.meta.includes or {}) do include(child) end
-            end
-            include("kickside.blocks.security:module_access")
             local declaration = registry.get("kickside.blocks.security:module_access")
             test.is_true(type(declaration.meta.title) == "string" and declaration.meta.title ~= "")
             test.eq(declaration.meta.intent, "module_access")
             test.eq(declaration.meta.surface, "kickside.blocks")
             test.is_true(declaration.meta.private ~= true)
-            local scope, scope_err = security.new_scope(policies)
-            test.is_nil(scope_err)
+            local scope = composed_scope("kickside.blocks.security:module_access")
             local actor = security.new_actor("module-member", {})
             test.eq(scope:evaluate(actor, "registry.get", "kickside.blocks:blocks"), "allow")
             for _, action in ipairs({ "access", "registry.get", "funcs.call" }) do

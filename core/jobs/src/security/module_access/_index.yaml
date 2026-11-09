@@ -19,6 +19,7 @@ entries:
     - kickside.core.jobs.persist:*
     - kickside.core.jobs.security:*
     - kickside.core.jobs.service:*
+    - kickside.core.jobs.policy:*
     actions:
     - registry.get
     - registry.find
@@ -38,6 +39,7 @@ entries:
     - kickside.core.jobs.persist:*
     - kickside.core.jobs.security:*
     - kickside.core.jobs.service:*
+    - kickside.core.jobs.policy:*
     actions:
     - contract.get
     - contract.open
@@ -60,6 +62,7 @@ entries:
     - kickside.core.jobs.persist:*
     - kickside.core.jobs.security:*
     - kickside.core.jobs.service:*
+    - kickside.core.jobs.policy:*
     actions:
     - contract.get
     - contract.open

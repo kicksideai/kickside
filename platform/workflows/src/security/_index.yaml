@@ -7,6 +7,13 @@ namespace: kickside.workflows.security
 # component service inside each handler.
 
 entries:
+  - name: maintenance_wake
+    kind: security.policy
+    policy:
+      resources: kickside.workflows.runs:maintenance_wake_signal
+      actions: funcs.call
+      effect: allow
+
   - name: maintenance_defer
     kind: security.policy
     policy:

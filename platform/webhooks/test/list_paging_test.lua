@@ -64,6 +64,23 @@ end
 
 return { probe = probe, run = test.run_cases(function()
     test.describe("Native webhook pages", function()
+        test.it("keeps a marked webhook visible after provider data cleanup", function()
+            local f = fixture(1)
+            local id = f.ids[1]
+            local db = assert(sql.get("app:db"))
+            assert(db:execute("DELETE FROM kickside_webhooks WHERE webhook_id=$1", {id}))
+            assert(db:release())
+            test.eq(#call(f.reader, {method = "list"}), 0, "an unmarked shell does not invent a provider resource")
+            db = assert(sql.get("app:db"))
+            assert(db:execute("UPDATE kickside_components SET deleting_at=$1 WHERE component_id=$2", {"2026-01-01T00:00:00Z", id}))
+            assert(db:release())
+            local page = call(f.reader, {method = "list_page", options = {limit = 7}})
+            test.is_nil(page.error)
+            test.eq(#page.rows, 1)
+            test.eq(page.rows[1].webhook_id, id)
+            test.not_nil(page.rows[1].deleting_at)
+            test.eq(#call(f.stranger, {method = "list"}), 0)
+        end)
         test.it("preserves each caller's visible set before and after native bounds", function()
             local f = fixture(9)
             for _, actor in ipairs({ f.owner, f.reader, f.member, f.stranger }) do

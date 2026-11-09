@@ -1,35 +1,39 @@
+local binding_errors = require("binding_errors")
 local upload_query_repo = require("upload_query_repo")
 local artifact_parts_repo = require("artifact_parts_repo")
 local security = require("security")
+local component = require("component")
+local upload_types = require("types")
 local ctx = require("ctx")
 local metadata_sanitizer = require("metadata_sanitizer")
 
-local function handle()
+local function handle(args)
     local upload_id, err = ctx.get("upload_id")
     if err then
-        return nil, "Failed to get upload_id from context: " .. err
+        return nil, binding_errors.new(errors.INVALID, "Failed to get upload_id from context: " .. tostring(err), "upload_id_required", false, err)
     end
 
-    if not upload_id or upload_id == "" then
-        return nil, "upload_id is required in context"
+    if type(upload_id) ~= "string" or upload_id == "" then
+        return nil, binding_errors.new(errors.INVALID, "upload_id is required in context", "upload_id_required")
     end
 
     local upload, err = upload_query_repo.get(upload_id)
     if err then
-        return nil, "Failed to get upload information: " .. err
+        return nil, binding_errors.from(err, errors.UNAVAILABLE,
+            errors.is(err, errors.NOT_FOUND) and "upload_not_found" or "upload_lookup_failed")
     end
 
     local actor = security.actor()
     if not actor then
-        return nil, "No authenticated actor found"
+        return nil, binding_errors.new(errors.PERMISSION_DENIED, "No authenticated actor found", "actor_required")
     end
 
-    local actor_id = actor:id()
-    local can_view_all = security.can("view_all", "uploads")
-
-    if upload.actor_id ~= actor_id and not can_view_all then
-        return nil, "Not authorized to access this content"
+    local component_id = upload_types.component_id_for_owner(upload.actor_id)
+    if not component_id then
+        return nil, binding_errors.new(errors.INTERNAL, "Upload owner is invalid", "upload_owner_invalid")
     end
+    local _, access_err = component.validate_access(component_id, component.ACCESS.READ)
+    if access_err then return nil, binding_errors.from(access_err, errors.PERMISSION_DENIED, "access_denied") end
 
     local content_type = upload.mime_type
     local size = upload.size
@@ -37,14 +41,21 @@ local function handle()
     local artifact_id = nil
     local checksum = nil
 
-    local artifact, artifact_err = artifact_parts_repo.get_primary_content_artifact(upload_id)
-    if not artifact_err and artifact then
-        local artifact_meta = artifact.metadata or {}
-        content_type = artifact.mime_type or content_type
-        size = artifact.size or artifact_meta.size or artifact_meta.original_size or artifact_meta.file_size or size
-        metadata = artifact_meta
-        artifact_id = artifact.artifact_id
-        checksum = artifact.checksum
+    if not args or args.format ~= "raw" then
+        local artifact, artifact_err = artifact_parts_repo.get_primary_content_artifact(upload_id)
+        if artifact_err and not errors.is(artifact_err, errors.NOT_FOUND) then
+            return nil, binding_errors.from(artifact_err, errors.UNAVAILABLE, "artifact_read_failed")
+        end
+        if artifact then
+            local artifact_meta = artifact.metadata or {}
+            content_type = artifact.mime_type
+            size = artifact.size
+            metadata = artifact_meta
+            artifact_id = artifact.artifact_id
+            checksum = artifact.checksum
+        end
+    else
+        checksum = upload.content_sha256
     end
 
     metadata = metadata_sanitizer.public(metadata)

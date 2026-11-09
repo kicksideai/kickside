@@ -164,6 +164,7 @@ entries:
   - base64
   - hash
   imports:
+    jobs_claim: kickside.core.jobs.persist:claim
     worker_dispatch: kickside.core.jobs.service:worker_dispatch
     jobs_lifecycle: kickside.core.jobs.persist:lifecycle
     test: wippy.test:test
@@ -351,6 +352,7 @@ entries:
   - hash
   imports:
     test: wippy.test:test
+    pdf_fixtures: app:rasterize_fixtures
     artifact_content_repo: kickside.uploads.persist:artifact_content_repo
     artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
     metadata_sanitizer: kickside.uploads:metadata_sanitizer

@@ -3,9 +3,9 @@ import { api } from '@wippy-fe/proxy'
 import type { ArtifactState, PreviewSource, Upload, UploadArtifact } from './uploads.types.ts'
 import {
   artifactLabel,
-  canPreview,
   isPrimaryMarkdown,
   isRawRenderable,
+  uploadLabel,
 } from './uploads.format.ts'
 
 const PARTS_PER_PAGE = 30
@@ -51,7 +51,7 @@ export function useUploadArtifacts(error: Ref<string>) {
   }
 
   function previewView(upload: Upload): PreviewSource {
-    return { contentType: upload.mime_type, sourceUrl: `/api/v1/uploads/${upload.uuid}/raw`, filename: upload.filename || upload.uuid }
+    return { contentType: upload.mime_type, sourceUrl: upload.raw_url || '', filename: uploadLabel(upload) }
   }
 
   function activePreviewSource(upload: Upload): PreviewSource {
@@ -76,7 +76,6 @@ export function useUploadArtifacts(error: Ref<string>) {
   }
 
   function openPreview(upload: Upload) {
-    if (!canPreview(upload)) return
     if (artifactView.value && preview.value?.uuid !== upload.uuid) artifactView.value = null
     preview.value = upload
     // Load the extracted parts up front so their chips appear alongside the file;
@@ -127,20 +126,19 @@ export function useUploadArtifacts(error: Ref<string>) {
       const markdown = primaryMarkdownFor(preview.value.uuid)
       if (markdown?.raw_url) return markdown.raw_url
     }
-    return preview.value ? `/api/v1/uploads/${preview.value.uuid}/raw` : ''
+    return preview.value?.raw_url || ''
   }
 
   function activeName(): string {
-    if (artifactView.value) return artifactLabel(artifactView.value)
+    if (artifactView.value) return artifactView.value.label || artifactView.value.artifact_id
     if (preview.value && !isRawRenderable(preview.value.mime_type)) {
       const markdown = primaryMarkdownFor(preview.value.uuid)
-      if (markdown) return artifactLabel(markdown)
+      if (markdown) return markdown.label || markdown.artifact_id
     }
-    return preview.value ? (preview.value.filename || preview.value.uuid) : 'download'
+    return preview.value ? uploadLabel(preview.value) : 'download'
   }
 
-  // Upload URLs require the bearer token, so a bare <a href> 401s. Fetch through
-  // the authenticated host client and hand the browser a blob URL instead.
+  // Blob URLs let downloads use the record's filename across storage origins.
   async function fetchBlobUrl(url: string): Promise<string | null> {
     if (!url) return null
     try {

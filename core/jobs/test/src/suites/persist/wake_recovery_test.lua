@@ -374,11 +374,65 @@ local function define_tests()
             db:release()
         end)
 
-        test.it("reclaims a crashed continuation and acknowledges retained demand", function()
-            local db, db_err = sql.get("app:db")
-            if not db then error("test database unavailable: " .. tostring(db_err)) end
+        test.it("leaves a continuation behind an expired shared-queue reclaim page", function()
+            local db, dbtype, db_err = job_fixture.private_queue("app:private_queue_wake_recovery_test")
+            if not db then error("test private queue unavailable: " .. tostring(db_err)) end
             test.is_nil(db_err)
-            local dbtype = tostring(db:type())
+            local reclaim_limit = job_fixture.pool_policy().worker_claim_batch
+            local past = dbtype == sql.type.SQLITE and "2000-01-01 00:00:00" or "2000-01-01T00:00:00Z"
+            for i = 1, reclaim_limit do
+                local id, enqueue_err = lifecycle.enqueue_job(db, dbtype, {
+                    owner_locator = { kind = "test", id = "wake_recovery_foreign" },
+                    job_identity = { namespace = "foreign", scope = "expired", key = tostring(i) },
+                    job_type = "test.watcher", parked = true,
+                })
+                test.is_nil(enqueue_err)
+                local leased, lease_err = job_fixture.lease_own(db, dbtype, id)
+                test.is_nil(lease_err)
+                test.not_nil(leased)
+                local _, expire_err = sql.builder.update("kickside_job"):set("lease_until", past)
+                    :where(sql.builder.eq({ id = id })):run_with(db):exec()
+                test.is_nil(expire_err)
+            end
+            local key = "thread:" .. uuid.v7()
+            local continuation_id, continuation_err = lifecycle.enqueue_job(db, dbtype, {
+                owner_locator = { kind = "installation", id = "kickside.core.jobs" },
+                job_identity = { namespace = "wake", scope = key, key = "continuation" },
+                job_type = wake.CONTINUATION_TYPE, payload = { wake_key = key }, parked = true,
+            })
+            test.is_nil(continuation_err)
+            test.not_nil(continuation_id)
+            local continuation, lease_err = job_fixture.lease_own(db, dbtype, continuation_id)
+            test.is_nil(lease_err)
+            test.not_nil(continuation)
+            local _, expire_err = sql.builder.update("kickside_job"):set("lease_until", past)
+                :where(sql.builder.eq({ id = continuation_id })):run_with(db):exec()
+            test.is_nil(expire_err)
+
+            local first_page, first_page_err = sql.builder.select("id"):from("kickside_job")
+                :where(sql.builder.eq({ status = "running" })):where("lease_until <= ?", past)
+                :order_by("id ASC"):limit(reclaim_limit):run_with(db):query()
+            test.is_nil(first_page_err)
+            test.eq(#first_page, reclaim_limit)
+            for _, row in ipairs(first_page) do
+                test.is_false(row.id == continuation_id,
+                    "the continuation is behind foreign expired work at the real reclaim cap")
+            end
+            local reclaimed, reclaim_err = reclaim.reclaim_expired(db, dbtype)
+            test.is_nil(reclaim_err)
+            test.eq(reclaimed, reclaim_limit)
+            local still_running, read_err = sql.builder.select("status"):from("kickside_job")
+                :where(sql.builder.eq({ id = continuation_id })):run_with(db):query()
+            test.is_nil(read_err)
+            test.eq(still_running[1].status, "running",
+                "a shared-queue reclaim pass would not reach this continuation")
+            db:release()
+        end)
+
+        test.it("reclaims a crashed continuation and acknowledges retained demand", function()
+            local db, dbtype, db_err = job_fixture.private_queue("app:private_queue_wake_recovery_test")
+            if not db then error("test private queue unavailable: " .. tostring(db_err)) end
+            test.is_nil(db_err)
             local key = "thread:" .. uuid.v7()
             for i = 1, 205 do
                 local id, enqueue_err = lifecycle.enqueue_job(db, dbtype, {
@@ -413,40 +467,28 @@ local function define_tests()
                 :from("kickside_job"):where(sql.builder.eq({ job_identity = identity }))
                 :run_with(db):query()
             test.eq(#rows, 1)
-            local continuation = rows[1]
-            local expired_token = uuid.v7()
+            local continuation = assert(job_fixture.lease_own(db, dbtype, rows[1].id))
             local _, expire_err = sql.builder.update("kickside_job")
-                :set("status", "running")
-                :set("lease_token", expired_token)
                 :set("lease_until", "2000-01-01T00:00:00Z")
                 :where(sql.builder.eq({ id = continuation.id }))
                 :run_with(db):exec()
             test.is_nil(expire_err)
+            local expired, expired_err = sql.builder.select("id"):from("kickside_job")
+                :where(sql.builder.eq({ status = "running" })):where("lease_until <= ?", "2000-01-01T00:00:00Z")
+                :run_with(db):query()
+            test.is_nil(expired_err)
+            test.eq(#expired, 1, "the private queue excludes foreign expired candidates")
+            test.eq(expired[1].id, continuation.id)
             local reclaimed, reclaim_err = reclaim.reclaim_expired(db, dbtype)
             test.is_nil(reclaim_err)
             test.is_true(reclaimed >= 1)
 
-            continuation.lease_token = uuid.v7()
-            local restarted, restart_err = sql.builder.update("kickside_job")
-                :set("status", "running")
-                :set("lease_token", continuation.lease_token)
-                :set("lease_until", lifecycle.future_string(dbtype, 60))
-                :where(sql.builder.eq({ id = continuation.id, status = "pending" }))
-                :run_with(db):exec()
-            test.is_nil(restart_err)
-            test.eq(lifecycle.rows_affected(restarted), 1, "the reclaimed continuation enters its new lease")
+            continuation = assert(job_fixture.lease_own(db, dbtype, continuation.id))
             local result, continue_err = wake.continue_job(db, dbtype, continuation)
             test.is_nil(continue_err, "the first continuation completes under its new lease")
             test.is_true(result.self_completed)
             test.eq(result.woken, 200, "the first continuation retains the unprocessed generation")
-            continuation.lease_token = uuid.v7()
-            local retried, retry_err = sql.builder.update("kickside_job")
-                :set("status", "running"):set("lease_token", continuation.lease_token)
-                :set("lease_until", lifecycle.future_string(dbtype, 60))
-                :where(sql.builder.eq({ id = continuation.id, status = "pending" }))
-                :run_with(db):exec()
-            test.is_nil(retry_err)
-            test.eq(lifecycle.rows_affected(retried), 1, "the remaining continuation enters its next lease")
+            continuation = assert(job_fixture.lease_own(db, dbtype, continuation.id))
             local final, final_err = wake.continue_job(db, dbtype, continuation)
             test.is_nil(final_err, "the remaining continuation completes under its next lease")
             test.is_true(final.self_completed)
@@ -478,14 +520,8 @@ local function define_tests()
                 job_type = "test.watcher", slot = true, wake_key = key, parked = true,
             })
             test.is_nil(enqueue_err)
-            local token = uuid.v7()
-            local _, run_err = sql.builder.update("kickside_job")
-                :set("status", "running"):set("lease_token", token)
-                :set("lease_until", lifecycle.future_string(dbtype, 60))
-                :where(sql.builder.eq({ id = id, status = "pending" }))
-                :run_with(db):exec()
-            test.is_nil(run_err)
-            local complete_err = lifecycle.complete_job(db, { id = id, lease_token = token }, dbtype)
+            local job = assert(job_fixture.lease_own(db, dbtype, id))
+            local complete_err = lifecycle.complete_job(db, job, dbtype)
             test.is_nil(complete_err)
             local parked = sql.builder.select("status", "scheduled_at")
                 :from("kickside_job"):where(sql.builder.eq({ id = id }))

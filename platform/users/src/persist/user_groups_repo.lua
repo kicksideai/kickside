@@ -201,6 +201,16 @@ function user_groups_repo.get_user_groups(user_id, opts)
     }
 end
 
+function user_groups_repo.get_user_groups_batch(user_ids, executor)
+    if type(user_ids) == "table" and #user_ids == 0 then return {}, nil end
+    local db, err = executor, nil
+    if not db then db, err = get_db() end
+    if err then return nil, err end
+    local memberships, read_err = support.read_page_memberships(db, user_ids)
+    if not executor then db:release() end
+    return memberships, read_err
+end
+
 function user_groups_repo.get_group_users(group_id, opts)
     if not group_id or group_id == "" then
         return nil, consts.ERROR.MISSING_REQUIRED_FIELD .. "group_id"
@@ -247,7 +257,8 @@ function user_groups_repo.get_user_with_groups(identifier)
         return nil, err
     end
     local user, err = find_user(db, identifier, normalized, {
-        "user_id", "email", "full_name", "password_hash", "status", "auth_generation", "created_at", "updated_at", user_repo_support.DELEGATION_COLUMN
+        "user_id", "email", "full_name", "password_hash", "status", "auth_generation", "created_at", "updated_at", user_repo_support.DELEGATION_COLUMN,
+        user_repo_support.BOT_ACCOUNT_PREDICATE .. " AS bot_account"
     })
 
     if err then

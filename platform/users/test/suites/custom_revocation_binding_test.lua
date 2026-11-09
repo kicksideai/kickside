@@ -35,10 +35,12 @@ local function define_tests()
             local before = assert(user_repo.get(uid)).auth_generation
             local delegation_before = assert(user_groups_repo.get_user_with_groups(uid)).delegation_generation
             local policy = assert(registry.get(policy_id))
+            policy.id = policy_id .. "_after"
             policy.data.policy.resources = "app:binding_after"
             changes = assert(registry.snapshot()):changes()
-            changes:update(policy)
+            changes:create(policy)
             test.is_nil(select(2, changes:apply()))
+            test.not_nil((scope_store.upsert({slug = slug, policies = {policy_id .. "_after"}}, "tester")))
             local projected, projection_err = trigger_reconcile.trigger()
             test.is_nil(projection_err)
             test.not_nil(projected)
@@ -62,6 +64,7 @@ local function define_tests()
             test.not_nil((trigger_reconcile.trigger()))
             changes = assert(registry.snapshot()):changes()
             changes:delete(policy_id)
+            changes:delete(policy_id .. "_after")
             test.is_nil(select(2, changes:apply()))
         end)
     end)

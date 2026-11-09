@@ -75,6 +75,12 @@ local function define_tests()
             local registered = registry.get(runtime_policy.ENTRY) :: any
             local encoded = json.encode(registered.meta)
             local meta = json.decode(encoded :: string)
+            test.eq(reserved.history_ms,7*24*60*60*1000)
+            test.eq(reserved.ledger_resolved_ms,30*24*60*60*1000)
+            meta.retention.history=nil
+            local compatible,compatible_err=runtime_policy.resolve(meta)
+            test.is_nil(compatible_err,tostring(compatible_err))
+            test.eq(compatible.history_ms,7*24*60*60*1000,"an omitted history policy uses its own hot window")
             meta.round.commit_reserve = meta.round.timeout
             local _, reserve_err = runtime_policy.resolve(meta)
             test.not_nil(reserve_err)

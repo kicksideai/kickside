@@ -7,6 +7,7 @@ import stylesText from './workflow-setup.css?inline'
 interface WorkflowSetupProps {
   'parent-id'?: string
   'submit-nonce'?: string
+  'source-context'?: string
 }
 
 interface WorkflowSetupEvents {
@@ -19,6 +20,7 @@ const PROPS_SCHEMA: WippyPropsSchema = {
   properties: {
     'parent-id': { type: 'string' },
     'submit-nonce': { type: 'string' },
+    'source-context': { type: 'string' },
   },
 }
 

@@ -184,9 +184,8 @@ end
 -- missing thread row is recreated (thread-declaring kinds), a missing declared
 -- projection or cursor is registered (any kind declaring projections). Declared state thereby survives anything — a partial
 -- delete, a lost row, a module uninstall/reinstall — because the next service
--- start reasserts the declaration. Boot runs it on service start and on a
--- code-changing in-place upgrade; an identical-source reinstall does not
--- trigger convergence. Each component converges under its own
+-- start reasserts the declaration. Boot runs it on service start and after
+-- each install's migrations are applied. Each component converges under its own
 -- stored execution identity (converge_executor), so projections keep running as
 -- whoever owns them and the opener's framework frame never stands in for a user.
 -- Components already matching their declaration are not touched at all.
@@ -214,7 +213,9 @@ function M.converge(opener_actor: any, opener_scope: any): ({ [string]: any }, e
                 .select("c.component_id AS component_id")
                 :from("kickside_components c")
                 :left_join("kickside_thread t ON t.id = c.component_id")
-                :where("t.id IS NULL")
+                :left_join("kickside_component_meta type_meta ON type_meta.component_id = c.component_id AND type_meta.key = 'type'")
+                :left_join("kickside_component_meta class_meta ON class_meta.component_id = c.component_id AND class_meta.key = 'thread_class'")
+                :where("(t.id IS NULL OR t.thread_class <> ? OR type_meta.value IS NULL OR type_meta.value <> 'thread' OR class_meta.value IS NULL OR class_meta.value <> t.thread_class)", tostring(kind.class))
                 :where("c.impl_id = ?", tostring(kind.component_impl_id or kind.impl_id))
                 :run_with(_db):query()
             if thread_err then

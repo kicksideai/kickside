@@ -159,7 +159,7 @@ export function useInstallDialog(props: InstallDialogProps, emit: { (e: 'close')
   const destinationId = computed(() =>
     plan.value?.dependency?.id || plan.value?.install_payload?.id as string | undefined || '')
 
-  const securityScan = useInstallSecurityScan({ props, hub, plan, versionArg })
+  const securityScan = useInstallSecurityScan({ props, hub, plan, planCurrent, versionArg })
   const {
     scan, acknowledged, criticalConfirmed, softFindings, unacknowledgedSoft,
     acknowledge, acknowledgeAllSoft, resetScanForPlan, runScanNow, skipScan, cancelScan,
@@ -382,7 +382,7 @@ export function useInstallDialog(props: InstallDialogProps, emit: { (e: 'close')
       setupDescriptors.value = descriptors
       applyPlan(p, previous)
       planCurrent.value = true
-      resetScanForPlan((p.graph || []).length)
+      resetScanForPlan(p.graph || [])
     } catch (e) {
       if (gen !== planGen || !props.open) return
       logError('install:plan', e)

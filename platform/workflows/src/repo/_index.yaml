@@ -9,10 +9,14 @@ entries:
     source: file://repo.lua
     modules: [contract, security, hash]
     imports:
+      deletion_progress: kickside.component:deletion_progress
       types: kickside.workflows:types
       component: kickside.component:component
       store: kickside.workflows.store:store
       envelope: kickside.component:envelope
+      automation: kickside.automation:automation
+      workflow: kickside.workflows:workflow
+      schema_validate: kickside.workflows.schema:schema_validate
 
   - name: version_publish
     kind: library.lua

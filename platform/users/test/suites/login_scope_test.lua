@@ -36,13 +36,34 @@ end
 
 local function define_tests()
     test.describe("login actor metadata", function()
-        local union_scope_name
+        local fixture
+
+        test.after_each(function()
+            if not fixture then return end
+            local owned = fixture
+            fixture = nil
+            if user_repo.get(owned.uid) then assert(user_lifecycle_repo.delete(owned.uid)) end
+            local _, delete_err = scope_store.delete(owned.slug)
+            local changes = assert(registry.snapshot()):changes()
+            for _, id in ipairs(owned.policies) do
+                if registry.get(id) then changes:delete(id) end
+            end
+            local config = owned.config
+            changes:update({id = tostring(config.id), kind = config.kind, meta = config.meta, data = config.data})
+            local _, apply_err = changes:apply()
+            local projected, projection_err = trigger_reconcile.trigger()
+            test.is_nil(delete_err)
+            test.is_nil(apply_err)
+            test.is_nil(projection_err)
+            test.not_nil(projected, "fixture removal acknowledged")
+        end)
 
         test.it("applies added group policies to an existing token without login", function()
             local uid, slug = "session_allow_expansion", "session_allow_expansion"
             local group = "kickside.security.scopes:" .. slug
             local first, added = "app:expansion_initial", "app:expansion_added"
             local config = assert(registry.get("kickside.security:composition_config"))
+            fixture = {uid = uid, slug = slug, policies = {first, added}, config = config}
             local changes = assert(registry.snapshot()):changes()
             changes:update({id = tostring(config.id), kind = config.kind,
                 meta = {delegation_fencer = "kickside.users.persist:delegation_fencer"}, data = config.data})
@@ -88,14 +109,6 @@ local function define_tests()
             end
             test.eq(assert(user_repo.get(uid)).auth_generation, before)
             tokens:close()
-            test.not_nil((user_lifecycle_repo.delete(uid)))
-            test.is_true((scope_store.delete(slug)))
-            test.not_nil((trigger_reconcile.trigger()))
-            changes = assert(registry.snapshot()):changes()
-            changes:delete(first)
-            changes:delete(added)
-            changes:update({id = tostring(config.id), kind = config.kind, meta = config.meta, data = config.data})
-            test.is_nil(select(2, changes:apply()))
         end)
 
         for _, binding in ipairs({"delegation_fencer", "sessions_invalidator"}) do
@@ -104,6 +117,7 @@ local function define_tests()
             local group = "kickside.security.scopes:" .. slug
             local policy_id = "app:login_projection_policy"
             local config = assert(registry.get("kickside.security:composition_config"))
+            fixture = {uid = uid, slug = slug, policies = {policy_id}, config = config}
             local changes = assert(registry.snapshot()):changes()
             local metadata = {}
             for key, value in pairs(config.meta or {}) do metadata[key] = value end
@@ -143,8 +157,8 @@ local function define_tests()
             test.not_nil(projected, "policy reduction reconciled before issuing a new session")
             local current = login()
             test.eq(assert(user_repo.get(uid)).auth_generation, before)
-            test.is_true(assert(user_groups_repo.get_user_with_groups(uid)).delegation_generation > delegation_before,
-                "projection omits delegation fencing for a configured host operation")
+            test.eq(assert(user_groups_repo.get_user_with_groups(uid)).delegation_generation, delegation_before + 1,
+                "native compatibility reduction fences delegations without changing login authentication")
             local tokens = assert(security.token_store("kickside.users.security:tokens"))
             for _, token in ipairs({older, current}) do
                 local actor, scope, validate_err = tokens:validate(token)
@@ -154,15 +168,6 @@ local function define_tests()
                 test.eq(scope:evaluate(actor, "access", "app:old.endpoint"), "undefined")
             end
             tokens:close()
-            test.not_nil((user_lifecycle_repo.delete(uid)), "account deleted")
-            test.is_true((scope_store.delete(slug)))
-            projected, projection_err = trigger_reconcile.trigger()
-            test.is_nil(projection_err)
-            test.not_nil(projected, "deleted custom group reconciled")
-            changes = assert(registry.snapshot()):changes()
-            changes:delete(policy_id)
-            changes:update({id = tostring(config.id), kind = config.kind, meta = config.meta, data = config.data})
-            test.is_nil(select(2, changes:apply()))
         end)
 
         end
@@ -189,9 +194,9 @@ local function define_tests()
             test.not_nil(current)
             local tokens, tokens_err = security.token_store("kickside.users.security:tokens")
             test.is_nil(tokens_err)
-            local _, _, older_validate_err = tokens:validate(older.token)
+            local _, _, older_validate_err = tokens:validate(assert(older.token))
             test.not_nil(older_validate_err)
-            local actor, _, validate_err = tokens:validate(current.token)
+            local actor, _, validate_err = tokens:validate(assert(current.token))
             test.is_nil(validate_err)
             test.eq(actor:id(), uid)
             tokens:close()
@@ -241,7 +246,7 @@ local function define_tests()
             test.not_nil(deleted)
         end)
 
-        test.it("denies named group materialization without runtime composition authority", function()
+        test.it("keeps legacy group materialization unavailable to an ordinary caller", function()
             local policy = assert(security.policy("app:projection_caller"))
             local scope = assert(security.new_scope({policy}))
             local bound = assert(funcs.new()):with_actor(security.new_actor("ordinary_member")):with_scope(scope)
@@ -471,18 +476,19 @@ local function define_tests()
                 test.not_nil(actor)
                 test.not_nil(scope)
                 local name = actor:meta().scope_id
-                test.is_true(name:match("^kickside%.security%.scopes:set_%x+$") ~= nil)
+                test.is_true(name:match("^kickside%.security%.scopes:set_%x+$") == nil)
                 test.eq(payload.security.scope, name)
-                if union_scope_name then test.eq(name, union_scope_name) end
-                union_scope_name = name
                 local executor, executor_err = funcs.new()
                 test.is_nil(executor_err)
                 local bound = executor:with_actor(actor):with_scope(scope)
                 local recovered, recover_err = bound:call("kickside.users.binding:subject_lookup", {subject_id = uid})
                 test.is_nil(recover_err)
                 test.eq(recovered.scope_name, name)
-                test.eq(#recovered.scope_groups, 1)
-                test.eq(recovered.scope_groups[1], name)
+                test.eq(#recovered.scope_groups, 3)
+                test.eq(#recovered.scope_policy_ids, 0)
+                local selected = {}
+                for _, group in ipairs(recovered.scope_groups) do selected[group] = true end
+                for _, group in ipairs(groups) do test.is_true(selected[group]) end
                 test.eq(scope:evaluate(actor, "access", "app:crm.endpoint"), "allow", "CRM group grant")
                 test.eq(scope:evaluate(actor, "access", "app:journal.endpoint"), "allow", "Journal group grant")
                 test.eq(scope:evaluate(actor, "access", "app:shared.endpoint"), "deny")
@@ -594,8 +600,10 @@ local function define_tests()
             test.eq(metadata.status, "active")
             test.eq(metadata.scope_id, SCOPE_ID)
             test.eq(metadata.security_groups[1], SCOPE_ID)
-            test.neq(metadata.login_time, "forged-time")
-            test.eq(metadata.client_trace, "preserved")
+            test.not_nil(metadata.session.login_time)
+            test.neq(metadata.session.login_time, "forged-time")
+            test.is_nil(metadata.login_time)
+            test.is_nil(metadata.client_trace)
 
             local generation = assert(user_repo.get(USER_ID)).auth_generation
             local changed, change_err = user_group_sources_repo.set_user_groups(USER_ID, { SCOPE_ID })

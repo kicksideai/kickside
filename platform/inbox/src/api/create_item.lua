@@ -39,7 +39,7 @@ local function handler()
     end
 
     local params = ({
-        item_type = b.item_type, title = b.title, content = b.content,
+        item_type = b.item_type, title = b.title, content = b.content, files = b.files,
         metadata = b.metadata, source_id = b.source_id, priority = b.priority,
         trace_context = b.trace_context,
     }) :: inbox_types.InboxCreateParams

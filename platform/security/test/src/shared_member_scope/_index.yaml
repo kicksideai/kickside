@@ -8,6 +8,7 @@ entries:
     method: run
     modules: [registry, security, time]
     imports:
+      source_scope: app:source_scope
       test: wippy.test:test
       registry_fixture: app:registry_fixture
       projection: kickside.security.service:scope_projection

@@ -1,5 +1,157 @@
 # Changelog
 
+## [0.2.20](https://github.com/kicksideai/kickside/compare/automation-v0.2.19...automation-v0.2.20) (2026-11-08)
+
+
+### Bug Fixes
+
+* **automation:** upgrade stored rollback steps of the retired trigger runtime on module update ([#367](https://github.com/kicksideai/kickside/issues/367)) ([26b9e6b](https://github.com/kicksideai/kickside/commit/26b9e6b3aefc32459cab739d74a44f881e03113f))
+
+## [0.2.19](https://github.com/kicksideai/kickside/compare/automation-v0.2.18...automation-v0.2.19) (2026-11-08)
+
+
+### Bug Fixes
+
+* **automation:** re-prepare a replayed delivery after its declaration changes ([#362](https://github.com/kicksideai/kickside/issues/362)) ([17ddf5d](https://github.com/kicksideai/kickside/commit/17ddf5df2a034e835c992ad14815b02487e59fe2))
+* **sync:** upgrade stored declarations to the current trigger spec on module update ([#361](https://github.com/kicksideai/kickside/issues/361)) ([cd6b101](https://github.com/kicksideai/kickside/commit/cd6b101aa994a3609709c1e293a808cb2d95f0d2))
+
+## [0.2.18](https://github.com/kicksideai/kickside/compare/automation-v0.2.17...automation-v0.2.18) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
+## [0.2.17](https://github.com/kicksideai/kickside/compare/automation-v0.2.16...automation-v0.2.17) (2026-11-07)
+
+
+### Bug Fixes
+
+* keep the typed access refusal of an event round's source pull ([#347](https://github.com/kicksideai/kickside/issues/347)) ([4b7a264](https://github.com/kicksideai/kickside/commit/4b7a2640d6593e7384764785e97aa4d6bdc3e4d7))
+
+## [0.2.16](https://github.com/kicksideai/kickside/compare/automation-v0.2.15...automation-v0.2.16) (2026-11-07)
+
+
+### Bug Fixes
+
+* **widgets:** follow deletion events without racing the delete job ([#337](https://github.com/kicksideai/kickside/issues/337)) ([fdd6984](https://github.com/kicksideai/kickside/commit/fdd6984188d6f35cdaf4e40cd0ac8b9cd08928bc))
+
+## [0.2.15](https://github.com/kicksideai/kickside/compare/automation-v0.2.14...automation-v0.2.15) (2026-11-07)
+
+
+### Performance Improvements
+
+* **automation:** resolve fixed registry entries once per round ([#335](https://github.com/kicksideai/kickside/issues/335)) ([cee0468](https://github.com/kicksideai/kickside/commit/cee0468266db65f6ee629082833e03afef87c387))
+
+## [0.2.14](https://github.com/kicksideai/kickside/compare/automation-v0.2.13...automation-v0.2.14) (2026-11-07)
+
+
+### Bug Fixes
+
+* **automation:** retry a delivery whose call target is not registered ([#333](https://github.com/kicksideai/kickside/issues/333)) ([b964dc3](https://github.com/kicksideai/kickside/commit/b964dc30c7f740bf8721599da0b1457af80d2cd5))
+* **automation:** style execution history inside the shadow root ([#331](https://github.com/kicksideai/kickside/issues/331)) ([de28143](https://github.com/kicksideai/kickside/commit/de2814359348cc2e0ae20ad059307e2159230b38))
+
+## [0.2.13](https://github.com/kicksideai/kickside/compare/automation-v0.2.12...automation-v0.2.13) (2026-11-07)
+
+
+### Bug Fixes
+
+* **automation:** resolve round authority once per identity at round start ([#322](https://github.com/kicksideai/kickside/issues/322)) ([b798aec](https://github.com/kicksideai/kickside/commit/b798aec3a005d99017f84247931990fc42aa3cc5))
+
+## [0.2.12](https://github.com/kicksideai/kickside/compare/automation-v0.2.11...automation-v0.2.12) (2026-11-05)
+
+
+### Bug Fixes
+
+* align consumer gates with asynchronous component deletion ([380f092](https://github.com/kicksideai/kickside/commit/380f092413fdaf4a5bdefaa8ce59fdd959f40202))
+* **component:** expose asynchronous deletion progress ([e4ca4b7](https://github.com/kicksideai/kickside/commit/e4ca4b7ab5185ecc6ecf83b336ca3e6edf5aca6e))
+* **component:** run deletion cleanup through Jobs ([da3f7ae](https://github.com/kicksideai/kickside/commit/da3f7aee8dce4136a65d1c94bda6604820bc8355))
+* **component:** simplify deletion waiting and committed delivery ([584eae6](https://github.com/kicksideai/kickside/commit/584eae6145e5e9b4ea36bdbd6527ffe376e9f7fe))
+* preserve deletion view state and bind notification authority ([2ea5cf1](https://github.com/kicksideai/kickside/commit/2ea5cf1a31352ba4ba1915daeca384d06d2e7b70))
+* **widgets:** keep accepted deletion state across pages ([62c8e18](https://github.com/kicksideai/kickside/commit/62c8e181b0e1b60d0c3c6a80f6f9585dac6ef7cb))
+* **widgets:** preserve deletion progress across refreshes ([cd607e1](https://github.com/kicksideai/kickside/commit/cd607e14462b8421d092612cb62dce73e57f5ed8))
+
+## [0.2.11](https://github.com/kicksideai/kickside/compare/automation-v0.2.10...automation-v0.2.11) (2026-11-03)
+
+
+### Bug Fixes
+
+* **workflows:** create workflows from automation source contracts ([#213](https://github.com/kicksideai/kickside/issues/213)) ([a44c6f7](https://github.com/kicksideai/kickside/commit/a44c6f7b753bceeb9a39cb89784bfffc58b286b5))
+
+## [0.2.10](https://github.com/kicksideai/kickside/compare/automation-v0.2.9...automation-v0.2.10) (2026-11-01)
+
+
+### Bug Fixes
+
+* **automation:** run drive repairs after Jobs schema upgrades ([#285](https://github.com/kicksideai/kickside/issues/285)) ([5b32173](https://github.com/kicksideai/kickside/commit/5b32173b6f95925c871a63cada5b02f9bbd259cf))
+
+## [0.2.9](https://github.com/kicksideai/kickside/compare/automation-v0.2.8...automation-v0.2.9) (2026-10-30)
+
+
+### Bug Fixes
+
+* preserve knowledge ingestion authority across engines ([#257](https://github.com/kicksideai/kickside/issues/257)) ([023bbe8](https://github.com/kicksideai/kickside/commit/023bbe89f5fc80700007da189a7615a93d693078))
+
+## [0.2.8](https://github.com/kicksideai/kickside/compare/automation-v0.2.7...automation-v0.2.8) (2026-10-30)
+
+
+### Bug Fixes
+
+* make direct grants atomic and select installed task providers ([#256](https://github.com/kicksideai/kickside/issues/256)) ([2e51908](https://github.com/kicksideai/kickside/commit/2e519081e032aabb2137ede2e5f3903e55012566))
+
+## [0.2.7](https://github.com/kicksideai/kickside/compare/automation-v0.2.6...automation-v0.2.7) (2026-10-29)
+
+
+### Bug Fixes
+
+* scope automation source pickers to binding kinds ([#214](https://github.com/kicksideai/kickside/issues/214)) ([f9e2577](https://github.com/kicksideai/kickside/commit/f9e2577a4dabfb088925098a96e013792e617e21))
+
+## [0.2.6](https://github.com/kicksideai/kickside/compare/automation-v0.2.5...automation-v0.2.6) (2026-10-28)
+
+
+### Features
+
+* **automation:** list automations by event source ([#184](https://github.com/kicksideai/kickside/issues/184)) ([742f652](https://github.com/kicksideai/kickside/commit/742f6522c05fc90bb08e3f91a8f3158825a3793b))
+
+
+### Bug Fixes
+
+* **automation:** select picker thread classes ([#186](https://github.com/kicksideai/kickside/issues/186)) ([edbd416](https://github.com/kicksideai/kickside/commit/edbd4164434a0041f2d577ca886172d40140332f))
+
+## [0.2.5](https://github.com/kicksideai/kickside/compare/automation-v0.2.4...automation-v0.2.5) (2026-10-28)
+
+
+### Bug Fixes
+
+* **automation:** compose delivery execution scopes ([#183](https://github.com/kicksideai/kickside/issues/183)) ([7ca577b](https://github.com/kicksideai/kickside/commit/7ca577b2a22bdeae4a4cb5fb13f029840d22e77d))
+* **automation:** reactivate blocked drives through controls ([#188](https://github.com/kicksideai/kickside/issues/188)) ([8673ccd](https://github.com/kicksideai/kickside/commit/8673ccda3133fc40ce909a5f1e459172c4079e2f))
+
+## [0.2.4](https://github.com/kicksideai/kickside/compare/automation-v0.2.3...automation-v0.2.4) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+
+## [0.2.3](https://github.com/kicksideai/kickside/compare/automation-v0.2.2...automation-v0.2.3) (2026-10-25)
+
+
+### Bug Fixes
+
+* **automation:** preserve legacy recurring agent inputs ([#134](https://github.com/kicksideai/kickside/issues/134)) ([c71eea2](https://github.com/kicksideai/kickside/commit/c71eea238abc29abe01b2b872e600557cbd7965d))
+* **automation:** wake retention after round release ([#142](https://github.com/kicksideai/kickside/issues/142)) ([e4ef878](https://github.com/kicksideai/kickside/commit/e4ef8782c41889cd41b7a28a21a032f44e88090f))
+
+## [0.2.2](https://github.com/kicksideai/kickside/compare/automation-v0.2.1...automation-v0.2.2) (2026-10-23)
+
+
+### Bug Fixes
+
+* **automation:** preserve denied configuration lookup errors ([e24cb7c](https://github.com/kicksideai/kickside/commit/e24cb7c5d42ea64c8426e8d4f64d501382877627))
+* **automation:** prune prepared output only with settlement proof ([#79](https://github.com/kicksideai/kickside/issues/79)) ([6578982](https://github.com/kicksideai/kickside/commit/657898216c8f9c40f0c9a7d4ca6f7b360d0307a2))
+* **automation:** repair stale job references on unserved wakes ([#127](https://github.com/kicksideai/kickside/issues/127)) ([7fb479a](https://github.com/kicksideai/kickside/commit/7fb479a83cedeefcb6cc7a55bcd0f4b22aa750cb))
+* **automation:** restrict authority-bearing edits to the execution subject ([#68](https://github.com/kicksideai/kickside/issues/68)) ([aed8ab5](https://github.com/kicksideai/kickside/commit/aed8ab5ec044ff0cbe8fb1962a8c7caa44bd88b1))
+* **automation:** retire direct agent launch controls without breaking saved tasks ([#95](https://github.com/kicksideai/kickside/issues/95)) ([86e687a](https://github.com/kicksideai/kickside/commit/86e687ad79c4d29d91c753d5e7d1ca9e7caf873a))
+
 ## [0.2.1](https://github.com/kicksideai/kickside/compare/automation-v0.2.0...automation-v0.2.1) (2026-10-23)
 
 

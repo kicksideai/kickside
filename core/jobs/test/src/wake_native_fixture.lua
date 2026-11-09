@@ -3,6 +3,7 @@ function M.reset(route, phase, source)
     M.route, M.phase, M.source = route, phase, source
     M.rollbacks, M.commits, M.updates = 0, 0, 0
     M.rollback_error, M.missing, M.value = nil, false, nil
+    M.calls, M.called_entry = 0, nil
 end
 function M.result(phase, value)
     if M.phase == phase then
@@ -19,7 +20,10 @@ function M.identity_parts(...) return M.result("identity", "identity") end
 function M.enqueue_job(...) return M.result("enqueue", "continuation") end
 function M.complete_tx(...) local _, err = M.result("complete", true); return err end
 function M.rows_affected(result) return result and tonumber(result.rows_affected) or 0 end
-function M.call(...) return M.result("nudge", 1) end
+function M.call(entry, ...)
+    M.calls, M.called_entry = M.calls + 1, entry
+    return M.result("nudge", 1)
+end
 function M.builder(...): any
     local q: any = {}
     function q:from(...) return self end

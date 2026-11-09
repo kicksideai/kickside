@@ -1,3 +1,4 @@
+import type { ComponentDeletionState } from '@kickside/ui-kit/useComponentDeletion'
 // Pure list-row model for the workflow list table — no API calls, no Vue. Folds a
 // WorkflowSummary (the list read, which already carries last_run) into the fields the
 // dense table renders: a version/draft status chip, a last-run outcome, and relative
@@ -53,7 +54,7 @@ export interface WorkflowRowLocation {
   title: string
 }
 
-export interface WorkflowRow {
+export interface WorkflowRow extends ComponentDeletionState {
   id: string
   title: string
   steps: number
@@ -136,6 +137,9 @@ export function toWorkflowRow(wf: WorkflowSummary, now: number = Date.now()): Wo
   const runs = Number(wf.run_count) || 0
   return {
     id: wf.id,
+    deleting_at: wf.deleting_at,
+    deletion_job_id: wf.deletion_job_id,
+    deletion_job: wf.deletion_job,
     title: wf.title,
     steps,
     runs,

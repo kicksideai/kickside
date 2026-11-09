@@ -24,11 +24,13 @@ defineEmits<{
 
 <style scoped>
 .right-flap-container {
+  pointer-events: none;
   width: 48px;
   height: 80px;
 }
 
 .right-flap {
+  pointer-events: auto;
   position: absolute;
   right: -8px;
   width: 40px;
@@ -38,7 +40,8 @@ defineEmits<{
   transition: transform 0.3s ease;
 }
 
-.right-flap-container:hover .right-flap {
+.right-flap-container:hover .right-flap,
+.right-flap-container:focus-within .right-flap {
   transform: translateX(0);
 }
 

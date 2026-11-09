@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 -- Threads binding integration. Drives the kickside.core:threads contract under real
 -- actors through contract.get():with_actor():with_scope():open() so the component
 -- contract resolves the acting actor: create registers a component (visible via a
@@ -247,7 +248,10 @@ local function define_tests()
                 test.eq(exited.thread.state, next_state)
                 local removed, remove_err = as_owner(DELETE, { thread_id = created.thread_id })
                 test.is_nil(remove_err)
-                test.is_true(removed.deleted)
+                test.is_true(removed.in_progress)
+                local finished, finish_err = deletion_worker.run(created.component_id)
+                test.is_nil(finish_err, tostring(finish_err))
+                test.is_true(finished.deleted)
                 local absent, absent_err = as_owner(FIND, { thread_id = created.thread_id })
                 test.is_nil(absent_err)
                 test.is_nil(absent)

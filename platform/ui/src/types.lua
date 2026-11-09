@@ -59,7 +59,7 @@ M.KEY = {
 }
 
 -- WCAG relative luminance of an sRGB triple (0-255 channels).
-local function tone_rel_luminance(r: number, g: number, b: number): number
+function M.tone_rel_luminance(r: number, g: number, b: number): number
     local function lin(c: number): number
         local s = c / 255
         if s <= 0.03928 then return s / 12.92 end
@@ -68,7 +68,7 @@ local function tone_rel_luminance(r: number, g: number, b: number): number
     return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b)
 end
 
-local function tone_contrast(l1: number, l2: number): number
+function M.tone_contrast(l1: number, l2: number): number
     local hi = math.max(l1, l2)
     local lo = math.min(l1, l2)
     return (hi + 0.05) / (lo + 0.05)
@@ -92,9 +92,9 @@ function M.is_legible_primary_color(value: string): boolean
     local b = tonumber(v:sub(5, 6), 16)
     if not r or not g or not b then return true end
     -- accent = ramp -600 = each channel * 0.88, rounded (matches the resolver/client)
-    local al = tone_rel_luminance(math.floor(r * 0.88 + 0.5), math.floor(g * 0.88 + 0.5), math.floor(b * 0.88 + 0.5))
-    local on_light = tone_contrast(al, tone_rel_luminance(255, 255, 255))
-    local on_dark = tone_contrast(al, tone_rel_luminance(12, 14, 18))
+    local al = M.tone_rel_luminance(math.floor(r * 0.88 + 0.5), math.floor(g * 0.88 + 0.5), math.floor(b * 0.88 + 0.5))
+    local on_light = M.tone_contrast(al, M.tone_rel_luminance(255, 255, 255))
+    local on_dark = M.tone_contrast(al, M.tone_rel_luminance(12, 14, 18))
     return on_light >= TONE_MIN_CONTRAST and on_dark >= TONE_MIN_CONTRAST
 end
 

@@ -25,6 +25,7 @@ entries:
     method: run
     modules: [sql, security, contract, uuid, json, funcs]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       component: kickside.component:component
   - name: system_purge_cleanup_delete
@@ -32,4 +33,5 @@ entries:
     source: file://system_purge_cleanup_delete.lua
     method: delete
     imports:
+      deletion_worker: app:deletion_test_worker
       component: kickside.component:component

@@ -71,9 +71,96 @@ entries:
       - sql
       - store
       - time
+      - events
+      - channel
+      - system
     imports:
       test: wippy.test:test
       settings_writer: kickside.settings.persist:settings_writer
+      settings_cache: kickside.settings:settings_cache
+
+  - name: changes_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_settings
+      group: KickSide Settings
+      comment: Committed revisions reach every keeper; keepers reload and tell local subscribers once.
+    source: file://changes_test.lua
+    method: run
+    modules: [contract, security, sql, json, time, channel, process, registry, store]
+    imports:
+      test: wippy.test:test
+      settings_writer: kickside.settings.persist:settings_writer
+      settings_changes: kickside.settings:settings_changes
+      settings_cache: kickside.settings:settings_cache
+
+  - name: change_listener
+    kind: process.lua
+    meta: { comment: Harness subscriber that forwards settings revisions to the test process. }
+    source: file://change_listener.lua
+    method: main
+    modules: [process, channel]
+    imports:
+      settings_changes: kickside.settings:settings_changes
+
+  - name: keeper_peer
+    kind: process.lua
+    meta: { comment: Harness stand-in for a keeper joining from another node. }
+    source: file://keeper_peer.lua
+    method: main
+    modules: [pg, process]
+    imports:
+      settings_changes: kickside.settings:settings_changes
+
+  - name: cache_errors_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_settings }
+    source: file://cache_errors_test.lua
+    method: run
+    modules: [funcs, security, registry]
+    imports:
+      test: wippy.test:test
+      settings_writer: kickside.settings.persist:settings_writer
+      settings_cache: kickside.settings:settings_cache
+
+  - name: cache_replace_probe
+    kind: function.lua
+    source: file://cache_probe.lua
+    method: replace
+    imports:
+      settings_cache: kickside.settings:settings_cache
+      settings_writer: kickside.settings.persist:settings_writer
+
+  - name: cache_reload_probe
+    kind: function.lua
+    source: file://cache_probe.lua
+    method: reload
+    imports:
+      settings_cache: kickside.settings:settings_cache
+      settings_writer: kickside.settings.persist:settings_writer
+
+  - name: cache_write_probe
+    kind: function.lua
+    source: file://cache_probe.lua
+    method: write
+    imports:
+      settings_cache: kickside.settings:settings_cache
+      settings_writer: kickside.settings.persist:settings_writer
+
+  - name: cache_probe_dispatch
+    kind: security.policy
+    policy:
+      resources: [app:cache_replace_probe, app:cache_reload_probe, app:cache_write_probe, kickside.settings:cache_bootloader]
+      actions: [funcs.call, funcs.security]
+      effect: allow
+
+  - name: cache_probe_read
+    kind: security.policy
+    policy:
+      resources: "*"
+      actions: [db.get, store.get, store.key.get, registry.get, registry.find]
+      effect: allow
 
   - name: cache_bootloader_dedup_test
     kind: function.lua
@@ -146,6 +233,18 @@ entries:
         - db.get
         - store.get
         - store.key.get
+      effect: allow
+
+  - name: settings_reader_policy
+    kind: security.policy
+    policy:
+      resources:
+        - kickside.settings:settings
+        - kickside.settings:get
+        - kickside.settings:get_namespace
+        - kickside.settings:list
+        - kickside.settings:set
+      actions: [contract.get, contract.open, contract.call, contract.implementations, contract.security, funcs.call, funcs.security]
       effect: allow
 
   # ─── Settings declarations the contract suite drives ──────────────────
@@ -322,3 +421,14 @@ entries:
     default: []
     read_access: admin
     visible: false
+
+  - name: setting_picker
+    kind: registry.entry
+    meta: { type: kickside.settings:definition }
+    namespace: kickside.settings.test
+    key: picker
+    value_type: string
+    default: "class:fast"
+    control:
+      tag: wc-model-picker
+      props: { capability: vision }

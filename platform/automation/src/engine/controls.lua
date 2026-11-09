@@ -42,10 +42,10 @@ local RECONCILE_DRIVE = "reconcile"
 -- and the round itself runs when a worker claims the drive's slot.
 local ROUND_QUEUED = "queued"
 
--- The parked phases resume releases (design v5 §4.4): an explicit pause, and
--- a deterministic declaration, access or identity failure the operator has
--- corrected. The round re-evaluates authority on its next stamp and parks
--- again if the cause remains. A deleted source never resumes.
+-- Resume releases every resumable phase, including an explicit pause. Run now
+-- and resync release a deterministic declaration, access or identity failure
+-- after an authorized operator corrects it. The round re-evaluates authority
+-- on its next stamp and parks again if the cause remains.
 local function resumable_phases(PHASE: Map): { [string]: boolean }
     return { [PHASE.PAUSED] = true, [PHASE.BLOCKED_DECLARATION] = true,
         [PHASE.BLOCKED_ACCESS] = true, [PHASE.BLOCKED_IDENTITY] = true }
@@ -70,6 +70,13 @@ function part.attach(M: any, dependencies: any, P: any): ()
     local function set(tx: any, automation_id: string, drive_key: string, fields: Map): error?
         local _, err = (dependencies.drive :: any).update_cas_tx(tx, automation_id, drive_key, {}, fields)
         return err
+    end
+
+    local function reactivate_recoverable(d: Map, fields: Map): Map
+        if d.phase ~= (dependencies.drive :: any).PHASE.PAUSED and RESUMABLE_PHASES[tostring(d.phase)] then
+            fields.phase = (dependencies.drive :: any).PHASE.ACTIVE
+        end
+        return fields
     end
 
     -- restart_reconcile_tx starts the automation's reconcile pass afresh and
@@ -101,6 +108,20 @@ function part.attach(M: any, dependencies: any, P: any): ()
             .. " WHERE owner_id=$1 AND source_port=$2 AND state IN ('dead','uncertain','retrying','waiting','parked')" .. key_filter,
             params)
         if read_err then return nil, read_err end
+        if key_filter ~= "" then
+            local retained,retained_err=tx:query("SELECT DISTINCT item_key FROM " .. ledger.TABLE
+                .. " WHERE owner_id=$1 AND source_port=$2" .. key_filter,params)
+            if retained_err then return nil,retained_err end
+            local found: Map={}
+            for _,row in ipairs(retained) do found[row.item_key]=true end
+            for _,key in ipairs(keys) do
+                if not found[tostring(key)] then
+                    return nil,errors.new({kind=errors.INVALID,retryable=false,
+                        message="item replay evidence predates this version or has aged out",
+                        details={code="replay_evidence_unavailable"}})
+                end
+            end
+        end
         local replayed = 0
         for _, row in ipairs(rows :: { Map }) do
             local item, decode_err = (dependencies.json :: any).decode(tostring(row.envelope_json))
@@ -126,23 +147,27 @@ function part.attach(M: any, dependencies: any, P: any): ()
     end
 
     local function discard_tx(tx: any, d: Map, keys: any): (Map?, error?)
-        if type(keys) ~= "table" or #keys == 0 then return nil, invalid("discard names the uncertain item keys") end
+        if type(keys) ~= "table" or #keys == 0 then return nil, invalid("discard names the dead or uncertain item keys") end
         local ledger = dependencies.round_ledger :: any
         local port = ledger.source_port(d)
         local now = (dependencies.drive :: any).utc_now()
-        local policy, policy_err = (dependencies.policy :: any).policy()
-        if policy_err then return nil, policy_err end
-        local expires = (dependencies.drive :: any).utc_after(policy.ledger_resolved_ms)
-        local discarded = 0
+        local policy,policy_err=(dependencies.policy :: any).policy()
+        if policy_err then return nil,policy_err end
+        local expires_at=(dependencies.drive :: any).utc_after(policy.ledger_resolved_ms)
+        local discarded, released = 0, 0
         for _, key in ipairs(keys) do
-            local result, err = tx:execute("UPDATE " .. ledger.TABLE
-                .. " SET state='resolved',error_code='discarded',next_attempt_at=NULL,resolved_at=$1,expires_at=$2,updated_at=$1"
-                .. " WHERE owner_id=$3 AND source_port=$4 AND item_key=$5 AND state='uncertain'",
-                { now, expires, d.automation_id, port, tostring(key) })
-            if err then return nil, err end
-            discarded = discarded + math.floor(tonumber(result.rows_affected) or 0)
+            for _, state in ipairs({"uncertain", "dead"}) do
+                local result, err = tx:execute("UPDATE " .. ledger.TABLE
+                    .. " SET state='resolved',envelope_json='{}',error_code='discarded',next_attempt_at=NULL,resolved_at=$1,expires_at=$2,updated_at=$1"
+                    .. " WHERE owner_id=$3 AND source_port=$4 AND item_key=$5 AND state=$6",
+                    { now, expires_at, d.automation_id, port, tostring(key), state })
+                if err then return nil, err end
+                local count = math.floor(tonumber(result.rows_affected) or 0)
+                discarded = discarded + count
+                if state == "uncertain" then released = released + count end
+            end
         end
-        local set_err = set(tx, d.automation_id, d.drive_key, { unresolved_count = math.max(0, d.unresolved_count - discarded) })
+        local set_err = set(tx, d.automation_id, d.drive_key, { unresolved_count = math.max(0, d.unresolved_count - released) })
         if set_err then return nil, set_err end
         return { discarded = discarded }, nil
     end
@@ -173,7 +198,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
         end
         if control == "run_now" then
             local now = drive_mod.utc_now()
-            local fields: Map = { next_run_at = now }
+            local fields: Map = reactivate_recoverable(d, { next_run_at = now })
             if d.source_kind == drive_mod.SOURCE_KIND.MANUAL then
                 fields.event_seq = math.max(d.event_seq :: integer, d.last_committed_occurrence_seq :: integer,
                     (d.occurrence_seq or 0) :: integer) + 1
@@ -187,8 +212,9 @@ function part.attach(M: any, dependencies: any, P: any): ()
         if control == "discard" then return discard_tx(tx, d, args.keys) end
         -- resync of a drive without a source thread: restart its cursor under a
         -- new delivery revision (A37), so re-pulled items are new deliveries.
-        local fields: Map = { cursor = (dependencies.sql :: any).NULL, rewind_generation = (d.rewind_generation :: integer) + 1,
-            delivery_revision = (d.delivery_revision :: integer) + 1, pass_pages = 0, pass_items = 0 }
+        local fields: Map = reactivate_recoverable(d, { cursor = (dependencies.sql :: any).NULL,
+            rewind_generation = (d.rewind_generation :: integer) + 1,
+            delivery_revision = (d.delivery_revision :: integer) + 1, pass_pages = 0, pass_items = 0 })
         if d.source_kind == drive_mod.SOURCE_KIND.COLLECTION or d.source_kind == drive_mod.SOURCE_KIND.TIMER then
             fields.next_run_at = drive_mod.utc_now()
         end
@@ -291,10 +317,10 @@ function part.attach(M: any, dependencies: any, P: any): ()
             local locked, lock_err = (dependencies.drive :: any).lock_tx(tx, pending.automation_id, pending.drive_keys)
             if lock_err then return nil, lock_err end
             local d = (locked :: { [string]: Map })[drive_key]
-            local set_err = set(tx, pending.automation_id, drive_key, {
+            local set_err = set(tx, pending.automation_id, drive_key, reactivate_recoverable(d, {
                 event_seq = input.target, rewind_generation = (d.rewind_generation :: integer) + 1,
                 delivery_revision = (d.delivery_revision :: integer) + 1,
-            })
+            }))
             if set_err then return nil, set_err end
             for _, key in ipairs(pending.drive_keys or {}) do
                 if key == RECONCILE_DRIVE then

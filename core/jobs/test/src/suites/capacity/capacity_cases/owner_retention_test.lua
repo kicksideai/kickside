@@ -62,26 +62,6 @@ local function run_once(db: sql.DB, owner: string, key: string): string
     return id :: string
 end
 
-local function seed_runs(db: sql.DB, owner: string, job_id: string, total: integer): integer
-    local statement: string
-    if tostring(db:type()) == sql.type.POSTGRES then
-        statement = [[INSERT INTO kickside_job_run
-            (id,job_id,owner_kind,owner_id,job_type,attempt_no,execution_seq,status,lease_token,started_at,finished_at)
-            SELECT md5($1::text || ':' || n::text)::uuid,$1::uuid,'test',$2,'test.retention',1,n + 1000,'success','seed',$3::timestamptz,$3::timestamptz
-            FROM generate_series(1,]] .. tostring(total) .. [[) AS n]]
-    else
-        statement = [[WITH RECURSIVE numbered(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM numbered WHERE n<]]
-            .. tostring(total) .. [[)
-            INSERT INTO kickside_job_run
-            (id,job_id,owner_kind,owner_id,job_type,attempt_no,execution_seq,status,lease_token,started_at,finished_at)
-            SELECT lower(hex(randomblob(16))),$1,'test',$2,'test.retention',1,n + 1000,'success','seed',$3,$3
-            FROM numbered]]
-    end
-    local seeded, err = db:execute(statement, { job_id, owner, "2000-01-01T00:00:00Z" })
-    if err then error("run seed failed: " .. tostring(err)) end
-    return math.floor(tonumber(seeded.rows_affected) :: number)
-end
-
 local function define_tests()
     test.describe("jobs retention bounded by age expiry", function()
         test.it("retains done dead and cancelled jobs until expiry and then removes them", function()
@@ -258,7 +238,7 @@ local function define_tests()
             local owner = uuid.v7()
             local db = open_db()
             local anchor = run_once(db, owner, "anchor")
-            test.eq(seed_runs(db, owner, anchor, FORMER_RUNS_PER_OWNER), FORMER_RUNS_PER_OWNER)
+            test.eq(job_fixture.seed_runs(db, FORMER_RUNS_PER_OWNER, anchor, owner, "2000-01-01T00:00:00Z"), FORMER_RUNS_PER_OWNER)
             for index = 1, 12 do run_once(db, owner, "run-" .. tostring(index)) end
             test.eq(count(db, "SELECT COUNT(*) AS n FROM kickside_job_run WHERE owner_kind='test' AND owner_id=$1",
                 { owner }), FORMER_RUNS_PER_OWNER + 13)

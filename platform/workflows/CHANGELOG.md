@@ -1,5 +1,89 @@
 # Changelog
 
+## [0.2.11](https://github.com/kicksideai/kickside/compare/workflows-v0.2.10...workflows-v0.2.11) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
+## [0.2.10](https://github.com/kicksideai/kickside/compare/workflows-v0.2.9...workflows-v0.2.10) (2026-11-07)
+
+
+### Bug Fixes
+
+* carry the component deletion receipt through thread, skill, webhook, workflow and agent deletes ([#341](https://github.com/kicksideai/kickside/issues/341)) ([98e9d03](https://github.com/kicksideai/kickside/commit/98e9d03b522828d63b284dff4174ef7543bef2cb))
+
+## [0.2.9](https://github.com/kicksideai/kickside/compare/workflows-v0.2.8...workflows-v0.2.9) (2026-11-07)
+
+
+### Bug Fixes
+
+* **widgets:** follow deletion events without racing the delete job ([#337](https://github.com/kicksideai/kickside/issues/337)) ([fdd6984](https://github.com/kicksideai/kickside/commit/fdd6984188d6f35cdaf4e40cd0ac8b9cd08928bc))
+
+## [0.2.8](https://github.com/kicksideai/kickside/compare/workflows-v0.2.7...workflows-v0.2.8) (2026-11-05)
+
+
+### Bug Fixes
+
+* **component:** expose asynchronous deletion progress ([e4ca4b7](https://github.com/kicksideai/kickside/commit/e4ca4b7ab5185ecc6ecf83b336ca3e6edf5aca6e))
+* **component:** run deletion cleanup through Jobs ([da3f7ae](https://github.com/kicksideai/kickside/commit/da3f7aee8dce4136a65d1c94bda6604820bc8355))
+* **component:** simplify deletion waiting and committed delivery ([584eae6](https://github.com/kicksideai/kickside/commit/584eae6145e5e9b4ea36bdbd6527ffe376e9f7fe))
+* preserve deletion view state and bind notification authority ([2ea5cf1](https://github.com/kicksideai/kickside/commit/2ea5cf1a31352ba4ba1915daeca384d06d2e7b70))
+* **widgets:** keep accepted deletion state across pages ([62c8e18](https://github.com/kicksideai/kickside/commit/62c8e181b0e1b60d0c3c6a80f6f9585dac6ef7cb))
+* **widgets:** preserve deletion progress across refreshes ([cd607e1](https://github.com/kicksideai/kickside/commit/cd607e14462b8421d092612cb62dce73e57f5ed8))
+
+## [0.2.7](https://github.com/kicksideai/kickside/compare/workflows-v0.2.6...workflows-v0.2.7) (2026-11-03)
+
+
+### Bug Fixes
+
+* **build:** restore the root make test target, release exclusions and the Workflows test clock ([#294](https://github.com/kicksideai/kickside/issues/294)) ([2b4bb19](https://github.com/kicksideai/kickside/commit/2b4bb195e01cdfdce8494e4e7cc51c5dc55dbb47))
+
+## [0.2.6](https://github.com/kicksideai/kickside/compare/workflows-v0.2.5...workflows-v0.2.6) (2026-11-03)
+
+
+### Bug Fixes
+
+* **workflows:** create workflows from automation source contracts ([#213](https://github.com/kicksideai/kickside/issues/213)) ([a44c6f7](https://github.com/kicksideai/kickside/commit/a44c6f7b753bceeb9a39cb89784bfffc58b286b5))
+
+## [0.2.5](https://github.com/kicksideai/kickside/compare/workflows-v0.2.4...workflows-v0.2.5) (2026-10-29)
+
+
+### Features
+
+* **workflows:** configure Block retries and execution timeouts ([#221](https://github.com/kicksideai/kickside/issues/221)) ([57cf0be](https://github.com/kicksideai/kickside/commit/57cf0be55dee41bf1b23a2333827554f015e158f))
+
+## [0.2.4](https://github.com/kicksideai/kickside/compare/workflows-v0.2.3...workflows-v0.2.4) (2026-10-28)
+
+
+### Bug Fixes
+
+* consolidate default account roles ([aafe19c](https://github.com/kicksideai/kickside/commit/aafe19cd2ac7d58ed04f4d035cef91995eab8dce))
+* **workflows:** grant maintenance its committed-change wake ([637f9aa](https://github.com/kicksideai/kickside/commit/637f9aa446222d318601e9ac594147c26efe41f8))
+
+## [0.2.3](https://github.com/kicksideai/kickside/compare/workflows-v0.2.2...workflows-v0.2.3) (2026-10-26)
+
+
+### Bug Fixes
+
+* **workflows:** give the run notice and run list readable spacing ([e5802ac](https://github.com/kicksideai/kickside/commit/e5802ac565f191edee5b910ee8803fd78393a89e))
+* **workflows:** style run controls through owned PT classes ([eb1259d](https://github.com/kicksideai/kickside/commit/eb1259db049c43c6397398883664815befe8994d))
+
+## [0.2.2](https://github.com/kicksideai/kickside/compare/workflows-v0.2.1...workflows-v0.2.2) (2026-10-25)
+
+
+### Bug Fixes
+
+* **workflows:** recheck workflow access before resuming Await ([#132](https://github.com/kicksideai/kickside/issues/132)) ([43bd575](https://github.com/kicksideai/kickside/commit/43bd5758c8c42200875fe39c6b2f61bf4a0ecd89))
+
+## [0.2.1](https://github.com/kicksideai/kickside/compare/workflows-v0.2.0...workflows-v0.2.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* **workflows:** preserve empty object schemas through publication ([#110](https://github.com/kicksideai/kickside/issues/110)) ([06213cb](https://github.com/kicksideai/kickside/commit/06213cb3f2de773e5c83a894d810a81838b8cc3c))
+
 ## [0.2.0](https://github.com/kicksideai/kickside/compare/workflows-v0.1.120...workflows-v0.2.0) (2026-10-22)
 
 

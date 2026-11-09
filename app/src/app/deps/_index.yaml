@@ -183,7 +183,7 @@ entries:
         value: "fs://css-variables.facade.json"
 
   # app.deps:keeper
-  - version: ">=0.5.109"
+  - version: ">=0.5.111"
     name: keeper
     kind: ns.dependency
     meta: {}

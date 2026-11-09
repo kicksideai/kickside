@@ -30,6 +30,7 @@ const props = defineProps<{
 // its dismissal or failure) so a host reacts without reaching into the element.
 const emit = defineEmits<{
   (e: 'change', value: unknown): void
+  (e: 'select', value: unknown): void
   (e: 'created', value: unknown): void
   (e: 'close', value: unknown): void
   (e: 'error', value: unknown): void
@@ -59,6 +60,9 @@ function consumed(e: Event): boolean {
   if (e.composedPath()[0] !== el) return false
   e.stopPropagation()
   return true
+}
+function onSelect(e: Event) {
+  if (consumed(e)) emit('select', (e as CustomEvent).detail)
 }
 function onCreated(e: Event) {
   if (consumed(e)) emit('created', (e as CustomEvent).detail)
@@ -106,6 +110,7 @@ function detach(target: HTMLElement | null = el) {
   if (!target) return
   target.removeEventListener('config-changed', onChange)
   target.removeEventListener('change', onChange)
+  target.removeEventListener('select', onSelect)
   target.removeEventListener('created', onCreated)
   target.removeEventListener('close', onClose)
   target.removeEventListener('error', onError)
@@ -138,6 +143,7 @@ async function mount() {
     applyAttrs()
     nextEl.addEventListener('config-changed', onChange)
     nextEl.addEventListener('change', onChange)
+    nextEl.addEventListener('select', onSelect)
     nextEl.addEventListener('created', onCreated)
     nextEl.addEventListener('close', onClose)
     nextEl.addEventListener('error', onError)
@@ -171,34 +177,3 @@ onBeforeUnmount(() => { mountGeneration += 1; detach() })
     <div v-else ref="host"></div>
   </div>
 </template>
-
-<style scoped>
-.kx-wcmount {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  overflow-x: clip;
-  --p-border-radius: var(--wf-radius-sm, 8px);
-  --p-content-border-radius: var(--wf-radius-sm, 8px);
-}
-.kx-wcmount :deep(.kx-wcmount-surface) {
-  display: block;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
-  color: inherit;
-}
-.kx-wcmount-fail {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
-  font-size: 12px; color: var(--p-danger-600, var(--p-danger-500));
-  padding: 9px 10px; border: 1px solid color-mix(in srgb, var(--p-danger-500) 32%, transparent);
-  border-radius: 10px; background: color-mix(in srgb, var(--p-danger-500) 7%, transparent);
-}
-.kx-wcmount-fail > span { min-width: 0; flex: 1; }
-.kx-wcmount-fail button {
-  border: 1px solid currentColor; border-radius: 8px; padding: 5px 9px;
-  background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer;
-}
-</style>

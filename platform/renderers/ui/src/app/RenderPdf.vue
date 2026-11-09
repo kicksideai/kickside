@@ -89,8 +89,8 @@ async function renderPdf() {
       if (!canvas || !context) continue
       canvas.width = w
       canvas.height = h
-      canvas.style.width = `${w}px`
-      canvas.style.height = `${h}px`
+      wrap.style.width = `${w}px`
+      wrap.style.setProperty('--pdf-width', `${w}px`)
       await page.render({ canvas, canvasContext: context, viewport }).promise
 
       const textDiv = wrap.querySelector<HTMLElement>('.textLayer')
@@ -98,7 +98,7 @@ async function renderPdf() {
         textDiv.replaceChildren()
         textDiv.style.width = `${w}px`
         textDiv.style.height = `${h}px`
-        textDiv.style.setProperty('--scale-factor', String(scale))
+        textDiv.style.setProperty('--total-scale-factor', String(scale))
         const layer = new pdfjs.TextLayer({
           textContentSource: page.streamTextContent(),
           container: textDiv,

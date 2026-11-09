@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.7](https://github.com/kicksideai/kickside/compare/execution-v0.2.6...execution-v0.2.7) (2026-10-26)
+
+
+### Bug Fixes
+
+* **security:** expose live scope resolution during staged upgrades ([db3c54d](https://github.com/kicksideai/kickside/commit/db3c54d66cc2dfc17da33040357e1decee522bf8))
+* **security:** expose live scope resolution during staged upgrades ([ed39a5e](https://github.com/kicksideai/kickside/commit/ed39a5e7f85a9a2f3669853dc63b508af5ebb9a3))
+
 ## [0.2.6](https://github.com/kicksideai/kickside/compare/execution-v0.2.5...execution-v0.2.6) (2026-10-22)
 
 

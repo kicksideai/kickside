@@ -5,7 +5,7 @@ TYPE   := plugin
 VIS    := public
 EMBED  := --embed ui_fs
 
-.PHONY: build dev watch publish lint test
+.PHONY: build dev watch publish lint test test-ui
 build:
 	$(MAKE) -C ../.. build MOD=$(MODULE)
 dev:
@@ -15,6 +15,8 @@ lint:
 	cd test && wippy lint $(WIPPY_LINT_ARGS) --ns 'kickside.$(subst -,_,$(MODULE))' --ns 'kickside.$(subst -,_,$(MODULE)).*'
 test:
 	cd test && ./run-tests.sh
+test-ui:
+	cd ui && npm test -- $(UI_TEST_ARGS)
 publish: build
 	@echo "Releases use GitHub Release Please (.github/workflows/release.yml)." >&2
 	@exit 1

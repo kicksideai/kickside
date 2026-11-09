@@ -1,7 +1,10 @@
 @import "@wippy-fe/theme/theme-config.css";
+/* Shared PickerSelect (searchable grouped single-select) styles. */
+@import "@widgets/app/pickerselect.css";
 @import "@kickside/ui-kit/spin.css";
 @import "@kickside/ui-kit/kx-tag.css";
 @import "@kickside/ui-kit/kx-tokens.css";
+@import "@widgets/app/anchored-panel.css";
 
 /* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
    preflight; without it PrimeVue controls keep UA defaults the theme never
@@ -18,46 +21,9 @@
 :host > div { height: 100%; min-height: 0; }
 *, *::before, *::after { box-sizing: border-box; }
 
-/* Module button surface, self-contained for the shadow root. Real PrimeVue CSS now
-   loads via primeVueCssUrl for the actual PrimeVue components (Dialog, Select), so
-   these module buttons carry a project `.km-btn` prefix rather than borrowing the
-   `.p-button` class — nothing here masquerades as a PrimeVue override. Matches the
-   app button look via --p-* tokens. */
-.km-btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  padding: 7px 13px; border: 1px solid var(--p-primary-color); border-radius: 8px;
-  font: inherit; font-size: 13px; font-weight: 700;
-  font-family: 'Outfit', system-ui, sans-serif; letter-spacing: -.005em;
-  line-height: 1.2; white-space: nowrap; cursor: pointer;
-  background: var(--p-primary-color); color: var(--p-primary-contrast-color);
-  transition: background .2s, color .2s, border-color .2s, transform .15s;
-}
-.km-btn:disabled { opacity: .55; cursor: default; }
-.km-btn:not(:disabled):hover { transform: translateY(-1px); }
-.km-btn:not(:disabled):active { transform: translateY(0); }
-.km-btn:not(.km-btn-text):not(.km-btn-outlined):not(.km-btn-secondary):not(.km-btn-danger):hover {
-  background: var(--p-primary-hover-color); border-color: var(--p-primary-hover-color);
-}
-.km-btn-secondary { background: color-mix(in srgb, var(--p-text-color) 6%, var(--p-content-background)); border-color: var(--p-content-border-color); color: var(--p-text-color); }
-.km-btn-secondary:not(:disabled):hover { background: color-mix(in srgb, var(--p-text-color) 11%, var(--p-content-background)); }
-.km-btn-outlined { background: transparent; border-color: var(--p-content-border-color); color: var(--p-text-color); }
-.km-btn-outlined:not(:disabled):hover { background: color-mix(in srgb, var(--p-text-color) 6%, transparent); }
-.km-btn-text { background: transparent; border-color: transparent; color: var(--p-text-color); }
-.km-btn-text:not(:disabled):hover { background: color-mix(in srgb, var(--p-text-color) 8%, transparent); }
-.km-btn-danger { background: var(--p-danger-500); border-color: var(--p-danger-500); color: var(--p-button-danger-color); }
-.km-btn-danger:not(:disabled):hover { background: var(--p-danger-600, color-mix(in srgb, var(--p-danger-500) 88%, var(--p-text-color))); }
-.km-btn-warning { background: var(--p-warn-500); border-color: var(--p-warn-500); color: var(--p-warn-contrast-color); }
-.km-btn-warning:not(:disabled):hover { background: var(--p-warn-hover-color); }
-.km-btn-warning.km-btn-outlined { background: transparent; border-color: color-mix(in srgb, var(--p-warn-500) 45%, var(--p-content-border-color)); color: var(--p-warn-600, var(--p-warn-500)); }
-.km-btn-warning.km-btn-outlined:not(:disabled):hover { background: color-mix(in srgb, var(--p-warn-500) 12%, transparent); }
-.km-btn-text.km-btn-secondary { color: var(--p-text-muted-color); }
-.km-btn-text.km-btn-danger { background: transparent; border-color: transparent; color: var(--p-danger-500); }
-.km-btn-text.km-btn-danger:not(:disabled):hover { background: color-mix(in srgb, var(--p-danger-500) 10%, transparent); }
-.km-btn-sm { font-size: 12px; padding: 5px 10px; }
-
-/* Module text input, self-contained for the shadow root (same reason as the
-   buttons). Project `.km-input` prefix, not `.p-inputtext`, so it never collides
-   with the real PrimeVue InputText styles now loaded via primeVueCssUrl. */
+/* Module text input, self-contained for the shadow root. Project `.km-input`
+   prefix, not `.p-inputtext`, so it never collides with the real PrimeVue
+   InputText styles now loaded via primeVueCssUrl. */
 .km-input {
   width: 100%; box-sizing: border-box;
   background: var(--p-content-background);
@@ -134,8 +100,7 @@
 @media (min-width: 760px) { .km-2col { grid-template-columns: 1fr 1fr; } }
 .km-loading { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--p-text-muted-color); padding: 24px 0; }
 .km-center { justify-content: center; }
-
-.km .km-btn { display: inline-flex; align-items: center; gap: 6px; }
+.km-initial-loading { flex: 1; }
 
 .km-banner {
   width: calc(100% - (var(--system-surface-gutter) * 2));
@@ -451,13 +416,13 @@
    out originally, so its filter kept `.km-input`'s own 9px padding and stood
    5px taller than the sort Select beside it. */
 :is(.km-controls, .inst-toolbar) .km-sort,
-:is(.km-controls, .inst-toolbar) .km-input,
-:is(.km-controls, .inst-toolbar) .km-btn {
+:is(.km-controls, .inst-toolbar) .km-input {
   height: var(--kx-control-height);
   box-sizing: border-box;
   border-radius: 8px;
   font-size: 13px;
 }
+:is(.km-controls, .inst-toolbar) .p-button { height: var(--kx-control-height); }
 :is(.km-controls, .inst-toolbar) .km-input {
   padding: 0 10px;
   border: 1px solid var(--p-content-border-color);
@@ -466,7 +431,6 @@
 }
 :is(.km-controls, .inst-toolbar) .km-input:enabled:hover { border-color: var(--p-primary-color); }
 :is(.km-controls, .inst-toolbar) .km-sort { min-width: 168px; align-items: center; }
-:is(.km-controls, .inst-toolbar) .km-btn { padding: 0 12px; }
 :is(.km-controls, .inst-toolbar) .km-i { width: 15px; height: 15px; }
 
 /* Active-token identity block inside the dropdown. */
@@ -648,7 +612,7 @@
   .km-ov-meta { grid-template-columns: 1fr; }
   .km-2p-foot > .km-foot-note { flex: 1 0 100%; }
   .km-2p-foot > .km-grow { display: none; }
-  .km-2p-foot > .km-btn { flex: 1 1 auto; }
+  .km-2p-foot > .p-button { flex: 1 1 auto; }
   .km-mrow { padding: 8px 10px; }
   .km-mrow > .km-grow { display: none; }
   .km-mrow > .km-dim { min-width: 0; overflow-wrap: anywhere; }
@@ -788,7 +752,6 @@
 
 /* Focus canon: each of these draws a border at rest, so focus lights that
    border and adds the halo - never an outline. See app/facade-src/README.md. */
-.km-btn:focus-visible,
 .feat-card:focus-visible,
 .mod-card:focus-visible {
   border-color: var(--p-focus-ring-color);

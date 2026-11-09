@@ -49,6 +49,19 @@ end
 
 local function define_tests()
     test.describe("Inbox Projection Worker", function()
+        test.it("retains generic file references through creation and replacement versions", function()
+            local files = { { component_id = "example:content", context = { file_id = "document" }, title = "Review document" } }
+            local first = fold({}, { ev(EV.CREATED, { id = "file-item", item_type = "notice", title = "Review", files = files }) }, 1)
+            test.not_nil(first.body.items["file-item"].files)
+            test.eq(first.body.items["file-item"].files[1].context.file_id, "document")
+            local next_files = { { component_id = "example:content", context = { file_id = "replacement" } } }
+            local next = fold(first.body, { ev("kickside.inbox.events:item.version", { id = "file-item", files = next_files }) }, 2)
+            test.eq(next.body.items["file-item"].files[1].context.file_id, "replacement")
+            local unchanged = fold(next.body, { ev("kickside.inbox.events:item.version", { id = "file-item" }) }, 3)
+            test.eq(unchanged.body.items["file-item"].files[1].context.file_id, "replacement")
+            local cleared = fold(unchanged.body, { ev("kickside.inbox.events:item.version", { id = "file-item", files = {} }) }, 4)
+            test.eq(#cleared.body.items["file-item"].files, 0)
+        end)
         test.it("keeps the post-commit metadata failure typed", function()
             local failure = errors.new({ kind = errors.UNAVAILABLE, message = "metadata owner unavailable" })
             local result, err = funcs.call("kickside.inbox.persist:projection_committed", {

@@ -10,7 +10,7 @@ import InputText from 'primevue/inputtext'
 import Paginator from 'primevue/paginator'
 import Select from 'primevue/select'
 import { api, host, loadByTagName } from '@wippy-fe/proxy'
-import { subscribeComponentMeta } from '@widgets/app/componentRealtime'
+import { subscribeComponentMeta } from '@kickside/ui-kit/componentRealtime'
 import { formatDateTime } from '@widgets/app/datetime'
 import UploadPreviewDrawer from './UploadPreviewDrawer.vue'
 import type { Upload, UploadsMeta } from './uploads.types.ts'
@@ -19,6 +19,7 @@ import {
   statusLabel, statusSeverity, typeIcon, typeLabel, uploadLabel,
 } from './uploads.format.ts'
 import { useUploadArtifacts } from './useUploadArtifacts.ts'
+import { useComponentProps, useComponentEvents } from '../constants'
 
 const TERMINAL = new Set(['completed', 'error'])
 const PAGE_SIZE = 30
@@ -45,15 +46,76 @@ const query = ref('')
 const statusFilter = ref('all')
 const page = ref(1)
 const deleting = ref(false)
+let listRead: Promise<void> | null = null
+let listRefreshQueued = false
+let disposed = false
 const retrying = ref(false)
 
 const {
   preview, artifactView, partsExpanded, busyAction,
   activePreviewSource,
-  openPreview, closePreview, viewOriginal, viewPrimary, viewArtifact,
+  openPreview: showPreview, closePreview: hidePreview, viewOriginal, viewPrimary, viewArtifact,
   currentArtifacts, partsTotal, partsPage, partsPages, partsRangeStart, partsRangeEnd,
   hasPrimary, artifactsLoading, gotoPartsPage, downloadActive, openActive,
 } = useUploadArtifacts(error)
+
+const routeProps = useComponentProps()
+const emit = useComponentEvents()
+const previewError = ref('')
+const previewLoading = ref(false)
+let previewRead = 0
+
+let pendingRoute: string | null = null
+
+function navigatePreview(id = '') {
+  pendingRoute = id
+  emit('navigate', { path: id })
+}
+
+function openPreview(upload: Upload) {
+  previewRead++
+  previewError.value = ''
+  previewLoading.value = false
+  showPreview(upload)
+  navigatePreview(upload.uuid)
+}
+
+function closePreview() {
+  previewRead++
+  previewError.value = ''
+  previewLoading.value = false
+  hidePreview()
+  navigatePreview()
+}
+
+watch(() => routeProps.value.route, async (route) => {
+  const id = String(route ?? '').replace(/^\/+|\/+$/g, '')
+  // Ignore an older host echo until the latest click's route returns.
+  if (pendingRoute !== null && id !== pendingRoute) return
+  pendingRoute = null
+  const read = ++previewRead
+  previewError.value = ''
+  previewLoading.value = false
+  if (id === preview.value?.uuid) return
+  hidePreview()
+  if (!id) return
+  previewLoading.value = true
+  try {
+    const { data } = await api.get(`/api/v1/uploads/${encodeURIComponent(id)}`)
+    if (read !== previewRead) return
+    if (!data.success || !data.upload) throw new Error(data.error || 'Failed to load upload')
+    const upload = data.upload as Upload
+    showPreview({ ...upload, filename: upload.filename || String(upload.meta?.filename || '') })
+  } catch (cause) {
+    if (read !== previewRead) return
+    const status = (cause as { response?: { status?: number } })?.response?.status
+    previewError.value = status === 403 || status === 404
+      ? 'File not found or you do not have permission to view it.'
+      : cause instanceof Error ? cause.message : 'Failed to load upload.'
+  } finally {
+    if (read === previewRead) previewLoading.value = false
+  }
+}, { immediate: true })
 
 const componentId = ref('')
 const meta = ref<UploadsMeta>({})
@@ -71,28 +133,49 @@ const pendingCount = computed(() => {
 const totalPages = computed(() => Math.max(1, Math.ceil(total.value / PAGE_SIZE)))
 
 // ── Server-driven list ────────────────────────────────────────────────────────
-async function fetchUploads() {
+function fetchUploads(): Promise<void> {
+  if (disposed) return Promise.resolve()
+  listRefreshQueued = true
+  if (listRead) return listRead
   loading.value = true
-  error.value = ''
-  try {
-    const params: Record<string, unknown> = { limit: PAGE_SIZE, offset: (page.value - 1) * PAGE_SIZE }
-    const q = query.value.trim()
-    if (q) params.q = q
-    if (statusFilter.value !== 'all') params.status = statusFilter.value
-    const { data } = await api.get('/api/v1/uploads/list', { params })
-    if (data.success) {
-      uploads.value = data.uploads || []
-      total.value = Number(data.meta?.total ?? uploads.value.length)
-      if (typeof data.component_id === 'string') componentId.value = data.component_id
-    } else {
-      uploads.value = []; total.value = 0
+  // One read plus a queued refresh covers invalidations received while awaiting
+  // the server. Start in a microtask so synchronous API failures cannot retain a
+  // settled promise and prevent later refreshes.
+  listRead = Promise.resolve().then(async () => {
+    try {
+      while (listRefreshQueued && !disposed) {
+        listRefreshQueued = false
+        const requestedPage = page.value
+        const requestedQuery = query.value.trim()
+        const requestedStatus = statusFilter.value
+        const isCurrent = () => !disposed && requestedPage === page.value
+          && requestedQuery === query.value.trim() && requestedStatus === statusFilter.value
+        error.value = ''
+        try {
+          const params: Record<string, unknown> = { limit: PAGE_SIZE, offset: (requestedPage - 1) * PAGE_SIZE }
+          if (requestedQuery) params.q = requestedQuery
+          if (requestedStatus !== 'all') params.status = requestedStatus
+          const { data } = await api.get('/api/v1/uploads/list', { params })
+          if (!isCurrent()) continue
+          if (data.success) {
+            uploads.value = data.uploads || []
+            total.value = Number(data.meta?.total ?? uploads.value.length)
+            if (typeof data.component_id === 'string') componentId.value = data.component_id
+          } else {
+            uploads.value = []; total.value = 0
+          }
+        } catch (e) {
+          if (!isCurrent()) continue
+          uploads.value = []; total.value = 0
+          error.value = e instanceof Error ? e.message : 'failed to load uploads'
+        }
+      }
+    } finally {
+      listRead = null
+      if (!disposed) loading.value = false
     }
-  } catch (e) {
-    uploads.value = []; total.value = 0
-    error.value = e instanceof Error ? e.message : 'failed to load uploads'
-  } finally {
-    loading.value = false
-  }
+  })
+  return listRead
 }
 
 function goto(p: number) {
@@ -116,6 +199,7 @@ watch(statusFilter, () => { page.value = 1; void fetchUploads() })
 // summary payload, so meta.changed is the invalidation signal to refetch this page.
 // Realtime only -- no polling.
 function connectRealtime() {
+  if (disposed) return
   const id = componentId.value
   if (!id || connectedComponentId === id) return
   if (componentUnsub) componentUnsub()
@@ -243,6 +327,9 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  disposed = true
+  listRefreshQueued = false
+  previewRead++
   window.removeEventListener('keydown', onKeydown)
   if (searchTimer) clearTimeout(searchTimer)
   if (componentUnsub) componentUnsub()
@@ -310,7 +397,12 @@ onBeforeUnmount(() => {
       </div>
     </header>
 
-    <div v-if="error" class="kx-err">{{ error }}</div>
+    <div v-if="error" class="kx-err" role="alert">{{ error }}</div>
+    <div v-if="previewLoading" class="kx-loading" role="status">Loading file…</div>
+    <div v-if="previewError" class="kx-err" role="alert" data-testid="uploads-link-error">
+      {{ previewError }}
+      <Button label="Close preview" text severity="secondary" @click="closePreview" />
+    </div>
 
     <div class="kx-body">
       <div class="kx-main">
@@ -364,7 +456,7 @@ onBeforeUnmount(() => {
             >
               <span class="kx-ficon"><Icon :icon="typeIcon(u.mime_type)" aria-hidden="true" /></span>
               <div class="kx-id">
-                <div class="kx-name" :title="uploadLabel(u)">{{ uploadLabel(u) }}<span v-if="!u.filename?.trim()" class="kx-uuid"> {{ u.uuid }}</span></div>
+                <div class="kx-name" :title="uploadLabel(u)">{{ uploadLabel(u) }}</div>
                 <div class="kx-sub"><span class="kx-type">{{ typeLabel(u) }}</span> · {{ formatSize(u.size) }}</div>
                 <div v-if="isFailed(u) && u.error" class="kx-err-reason" :title="formatError(u.error)">{{ formatError(u.error) }}</div>
               </div>

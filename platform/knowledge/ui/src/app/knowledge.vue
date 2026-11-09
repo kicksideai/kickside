@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import ComponentDeletion from '@kickside/ui-kit/ComponentDeletion.vue'
+import { useComponentDeletion } from '@kickside/ui-kit/useComponentDeletion'
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import Button from 'primevue/button'
@@ -6,9 +8,10 @@ import Tag from 'primevue/tag'
 import { api, host, loadByTagName } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import KbDialog from './KbDialog.vue'
+import KnowledgeStats from './KnowledgeStats.vue'
 import AnchoredPanel from '@widgets/app/AnchoredPanel.vue'
 import { useComponentProps, useComponentEvents } from '../constants'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import type { DialogTarget, KbDetail, KnowledgeBase } from './knowledge.types.ts'
 import { useKnowledgeCatalog } from './useKnowledgeCatalog.ts'
 import { useKnowledgeDetail } from './useKnowledgeDetail.ts'
@@ -44,7 +47,7 @@ const detailState = useKnowledgeDetail({
 })
 const {
   detailLoading, detailError, detailHost, detailManageTag, detailViews, detailHasViews,
-  detailView, innerRoute, setDetailView, openDetail, refreshOpenDetail, closeDetail,
+  detailView, innerRoute, setDetailView, openDetail, refreshOpenDetail, closeDetail, backDetail,
   applyRoute,
 } = detailState
 
@@ -105,36 +108,6 @@ async function onDialogSaved() {
 // ─── delete ──────────────────────────────────────────────────────────────
 // The destructive confirm runs in the host layer via host.confirm (rendered
 // outside this web component), so no in-component modal is needed.
-const pendingDeletes = ref<Record<string, string>>({})
-const deletionComplete = ref('')
-const deletionNotice = computed(() => Object.keys(pendingDeletes.value).length
-  ? `Deleting ${Object.values(pendingDeletes.value).join(', ')}: cleanup is in progress and continues in the background.`
-  : deletionComplete.value)
-let cleanupTimer: ReturnType<typeof setTimeout> | undefined
-let disposed = false
-
-function scheduleCleanup() {
-  if (disposed || cleanupTimer !== undefined || !Object.keys(pendingDeletes.value).length) return
-  cleanupTimer = setTimeout(async () => {
-    cleanupTimer = undefined
-    const loaded = await load({ preserve: true })
-    if (disposed) return
-    if (loaded) {
-      for (const [id, name] of Object.entries(pendingDeletes.value)) {
-        if (kbs.value.some(kb => kb.id === id)) continue
-        delete pendingDeletes.value[id]
-        deletionComplete.value = `Deletion complete: ${name}.`
-      }
-    }
-    scheduleCleanup()
-  }, 1000)
-}
-
-onBeforeUnmount(() => {
-  disposed = true
-  if (cleanupTimer !== undefined) clearTimeout(cleanupTimer)
-})
-
 async function askRemove(k: KnowledgeBase) {
   const ok = await host.confirm({
     header: 'Delete knowledge base',
@@ -150,13 +123,9 @@ async function askRemove(k: KnowledgeBase) {
   try {
     const { data } = await api.delete(`/api/v1/knowledge/${k.id}`)
     if (!data?.success) throw new Error(data?.error || 'delete failed')
-    deletionComplete.value = ''
-    if (data.in_progress === true) {
-      pendingDeletes.value[k.id] = k.name || '(untitled)'
-      scheduleCleanup()
-    }
+    acceptDeletion(k.id, data)
     if (detail.value?.id === k.id) closeDetail()
-    await load({ preserve: data.in_progress === true })
+    await load()
   } catch (e) {
     showSurfaceError(errMsg(e, 'delete failed'))
   }
@@ -228,11 +197,11 @@ useHostVisibilityRefresh(async () => {
     error.value = errMsg(e, 'host API unavailable')
   }
 })
+const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (detail.value?.id === id) closeDetail() }, load)
 </script>
 
 <template>
   <div class="kx">
-    <div v-if="deletionNotice" class="kx-notice" role="status">{{ deletionNotice }}</div>
     <!-- ─── List view ─────────────────────────────────────────────── -->
     <template v-if="!detail">
       <header class="kx-head">
@@ -286,10 +255,11 @@ useHostVisibilityRefresh(async () => {
             role="button"
             tabindex="0"
             :aria-label="`Open ${k.name || 'knowledge base'}`"
-            @click="openDetail(k)"
-            @keydown.enter="openDetail(k)"
-            @keydown.space.prevent="openDetail(k)"
+            @click="!k.deleting_at && openDetail(k)"
+            @keydown.enter="!k.deleting_at && openDetail(k)"
+            @keydown.space.prevent="!k.deleting_at && openDetail(k)"
           >
+            <ComponentDeletion :state="k" @retry="askRemove(k)" />
             <div class="kx-card-head">
               <span class="kx-ficon"><Icon :icon="k.icon || k.badge?.icon || 'tabler:books'" aria-hidden="true" /></span>
               <div class="kx-card-id">
@@ -301,13 +271,13 @@ useHostVisibilityRefresh(async () => {
                 </div>
               </div>
               <div class="kx-card-actions" @click.stop>
-                <Button type="button" severity="secondary" outlined size="small" title="Edit" :aria-label="`Edit ${k.name}`" @click="openEdit(k)">
+                <Button type="button" severity="secondary" outlined size="small" title="Edit" :aria-label="`Edit ${k.name}`" @click="!k.deleting_at && openEdit(k)" :disabled="!!k.deleting_at">
                   <template #icon="{ class: iconClass }"><Icon icon="tabler:pencil" :class="iconClass" aria-hidden="true" /></template>
                 </Button>
-                <Button type="button" severity="secondary" outlined size="small" title="Share" :aria-label="`Share ${k.name}`" @click="openShare(k)">
+                <Button type="button" severity="secondary" outlined size="small" title="Share" :aria-label="`Share ${k.name}`" @click="openShare(k)" :disabled="!!k.deleting_at">
                   <template #icon="{ class: iconClass }"><Icon icon="tabler:share" :class="iconClass" aria-hidden="true" /></template>
                 </Button>
-                <Button type="button" severity="danger" outlined size="small" title="Delete" :aria-label="`Delete ${k.name}`" @click="askRemove(k)">
+                <Button type="button" severity="danger" outlined size="small" title="Delete" :aria-label="`Delete ${k.name}`" @click="askRemove(k)" :disabled="!!k.deleting_at">
                   <template #icon="{ class: iconClass }"><Icon icon="tabler:trash" :class="iconClass" aria-hidden="true" /></template>
                 </Button>
               </div>
@@ -333,17 +303,18 @@ useHostVisibilityRefresh(async () => {
     <template v-else>
       <div class="kx-bar">
         <div class="kx-bar-l">
-          <button class="kx-back" @click="closeDetail()"><Icon icon="tabler:arrow-left" aria-hidden="true" /> Back</button>
-          <h1 class="kx-title">{{ detail.name || '(untitled)' }}</h1>
+          <button class="kx-back" @click="backDetail()"><Icon icon="tabler:arrow-left" aria-hidden="true" /> Back</button>
+          <h1 class="kx-title" :title="detail.name || '(untitled)'">{{ detail.name || '(untitled)' }}</h1>
           <Tag v-if="detail.badge" :severity="badgeSeverity(detail.badge.tone)" class="kx-pill kx-tag-caps">
             <Icon :icon="detail.badge.icon" aria-hidden="true" />{{ detail.badge.label }}
           </Tag>
+          <KnowledgeStats :items="detail.stat_items || []" />
           <span
             v-if="detail.auto_summary || detail.auto_description"
+            ref="summaryAnchor"
             class="kx-summary"
           >
             <Button
-              ref="summaryAnchor"
               severity="secondary"
               outlined
               class="kx-summary-btn"
@@ -397,30 +368,14 @@ useHostVisibilityRefresh(async () => {
         </div>
 
         <template v-else>
-          <!-- When the engine owns the detail (manage_ui_id), it renders its own
-               header/stats/summary, so the wrapper chrome stays out of the way and
-               the engine UI gets the full area. -->
           <template v-if="!detailManageTag">
             <div class="kx-detail-meta">
               <div v-if="detail.description" class="kx-detail-desc">{{ detail.description }}</div>
               <div class="kx-stats">
                 <span v-if="detail.embedding_model" class="kx-stat"><Icon icon="tabler:vector" aria-hidden="true" />{{ detail.embedding_model }}</span>
-                <span
-                  v-for="(s, i) in (detail.stat_items || [])"
-                  :key="i"
-                  class="kx-stat"
-                  :title="`${formatCount(s.value)} ${s.label}`"
-                  :aria-label="`${formatCount(s.value)} ${s.label}`"
-                >
-                  <Icon v-if="s.icon" :icon="s.icon" aria-hidden="true" />{{ formatCount(s.value) }}
-                </span>
               </div>
             </div>
 
-            <div v-if="detail.auto_summary" class="kx-detail-summary">
-              <div class="kx-detail-summary-lbl">Summary</div>
-              {{ detail.auto_summary }}
-            </div>
           </template>
 
           <div ref="detailHost" class="kx-detail-host"></div>

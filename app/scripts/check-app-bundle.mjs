@@ -25,6 +25,7 @@ export async function checkAppBundle(appDir) {
   const references = [...html.matchAll(/(?:src|href)=["']([^"']+)["']/g)]
     .map(match => match[1])
     .filter(value => !/^(?:[a-z]+:|\/\/|#)/i.test(value))
+    .map(value => value.split(/[?#]/, 1)[0])
     .map(value => value.replace(/^\/app\/app\/main\//, '').replace(/^\.\//, ''))
     .filter(Boolean)
   if (!references.some(value => value.endsWith('.js'))) throw new Error('Local JavaScript entrypoint is missing')
@@ -56,9 +57,10 @@ export async function checkAppBundle(appDir) {
       throw new Error(`Application import map omits vendor asset: ${entry.file}`)
     }
   }
-  const stylesheets = Object.keys(manifest.files).filter(name => name.endsWith('.css'))
-    .map(name => join(bundle, name))
-  stylesheets.push(resolve(appDir, 'static/custom-css.facade.generated.css'))
+  const stylesheets = new Set([...Object.keys(manifest.files), ...references]
+    .filter(name => name.endsWith('.css'))
+    .map(name => localAsset(name)))
+  stylesheets.add(resolve(appDir, 'static/custom-css.facade.generated.css'))
   for (const stylesheet of stylesheets) {
     await requireFile(stylesheet)
     const css = await readFile(stylesheet, 'utf8')

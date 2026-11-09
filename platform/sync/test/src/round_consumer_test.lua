@@ -8,6 +8,7 @@
 
 local test = require("test")
 local round_write = require("round_write")
+local round_provenance = require("round_provenance")
 local sql = require("sql")
 local json = require("json")
 local uuid = require("uuid")
@@ -15,6 +16,8 @@ local funcs = require("funcs")
 local contract = require("contract")
 local security = require("security")
 local drive = require("drive")
+local jobs_claim = require("jobs_claim")
+local lifecycle = require("lifecycle")
 local user_repo = require("user_repo")
 local user_groups_repo = require("user_groups_repo")
 
@@ -22,6 +25,7 @@ type Map = { [string]: any }
 
 local DB = "app:db"
 local DELIVER = "kickside.sync:round_deliver"
+local COUNTED_DELIVER = "app:counted_round_deliver"
 local SOURCE = "app.fixture:records"
 
 local function exec(statement: string, params: { any }?): ()
@@ -94,7 +98,7 @@ end
 -- register_resource(owner, grantee?, group?) -> a component the owner holds
 -- FULL on, with READ granted to the grantee user and to the group when named.
 local function register_resource(owner: string, grantee: string?, group: string?): string
-    local actor = security.new_actor(owner, { security_groups = { "automation_test" } })
+    local actor = security.new_actor(owner, { security_groups = { "app:automation_test" } })
     local policy = security.policy("app:user")
     local svc = contract.get("kickside.component:component_service")
     local inst = (svc :: any):with_actor(actor):with_scope(security.new_scope({ policy })):open()
@@ -128,23 +132,27 @@ local function define_tests(section: string)
             return round_write.keys({ automation_id = automation_id, source_port = SOURCE }, { item_key = key }, slot).identity_key
         end
 
-        local function deliver(items: { Map }, config: Map, holders: Map?): (Map?, any)
+        local function deliver(items: { Map }, config: Map, holders: Map?, target: string?): (Map?, any)
             for _, item in ipairs(items) do item.delivery_key = delivery_key(item.item_key, item.op) end
             local who = holders or {}
             local caller = funcs.new()
             if who.actor then
-                caller = caller:with_actor(security.new_actor(who.actor, { security_groups = { "automation_test" } }))
+                caller = caller:with_actor(security.new_actor(who.actor, { security_groups = { "app:automation_test" } }))
                     :with_scope(security.new_scope({ security.policy("app:user") }))
             end
-            return caller:call(DELIVER, {
-                drive = { automation_id = automation_id, drive_key = "main", source_kind = who.source_kind or "collection", source_ref = SOURCE,
-                    source_port = SOURCE, ledger_port = SOURCE, delivery_revision = 1,
-                    fence = { round_token = "round-" .. automation_id, revision = 1, rewind_generation = 0, command_generation = 0,
-                        round_until = "2999-01-01T00:00:00Z", job = round_job },
-                    operator = { kind = "user", id = who.operator or operator },
-                    principal = { kind = "user", id = who.principal or principal } },
-                items = items, config = config,
-            })
+            local held: Map = { automation_id = automation_id, drive_key = "main", source_kind = who.source_kind or "collection", source_ref = SOURCE,
+                source_port = SOURCE, ledger_port = SOURCE, delivery_revision = 1,
+                applied_hash = who.applied_hash,
+                fence = { round_token = "round-" .. automation_id, revision = 1, rewind_generation = 0, command_generation = 0,
+                    round_until = "2999-01-01T00:00:00Z", job = round_job },
+                operator = { kind = "user", id = who.operator or operator },
+                principal = { kind = "user", id = who.principal or principal } }
+            -- A round admits its page's delivery keys before it delivers them.
+            local keys: { string } = {}
+            for _, entry in ipairs(items) do keys[#keys + 1] = entry.delivery_key end
+            local _, admit_err = round_provenance.admit(held, keys)
+            if admit_err then error("admit: " .. tostring(admit_err)) end
+            return caller:call(target or DELIVER, { drive = held, items = items, config = config })
         end
 
         local function func_transform(resource_id: string?): Map
@@ -153,10 +161,10 @@ local function define_tests(section: string)
             return t
         end
 
-        local function receipt(key: string, slot: string, dest_id: string): ()
+        local function receipt(key: string, slot: string, dest_id: string, delivered_key: string?, declaration_hash: string?): ()
             exec("INSERT INTO kickside_automation_receipt (owner_id, source_port, item_key, map_slot, identity_key, dest_ref_json,"
-                .. " dest_version, updated_at) VALUES ($1, $2, $3, $4, $5, $6, 'v1', '2026-01-01T00:00:00Z')",
-                { automation_id, SOURCE, key, slot, identity(key), json.encode({ id = dest_id }) })
+                .. " delivery_key, declaration_hash, dest_version, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'v1', '2026-01-01T00:00:00Z')",
+                { automation_id, SOURCE, key, slot, identity(key), json.encode({ id = dest_id }), delivered_key or sql.NULL, declaration_hash or sql.NULL })
         end
 
         test.before_all(function()
@@ -166,7 +174,7 @@ local function define_tests(section: string)
             for _, id in ipairs({ operator, principal }) do
                 local _, create_err = user_repo.create({ user_id = id, email = id .. "@test.local", password = "testpass123", status = "active" })
                 if create_err then error("create user " .. id .. ": " .. tostring(create_err)) end
-                local assigned, group_err = user_groups_repo.assign_user_to_group(id, "automation_test")
+                local assigned, group_err = user_groups_repo.assign_user_to_group(id, "app:automation_test")
                 if group_err or not assigned then error("assign harness scope: " .. tostring(group_err)) end
             end
             local d, db_err = sql.get(DB)
@@ -192,12 +200,30 @@ local function define_tests(section: string)
             if err then error(tostring(err)) end
             exec("UPDATE kickside_automation_drive SET round_token = $1, round_until = $2 WHERE automation_id = $3 AND drive_key = 'main'",
                 { "round-" .. automation_id, "2999-01-01T00:00:00Z", automation_id })
-            exec("INSERT INTO kickside_job (id, job_type, job_identity, status, lease_token, lease_until, execution_seq,"
-                .. " owner_kind, owner_id) VALUES ($1, 'kickside.automation:round', $2, 'running', $3, $4, 1, 'automation', $5)",
-                { round_job.id, "test:" .. round_job.id, round_job.lease_token, "2999-01-01T00:00:00Z", automation_id })
+            exec("INSERT INTO kickside_job (id, job_type, job_identity, status, owner_kind, owner_id)"
+                .. " VALUES ($1, 'kickside.automation:round', $2, 'pending', 'automation', $3)",
+                { round_job.id, "test:" .. round_job.id, automation_id })
+            d = assert(sql.get(DB))
+            tx = assert(d:begin())
+            local leased, lease_err = jobs_claim.lease_row(tx, tostring(d:type()), round_job.id,
+                round_job.lease_token, "2999-01-01T00:00:00Z", lifecycle.now_string(tostring(d:type())))
+            if lease_err or not leased then tx:rollback(); d:release(); error(lease_err or "fixture job is not pending") end
+            assert(tx:commit())
+            round_job = assert(d:query("SELECT * FROM kickside_job WHERE id=$1", {round_job.id}))[1]
+            assert(d:release())
         end)
 
         if section == "delivery" then
+            test.it("reads the runtime policy and the transform strategy once per round whatever its item count", function()
+                local events: { Map } = {}
+                for index = 1, 6 do events[index] = item("counted-" .. tostring(index), { directive = "" }) end
+                local answer, err = deliver(events, declaration("app.fixture:round_record", RECORD_EXPR), nil, COUNTED_DELIVER)
+                test.is_nil(err, tostring(err))
+                test.eq(#answer.out.delivered_items, 6, json.encode(answer.out))
+                test.eq(answer.policy_reads, 1)
+                test.eq(answer.strategy_reads, 2)
+            end)
+
             test.it("skips explicit transform outcomes and replays their prepared reason without writing", function()
                 local round_outcome = require("round_outcome")
                 local round_commit = require("round_commit")
@@ -249,8 +275,7 @@ local function define_tests(section: string)
                 test.eq(#query("SELECT item_key FROM kickside_trigger_item_ledger WHERE owner_id=$1", { automation_id }), 0,
                     "a skip on first delivery creates no unresolved item")
                 local state = query("SELECT state FROM kickside_automation_delivery_history WHERE automation_id=$1", { automation_id })
-                test.eq(#state, 1)
-                test.eq(state[1].state, "resolved")
+                test.eq(#state, 0,"a skipped transform records no delivery event")
                 local progress = query("SELECT cursor,event_seq,unresolved_count FROM kickside_automation_drive WHERE automation_id=$1", { automation_id })[1]
                 test.eq(json.decode(progress.cursor).page, 2)
                 test.eq(tonumber(progress.event_seq), 9)
@@ -289,6 +314,79 @@ local function define_tests(section: string)
                 test.eq(written[1].idempotency_key, delivery_key("ok"))
                 test.eq(written[1].origin, automation_id, "the sink write names its writing origin")
                 test.eq(written[1].input.title, "record ok")
+            end)
+
+            test.it("skips a snapshot upsert already delivered to every receipt slot", function()
+                local key = "snapshot-repeat"
+                receipt(key, "", "rec:existing", delivery_key(key), "declaration-current")
+                local out, err = deliver({ item(key, { directive = "" }) }, declaration("app.fixture:round_record", func_transform(shared)),
+                    { applied_hash = "declaration-current" })
+                test.is_nil(err, tostring(err))
+                test.eq(#out.delivered_items, 0, json.encode(out))
+                test.eq(#out.skipped_items, 1, json.encode(out))
+                test.eq(out.skipped_items[1].reason, "already delivered")
+                test.eq(transform_calls(key), 0)
+                test.eq(#writes(identity(key)), 0)
+            end)
+
+            test.it("redelivers a snapshot when its receipt predates the applied declaration", function()
+                local key = "snapshot-reconfigured"
+                receipt(key, "", "rec:existing", delivery_key(key), "declaration-before")
+                local out, err = deliver({ item(key, { directive = "" }) },
+                    declaration("app.fixture:round_record", { kind = "expr", expr = '{"title":"remapped"}' }),
+                    { applied_hash = "declaration-remapped" })
+                test.is_nil(err, tostring(err))
+                test.eq(#out.delivered_items, 1, json.encode(out))
+                test.eq(#out.skipped_items, 0, json.encode(out))
+                local sent = writes(identity(key))
+                test.eq(#sent, 1)
+                test.eq(sent[1].input.title, "remapped")
+            end)
+
+            test.it("uses declaration identity for transform, sink configuration, and filter changes", function()
+                local key = "snapshot-declaration"
+                local stale = delivery_key(key)
+                local function expect_delivery(config: Map, prior_hash: string, current_hash: string): ()
+                    receipt(key, "", "rec:" .. prior_hash, stale, prior_hash)
+                    local out, err = deliver({ item(key, { keep = true, directive = "" }) }, config,
+                        { applied_hash = current_hash })
+                    test.is_nil(err, tostring(err))
+                    test.eq(#out.delivered_items, 1, json.encode(out))
+                    test.eq(#out.skipped_items, 0, json.encode(out))
+                    exec("DELETE FROM kickside_automation_receipt WHERE owner_id=$1 AND source_port=$2 AND item_key=$3",
+                        { automation_id, SOURCE, key })
+                end
+                local function expect_skip(config: Map, hash: string): ()
+                    receipt(key, "", "rec:" .. hash, stale, hash)
+                    local out, err = deliver({ item(key, { keep = true, directive = "" }) }, config, { applied_hash = hash })
+                    test.is_nil(err, tostring(err))
+                    test.eq(#out.delivered_items, 0, json.encode(out))
+                    test.eq(#out.skipped_items, 1, json.encode(out))
+                    test.eq(out.skipped_items[1].reason, "already delivered")
+                    exec("DELETE FROM kickside_automation_receipt WHERE owner_id=$1 AND source_port=$2 AND item_key=$3",
+                        { automation_id, SOURCE, key })
+                end
+
+                local remapped = declaration("app.fixture:round_record", { kind = "expr", expr = '{"title":"remapped"}' })
+                expect_delivery(remapped, "transform-before", "transform-after")
+                expect_skip(remapped, "transform-after")
+
+                local reconfigured_sink = declaration("app.fixture:round_record", RECORD_EXPR)
+                reconfigured_sink.sink_config = { mapping = "updated" }
+                expect_delivery(reconfigured_sink, "sink-before", "sink-after")
+                expect_skip(reconfigured_sink, "sink-after")
+
+                local included = declaration("app.fixture:round_record", RECORD_EXPR, "payload.keep")
+                expect_delivery(included, "filter-before", "filter-included")
+                expect_skip(included, "filter-included")
+                local excluded = declaration("app.fixture:round_record", RECORD_EXPR, "false")
+                receipt(key, "", "rec:filter-included", stale, "filter-included")
+                local out, err = deliver({ item(key, { keep = true, directive = "" }) }, excluded,
+                    { applied_hash = "filter-excluded" })
+                test.is_nil(err, tostring(err))
+                test.eq(#out.delivered_items, 0, json.encode(out))
+                test.eq(#out.skipped_items, 1, json.encode(out))
+                test.eq(out.skipped_items[1].reason, "filtered")
             end)
 
             test.it("delivers for an owner holding more receipts than any former per-owner count", function()
@@ -362,6 +460,33 @@ local function define_tests(section: string)
                 test.eq(unsafe_failed.prepared_key, delivery_key("empty-unsafe"))
             end)
 
+            test.it("preserves effectful transform failures without caching a null result", function()
+                local out, err = deliver({ item("transform-error", { directive = "transform_error" }) },
+                    declaration("app.fixture:round_record", func_transform(shared)))
+                test.is_nil(err, tostring(err))
+                local failed = by_key(out.failed_items)[delivery_key("transform-error")]
+                test.not_nil(failed, json.encode(out))
+                test.is_true(failed.error.retriable)
+                test.is_true(string.find(failed.error.message, "fixture transform unavailable", 1, true) ~= nil,
+                    json.encode(failed))
+                test.eq(#query("SELECT idempotency_key FROM kickside_automation_prepared WHERE automation_id=$1", { automation_id }), 0)
+                test.eq(#writes(identity("transform-error")), 0)
+            end)
+
+            test.it("preserves permanent transform errors without preparing or writing", function()
+                local transform = func_transform(shared)
+                transform["function"] = ""
+                local out, err = deliver({ item("invalid-skip", {}) },
+                    declaration("app.fixture:round_record", transform))
+                test.is_nil(err, tostring(err))
+                local failed = by_key(out.failed_items)[delivery_key("invalid-skip")]
+                test.not_nil(failed, json.encode(out))
+                test.is_false(failed.error.retriable)
+                test.eq(failed.error.code, "missing_function")
+                test.eq(#query("SELECT idempotency_key FROM kickside_automation_prepared WHERE automation_id=$1", { automation_id }), 0)
+                test.eq(#writes(identity("invalid-skip")), 0)
+            end)
+
             test.it("uses one record normalization rule regardless of a legacy flag", function()
                 local config = declaration("app.fixture:round_record", { kind = "expr", expr = "payload.flag" })
                 config.legacy_record = true
@@ -426,6 +551,22 @@ local function define_tests(section: string)
                     end
                 end)
             end
+
+            test.it("retains a legacy null preparation as a visible failure without rerunning its transform", function()
+                local config = declaration("app.fixture:round_record", func_transform(shared))
+                local first, err = deliver({ item("legacy-null", { directive = "flaky" }) }, config)
+                test.is_nil(err, tostring(err))
+                test.is_true(by_key(first.failed_items)[delivery_key("legacy-null")].error.retriable)
+                exec("UPDATE kickside_automation_prepared SET prepared_json='null' WHERE automation_id=$1", { automation_id })
+                local writes_before = #writes(identity("legacy-null"))
+                local second = deliver({ item("legacy-null", { directive = "flaky" }) }, config)
+                local failed = by_key(second.failed_items)[delivery_key("legacy-null")]
+                test.not_nil(failed, json.encode(second))
+                test.is_false(failed.error.retriable)
+                test.eq(failed.error.code, "missing_transform_result")
+                test.eq(transform_calls("legacy-null"), 1)
+                test.eq(#writes(identity("legacy-null")), writes_before)
+            end)
 
             test.it("persists a replay-unsafe transform once and reuses it when the write is retried", function()
                 local config = declaration("app.fixture:round_record", func_transform(shared))
@@ -492,6 +633,17 @@ local function define_tests(section: string)
                 test.not_nil(by_key(out.skipped_items)[delivery_key("never", "delete")])
             end)
 
+            test.it("keeps earlier slot receipts when a later destination waits for capacity",function()
+                receipt("partial-wait","a","rec:a")
+                receipt("partial-wait","b","rec:b")
+                local out,err=deliver({item("partial-wait",{wait_slot="b"})},declaration("app.fixture:round_record",{kind="none"}))
+                test.is_nil(err,tostring(err))
+                local waiting=by_key(out.waiting_items)[delivery_key("partial-wait")]
+                test.not_nil(waiting)
+                test.eq(#(waiting.receipts or {}),1)
+                test.eq(waiting.receipts[1].map_slot,"a")
+            end)
+
             test.it("deletes a mapped destination whatever the filter says of a source item", function()
                 receipt("filtered_gone", "", "rec:fg")
                 local out, err = deliver({ item("filtered_gone", {}, "delete") },
@@ -549,23 +701,25 @@ local function define_tests(section: string)
             end)
 
         else
-            test.it("refreshes transform resource grants before the next effect", function()
+            test.it("honours a transform resource grant revoked mid-page until the next page", function()
                 local resource = register_resource(operator, principal)
+                local config = declaration("app.fixture:round_record", func_transform(resource))
                 local out, err = deliver({
                     item("grant-first", { revoke_resource = resource, revoke_principal = principal }),
-                    item("grant-second", {}) }, declaration("app.fixture:round_record", func_transform(resource)))
+                    item("grant-second", {}) }, config)
                 test.is_nil(err, tostring(err))
                 test.not_nil(out)
-                test.eq(#out.delivered_items, 1)
-                test.not_nil(by_key(out.delivered_items)[delivery_key("grant-first")])
-                local denied = by_key(out.failed_items)[delivery_key("grant-second")]
-                test.not_nil(denied)
-                test.eq(denied.error.kind, errors.PERMISSION_DENIED)
-                test.eq(denied.error.details.error_kind, "access")
+                test.eq(#out.delivered_items, 2)
                 test.eq(transform_calls("grant-first"), 1)
-                test.eq(transform_calls("grant-second"), 0)
+                test.eq(transform_calls("grant-second"), 1)
                 test.eq(#writes(identity("grant-first")), 1)
-                test.eq(#writes(identity("grant-second")), 0)
+                test.eq(#writes(identity("grant-second")), 1)
+                local next_page, next_err = deliver({ item("grant-next", {}) }, config)
+                test.is_nil(next_page)
+                test.not_nil(next_err)
+                test.eq(errors.is(next_err, errors.PERMISSION_DENIED), true)
+                test.eq(transform_calls("grant-next"), 0)
+                test.eq(#writes(identity("grant-next")), 0)
             end)
             test.it("runs an effectful transform on a resource its operator and principal both hold", function()
                 local out, err = deliver({ item("granted", { directive = "" }) }, declaration("app.fixture:round_record", func_transform(shared)))

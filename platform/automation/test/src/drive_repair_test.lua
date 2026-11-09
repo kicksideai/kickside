@@ -11,6 +11,7 @@ local jobs = require("jobs")
 local repair = require("repair")
 local types = require("types")
 local jobs_config = require("jobs_config")
+local h = require("round_harness")
 local process = require("process")
 local channel = require("channel")
 local time = require("time")
@@ -71,16 +72,10 @@ local cases=test.run_cases(function()
                 fresh:release()
                 test.not_nil(repaired.job_id)
                 test.eq(assert(jobs.get_job(repaired.job_id)).status,"pending")
-                -- Canonical provisioning can emit more than one committed hint
-                -- (dispatcher creation plus its explicit wake). Drain those
-                -- before checking that an applied migration emits no new hint.
-                while true do
-                    local pending=channel.select({wake:case_receive(),time.after("20ms"):case_receive()})
-                    if pending.channel~=wake then break end
-                end
-                test.eq(run(db,migration_id).status,"complete")
-                local quiet=channel.select({wake:case_receive(),time.after("20ms"):case_receive()})
-                test.is_true(quiet.channel~=wake,"an already-applied repair must not request another dispatcher round")
+                local repeated=run(db,migration_id)
+                test.eq(repeated.status,"complete")
+                test.eq(repeated.skipped,1)
+                test.eq(repeated.applied,0)
             end)
             process.registry.unregister(jobs_config.POOL_NAME,process.registry.CONSISTENT)
             process.unlisten(wake)
@@ -130,7 +125,7 @@ local cases=test.run_cases(function()
             local running=fixture(db)
             local running_job=assert(slot.provision(running,"main"))
             local jobs_db=assert(sql.get(jobs_config.db_id()))
-            execute(jobs_db,"UPDATE kickside_job SET status='running' WHERE id=$1",{running_job})
+            h.lease_job(running_job)
             jobs_db:release()
             local terminal={}
             for _,status in ipairs({"done","dead"}) do

@@ -106,8 +106,22 @@ type CreateResult = {
 -- public per-component row.
 type UpsertResult = { agent: ComponentRow, created: boolean, rollback: RollbackStep? }
 
--- Bare component handle returned by update/delete.
+-- Bare component handle returned by update.
 type ComponentRef = { component_id: string }
+
+-- agents.delete result: the component deletion receipt. While the deletion job
+-- owns completion, deleted is false and in_progress, status, cleanup_pending and
+-- job_id describe it.
+type DeleteResult = {
+    success: boolean,
+    component_id: string,
+    deleted: boolean,
+    in_progress: boolean?,
+    status: string?,
+    cleanup_pending: boolean?,
+    job_id: string?,
+    notification_error: { [string]: any }?,
+}
 
 M.AgentConfig = AgentConfig
 M.RollbackStep = RollbackStep
@@ -115,5 +129,6 @@ M.ComponentRow = ComponentRow
 M.CreateResult = CreateResult
 M.UpsertResult = UpsertResult
 M.ComponentRef = ComponentRef
+M.DeleteResult = DeleteResult
 
 return M

@@ -43,7 +43,7 @@ export interface HubVersionItem {
 }
 
 export type InstalledFilterMode = 'all' | 'root' | 'transitive' | 'local'
-export type UpdateStatus = 'available' | 'current' | 'planning' | 'updating' | 'updated' | 'blocked' | 'failed'
+export type UpdateStatus = 'available' | 'queued' | 'skipped' | 'current' | 'planning' | 'updating' | 'updated' | 'blocked' | 'failed'
 
 export interface UpdateInfo {
   component: string

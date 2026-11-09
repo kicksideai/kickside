@@ -36,7 +36,7 @@ local function fixture(group_ids)
     owned[#owned + 1] = id
     local minted = assert(session.mint(assert(groups.get_user_with_groups(id))))
     tokens[#tokens + 1] = minted.token
-    return id, minted.token
+    return id, minted.token, minted
 end
 
 local function request(method, path, payload, token)
@@ -116,6 +116,32 @@ return {run = test.run_cases(function()
             end
             test.is_nil(select(2, registry.apply_version(original)))
             owned, tokens = {}, {}
+        end)
+        test.it("serves the own-profile endpoint without caller access to membership configuration", function()
+            local changes = assert(registry.snapshot()):changes()
+            local permissive = assert(registry.get("app:user"))
+            local remaining = {}
+            for _, group in ipairs(permissive.data.groups) do
+                if group ~= "app.security:user" then remaining[#remaining + 1] = group end
+            end
+            permissive.data.groups = remaining
+            changes:update(permissive)
+            changes:create({id = "app:self_profile_without_config", kind = "security.policy", data = {
+                groups = {"app:self_profile_without_config"},
+                policy = {actions = "*", resources = "*", effect = "allow", conditions = {
+                    {field = "resource", operator = "nin", value = {"kickside.users:membership_config"}},
+                }},
+            }})
+            test.is_nil(select(2, changes:apply()))
+            local id, token, minted = fixture({"app:self_profile_without_config"})
+            test.eq(minted.scope:evaluate(minted.actor, "registry.get", "kickside.users:membership_config"), "undefined")
+            local response = request("GET", "/api/user/me", nil, token)
+            test.eq(response.status_code, 200, tostring(response.body))
+            local body = assert(json.decode(response.body))
+            test.eq(body.user.id, id)
+            test.is_false(body.security.is_admin)
+            test.eq(#body.security.groups, 1)
+            test.eq(body.security.groups[1], "app:self_profile_without_config")
         end)
         test.it("BOT-ACCOUNT-ADMIN-CREATION creates one ordinary User marker and native audit with explicit empty groups", function()
             local response = create({full_name = "Project bot", groups = {}})

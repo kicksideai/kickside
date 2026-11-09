@@ -34,6 +34,9 @@ type AccessContext = {
 -- One component row as list_components returns it.
 type ComponentRow = {
     component_id: string,
+    deleting_at: string?,
+    deletion_job_id: string?,
+    deletion_job: {status: string, attempts: integer, last_error: string?}?,
     impl_id: string,
     meta: { [string]: any }?,
     created_at: string?,
@@ -183,7 +186,8 @@ end
 -- The display fields a thread component carries in its public meta: the human
 -- title and icon a picker renders. A thread row stores neither (its title lives on
 -- the component, not in the thread attrs), so listing surfaces them alongside ids.
-type ComponentDisplay = { title: string, icon: string }
+type ComponentDisplay = {title: string, icon: string, deleting_at: string?, deletion_job_id: string?,
+    deletion_job: {status: string, attempts: integer, last_error: string?}?}
 
 local function listing_response_error(field: string): error
     return errors.new({kind = errors.INTERNAL, retryable = false,
@@ -201,7 +205,8 @@ function component.list_thread_components(
     meta_filters: { [string]: any }?,
     access_mask: integer,
     limit: integer,
-    start_offset: integer?
+    start_offset: integer?,
+    impl_id: string?
 ): (string[]?, error?, { [string]: ComponentDisplay }?, table?)
     local svc, svc_err = open()
     if svc_err then
@@ -210,7 +215,7 @@ function component.list_thread_components(
 
     -- Thread-backed components are identified by public meta.type=thread. Their
     -- impl_id may be the generic thread shell or a real declared component kind
-    -- such as uploads/inbox, so list scoping must not depend on impl_id.
+    -- such as uploads/inbox. An optional implementation narrows the kind set.
     local meta: { [string]: any } = { type = "thread" }
     if type(meta_filters) == "table" then
         for key, value in pairs(meta_filters) do
@@ -221,6 +226,10 @@ function component.list_thread_components(
         access_mask = access_mask,
         meta = meta,
     }
+
+    if type(impl_id) == "string" and impl_id ~= "" then
+        filters.impl_ids = { impl_id }
+    end
 
     -- The component service caps a single page at PAGE_MAX; the access-id set this
     -- resolves can exceed it, so page through until limit ids are gathered or the
@@ -262,6 +271,9 @@ function component.list_thread_components(
                 display[row.component_id] = {
                     title = type(title) == "string" and title or "",
                     icon = type(icon) == "string" and icon or "",
+                    deleting_at = row.deleting_at,
+                    deletion_job_id = row.deletion_job_id,
+                    deletion_job = row.deletion_job,
                 }
             end
         end

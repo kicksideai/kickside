@@ -40,6 +40,7 @@ local ledger = require("round_ledger")
 local commit = require("round_commit")
 local jobs = require("jobs")
 local prepared_output = require("round_prepared")
+local provenance = require("round_provenance")
 local runtime_policy = require("runtime_policy")
 
 local identity = require("delivery_identity")
@@ -73,7 +74,9 @@ function M.keys(d: Map, item: Map, map_slot: string?): Map
     return identity.keys(d, item, map_slot)
 end
 
--- describe_sink(port_id) -> { port, binding, delivery, input_shape }.
+-- describe_sink(port_id) -> { port, binding, delivery, input_shape,
+-- destination_slots }. destination_slots is the policy's per-item slot bound,
+-- resolved here once for every write a round makes through this sink.
 function M.describe_sink(port_id: string): (Map?, error?)
     local port, port_err = automations_lib.resolve_sink(port_id)
     if port_err then return nil, port_err end
@@ -88,7 +91,10 @@ function M.describe_sink(port_id: string): (Map?, error?)
     if not SHAPES[tostring(meta.input_shape)] then
         return nil, invalid("sink binding " .. binding .. " declares no input_shape (record or content)")
     end
-    return { port = port_id, binding = binding, delivery = meta.delivery, input_shape = meta.input_shape }, nil
+    local slots, slots_err = M.destination_slots()
+    if slots_err or not slots then return nil, slots_err end
+    return { port = port_id, binding = binding, delivery = meta.delivery, input_shape = meta.input_shape,
+        destination_slots = slots }, nil
 end
 
 -- The most keys one receipt statement names.
@@ -108,7 +114,7 @@ function M.receipts(owner_id: string, source_port: string, item_keys: { string }
             marks[#marks + 1] = "$" .. tostring(#params)
         end
         local rows, err = with_db(function(db: any): (any?, any)
-            return db:query("SELECT item_key, map_slot, identity_key, dest_ref_json, dest_version FROM kickside_automation_receipt"
+            return db:query("SELECT item_key, map_slot, identity_key, dest_ref_json, dest_version, delivery_key, declaration_hash, pass_id FROM kickside_automation_receipt"
                 .. " WHERE owner_id = $1 AND source_port = $2 AND item_key IN (" .. table.concat(marks, ", ") .. ")"
                 .. " ORDER BY item_key, map_slot", params)
         end)
@@ -123,7 +129,8 @@ function M.receipts(owner_id: string, source_port: string, item_keys: { string }
             local key = tostring(row.item_key)
             local slots = out[key] or {}
             slots[#slots + 1] = { map_slot = tostring(row.map_slot or ""), identity_key = row.identity_key,
-                dest_ref = dest_ref, dest_version = row.dest_version }
+                dest_ref = dest_ref, dest_version = row.dest_version, delivery_key = row.delivery_key,
+                declaration_hash = row.declaration_hash, pass_id = row.pass_id }
             out[key] = slots
         end
     end
@@ -174,22 +181,28 @@ function M.check_fence(d: any): error?
     return nil
 end
 
--- Read one page of prepared rows with bounded bind lists. A caller can
--- distinguish a missing row from a stored JSON null through the row map.
-local function prepared_rows(owner_id: string, keys: { string }): (Map?, error?)
+-- Read one page of prepared rows with bounded bind lists, each with whether
+-- it was prepared under the declaration the round's drive applies. A caller
+-- can distinguish a missing row from a stored JSON null through the row map.
+local function prepared_rows(d: Map, keys: { string }): (Map?, error?)
     return with_db(function(db: any): (any?, any)
         local found: Map = {}
         for first = 1, #keys, 100 do
-            local params: { any } = { owner_id }
+            local params: { any } = { tostring(d.automation_id), tostring(d.drive_key) }
             local marks: { string } = {}
             for index = first, math.min(#keys, first + 99) do
                 params[#params + 1] = keys[index]
                 marks[#marks + 1] = "$" .. tostring(#params)
             end
-            local rows, err = db:query("SELECT idempotency_key,payload_hash,prepared_json FROM kickside_automation_prepared"
-                .. " WHERE automation_id=$1 AND idempotency_key IN (" .. table.concat(marks, ",") .. ")", params)
+            local rows, err = db:query("SELECT p.idempotency_key,p.payload_hash,p.prepared_json,p.declaration_hash,"
+                .. "d.applied_hash FROM kickside_automation_prepared p JOIN kickside_automation_drive d"
+                .. " ON d.automation_id=p.automation_id"
+                .. " WHERE p.automation_id=$1 AND d.drive_key=$2 AND p.idempotency_key IN (" .. table.concat(marks, ",") .. ")", params)
             if err then return nil, internal("failed to read prepared page", err) end
-            for _, row in ipairs(rows :: { Map }) do found[tostring(row.idempotency_key)] = row end
+            for _, row in ipairs(rows :: { Map }) do
+                row.current_declaration = row.declaration_hash ~= nil and row.declaration_hash == row.applied_hash
+                found[tostring(row.idempotency_key)] = row
+            end
         end
         return found, nil
     end)
@@ -197,7 +210,18 @@ end
 
 -- prepare(spec, compute) runs compute under the round's live fence. A
 -- replay-unsafe spec (prepared = true) persists its output under the delivery
--- key before the write and every retry under that key and hash reuses it.
+-- key before the write and every retry under that key and hash reuses it;
+-- another payload under that key is an idempotency conflict.
+--
+-- A replay gives its delivery a new key and keeps the output prepared under
+-- the key it was admitted under while that output still holds: its payload
+-- hash is the replay's, or it was prepared under the declaration the drive
+-- applies, where another payload is the conflict. Output prepared under a
+-- superseded or unrecorded declaration is stale for the replay only when the
+-- ledger proves no attempt of the item reached its sink (round_ledger.unsent):
+-- the replay then prepares its payload again and replaces the admitted key's
+-- row, which every later replay of the item reads. Without that proof the
+-- original output may have been sent, and another payload is the conflict.
 function M.prepare(spec: Map, compute: () -> (any?, any)): (any?, any)
     if type(spec) ~= "table" or type(spec.drive) ~= "table" or type(compute) ~= "function" then
         return nil, invalid("preparation requires a spec with its round drive and a compute function")
@@ -208,35 +232,48 @@ function M.prepare(spec: Map, compute: () -> (any?, any)): (any?, any)
     local d = spec.drive :: Map
     local fence_err = M.check_fence(d)
     if fence_err then return nil, fence_err end
-    local allowed, authority_err = funcs.call("kickside.automation:round_authority", {drive=d,key=spec.key,prepared_lookup=true})
-    if authority_err or not allowed then return nil, authority_err end
-    local function compute_effect(): (any?, any)
-        if type(spec.effect) == "table" then
-            return funcs.call("kickside.automation:round_authority_compute",{drive=d,key=spec.key,target=spec.effect.target,args=spec.effect.args})
-        end
-        return compute()
-    end
-    if spec.prepared ~= true then return compute_effect() end
-    local original_key=type(allowed) == "table" and allowed.prepared_key or spec.key
-    local stored, stored_err = prepared_rows(tostring(d.automation_id), { tostring(original_key),tostring(spec.key) })
+    if spec.prepared ~= true then return compute() end
+    local evidence, evidence_err = provenance.load_evidence(d, spec.key)
+    if evidence_err or not evidence then return nil, evidence_err end
+    local original_key = tostring(evidence.prepared_key or spec.key)
+    local stored, stored_err = prepared_rows(d, { original_key, tostring(spec.key) })
     if stored_err or not stored then return nil, stored_err end
-    local prior = (stored :: Map)[tostring(original_key)] or (stored :: Map)[tostring(spec.key)]
+    local prior = (stored :: Map)[tostring(spec.key)]
+    local target = tostring(spec.key)
+    if not prior then
+        local admitted = (stored :: Map)[original_key]
+        if admitted and (admitted.payload_hash == spec.hash or admitted.current_declaration) then prior = admitted end
+        if admitted and not prior then
+            local unsent, unsent_err = with_db(function(db: any): (any?, any)
+                return ledger.unsent(db, d, tostring(spec.key))
+            end)
+            if unsent_err then return nil, unsent_err end
+            if unsent then target = original_key else prior = admitted end
+        end
+    end
     if prior then
         if prior.payload_hash ~= spec.hash then return nil, prepared_output.conflict(tostring(spec.key)) end
         local value, decode_err = json.decode(tostring(prior.prepared_json))
         if decode_err then return nil, internal("stored prepared output is not JSON", decode_err) end
         return value, nil
     end
-    local value, compute_err = compute_effect()
+    local replayed,replay_err=with_db(function(db: any): (any?,any) return ledger.replayed(db,d,tostring(spec.key)) end)
+    if replay_err then return nil,replay_err end
+    if replayed then
+        local unsent,unsent_err=with_db(function(db: any): (any?,any) return ledger.unsent(db,d,tostring(spec.key)) end)
+        if unsent_err then return nil,unsent_err end
+        if not unsent then return nil,prepared_output.conflict(tostring(spec.key)) end
+    end
+    local value, compute_err = compute()
     if compute_err ~= nil then return nil, compute_err end
     local encoded, encode_err = json.encode(value)
     if encode_err or type(encoded) ~= "string" then
         return nil, invalid("prepared output must be JSON serializable")
     end
     local results, materialize_err = prepared_output.materialize_many(d,
-        { { key = tostring(spec.key), hash = tostring(spec.hash), encoded = encoded } })
+        { { key = target, delivery = tostring(spec.key), hash = tostring(spec.hash), encoded = encoded } })
     if materialize_err or not results then return nil, materialize_err end
-    local answer = (results :: Map)[tostring(spec.key)]
+    local answer = (results :: Map)[target]
     return answer.value, answer.error
 end
 
@@ -321,13 +358,14 @@ function M.write(sink: Map, request: Map, d: Map, item: Map): Map
         return { state = "failed", error = failure_classification.classify({ kind = errors.INVALID, retriable = false,
             message = "a write names its sink operation" }) }
     end
-    local policy, policy_err = runtime_policy.policy()
-    if policy_err or not policy then
-        return { state = "failed", error = failure_classification.classify(policy_err) }
+    local policy_slots = sink.destination_slots
+    if type(policy_slots) ~= "number" or policy_slots ~= math.floor(policy_slots) or policy_slots < 1 then
+        return { state = "failed", error = failure_classification.classify(invalid(
+            "a write requires the sink described with its policy destination-slot bound")) }
     end
-    local max_slots = request.max_destination_slots or policy.destination_slots_per_item
+    local max_slots = request.max_destination_slots or policy_slots
     if type(max_slots) ~= "number" or max_slots ~= math.floor(max_slots) or max_slots < 1
-        or max_slots > policy.destination_slots_per_item then
+        or max_slots > policy_slots then
         return { state = "failed", error = failure_classification.classify(invalid(
             "a write requires a finite destination-slot bound within policy")) }
     end
@@ -344,11 +382,8 @@ function M.write(sink: Map, request: Map, d: Map, item: Map): Map
                 error = failure, retry_after_ms = failure.retry_after_ms}
         end
     end
-    local admission_key=item.delivery_key or request.idempotency_key
-    local allowed,authority_err=funcs.call("kickside.automation:round_authority",{drive=d,key=request.idempotency_key,delivery_key=admission_key})
-    if authority_err or not allowed then return {state="failed",error=failure_classification.classify(authority_err)} end
     if sink.delivery == M.DELIVERY.AT_MOST_ONCE then
-        local decision, reserve_err = reserve_uncertain(d, item, request,admission_key)
+        local decision, reserve_err = reserve_uncertain(d, item, request, item.delivery_key or request.idempotency_key)
         if reserve_err then return { state = "failed", error = failure_classification.classify(reserve_err) } end
         if not decision.send then return { state = decision.state, receipts = {} } end
     end
@@ -361,9 +396,10 @@ function M.write(sink: Map, request: Map, d: Map, item: Map): Map
             revision = math.floor(tonumber(d.automation_revision) or 1) },
     }
     if type(request.map_slot) == "string" and request.map_slot ~= "" then body.map_slot = request.map_slot end
-    local packet,send_err=funcs.call("kickside.automation:round_authority_write",{
-        drive=d,key=request.idempotency_key,delivery_key=admission_key,binding=sink.binding,config=type(request.config) == "table" and request.config or {},body=body})
-    if packet and packet.refused ~= nil then return {state="failed",error=failure_classification.classify(packet.refused)} end
+    local fence_err = M.check_fence(d)
+    if fence_err then return { state = "failed", error = failure_classification.classify(fence_err) } end
+    local packet,send_err=funcs.call("kickside.automation:round_sink_effect",{
+        drive=d,binding=sink.binding,config=type(request.config) == "table" and request.config or {},body=body})
     if send_err or not packet then
         local failure = failure_classification.classify(send_err)
         -- The call may fail after the destination received the request, so an

@@ -155,6 +155,7 @@ entries:
     method: run
     modules: [sql, uuid, funcs, security]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
 
   - name: reply_providers_test
@@ -202,37 +203,6 @@ entries:
     imports:
       test: wippy.test:test
       reply_sender: kickside.connection:reply_sender
-
-  - name: channel_sink_reply_fixture
-    kind: library.lua
-    source: file://channel_test_link/reply_sender_stub.lua
-    imports:
-      component: kickside.component:component
-
-  - name: channel_sink_under_test
-    kind: library.lua
-    source: file://channel_src_link/sink/channel_sink.lua
-    imports:
-      canonical_json: kickside.contract:canonical_json
-      writable_sink: kickside.data:writable_sink
-      reply_sender: app:channel_sink_reply_fixture
-
-  - name: channel_sink_access_probe
-    kind: function.lua
-    source: file://channel_sink_access_probe.lua
-    method: run
-    imports:
-      channel_sink: app:channel_sink_under_test
-      reply_sender: app:channel_sink_reply_fixture
-
-  - name: channel_sink_access_test
-    kind: function.lua
-    meta: { type: test, suite: channel_sink_access }
-    source: file://suites/channel_sink_access_test.lua
-    method: run
-    modules: [sql, uuid, funcs, security]
-    imports:
-      test: wippy.test:test
 
   - name: users_closure_test
     kind: function.lua
@@ -328,6 +298,8 @@ entries:
     - name: kickside.core:target_db
       value: app:db
     - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.settings:process_host
       value: app:processes
     - name: kickside.core.lifecycle:user_lifecycle_grant
       value:
@@ -484,6 +456,7 @@ entries:
     kind: library.lua
     source: file://list_connections_source.lua
     imports:
+      deletion_progress: kickside.component:deletion_progress
       http: app:connection_reason_fixture
       contract: app:connection_reason_contract
       security: app:connection_reason_security
@@ -563,3 +536,21 @@ entries:
       driver: kickside.connection.client:driver
       schema: kickside.connection.client:schema
       types: kickside.connection.client:types
+
+  - name: connections_mutation_test
+    kind: function.lua
+    meta: {type: test, suite: connections_mutation}
+    source: file://connections_mutation_test.lua
+    method: run
+    modules: [uuid, security, contract, funcs]
+    imports:
+      test: wippy.test:test
+
+  - name: deletion_test_worker
+    kind: library.lua
+    source: file://deletion_test_worker.lua
+    modules: [funcs, sql, time, uuid, process]
+    imports:
+      claim: kickside.core.jobs.persist:claim
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      completion: kickside.core.jobs.service:worker_completion

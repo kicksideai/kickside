@@ -20,6 +20,7 @@ entries:
     source: file://list_kb.lua
     modules: [http, json, security, registry]
     imports:
+      deletion_progress: kickside.component:deletion_progress
       component: kickside.component:component
       engines: kickside.knowledge:engines
       query_params: kickside.knowledge.api:query_params
@@ -57,6 +58,7 @@ entries:
     modules: [http, json, security, contract]
     imports:
       engines: kickside.knowledge:engines
+      http_errors: kickside.contract:http_errors
     method: handler
 
   - name: create_kb.endpoint
@@ -174,7 +176,6 @@ entries:
     imports:
       http_errors: kickside.contract:http_errors
       component: kickside.component:component
-      thread_ingest: kickside.knowledge.injection:thread_ingest
     method: handler
     pool:
       size: 8
@@ -220,10 +221,10 @@ entries:
     source: file://ingest_upload.lua
     modules: [contract, security]
     imports:
+      engines: kickside.knowledge:engines
       component: kickside.component:component
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
       upload_query_repo: kickside.uploads.persist:upload_query_repo
-      thread_ingest: kickside.knowledge.injection:thread_ingest
 
   # Ingest already-uploaded file(s) into a KB by upload id ("My uploads").
   - name: ingest_existing_upload

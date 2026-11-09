@@ -14,7 +14,7 @@ function M.new(dependencies: any): any
     local core_threads = type(dependencies) == "table" and dependencies.core_threads or nil
     local retention = {}
 
-    function retention.prune_deleted(cutoff: string, limit: integer): (integer?, error?)
+    function retention.prune_deleted(cutoff: string, limit: integer): (integer?, error?, any?)
         if type(cutoff) ~= "string" or cutoff == "" or type(limit) ~= "number"
             or limit ~= math.floor(limit) or limit < 1 or limit > 500 then
             return nil, failure("upload tombstone retention arguments invalid",
@@ -35,7 +35,9 @@ function M.new(dependencies: any): any
               AND NOT EXISTS (SELECT 1 FROM kickside_uploads u WHERE u.uuid=r.upload_id)
             ORDER BY r.deleted_at,r.upload_id LIMIT $2]], { cutoff, CANDIDATE_SCAN_LIMIT })
         db:release()
-        if read_err then return nil, failure("upload tombstone candidate read failed", read_err, errors.INTERNAL) end
+        if read_err or type(candidates) ~= "table" then
+            return nil, failure("upload tombstone candidate read failed", read_err, errors.INTERNAL)
+        end
 
         local safe: { any } = {}
         for _, row in ipairs(candidates or {}) do
@@ -53,7 +55,7 @@ function M.new(dependencies: any): any
             end
         end
 
-        if #safe == 0 then return 0, nil end
+        if #safe == 0 then return 0, nil, {needs_continue = false} end
         db, open_err = resources.get_db()
         if open_err or not db then
             return nil, failure("upload retention database unavailable after Core reads", open_err, errors.UNAVAILABLE)
@@ -78,7 +80,7 @@ function M.new(dependencies: any): any
             deleted = deleted + count
         end
         db:release()
-        return deleted, nil
+        return deleted, nil, {needs_continue = deleted >= limit}
     end
 
     return retention

@@ -1,5 +1,67 @@
 # Changelog
 
+## [0.1.73](https://github.com/kicksideai/kickside/compare/inbox-v0.1.72...inbox-v0.1.73) (2026-11-08)
+
+
+### Bug Fixes
+
+* UI artifacts in buttons, headings, dialogs and tables ([#371](https://github.com/kicksideai/kickside/issues/371)) ([ea55ea8](https://github.com/kicksideai/kickside/commit/ea55ea8a17ee5802cb73a4dbcf39878d7f56cd2e))
+
+## [0.1.72](https://github.com/kicksideai/kickside/compare/inbox-v0.1.71...inbox-v0.1.72) (2026-11-08)
+
+
+### Bug Fixes
+
+* **inbox:** remove the New notice test button from the inbox header ([#365](https://github.com/kicksideai/kickside/issues/365)) ([af09fc6](https://github.com/kicksideai/kickside/commit/af09fc6442ab0fbf820e29f4aa7c757500eabd9c))
+
+## [0.1.71](https://github.com/kicksideai/kickside/compare/inbox-v0.1.70...inbox-v0.1.71) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
+## [0.1.70](https://github.com/kicksideai/kickside/compare/inbox-v0.1.69...inbox-v0.1.70) (2026-11-07)
+
+
+### Bug Fixes
+
+* **widgets:** follow deletion events without racing the delete job ([#337](https://github.com/kicksideai/kickside/issues/337)) ([fdd6984](https://github.com/kicksideai/kickside/commit/fdd6984188d6f35cdaf4e40cd0ac8b9cd08928bc))
+
+## [0.1.69](https://github.com/kicksideai/kickside/compare/inbox-v0.1.68...inbox-v0.1.69) (2026-11-06)
+
+
+### Features
+
+* **inbox:** support file references with inline previews ([#173](https://github.com/kicksideai/kickside/issues/173)) ([2a19510](https://github.com/kicksideai/kickside/commit/2a195101fdf84e9246c5a39495d8fdbd3917c490))
+
+## [0.1.68](https://github.com/kicksideai/kickside/compare/inbox-v0.1.67...inbox-v0.1.68) (2026-10-29)
+
+
+### Features
+
+* **inbox:** support source-owned aggregate item lifecycle ([#204](https://github.com/kicksideai/kickside/issues/204)) ([de81bc1](https://github.com/kicksideai/kickside/commit/de81bc1c7b8fce8c14b3030193534379b4c40fc9))
+
+
+### Bug Fixes
+
+* preserve composed scopes across chat and Inbox review ([#220](https://github.com/kicksideai/kickside/issues/220)) ([8c16715](https://github.com/kicksideai/kickside/commit/8c167155d4f77d81948b3148284d1f0bd34f30c2))
+
+## [0.1.67](https://github.com/kicksideai/kickside/compare/inbox-v0.1.66...inbox-v0.1.67) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+
+## [0.1.66](https://github.com/kicksideai/kickside/compare/inbox-v0.1.65...inbox-v0.1.66) (2026-10-25)
+
+
+### Bug Fixes
+
+* **inbox:** hide assignee existence before authorization ([#137](https://github.com/kicksideai/kickside/issues/137)) ([7caf6e5](https://github.com/kicksideai/kickside/commit/7caf6e57ebf509b9690dc4eb7530a1065b31cc1f))
+* **inbox:** scope review assignee lookup to arm ([#136](https://github.com/kicksideai/kickside/issues/136)) ([9f2dc35](https://github.com/kicksideai/kickside/commit/9f2dc35ebb4c21be98e7f7e238478133be42c34c))
+
 ## [0.1.65](https://github.com/kicksideai/kickside/compare/inbox-v0.1.64...inbox-v0.1.65) (2026-10-22)
 
 

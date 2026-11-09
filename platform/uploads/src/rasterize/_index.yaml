@@ -20,6 +20,7 @@ entries:
     source: file://page_images.lua
     imports:
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+      text_trim: kickside.uploads:text_trim
 
   - name: stage
     kind: function.lua

@@ -28,6 +28,19 @@ entries:
     imports:
       thread_ingest: kickside.knowledge.injection:thread_ingest
 
+  - name: ledger
+    kind: contract.binding
+    meta:
+      events:
+        output:
+          - type: kickside.knowledge.events:content.upserted
+    contracts:
+      - contract: kickside.contract:embeddable
+        context_required: [component_id]
+        methods:
+          embed_content: test.kb:embed_content
+          embed_reference: test.kb:embed_reference
+
   - name: embeddable
     kind: contract.binding
     meta:

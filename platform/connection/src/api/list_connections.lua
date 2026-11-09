@@ -1,3 +1,4 @@
+local deletion_progress = require("deletion_progress")
 -- GET /api/v1/connections [?provider=discord&limit=100&offset=0]
 --
 -- Lists the calling user's connection components through the canonical
@@ -140,6 +141,9 @@ local function project_connection(row: any): any
 
     return {
         component_id = component_id,
+        deleting_at = row.deleting_at,
+        deletion_job_id = row.deletion_job_id,
+        deletion_job = row.deletion_job,
         name = name,
         provider = provider,
         icon = icon,
@@ -187,6 +191,12 @@ local function handler()
         return
     end
 
+    local _, progress_err = deletion_progress.enrich(page.connections)
+    if progress_err then
+        res:set_status(http.STATUS.INTERNAL_ERROR)
+        res:write_json({success = false, error = tostring(progress_err)})
+        return
+    end
     local out = {}
     local items = {}
     for _, row in ipairs((page and page.connections) or {}) do
@@ -202,6 +212,9 @@ local function handler()
         -- per-provider filtering.
         items[#items + 1] = {
             id = c.component_id,
+            deleting_at = c.deleting_at,
+            deletion_job_id = c.deletion_job_id,
+            deletion_job = c.deletion_job,
             label = c.name,
             icon = c.icon,
             provider = c.provider,

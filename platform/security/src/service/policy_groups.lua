@@ -13,6 +13,88 @@ end
 M.compare = coverage.compare
 M.fingerprint = coverage.fingerprint
 
+-- Return the canonical JSON shape of a table, or nil when canonical_json would
+-- reject its keys. Empty tables need their encoded form checked: Wippy retains
+-- an explicit empty-object marker which ordinary table iteration cannot see.
+local function table_shape(value: any): string?
+    local count, highest, dense = 0, 0, true
+    for key in pairs(value) do
+        count = count + 1
+        if type(key) ~= "number" or key < 1 or math.floor(key) ~= key then
+            dense = false
+        elseif key > highest then
+            highest = key
+        end
+    end
+    if count == 0 then
+        local encoded, encode_err = canonical_json.encode(value)
+        if encode_err then return nil end
+        if encoded == "[]" then return "array" end
+        if encoded == "{}" then return "object" end
+        return nil
+    end
+    if dense and count == highest then return "array" end
+    for key in pairs(value) do
+        if type(key) ~= "string" then return nil end
+    end
+    return "object"
+end
+
+-- A true result is stronger than Lua equality: it means canonical_json would
+-- encode both values identically. Anything ambiguous deliberately returns
+-- false so the canonical hash remains the authority for the diff.
+local function same_value(left: any, right: any, depth: integer, active_left: any?, active_right: any?): boolean
+    local left_type, right_type = type(left), type(right)
+    if left_type ~= right_type then return false end
+    if left_type ~= "table" then
+        if left_type == "nil" or left_type == "boolean" or left_type == "string" then return left == right end
+        local left_encoded, left_err = canonical_json.encode(left)
+        if left_err then return false end
+        local right_encoded, right_err = canonical_json.encode(right)
+        return not right_err and left_encoded == right_encoded
+    end
+
+    active_left, active_right = active_left or {}, active_right or {}
+    -- The hash wraps meta/data in an outer object, so their table roots begin
+    -- at depth two. Never suppress a canonical depth or metamethod error.
+    if depth > canonical_json.MAX_DEPTH or getmetatable(left) ~= nil or getmetatable(right) ~= nil then return false end
+    if active_left[left] or active_right[right] then return false end
+    local left_shape, right_shape = table_shape(left), table_shape(right)
+    if not left_shape or left_shape ~= right_shape then return false end
+    active_left[left], active_right[right] = true, true
+
+    local equal = true
+    if left_shape == "array" then
+        if #left ~= #right then
+            equal = false
+        else
+            for index = 1, #left do
+                if not same_value(left[index], right[index], depth + 1, active_left, active_right) then
+                    equal = false
+                    break
+                end
+            end
+        end
+    else
+        for key, value in pairs(left) do
+            if not same_value(value, right[key], depth + 1, active_left, active_right) then
+                equal = false
+                break
+            end
+        end
+        if equal then
+            for key in pairs(right) do
+                if left[key] == nil then
+                    equal = false
+                    break
+                end
+            end
+        end
+    end
+    active_left[left], active_right[right] = nil, nil
+    return equal
+end
+
 -- plan(scopes, effective, snap) plans native group bindings against the
 -- projection pass's registry snapshot.
 function M.plan(scopes: any, effective: any, snap: any): (any?, error?)
@@ -135,7 +217,7 @@ function M.plan(scopes: any, effective: any, snap: any): (any?, error?)
         end
         if not have then
             plan.creates[#plan.creates + 1] = want
-        else
+        elseif not (same_value(have.meta, want.meta, 2) and same_value(have.data, want.data, 2)) then
             local old_hash, old_err = canonical_json.hash({meta = have.meta, data = have.data})
             if old_err then return nil, old_err end
             local new_hash, new_err = canonical_json.hash({meta = want.meta, data = want.data})

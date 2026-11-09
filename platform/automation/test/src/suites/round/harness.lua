@@ -22,6 +22,9 @@ local channel = require("channel")
 local jobs = require("jobs")
 local jobs_config = require("jobs_config")
 local migration_runner = require("migration_runner")
+local jobs_claim = require("jobs_claim")
+local lifecycle = require("lifecycle")
+local clock = require("clock")
 
 type Map = { [string]: any }
 
@@ -201,15 +204,35 @@ function M.execution_ceiling_ms(): integer
     return (policy :: any).proc_max_execution_ms
 end
 
+function M.lease_job(id: string, lease_seconds: integer?): Map
+    local d = M.db()
+    local dbtype = tostring(d:type())
+    local tx = assert(d:begin())
+    local now = lifecycle.now_string(dbtype)
+    local token = uuid.v7()
+    local until_at = lifecycle.future_string(dbtype, lease_seconds or 60)
+    local leased, err = jobs_claim.lease_row(tx, dbtype, id, token, until_at, now)
+    if err or not leased then
+        tx:rollback(); d:release(); error(err or "fixture job is not pending")
+    end
+    assert(tx:commit())
+    local rows = assert(d:query("SELECT * FROM kickside_job WHERE id=$1", {id}))
+    assert(d:release())
+    return rows[1]
+end
+
 -- running_job(lease_seconds?) -> the lease { id, lease_token, execution_seq,
 -- lease_until } of a job row the jobs store holds as running under that live
 -- lease, the job a round's fence names.
 function M.running_job(lease_seconds: integer?): Map
-    local job: Map = { id = uuid.v7(), lease_token = uuid.v7(), execution_seq = 1,
-        lease_until = time.now():utc():add((lease_seconds or 60) * time.SECOND):format(time.RFC3339) }
-    M.exec("INSERT INTO kickside_job (id, job_type, job_identity, status, lease_token, lease_until, execution_seq, owner_kind, owner_id)"
-        .. " VALUES ($1, 'kickside.automation:round', $2, 'running', $3, $4, $5, 'test', $6)",
-        { job.id, "test:" .. job.id, job.lease_token, job.lease_until, job.execution_seq, job.id })
+    local id = uuid.v7()
+    M.exec("INSERT INTO kickside_job (id, job_type, job_identity, status, owner_kind, owner_id)"
+        .. " VALUES ($1, 'kickside.automation:round', $2, 'pending', 'test', $3)",
+        { id, "test:" .. id, id })
+    local job = M.lease_job(id, lease_seconds)
+    local deadline, deadline_err = clock.parse(job.lease_until)
+    if deadline_err or not deadline then error(tostring(deadline_err)) end
+    job.lease_until = deadline:utc():format(time.RFC3339)
     return job
 end
 
@@ -287,14 +310,14 @@ end
 -- automation, the source thread with append(text), and run(), a
 -- round attempt through a runner constructed with explicit dependencies
 -- (env.completions records every slot completion).
-function M.setup(prefix: string): Map
+function M.setup(prefix: string, kind: string?): Map
     local env: Map = { completions = {}, warnings = {}, notifications = {} }
     env.owner = prefix .. "_" .. uuid.v4():sub(1, 8)
     env.actor = security.new_actor(env.owner, { security_groups = { "automation_test" } })
     env.scope = security.named_scope(PROC_SCOPE)
     env.caller = funcs.new():with_actor(env.actor):with_scope(env.scope)
     M.ensure_log()
-    local installed, install_err = env.caller:call(MANAGE_TOOL, { action = "install", type = M.FIXTURE_KIND, input = {} })
+    local installed, install_err = env.caller:call(MANAGE_TOOL, { action = "install", type = kind or M.FIXTURE_KIND, input = {} })
     if install_err or not installed or not installed.success then error("fixture install: " .. tostring(install_err or (installed and installed.error))) end
     env.automation_id = installed.id
     local def = contract.get("kickside.core:threads")

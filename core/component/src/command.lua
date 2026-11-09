@@ -104,6 +104,19 @@ function M.apply_declaration(input: any, verify: any): (any?, error?)
     end)
 end
 
+-- The automation's framework system actor brings a component's stored
+-- rollback chain to its current cleanup targets: upgrade(chain) -> (chain,
+-- changed) runs under the component row lock, for a component whose
+-- declaration fence input.automation_id holds. input = { component_id,
+-- automation_id }.
+function M.upgrade_rollback(input: any, upgrade: any): (any?, error?)
+    local token, prepare_err = ops.prepare_rollback_upgrade(input, upgrade)
+    if prepare_err then return nil, prepare_err end
+    return M.with_component_tx(function(tx: sql.Transaction, _db: sql.DB): (any?, error?)
+        return ops.upgrade_rollback_tx(tx, token)
+    end)
+end
+
 -- The one privileged create path for an automation install (design v4 §6.3,
 -- OWNERSHIP A14). The automation engine reserves its install command, then
 -- invokes this as its framework system actor; `verify` reads that durable

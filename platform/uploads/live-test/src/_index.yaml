@@ -138,6 +138,8 @@ entries:
       value: app:db
     - name: kickside.core.lifecycle:process_host
       value: app:processes
+    - name: kickside.settings:process_host
+      value: app:processes
     - name: kickside.core.lifecycle:user_lifecycle_grant
       value:
         subject_id: uploads_test

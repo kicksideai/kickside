@@ -399,12 +399,16 @@
   align-items: center;
   gap: 1px;
   padding-right: 6px;
-  opacity: 0;
-  transition: opacity .12s ease;
 }
 
-.km-prow:hover .km-prow-acts,
-.km-prow:focus-within .km-prow-acts { opacity: 1; }
+/* Where rows can be hovered, the actions take no width until the row is hovered
+   or focused, so the provider name uses the whole rail at rest. Touch rows keep
+   them in place. */
+@media (hover: hover) {
+  .km-prow-acts { max-width: 0; padding-right: 0; overflow: hidden; opacity: 0; transition: opacity .12s ease; }
+  .km-prow:hover .km-prow-acts,
+  .km-prow:focus-within .km-prow-acts { max-width: none; padding-right: 6px; overflow: visible; opacity: 1; }
+}
 
 .km-prow-msg {
   grid-column: 1 / -1;
@@ -480,9 +484,10 @@
   display: flex;
   flex-direction: column;
   /* Single source of truth for the table grid so the header and every row align.
-     The actions column is fixed-width so one- vs two-button rows never shift the
+     The actions column is fixed-width so rows with fewer actions never shift the
      other columns. */
-  --km-cols: 32px minmax(0, 1.3fr) minmax(0, 1.75fr) 76px 122px;
+  --km-cols: 32px minmax(0, 1.75fr) minmax(0, 1.3fr) 76px var(--km-acts-w);
+  --km-acts-w: 138px;
 }
 
 .km-pool-head {
@@ -609,7 +614,8 @@
 
 .km-mrow-limit-chips { display: none; }
 
-.km-mrow-acts { display: flex; align-items: center; gap: 1px; justify-self: end; }
+.km-mrow-acts { display: flex; align-items: center; gap: 6px; justify-self: end; }
+.km-mrow-acts .p-button svg { flex: none; width: 15px; height: 15px; }
 
 .km-mrow-probe {
   grid-column: 1 / -1;
@@ -913,11 +919,6 @@
   border-top: 1px solid var(--p-content-border-color);
 }
 
-.km-probe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px 16px; }
-.km-probe-kv { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
-.km-probe-kv span { flex: 0 0 96px; color: var(--p-text-muted-color); font-size: 11.5px; }
-.km-probe-kv code { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11.5px; }
-
 .km-probe-tokens { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .km-probe-tokens-l { color: var(--p-text-muted-color); font-size: 11.5px; margin-right: 2px; }
 .km-probe-tok {
@@ -998,16 +999,6 @@
   font-weight: 720;
 }
 
-.km-class-ref {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--p-primary-color);
-  background: color-mix(in srgb, var(--p-primary-color) 12%, transparent);
-  padding: 1px 6px;
-  border-radius: 6px;
-}
-
 .km-class-desc { margin-top: 3px; color: var(--p-text-muted-color); font-size: 12px; line-height: 1.4; }
 .km-class-meta { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 .km-class-count { color: var(--p-text-muted-color); font-size: 11.5px; white-space: nowrap; }
@@ -1015,7 +1006,7 @@
 
 .km-class-member {
   display: grid;
-  grid-template-columns: 58px minmax(0, 1.2fr) minmax(0, 1fr) auto;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   padding: 8px 12px;
@@ -1039,7 +1030,6 @@
 }
 
 .km-class-member-name { font-size: 13px; font-weight: 620; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.km-class-member-id { color: var(--p-text-muted-color); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .km-class-member-pri { color: var(--p-text-muted-color); font-size: 11px; justify-self: end; white-space: nowrap; }
 .km-class-empty { padding: 12px; color: var(--p-text-muted-color); font-size: 12px; }
 
@@ -1065,10 +1055,11 @@
   .km-shell { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
   .km-rail { border-right: 0; border-bottom: 1px solid var(--p-content-border-color); max-height: 40vh; }
   .km-pool-cols { display: none; }
-  .km-mrow { grid-template-columns: 34px minmax(0, 1fr) 122px; gap: 6px 10px; align-items: center; }
+  .km-mrow { grid-template-columns: 34px minmax(0, 1fr); gap: 6px 10px; align-items: center; }
   .km-mrow .km-avatar { grid-column: 1; grid-row: 1; }
   .km-mrow-id { grid-column: 2; grid-row: 1; }
-  .km-mrow-acts { grid-column: 3; grid-row: 1; align-self: start; justify-content: flex-end; }
+  /* The actions take their own row so the model name keeps the full width. */
+  .km-mrow-acts { grid-column: 2; grid-row: 4; justify-self: end; }
   .km-mrow-limits { display: none; }
   .km-mrow-limit-chips {
     grid-column: 2 / 3;
@@ -1100,15 +1091,11 @@
   .km-mrow-probe { grid-column: 1 / -1; padding-left: 10px; }
   .km-mrow-probe-head .p-button { margin-left: 0; }
   .km-form-grid, .km-form-grid.four { grid-template-columns: 1fr; }
-  /* Class member rows: drop the mono id, keep name + priority. */
-  .km-class-member { grid-template-columns: auto minmax(0, 1fr) auto; }
-  .km-class-member-id { display: none; }
 }
 
 @media (max-width: 560px) {
   .km-pool-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .km-pool-head-top .km-search { width: 100%; }
-  .km-probe-grid { grid-template-columns: 1fr; }
 }
 
 /* ── Onboarding (kickside-onboard-models) ──────────────────────────────────
@@ -1180,6 +1167,7 @@
 
 /* Auto-select bar above the tier sections */
 .ob-autobar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ob-autobar .p-button { flex: none; white-space: nowrap; }
 .ob-auto-hint { font-size: 12px; color: var(--p-text-muted-color); }
 
 /* Review blocks */

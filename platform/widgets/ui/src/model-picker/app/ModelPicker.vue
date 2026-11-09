@@ -48,7 +48,11 @@ const currentIcon = computed(() => isClass(current.value) ? 'tabler:category' : 
 // model name). Only non-empty groups are emitted so no bare header shows.
 const options = computed<{ group: string; items: OptionRow[] }[]>(() => {
   const out: { group: string; items: OptionRow[] }[] = []
-  const matchingClasses = classes.value.filter(c => c.capability === capability.value)
+  const available = new Set(models.value.map(m => m.name))
+  // A class resolves to its first ranked member. Only offer it for a capability
+  // filter when that effective model matches; a lower-ranked match is insufficient.
+  const matchingClasses = capability.value === 'embed' ? [] : classes.value.filter(c =>
+    c.capability === capability.value || (c.models[0] && available.has(c.models[0].name)))
   if (matchingClasses.length) {
     out.push({
       group: 'Classes',
@@ -74,11 +78,14 @@ async function loadData() {
   const requestedCapability = capability.value
   loading.value = true
   try {
-    // Classes are generate-specific (fast/balanced/…); only fetch them for the
-    // default generate mode. Embedding mode lists models only.
-    const reqs: Promise<any>[] = [api.get(`/api/v1/models/list?capability=${encodeURIComponent(requestedCapability)}`)]
-    if (requestedCapability === 'generate') reqs.push(api.get('/api/v1/models/classes'))
-    const [ml, cl] = await Promise.all(reqs)
+    const [ml, cl] = await Promise.all([
+      api.get(`/api/v1/models/list?capability=${encodeURIComponent(requestedCapability)}`),
+      // Embedding selection remains model-only. Classes enrich the other
+      // pickers; their availability must not hide a successful model list.
+      requestedCapability === 'embed'
+        ? Promise.resolve(null)
+        : api.get('/api/v1/models/classes').catch(() => null),
+    ])
     if (generation !== loadGeneration || requestedCapability !== capability.value) return
     models.value = ml?.data?.success ? (ml.data.models || []) : []
     classes.value = cl?.data?.success ? (cl.data.classes || []) : []

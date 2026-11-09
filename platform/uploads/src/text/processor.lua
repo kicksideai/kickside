@@ -1,6 +1,7 @@
 local uploads_resources = require("uploads_resources")
 local hash = require("hash")
 local artifact_content_repo = require("artifact_content_repo")
+local trim = require("text_trim").trim
 
 -- Memory cap for formats that must be read whole to extract text (plain text,
 -- markdown, code, json). Tabular files (csv/tsv) are handled by a bounded streaming
@@ -71,10 +72,6 @@ local function artifact_kind(mime_type: string?): string
         return "markdown"
     end
     return "text"
-end
-
-local function trim(value: string): string
-    return (value:gsub("^%s*(.-)%s*$", "%1"))
 end
 
 local function human_mb(bytes: number): string

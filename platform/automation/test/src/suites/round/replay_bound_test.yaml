@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: kickside.automation
+entries:
+  - name: history_replay_bound_test
+    kind: function.lua
+    source: file://replay_bound_test.lua
+    method: run
+    meta: {type: test, suite: kickside_automation_history}
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      delivery_identity: kickside.automation:delivery_identity
+      drive: kickside.automation:drive
+      round_ledger: kickside.automation:round_ledger

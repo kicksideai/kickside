@@ -1,6 +1,17 @@
 version: '1.0'
 namespace: app
 entries:
+- name: jobs_updated_at_migration_test
+  kind: function.lua
+  source: file://jobs_updated_at_migration_test.lua
+  method: run
+  meta:
+    type: test
+    suite: jobs_updated_at_migration
+  modules: [sql, funcs, uuid]
+  imports:
+    test: wippy.test:test
+    migration_registry: wippy.migration:registry
 - name: migration_identity_test
   kind: function.lua
   meta:

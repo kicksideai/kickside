@@ -30,10 +30,6 @@ html { color-scheme: light dark; }
   --ac-fg: color-mix(in srgb, var(--p-primary-color) 35%, var(--p-text-color));
 }
 
-/* Dark-mode --p-primary-contrast-color (white-on-primary) is delivered by the
-   facade children CSS (:host, :root) so it reaches this host document AND every
-   WC shadow — module/page CSS must not redefine host --p-* tokens (11.42b). */
-
 /* Thin, theme-aware scrollbars that blend into surrounding surfaces. */
 * {
   scrollbar-width: thin;

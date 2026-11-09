@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useComponentDeletion } from '@kickside/ui-kit/useComponentDeletion'
+import { latestRequest } from '@kickside/ui-kit/latestRequest'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
@@ -134,15 +136,18 @@ function onLabelsSaved(id: string, labels: string[]) {
   rows.value = rows.value.map((r) => (r.id === id ? { ...r, labels } : r))
 }
 
+const beginLoad = latestRequest()
 async function load() {
+  const current = beginLoad()
   loading.value = true
   error.value = ''
   try {
-    rows.value = await listWorkflows()
+    const listed = await listWorkflows()
+    if (current()) rows.value = listed
   } catch (e) {
-    error.value = humanError(e, 'Couldn’t load your Workflows.')
+    if (current()) error.value = humanError(e, 'Couldn’t load your Workflows.')
   } finally {
-    loading.value = false
+    if (current()) loading.value = false
   }
 }
 
@@ -231,7 +236,8 @@ async function confirmDelete() {
   error.value = ''
   try {
     await deleteWorkflow(row.id)
-    rows.value = rows.value.filter((r) => r.id !== row.id)
+    acceptDeletion(row.id)
+    await load()
     focusAfterDelete.value = true
     deleteTarget.value = null
   } catch (e) {
@@ -255,6 +261,7 @@ function closeShare() {
 }
 
 useHostVisibilityRefresh(load)
+const {acceptDeletion} = useComponentDeletion(rows, row => row.id, undefined, load)
 </script>
 
 <template>
@@ -362,7 +369,7 @@ useHostVisibilityRefresh(load)
     </Dialog>
 
     <main class="kx-body">
-      <div v-if="loading" class="kx-list wf-runs-loading">
+      <div v-if="loading && !rows.length" class="kx-list wf-runs-loading">
         <ProgressSpinner class="wf-status-spinner" stroke-width="4" aria-label="Loading Workflows" />
         <span>Loading Workflows…</span>
       </div>

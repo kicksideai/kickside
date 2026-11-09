@@ -1,5 +1,107 @@
 # Changelog
 
+## [0.3.11](https://github.com/kicksideai/kickside/compare/uploads-v0.3.10...uploads-v0.3.11) (2026-11-07)
+
+
+### Bug Fixes
+
+* **widgets:** follow deletion events without racing the delete job ([#337](https://github.com/kicksideai/kickside/issues/337)) ([fdd6984](https://github.com/kicksideai/kickside/commit/fdd6984188d6f35cdaf4e40cd0ac8b9cd08928bc))
+
+## [0.3.10](https://github.com/kicksideai/kickside/compare/uploads-v0.3.9...uploads-v0.3.10) (2026-11-06)
+
+
+### Features
+
+* **inbox:** support file references with inline previews ([#173](https://github.com/kicksideai/kickside/issues/173)) ([2a19510](https://github.com/kicksideai/kickside/commit/2a195101fdf84e9246c5a39495d8fdbd3917c490))
+
+## [0.3.9](https://github.com/kicksideai/kickside/compare/uploads-v0.3.8...uploads-v0.3.9) (2026-11-05)
+
+
+### Features
+
+* **uploads:** add trusted_reader library ([8c001b7](https://github.com/kicksideai/kickside/commit/8c001b705f54a5181452a67a3d85be673bbab8f8))
+* **uploads:** keep caller metadata and fetched file facts on attachment ingest ([3993702](https://github.com/kicksideai/kickside/commit/39937029dfcc671f9b85fad1515372dcfb197685))
+* **uploads:** trusted reader and caller metadata on attachment ingest (ATN-98) ([3f7a958](https://github.com/kicksideai/kickside/commit/3f7a958ccfdd28170e1f39fa356445254478b83c))
+
+
+### Bug Fixes
+
+* **uploads:** find the original image of an image upload in trusted_reader ([d685224](https://github.com/kicksideai/kickside/commit/d685224889e493f882fe90d0d9a298fa0473effc))
+* **uploads:** harden attachment metadata, text limits and token replay ([d387676](https://github.com/kicksideai/kickside/commit/d38767697056d3144181c80f0bff797022aa222f))
+* **uploads:** isolate concurrent blob writes and keep typed ingest errors ([f5e7b12](https://github.com/kicksideai/kickside/commit/f5e7b12b3d65bb27fc8254b1c43dfaecd4b4acb7))
+* **uploads:** isolate concurrent blob writes and preserve ingest errors ([ded65bc](https://github.com/kicksideai/kickside/commit/ded65bc25fb852d4d0bea8c1c9c7491e4f658499))
+* **uploads:** return the uploader's metadata from trusted_reader provenance ([94e7b08](https://github.com/kicksideai/kickside/commit/94e7b082208c571e47e1de944e78e1f59f1e12aa))
+* **uploads:** trim whitespace without the anchored pattern on large text ([e8abea7](https://github.com/kicksideai/kickside/commit/e8abea7527af8e4210936e29d0a4c584d5f7cba0))
+
+## [0.3.8](https://github.com/kicksideai/kickside/compare/uploads-v0.3.7...uploads-v0.3.8) (2026-10-30)
+
+
+### Bug Fixes
+
+* bound upload invalidation reads in file surfaces ([#269](https://github.com/kicksideai/kickside/issues/269)) ([6a90ddf](https://github.com/kicksideai/kickside/commit/6a90ddf86b813f273b1b0bf1609084c453764ecf))
+
+## [0.3.7](https://github.com/kicksideai/kickside/compare/uploads-v0.3.6...uploads-v0.3.7) (2026-10-30)
+
+
+### Bug Fixes
+
+* **uploads:** preserve legacy presigned S3 addresses ([#260](https://github.com/kicksideai/kickside/issues/260)) ([12842ee](https://github.com/kicksideai/kickside/commit/12842ee9f460960707db8b69ed378ad1f599fff7))
+* **uploads:** preserve objects referenced across legacy S3 aliases ([#263](https://github.com/kicksideai/kickside/issues/263)) ([48b2c43](https://github.com/kicksideai/kickside/commit/48b2c438f152b8ef899fe99fd263d9b4f1259237))
+* **uploads:** remove unused S3 alias compatibility ([#265](https://github.com/kicksideai/kickside/issues/265)) ([9758d2c](https://github.com/kicksideai/kickside/commit/9758d2c33146550fb79619d0f03183331376dce6))
+
+## [0.3.6](https://github.com/kicksideai/kickside/compare/uploads-v0.3.5...uploads-v0.3.6) (2026-10-29)
+
+
+### Bug Fixes
+
+* **uploads:** read original upload content and canonical artifact metadata ([#207](https://github.com/kicksideai/kickside/issues/207)) ([55ab0cc](https://github.com/kicksideai/kickside/commit/55ab0cc08dc67de4ddea699880d55e23b0370257))
+
+## [0.3.5](https://github.com/kicksideai/kickside/compare/uploads-v0.3.4...uploads-v0.3.5) (2026-10-28)
+
+
+### Features
+
+* **uploads:** add preview deep links ([#170](https://github.com/kicksideai/kickside/issues/170)) ([4bebf64](https://github.com/kicksideai/kickside/commit/4bebf64776be18aea2b203a8de044741a73ffb0d))
+
+
+### Bug Fixes
+
+* **uploads:** return native errors from provider bindings ([#202](https://github.com/kicksideai/kickside/issues/202)) ([1ce679f](https://github.com/kicksideai/kickside/commit/1ce679f4c11adebfc53cbe491c5cb97056a2c33c))
+
+## [0.3.4](https://github.com/kicksideai/kickside/compare/uploads-v0.3.3...uploads-v0.3.4) (2026-10-28)
+
+
+### Bug Fixes
+
+* **uploads:** enforce component read access in content providers ([#171](https://github.com/kicksideai/kickside/issues/171)) ([a6bc32c](https://github.com/kicksideai/kickside/commit/a6bc32c25f3217100d78de0bf03d502f91ea5c95))
+
+## [0.3.3](https://github.com/kicksideai/kickside/compare/uploads-v0.3.2...uploads-v0.3.3) (2026-10-28)
+
+
+### Features
+
+* **uploads:** mark PDF pages and PPTX slides in document markdown ([95a4330](https://github.com/kicksideai/kickside/commit/95a433048cae3e5bfc8904d9d8df91efb4dba001))
+* **uploads:** mark PDF pages and PPTX slides in document markdown ([466fb75](https://github.com/kicksideai/kickside/commit/466fb75c838e675b0c662b8c20d595509ee44ea2))
+
+## [0.3.2](https://github.com/kicksideai/kickside/compare/uploads-v0.3.1...uploads-v0.3.2) (2026-10-27)
+
+
+### Features
+
+* **uploads:** support native storage paths and safe stage relocation ([b6be26e](https://github.com/kicksideai/kickside/commit/b6be26e9ded82d1dab0de96d5d3cb09f62fb2318))
+
+
+### Bug Fixes
+
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+
+## [0.3.1](https://github.com/kicksideai/kickside/compare/uploads-v0.3.0...uploads-v0.3.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **uploads:** page files using their selected sort order ([#138](https://github.com/kicksideai/kickside/issues/138)) ([3174d1d](https://github.com/kicksideai/kickside/commit/3174d1da2cf78aef89ae4da2ecf31654922e1a73))
+
 ## [0.3.0](https://github.com/kicksideai/kickside/compare/uploads-v0.2.0...uploads-v0.3.0) (2026-10-22)
 
 

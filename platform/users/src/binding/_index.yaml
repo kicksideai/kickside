@@ -83,13 +83,15 @@ entries:
       policies:
         - kickside.users.security:login_db_access
         - kickside.users.security:login_env_read
-        - kickside.users.security:session_group_set_projection
+        - kickside.users.security:session_group_policy_read
+        - kickside.users.security:resolve_scope_groups
     imports:
       consts: kickside.users:consts
       user_groups_repo: kickside.users.persist:user_groups_repo
       user_authority: kickside.users:user_authority
       session_metadata: kickside.users:session_metadata
       credential_eligibility: kickside.users.persist:credential_eligibility
+      bot_accounts_repo: kickside.users.persist:bot_accounts_repo
 
   - name: credential_subject_lookup
     kind: function.lua
@@ -101,9 +103,11 @@ entries:
       policies:
         - kickside.users.security:login_db_access
         - kickside.users.security:login_env_read
-        - kickside.users.security:session_group_set_projection
+        - kickside.users.security:session_group_policy_read
+        - kickside.users.security:resolve_scope_groups
     imports:
       credential_eligibility: kickside.users.persist:credential_eligibility
+      bot_accounts_repo: kickside.users.persist:bot_accounts_repo
       consts: kickside.users:consts
       user_groups_repo: kickside.users.persist:user_groups_repo
       user_authority: kickside.users:user_authority

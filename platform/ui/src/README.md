@@ -60,6 +60,15 @@ The editor reads `/nav/list` and writes `/nav/config`. Those compatibility route
 are owned by this module; internally, persisted navigation controls live under
 the `kickside.ui` settings namespace.
 
+## Scoped System access
+
+Hosts may compose `kickside.ui.security:system_tabs_access` into a scoped
+administrator role to open System's tab catalog. It is unassigned by default and
+grants only `GET /settings/tabs`; it does not grant Settings, Appearance, user
+management or system onboarding. Each `ui.settings_tab` still requires its own
+declared `access` capability, so a catalog reader cannot open unrelated tabs.
+The application owns choosing which roles receive this navigation capability.
+
 ## Splash
 
 A `ui.splash` registry entry declares optional `meta.presentation`:
@@ -80,6 +89,9 @@ meta:
   scope: user
   presentation: dialog
 ```
+
+A step that mounts a component and declares no `title` owns its heading: the
+shell renders no step heading and labels the modal with the splash `title`.
 
 Dialog content sizes to its steps within a maximum width and viewport height.
 The native modal dialog traps focus, carries `aria-modal` and a labelled title,

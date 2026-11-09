@@ -21,9 +21,11 @@ entries:
       - contract
       - process
       - channel
+      - time
     imports:
       test: wippy.test:test
       jobs: kickside.core.jobs:jobs
+      jobs_wake: kickside.core.jobs.persist:wake
       projection_writer: kickside.core.projections.persist:writer
       writer: kickside.core.threads.persist:writer
 

@@ -18,6 +18,41 @@ end
 
 local function define_tests(): ()
     test.describe("declared automation references", function()
+        test.it("protects implicit objects, false values and removed parents", function()
+            local input = { properties = { nested = { properties = {
+                enabled = { type = "boolean", ["x-authority"] = "subject" },
+            } } } }
+            for _, after in ipairs({ { nested = { enabled = false } }, {} }) do
+                local err = references.validate_edit(input, { nested = { enabled = true } }, after, "operator", "subject")
+                test.not_nil(err)
+                test.eq(err:kind(), errors.PERMISSION_DENIED)
+                test.is_nil(references.validate_edit(input, { nested = { enabled = true } }, after, "subject", "subject"))
+            end
+        end)
+        test.it("collects grants from implicit object schemas", function()
+            local refs, err = references.collect({ properties = { id = {
+                type = "string", ["x-reference"] = { kind = "component", access = "READ" },
+            } } }, { id = "component-1" })
+            test.is_nil(err, tostring(err))
+            test.eq(#refs, 1)
+            test.eq(refs[1].id, "component-1")
+        end)
+        test.it("refuses protected composition and cyclic schemas without interpreting them", function()
+            local marked = { type = "string", ["x-authority"] = "subject" }
+            for _, input in ipairs({ { allOf = { { properties = { code = marked } } } },
+                { ["$defs"] = { code = marked } }, { type = "array", items = { marked } } }) do
+                local _, err = references.collect(input, {})
+                test.not_nil(err)
+                test.eq(err:kind(), errors.INVALID)
+                test.contains(tostring(err), "unsupported schema position")
+            end
+            local cyclic = { type = "object", properties = {} }
+            cyclic.properties.self = cyclic
+            local _, err = references.collect(cyclic, {})
+            test.not_nil(err)
+            test.contains(tostring(err), "cyclic")
+        end)
+
         test.it("collects only annotated nested fields and array items", function()
             local refs, err = references.collect(schema(), {
                 source = { thread_id = THREAD_ID, note = "component-secret" },

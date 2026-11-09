@@ -69,19 +69,9 @@ local function define_tests()
                     :from("kickside_job"):where(sql.builder.eq({ job_identity = identity }))
                     :run_with(db):query()
                 test.eq(#rows, 1)
-                local token = uuid.v7()
-                local _, lease_err = sql.builder.update("kickside_job")
-                    :set("status", "running")
-                    :set("lease_token", token)
-                    :set("lease_until", lifecycle.future_string(dbtype, 600))
-                    :set("execution_seq", 1)
-                    :set("attempts", 1)
-                    :where(sql.builder.eq({ id = rows[1].id, status = "pending" }))
-                    :run_with(db):exec()
+                local leased, lease_err = job_fixture.lease_own(db, dbtype, rows[1].id)
                 test.is_nil(lease_err)
-                continuation = { id = rows[1].id, lease_token = token, execution_seq = 1,
-                    attempts = 1, payload = rows[1].payload, job_type = wake.CONTINUATION_TYPE,
-                    owner_kind = rows[1].owner_kind, owner_id = rows[1].owner_id }
+                continuation = leased
                 db:release()
             end)
             test.not_nil(continuation)

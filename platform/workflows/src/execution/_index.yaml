@@ -7,6 +7,7 @@ entries:
     meta:
       comment: Mapping v1 parser/normalizer for workflow edge transforms.
     source: file://mapping.lua
+    modules: [json]
 
   - name: execution
     kind: library.lua

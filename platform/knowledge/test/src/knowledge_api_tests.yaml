@@ -2,6 +2,17 @@ version: "1.0"
 namespace: kickside.knowledge.api
 
 entries:
+  - name: detail_statistics_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge }
+    source: file://detail_statistics_test.lua
+    method: run
+    modules: [http]
+    imports:
+      test: wippy.test:test
+      get_kb: kickside.knowledge.api:get_kb
+      engines: kickside.knowledge:engines
+      stores: kickside.knowledge:stores
   - name: query_params_test
     kind: function.lua
     meta: { type: test, suite: knowledge }
@@ -34,10 +45,15 @@ entries:
     meta: { type: test, suite: knowledge }
     source: file://upload_meta_boundary_test.lua
     method: run
-    modules: [funcs, security, sql, uuid]
+    security:
+      actor: { id: system:knowledge-upload-boundary-test }
+    modules: [funcs, security, sql, uuid, contract, json, fs]
     imports:
+      fixture_cleanup: app:fixture_cleanup
+      execution_identity: kickside.execution:execution_identity
       test: wippy.test:test
       artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      upload_types: kickside.uploads:types
 
   - name: update_consistency_test
     kind: function.lua

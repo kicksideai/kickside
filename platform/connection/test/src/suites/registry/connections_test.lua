@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 -- Tests for kickside.connection:connections binding.
 --
 -- Drives the binding via funcs:call with a test actor + scope so the
@@ -207,7 +208,17 @@ local function define_tests()
                 test.eq(result.component_id, connection_id)
             end)
 
-            test.it("find after delete returns nothing", function()
+            test.it("find keeps the marked connection until the job removes it", function()
+                local marked, mark_err = call(exec, "find", {
+                    provider = "jira", name = connection_name .. "_renamed",
+                })
+                test.is_nil(mark_err)
+                test.not_nil(marked.deleting_at)
+                test.not_nil(marked.deletion_job_id)
+                if not connection_id then error("registered connection ID is missing") end
+                local finished, finish_err = deletion_worker.run(connection_id)
+                test.is_nil(finish_err, tostring(finish_err))
+                test.is_true(finished.deleted)
                 local found, err = call(exec, "find", {
                     provider = "jira",
                     name = connection_name .. "_renamed",

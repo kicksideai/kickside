@@ -67,11 +67,15 @@ function part.attach(M: any, dependencies: any, P: any): ()
         if entry_err or type(entry) ~= "table" or type(entry.meta) ~= "table" then
             return nil, entry_err or automation_error("automation kind schema is unavailable", errors.INVALID)
         end
+        local subject_id = execution_identity.actor_key((identity :: Map).principal)
+        local edit_err = (dependencies.declaration_references :: any).validate_edit(entry.meta.inputs,
+            (ctx :: Map)[PORTABLE_INPUT_KEY], input, operator_id, subject_id)
+        if edit_err then return nil, edit_err end
         return P.run_declaration_command({
             kind = "reconfigure",
             automation_id = component_id,
             operator_id = operator_id,
-            subject_id = execution_identity.actor_key((identity :: Map).principal),
+            subject_id = subject_id,
             subject_identity = identity,
             type_id = type_id,
             schema = entry.meta.inputs,

@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.42](https://github.com/kicksideai/kickside/compare/oauth-v0.1.41...oauth-v0.1.42) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+
+## [0.1.41](https://github.com/kicksideai/kickside/compare/oauth-v0.1.40...oauth-v0.1.41) (2026-10-26)
+
+
+### Bug Fixes
+
+* **oauth:** complete cleanup when the connection row is already gone ([c4dc409](https://github.com/kicksideai/kickside/commit/c4dc409367add2ecd932a37e775648c4fe53b557))
+* **oauth:** complete orphaned connection teardown ([160e05b](https://github.com/kicksideai/kickside/commit/160e05b5c069c253d5a4ea7920798f1979fe2eb9))
+
 ## [0.1.40](https://github.com/kicksideai/kickside/compare/oauth-v0.1.39...oauth-v0.1.40) (2026-10-22)
 
 

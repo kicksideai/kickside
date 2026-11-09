@@ -8,6 +8,31 @@ namespace: app
 # isolation. Excluded from publish (see wippy.yaml).
 
 entries:
+  - name: public_seams_test
+    kind: function.lua
+    meta: { type: test, suite: jobs_public_seams }
+    source: file://public_seams_test.lua
+    method: run
+    modules: [sql, uuid, process, channel, time, security, funcs]
+    imports:
+      test: wippy.test:test
+      jobs: kickside.core.jobs:jobs
+      job_fixture: app:job_fixture
+
+  - name: public_seams_probe
+    kind: function.lua
+    source: file://public_seams_probe.lua
+    method: run
+    imports:
+      jobs: kickside.core.jobs:jobs
+
+  - name: public_seams_scope
+    kind: security.policy
+    policy:
+      resources: [app:public_seams_probe, 'kickside.core.jobs:*', app:db]
+      actions: [funcs.call, registry.get, db.get]
+      effect: allow
+
   - name: dep.wippy.test
     kind: ns.dependency
     component: wippy/test
@@ -25,6 +50,11 @@ entries:
     foreign_keys: true
     file: ":memory:"
 
+  - name: jobs_migration_db
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
   - name: private_queue_claim_fence_test
     kind: db.sql.sqlite
     foreign_keys: true
@@ -36,6 +66,11 @@ entries:
     file: ":memory:"
 
   - name: private_queue_concurrency_claim_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: private_queue_capacity_claim_test
     kind: db.sql.sqlite
     foreign_keys: true
     file: ":memory:"
@@ -115,8 +150,9 @@ entries:
     meta:
       comment: Own-row leasing on the shared queue and the private queue for claim-selection suites.
     source: file://job_fixture.lua
-    modules: [sql, uuid, process]
+    modules: [json, sql, uuid, process]
     imports:
+      runtime_policy: kickside.core.jobs.policy:runtime
       lifecycle: kickside.core.jobs.persist:lifecycle
       config: kickside.core.jobs:config
       wake: kickside.core.jobs.persist:wake
@@ -185,6 +221,60 @@ entries:
       - sql
       - json
 
+    imports:
+      jobs: kickside.core.jobs:jobs
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      threads_writer: kickside.core.threads.persist:writer
+      retention_notifier: kickside.core.retention:notifier
+
+  - name: capacity_worker_a
+    kind: function.lua
+    meta:
+      comment: Capacity-declared worker fixture A.
+      job_capacity: app.capacity
+      job_capacity_settings:
+        namespace: app.capacity
+        global_limit_key: global_limit
+        concurrency_key_limit_key: concurrency_key_limit
+    source: file://generic_job_target.lua
+    method: run
+    modules: [security, time, channel, sql, json]
+    imports:
+      jobs: kickside.core.jobs:jobs
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      threads_writer: kickside.core.threads.persist:writer
+      retention_notifier: kickside.core.retention:notifier
+
+  - name: capacity_worker_b
+    kind: function.lua
+    meta:
+      comment: Capacity-declared worker fixture B.
+      job_capacity: app.capacity
+      job_capacity_settings:
+        namespace: app.capacity
+        global_limit_key: global_limit
+        concurrency_key_limit_key: concurrency_key_limit
+    source: file://generic_job_target.lua
+    method: run
+    modules: [security, time, channel, sql, json]
+    imports:
+      jobs: kickside.core.jobs:jobs
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      threads_writer: kickside.core.threads.persist:writer
+      retention_notifier: kickside.core.retention:notifier
+
+  - name: capacity_key_worker
+    kind: function.lua
+    meta:
+      comment: Capacity-declared worker fixture B.
+      job_capacity: app.key_capacity
+      job_capacity_settings:
+        namespace: app.key_capacity
+        global_limit_key: global_limit
+        concurrency_key_limit_key: concurrency_key_limit
+    source: file://generic_job_target.lua
+    method: run
+    modules: [security, time, channel, sql, json]
     imports:
       jobs: kickside.core.jobs:jobs
       lifecycle: kickside.core.jobs.persist:lifecycle
@@ -549,6 +639,7 @@ entries:
       - channel
       - registry
     imports:
+      job_fixture: app:job_fixture
       test: wippy.test:test
       job_types: kickside.core.jobs:types
       config: kickside.core.jobs:config
@@ -609,6 +700,7 @@ entries:
       lease: kickside.core.jobs.persist:lease_heartbeat
       lifecycle: kickside.core.jobs.persist:lifecycle
       job_fixture: app:job_fixture
+      config: kickside.core.jobs:config
   - name: worker_pulse_test
     kind: function.lua
     meta:
@@ -672,6 +764,7 @@ entries:
     imports:
       test: wippy.test:test
       worker_pool: kickside.core.jobs.service:worker_pool
+      job_fixture: app:job_fixture
 
   - name: awaited_capacity_test
     kind: function.lua
@@ -707,6 +800,7 @@ entries:
       clock: kickside.core.jobs:clock
       claim: kickside.core.jobs.persist:claim
       lifecycle: kickside.core.jobs.persist:lifecycle
+      retention: kickside.core.jobs.persist:retention
 
   - name: idle_report_test
     kind: function.lua
@@ -1242,6 +1336,7 @@ entries:
     meta: {type: test, suite: jobs_pool_nudge_native}
     source: file://pool_nudge_native_test.lua
     method: run
+    modules: [process, time, channel]
     imports:
       test: wippy.test:test
       nudge: app:pool_nudge_native_source
@@ -1431,11 +1526,13 @@ entries:
     kind: library.lua
     source: file://start_fence_native_source.lua
     imports:
+      reclaim: kickside.core.jobs.persist:reclaim
       sql: app:start_fence_native_sql_adapter
       job_types: kickside.core.jobs:types
       lifecycle: kickside.core.jobs.persist:lifecycle
       worker_marker: app:start_fence_native_marker_adapter
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      thread_fence: app:start_fence_native_fixture
 
   - name: start_fence_native_test
     kind: function.lua
@@ -1736,6 +1833,7 @@ entries:
       lifecycle: kickside.core.jobs.persist:lifecycle
       run_status: kickside.core.jobs:run_status
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      thread_fence: app:slot_purge_native_fixture
 
   - name: slot_purge_native_test
     kind: function.lua
@@ -1791,6 +1889,7 @@ entries:
       clock: kickside.core.jobs:clock
       thread_teardown: app:retention_native_fixture
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      thread_fence: kickside.core.jobs.persist:thread_fence
 
   - name: retention_native_test
     kind: function.lua
@@ -1929,7 +2028,6 @@ entries:
       cleanup: app:thread_cleanup_native_source
       fixture: app:thread_cleanup_native_fixture
 
-
   - name: thread_cleanup_native_test_replay
     kind: function.lua
     meta: {type: test, suite: jobs_thread_cleanup_native}
@@ -1940,7 +2038,6 @@ entries:
       test: wippy.test:test
       cleanup: app:thread_cleanup_native_source
       fixture: app:thread_cleanup_native_fixture
-
 
   - name: thread_cleanup_native_test_reclaim_selected
     kind: function.lua
@@ -2042,6 +2139,7 @@ entries:
     modules: [sql]
     imports:
       json: app:row_bytes_native_fixture
+      job_types: kickside.core.jobs:types
 
   - name: row_bytes_native_test
     kind: function.lua
@@ -2092,6 +2190,7 @@ entries:
     source: file://enqueue_native_source.lua
     modules: [uuid]
     imports:
+      runtime_policy: app:enqueue_native_fixture
       sql: app:enqueue_native_sql
       json: app:enqueue_native_json_adapter
       clock: app:enqueue_native_clock_adapter
@@ -2102,6 +2201,8 @@ entries:
       row_bytes: app:enqueue_native_row_bytes_adapter
       listing: kickside.core.jobs.persist:listing
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+      capacity: app:capacity_native_adapter
 
   - name: enqueue_native_test
     kind: function.lua
@@ -2218,6 +2319,8 @@ entries:
     kind: library.lua
     source: file://reclaim_native_source.lua
     imports:
+      execution_policy: app:reclaim_native_execution_policy
+      runtime_policy: app:reclaim_native_fixture
       sql: app:reclaim_native_sql
       job_types: kickside.core.jobs:types
       config: app:reclaim_native_config
@@ -2348,13 +2451,15 @@ entries:
     kind: library.lua
     source: file://scope_native_source.lua
     imports:
+      runtime_policy: kickside.core.jobs.policy:runtime
       sql: app:scope_native_sql
       config: app:scope_native_config
       lifecycle: app:scope_native_lifecycle
       lifecycle_cancel: app:scope_native_lifecycle_cancel
       lifecycle_enqueue: app:scope_native_lifecycle_enqueue
       lease_status: app:scope_native_lease_status
-      wake: app:scope_native_wake
+      wake: app:wake_native_source
+      slot_purge: kickside.core.jobs.persist:slot_purge
       clock: app:scope_native_clock
       completion: app:scope_native_completion
       retention: app:scope_native_retention
@@ -2395,13 +2500,6 @@ entries:
       lifecycle_types: kickside.core.jobs.persist:lifecycle
 
   - name: scope_native_lease_status
-    kind: library.lua
-    source: file://scope_native_dependency.lua
-    imports:
-      fixture: app:scope_native_fixture
-      lifecycle_types: kickside.core.jobs.persist:lifecycle
-
-  - name: scope_native_wake
     kind: library.lua
     source: file://scope_native_dependency.lua
     imports:
@@ -2560,11 +2658,9 @@ entries:
 
   - name: transaction_native_wake
     kind: library.lua
-    source: file://transaction_native_dependency.lua
-    modules: [sql]
+    source: file://facade_wake_dependency.lua
     imports:
       fixture: app:transaction_native_fixture
-      lifecycle_types: kickside.core.jobs.persist:lifecycle
 
   - name: transaction_native_clock
     kind: library.lua
@@ -2634,12 +2730,14 @@ entries:
     kind: library.lua
     source: file://transaction_native_source.lua
     imports:
+      runtime_policy: kickside.core.jobs.policy:runtime
       sql: app:transaction_native_sql
       config: app:transaction_native_config
       lifecycle: app:transaction_native_lifecycle
       lifecycle_cancel: app:transaction_native_lifecycle_cancel
       lifecycle_enqueue: app:transaction_native_lifecycle_enqueue
       wake: app:transaction_native_wake
+      slot_purge: kickside.core.jobs.persist:slot_purge
       clock: app:transaction_native_clock
       completion: app:transaction_native_completion
       lease_status: app:transaction_native_lease_status
@@ -2728,11 +2826,9 @@ entries:
 
   - name: health_native_wake
     kind: library.lua
-    source: file://health_native_dependency.lua
-    modules: [sql]
+    source: file://facade_wake_dependency.lua
     imports:
       fixture: app:health_native_fixture
-      lifecycle_types: kickside.core.jobs.persist:lifecycle
 
   - name: health_native_clock
     kind: library.lua
@@ -2802,12 +2898,14 @@ entries:
     kind: library.lua
     source: file://health_native_source.lua
     imports:
+      runtime_policy: app:health_native_fixture
       sql: app:health_native_sql
       config: app:health_native_config
       lifecycle: app:health_native_lifecycle
       lifecycle_cancel: app:health_native_lifecycle_cancel
       lifecycle_enqueue: app:health_native_lifecycle_enqueue
       wake: app:health_native_wake
+      slot_purge: kickside.core.jobs.persist:slot_purge
       clock: app:health_native_clock
       completion: app:health_native_completion
       lease_status: app:health_native_lease_status
@@ -2876,6 +2974,7 @@ entries:
     - time
     - channel
     imports:
+      execution_policy: app:lease_native_execution_policy
       sql: app:lease_native_sql
       process: app:lease_native_process
       config: app:lease_native_dependency
@@ -2973,6 +3072,7 @@ entries:
     - time
     - uuid
     imports:
+      execution_policy: app:run_history_native_execution_policy
       sql: app:run_history_native_sql
       clock: app:run_history_native_clock
       config: app:run_history_native_config
@@ -3086,6 +3186,7 @@ entries:
     - time
     - uuid
     imports:
+      execution_policy: app:transition_native_execution_policy
       sql: app:transition_native_sql
       clock: app:transition_native_clock
       config: app:transition_native_config
@@ -3237,6 +3338,7 @@ entries:
     kind: library.lua
     source: file://wake_native_source.lua
     imports:
+      job_types: kickside.core.jobs:types
       sql: app:wake_native_sql
       clock: app:wake_native_clock
       lifecycle: app:wake_native_lifecycle
@@ -3271,6 +3373,8 @@ entries:
   - name: claim_native_fixture
     kind: library.lua
     source: file://claim_native_fixture.lua
+    imports:
+      config: kickside.core.jobs:config
   - name: claim_native_sql
     kind: library.lua
     source: file://claim_native_sql.lua
@@ -3305,8 +3409,9 @@ entries:
   - name: claim_native_source
     kind: library.lua
     source: file://claim_native_source.lua
-    modules: [uuid]
+    modules: [json, uuid]
     imports:
+      runtime_policy: app:claim_native_fixture
       sql: app:claim_native_sql
       job_types: kickside.core.jobs:types
       config: app:claim_native_config
@@ -3315,6 +3420,18 @@ entries:
       lifecycle_cancel: app:claim_native_lifecycle_cancel
       row_bytes: app:claim_native_row_bytes
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      capacity: app:capacity_native_adapter
+      eligibility: app:eligibility_native_source
+  - name: eligibility_native_source
+    kind: library.lua
+    source: file://eligibility_native_source.lua
+    modules: [sql]
+    imports:
+      capacity: app:capacity_native_adapter
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+  - name: capacity_native_adapter
+    kind: library.lua
+    source: file://capacity_native_adapter.lua
   - name: claim_native_test
     kind: function.lua
     source: file://claim_native_test.lua
@@ -3328,6 +3445,10 @@ entries:
       fixture: app:claim_native_fixture
 
   - name: private_queue_claim_exclusion_test
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+  - name: private_queue_wake_recovery_test
     kind: db.sql.sqlite
     foreign_keys: true
     file: ":memory:"
@@ -3409,6 +3530,7 @@ entries:
     source: file://child_native_source.lua
     modules: [logger, time]
     imports:
+      execution_policy: app:child_native_execution_policy
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       job_types: kickside.core.jobs:types
       process: app:child_native_process
@@ -3492,6 +3614,8 @@ entries:
     kind: library.lua
     source: file://worker_fence_native_source.lua
     imports:
+      reclaim: kickside.core.jobs.persist:reclaim
+      execution_policy: app:worker_fence_native_execution_policy
       sql: app:worker_fence_native_sql
       job_types: kickside.core.jobs:types
       sql_boundary: kickside.core.jobs.persist:sql_boundary
@@ -3558,6 +3682,7 @@ entries:
     source: file://lease_heartbeat_native_source.lua
     modules: [logger]
     imports:
+      execution_policy: app:lease_native_execution_policy
       sql: app:lease_native_sql
       time: app:lease_heartbeat_native_time
       process: app:lease_heartbeat_native_process
@@ -3664,6 +3789,7 @@ entries:
     source: file://dispatch_cause_native_source.lua
     modules: [sql, logger, time]
     imports:
+      execution_policy: app:dispatch_cause_native_execution_policy
       error_envelope: kickside.contract:error_envelope
       job_types: kickside.core.jobs:types
       registry: app:dispatch_cause_native_registry
@@ -3694,6 +3820,7 @@ entries:
     source: file://config_boundary_native_source.lua
     modules: [time]
     imports:
+      policy_fields: kickside.core.jobs.policy:fields
       registry_version: kickside.core.jobs:registry_version
       registry: app:config_boundary_native_fixture
       job_types: kickside.core.jobs:types
@@ -3777,3 +3904,289 @@ entries:
     imports:
       test: wippy.test:test
       boundary: kickside.core.jobs.persist:sql_boundary
+
+  - name: notification_native_test
+    kind: function.lua
+    meta: { type: test, suite: jobs_notification_native }
+    source: file://notification_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      jobs: app:scope_native_source
+      wake: app:wake_native_source
+      fixture: app:wake_native_fixture
+
+  - name: pool_resize_test
+    kind: function.lua
+    meta: {comment: "Pool resize test.", type: test, suite: jobs_pool_resize}
+    source: file://pool_resize_test.lua
+    method: run
+    modules: [sql, process]
+    imports:
+      test: wippy.test:test
+      worker_pool: kickside.core.jobs.service:worker_pool
+      job_fixture: app:job_fixture
+
+  - name: policy_migration_db
+    meta: {comment: "Policy migration db."}
+    kind: db.sql.sqlite
+    file: ':memory:'
+
+  - name: policy_migration_test
+    kind: function.lua
+    meta: {comment: "Policy migration test.", type: test, suite: jobs_policy_migration}
+    source: file://policy_migration_test.lua
+    method: run
+    modules: [sql, funcs, uuid, json]
+    imports:
+      test: wippy.test:test
+
+  - name: claim_policy_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_claim_policy, comment: Captures policy before dispatch and subsequent live edits.}
+    source: file://claim_policy_test.lua
+    method: run
+    modules: [sql]
+    imports:
+      job_fixture: app:job_fixture
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      test: wippy.test:test
+      claim: kickside.core.jobs.persist:claim
+      lease: kickside.core.jobs.persist:lease_heartbeat
+      config: kickside.core.jobs:config
+      policy_settings_fixture: app:policy_settings_fixture
+
+  - name: private_queue_claim_policy
+    kind: db.sql.sqlite
+    meta: {comment: Isolates claim-time policy tests.}
+    file: ':memory:'
+
+  - name: reclaim_native_execution_policy
+    kind: library.lua
+    meta: {comment: Injects the captured execution policy dependency for native boundary tests.}
+    source: file://execution_policy_native.lua
+    imports:
+      fixture: app:reclaim_native_fixture
+
+  - name: lease_native_execution_policy
+    kind: library.lua
+    meta: {comment: Injects the captured execution policy dependency for native boundary tests.}
+    source: file://execution_policy_native.lua
+    imports:
+      fixture: app:lease_native_fixture
+
+  - name: run_history_native_execution_policy
+    kind: library.lua
+    meta: {comment: Injects the captured execution policy dependency for native boundary tests.}
+    source: file://execution_policy_native.lua
+    imports:
+      fixture: app:run_history_native_fixture
+
+  - name: transition_native_execution_policy
+    kind: library.lua
+    meta: {comment: Injects the captured execution policy dependency for native boundary tests.}
+    source: file://execution_policy_native.lua
+    imports:
+      fixture: app:transition_native_fixture
+
+  - name: child_native_execution_policy
+    kind: library.lua
+    meta: {comment: Injects the captured execution policy dependency for native boundary tests.}
+    source: file://execution_policy_native.lua
+    imports:
+      fixture: app:child_native_fixture
+
+  - name: worker_fence_native_execution_policy
+    kind: library.lua
+    meta: {comment: Injects the captured execution policy dependency for native boundary tests.}
+    source: file://execution_policy_native.lua
+    imports:
+      fixture: app:worker_fence_native_fixture
+
+  - name: dispatch_cause_native_execution_policy
+    kind: library.lua
+    meta: {comment: Injects the captured execution policy dependency for native boundary tests.}
+    source: file://execution_policy_native.lua
+    imports:
+      fixture: app:dispatch_cause_native_fixture
+
+  - name: execution_policy_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_execution_policy, comment: Preserves real claim snapshots through every execution lifecycle path.}
+    source: file://execution_policy_test.lua
+    method: run
+    modules: [sql, json, time]
+    imports:
+      test: wippy.test:test
+      config: kickside.core.jobs:config
+      runtime_policy: kickside.core.jobs.policy:runtime
+      claim: kickside.core.jobs.persist:claim
+      lease: kickside.core.jobs.persist:lease_heartbeat
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      cancel: kickside.core.jobs.persist:lifecycle_cancel
+      reclaim: kickside.core.jobs.persist:reclaim
+      fence: kickside.core.jobs.service:worker_fence
+      worker: kickside.core.jobs.service:worker_completion
+      policy_settings_fixture: app:policy_settings_fixture
+      job_fixture: app:job_fixture
+
+  - name: pool_policy_harness
+    kind: library.lua
+    meta: {comment: Drives the real pool owner through lifecycle and publication events.}
+    source: file://pool_policy_harness.lua
+    modules: [sql, process]
+    imports:
+      config: kickside.core.jobs:config
+      worker_pool: kickside.core.jobs.service:worker_pool
+      job_fixture: app:job_fixture
+
+  - name: pool_policy_lifecycle_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_pool_policy_lifecycle, comment: Verifies handover revision recovery and nonfatal policy and publication failures.}
+    source: file://pool_policy_lifecycle_test.lua
+    method: run
+    modules: [process]
+    imports:
+      test: wippy.test:test
+      harness: app:pool_policy_harness
+
+  - name: dep.kickside.settings
+    kind: ns.dependency
+    version: '*'
+    meta: {comment: Settings stores the administrator Jobs policy overrides the policy suites write.}
+    component: kickside/settings
+    parameters:
+    - name: kickside.settings:target_db
+      value: app:db
+    - name: kickside.settings:process_host
+      value: app:processes
+    - name: kickside.settings:api_router
+      value: app:api
+    - name: kickside.settings:ui_server
+      value: app:gateway
+
+  - name: jobs_settings_admin
+    kind: security.policy
+    meta: {comment: Administrator scope that writes Jobs policy overrides through Settings.}
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: policy_settings_fixture
+    kind: library.lua
+    meta: {comment: Writes and resets Jobs policy overrides through the Settings contract.}
+    source: file://policy_settings_fixture.lua
+    modules: [contract, security]
+
+  - name: policy_settings_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_policy_settings, comment: Resolves Settings overrides over host and shipped policy and refuses invalid values.}
+    source: file://policy_settings_test.lua
+    method: run
+    modules: [registry, security, funcs, sql]
+    imports:
+      test: wippy.test:test
+      config: kickside.core.jobs:config
+      runtime_policy: kickside.core.jobs.policy:runtime
+      policy_settings_fixture: app:policy_settings_fixture
+
+  # Capacity limits the capacity suites read through Settings.
+  - name: capacity_global_limit
+    kind: registry.entry
+    meta: {type: kickside.settings:definition}
+    namespace: app.capacity
+    key: global_limit
+    value_type: int
+    default: 2
+    description: Harness capacity group limit.
+    scope: global
+    editable: true
+
+  - name: capacity_concurrency_key_limit
+    kind: registry.entry
+    meta: {type: kickside.settings:definition}
+    namespace: app.capacity
+    key: concurrency_key_limit
+    value_type: int
+    default: 2
+    description: Harness per-key capacity limit.
+    scope: global
+    editable: true
+
+  - name: key_capacity_global_limit
+    kind: registry.entry
+    meta: {type: kickside.settings:definition}
+    namespace: app.key_capacity
+    key: global_limit
+    value_type: int
+    default: 3
+    description: Harness keyed capacity group limit.
+    scope: global
+    editable: true
+
+  - name: key_capacity_concurrency_key_limit
+    kind: registry.entry
+    meta: {type: kickside.settings:definition}
+    namespace: app.key_capacity
+    key: concurrency_key_limit
+    value_type: int
+    default: 1
+    description: Harness keyed per-key capacity limit.
+    scope: global
+    editable: true
+
+  - name: policy_settings_scope
+    kind: security.policy
+    policy:
+      resources: [app:policy_settings_resolve, app:policy_settings_enqueue, app:generic_job_target, 'kickside.core.jobs:*', 'kickside.core.jobs.policy:*', app:db]
+      actions: [funcs.call, registry.get, db.get]
+      effect: allow
+
+  - name: policy_settings_resolve
+    kind: function.lua
+    source: file://policy_settings_probe.lua
+    method: resolve
+    imports:
+      runtime_policy: kickside.core.jobs.policy:runtime
+      jobs: kickside.core.jobs:jobs
+
+  - name: policy_settings_enqueue
+    kind: function.lua
+    source: file://policy_settings_probe.lua
+    method: enqueue
+    imports:
+      runtime_policy: kickside.core.jobs.policy:runtime
+      jobs: kickside.core.jobs:jobs
+
+  - name: retention_pace_test
+    kind: function.lua
+    meta: {type: test, suite: jobs_retention_pace, timeout: 600s}
+    source: file://retention_pace_test.lua
+    method: run
+    modules: [sql, uuid, time]
+    imports:
+      test: wippy.test:test
+      config: kickside.core.jobs:config
+      retention: kickside.core.jobs.persist:retention
+      retention_schedule: kickside.core.jobs.service:retention_schedule
+      retention_order_migration: app:retention_order_migration
+      worker_heartbeat: kickside.core.jobs.service:worker_heartbeat
+      job_fixture: app:job_fixture
+
+  - name: private_queue_retention_pace
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"
+
+  - name: retention_order_migration
+    kind: library.lua
+    source: file://retention_order_migration.lua
+    imports:
+      migration: wippy.migration:core
+      run_status: kickside.core.jobs:run_status
+
+  - name: private_queue_retention_dispatch
+    kind: db.sql.sqlite
+    foreign_keys: true
+    file: ":memory:"

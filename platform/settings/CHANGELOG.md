@@ -1,5 +1,59 @@
 # Changelog
 
+## [0.3.7](https://github.com/kicksideai/kickside/compare/settings-v0.3.6...settings-v0.3.7) (2026-11-08)
+
+
+### Bug Fixes
+
+* UI artifacts in buttons, headings, dialogs and tables ([#371](https://github.com/kicksideai/kickside/issues/371)) ([ea55ea8](https://github.com/kicksideai/kickside/commit/ea55ea8a17ee5802cb73a4dbcf39878d7f56cd2e))
+
+## [0.3.6](https://github.com/kicksideai/kickside/compare/settings-v0.3.5...settings-v0.3.6) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
+## [0.3.5](https://github.com/kicksideai/kickside/compare/settings-v0.3.4...settings-v0.3.5) (2026-11-06)
+
+
+### Bug Fixes
+
+* **settings:** reload cold snapshots on reads ([#315](https://github.com/kicksideai/kickside/issues/315)) ([687e773](https://github.com/kicksideai/kickside/commit/687e7735155e61cc0d15767b709d32e137a49a48))
+
+## [0.3.4](https://github.com/kicksideai/kickside/compare/settings-v0.3.3...settings-v0.3.4) (2026-11-03)
+
+
+### Features
+
+* **settings:** report overridden keys from get_namespace ([#299](https://github.com/kicksideai/kickside/issues/299)) ([4a3d80e](https://github.com/kicksideai/kickside/commit/4a3d80e01974709bfa8f6a826c2f9aaa6e594005))
+
+
+### Bug Fixes
+
+* **settings:** default the change keeper to the host's processes ([#301](https://github.com/kicksideai/kickside/issues/301)) ([826c844](https://github.com/kicksideai/kickside/commit/826c84437413170d45f467000f8505a8ddc2411f))
+
+## [0.3.3](https://github.com/kicksideai/kickside/compare/settings-v0.3.2...settings-v0.3.3) (2026-11-03)
+
+
+### Features
+
+* **settings:** propagate committed changes to every node ([#297](https://github.com/kicksideai/kickside/issues/297)) ([c45b3c3](https://github.com/kicksideai/kickside/commit/c45b3c314fdedf53d5562f4ac64c24a4f0b168c4))
+
+## [0.3.2](https://github.com/kicksideai/kickside/compare/settings-v0.3.1...settings-v0.3.2) (2026-10-28)
+
+
+### Features
+
+* **settings:** support shared picker value controls ([#177](https://github.com/kicksideai/kickside/issues/177)) ([8a883eb](https://github.com/kicksideai/kickside/commit/8a883eb7122f80e24c09c9f0ebce0f3b68cf4ced))
+
+## [0.3.1](https://github.com/kicksideai/kickside/compare/settings-v0.3.0...settings-v0.3.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** resolve live scopes through Security-owned projections ([adad7ee](https://github.com/kicksideai/kickside/commit/adad7ee499f7dfbd1134c57c06368aa440a0ab07))
+
 ## [0.3.0](https://github.com/kicksideai/kickside/compare/settings-v0.2.0...settings-v0.3.0) (2026-10-22)
 
 

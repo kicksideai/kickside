@@ -290,6 +290,12 @@ entries:
         methods:
           get_info: kickside.uploads.binding:file_provider_func
 
+  - name: text_trim
+    kind: library.lua
+    meta:
+      comment: Whitespace trim uses a linear scan to avoid backtracking; the runtime matcher stops at MaxBacktracks = 100000 (wippyai/go-lua pm.go) and reports no match, so the anchored pattern fails on large text.
+    source: file://text_trim.lua
+
   - name: metadata_sanitizer
     kind: library.lua
     meta:
@@ -356,7 +362,11 @@ entries:
       execution_identity: kickside.execution:execution_identity
       jobs: kickside.core.jobs:jobs
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      uploads_resources: kickside.uploads.binding:uploads_resources
+      relocation_cleanup_repo: kickside.uploads.persist:relocation_cleanup_repo
       metadata_sanitizer: kickside.uploads:metadata_sanitizer
+      error_envelope: kickside.contract:error_envelope
 
   - name: uploads
     kind: library.lua
@@ -367,9 +377,12 @@ entries:
     imports:
       upload_record_repo: kickside.uploads.persist:upload_record_repo
       upload_query_repo: kickside.uploads.persist:upload_query_repo
+      upload_response: kickside.uploads.api:upload_response
+      upload_tokens: kickside.uploads.persist:upload_tokens
       upload_read_model: kickside.uploads.persist:upload_read_model
       upload_type: kickside.uploads:upload_type
       artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo
+      relocation_cleanup_repo: kickside.uploads.persist:relocation_cleanup_repo
       uploads_resources: kickside.uploads.binding:uploads_resources
       uploads_events: kickside.uploads.persist:uploads_events
       types: kickside.uploads:types
@@ -435,7 +448,7 @@ entries:
     default: kickside.uploads.binding:storage_adapter_default
     meta:
       value_kind: library.lua
-      description: Optional native file adapter library. get(storage_id, db_id, staging_id, legacy_cloud_id,
+      description: Optional native file adapter library. get(storage_id, db_id, staging_id, cloud_id,
         query_db) returns a filesystem-compatible adapter. The default uses the host filesystem.
     targets:
     - entry: kickside.uploads.binding:uploads_resources

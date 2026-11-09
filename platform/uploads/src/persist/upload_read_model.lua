@@ -6,6 +6,7 @@ local resources = require("uploads_resources")
 local upload_types = require("types")
 local upload_type = require("upload_type")
 local persisted_json = require("persisted_json")
+local trim = require("text_trim").trim
 local read_model_owner_delete = require("read_model_owner_delete")
 
 local M = {}
@@ -18,11 +19,6 @@ local STATUS = {
     ERROR = "error",
     DELETED = "deleted",
 }
-
-local function trim(value: any): string
-    if type(value) ~= "string" then return "" end
-    return (value:gsub("^%s*(.-)%s*$", "%1"))
-end
 
 local function encode_json_object(value: any): string?
     if type(value) ~= "table" then return nil end

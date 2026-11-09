@@ -30,6 +30,24 @@ local function define_tests()
             end
         end)
 
+        test.it("keeps contribution access independent from the catalog capability", function()
+            local ids = assert(composition.expand({"kickside.ui.security:module_access"}))
+            local policies = {}
+            for _, id in ipairs(ids) do policies[#policies + 1] = assert(security.policy(id)) end
+            policies[#policies + 1] = assert(security.policy("kickside.ui.security:system_tabs_access"))
+            local actor = security.new_actor("scoped-system-reader", {})
+            for _, grant_tab in ipairs({false, true}) do
+                if grant_tab then policies[#policies + 1] = assert(security.policy("kickside.ui:shell_fixture_management")) end
+                local entries, err = funcs.new():with_actor(actor):with_scope(security.new_scope(policies))
+                    :call("kickside.ui:shell_access_probe")
+                test.is_nil(err)
+                local visible = {}
+                for _, entry in ipairs(entries) do visible[entry.id] = true end
+                test.eq(visible["kickside.ui:tab.gated_fixture"] == true, grant_tab)
+                test.is_nil(visible["kickside.ui:tab.appearance"], "catalog discovery must not grant Appearance")
+            end
+        end)
+
         test.it("lets a module member read the shell settings the navigation renders", function()
             local actor = security.new_actor("shell-module-member", {})
             local ids, expand_err = composition.expand({"kickside.ui.security:module_access"})

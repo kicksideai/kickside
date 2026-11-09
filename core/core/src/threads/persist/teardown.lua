@@ -95,7 +95,9 @@ end
 -- component through the contract, which tears down the component's access and
 -- meta. A failed component removal after the thread is gone is returned so the
 -- caller retries the component teardown. Returns { deleted, thread_id,
--- component_id, notified }.
+-- component_id, notified }, or while the component deletion job owns completion
+-- { deleted = false, in_progress, status, cleanup_pending, job_id, thread_id,
+-- component_id }.
 function M.delete(db: DB, thread_id: string, actor_id: string?): (table?, error?)
     local id = trim(thread_id)
     if id == "" then
@@ -117,7 +119,7 @@ function M.delete(db: DB, thread_id: string, actor_id: string?): (table?, error?
     if type(removed) == "table" and removed.in_progress == true then
         return { deleted = false, thread_id = id, component_id = component_id,
             in_progress = true, status = removed.status, cleanup_pending = removed.cleanup_pending,
-            kind = removed.kind, retryable = removed.retryable, details = removed.details,
+            job_id = removed.job_id, kind = removed.kind, retryable = removed.retryable, details = removed.details,
             discarded = removed.thread_discarded or removed.discarded }, nil
     end
     local remaining, remaining_err = db:query("SELECT id FROM kickside_thread WHERE id=$1", { id })

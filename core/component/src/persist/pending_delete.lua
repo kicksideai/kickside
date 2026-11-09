@@ -1,6 +1,4 @@
--- A committed deleting_at mark is the durable continuation for a component
--- whose kind cleanup stopped between pages or whose caller crashed. The core
--- retention service retries one bounded page after an eligibility change.
+-- Retention enrolls committed deletion intents in their component Jobs identity.
 local sql = require("sql")
 local component_types = require("component_types")
 local component = require("component")
@@ -22,9 +20,8 @@ function M.run(limit: integer, owner_id: string?): (integer?, error?, boolean?, 
     local db, open_err = sql.get(component_types.db_id())
     if open_err then return nil, errors.wrap(open_err, "component cleanup database unavailable") end
     if type(db) ~= "table" and type(db) ~= "userdata" then return nil, response_error("database") end
-    -- A released owner must not sit behind another page of live leases. The
-    -- delete mark is the authority; unrelated owner ids are harmless misses.
-    local query = "SELECT component_id FROM kickside_components WHERE deleting_at IS NOT NULL"
+    -- A directed wake addresses its owner's mark without waiting for a scan page.
+    local query = "SELECT component_id FROM kickside_components WHERE deleting_at IS NOT NULL AND delete_intent IS NULL"
     local params: { any } = { limit }
     local limit_sql = "$1"
     if owner_id ~= nil then
@@ -44,8 +41,8 @@ function M.run(limit: integer, owner_id: string?): (integer?, error?, boolean?, 
         if type(row) ~= "table" or type(row.component_id) ~= "string" or row.component_id == "" then
             return nil, response_error("rows.component_id")
         end
-        -- The original request already passed the child-policy gate before it
-        -- committed deleting_at. Reparenting is inert when there are no children.
+        -- Legacy marks predate durable intent. Their historical retention policy
+        -- reparents children; intent-bearing marks belong exclusively to Jobs.
         local ok, err = component.system_delete(row.component_id, "reparent_root")
         local pending, continuation = teardown.cleanup_pending(err)
         if err == nil and ok == true then removed = removed + 1

@@ -39,3 +39,12 @@ test('surface state defaults remain available alongside opt-in layouts', () => {
   assert.match(css, /\.kx-loading\.kx-loading-centered/)
   assert.doesNotMatch(css, /\.kc-|\.es(?:[\s.{:-])/)
 })
+
+test('native primary action states use paired palette tokens', () => {
+  const css = read('kx-controls.css')
+  assert.match(css, /\.kx-btn-primary\s*\{[^}]*background:\s*var\(--p-primary-color\);[^}]*color:\s*var\(--p-button-primary-color\);/s)
+  assert.match(css, /\.kx-btn-primary:hover:not\(:disabled\)\s*\{[^}]*background:\s*var\(--p-primary-hover-color\);[^}]*color:\s*var\(--p-button-primary-hover-color\);/s)
+  assert.match(css, /\.kx-btn-primary:active:not\(:disabled\)\s*\{[^}]*background:\s*var\(--p-primary-active-color\);[^}]*color:\s*var\(--p-button-primary-active-color\);/s)
+  const primaryRules = css.match(/\.kx-btn-primary[^}]*\{[^}]*\}/gs)?.join('') ?? ''
+  assert.doesNotMatch(primaryRules, /brightness\(/)
+})

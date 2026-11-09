@@ -6,6 +6,15 @@ import { api } from '@wippy-fe/proxy'
 import type { WorkflowInterface } from '../types'
 import { asInterface, asRecord, get, post } from './http'
 
+export async function assistWorkflowBinding(id: string, sourceSchema: unknown, startSchema: unknown): Promise<string> {
+  const result = await post(`/api/v1/workflows/${encodeURIComponent(id)}/assist/binding`, {
+    source_context_schema: sourceSchema, target_start_schema: startSchema,
+    source_root: 'payload', intent: 'Map the source item to the Workflow Start input.',
+  })
+  if (typeof result.transform !== 'string' || !result.transform) throw new Error('Binding assist returns no transform.')
+  return result.transform
+}
+
 export interface PublishResult {
   version: number
   hash?: string

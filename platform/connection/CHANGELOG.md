@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.5.5](https://github.com/kicksideai/kickside/compare/connection-v0.5.4...connection-v0.5.5) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
+## [0.5.4](https://github.com/kicksideai/kickside/compare/connection-v0.5.3...connection-v0.5.4) (2026-11-07)
+
+
+### Bug Fixes
+
+* **widgets:** follow deletion events without racing the delete job ([#337](https://github.com/kicksideai/kickside/issues/337)) ([fdd6984](https://github.com/kicksideai/kickside/commit/fdd6984188d6f35cdaf4e40cd0ac8b9cd08928bc))
+
+## [0.5.3](https://github.com/kicksideai/kickside/compare/connection-v0.5.2...connection-v0.5.3) (2026-11-05)
+
+
+### Bug Fixes
+
+* **component:** expose asynchronous deletion progress ([e4ca4b7](https://github.com/kicksideai/kickside/commit/e4ca4b7ab5185ecc6ecf83b336ca3e6edf5aca6e))
+* **component:** run deletion cleanup through Jobs ([da3f7ae](https://github.com/kicksideai/kickside/commit/da3f7aee8dce4136a65d1c94bda6604820bc8355))
+* **component:** simplify deletion waiting and committed delivery ([584eae6](https://github.com/kicksideai/kickside/commit/584eae6145e5e9b4ea36bdbd6527ffe376e9f7fe))
+* preserve deletion view state and bind notification authority ([2ea5cf1](https://github.com/kicksideai/kickside/commit/2ea5cf1a31352ba4ba1915daeca384d06d2e7b70))
+* **widgets:** keep accepted deletion state across pages ([62c8e18](https://github.com/kicksideai/kickside/commit/62c8e181b0e1b60d0c3c6a80f6f9585dac6ef7cb))
+* **widgets:** preserve deletion progress across refreshes ([cd607e1](https://github.com/kicksideai/kickside/commit/cd607e14462b8421d092612cb62dce73e57f5ed8))
+
+## [0.5.2](https://github.com/kicksideai/kickside/compare/connection-v0.5.1...connection-v0.5.2) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+
+## [0.5.1](https://github.com/kicksideai/kickside/compare/connection-v0.5.0...connection-v0.5.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* **connection:** type provider client fixtures ([#131](https://github.com/kicksideai/kickside/issues/131)) ([34a503c](https://github.com/kicksideai/kickside/commit/34a503ce98550881b86120b96e860bb3ee027807))
+
 ## [0.5.0](https://github.com/kicksideai/kickside/compare/connection-v0.4.0...connection-v0.5.0) (2026-10-22)
 
 

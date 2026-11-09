@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 import { api } from '@wippy-fe/proxy'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import type { Automation } from './automation-types'
 
 export function useAutomationExport(exportId: Ref<string>, error: Ref<string>, pretty: (automation: Automation) => string) {

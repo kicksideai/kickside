@@ -105,6 +105,8 @@ entries:
   parameters:
   - name: kickside.users:env_storage
     value: app.env:store
+  - name: kickside.settings:process_host
+    value: app:processes
   - name: kickside.users:public_router
     value: app:api.public
   - name: kickside.users:api_router
@@ -311,6 +313,27 @@ entries:
     session_index: kickside.users.persist:session_index
     links: kickside.identity:link_service
     dm: kickside.dm:receive_func
+    trigger_reconcile: kickside.security:trigger_reconcile
+- name: unlink_counts_test
+  kind: function.lua
+  source: file://unlink_counts_test.lua
+  method: run
+  meta:
+    type: test
+    suite: identity_unlink_counts
+  security:
+    actor:
+      id: app:test_runner
+    policies:
+    - app:test_runtime
+  modules:
+  - sql
+  - uuid
+  - funcs
+  imports:
+    test: wippy.test:test
+    link_service: kickside.identity:link_service
+    channel_persist: kickside.channel.persist:repo
 - name: identity_only_data
   kind: security.policy
   groups:

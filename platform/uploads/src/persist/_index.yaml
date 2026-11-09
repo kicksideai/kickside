@@ -19,6 +19,7 @@ entries:
       uploads_resources: kickside.uploads.binding:uploads_resources
       artifact_schema: kickside.uploads.persist:artifact_schema
       artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
 
   - name: artifact_parts_repo
     kind: library.lua
@@ -40,6 +41,17 @@ entries:
     imports:
       persisted_json: kickside.contract:persisted_json
       uploads_resources: kickside.uploads.binding:uploads_resources
+
+  - name: relocation_cleanup_repo
+    kind: library.lua
+    meta:
+      comment: Persist superseded storage paths with relocation and retire them after successful reference-aware cleanup.
+    source: file://relocation_cleanup_repo.lua
+    modules: [json]
+    imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
+      storage_catalog: kickside.uploads.binding:storage_catalog
+      persisted_json: kickside.contract:persisted_json
 
   - name: upload_record_repo
     kind: library.lua
@@ -67,8 +79,10 @@ entries:
     source: file://upload_query_repo.lua
     modules: [sql]
     imports:
+      binding_errors: kickside.uploads.binding:binding_errors
       uploads_resources: kickside.uploads.binding:uploads_resources
       persisted_json: kickside.contract:persisted_json
+      text_trim: kickside.uploads:text_trim
 
   - name: upload_tokens
     kind: library.lua
@@ -88,6 +102,7 @@ entries:
       types: kickside.uploads:types
       persisted_json: kickside.contract:persisted_json
       upload_type: kickside.uploads:upload_type
+      text_trim: kickside.uploads:text_trim
 
       read_model_owner_delete: kickside.uploads.persist:read_model_owner_delete
   # Foreground user-operation appends. Durable

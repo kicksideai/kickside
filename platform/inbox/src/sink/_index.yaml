@@ -67,16 +67,43 @@ entries:
       { "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "properties": {
+          "files": {"type": "array", "description": "File references resolved by content_provider under the viewer identity.", "items": {"type": "object", "additionalProperties": false, "properties": {"component_id": {"type": "string", "minLength": 1}, "context": {"type": "object"}, "title": {"type": "string"}}, "required": ["component_id"]}},
           "content": { "type": "string", "description": "Item body. Falls back to the destination's content config when absent." },
           "content_type": { "type": "string", "description": "MIME type of the body, copied onto the item metadata. Any value accepted." },
           "item_type": { "type": "string", "description": "Overrides the configured item type." },
           "priority": { "type": "string", "enum": ["low", "normal", "high", "urgent"], "description": "Overrides the configured priority." },
           "title": { "type": "string", "description": "Overrides the derived title." },
-          "source_id": { "type": "string", "description": "Stable source id; defaults to the idempotency key." },
+          "source_id": { "type": "string", "description": "Stable source id; defaults to the record identity. Aggregates require a source component the actor can read." },
+          "aggregate_key": { "type": "string", "minLength": 1, "description": "One item per source component, key and ambient recipient; later writes refresh and reopen it." },
+          "status": { "description": "Aggregate lifecycle: pending (default) or resolved. Resolved explicitly closes an aggregate without requiring content. Ignored without an aggregate key." },
           "metadata": { "type": "object", "description": "Copied onto the item metadata; dedup_key defaults to the idempotency key." }
         },
-        "required": ["content"] }
+        "allOf": [{
+          "if": { "required": ["aggregate_key"] },
+          "then": { "properties": { "status": { "type": "string", "enum": ["pending", "resolved"] } } }
+        }],
+        "anyOf": [
+          { "required": ["content"] },
+          { "required": ["source_id", "aggregate_key", "status"], "properties": { "status": { "const": "resolved" } } }
+        ] }
     config_schema:
+      aggregate_key:
+        picker: wc-schema-form
+        type: string
+        title: Aggregate key
+        description: Optional stable key for one item per source component and recipient. Omit for independent items.
+      source_id:
+        picker: wc-schema-form
+        type: string
+        title: Source component
+        description: Source component ID required for aggregates. The recipient must retain READ access.
+      status:
+        picker: wc-schema-form
+        type: string
+        enum: [pending, resolved]
+        default: pending
+        title: Aggregate status
+        description: Pending refreshes and reopens the aggregate; resolved closes it without a body.
       content:
         picker: wc-schema-form
         type: string

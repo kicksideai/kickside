@@ -46,7 +46,7 @@ local function define_tests(register)
             local minted, err = session.mint(user)
             test.is_nil(err, tostring(err)); test.not_nil(minted)
             test.not_nil((trigger_reconcile.trigger()))
-            return minted.token
+            return assert(minted.token)
         end
         local function payload(token)
             local db = assert(sql.get("app:db"))
@@ -320,7 +320,7 @@ local function define_tests(register)
             })
             test.is_nil(mint_err, tostring(mint_err))
             local before = payload(minted.token)
-            local expansion_group = fixture_id("app:continuity_expansion_group")
+            local expansion_group = fixture_id("app:continuity_group_expanded")
             local changes = projection_changes()
             changes:create({id = fixture_id("app:continuity_expansion_policy"), kind = "security.policy", data = {
                 groups = {expansion_group},
@@ -337,7 +337,8 @@ local function define_tests(register)
             test.eq(meta.client_trace, "saved-session-trace")
             test.eq(meta.sso_provider, "fixture-provider")
             test.eq(meta.scope_id, minted.actor:meta().scope_id)
-            test.eq(meta.login_time, minted.actor:meta().login_time)
+            test.not_nil(meta.session.login_time)
+            test.eq(meta.session.login_time, minted.actor:meta().session.login_time)
             test.eq(meta.user_id, uid)
             local has_expansion = false
             for _, group in ipairs(meta.security_groups) do

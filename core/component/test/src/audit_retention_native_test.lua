@@ -10,14 +10,18 @@ end
 return {run = test.run_cases(function()
     test.describe("native component audit retention", function()
         for _, stage in ipairs({"policy", "publication_open", "publication_scan", "publication_release", "publish", "ack_open", "ack", "ack_release",
-            "retention_open", "owner_scan", "begin", "lock", "prune_read", "delete", "commit", "retention_release"}) do
+            "retention_open", "owner_scan", "begin", "lock", "prune_read", "delete", "commit", "retention_release", "deadline_scan"}) do
             for _, kind in ipairs(kinds) do
                 for _, options in ipairs({{}, {retryable = false}, {retryable = true}}) do
                     test.it(stage .. "/" .. kind .. "/" .. tostring(options.retryable), function()
                         local source = errors.new({kind = kind, retryable = options.retryable, message = "audit dependency refused",
                             details = {code = "audit_retention_dependency", nested = {marker = "kept"}}})
                         fixture.reset(stage, source); local result, err = retention.run(1)
-                        test.is_nil(result); native(err, source)
+                        if stage == "deadline_scan" then
+                            test.is_nil(err); test.not_nil(result); test.eq(fixture.deadline_scans, 0)
+                        else
+                            test.is_nil(result); native(err, source)
+                        end
                         if stage == "publication_release" then test.eq(fixture.events, 0); test.eq(fixture.acks, 0) end
                         if stage == "ack_release" then test.eq(fixture.begins, 0) end
                         if stage == "lock" or stage == "prune_read" or stage == "delete" then test.eq(fixture.rollbacks, 1) end
@@ -46,10 +50,15 @@ return {run = test.run_cases(function()
                 end
             end
         end
-        for _, stage in ipairs({"policy", "publication_open", "publication_scan", "publish", "ack_open", "ack", "retention_open", "owner_scan", "begin", "lock", "prune_read", "delete", "commit"}) do
+        for _, stage in ipairs({"policy", "publication_open", "publication_scan", "publish", "ack_open", "ack", "retention_open", "owner_scan", "begin", "lock", "prune_read", "delete", "commit", "deadline_scan"}) do
             test.it("missing/" .. stage, function()
                 fixture.reset(stage, nil); local ok, result, err = pcall(retention.run, 1)
-                test.is_true(ok); test.is_nil(result); test.eq(type(err), "userdata")
+                test.is_true(ok)
+                if stage == "deadline_scan" then
+                    test.is_nil(err); test.not_nil(result); test.eq(fixture.deadline_scans, 0)
+                    return
+                end
+                test.is_nil(result); test.eq(type(err), "userdata")
                 test.is_true(errors.is(err, errors.INTERNAL)); test.is_false(err:retryable())
                 test.eq(err:details().code, "component_audit_retention_response")
             end)
@@ -60,6 +69,13 @@ return {run = test.run_cases(function()
             test.eq(fixture.events, 1); test.eq(fixture.acks, 1); test.eq(fixture.deletes, 1)
             test.eq(fixture.commits, 1); test.eq(fixture.rollbacks, 0); test.eq(fixture.releases, 3)
             test.eq(fixture.event.component_id, "component"); test.eq(fixture.event.identity_generation, 1)
+        end)
+        test.it("does not rescan retained history for an eligibility deadline", function()
+            fixture.reset("", nil); fixture.empty = true
+            local result, err = retention.run(1)
+            test.is_nil(err)
+            test.eq(fixture.deadline_scans, 0)
+            test.is_nil(result.deadline_ms)
         end)
         test.it("empty publication and pruning", function()
             fixture.reset("", nil); fixture.empty = true

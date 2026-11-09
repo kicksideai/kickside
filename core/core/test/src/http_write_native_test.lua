@@ -80,6 +80,12 @@ return {run = test.run_cases(function()
                 end)
             end
         end
+        test.it("delete_thread/in-progress receipt carries the deletion job", function()
+            fixture.reset("in_progress", nil); require("delete_thread").handler()
+            test.eq(fixture.status, 202); test.eq(fixture.calls, 1)
+            test.eq(encoded(fixture.body), encoded({success = true, thread_id = "thread", deleted = false, in_progress = true,
+                status = "in_progress", cleanup_pending = true, job_id = "job"}))
+        end)
         local message = require("post_message")
         for _, kind in ipairs(kinds) do
             for _, policy in ipairs({{}, {retryable = false}, {retryable = true}}) do

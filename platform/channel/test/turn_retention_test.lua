@@ -7,6 +7,7 @@ local policy = require("retention_policy_source")
 local fixture = require("receive_fixture")
 local conversation = require("channel_conversation")
 local persist = require("persist")
+local recovery = require("turn_recovery")
 
 local function resolve(retention: any): (any?, error?)
     return policy.resolve({ retention = retention, limits = { max_row_bytes = 4194304 } })
@@ -42,6 +43,98 @@ end
 local function define_tests()
     test.describe("channel accepted-turn retention", function()
         test.before_each(fixture.truncate)
+
+        test.it("drains a backlog through callback continuation and schedules retained turns", function()
+            local db = assert(sql.get(DB))
+            local _, seed_err = db:execute([[WITH RECURSIVE n(x) AS (
+                SELECT 1 UNION ALL SELECT x+1 FROM n WHERE x<1001)
+                INSERT INTO kickside_channel_turns(turn_id,route_json,accepted_at,appended_at)
+                SELECT 'chain-' || CAST(x AS TEXT),'{}',$1,$1 FROM n]], {stamp(-72)})
+            db:release()
+            test.is_nil(seed_err, tostring(seed_err))
+            seed("retained", stamp(-1), true)
+            local passes = 0
+            repeat
+                local result = tick.run()
+                test.is_true(result.success, tostring(result.error))
+                passes = passes + 1
+                if not result.needs_continue then break end
+                test.is_true(passes < 5)
+            until false
+            test.eq(table.concat(ids(), ","), "retained")
+            test.eq(passes, 3)
+            local result = tick.run()
+            test.not_nil(result.deadline_ms)
+            test.is_true(result.deadline_ms > math.floor(time.now():unix_nano()/1000000))
+        end)
+
+        test.it("holds a continuous settled-turn stream at rate times its 48-hour window", function()
+            local base = assert(time.parse(time.RFC3339,"2099-01-01T00:00:00Z"))
+            for hour = 1,60 do
+                for n = 1,3 do
+                    seed("stream-" .. tostring(hour) .. "-" .. tostring(n),
+                        base:add(hour*time.HOUR):format_rfc3339(), true)
+                end
+                local pages = 0
+                repeat
+                    local _, err, progress = retention.prune_settled(DB,
+                        base:add((hour-48)*time.HOUR):format_rfc3339(),2)
+                    test.is_nil(err, tostring(err))
+                    pages = pages + 1
+                    test.is_true(pages < 5)
+                    if not progress.needs_continue then break end
+                until false
+                test.eq(#ids(), math.min(hour,48)*3)
+            end
+        end)
+
+        test.it("schedules the next pass from an existing turn's expiry without another write", function()
+            local accepted = time.now():utc():add(-48*time.HOUR + 3*time.SECOND)
+            local accepted_at = accepted:format_rfc3339()
+            seed("scheduled", accepted_at, false)
+            local marked, mark_err = recovery.mark_appended(DB, "scheduled")
+            test.is_nil(mark_err, tostring(mark_err))
+            test.is_true(marked)
+            local result = tick.run()
+            test.is_true(result.success, tostring(result.error))
+            test.eq(result.deleted, 0)
+            test.is_false(result.needs_continue)
+            local parsed = assert(time.parse(time.RFC3339, accepted_at))
+            test.eq(result.deadline_ms, math.floor(parsed:unix_nano()/1000000) + 48*60*60*1000)
+            local delay = result.deadline_ms - math.floor(time.now():unix_nano()/1000000)
+            test.is_true(delay > 0)
+            time.sleep(tostring(delay + 50) .. "ms")
+            result = tick.run()
+            test.is_true(result.success, tostring(result.error))
+            test.eq(result.deleted, 1)
+            test.is_nil(result.deadline_ms)
+            test.eq(#ids(), 0)
+        end)
+
+        test.it("locks each composite conversation identity in a stable tuple order", function()
+            seed("lock-a",stamp(-72),true)
+            seed("lock-b",stamp(-72),true)
+            local db = assert(sql.get(DB))
+            test.is_nil(select(2,db:execute([[UPDATE kickside_channel_turns
+                SET owner_provider=$1,owner_external_id=$2 WHERE turn_id=$3]],{"a","b:c","lock-a"})))
+            test.is_nil(select(2,db:execute([[UPDATE kickside_channel_turns
+                SET owner_provider=$1,owner_external_id=$2 WHERE turn_id=$3]],{"a:b","c","lock-b"})))
+            db:release()
+            local original = conversation.lock_tx
+            local locks = {}
+            conversation.lock_tx = function(tx,dbtype,provider,external_id)
+                locks[#locks+1] = {provider=provider,external_id=external_id}
+                return original(tx,dbtype,provider,external_id)
+            end
+            local ok,removed,err = pcall(retention.prune_settled,DB,stamp(-48),10)
+            conversation.lock_tx = original
+            test.is_true(ok,tostring(removed))
+            test.is_nil(err,tostring(err))
+            test.eq(removed,2)
+            test.eq(#locks,2,"distinct tuple identities each acquire their own owner lock")
+            test.eq(locks[1].provider,"a")
+            test.eq(locks[2].provider,"a:b")
+        end)
 
         test.it("reclaims only appended turns with expired reply proofs and settled receipts", function()
             seed("old-plain", stamp(-72), true)

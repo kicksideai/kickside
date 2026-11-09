@@ -10,6 +10,7 @@ local security = require("security")
 
 local job_types = require("job_types")
 local cfg = require("config")
+local execution_policy = require("execution_policy")
 local error_envelope = require("error_envelope")
 local lifecycle = require("lifecycle")
 local wake = require("wake")
@@ -59,25 +60,9 @@ local function runtime_for_kind(kind: string?): string?
 end
 
 local function parse_worker_ref(raw: any): (table?, error?)
-    local worker_ref = trim(raw)
-    if worker_ref == "" then
-        return nil, nil
-    end
-
-    local runtime: string? = nil
-    local target_id = ""
-    if worker_ref:sub(1, #job_types.WORKER_SCHEME.FUNC) == job_types.WORKER_SCHEME.FUNC then
-        runtime = job_types.WORKER_RUNTIME.FUNC
-        target_id = trim(worker_ref:sub(#job_types.WORKER_SCHEME.FUNC + 1))
-    elseif worker_ref:sub(1, #job_types.WORKER_SCHEME.PROC) == job_types.WORKER_SCHEME.PROC then
-        runtime = job_types.WORKER_RUNTIME.PROC
-        target_id = trim(worker_ref:sub(#job_types.WORKER_SCHEME.PROC + 1))
-    else
-        target_id = worker_ref
-    end
-    if target_id == "" then
-        return nil, (errors.new({ message = "job worker_ref target is required", kind = errors.INVALID }) :: error)
-    end
+    local parsed, parse_err = job_types.worker_reference(raw)
+    if parse_err or not parsed then return nil, parse_err end
+    local worker_ref, runtime, target_id = parsed.worker_ref, parsed.worker_runtime, parsed.target_id
     if PROC_BLOCKED[target_id] ~= nil then
         return nil, (errors.new({ message = PROC_BLOCKED[target_id], kind = errors.INVALID }) :: error)
     end
@@ -345,7 +330,7 @@ local function run_supervised_proc(db: sql.DB?, dbtype: string, job: table, bind
         if not db then
             return nil, (errors.new({ message = "db is required for live proc supervision", kind = errors.INTERNAL }) :: error), nil
         end
-        local policy, policy_err = cfg.policy()
+        local policy, policy_err = execution_policy.read(job)
         if policy_err then return nil, policy_err, nil end
         local built, build_err = build_proc_hooks(db, dbtype, job, binding, run_id, policy)
         if build_err then return nil, build_err, nil end

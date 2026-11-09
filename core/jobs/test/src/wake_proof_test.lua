@@ -15,7 +15,8 @@ local function proof(route: string, phase: string, value: any, field: string)
     fixture.reset(route, phase, nil); fixture.missing, fixture.value = true, value
     local ok, _, err = pcall(function() return invoke(route) end); test.is_true(ok)
     local actual = required(err); test.is_true(errors.is(actual, errors.INTERNAL)); test.is_false(actual:retryable())
-    test.eq(actual:details().code, "job_wake_response"); test.eq(actual:details().field, field); test.eq(fixture.commits, 0)
+    test.eq(actual:details().code, route == "nudge" and "job_notification_response" or "job_wake_response")
+    test.eq(actual:details().field, field); test.eq(fixture.commits, 0)
 end
 return {run = test.run_cases(function()
     test.describe("wake response proof", function()

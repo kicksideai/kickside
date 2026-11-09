@@ -45,7 +45,7 @@ return {run = test.run_cases(function()
         end)
         test.it("validated policy keeps isolated cached copies", function()
             local entry, entry_err = native_registry.get("kickside.core.jobs:policy"); test.is_nil(entry_err)
-            fixture.reset("", nil, entry.meta)
+            fixture.reset("", nil, entry.data.defaults)
             local value, err = config.policy(); test.is_nil(err); test.not_nil(value)
             local original = value.fairness_shares.live; value.fairness_shares.live = 12345
             local copy, copy_err = config.policy(); test.is_nil(copy_err); test.eq(copy.fairness_shares.live, original)

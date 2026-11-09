@@ -13,6 +13,7 @@ entries:
   kind: library.lua
   source: file://owner_teardown_source.lua
   imports:
+    binding_errors: kickside.uploads.binding:binding_errors
     ctx: app:owner_teardown_context
     component: app:owner_teardown_component
     upload_read_model: kickside.uploads.persist:upload_read_model

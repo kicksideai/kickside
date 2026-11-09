@@ -138,6 +138,9 @@ type ListTypesOptions = {
 
 type ComponentRow = {
     component_id: string,
+    deleting_at: string?,
+    deletion_job_id: string?,
+    deletion_job: {status: string, attempts: integer, last_error: string?}?,
     impl_id: string,
     parent_id: string?,
     created_at: any?,
@@ -170,7 +173,8 @@ type AccessMasks = {
 }
 
 function M.db_id(): string
-    local entry = select(1, registry.get(M.DB_CONFIG)) :: any
+    local entry, err = registry.get(M.DB_CONFIG)
+    if err then error(err) end
     return entry.meta.db_id :: string
 end
 
@@ -220,6 +224,9 @@ type LoggerInstance = {
 }
 
 type InstalledAutomation = {
+    deleting_at: string?,
+    deletion_job_id: string?,
+    deletion_job: {status: string, attempts: integer, last_error: string?}?,
     owner_id: string?,
     is_owner: boolean,
     id: string,
@@ -235,6 +242,7 @@ type InstalledAutomation = {
     public_state: Map?,
     drive_status: Map?,
     availability: Map?,
+    routes: {Map}?,
 }
 
 type ListInstalledOptions = {
@@ -243,6 +251,9 @@ type ListInstalledOptions = {
     parent_id: string?,
     limit: number?,
     offset: number?,
+    source_port: string?,
+    source_thread_id: string?,
+    source_filter: string?,
 }
 
 type InstallTypeResult = {

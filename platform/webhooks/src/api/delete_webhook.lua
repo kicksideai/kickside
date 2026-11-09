@@ -23,7 +23,7 @@ local function new(dependencies: any): any
 
         local webhook_id = req:param("id")
 
-        local ok, err = repo.delete(webhook_id)
+        local ok, err, receipt = repo.delete(webhook_id)
         if not ok then
             res:set_status((http_errors.classify(err)))
             local body = { success = false, error = tostring(err or "delete failed") }
@@ -37,8 +37,11 @@ local function new(dependencies: any): any
             res:write_json(body)
             return
         end
+        local deletion = receipt :: { [string]: any }
         res:set_status(http.STATUS.OK)
-        res:write_json({ success = true, webhook_id = webhook_id })
+        res:write_json({ success = true, webhook_id = webhook_id, deleted = deletion.deleted,
+            in_progress = deletion.in_progress, status = deletion.status, cleanup_pending = deletion.cleanup_pending,
+            job_id = deletion.job_id, notification_error = deletion.notification_error })
     end
     return { handler = handler }
 end

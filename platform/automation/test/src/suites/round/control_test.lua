@@ -104,6 +104,51 @@ local function define_tests(group: integer)
             end
         end)
 
+        test.it("re-evaluates corrected blocked drives through run_now and resync only for a writer", function()
+            local stranger = require("funcs").new():with_actor(require("security").new_actor("recovery_stranger_" .. uuid.v4():sub(1, 8), {}))
+                :with_scope(env.scope)
+            for _, case in ipairs({
+                { control = "run_now", drive_key = "run_now_blocked" },
+                { control = "resync", drive_key = "resync_blocked", request_id = "resync-blocked" },
+            }) do
+                event_drive(case.drive_key)
+                env.append("while " .. case.drive_key)
+                h.set_drive(env.automation_id, case.drive_key, "phase = $1, last_error_json = $2",
+                    { drive.PHASE.BLOCKED_IDENTITY, json.encode({ kind = errors.PERMISSION_DENIED, message = "authority changed", attempts = 1 }) })
+
+                local denied, denied_err = stranger:call(MANAGE_TOOL, { action = "control", id = env.automation_id,
+                    control = case.control, drive_key = case.drive_key, request_id = case.request_id })
+                test.is_nil(denied)
+                test.not_nil(denied_err)
+                test.eq(h.read_drive(env.automation_id, case.drive_key).phase, drive.PHASE.BLOCKED_IDENTITY)
+
+                local recovered = control(case)
+                test.is_true(recovered.success, tostring(recovered.error))
+                test.eq(recovered.outcome.round, "queued")
+                local current = h.read_drive(env.automation_id, case.drive_key)
+                test.eq(current.phase, drive.PHASE.ACTIVE)
+                test.is_true(current.enabled)
+                test.is_true(status_of(case.drive_key).wake_pending)
+                env.run(env.automation_id, case.drive_key)
+                test.is_true(#h.log_rows(env.automation_id, case.drive_key) > 0, case.control)
+                test.is_false(status_of(case.drive_key).wake_pending)
+            end
+        end)
+
+        test.it("keeps an explicitly paused drive paused through run_now and resync", function()
+            event_drive("paused_recovery")
+            local paused = control({ control = "pause", drive_key = "paused_recovery" })
+            test.is_true(paused.success, tostring(paused.error))
+            for _, control_case in ipairs({
+                { control = "run_now", drive_key = "paused_recovery" },
+                { control = "resync", drive_key = "paused_recovery", request_id = "resync-paused" },
+            }) do
+                local result = control(control_case)
+                test.is_true(result.success, tostring(result.error))
+                test.eq(h.read_drive(env.automation_id, "paused_recovery").phase, drive.PHASE.PAUSED)
+            end
+        end)
+
         test.it("keeps a drive blocked on a deleted source parked through resume", function()
             for _, phase in ipairs({ drive.PHASE.BLOCKED_SOURCE_DELETED }) do
                 event_drive(phase)

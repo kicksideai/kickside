@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.2.8](https://github.com/kicksideai/kickside/compare/ui-v0.2.7...ui-v0.2.8) (2026-11-08)
+
+
+### Features
+
+* **ui:** let a title-less component splash step own its heading ([#369](https://github.com/kicksideai/kickside/issues/369)) ([38c9439](https://github.com/kicksideai/kickside/commit/38c9439088a70e3a2e65a6d21ab1cfcc142de099))
+
+## [0.2.7](https://github.com/kicksideai/kickside/compare/ui-v0.2.6...ui-v0.2.7) (2026-11-01)
+
+
+### Bug Fixes
+
+* **ui:** initialize legacy branding storage under the host project ([#283](https://github.com/kicksideai/kickside/issues/283)) ([cb43ab6](https://github.com/kicksideai/kickside/commit/cb43ab6aa21805838f168e0319cab5cfe9e5c44e))
+
+## [0.2.6](https://github.com/kicksideai/kickside/compare/ui-v0.2.5...ui-v0.2.6) (2026-10-30)
+
+
+### Bug Fixes
+
+* **ui:** expose scoped System tab discovery access ([#247](https://github.com/kicksideai/kickside/issues/247)) ([79afa1a](https://github.com/kicksideai/kickside/commit/79afa1aa9bfd48bef4c7beceb3081a3d79ed2754))
+
+## [0.2.5](https://github.com/kicksideai/kickside/compare/ui-v0.2.4...ui-v0.2.5) (2026-10-28)
+
+
+### Bug Fixes
+
+* **ui:** derive primary action contrast ([#190](https://github.com/kicksideai/kickside/issues/190)) ([30058be](https://github.com/kicksideai/kickside/commit/30058be3701af2b5c6e9a47af1b111db22538f90))
+
+## [0.2.4](https://github.com/kicksideai/kickside/compare/ui-v0.2.3...ui-v0.2.4) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** resolve live scopes through Security-owned projections ([adad7ee](https://github.com/kicksideai/kickside/commit/adad7ee499f7dfbd1134c57c06368aa440a0ab07))
+
 ## [0.2.3](https://github.com/kicksideai/kickside/compare/ui-v0.2.2...ui-v0.2.3) (2026-10-22)
 
 

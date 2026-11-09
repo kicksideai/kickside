@@ -13,6 +13,19 @@ namespace: kickside.ui.security
 # the library gates instance marks on admin access. The id-less instance reset
 # belongs to the administrator surface.
 entries:
+  # Hosts compose this into scoped management roles. It opens only discovery;
+  # each contributed tab still enforces its own declared access capability.
+  - name: system_tabs_access
+    kind: security.policy
+    meta:
+      title: System tab discovery
+      comment: Allows the caller to list only its authorized System tabs, without granting settings or appearance administration.
+    groups: []
+    policy:
+      resources: kickside.ui.api:list_settings_tabs.endpoint
+      actions: access
+      effect: allow
+
   - name: system_onboarding_access
     kind: security.policy
     meta:

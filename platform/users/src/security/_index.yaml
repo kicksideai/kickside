@@ -2,6 +2,14 @@ version: "1.0"
 namespace: kickside.users.security
 
 entries:
+  - name: membership_config_read
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      resources: kickside.users:membership_config
+      actions: registry.get
+      effect: allow
+
   - name: run_as_candidate_endpoint_access
     kind: security.policy
     meta: {private: true}
@@ -15,7 +23,7 @@ entries:
     kind: security.policy
     meta: {private: true, service_only: true}
     policy:
-      actions: [security.actor.create, security.policy_group.get, security.scope.create]
+      actions: [security.actor.create, security.policy_group.get, security.policy.get, security.scope.create]
       resources: '*'
       effect: allow
 
@@ -27,11 +35,19 @@ entries:
       resources: '*'
       effect: allow
 
+  - name: resolve_scope_groups
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: funcs.call
+      resources: kickside.security.runtime:resolve_groups
+      effect: allow
+
   - name: session_group_policy_read
     kind: security.policy
     meta: {private: true, service_only: true}
     policy:
-      actions: [security.policy_group.get, registry.get]
+      actions: [security.policy_group.get, security.policy.get, registry.get]
       resources: '*'
       effect: allow
   - name: session_group_set_projection
@@ -39,7 +55,11 @@ entries:
     meta: {private: true, service_only: true}
     policy:
       actions: [funcs.call, security.groups.compose]
-      resources: [kickside.security.binding:materialize_group_set, kickside.security.binding:classify_membership_effect]
+      # Existing session consumers keep using this bundle when group projection
+      # delegates to Security's source-scope resolver.
+      resources:
+        - kickside.security.binding:classify_membership_effect
+        - kickside.security.runtime:resolve_groups
       effect: allow
   - name: users_runtime_read
     kind: security.policy

@@ -1,7 +1,7 @@
 local M = {}
 M.ID = "018fa746-bd62-7000-a000-000000000001"
 function M.reset(stage: string, source: error?)
-    M.stage, M.source, M.reads, M.lookups = stage, source, 0, 0
+    M.stage, M.source, M.reads, M.lookups, M.lookups_by_id = stage, source, 0, 0, {}
 end
 function M.query(...)
     M.reads = M.reads + 1
@@ -11,6 +11,7 @@ end
 function M.database(): any return {query = M.query} end
 function M.get(id: string): (any, error?)
     M.lookups = M.lookups + 1
+    M.lookups_by_id[id] = (M.lookups_by_id[id] or 0) + 1
     if (M.stage == "kind" and id == "guard:component") or (M.stage == "event" and id == "guard:event")
         or (M.stage == "output" and id == "guard:output") then return nil, M.source end
     if M.stage == "absent_kind" and id == "guard:component" then return nil, nil end

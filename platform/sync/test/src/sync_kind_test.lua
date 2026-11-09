@@ -12,6 +12,9 @@ local automations_lib = require("automations_lib")
 local binding_validation = require("binding_validation")
 local contract = require("contract")
 local drive = require("drive")
+local engine_schema = require("engine_schema")
+local upgrade_engine = require("upgrade_engine")
+local component_lib = require("component")
 local errors = require("errors")
 local funcs = require("funcs")
 local registry = require("registry")
@@ -24,6 +27,7 @@ type Map = { [string]: any }
 
 local PROCESS_SCOPE = "wippy.security:process"
 local MANAGE = "kickside.automation.agent:automations_manage"
+local READ = "kickside.automation.agent:automations_read"
 local DB = "app:db"
 
 local function read_drive(id: string, key: string): Map?
@@ -78,6 +82,19 @@ local function define_tests()
         exec = funcs.new():with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE))
     end)
 
+    test.it("rejects a selected component of another source kind through install", function()
+        local threads = (contract.get("kickside.core:threads") :: any):with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE)):open()
+        local wrong, create_err = threads:upsert({ thread_class = "fixture", impl_id = "app.fixture:schema_record_feed",
+            external_ref = "wrong-source:" .. uuid.v4(), title = "Other feed kind" })
+        test.is_nil(create_err, tostring(create_err))
+        local result, err = install(declaration({ trigger = { v = 2, source = "app.fixture:record_arrived",
+            config = { thread_id = wrong.thread_id }, backfill = "none" } }))
+        test.is_nil(result)
+        test.is_true(errors.is(err, errors.INVALID), tostring(err))
+        test.eq(err:details().code, "source_kind_mismatch")
+        test.eq(err:details().field, "trigger.config.thread_id")
+    end)
+
     test.describe("kickside.sync declarations", function()
         test.it("remains a native Data Sync Automation with its own create surface", function()
             local entry = registry.get("kickside.sync:sync") :: any
@@ -121,12 +138,16 @@ local function define_tests()
         end)
 
         test.it("uses the normalized selected instance for its schema and event source", function()
+            local threads = (contract.get("kickside.core:threads") :: any):with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE)):open()
+            local created, create_err = threads:upsert({ thread_class = "fixture", impl_id = "app.fixture:schema_record_feed",
+                external_ref = "normalized-source:" .. uuid.v4(), title = "Schema feed" })
+            test.is_nil(create_err, tostring(create_err))
             local result, err = exec:call("kickside.sync:sync_install", declaration({
                 trigger = { v = 2, source = "app.fixture:selected_schema_record", backfill = "none",
-                    config = { thread_id = "  selected-feed  " } },
+                    config = { thread_id = "  " .. created.thread_id .. "  " } },
             }))
             test.is_nil(err, tostring(err))
-            test.eq(result.source.source_thread_id, "selected-feed")
+            test.eq(result.source.source_thread_id, created.thread_id)
         end)
 
         test.it("keeps destination-configured content in expression mapping validation", function()
@@ -174,24 +195,12 @@ local function define_tests()
         end)
 
         test.it("applies installed LLM settings through the native LLM owner and preserves poll bounds", function()
-            local original_models, original_providers = llm._models, llm._providers
+            local original_generate = llm.generate
             local requests = {}
-            local function model(name)
-                return { name = name, providers = { { id = "fixture:llm", provider_model = name, sampling = true } } }
+            llm.generate = function(prompt_input, options)
+                requests[#requests + 1] = { messages = prompt_input:get_messages(), options = options }
+                return { result = "bounded output", tokens = {} }, nil
             end
-            llm._models = {
-                get_by_name = function(name) return model(name), nil end,
-                get_by_class = function(name) return { model("class:" .. name) }, nil end,
-            }
-            llm._providers = {
-                driver_declares_legacy_reasoning_flag = function() return false, nil end,
-                open = function()
-                    return { generate = function(_, request)
-                        requests[#requests + 1] = request
-                        return { result = "bounded output", tokens = {} }, nil
-                    end }, nil
-                end,
-            }
             local ok, failure = pcall(function()
                 local cases = {
                     { config = {kind = "llm"}, model = "class:fast", temperature = 0,
@@ -219,13 +228,13 @@ local function define_tests()
                     test.is_nil(err, tostring(err))
                     test.eq(result, "bounded output")
                     local request = requests[#requests]
-                    test.eq(request.model, case.model)
+                    test.eq(request.options.model, case.model)
                     test.eq(request.options.temperature, case.temperature)
                     test.eq(request.options.max_tokens, case.max_tokens)
                     test.eq(request.messages[1].content[1].text, case.prompt)
                 end
             end)
-            llm._models, llm._providers = original_models, original_providers
+            llm.generate = original_generate
             if not ok then error(failure) end
         end)
 
@@ -306,7 +315,7 @@ local function define_tests()
 
         test.it("declares an events source as an event drive on its thread from its history boundary", function()
             local threads = (contract.get("kickside.core:threads") :: any):with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE)):open()
-            local created, created_err = threads:upsert({ thread_class = "automation", external_ref = "sync-kind:" .. uuid.v4(), title = "Upstream" })
+            local created, created_err = threads:upsert({ thread_class = "fixture", impl_id = "app.fixture:record_feed", external_ref = "sync-kind:" .. uuid.v4(), title = "Upstream" })
             test.is_nil(created_err, tostring(created_err))
             local thread_id = tostring(created.thread_id)
             local installed, err = install(declaration({ trigger = { v = 2, source = "app.fixture:record_arrived",
@@ -354,6 +363,98 @@ local function define_tests()
     end)
 
     test.describe("kickside.sync reconfigure", function()
+        test.it("edits a legacy sync with no stored reconcile flag", function()
+            local installed = install_ok(declaration({ enabled = false }))
+            local db, db_err = sql.get(DB)
+            test.is_nil(db_err)
+            local rows, read_err = db:query("SELECT private_context FROM kickside_components WHERE component_id = $1", { installed.id })
+            test.is_nil(read_err)
+            local state = rows[1].private_context
+            if type(state) == "string" then state = json.decode(state) end
+            state.reconcile = nil
+            local _, write_err = db:execute("UPDATE kickside_components SET private_context = $1, context_revision = context_revision + 1 WHERE component_id = $2", { json.encode(state), installed.id })
+            db:release()
+            test.is_nil(write_err)
+            local result, err = exec:call(MANAGE, { action = "reconfigure", id = installed.id,
+                input = declaration({ title = "Legacy sync edited", enabled = false }) })
+            test.is_nil(err, tostring(err))
+            test.not_nil(result)
+            local saved, saved_err = automations_lib.read_state(installed.id)
+            test.is_nil(saved_err)
+            test.eq(saved.title, "Legacy sync edited")
+            test.eq(saved.reconcile, false)
+            test.is_nil(read_drive(installed.id, "reconcile"))
+            test.eq((read_drive(installed.id, "main") :: Map).enabled, false)
+        end)
+
+        test.it("refuses opaque edits without holding a source change pending", function()
+            local transform = { kind = "func", ["function"] = "app.fixture:round_transform",
+                resource_id = uuid.v7(), config = { resource = "first" } }
+            local installed = install_ok(declaration({ transform = transform }))
+            local threads = (contract.get("kickside.core:threads") :: any):with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE)):open()
+            local created, create_err = threads:upsert({ thread_class = "fixture", impl_id = "app.fixture:record_feed",
+                external_ref = "source-change:" .. uuid.v4(), title = "Source" })
+            test.is_nil(create_err, tostring(create_err))
+            local service = (contract.get("kickside.component:component_service") :: any):with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE)):open()
+            local granted, grant_err = service:grant_subtree({ root_component_id = tostring(created.thread_id),
+                subject = { subject_id = security.actor():id(), subject_type = "user" }, access_mask = 1 })
+            test.is_nil(grant_err, tostring(grant_err))
+            test.is_true(granted.success)
+            manage({ action = "pause", id = installed.id })
+            manage({ action = "resume", id = installed.id })
+            local before = read_drive(installed.id, "main") :: Map
+            test.eq(before.phase, "active")
+            local changed = declaration({ trigger = { v = 2, source = "app.fixture:record_arrived",
+                config = { thread_id = tostring(created.thread_id) }, backfill = "none" },
+                transform = { kind = transform.kind, ["function"] = transform["function"],
+                    resource_id = transform.resource_id, config = { resource = "second" } } })
+            local result, err = funcs.new():call(MANAGE, { action = "reconfigure", id = installed.id, input = changed })
+            test.is_nil(result)
+            test.not_nil(err)
+            test.ok(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
+            test.contains(tostring(err), "execution subject")
+            local after = read_drive(installed.id, "main") :: Map
+            test.is_nil(after.pending_command_id)
+            test.eq(after.phase, before.phase)
+            test.eq(after.source_kind, before.source_kind)
+            test.eq(after.applied.declaration.transform.config.resource, "first")
+            manage({ action = "uninstall", id = installed.id })
+        end)
+
+        test.it("keeps shared pure edits and refuses opaque configuration edits", function()
+            local transform = { kind = "func", ["function"] = "app.fixture:round_transform",
+                resource_id = uuid.v7(), config = { nested = { resource = "first" } } }
+            local installed = install_ok(declaration({ transform = transform }))
+            local shared = funcs.new()
+            local pure, pure_err = shared:call(MANAGE, { action = "reconfigure", id = installed.id,
+                input = declaration({ title = "Renamed", transform = transform }) })
+            test.is_nil(pure_err, tostring(pure_err))
+            test.not_nil(pure)
+            manage({ action = "pause", id = installed.id })
+            manage({ action = "resume", id = installed.id })
+            local before = read_drive(installed.id, "main") :: Map
+            test.eq(before.phase, "active")
+            local changed = { kind = transform.kind, ["function"] = transform["function"],
+                resource_id = transform.resource_id, config = { nested = { resource = "second" } } }
+            local result, err = shared:call(MANAGE, { action = "reconfigure", id = installed.id,
+                input = declaration({ transform = changed }) })
+            test.is_nil(result)
+            test.not_nil(err)
+            test.ok(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
+            test.contains(tostring(err), "execution subject")
+            local main = read_drive(installed.id, "main") :: Map
+            test.eq(main.applied.declaration.transform.config.nested.resource, "first")
+            test.is_true(main.enabled)
+            test.eq(main.phase, before.phase)
+            test.is_nil(main.pending_command_id)
+            local accepted, subject_err = exec:call(MANAGE, { action = "reconfigure", id = installed.id,
+                input = declaration({ transform = changed }) })
+            test.is_nil(subject_err, tostring(subject_err))
+            test.not_nil(accepted)
+            test.eq((read_drive(installed.id, "main") :: Map).applied.declaration.transform.config.nested.resource, "second")
+            manage({ action = "uninstall", id = installed.id })
+        end)
+
         test.it("accepts an unchanged event source when editing title and transform, and refuses an invalid source change", function()
             local threads = (contract.get("kickside.core:threads") :: any):with_actor(owner):with_scope(security.named_scope(PROCESS_SCOPE)):open()
             local created, create_err = threads:upsert({ thread_class = "fixture", impl_id = "app.fixture:record_feed", external_ref = "sync-edit:" .. uuid.v4(), title = "Source" })
@@ -418,6 +519,387 @@ local function define_tests()
             test.is_nil(moved)
             test.not_nil(move_err)
             test.contains(tostring(move_err), "destination")
+
+            local keyed = { v = 2, source = "app.fixture:keyed_records",
+                schedule = { type = "interval", expression = "1h" }, backfill = "all" }
+            local plain = install_ok(declaration({ trigger = keyed })) :: Map
+            local added, add_err = exec:call(MANAGE, { action = "reconfigure", id = plain.id,
+                input = declaration({ trigger = keyed, reconcile = true }) })
+            test.is_nil(added)
+            test.contains(tostring(add_err), "reconcile")
+            test.is_nil(read_drive(plain.id, "reconcile"))
+
+            local reconciled = install_ok(declaration({ trigger = keyed, reconcile = true })) :: Map
+            local dropped, drop_err = exec:call(MANAGE, { action = "reconfigure", id = reconciled.id,
+                input = declaration({ trigger = keyed, title = "Dropped reconcile" }) })
+            test.is_nil(dropped)
+            test.contains(tostring(drop_err), "reconcile")
+            test.not_nil(read_drive(reconciled.id, "reconcile"))
+            test.eq((read_drive(reconciled.id, "main") :: Map).applied.declaration.title, "Records to store")
+        end)
+
+        test.it("reconfigures the read_config declaration of a reconcile sync with only a transform change", function()
+            local transform = { kind = "func", ["function"] = "app.fixture:round_transform",
+                resource_id = uuid.v7(), config = { step = "first" } }
+            local installed = install_ok(declaration({ trigger = { v = 2, source = "app.fixture:keyed_records",
+                schedule = { type = "interval", expression = "1h" }, backfill = "all",
+                delivery = { retry_after_ms = 5000 }, poll = { page_size = 50, max_pages_per_run = 4, max_items_per_run = 200 } },
+                transform = transform, reconcile = true })) :: Map
+            local function portable(): Map
+                local read, read_err = exec:call(READ, { action = "read_config", id = installed.id })
+                test.is_nil(read_err, tostring(read_err))
+                return (read :: Map).config._portable_input :: Map
+            end
+
+            local unchanged, unchanged_err = exec:call(MANAGE, { action = "reconfigure", id = installed.id, input = portable() })
+            test.is_nil(unchanged_err, tostring(unchanged_err))
+            test.is_true((unchanged :: Map).success)
+
+            local edited = portable()
+            edited.transform = { kind = transform.kind, ["function"] = transform["function"],
+                resource_id = transform.resource_id, config = { step = "second" } }
+            local result, err = exec:call(MANAGE, { action = "reconfigure", id = installed.id, input = edited })
+            test.is_nil(err, tostring(err))
+            test.is_true((result :: Map).success)
+            test.eq((read_drive(installed.id, "main") :: Map).applied.declaration.transform.config.step, "second")
+            test.not_nil(read_drive(installed.id, "reconcile"))
+            local stored = portable()
+            test.is_true(stored.reconcile)
+            test.eq(stored.trigger.delivery.retry_after_ms, 5000)
+            test.eq(stored.trigger.poll.page_size, 50)
+        end)
+
+        test.it("edits a reconcile sync whose stored state holds the reconcile pass record instead of the flag", function()
+            local keyed = { v = 2, source = "app.fixture:keyed_records",
+                schedule = { type = "interval", expression = "1h" }, backfill = "all" }
+            local installed = install_ok(declaration({ trigger = keyed, reconcile = true })) :: Map
+            local db, db_err = sql.get(DB)
+            test.is_nil(db_err)
+            local rows, read_err = db:query("SELECT private_context FROM kickside_components WHERE component_id = $1", { installed.id })
+            test.is_nil(read_err)
+            local state = rows[1].private_context
+            if type(state) == "string" then state = json.decode(state) end
+            state.reconcile = { phase = "idle", keys = {}, coverage = { final = false, pages_seen = 0 } }
+            local _, write_err = db:execute("UPDATE kickside_components SET private_context = $1, context_revision = context_revision + 1 WHERE component_id = $2", { json.encode(state), installed.id })
+            db:release()
+            test.is_nil(write_err)
+
+            local result, err = exec:call(MANAGE, { action = "reconfigure", id = installed.id,
+                input = declaration({ trigger = keyed, reconcile = true, transform = { kind = "func",
+                    ["function"] = "app.fixture:round_transform", resource_id = uuid.v7(), config = { step = "edited" } } }) })
+            test.is_nil(err, tostring(err))
+            test.is_true((result :: Map).success)
+            test.eq((read_drive(installed.id, "main") :: Map).applied.declaration.transform.config.step, "edited")
+            test.not_nil(read_drive(installed.id, "reconcile"))
+            test.is_true((automations_lib.read_state(installed.id) :: Map).reconcile)
+
+            local dropped, drop_err = exec:call(MANAGE, { action = "reconfigure", id = installed.id,
+                input = declaration({ trigger = keyed }) })
+            test.is_nil(dropped)
+            test.contains(tostring(drop_err), "reconcile")
+        end)
+    end)
+
+    test.describe("kickside.sync stored declaration upgrade", function()
+        local UPGRADE = "kickside.sync:declaration_upgrade"
+        local REMOVED = { "trigger.poll.continue_after_ms", "trigger.poll.delivery",
+            "trigger.schedule.max_retries", "trigger.schedule.timeout_seconds" }
+        local LEGACY_RETRY_MS = 7000
+
+        local function query(statement: string, params: { any }): { Map }
+            local db, db_err = sql.get(DB)
+            if db_err or not db then error(tostring(db_err or "sync test database unavailable")) end
+            local rows, err = db:query(statement, params)
+            db:release()
+            if err then error(tostring(err)) end
+            return rows :: { Map }
+        end
+
+        local function execute(statement: string, params: { any })
+            local db, db_err = sql.get(DB)
+            if db_err or not db then error(tostring(db_err or "sync test database unavailable")) end
+            local _, err = db:execute(statement, params)
+            db:release()
+            if err then error(tostring(err)) end
+        end
+
+        local function decoded(raw: any): Map
+            if type(raw) == "table" then return raw :: Map end
+            return json.decode(tostring(raw)) :: Map
+        end
+
+        -- legacy_trigger(trigger) -> the trigger as Syncs stored it before the
+        -- current Trigger Spec v2: poll pacing and delivery attempts, schedule
+        -- retries and timeout.
+        local function legacy_trigger(trigger: Map): Map
+            local raw, encode_err = json.encode(trigger)
+            test.is_nil(encode_err)
+            local decoded_trigger, decode_err = json.decode(raw)
+            test.is_nil(decode_err)
+            local out = decoded_trigger :: Map
+            out.poll = out.poll or {}
+            out.poll.continue_after_ms = 10000
+            out.poll.delivery = { max_attempts = 3, retry_after_ms = LEGACY_RETRY_MS, on_exhausted = "skip" }
+            out.schedule.max_retries = 3
+            out.schedule.timeout_seconds = 3600
+            return out
+        end
+
+        -- store_legacy(id) rewrites the sync's stored declaration and every
+        -- drive's applied declaration to the legacy trigger shape.
+        local function store_legacy(id: string)
+            local context = decoded(query("SELECT private_context FROM kickside_components WHERE component_id = $1", { id })[1].private_context)
+            context._portable_input.trigger = legacy_trigger(context._portable_input.trigger)
+            execute("UPDATE kickside_components SET private_context = $1, context_revision = context_revision + 1 WHERE component_id = $2",
+                { json.encode(context), id })
+            for _, row in ipairs(query("SELECT drive_key, applied_json FROM kickside_automation_drive WHERE automation_id = $1", { id })) do
+                local applied = decoded(row.applied_json)
+                applied.declaration.trigger = legacy_trigger(applied.declaration.trigger)
+                execute("UPDATE kickside_automation_drive SET applied_json = $1 WHERE automation_id = $2 AND drive_key = $3",
+                    { json.encode(applied), id, row.drive_key })
+            end
+        end
+
+        local function same(a: any, b: any): boolean
+            if type(a) ~= "table" or type(b) ~= "table" then return a == b end
+            for k, v in pairs(a :: Map) do if not same(v, (b :: Map)[k]) then return false end end
+            for k in pairs(b :: Map) do if (a :: Map)[k] == nil then return false end end
+            return true
+        end
+
+        local function versions(id: string): Map
+            local fence = query("SELECT applied_command_generation FROM kickside_component_declaration_fence WHERE component_id = $1", { id })[1]
+            local component = query("SELECT context_revision FROM kickside_components WHERE component_id = $1", { id })[1]
+            return { fence = tonumber(fence.applied_command_generation) :: number,
+                context = tonumber(component.context_revision) :: number,
+                command = (read_drive(id, "main") :: Map).command_generation :: number }
+        end
+
+        local function stored_declaration(id: string): Map
+            return decoded(query("SELECT private_context FROM kickside_components WHERE component_id = $1", { id })[1].private_context)._portable_input :: Map
+        end
+
+        local function portable(id: string): Map
+            local read, read_err = exec:call(READ, { action = "read_config", id = id })
+            test.is_nil(read_err, tostring(read_err))
+            return (read :: Map).config._portable_input :: Map
+        end
+
+        local function run_upgrade(): Map
+            local result, err = funcs.new():call(UPGRADE)
+            test.is_nil(err, tostring(err))
+            test.eq((result :: Map).status, "success", tostring((result :: Map).message))
+            return (result :: Map).details :: Map
+        end
+
+        local function upgraded_entry(report: Map, id: string): Map?
+            for _, entry in ipairs(report.upgraded) do
+                if entry.id == id then return entry :: Map end
+            end
+            return nil
+        end
+
+        local function refused_entry(report: Map, id: string): Map?
+            for _, entry in ipairs(report.failed) do
+                if entry.id == id then return entry :: Map end
+            end
+            return nil
+        end
+
+        local function install_reconciled(): Map
+            return install_ok(declaration({ trigger = { v = 2, source = "app.fixture:keyed_records",
+                schedule = { type = "interval", expression = "1h" }, backfill = "all",
+                poll = { page_size = 50, max_pages_per_run = 4, max_items_per_run = 200 } },
+                transform = { kind = "func", ["function"] = "app.fixture:round_transform",
+                    resource_id = uuid.v7(), config = { step = "first" } }, reconcile = true })) :: Map
+        end
+
+        test.it("upgrades a sync whose stored declaration predates the current trigger spec, so it reconfigures again", function()
+            local installed = install_reconciled()
+            local policy_before = (read_drive(installed.id, "main") :: Map).applied.policy
+            store_legacy(installed.id)
+
+            local refused, refused_err = exec:call(MANAGE, { action = "reconfigure", id = installed.id, input = portable(installed.id) })
+            test.is_nil(refused)
+            test.contains(tostring(refused_err), "undeclared field")
+
+            local before = versions(installed.id)
+            local report = run_upgrade()
+            test.is_nil(refused_entry(report, installed.id))
+            local entry = upgraded_entry(report, installed.id)
+            test.not_nil(entry, "the legacy sync is upgraded")
+            local removed = (entry :: Map).removed :: { string }
+            table.sort(removed)
+            test.eq(table.concat(removed, ","), table.concat(REMOVED, ","))
+
+            local stored = portable(installed.id)
+            local inputs = (registry.get("kickside.sync:sync") :: any).meta.inputs
+            local schema_err = engine_schema.validate_install_input(inputs, stored)
+            test.is_nil(schema_err, tostring(schema_err))
+            test.eq(stored.trigger.delivery.retry_after_ms, LEGACY_RETRY_MS)
+            test.eq((entry :: Map).retry_after_ms, LEGACY_RETRY_MS)
+            test.eq(stored.trigger.poll.page_size, 50)
+            test.eq(stored.trigger.poll.max_pages_per_run, 4)
+            test.eq(stored.trigger.poll.max_items_per_run, 200)
+            test.is_nil(stored.trigger.poll.continue_after_ms)
+            test.is_nil(stored.trigger.poll.delivery)
+            test.is_nil(stored.trigger.schedule.max_retries)
+            test.is_nil(stored.trigger.schedule.timeout_seconds)
+            test.eq(stored.trigger.schedule.type, "interval")
+            test.eq(stored.trigger.schedule.expression, "1h")
+
+            local after = versions(installed.id)
+            test.eq(after.fence, before.fence + 1)
+            test.eq(after.command, before.command + 1)
+            test.is_true(after.context > before.context)
+            local main = read_drive(installed.id, "main") :: Map
+            for _, key in ipairs({ "main", "reconcile" }) do
+                local applied = (read_drive(installed.id, key) :: Map).applied.declaration.trigger
+                test.is_true(same(applied, stored.trigger), key .. " applies the upgraded declaration")
+            end
+            test.is_true(policy_before.delivery.retry_after_ms ~= LEGACY_RETRY_MS)
+            test.eq(main.applied.policy.delivery.retry_after_ms, LEGACY_RETRY_MS)
+            test.eq(main.action.delivery.retry_after_ms, LEGACY_RETRY_MS)
+            test.eq((read_drive(installed.id, "reconcile") :: Map).applied.policy.delivery.retry_after_ms, LEGACY_RETRY_MS)
+            test.eq(main.applied.policy.round.page_size, policy_before.round.page_size)
+            test.eq(main.applied.policy.round.max_pages, policy_before.round.max_pages)
+            test.eq(main.applied.policy.round.max_items, policy_before.round.max_items)
+
+            local edited = portable(installed.id)
+            edited.transform.config = { step = "second" }
+            local result, err = exec:call(MANAGE, { action = "reconfigure", id = installed.id, input = edited })
+            test.is_nil(err, tostring(err))
+            test.is_true((result :: Map).success)
+            local reconfigured = read_drive(installed.id, "main") :: Map
+            test.eq(reconfigured.applied.declaration.transform.config.step, "second")
+            test.eq(reconfigured.applied.policy.delivery.retry_after_ms, LEGACY_RETRY_MS)
+            test.not_nil(read_drive(installed.id, "reconcile"))
+        end)
+
+        test.it("leaves a sync with a current declaration untouched", function()
+            local installed = install_reconciled()
+            local before = versions(installed.id)
+            local stored_before = portable(installed.id)
+            local report = run_upgrade()
+            test.is_nil(upgraded_entry(report, installed.id))
+            test.is_nil(refused_entry(report, installed.id))
+            local after = versions(installed.id)
+            test.eq(after.fence, before.fence)
+            test.eq(after.command, before.command)
+            test.eq(after.context, before.context)
+            test.is_true(same(portable(installed.id), stored_before))
+        end)
+
+        test.it("upgrades a legacy declaration once across repeated runs", function()
+            local installed = install_reconciled()
+            store_legacy(installed.id)
+            test.not_nil(upgraded_entry(run_upgrade(), installed.id))
+            local once = versions(installed.id)
+            local stored_once = portable(installed.id)
+            local again = run_upgrade()
+            test.is_nil(upgraded_entry(again, installed.id))
+            test.is_nil(refused_entry(again, installed.id))
+            local twice = versions(installed.id)
+            test.eq(twice.fence, once.fence)
+            test.eq(twice.command, once.command)
+            test.eq(twice.context, once.context)
+            test.is_true(same(portable(installed.id), stored_once))
+        end)
+
+        test.it("keeps a declared delivery retry delay over the legacy one", function()
+            local installed = install_ok(declaration({ trigger = { v = 2, source = "app.fixture:records",
+                schedule = { type = "interval", expression = "1h" }, backfill = "all",
+                delivery = { retry_after_ms = 1500 } } })) :: Map
+            store_legacy(installed.id)
+            local entry = upgraded_entry(run_upgrade(), installed.id)
+            test.not_nil(entry)
+            test.is_nil((entry :: Map).retry_after_ms)
+            test.eq((entry :: Map).superseded_retry_after_ms, LEGACY_RETRY_MS)
+            local stored = portable(installed.id)
+            test.eq(stored.trigger.delivery.retry_after_ms, 1500)
+            test.is_nil(stored.trigger.poll)
+            local main = read_drive(installed.id, "main") :: Map
+            test.eq(main.applied.policy.delivery.retry_after_ms, 1500)
+            test.eq(main.action.delivery.retry_after_ms, 1500)
+        end)
+
+        test.it("leaves a reconfigure that lands during the upgrade in place and upgrades from it next", function()
+            local installed = install_ok(declaration({ title = "Before the edit" })) :: Map
+            store_legacy(installed.id)
+            local before = versions(installed.id)
+            local edited = false
+            local real = component_lib
+            local component: Map = {}
+            for name, value in pairs(real :: Map) do component[name] = value end
+            component.get_private_context = function(id: string): (any, any)
+                local context, context_err = real.get_private_context(id)
+                if id == installed.id and not edited then
+                    edited = true
+                    local applied, apply_err = exec:call(MANAGE, { action = "reconfigure", id = installed.id,
+                        input = declaration({ title = "Edited by the owner" }) })
+                    test.is_nil(apply_err, tostring(apply_err))
+                    test.is_true((applied :: Map).success)
+                end
+                return context, context_err
+            end
+            local engine = upgrade_engine.new({ component = component })
+            local report, err = engine.upgrade_declarations("kickside.sync:sync")
+            test.is_nil(err, tostring(err))
+            test.is_true(edited)
+            test.is_nil(upgraded_entry(report :: Map, installed.id))
+            local refused = refused_entry(report :: Map, installed.id)
+            test.not_nil(refused, "the upgrade over a moved baseline is refused")
+            test.contains(tostring((refused :: Map).error), "baseline")
+            local after = versions(installed.id)
+            test.eq(after.command, before.command + 1)
+            test.eq(after.fence, before.fence + 1)
+            local stored = portable(installed.id)
+            test.eq(stored.title, "Edited by the owner")
+            test.eq((read_drive(installed.id, "main") :: Map).applied.declaration.title, "Edited by the owner")
+
+            local next_run = run_upgrade()
+            test.is_nil(upgraded_entry(next_run, installed.id))
+            test.is_nil(refused_entry(next_run, installed.id))
+            test.eq(portable(installed.id).title, "Edited by the owner")
+            test.eq(versions(installed.id).command, after.command)
+        end)
+
+        test.it("upgrades on a later run once a refused subject's grant is restored", function()
+            local installed = install_ok(declaration()) :: Map
+            store_legacy(installed.id)
+            local grants = query("SELECT * FROM kickside_component_access WHERE component_id = $1 AND subject_id = $2",
+                { installed.id, owner_id })
+            test.is_true(#grants > 0, "the installing owner holds a grant on its sync")
+            execute("DELETE FROM kickside_component_access WHERE component_id = $1 AND subject_id = $2", { installed.id, owner_id })
+            local before = versions(installed.id)
+            local refused_report = run_upgrade()
+            test.is_nil(upgraded_entry(refused_report, installed.id))
+            test.not_nil(refused_entry(refused_report, installed.id), "the subject without its grant is refused")
+            local refused_versions = versions(installed.id)
+            test.eq(refused_versions.fence, before.fence)
+            test.eq(refused_versions.command, before.command + 1)
+            test.not_nil(stored_declaration(installed.id).trigger.poll.delivery)
+
+            for _, grant in ipairs(grants) do
+                local columns: { string } = {}
+                local marks: { string } = {}
+                local values: { any } = {}
+                for column, value in pairs(grant) do
+                    columns[#columns + 1] = column
+                    values[#values + 1] = value
+                    marks[#marks + 1] = "$" .. tostring(#values)
+                end
+                execute("INSERT INTO kickside_component_access (" .. table.concat(columns, ",") .. ") VALUES ("
+                    .. table.concat(marks, ",") .. ")", values)
+            end
+            local restored = upgraded_entry(run_upgrade(), installed.id)
+            test.not_nil(restored, "the restored subject's sync is upgraded")
+            local stored = stored_declaration(installed.id)
+            test.is_nil(stored.trigger.poll)
+            test.eq(stored.trigger.delivery.retry_after_ms, LEGACY_RETRY_MS)
+            local after = versions(installed.id)
+            test.eq(after.command, before.command + 2, "the refused attempt and the upgrade each take a generation")
+            test.eq(after.fence, after.command)
         end)
     end)
 

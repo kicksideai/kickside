@@ -4,6 +4,31 @@ namespace: kickside.automation.migrations
 # target_db is injected by the root kickside.automation:target_db requirement.
 
 entries:
+  - name: 15_prepared_settlement_index
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on:
+        - ns:wippy.migration
+        - kickside.automation.migrations:06_trigger_item_ledger
+    source: file://15_prepared_settlement_index.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration
+
+  - name: 16_prepared_declaration
+    kind: function.lua
+    meta:
+      type: migration
+      comment: Records the applied declaration hash on each prepared output row.
+      depends_on:
+        - ns:wippy.migration
+        - kickside.automation.migrations:10_drive_schema
+    source: file://16_prepared_declaration.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration
+
   - name: 12_delivery_history
     kind: function.lua
     meta:
@@ -54,6 +79,9 @@ entries:
     kind: function.lua
     meta:
       type: migration
+      # The repair provisions through the current Jobs API. The migration
+      # runner orders by timestamp, not registry lifecycle dependencies.
+      timestamp: "2026-10-28T00:00:24Z"
       depends_on: [ns:wippy.migration, kickside.core.jobs.migrations:21_retire_upload_intent_slot]
     source: file://13_stranded_drives.lua
     method: migration
@@ -64,6 +92,7 @@ entries:
     kind: function.lua
     meta:
       type: migration
+      timestamp: "2026-10-28T00:00:25Z"
       depends_on: [kickside.automation.migrations:13_stranded_drives]
     source: file://14_stranded_drive_wake_recovery.lua
     method: migration
@@ -78,6 +107,27 @@ entries:
     source: file://stranded_drives.lua
     modules: [sql, json]
     imports:
+      slot_repair: kickside.automation.engine:slot_repair
       migration: wippy.migration:migration
       jobs: kickside.core.jobs:jobs
       slot: kickside.automation:slot
+
+  - name: 18_ledger_eligibility
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on: [ns:wippy.migration, kickside.automation.migrations:11_delivery_provenance]
+    source: file://18_ledger_eligibility.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration
+
+  - name: 19_receipt_delivery_identity
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on: [ns:wippy.migration, kickside.automation.migrations:10_drive_schema]
+    source: file://19_receipt_delivery_identity.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration

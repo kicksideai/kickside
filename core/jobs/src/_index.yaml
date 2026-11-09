@@ -31,6 +31,14 @@ entries:
         path: .meta.target_db
       - entry: kickside.core.jobs.migrations:21_retire_upload_intent_slot
         path: .meta.target_db
+      - entry: kickside.core.jobs.migrations:22_capacity_groups
+        path: .meta.target_db
+      - entry: kickside.core.jobs.migrations:25_retention_order
+        path: .meta.target_db
+      - entry: kickside.core.jobs.migrations:24_lease_policy
+        path: .meta.target_db
+      - entry: kickside.core.jobs.migrations:23_jobs_updated_at
+        path: .meta.target_db
       - entry: kickside.core.jobs:db_config
         path: .meta.db_id
 
@@ -45,8 +53,9 @@ entries:
   # .wippy.yaml "kickside.core.jobs:policy:meta.<path>".
   - name: policy
     kind: registry.entry
-    meta:
-      comment: Jobs runtime policy — worker pool, fairness, retry, wake fanout, age-based retention, and per-row size limits.
+    # Defaults stay outside meta so explicit host assignments retain presence,
+    # including assignments whose value equals the shipped default.
+    defaults:
       worker:
         count_sqlite: 2
         count_postgres: 4
@@ -83,6 +92,19 @@ entries:
         batch: 500
         thread_cleanup_batch: 100
 
+    meta:
+      comment: Jobs runtime policy defaults with explicit host overrides under meta.
+      worker: {}
+      lease: {}
+      retry: {}
+      slot_retry: {}
+      fairness: {}
+      wake: {}
+      proc: {}
+      health: {}
+      limits: {}
+      retention: {}
+
   - name: process_host
     kind: ns.requirement
     meta:
@@ -112,6 +134,7 @@ entries:
     imports:
       registry_version: kickside.core.jobs:registry_version
       job_types: kickside.core.jobs:types
+      policy_fields: kickside.core.jobs.policy:fields
 
   - name: run_status
     kind: library.lua
@@ -133,6 +156,15 @@ entries:
       comment: Job classes declared on worker entries (meta.job_class); awaited types own reserved worker slots.
     source: file://job_class.lua
     modules: [registry]
+    imports:
+      job_types: kickside.core.jobs:types
+
+  - name: capacity
+    kind: library.lua
+    meta:
+      comment: Optional worker capacity declarations backed by instance Settings.
+    source: file://capacity.lua
+    modules: [contract, registry]
     imports:
       job_types: kickside.core.jobs:types
 
@@ -209,21 +241,37 @@ entries:
       policies:
         - kickside.core.jobs:signal_transport
 
+  # Public notification entry: callers need only Jobs runtime call access.
+  - name: nudge_workers
+    kind: function.lua
+    source: file://persist/pool_nudge.lua
+    method: run
+    modules: [process]
+    imports:
+      config: kickside.core.jobs:config
+    security:
+      actor:
+        id: kickside.core.jobs:nudge_workers
+      policies:
+        - kickside.core.jobs:signal_transport
+
   - name: jobs
     kind: library.lua
     meta:
-      comment: "Durable jobs API: enqueue, fenced cancellation, lease validation, completion, listing, retention, and health."
+      comment: "Durable jobs API: enqueue, post-commit nudge, slot purge, fenced cancellation, lease validation, completion, listing, retention, and health."
     source: file://jobs.lua
     modules:
       - sql
       - logger
     imports:
+      runtime_policy: kickside.core.jobs.policy:runtime
       config: kickside.core.jobs:config
       lifecycle: kickside.core.jobs.persist:lifecycle
       lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
       lifecycle_enqueue: kickside.core.jobs.persist:lifecycle_enqueue
       lease_status: kickside.core.jobs.persist:lease_status
       wake: kickside.core.jobs.persist:wake
+      slot_purge: kickside.core.jobs.persist:slot_purge
       clock: kickside.core.jobs:clock
       completion: kickside.core.jobs.persist:completion
       retention: kickside.core.jobs.persist:retention
@@ -266,3 +314,9 @@ entries:
   - name: registry_version
     kind: library.lua
     source: file://registry_version.lua
+
+  - name: dep.kickside.contract
+    meta: {comment: "Dep kickside contract."}
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'

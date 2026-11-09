@@ -48,8 +48,8 @@ const { markUrl, appTitle, applyBranding } = useShellBranding(api)
 const toneOverlay = useToneOverlay(contentMain)
 const shellAccount = useShellAccount(api, host, instance)
 const {
-  currentUser, accountItems, profileOpen, profileWcOpen, profileWcHost,
-  toggleProfile, openComponentModal, openProfile, closeProfile,
+  currentUser, accountItems, profileWcOpen, profileWcHost,
+  openComponentModal, openProfile, closeProfile,
   loadAccountItems, userInitials, fetchMe, logout,
 } = shellAccount
 
@@ -63,6 +63,23 @@ const {
   renderableCategories, navItems, layout, home, splash, splashError, splashSaving,
   loaded, error: navError, loadNav, reloadNav, dismissSplash, advanceSplash,
 } = useSurfaces()
+
+const resettingSetup = ref(false)
+async function replaySetup() {
+  if (resettingSetup.value) return
+  resettingSetup.value = true
+  try {
+    const { data } = await api.delete('/api/v1/ui/splash/seen')
+    if (data?.success !== true) throw new Error(data?.error || 'Could not reopen workspace setup.')
+    await reloadNav()
+  } catch (cause: unknown) {
+    const response = (cause as { response?: { data?: { error?: string } } })?.response
+    host.toast({ severity: 'error', summary: 'Workspace setup',
+      detail: response?.data?.error || (cause instanceof Error ? cause.message : 'Could not reopen workspace setup.') })
+  } finally {
+    resettingSetup.value = false
+  }
+}
 
 const sessionWorkspace = useSessionWorkspace({
   route,
@@ -313,13 +330,6 @@ function toggleCat(key: string) {
   collapsedCats.value = next
 }
 
-// Horizontal layout renders each category as a dropdown menu (packs more into the
-// top bar). openMenu holds the open category key; a document click closes it.
-const openMenu = ref<string | null>(null)
-function toggleMenu(key: string) { openMenu.value = openMenu.value === key ? null : key }
-
-function closeMenus() { openMenu.value = null; profileOpen.value = false }
-
 onMounted(() => {
   nextTick(() => { portalsReady.value = true })
   narrowSidebarQuery = window.matchMedia('(max-width: 640px)')
@@ -329,7 +339,6 @@ onMounted(() => {
   fetchMe()
   loadAccountItems()
   applyBranding()
-  document.addEventListener('click', closeMenus)
   window.addEventListener('focus', refreshNavOnResume)
   document.addEventListener('visibilitychange', refreshNavOnResume)
   window.addEventListener('kickside:nav-changed', refreshShellRegistryState)
@@ -340,7 +349,6 @@ onUnmounted(() => {
   narrowSidebarQuery?.removeEventListener('change', syncNarrowSidebar)
   narrowSidebarQuery = null
   clearRegistryRefreshTimers()
-  document.removeEventListener('click', closeMenus)
   window.removeEventListener('focus', refreshNavOnResume)
   document.removeEventListener('visibilitychange', refreshNavOnResume)
   window.removeEventListener('kickside:nav-changed', refreshShellRegistryState)
@@ -387,20 +395,17 @@ onUnmounted(() => {
       :nav-error="navError"
       :rail-collapsed="railCollapsed"
       :collapsed-cats="collapsedCats"
-      :open-menu="openMenu"
-      :profile-open="profileOpen"
       :current-user="currentUser"
       :account-items="accountItems"
+      :resetting-setup="resettingSetup"
       @new-chat="newSessionChat"
       @navigate="navigate"
-      @toggle-menu="toggleMenu"
-      @close-menus="closeMenus"
       @toggle-collapsed="toggleCollapsed"
       @expand="expand"
       @toggle-cat="toggleCat"
-      @toggle-profile="toggleProfile"
       @open-profile="openProfile"
       @account-open="openComponentModal"
+      @replay-setup="replaySetup"
       @logout="logout"
     />
     </Teleport>
@@ -469,7 +474,7 @@ onUnmounted(() => {
   position: relative;
   height: 100dvh;
   max-height: 100dvh;
-  overflow: hidden;
+  overflow: clip;
   --wippy-layout-splitter-bg: var(--p-content-border-color);
   --wippy-layout-splitter-hover-bg: var(--p-primary-color);
   --wippy-layout-splitter-hit-size: 14px;

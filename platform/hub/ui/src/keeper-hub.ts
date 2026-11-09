@@ -248,6 +248,13 @@ export interface HubInstallPlan {
   install_payload?: Record<string, unknown>
 }
 
+export interface HubInstallBatchPlan {
+  success: boolean
+  applicable: boolean
+  plans: HubInstallPlan[]
+  install_payload: HubInstallBatchArgs
+}
+
 export interface HubUninstallArgs {
   id?: string
   component?: string
@@ -424,6 +431,10 @@ export function keeperHub(api: Api) {
 
     planInstall(args: HubPlanInstallArgs) {
       return unwrap<HubInstallPlan>(api.post('/api/v1/keeper/hub/dependencies/plan', args))
+    },
+
+    planBatchInstall(args: HubInstallBatchArgs) {
+      return unwrap<HubInstallBatchPlan>(api.post('/api/v1/keeper/hub/dependencies/plan', args))
     },
 
     install(args: HubInstallArgs | HubInstallBatchArgs) {

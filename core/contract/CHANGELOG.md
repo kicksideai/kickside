@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.3](https://github.com/kicksideai/kickside/compare/contract-v0.3.2...contract-v0.3.3) (2026-11-05)
+
+
+### Bug Fixes
+
+* **component:** execute deletion cleanup through Jobs ([c034b5c](https://github.com/kicksideai/kickside/commit/c034b5c8e5cc2c92a5ced4d8ae70107361f2e9d3))
+* **component:** run deletion cleanup through Jobs ([da3f7ae](https://github.com/kicksideai/kickside/commit/da3f7aee8dce4136a65d1c94bda6604820bc8355))
+
+## [0.3.2](https://github.com/kicksideai/kickside/compare/contract-v0.3.1...contract-v0.3.2) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** resolve live scopes through Security-owned projections ([adad7ee](https://github.com/kicksideai/kickside/commit/adad7ee499f7dfbd1134c57c06368aa440a0ab07))
+
 ## [0.3.1](https://github.com/kicksideai/kickside/compare/contract-v0.3.0...contract-v0.3.1) (2026-10-22)
 
 

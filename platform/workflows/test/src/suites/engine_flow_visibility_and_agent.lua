@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 local test = require("test")
 local uuid = require("uuid")
 local uuid_v4 = uuid.v4
@@ -122,9 +123,11 @@ local function define_tests()
             test.is_true(read_only.success, tostring(read_only.error))
 
             local blocked = select(1, call_as(owner, { op = "agent_tool_delete", workflow_id = id })) :: Map
-            test.is_false(blocked.success)
-            test.contains(tostring(blocked.error), "active run or unpublished terminal event")
-            test.is_true(errors.is(blocked.error, errors.CONFLICT))
+            test.is_true(blocked.success)
+            local pending, pending_err = deletion_worker.run(id)
+            test.is_nil(pending)
+            test.contains(tostring(pending_err), "active run or unpublished terminal event")
+            test.is_true(errors.is(pending_err, errors.CONFLICT))
             local d, db_err = sql.get("app:db")
             test.is_nil(db_err)
             if not d then error("test database unavailable") end
@@ -137,6 +140,9 @@ local function define_tests()
             test.eq(tick.failures, 0, tostring(tick.last_error))
             local deleted = select(1, call_as(owner, { op = "agent_tool_delete", workflow_id = id })) :: Map
             test.is_true(deleted.success, tostring(deleted.error))
+            local finished, finish_err = deletion_worker.run(id)
+            test.is_nil(finish_err, tostring(finish_err))
+            test.is_true(finished.deleted)
             test.is_true(string.find(prompt_for(owner), title, 1, true) == nil)
         end)
 

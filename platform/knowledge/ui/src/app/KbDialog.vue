@@ -6,7 +6,7 @@ import Dialog from 'primevue/dialog'
 import Select from 'primevue/select'
 import { api as proxyApi, loadByTagName } from '@wippy-fe/proxy'
 import IconField from '@widgets/app/IconField.vue'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import type { ConfigValue, ConfigOption, EngineConfigField, EngineConfigSchema, Engine, EmbeddingModel } from './kbDialogTypes'
 
 const dialogPt = {

@@ -13,6 +13,7 @@ local base64 = require("base64")
 local hash = require("hash")
 local artifact_content_repo = require("artifact_content_repo")
 local artifact_parts_repo = require("artifact_parts_repo")
+local pdf_fixtures = require("pdf_fixtures")
 local metadata_sanitizer = require("metadata_sanitizer")
 local execution_identity = require("execution_identity")
 local upload_record_repo = require("upload_record_repo")
@@ -309,6 +310,37 @@ local function define_tests()
             test.eq("source", artifacts[1].role)
             test.eq("primary", artifacts[2].role)
             test.eq(artifacts[1].artifact_id, artifacts[2].parent_artifact_id)
+        end)
+
+        test.it("document wrapper marks each PDF page in the markdown artifact", function()
+            local storage = fs.get("app:uploads")
+            test.not_nil(storage)
+            local upload_id = "doc2md-pages-" .. uuid_v4()
+            local path = upload_id .. ".pdf"
+            local ok, write_err = storage:writefile(path, pdf_fixtures.pdf)
+            test.is_nil(write_err)
+            test.is_true(ok ~= false)
+            local upload, upload_err = upload_record_repo.create(upload_id, "test-user", #pdf_fixtures.pdf, "application/pdf",
+                "app:uploads", path, "documents", { filename = "two-pages.pdf", source = "uploads.test" }, "uploaded")
+            test.is_nil(upload_err)
+            test.not_nil(upload)
+
+            local result, call_err = funcs.new():call("kickside.uploads.documents:processor", {
+                upload_id = upload_id,
+                storage_id = "app:uploads",
+                storage_path = path,
+                mime_type = "application/pdf",
+                size = #pdf_fixtures.pdf,
+                metadata = { filename = "two-pages.pdf", source = "uploads.test" },
+                options = { extract_images = false },
+            })
+            test.is_nil(call_err)
+            test.is_true(result.success, "document processor failed")
+
+            local primary, primary_err = artifact_parts_repo.read_primary_content(upload_id)
+            test.is_nil(primary_err)
+            test.contains(primary.content or "", "<!-- page 1 -->")
+            test.contains(primary.content or "", "<!-- page 2 -->")
         end)
 
         test.it("deduplicates artifact bytes while preserving aliases", function()

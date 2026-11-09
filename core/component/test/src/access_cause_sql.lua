@@ -9,6 +9,7 @@ local function builder(operation)
     function query:limit(...) return self end
     function query:set(...) return self end
     function query:set_map(...) return self end
+    function query:suffix(...) return self end
     function query:run_with(db) self.db = db; return self end
     function query:query() return self.db:query() end
     function query:exec() return self.db:execute(operation) end

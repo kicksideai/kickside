@@ -1,7 +1,7 @@
-import { u as ce, a as pe, s as me, W as ve, e as fe, b as ke, c as xe, P as ge } from "./styles-BeIlQBlD.js";
-import { computed as y, watch as X, defineComponent as ye, ref as a, onMounted as be, resolveComponent as P, openBlock as r, createElementBlock as u, withModifiers as B, createElementVNode as t, createVNode as d, unref as K, withDirectives as c, vModelText as k, createTextVNode as H, toDisplayString as x, createCommentVNode as g, Fragment as he, renderList as we, vModelCheckbox as Ce } from "vue";
+import { u as ce, a as pe, s as me, _ as ve, e as fe, W as ke, b as xe, P as ge } from "./styles-DigoX-q5.js";
+import { computed as y, watch as X, defineComponent as ye, ref as a, onMounted as be, resolveComponent as P, openBlock as r, createElementBlock as u, withModifiers as B, createElementVNode as t, createVNode as d, unref as K, withDirectives as c, vModelText as k, createTextVNode as H, toDisplayString as x, createCommentVNode as g, Fragment as he, renderList as we, vModelCheckbox as _e } from "vue";
 import { Icon as Q } from "@iconify/vue";
-import { loadByTagName as z, api as G, define as _e } from "@wippy-fe/proxy";
+import { loadByTagName as z, api as G, define as Ce } from "@wippy-fe/proxy";
 function Me(w) {
   return y(() => {
     const p = w.value;
@@ -31,32 +31,32 @@ const Se = { class: "kx-cr-head" }, Ne = { class: "kx-cr-ico" }, Ve = { class: "
 }, Le = {
   key: 2,
   class: "kx-field"
-}, De = { class: "kx-field" }, We = { class: "kx-field-lbl" }, je = {
+}, De = { class: "kx-field" }, je = { class: "kx-field-lbl" }, We = {
   key: 0,
   class: "kx-id"
-}, Be = { class: "kx-field" }, Ke = { class: "kx-check kx-check-control" }, Ye = { class: "kx-field" }, Fe = { class: "kx-inline-control kx-inline-control-standalone" }, Je = "kickside.channel.responder:channel_responder", $e = "You are responding in a channel. Keep responses concise and direct. No emojis. If you need external information, use available capabilities or tools before answering.", He = /* @__PURE__ */ ye({
+}, Be = { class: "kx-field" }, Ke = { class: "kx-check kx-check-control" }, Ye = { class: "kx-field" }, $e = { class: "kx-inline-control kx-inline-control-standalone" }, Fe = "kickside.channel.responder:channel_responder", Je = "You are responding in a channel. Keep responses concise and direct. No emojis. If you need external information, use available capabilities or tools before answering.", He = /* @__PURE__ */ ye({
   __name: "ChannelResponderCreate",
   setup(w) {
     function p(n) {
       return (n.title || "").trim() || "Unknown capability";
     }
-    const b = ce(), i = pe(), O = y(() => b.value.typeId || Je), Y = Me(b);
+    const b = ce(), i = pe(), O = y(() => b.value.typeId || Fe), Y = Me(b);
     y(() => !!Y.value);
-    const N = a(""), C = a(null), R = a(""), _ = a(""), F = a(""), V = a(!1), q = a($e);
+    const N = a(""), _ = a(null), R = a(""), C = a(""), $ = a(""), V = a(!1), q = a(Je);
     X(V, (n) => i("submit-state", { saving: n }));
     const I = a("");
-    Ae(b, $, V);
+    Ae(b, J, V);
     const E = a(!1), m = a([]), v = a({}), T = a([]), M = a(""), h = a(!0), L = a(120), A = a(10), U = a("immediate"), Z = [
       { label: "Immediate", value: "immediate" },
       { label: "Lazy", value: "lazy" }
-    ], D = a(8), W = a("class:fast"), j = a("Only reply when the accumulated channel messages are relevant to the agent. Ignore noise, acknowledgements, and unrelated chatter."), ee = y(() => T.value.filter((n) => !!n.web_component && m.value.includes(n.id))), S = y(() => U.value === "lazy"), J = y(() => N.value.trim() ? !C.value?.channel_id || !C.value?.connection_id ? "A channel is required." : _.value ? "" : "An agent is required." : "Name is required."), te = y(() => !J.value);
+    ], D = a(8), j = a("class:fast"), W = a("Only reply when the accumulated channel messages are relevant to the agent. Ignore noise, acknowledgements, and unrelated chatter."), ee = y(() => T.value.filter((n) => !!n.web_component && m.value.includes(n.id))), S = y(() => U.value === "lazy"), F = y(() => N.value.trim() ? !_.value?.channel_id || !_.value?.connection_id ? "A channel is required." : C.value ? "" : "An agent is required." : "Name is required."), te = y(() => !F.value);
     function ne(n) {
       const e = n.detail;
-      e && e.channel_id ? (C.value = { connection_id: e.connection_id, channel_id: e.channel_id }, R.value = (e.channel_name || "").trim()) : (C.value = null, R.value = "");
+      e && e.channel_id ? (_.value = { connection_id: e.connection_id, channel_id: e.channel_id }, R.value = (e.channel_name || "").trim()) : (_.value = null, R.value = "");
     }
     function le(n) {
       const e = n.detail, s = e && Array.isArray(e.selected) ? e.selected.map(String) : [], o = e && Array.isArray(e.labels) ? e.labels.map(String) : [];
-      _.value = s[0] || "", F.value = (o[0] || "").trim();
+      C.value = s[0] || "", $.value = (o[0] || "").trim();
     }
     async function ae(n) {
       if (!n.length) {
@@ -96,16 +96,16 @@ const Se = { class: "kx-cr-head" }, Ne = { class: "kx-cr-ico" }, Ve = { class: "
       });
     });
     function re(n) {
-      W.value = String(n.detail || "class:fast");
+      j.value = String(n.detail || "class:fast");
     }
-    async function $() {
+    async function J() {
       if (!te.value) {
-        I.value = J.value, i("automation-installed", { success: !1, error: I.value });
+        I.value = F.value, i("automation-installed", { success: !1, error: I.value });
         return;
       }
       V.value = !0, I.value = "";
       try {
-        const n = C.value, e = {
+        const n = _.value, e = {
           type: O.value,
           parent_id: Y.value || void 0,
           input: {
@@ -113,8 +113,8 @@ const Se = { class: "kx-cr-head" }, Ne = { class: "kx-cr-ico" }, Ve = { class: "
             connection_id: n.connection_id,
             channel_id: n.channel_id,
             channel_name: R.value,
-            agent_id: _.value,
-            agent_name: F.value,
+            agent_id: C.value,
+            agent_name: $.value,
             target: "channel",
             system_prompt: q.value.trim(),
             traits: [...m.value],
@@ -128,8 +128,8 @@ const Se = { class: "kx-cr-head" }, Ne = { class: "kx-cr-ico" }, Ve = { class: "
             response_policy: {
               mode: U.value,
               wait_seconds: Math.max(1, Math.min(120, Math.floor(Number(D.value) || 8))),
-              assessor_model: W.value || "class:fast",
-              prompt: j.value.trim()
+              assessor_model: j.value || "class:fast",
+              prompt: W.value.trim()
             }
           }
         }, { data: s } = await G.post("/api/v1/automations", e), o = s;
@@ -149,7 +149,7 @@ const Se = { class: "kx-cr-head" }, Ne = { class: "kx-cr-ico" }, Ve = { class: "
       const s = P("wc-channel-picker"), o = P("wc-agent-picker"), f = P("wc-model-picker"), ue = P("wc-multiselect");
       return r(), u("form", {
         class: "kx-cr",
-        onSubmit: B($, ["prevent"])
+        onSubmit: B(J, ["prevent"])
       }, [
         t("div", Se, [
           t("span", Ne, [
@@ -187,7 +187,7 @@ const Se = { class: "kx-cr-head" }, Ne = { class: "kx-cr-ico" }, Ve = { class: "
           d(o, {
             placeholder: "Pick an agent…",
             multi: "false",
-            selected: _.value ? JSON.stringify([_.value]) : "[]",
+            selected: C.value ? JSON.stringify([C.value]) : "[]",
             onChange: le
           }, null, 8, ["selected"])
         ]),
@@ -249,7 +249,7 @@ const Se = { class: "kx-cr-head" }, Ne = { class: "kx-cr-ico" }, Ve = { class: "
             S.value ? (r(), u("div", qe, [
               e[20] || (e[20] = t("span", { class: "kx-field-lbl" }, "Assessment model", -1)),
               d(f, {
-                value: W.value,
+                value: j.value,
                 capability: "generate",
                 onSelect: re
               }, null, 8, ["value"])
@@ -257,12 +257,12 @@ const Se = { class: "kx-cr-head" }, Ne = { class: "kx-cr-ico" }, Ve = { class: "
             S.value ? (r(), u("label", Le, [
               e[21] || (e[21] = t("span", { class: "kx-field-lbl" }, "Lazy response prompt", -1)),
               c(t("textarea", {
-                "onUpdate:modelValue": e[5] || (e[5] = (l) => j.value = l),
+                "onUpdate:modelValue": e[5] || (e[5] = (l) => W.value = l),
                 class: "kx-input kx-textarea",
                 rows: "4",
                 placeholder: "Tell the responder when to stay quiet and when to answer."
               }, null, 512), [
-                [k, j.value]
+                [k, W.value]
               ])
             ])) : g("", !0),
             t("div", De, [
@@ -281,9 +281,9 @@ const Se = { class: "kx-cr-head" }, Ne = { class: "kx-cr-ico" }, Ve = { class: "
               key: l.id,
               class: "kx-field kx-trait-cfg"
             }, [
-              t("span", We, [
+              t("span", je, [
                 H(x(p(l)), 1),
-                l.title?.trim() ? g("", !0) : (r(), u("span", je, x(l.id), 1))
+                l.title?.trim() ? g("", !0) : (r(), u("span", We, x(l.id), 1))
               ]),
               d(ve, {
                 tag: l.web_component || "",
@@ -308,7 +308,7 @@ const Se = { class: "kx-cr-head" }, Ne = { class: "kx-cr-ico" }, Ve = { class: "
                 "onUpdate:modelValue": e[7] || (e[7] = (l) => h.value = l),
                 type: "checkbox"
               }, null, 512), [
-                [Ce, h.value]
+                [_e, h.value]
               ]),
               t("span", null, [
                 e[26] || (e[26] = t("strong", null, "Start a new chat after quiet time", -1)),
@@ -343,7 +343,7 @@ const Se = { class: "kx-cr-head" }, Ne = { class: "kx-cr-ico" }, Ve = { class: "
             ]),
             t("label", Ye, [
               e[29] || (e[29] = t("span", { class: "kx-field-lbl" }, "Stop idle responder after", -1)),
-              t("span", Fe, [
+              t("span", $e, [
                 c(t("input", {
                   "onUpdate:modelValue": e[11] || (e[11] = (l) => A.value = l),
                   class: "kx-input kx-number-sm",
@@ -384,5 +384,5 @@ class Ge extends ke {
     return { rootComponent: He, plugins: [ge] };
   }
 }
-_e(import.meta.url, Ge);
+Ce(import.meta.url, Ge);
 //# sourceMappingURL=channel_responder_create.js.map

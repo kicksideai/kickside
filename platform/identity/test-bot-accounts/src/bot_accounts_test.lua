@@ -13,6 +13,7 @@ local session_index=require("session_index")
 local links=require("links")
 local dm=require("dm")
 local funcs=require("funcs")
+local reconcile=require("trigger_reconcile")
 local owned={}
 local function query(statement,args)
     local db=assert(sql.get("app:db"));local rows,err=db:query(statement,args);db:release()
@@ -58,7 +59,10 @@ local function admission_state()
     return assert(json.encode(state))
 end
 
+-- The scope projection commits in reaction to earlier registry changes; its
+-- reply settles those commits before this change takes its snapshot.
 local function bind_host_only()
+    test.not_nil((reconcile.trigger()))
     local original = assert(registry.current_version())
     local changes = assert(registry.snapshot()):changes()
     local entries = assert(registry.find({[".id"] = "kickside.contract:host_credential_eligibility"}))

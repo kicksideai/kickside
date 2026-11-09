@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import WcMount from '@widgets/app/WcMount.vue'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import SchemaEditor from './SchemaEditor.vue'
 import { getWorkflowVersion } from '../api/versions'
 const props = defineProps<{ workflowId: string; publishedVersion: number }>()
@@ -37,9 +37,3 @@ onBeforeUnmount(() => { sequence += 1 })
     </template>
   </section>
 </template>
-<style scoped>
-.wf-published-run { padding: 1rem; display: grid; gap: 0.75rem; border-block-end: 1px solid var(--p-content-border-color); background: var(--p-content-background); }
-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-h2, p { margin: 0; }
-h2 { font-size: 1rem; }
-</style>

@@ -6,6 +6,49 @@ namespace: app
 # from publish (see wippy.yaml exclude: app:**).
 
 entries:
+  - name: system_exists_test
+    kind: function.lua
+    meta: {type: test, suite: component_system_read}
+    source: file://system_exists_test.lua
+    method: run
+    modules: [funcs, security, sql, uuid]
+    imports:
+      test: wippy.test:test
+  - name: system_exists_client
+    kind: function.lua
+    source: file://system_exists_client.lua
+    method: run
+    modules: [funcs]
+  - name: system_exists_owner_call
+    kind: security.policy
+    policy:
+      actions: [funcs.call, funcs.security]
+      resources: kickside.component.system:exists
+      effect: allow
+  - name: system_exists_leaf_call
+    kind: security.policy
+    policy:
+      actions: funcs.call
+      resources: [kickside.component.system:read_exists, app:system_exists_client]
+      effect: allow
+  - name: system_exists_config_read
+    kind: security.policy
+    policy:
+      actions: registry.get
+      resources: kickside.component:db_config
+      effect: allow
+  - name: system_exists_db_deny
+    kind: security.policy
+    policy:
+      actions: db.get
+      resources: app:db
+      effect: deny
+  - name: system_exists_owner_deny
+    kind: security.policy
+    policy:
+      actions: funcs.call
+      resources: kickside.component.system:exists
+      effect: deny
   - name: owned_identity_selection_probe
     kind: function.lua
     source: file://owned_identity_selection_probe.lua
@@ -48,6 +91,7 @@ entries:
     method: run
     modules: [registry, process, channel, contract, security, uuid]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       component_lifecycle: kickside.component:component_lifecycle
       lifecycle_stub: app:component_lifecycle_test_impl
@@ -803,6 +847,7 @@ entries:
   - name: identity_native_source
     kind: library.lua
     source: file://identity_native_source.lua
+    modules: [json]
     imports:
       persisted_json: kickside.contract:persisted_json
       sql: app:identity_native_sql_adapter
@@ -1132,16 +1177,21 @@ entries:
     kind: library.lua
     source: file://teardown_cause_source.lua
     modules:
+    - json
     - security
     - registry
     - time
     imports:
+      jobs: kickside.core.jobs:jobs
       error_envelope: kickside.contract:error_envelope
       sql: app:teardown_cause_sql
       contract: app:teardown_cause_contract
       component_ops: app:teardown_cause_fixture
       placement: kickside.component.persist:placement
       component_lifecycle: kickside.component:component_lifecycle
+      persisted_json: kickside.contract:persisted_json
+      committed_error: kickside.contract:committed_error
+      meta_service: kickside.component:meta_service
 
   - name: teardown_cause_test
     kind: function.lua
@@ -1208,9 +1258,11 @@ entries:
     kind: library.lua
     source: file://cleanup_setup_source.lua
     modules:
+    - json
     - sql
     - time
     imports:
+      jobs: kickside.core.jobs:jobs
       error_envelope: kickside.contract:error_envelope
       security: app:cleanup_setup_security
       contract: app:cleanup_setup_contract
@@ -1218,6 +1270,9 @@ entries:
       component_ops: kickside.component.persist:component_ops
       placement: kickside.component.persist:placement
       component_lifecycle: kickside.component:component_lifecycle
+      persisted_json: kickside.contract:persisted_json
+      committed_error: kickside.contract:committed_error
+      meta_service: kickside.component:meta_service
 
   - name: cleanup_setup_test
     kind: function.lua
@@ -1248,16 +1303,16 @@ entries:
       test: wippy.test:test
       envelope: kickside.component:envelope
 
-  - name: context_result_native_test
+  - name: envelope_result_native_test
     kind: function.lua
-    source: file://context_result_native_test.lua
+    source: file://envelope_result_native_test.lua
     method: run
     meta:
       type: test
-      suite: component_context_result_native
+      suite: component_envelope_result_native
     imports:
       test: wippy.test:test
-      context: kickside.component:context_policy
+      envelope: kickside.component:envelope
 
   - name: command_cause_fixture
     kind: library.lua
@@ -1356,6 +1411,7 @@ entries:
       type: test
       suite: component_system_delete_native
     imports:
+      worker: app:system_delete_worker_native
       test: wippy.test:test
       component: app:system_delete_source
       fixture: app:system_delete_fixture
@@ -1543,10 +1599,15 @@ entries:
     kind: library.lua
     source: file://teardown_tx_cleanup_source.lua
     modules:
+    - json
     - security
     - registry
     - time
     imports:
+      meta_service: app:deletion_notify_fixture
+      persisted_json: kickside.contract:persisted_json
+      committed_error: kickside.contract:committed_error
+      jobs: app:teardown_tx_cleanup_jobs
       error_envelope: kickside.contract:error_envelope
       sql: app:teardown_tx_cleanup_sql
       contract: app:teardown_tx_cleanup_contract
@@ -1586,6 +1647,8 @@ entries:
       type: test
       suite: component_inherited_cleanup_native
     imports:
+      worker: app:system_delete_worker_native
+      fixture: app:system_delete_fixture
       test: wippy.test:test
       teardown: kickside.component.persist:teardown
 
@@ -1628,6 +1691,7 @@ entries:
       teardown: app:gated_delete_teardown
       envelope: kickside.component:envelope
       error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error
 
   - name: gated_delete_native_test
     kind: function.lua
@@ -1637,6 +1701,7 @@ entries:
       type: test
       suite: component_gated_delete_native
     imports:
+      worker: app:gated_delete_worker_native
       test: wippy.test:test
       binding: app:gated_delete_source
       fixture: app:gated_delete_fixture
@@ -2170,6 +2235,7 @@ entries:
       meta_ops: kickside.component.persist:meta_ops
       declaration_fence: kickside.component.persist:declaration_fence
       execution_identity: kickside.execution:execution_identity
+      lifecycle_rollback: kickside.component.persist:lifecycle_rollback
 
   - name: declaration_serial_native_test
     kind: function.lua
@@ -2329,6 +2395,7 @@ entries:
   - name: identity_read_cleanup_fixture
     kind: library.lua
     source: file://identity_read_cleanup_fixture.lua
+    modules: [json]
 
   - name: identity_read_cleanup_sql
     kind: library.lua
@@ -2345,6 +2412,7 @@ entries:
   - name: identity_read_cleanup_source
     kind: library.lua
     source: file://identity_read_cleanup_source.lua
+    modules: [json]
     imports:
       persisted_json: kickside.contract:persisted_json
       sql: app:identity_read_cleanup_sql
@@ -2373,6 +2441,16 @@ entries:
       test: wippy.test:test
       identity: app:identity_read_cleanup_source
       fixture: app:identity_read_cleanup_fixture
+
+  - name: identity_receipt_store_test
+    kind: function.lua
+    source: file://identity_receipt_store_test.lua
+    method: run
+    meta: {type: test, suite: identity_receipt_store}
+    modules: [json, sql, time, uuid]
+    imports:
+      test: wippy.test:test
+      identity: kickside.component:identity_access
 
   - name: metadata_tx_fixture
     kind: library.lua
@@ -2420,6 +2498,7 @@ entries:
     source: file://metadata_tx_source.lua
     modules: [time, contract]
     imports:
+      execution_identity: kickside.execution:execution_identity
       sql: app:metadata_tx_sql
       security: app:metadata_tx_security
       registry: app:metadata_tx_registry
@@ -2454,6 +2533,7 @@ entries:
     source: file://metadata_retry_source.lua
     modules: [time, contract, registry]
     imports:
+      execution_identity: kickside.execution:execution_identity
       sql: app:committed_retry_sql
       security: app:committed_retry_security
       funcs: app:metadata_retry_funcs
@@ -2498,6 +2578,7 @@ entries:
     source: file://notification_access_source.lua
     modules: [sql, time, security, contract, registry, funcs]
     imports:
+      execution_identity: kickside.execution:execution_identity
       component_command: kickside.component:component_command
       committed_error: kickside.contract:committed_error
       component_ops: app:notification_access_ops
@@ -2836,3 +2917,18 @@ entries:
       context: app:context_access_source
       fixture: app:context_access_fixture
       envelope: kickside.component:envelope
+
+  - name: concurrent_grants_test
+    kind: function.lua
+    meta: {type: test, suite: component_concurrent_grants}
+    source: file://concurrent_grants_test.lua
+    method: run
+    modules: [sql, uuid, time]
+    imports:
+      test: wippy.test:test
+      access_ops: kickside.component.persist:access_ops
+
+  - name: deletion_notify_fixture
+    kind: library.lua
+    source: file://deletion_notify_fixture.lua
+    imports: {fixture: app:teardown_tx_cleanup_fixture}

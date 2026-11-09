@@ -167,6 +167,192 @@ local function define_tests()
             test.eq(after.thread_class, "test.descriptor.thread")
         end)
 
+        test.it("converge restores missing public thread markers for a retained declared thread", function()
+            local owner_id = "marker-owner-" .. uuid.v4():sub(1, 8)
+            local owner = security.new_actor(owner_id, { security_groups = {} })
+            local component_id = uuid.v4()
+            local cinst = (contract.get("kickside.component:component_service") :: any)
+                :with_actor(owner):with_scope(scope()):open()
+            local registered = cinst:register({
+                component_id = component_id,
+                impl_id = "app:converge_test_decl",
+                meta = { class = "test_converge", title = "Marker repair" },
+            })
+            test.is_true(type(registered) == "table" and registered.success == true)
+            local tinst = (contract.get("kickside.core:threads") :: any)
+                :with_actor(owner):with_scope(scope()):open()
+            local ensured, ensure_err = tinst:ensure_thread({
+                component_id = component_id,
+                impl_id = "app:converge_test_decl",
+            })
+            test.is_nil(ensure_err)
+            test.not_nil(ensured)
+
+            local d = db()
+            local stored = sql.builder.select("thread_class"):from("kickside_thread")
+                :where(sql.builder.eq({ id = component_id })):run_with(d):query()
+            test.eq(tostring(stored[1].thread_class), "test.converge.thread")
+            test.eq(count(d, "kickside_retention_policy", "thread_id", component_id), 1)
+            local grants = d:query([[SELECT subject_id,subject_type,access_mask,inherited
+                FROM kickside_component_access WHERE component_id=$1 ORDER BY access_id]], { component_id })
+            for _, key in ipairs({ "type", "thread_class" }) do
+                local _, delete_err = d:execute(
+                    "DELETE FROM kickside_component_meta WHERE component_id=$1 AND key=$2", { component_id, key })
+                test.is_nil(delete_err)
+            end
+            local absent = sql.builder.select("key"):from("kickside_component_meta")
+                :where("component_id = ?", component_id)
+                :where("key IN ('type', 'thread_class')")
+                :run_with(d):query()
+            test.eq(#(absent or {}), 0)
+            d:release()
+
+            local summary, converge_err = provision.converge(
+                security.new_actor("system:lifecycle", { system = true, security_groups = {} }), scope())
+            test.is_nil(converge_err)
+            test.is_true((tonumber((summary :: any).healed) or 0) >= 1)
+
+            local repaired = db()
+            local markers = sql.builder.select("key", "value", "updated_at"):from("kickside_component_meta")
+                :where("component_id = ?", component_id)
+                :where("key IN ('type', 'thread_class')")
+                :run_with(repaired):query()
+            local marker_map: { [string]: any } = {}
+            local marker_updates: { [string]: any } = {}
+            for _, marker in ipairs(markers or {}) do
+                marker_map[tostring(marker.key)] = marker.value
+                marker_updates[tostring(marker.key)] = marker.updated_at
+            end
+            test.eq(marker_map.type, "thread")
+            test.eq(marker_map.thread_class, "test.converge.thread")
+            test.eq(#(markers or {}), 2)
+            local repaired_grants = repaired:query([[SELECT subject_id,subject_type,access_mask,inherited
+                FROM kickside_component_access WHERE component_id=$1 ORDER BY access_id]], { component_id })
+            test.eq(#(repaired_grants or {}), #(grants or {}))
+            for index, grant in ipairs(grants or {}) do
+                for key, value in pairs(grant) do test.eq(repaired_grants[index][key], value) end
+            end
+            repaired:release()
+
+            local _, repeat_err = provision.converge(
+                security.new_actor("system:lifecycle", { system = true, security_groups = {} }), scope())
+            test.is_nil(repeat_err)
+            local verified = db()
+            local repeated_markers = sql.builder.select("key", "updated_at"):from("kickside_component_meta")
+                :where("component_id = ?", component_id)
+                :where("key IN ('type', 'thread_class')")
+                :run_with(verified):query()
+            for _, marker in ipairs(repeated_markers or {}) do
+                test.eq(marker.updated_at, marker_updates[tostring(marker.key)])
+            end
+            test.eq(#(repeated_markers or {}), 2)
+            verified:release()
+        end)
+
+        test.it("converge restores a retained declared class without changing durable thread state", function()
+            local owner = security.new_actor("class-converge-owner-" .. uuid.v4(), { security_groups = {} })
+            local component_id = uuid.v4()
+            local component = (contract.get("kickside.component:component_service") :: any)
+                :with_actor(owner):with_scope(scope()):open()
+            local registered, register_err = component:register({
+                component_id = component_id,
+                impl_id = "app:converge_test_decl",
+                meta = { class = "test_converge", title = "Declared class convergence" },
+            })
+            test.is_nil(register_err)
+            test.is_true(type(registered) == "table" and registered.success == true)
+
+            local threads = (contract.get("kickside.core:threads") :: any)
+                :with_actor(owner):with_scope(scope()):open()
+            local ensured, ensure_err = threads:ensure_thread({
+                component_id = component_id,
+                impl_id = "app:converge_test_decl",
+            })
+            test.is_nil(ensure_err)
+            test.eq(ensured.thread.thread_class, "test.converge.thread")
+            local appended, append_err = threads:append_event({
+                thread_id = component_id,
+                event = { type = "app:threads_cv_trigger", body = {} },
+            })
+            test.is_nil(append_err)
+            test.not_nil(appended)
+
+            local before_db = db()
+            local thread_before = before_db:query([[SELECT id,thread_class,state,event_count,attrs,updated_at
+                FROM kickside_thread WHERE id=$1]], { component_id })[1]
+            local retention_before = before_db:query([[SELECT thread_id,event_hot_retention_days,archive_mode,enabled
+                FROM kickside_retention_policy WHERE thread_id=$1]], { component_id })[1]
+            local events_before = before_db:query([[SELECT id,seq,type,body FROM kickside_event
+                WHERE thread_id=$1 ORDER BY seq]], { component_id })
+            local access_before = before_db:query([[SELECT subject_id,subject_type,access_mask,inherited
+                FROM kickside_component_access WHERE component_id=$1 ORDER BY access_id]], { component_id })
+            test.not_nil(retention_before)
+            test.eq(#events_before, 1)
+
+            local _, class_err = before_db:execute("UPDATE kickside_thread SET thread_class=$1 WHERE id=$2",
+                { "conversation", component_id })
+            test.is_nil(class_err)
+            for key, value in pairs({ type = "thread", thread_class = "conversation" }) do
+                local _, marker_err = before_db:execute(
+                    "UPDATE kickside_component_meta SET value=$1 WHERE component_id=$2 AND key=$3",
+                    { value, component_id, key })
+                test.is_nil(marker_err)
+            end
+            before_db:release()
+
+            local summary, converge_err = provision.converge(
+                security.new_actor("system:lifecycle", { system = true, security_groups = {} }), scope())
+            test.is_nil(converge_err)
+            test.is_true((tonumber((summary :: any).healed) or 0) >= 1)
+
+            local after_db = db()
+            local thread_after = after_db:query([[SELECT id,thread_class,state,event_count,attrs,updated_at
+                FROM kickside_thread WHERE id=$1]], { component_id })[1]
+            test.eq(thread_after.id, thread_before.id)
+            test.eq(thread_after.thread_class, "test.converge.thread")
+            test.eq(thread_after.state, thread_before.state)
+            test.eq(tonumber(thread_after.event_count), tonumber(thread_before.event_count))
+            test.eq(thread_after.attrs, thread_before.attrs)
+            local markers = after_db:query([[SELECT key,value FROM kickside_component_meta
+                WHERE component_id=$1 AND key IN ('type','thread_class') ORDER BY key]], { component_id })
+            local marker_map: { [string]: any } = {}
+            for _, marker in ipairs(markers) do marker_map[tostring(marker.key)] = marker.value end
+            test.eq(marker_map.type, "thread")
+            test.eq(marker_map.thread_class, "test.converge.thread")
+            local retention_after = after_db:query([[SELECT thread_id,event_hot_retention_days,archive_mode,enabled
+                FROM kickside_retention_policy WHERE thread_id=$1]], { component_id })[1]
+            for key, value in pairs(retention_before) do test.eq(retention_after[key], value) end
+            local events_after = after_db:query([[SELECT id,seq,type,body FROM kickside_event
+                WHERE thread_id=$1 ORDER BY seq]], { component_id })
+            test.eq(#events_after, #events_before)
+            for index, event in ipairs(events_before) do
+                for key, value in pairs(event) do test.eq(events_after[index][key], value) end
+            end
+            local access_after = after_db:query([[SELECT subject_id,subject_type,access_mask,inherited
+                FROM kickside_component_access WHERE component_id=$1 ORDER BY access_id]], { component_id })
+            test.eq(#access_after, #access_before)
+            for index, grant in ipairs(access_before) do
+                for key, value in pairs(grant) do test.eq(access_after[index][key], value) end
+            end
+            after_db:release()
+
+            local stranger = security.new_actor("class-converge-reader-" .. uuid.v4(), { security_groups = {} })
+            local stranger_threads = (contract.get("kickside.core:threads") :: any)
+                :with_actor(stranger):with_scope(scope()):open()
+            local hidden, hidden_err = stranger_threads:find({ thread_id = component_id })
+            test.is_nil(hidden)
+            test.is_nil(hidden_err)
+
+            local repeated, repeat_err = provision.converge(
+                security.new_actor("system:lifecycle", { system = true, security_groups = {} }), scope())
+            test.is_nil(repeat_err)
+            local verified_db = db()
+            local verified = verified_db:query("SELECT updated_at FROM kickside_thread WHERE id=$1", { component_id })[1]
+            verified_db:release()
+            test.eq(verified.updated_at, thread_after.updated_at)
+            test.eq(tonumber((repeated :: any).healed) or 0, 0)
+        end)
+
         test.it("converge recreates a lost declared thread with its projections", function()
             local owner_id = "cv-owner-" .. uuid.v4():sub(1, 8)
             local owner = security.new_actor(owner_id, { security_groups = {} })

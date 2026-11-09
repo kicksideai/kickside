@@ -1,0 +1,55 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: app
+
+entries:
+  - name: relocation_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: packed_storage
+      comment: Upload stage relocation persists complete new locations before cleanup.
+    source: file://relocation_test.lua
+    method: run
+    modules: [fs, uuid, sql, json]
+    security:
+      policies:
+        - kickside.uploads.security:deferred_owner
+        - kickside.uploads.security:deferred_actor
+    imports:
+      test: wippy.test:test
+      pipeline: kickside.uploads:pipeline
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      upload_lib: kickside.uploads:uploads
+      uploads_events: kickside.uploads.persist:uploads_events
+      uploads_resources: kickside.uploads.binding:uploads_resources
+      storage_catalog: kickside.uploads.binding:storage_catalog
+      relocation_cleanup_repo: kickside.uploads.persist:relocation_cleanup_repo
+      execution_identity: kickside.execution:execution_identity
+
+  - name: relocation_stage
+    kind: function.lua
+    source: file://relocation_stage.lua
+    method: relocate
+
+  - name: relocation_observer
+    kind: function.lua
+    source: file://relocation_stage.lua
+    method: observe
+
+  - name: types.relocation
+    kind: registry.entry
+    meta:
+      type: upload.type
+      title: Relocation test file
+    type_key: relocation
+    priority: -100
+    mime_types: [application/x-kickside-relocation-test]
+    extensions: [relocationtest]
+    pipeline:
+      - func: app:relocation_stage
+        title: Relocate test stage
+      - func: app:relocation_observer
+        title: Observe relocation stage

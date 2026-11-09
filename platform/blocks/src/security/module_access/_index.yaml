@@ -9,6 +9,7 @@ entries:
     intent: module_access
     includes:
     - kickside.blocks.security:module_runtime
+    - kickside.blocks.security:await_execution
   groups: []
   policy:
     resources:
@@ -24,6 +25,19 @@ entries:
     - contract.security
     - funcs.call
     - funcs.security
+    effect: allow
+- name: await_execution
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.blocks:await
+    actions:
+    - process.spawn
+    - process.spawn.monitored
+    - process.spawn.linked
     effect: allow
 - name: module_runtime
   kind: security.policy

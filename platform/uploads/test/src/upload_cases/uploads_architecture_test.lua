@@ -202,6 +202,7 @@ local function complete_as(actor_id: string, upload_id: string, etag: string, me
 end
 
 local function create_completed_upload(upload_id: string, user_id: string, mime_type: string, filename: string, size: integer): any
+    ensure_uploads_component(user_id)
     local upload, upload_err = upload_record_repo.create(
         upload_id,
         user_id,
@@ -219,6 +220,7 @@ local function create_completed_upload(upload_id: string, user_id: string, mime_
 end
 
 local function create_completed_upload_with_bytes(upload_id: string, user_id: string, mime_type: string, filename: string, bytes: string, type_id: string?): any
+    ensure_uploads_component(user_id)
     local storage = fs.get("app:uploads")
     test.not_nil(storage)
     local path = upload_id .. ".bin"
@@ -403,9 +405,11 @@ local function define_tests()
         end)
 
         test.it("resolves session file_provider attachments through the upload repo", function()
-            test.is_nil(file_provider.get_info(nil))
-            test.is_nil(file_provider.get_info({}))
-            test.is_nil(file_provider.get_info({ file_uuid = uuid_v4() }))
+            for _, args in ipairs({ false, {}, { file_uuid = uuid_v4() } }) do
+                local absent, absent_err = file_provider.get_info(args or nil)
+                test.is_nil(absent_err, tostring(absent_err))
+                test.is_nil(absent)
+            end
 
             local upload_id = uuid_v4()
             local upload = create_completed_upload(upload_id, "file-provider-user", "text/plain", "attachment.txt", 42)

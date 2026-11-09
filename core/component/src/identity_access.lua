@@ -1,4 +1,5 @@
 local sql = require("sql")
+local json = require("json")
 local persisted_json = require("persisted_json")
 local component_types = require("component_types")
 local access_policy = require("access_policy")
@@ -112,6 +113,20 @@ local function validate_principal_access(component_id: string, required_mask: in
     return allowed, nil
 end
 
+-- The receipt reads only the _execution_identity key of private_context. A
+-- context that is not a JSON object or array comes back whole, so its decode
+-- reports the corrupt column exactly as a full read would.
+local POSTGRES_IDENTITY = "(c.private_context -> '_execution_identity')::text AS execution_identity,"
+    .. " COALESCE(jsonb_typeof(c.private_context) IN ('object', 'array'), false) AS context_readable,"
+    .. " CASE WHEN jsonb_typeof(c.private_context) IN ('object', 'array') THEN NULL"
+    .. " ELSE c.private_context::text END AS unreadable_context"
+local SQLITE_READABLE = "CASE WHEN json_valid(c.private_context)"
+    .. " THEN json_type(c.private_context) IN ('object', 'array') ELSE 0 END"
+local SQLITE_IDENTITY = "CASE WHEN " .. SQLITE_READABLE
+    .. " THEN c.private_context -> '$._execution_identity' END AS execution_identity,"
+    .. " " .. SQLITE_READABLE .. " AS context_readable,"
+    .. " CASE WHEN " .. SQLITE_READABLE .. " THEN NULL ELSE c.private_context END AS unreadable_context"
+
 -- One component-store snapshot for cross-store identity finalization. The
 -- automation owner compares this durable fence with its pending command before
 -- acknowledging any drive.
@@ -126,13 +141,16 @@ local function get_identity_receipt(component_id: string): (any?, error?)
         return nil, (errors.new({ message = "component database unavailable",
             kind = errors.UNAVAILABLE, retryable = true, details = { error_kind = "infrastructure" } }) :: error)
     end
-    local rows, read_err = db:query("SELECT c.identity_generation, c.identity_hash, c.private_context,"
+    local dialect, read_err = db:type()
+    local rows: any = nil
+    if not read_err then rows, read_err = db:query("SELECT c.identity_generation, c.identity_hash, "
+        .. (dialect == sql.type.POSTGRES and POSTGRES_IDENTITY or SQLITE_IDENTITY) .. ","
         .. " f.declaration_hash, f.command_id AS declaration_command_id,"
         .. " f.applied_command_generation AS declaration_command_generation, a.created_at AS identity_selected_at FROM " .. component_types.TABLES.COMPONENTS .. " c"
         .. " LEFT JOIN kickside_component_declaration_fence f ON f.component_id = c.component_id"
         .. " AND f.automation_id = $1"
         .. " LEFT JOIN kickside_execution_identity_audit a ON a.component_id = c.component_id"
-        .. " AND a.identity_generation = c.identity_generation WHERE c.component_id = $2", { component_id, component_id })
+        .. " AND a.identity_generation = c.identity_generation WHERE c.component_id = $2", { component_id, component_id }) end
     local final_err = release_db(db, read_err)
     if final_err then
         return nil, dependency_error(final_err, "identity receipt read failed", true)
@@ -142,14 +160,22 @@ local function get_identity_receipt(component_id: string): (any?, error?)
         return nil, (errors.new({ message = "component not found", kind = errors.PERMISSION_DENIED,
             details = { error_kind = "subject" } }) :: error)
     end
-    local context, decode_err = persisted_json.decode_table(row.private_context, "component.private_context")
-    if decode_err then return nil, errors.wrap(decode_err, "failed to decode identity receipt context") end
-    if type(context) ~= "table" or type(context._execution_identity) ~= "table" then
+    if row.context_readable ~= true and row.context_readable ~= 1 then
+        local _, decode_err = persisted_json.decode_table(row.unreadable_context, "component.private_context")
+        return nil, errors.wrap(decode_err :: error, "failed to decode identity receipt context")
+    end
+    local execution_identity: any, identity_err: error? = nil, nil
+    if row.execution_identity ~= nil then execution_identity, identity_err = json.decode(tostring(row.execution_identity)) end
+    if identity_err then
+        local _, decode_err = persisted_json.decode_table(row.execution_identity, "component.private_context")
+        return nil, errors.wrap(decode_err :: error, "failed to decode identity receipt context")
+    end
+    if type(execution_identity) ~= "table" then
         return nil, (errors.new({ message = "stored execution identity is invalid", kind = errors.INVALID,
             details = { error_kind = "declaration" } }) :: error)
     end
-    return { component_id = component_id, principal = context._execution_identity.principal,
-        execution_identity = context._execution_identity,
+    return { component_id = component_id, principal = execution_identity.principal,
+        execution_identity = execution_identity,
         identity_generation = tonumber(row.identity_generation), identity_hash = row.identity_hash,
         declaration_hash = row.declaration_hash, identity_selected_at = row.identity_selected_at,
         declaration_command_id = row.declaration_command_id,

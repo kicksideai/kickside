@@ -4,9 +4,11 @@ TYPE   := plugin
 VIS    := public
 EMBED  := --embed ui_fs
 
-.PHONY: build dev publish lint test
+.PHONY: build dev publish lint test test-ui
 build:
 	$(MAKE) -C ../.. build MOD=$(MODULE)
+test-ui:
+	cd ui && npm test -- $(UI_TEST_ARGS)
 dev:
 	cd ui && npm run dev
 lint:
@@ -20,3 +22,4 @@ publish: build
 .PHONY: lockrefresh
 lockrefresh:
 	cd test && wippy update $(WIPPY_UPDATE_ARGS)
+	cd live-test && wippy update $(WIPPY_UPDATE_ARGS)

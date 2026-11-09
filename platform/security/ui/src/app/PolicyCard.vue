@@ -1,43 +1,26 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { Icon } from '@iconify/vue'
 import type { Policy } from '../types.ts'
+import Pill from './shared/Pill.vue'
 
-// A policy card showing title (or short id) + comment. Used in the palette
-// (mode=palette, "+" to add, draggable), inside a scope (mode=selected, "x" to
-// remove, draggable to reorder), or as a locked base policy in an overlay
-// (mode=locked, read-only). The chevron expands an advanced view: effect,
-// actions, resources.
 const props = defineProps<{ policy: Policy, mode: 'palette' | 'selected' | 'locked' }>()
 const emit = defineEmits<{ add: []; remove: [] }>()
 
-const expanded = ref(false)
+const title = computed(() => props.policy.title && props.policy.title !== props.policy.id
+  ? props.policy.title : 'Unnamed permission')
 
 function onDragStart(e: DragEvent) {
   if (props.mode === 'locked' || !e.dataTransfer) return
   e.dataTransfer.setData('text/plain', props.policy.id)
   e.dataTransfer.effectAllowed = props.mode === 'palette' ? 'copy' : 'move'
 }
-
-function shortId(id: string): string {
-  return id.includes(':') ? id.split(':').slice(-1)[0]! : id
-}
-
-function asList(v: unknown): string[] {
-  if (Array.isArray(v)) return v.map(String)
-  if (typeof v === 'string' && v) return [v]
-  return []
-}
-
-const actions = computed(() => asList(props.policy.actions))
-const resources = computed(() => asList(props.policy.resources))
-const hasDetail = computed(() => !!props.policy.effect || actions.value.length > 0 || resources.value.length > 0 || !!props.policy.surface)
 </script>
 
 <template>
   <div
     class="ks-pcard"
-    :class="[mode, { expanded }]"
+    :class="mode"
     :draggable="mode !== 'locked'"
     @dragstart="onDragStart"
     @dblclick="mode === 'palette' && emit('add')"
@@ -47,50 +30,17 @@ const hasDetail = computed(() => !!props.policy.effect || actions.value.length >
       <Icon v-else icon="tabler:grip-vertical" class="ks-pcard-grip" aria-hidden="true" />
       <div class="ks-pcard-body">
         <div class="ks-pcard-head">
-          <span class="ks-pcard-title" :title="policy.title || shortId(policy.id)">{{ policy.title || shortId(policy.id) }}</span>
-          <span v-if="policy.effect" class="ks-eff" :class="policy.effect">{{ policy.effect }}</span>
+          <Pill v-if="policy.effect === 'allow' || policy.effect === 'deny'" :severity="policy.effect === 'allow' ? 'success' : 'danger'">{{ policy.effect === 'deny' ? 'Blocks' : 'Allows' }}</Pill>
+          <span class="ks-pcard-title" :title="title">{{ title }}</span>
         </div>
         <div v-if="policy.comment" class="ks-pcard-comment">{{ policy.comment }}</div>
-        <div class="ks-pcard-id" :title="policy.id">{{ policy.id }}</div>
       </div>
-      <button
-        v-if="hasDetail"
-        class="ks-pcard-act detail"
-        :class="{ open: expanded }"
-        :aria-label="expanded ? 'Hide details' : 'Show details'"
-        @click.stop="expanded = !expanded"
-      >
-        <Icon icon="tabler:chevron-right" aria-hidden="true" />
-      </button>
-      <button v-if="mode === 'palette'" class="ks-pcard-act add" aria-label="Add policy" @click.stop="emit('add')">
+      <button v-if="mode === 'palette'" class="ks-pcard-act add" :aria-label="`Add permission ${title}`" @click.stop="emit('add')">
         <Icon icon="tabler:plus" aria-hidden="true" />
       </button>
-      <button v-else-if="mode === 'selected'" class="ks-pcard-act remove" aria-label="Remove policy" @click.stop="emit('remove')">
+      <button v-else-if="mode === 'selected'" class="ks-pcard-act remove" :aria-label="`Remove permission ${title}`" @click.stop="emit('remove')">
         <Icon icon="tabler:x" aria-hidden="true" />
       </button>
-    </div>
-
-    <div v-if="expanded" class="ks-pcard-detail">
-      <div v-if="policy.surface || policy.intent" class="ks-pcard-kv">
-        <span>Surface</span><code>{{ policy.surface || policy.intent }}</code>
-      </div>
-      <div class="ks-pcard-kv">
-        <span>Effect</span><code class="ks-eff-code" :class="policy.effect">{{ policy.effect || '—' }}</code>
-      </div>
-      <div class="ks-pcard-kv">
-        <span>Actions</span>
-        <div class="ks-pcard-tags">
-          <code v-for="a in actions" :key="a">{{ a }}</code>
-          <span v-if="!actions.length" class="ks-pcard-none">—</span>
-        </div>
-      </div>
-      <div class="ks-pcard-kv">
-        <span>Resources</span>
-        <div class="ks-pcard-tags">
-          <code v-for="r in resources" :key="r">{{ r }}</code>
-          <span v-if="!resources.length" class="ks-pcard-none">—</span>
-        </div>
-      </div>
     </div>
   </div>
 </template>

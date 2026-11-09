@@ -71,6 +71,7 @@ return test.run_cases(function()
                     (automation_id,idempotency_key,payload_hash,prepared_json,created_at)
                     VALUES ($1,'output','hash','{}','1900-01-01T00:00:00Z')]], { id })
             end
+            item(orphan, "output", "resolved", "1900-01-01T00:00:00Z")
             local opened = db()
             local tx = assert(opened:begin())
             local removed, prune_err = prepared_retention.prune_orphans_tx(tx, "1950-01-01T00:00:00Z", 10)
@@ -83,12 +84,49 @@ return test.run_cases(function()
             inspect:release()
             exec("DELETE FROM kickside_automation_prepared WHERE automation_id IN ($1,$2)", { protected, orphan })
             exec("DELETE FROM kickside_trigger_item_ledger WHERE owner_id=$1", { protected })
+            exec("DELETE FROM kickside_trigger_item_ledger WHERE owner_id=$1", { orphan })
             test.is_nil(prune_err, tostring(prune_err))
             test.is_nil(commit_err, tostring(commit_err))
             test.is_nil(read_err, tostring(read_err))
             test.eq(removed, 1)
             test.eq(#rows, 1)
             test.eq(rows[1].automation_id, protected)
+        end)
+
+        test.it("prunes prepared output only with matching settlement or discard proof", function()
+            local owner = uuid.v7()
+            for _, key in ipairs({"unproven", "settled", "discarded", "dead"}) do
+                exec([[INSERT INTO kickside_automation_prepared
+                    (automation_id,idempotency_key,payload_hash,prepared_json,created_at)
+                    VALUES ($1,$2,'hash','{}','1900-01-01T00:00:00Z')]], {owner, key})
+            end
+            for _, proof in ipairs({{key = "settled", state = "resolved", code = "none"},
+                {key = "discarded", state = "resolved", code = "discarded"},
+                {key = "dead", state = "dead", code = "failed"}}) do
+                exec([[INSERT INTO kickside_trigger_item_ledger
+                    (owner_id,source_port,item_key,dedup_key,identity_key,envelope_json,state,error_code,
+                     first_failed_at,last_failed_at,created_at,updated_at,resolved_at)
+                    VALUES ($1,'source',$2,$2,$2,'{}',$3,$4,$5,$5,$5,$5,$5)]],
+                    {owner, proof.key, proof.state, proof.code, "1900-01-01T00:00:00Z"})
+            end
+            local opened = db()
+            local tx = assert(opened:begin())
+            local removed, prune_err = prepared_retention.prune_orphans_tx(tx, "1950-01-01T00:00:00Z", 10)
+            local _, commit_err = tx:commit()
+            opened:release()
+            local inspect = db()
+            local rows, read_err = inspect:query("SELECT idempotency_key FROM kickside_automation_prepared"
+                .. " WHERE automation_id=$1 ORDER BY idempotency_key", {owner})
+            inspect:release()
+            exec("DELETE FROM kickside_automation_prepared WHERE automation_id=$1", {owner})
+            exec("DELETE FROM kickside_trigger_item_ledger WHERE owner_id=$1", {owner})
+            test.is_nil(prune_err)
+            test.is_nil(commit_err)
+            test.is_nil(read_err)
+            test.eq(removed, 2)
+            test.eq(#rows, 2)
+            test.eq(rows[1].idempotency_key, "dead")
+            test.eq(rows[2].idempotency_key, "unproven")
         end)
 
         test.it("drains old terminal orphans in bounded batches and preserves unresolved evidence", function()

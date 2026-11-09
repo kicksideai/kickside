@@ -42,35 +42,9 @@ local function make_thread(db): string
     return id
 end
 
--- Insert a job already in running state under a known lease token.
+-- Create a fenced execution with the shared claim-snapshot fixture.
 local function make_running_job(db, dbtype, thread_id, attempts, max_attempts): table
-    local id = uuid.v7()
-    local token = uuid.v7()
-    local _, err = sql.builder.insert("kickside_job")
-        :set_map({
-            id = id,
-            owner_kind = "test",
-            owner_id = "lifecycle_test",
-            job_identity = "7:oneshot" .. tostring(#id) .. ":" .. id .. tostring(#id) .. ":" .. id,
-            thread_id = thread_id,
-            job_type = "test.job",
-            payload = "{}",
-            status = job_types.JOB_STATE.RUNNING,
-            attempts = attempts,
-            max_attempts = max_attempts,
-            queue_tier = job_types.QUEUE_TIER.LIVE,
-            lease_token = token,
-            execution_seq = 1,
-            lease_until = lifecycle.future_string(dbtype, 60),
-        })
-        :run_with(db)
-        :exec()
-    if err then
-        error("make_running_job failed: " .. tostring(err))
-    end
-    return { id = id, thread_id = thread_id, job_type = "test.job", attempts = attempts,
-        max_attempts = max_attempts, lease_token = token, execution_seq = 1, payload = "{}",
-        owner_kind = "test", owner_id = "lifecycle_test" }
+    return assert(job_fixture.running_job(db, dbtype, thread_id, attempts, max_attempts))
 end
 
 local function job_status(db, id): string?
@@ -122,12 +96,7 @@ local function define_tests()
                     :where("status IN ('pending','running')")
                     :order_by("created_at DESC"):limit(1):run_with(db):query()
                 test.eq(#continuation, 1)
-                local job = continuation[1]
-                job.lease_token = uuid.v7()
-                local _, running_err = sql.builder.update("kickside_job")
-                    :set("status", "running"):set("lease_token", job.lease_token)
-                    :where(sql.builder.eq({ id = job.id })):run_with(db):exec()
-                test.is_nil(running_err)
+                local job = assert(job_fixture.lease_own(db, dbtype, continuation[1].id))
 
                 local second, second_err = job_fixture.wake_key(db, dbtype, key)
                 test.is_nil(second_err)
@@ -137,13 +106,7 @@ local function define_tests()
                 local result, continue_err = wake.continue_job(db, dbtype, job)
                 test.is_nil(continue_err)
                 test.is_true(result.self_completed)
-                job.lease_token = uuid.v7()
-                local _, retry_err = sql.builder.update("kickside_job")
-                    :set("status", "running"):set("lease_token", job.lease_token)
-                    :set("lease_until", lifecycle.future_string(dbtype, 60))
-                    :where(sql.builder.eq({ id = job.id, status = "pending" }))
-                    :run_with(db):exec()
-                test.is_nil(retry_err)
+                job = assert(job_fixture.lease_own(db, dbtype, job.id))
                 local final, final_err = wake.continue_job(db, dbtype, job)
                 test.is_nil(final_err)
                 test.is_true(final.self_completed)
@@ -206,9 +169,8 @@ local function define_tests()
                     job_type = "test.watcher", wake_key = key,
                 })
                 test.is_nil(enqueue_err)
-                local _, set_err = sql.builder.update("kickside_job")
-                    :set("status", "running"):set("lease_token", uuid.v7())
-                    :set("scheduled_at", nil)
+                assert(job_fixture.lease_own(db, dbtype, id))
+                local _, set_err = sql.builder.update("kickside_job"):set("scheduled_at", nil)
                     :where(sql.builder.eq({ id = id })):run_with(db):exec()
                 test.is_nil(set_err)
                 local woken, wake_err = job_fixture.wake_key(db, dbtype, key)

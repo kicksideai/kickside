@@ -16,6 +16,8 @@ local projection_writer = require("projection_writer")
 local writer = require("writer")
 local process = require("process")
 local channel = require("channel")
+local time = require("time")
+local jobs_wake = require("jobs_wake")
 
 local DB = "app:db"
 local THREADS = "kickside.core:threads"
@@ -109,7 +111,16 @@ local function define_tests()
 
         for _, subscribed in ipairs({ false, true }) do
             test.it("notifies the pool only when committed append wakes subscribed work: " .. tostring(subscribed), function()
-                local thread_id = new_thread()
+                -- Component creation has its own asynchronous post-commit nudge.
+                -- append_system only needs the thread row; keep that unrelated
+                -- lifecycle traffic outside this writer notification fixture.
+                local thread_id = uuid.v7()
+                local seed_db = assert(sql.get(DB))
+                local _, seed_err = seed_db:execute(
+                    "INSERT INTO kickside_thread (id,thread_class,component_id,event_count) VALUES ($1,'test',$2,0)",
+                    { thread_id, thread_id })
+                seed_db:release()
+                test.is_nil(seed_err)
                 local job_id: string? = nil
                 if subscribed then
                     local queued, enqueue_err = jobs.enqueue({
@@ -122,27 +133,51 @@ local function define_tests()
                     if not queued then error("watcher is absent") end
                     job_id = queued.id
                 end
-                local mailbox, listen_err = process.listen("kickside.core.jobs:wake", { message = true })
-                test.is_nil(listen_err)
-                if not mailbox then error("wake mailbox is absent") end
-                local _, register_err = process.registry.register("kickside.core.jobs.worker_pool", nil, process.registry.CONSISTENT)
-                test.is_nil(register_err)
-                local db, db_err = sql.get(DB)
-                test.is_nil(db_err)
-                if not db then error("database is absent") end
-                local result, append_err = writer.append_system(db, thread_id, { { type = "app:threads_note", body_json = "{}" } })
+                local mailbox = nil
+                if subscribed then
+                    local listen_err
+                    mailbox, listen_err = process.listen("kickside.core.jobs:wake", { message = true })
+                    test.is_nil(listen_err)
+                    test.not_nil(mailbox)
+                    local _, register_err = process.registry.register("kickside.core.jobs.worker_pool", nil, process.registry.CONSISTENT)
+                    test.is_nil(register_err)
+                end
+                local db = assert(sql.get(DB))
+                -- This actor shares the wake library with writer. Other actors
+                -- may nudge the global pool; observe only this append's call,
+                -- forwarding it unchanged to the real Jobs notification path.
+                local original = jobs_wake.nudge_workers
+                local nudge_calls, forwarded = 0, nil
+                jobs_wake.nudge_workers = function(...)
+                    nudge_calls = nudge_calls + 1
+                    local count, err = original(...)
+                    forwarded = count
+                    return count, err
+                end
+                local ran, result, append_err = pcall(writer.append_system, db, thread_id,
+                    { { type = "app:threads_note", body_json = "{}" } })
+                jobs_wake.nudge_workers = original
                 db:release()
-                local notice = channel.select({ mailbox:case_receive(), default = true })
-                local _, unregister_err = process.registry.unregister("kickside.core.jobs.worker_pool", process.registry.CONSISTENT)
-                process.unlisten(mailbox)
+                local notice, unregister_err
+                if subscribed then
+                    local deadline = assert(time.after("5s"))
+                    notice = channel.select({ mailbox:case_receive(), deadline:case_receive() })
+                    _, unregister_err = process.registry.unregister("kickside.core.jobs.worker_pool", process.registry.CONSISTENT)
+                    process.unlisten(mailbox)
+                end
                 if job_id then
                     local _, cancel_err = jobs.cancel(job_id)
                     test.is_nil(cancel_err)
                 end
+                if not ran then error(result) end
                 test.is_nil(unregister_err)
                 test.is_nil(append_err)
                 test.not_nil(result)
-                test.eq(notice.channel == mailbox, subscribed)
+                test.eq(nudge_calls, subscribed and 1 or 0)
+                if subscribed then
+                    test.eq(forwarded, 1)
+                    test.eq(notice.channel, mailbox)
+                end
                 local read_db = assert(sql.get(DB))
                 local rows, read_err = read_db:query("SELECT demand_generation,ack_generation FROM kickside_wake_fanout WHERE key=$1", { "thread:" .. thread_id })
                 read_db:release()

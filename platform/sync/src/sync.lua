@@ -247,7 +247,9 @@ end
 
 -- reconfigure(args) re-declares the sync in place: the declaration and its
 -- main source, product state, public meta and enabled drives through one
--- declaration command. The destination and reconcile choice are fixed at install.
+-- declaration command. The destination and reconcile choice are fixed at install:
+-- the engine holds the installed reconcile mode as the reconcile drive and
+-- refuses a declaration that adds or drops it.
 function M.reconfigure(args: any): (Map?, any)
     local input = type(args) == "table" and (args :: Map) or {}
     local id = trim(ctx.get("component_id"))
@@ -263,7 +265,6 @@ function M.reconfigure(args: any): (Map?, any)
     local cur = current :: Map
     local cur_sink = type(cur.sink) == "table" and (cur.sink :: Map) or {}
     if cur_sink.port ~= (s.sink :: Map).port then return nil, invalid("destination changes require reinstalling the data sync") end
-    if cur.reconcile ~= s.reconcile then return nil, invalid("reconcile changes require reinstalling the data sync") end
     local declaration = copy(input)
     declaration.component_id = nil
     local meta = public_state(p, input.trigger :: Map)

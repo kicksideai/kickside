@@ -6,7 +6,7 @@ import { useEvents, useProps } from '@wippy-fe/webcomponent-vue'
 import { inputPreset } from '@widgets/app/inputPreset'
 import { useParentId } from '@widgets/app/useParentId'
 import { useSubmitNonce } from '@widgets/app/useSubmitNonce'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import ScheduleForm from '../trigger-config/app/ScheduleForm.vue'
 import { fromRecurringSchedule, toRecurringSchedule, type RecurringSchedule } from '../trigger-config/schedule'
 import type { TriggerSchedule } from '../trigger-config/spec'
@@ -26,7 +26,7 @@ const automationId = computed(() => String(inputPreset(props.value.config).id ||
 const title = ref('')
 const enabled = ref(true)
 const schedule = ref<TriggerSchedule | null>(null)
-const target = ref<TaskTarget>({ kind: 'agent' })
+const target = ref<TaskTarget>({ kind: '' })
 const targetError = ref('Choose a target.')
 const loading = ref(true)
 const loaded = ref(false)
@@ -40,7 +40,7 @@ function seed(input: Record<string, unknown>) {
   title.value = typeof input.title === 'string' ? input.title : ''
   enabled.value = input.enabled !== false
   schedule.value = fromRecurringSchedule(input.schedule as RecurringSchedule || null)
-  target.value = input.target as TaskTarget || { kind: 'agent' }
+  target.value = input.target as TaskTarget || { kind: '' }
 }
 async function load() {
   loading.value = true; loaded.value = false; error.value = ''
@@ -95,7 +95,7 @@ watch(automationId, load)
   <p v-else-if="!loaded" role="alert">{{ error }}</p>
   <form v-else class="task-form" @submit.prevent="submit">
     <label class="task-field">Title <input v-model="title" aria-label="Title" :disabled="saving" /></label>
-    <label class="task-check"><input v-model="enabled" type="checkbox" :disabled="saving" /> Enabled</label>
+    <label v-if="!automationId" class="task-check"><input v-model="enabled" type="checkbox" :disabled="saving" /> Enabled</label>
     <section v-if="recurring" aria-label="Schedule (UTC)">
       <p class="task-hint">All times are UTC.</p>
       <ScheduleForm v-model="schedule" default-preset="daily" :disabled="saving" />

@@ -32,13 +32,12 @@ entries:
       title: Automations Manager
       public: true
       icon: tabler:settings-automation
-      comment: "Schedules recurring tasks (every minute, hourly, daily, or cron) to run workflows, agents, or actions with RecurringTasks; installs, reconfigures, pauses/resumes, runs, imports, and uninstalls automations."
+      comment: "Schedules recurring tasks (every minute, hourly, daily, or cron) to run workflows or actions with RecurringTasks; installs, reconfigures, pauses/resumes, runs, imports, and uninstalls automations."
       tags: [automation, scheduling, recurring, schedules]
     prompt: |
       Use **RecurringTasks** for “every X, run this task”: create with a UTC
-      interval (e.g. 15m) or cron and target kind workflow, agent, or action.
-      A workflow uses an exact published flow_ref and Start input; an agent uses
-      agent_id and prompt; an action uses a declared writable port, config and input.
+      interval (e.g. 15m) or cron and target kind workflow or action.
+      A workflow uses an exact published flow_ref and Start input; an action uses a declared writable port, config and input.
       Before creating an action target, read its port config_schema and input_schema
       with AutomationsRead action=catalog. Put port configuration in target.config
       and every required per-run field in target.input, including fields also present

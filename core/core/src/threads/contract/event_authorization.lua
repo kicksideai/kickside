@@ -171,7 +171,19 @@ local function output_kind_matches(output_kind: string, event_type: string, thre
     return outputs[event_type] ~= nil, nil
 end
 
-local function validate_declared_event(impl_id: string, event_type: string, user_append: boolean,
+-- The event declaration of a thread's component kind, read once for all of
+-- the events one write carries.
+type Declaration = { inputs: { [string]: boolean }, outputs: table }
+
+local function declaration_for(impl_id: string): (Declaration?, error?)
+    local input_types, output_types, declaration_err = event_types_for_impl(impl_id)
+    if declaration_err then return nil, declaration_err end
+    local inputs = input_types :: { [string]: boolean }
+    if impl_id == GENERIC_THREAD_IMPL then inputs[GENERIC_THREAD_MESSAGE] = true end
+    return { inputs = inputs, outputs = output_types :: table }, nil
+end
+
+local function validate_declared_event(declaration: Declaration, event_type: string, user_append: boolean,
     thread_class: string?): (string?, error?)
     if type(event_type) ~= "string" or event_type == "" then
         return nil, (errors.new({ message = "event type is required", kind = errors.INVALID }) :: error)
@@ -183,11 +195,8 @@ local function validate_declared_event(impl_id: string, event_type: string, user
             kind = errors.INVALID }) :: error)
     end
 
-    local input_types, output_types, declaration_err = event_types_for_impl(impl_id)
-    if declaration_err then return nil, declaration_err end
-    local inputs = input_types :: { [string]: boolean }
-    local outputs = output_types :: table
-    if impl_id == GENERIC_THREAD_IMPL then inputs[GENERIC_THREAD_MESSAGE] = true end
+    local inputs = declaration.inputs
+    local outputs = declaration.outputs
 
     local _, output_kind, event_err = registered_event_type(event_type)
     if event_err then return nil, event_err end
@@ -289,10 +298,16 @@ function M.validate_event_types(db: sql.DB, writes: { table }, _user_append: boo
         end
         local impl_id = tostring(components[1].impl_id or "")
         local producer_write = true
+        local declaration: Declaration? = nil
         for _, event in ipairs(write.events) do
             local timestamp_err = validate_user_timestamp(event, user_append == true)
             if timestamp_err then return false, timestamp_err end
-            local direction, declaration_err = validate_declared_event(impl_id, event.type, user_append == true, thread.thread_class)
+            if not declaration then
+                local declared, declared_err = declaration_for(impl_id)
+                if declared_err or not declared then return false, declared_err end
+                declaration = declared
+            end
+            local direction, declaration_err = validate_declared_event(declaration :: Declaration, event.type, user_append == true, thread.thread_class)
             if declaration_err then return false, declaration_err end
             if direction ~= "output" or security.can("threads.output.publish", event.type) ~= true then producer_write = false end
             if user_append and direction == "input" then
@@ -362,7 +377,9 @@ function M.authorize_primary_emit(args: any): (any?, error?)
         if read_err then return nil, read_err end
         thread_class = rows and rows[1] and rows[1].thread_class or nil
     end
-    local direction, declaration_err = validate_declared_event(impl_id, event.type, user_append == true, thread_class)
+    local declaration, declared_err = declaration_for(impl_id)
+    if declared_err or not declaration then return nil, declared_err end
+    local direction, declaration_err = validate_declared_event(declaration, event.type, user_append == true, thread_class)
     if declaration_err then return nil, declaration_err end
     local producer = direction == "output" and security.can("threads.output.publish", event.type) == true
     if exists and user_append and not producer then

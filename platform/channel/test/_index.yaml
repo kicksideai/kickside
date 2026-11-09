@@ -225,6 +225,7 @@ entries:
     method: run
     modules: [sql, time]
     imports:
+      turn_recovery: app:turn_recovery
       channel_conversation: app:channel_conversation
       persist: app:persist
       test: wippy.test:test
@@ -498,8 +499,10 @@ entries:
   - name: responder
     kind: library.lua
     source: file://src_link/responder/responder.lua
-    modules: [ctx, funcs, security, contract]
+    modules: [funcs, security, contract]
     imports:
+      owner_gc: app:responder_owner_gc
+      ctx: app:responder_delete_fixture
       automations_lib: app:automations_lib_stub
       component: app:component_fixture
       channel_consts: app:channel_consts
@@ -662,28 +665,6 @@ entries:
       hub_policy: app:hub_policy
       real_hub: app:real_hub
 
-  - name: identity_consts
-    kind: library.lua
-    source: file://identity_consts_stub.lua
-
-  - name: identity_credential_eligibility
-    kind: library.lua
-    source: file://identity_src_link/credential_eligibility.lua
-    imports:
-      credential_eligibility: kickside.contract:credential_eligibility
-
-  - name: identity_link_service
-    kind: library.lua
-    source: file://identity_src_link/link_service.lua
-    modules: [sql, crypto, uuid, time]
-    imports:
-      component: app:component_fixture
-      channel_cleanup: app:cleanup_conversation
-      channel_cleanup_finalize: app:complete_unlink
-      identity_consts: app:identity_consts
-      credential_eligibility: app:identity_credential_eligibility
-      agent_ref: app:agent_ref
-
   - name: responder_health
     kind: library.lua
     source: file://src_link/responder/health.lua
@@ -702,20 +683,6 @@ entries:
       health_reporter: app:responder_health
       test_state: app:test_state
 
-  - name: registry_probe_access
-    kind: security.policy
-    groups: [app.security:user]
-    policy:
-      resources: app:registry_probe
-      actions: funcs.call
-      effect: allow
-
-  - name: registry_probe
-    kind: function.lua
-    source: file://registry_probe.lua
-    method: claim
-    modules: [process]
-
   - name: bridge_registry_probe
     kind: function.lua
     source: file://registry_probe.lua
@@ -730,7 +697,7 @@ entries:
     meta: { type: test, suite: channel }
     source: file://registry_authority_test.lua
     method: run
-    modules: [funcs, security, uuid]
+    modules: [funcs, uuid]
     imports:
       test: wippy.test:test
 
@@ -738,3 +705,165 @@ entries:
     kind: library.lua
     source: file://bridge_timer_fixture.lua
     modules: [time]
+
+  - name: responder_delete_fixture
+    kind: library.lua
+    source: file://responder_delete_fixture.lua
+    imports: {test_state: app:test_state}
+
+  - name: responder_owner_gc
+    kind: library.lua
+    source: file://responder_delete_fixture.lua
+    imports: {test_state: app:test_state}
+
+  # The channel sink's WRITE boundary against real component grants: the sink
+  # and the reply sender stand-in run over the real kickside.component service.
+  - name: gateway
+    kind: http.service
+    addr: :0
+    lifecycle:
+      auto_start: true
+
+  - name: api
+    kind: http.router
+    meta:
+      server: gateway
+    prefix: /api
+
+  - name: dep.kickside_component
+    kind: ns.dependency
+    component: kickside/component
+    version: "*"
+    parameters:
+      - name: kickside.component:target_db
+        value: app:db
+      - name: kickside.component:api_router
+        value: app:api
+
+  - name: dep.kickside_jobs
+    kind: ns.dependency
+    component: kickside/jobs
+    version: "*"
+    parameters:
+      - name: kickside.core.jobs:target_db
+        value: app:db
+      - name: kickside.core.jobs:process_host
+        value: app:processes
+
+  - name: sink_access_reply_sender
+    kind: library.lua
+    source: file://reply_sender_stub.lua
+    imports:
+      component: kickside.component:component
+
+  - name: sink_access_channel_sink
+    kind: library.lua
+    source: file://src_link/sink/channel_sink.lua
+    imports:
+      canonical_json: kickside.contract:canonical_json
+      writable_sink: kickside.data:writable_sink
+      reply_sender: app:sink_access_reply_sender
+
+  - name: channel_sink_access_probe
+    kind: function.lua
+    source: file://channel_sink_access_probe.lua
+    method: run
+    imports:
+      channel_sink: app:sink_access_channel_sink
+      reply_sender: app:sink_access_reply_sender
+
+  - name: channel_sink_access_test
+    kind: function.lua
+    meta: { type: test, suite: channel_sink_access }
+    source: file://channel_sink_access_test.lua
+    method: run
+    modules: [sql, uuid, funcs, security]
+    imports:
+      test: wippy.test:test
+
+  - name: dep.wippy_session
+    kind: ns.dependency
+    component: wippy/session
+    version: '*'
+    parameters:
+      - name: wippy.session:database_resource
+        value: app:db
+      - name: wippy.session:env_storage
+        value: app:env_storage
+      - name: wippy.session:api_router
+        value: app:api
+      - name: wippy.session:default_host
+        value: app:processes
+
+  - name: archive_retention_sql
+    kind: library.lua
+    source: file://src_link/persist/archive_retention.lua
+    modules: [sql]
+    imports:
+      session_service: wippy.session:service
+      session_delete_proof: app:session_delete_proof
+      channel_conversation: app:channel_conversation
+
+  - name: archive_retention_sql_test
+    kind: function.lua
+    meta: { type: test, suite: channel, timeout: 30s }
+    source: file://archive_retention_sql_test.lua
+    method: run
+    modules: [sql, uuid]
+    imports:
+      test: wippy.test:test
+      retention: app:archive_retention_sql
+      sessions: wippy.session:service
+      receive_fixture: app:receive_fixture
+
+  - name: dep.wippy_views
+    kind: ns.dependency
+    component: wippy/views
+    version: '*'
+    parameters:
+      - name: api_router
+        value: app:api
+      - name: env_storage
+        value: app:env_storage
+
+  - name: dep.kickside_users
+    kind: ns.dependency
+    component: kickside/users
+    version: '*'
+    parameters:
+      - {name: kickside.users:env_storage, value: 'app:env_storage'}
+      - {name: kickside.users:public_router, value: 'app:users_public'}
+      - {name: kickside.users:api_router, value: 'app:api'}
+      - {name: kickside.users:ui_server, value: 'app:gateway'}
+      - {name: kickside.users:target_db, value: 'app:db'}
+      - {name: kickside.users:user_security_scope, value: 'app:restart_db_access'}
+      - {name: kickside.users:admin_security_scope, value: 'app:restart_db_access'}
+      - {name: kickside.users:login_role_resource, value: 'app:*'}
+      - {name: kickside.settings:target_db, value: 'app:db'}
+      - {name: kickside.settings:api_router, value: 'app:api'}
+      - {name: kickside.settings:ui_server, value: 'app:gateway'}
+      - {name: kickside.settings:process_host, value: 'app:processes'}
+      - {name: kickside.core:target_db, value: 'app:db'}
+      - {name: kickside.core.lifecycle:process_host, value: 'app:processes'}
+      - {name: kickside.core.retention:process_host, value: 'app:processes'}
+      - {name: kickside.core.threads:process_host, value: 'app:processes'}
+      - {name: kickside.core.retention:api_router, value: 'app:api'}
+      - {name: kickside.core.threads:api_router, value: 'app:api'}
+      - {name: kickside.core.projections:api_router, value: 'app:api'}
+      - {name: kickside.core.retention:user_security_scope, value: 'app:restart_db_access'}
+      - {name: kickside.core.threads:user_security_scope, value: 'app:restart_db_access'}
+
+  - name: users_public
+    kind: http.router
+    meta: {server: gateway}
+    prefix: /public
+
+  - name: dep.kickside_security
+    kind: ns.dependency
+    component: kickside/security
+    version: '*'
+    parameters:
+      - {name: api_router, value: 'app:api'}
+      - {name: ui_server, value: 'app:gateway'}
+      - {name: target_db, value: 'app:db'}
+      - {name: process_host, value: 'app:processes'}

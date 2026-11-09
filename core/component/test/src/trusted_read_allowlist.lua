@@ -41,18 +41,18 @@ M.METHODS = {
 M.SELF_PATH = "core/component/src/component.lua"
 
 M.ALLOW = {
-    ["app/src/app/security/registry/delegation/delegation.lua"] = {
-        list_system = {
+    ["platform/automation/src/declaration_writer.lua"] = {
+        get_private_context = {
             count = 1,
-            why = "the private host delegation validator checks root existence without returning component metadata or private context",
-            entry = "app.security:delegation_validator",
+            why = "the pending declaration verifier compares protected values with the live baseline after checking operator WRITE and both principals' resource grants; it never returns private context",
+            entry = "kickside.automation:declaration_writer_verify",
         },
     },
-    ["platform/security/test-bot-accounts/src/host_delegation/delegation.lua"] = {
-        list_system = {
+    ["platform/automation/src/rollback_writer.lua"] = {
+        get_private_context = {
             count = 1,
-            why = "the authenticated HTTP harness binds the production host validator source to verify private root validation through native admission",
-            entry = "app.security:delegation_validator",
+            why = "the rollback upgrade writer reads the stored rollback chain to retire the legacy trigger projections its watch steps name; it never returns private context",
+            entry = "kickside.automation:rollback_writer_upgrade",
         },
     },
     ["platform/automation/src/identity_writer.lua"] = {

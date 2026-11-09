@@ -1,6 +1,7 @@
 local registry = require("registry")
+local scope_key = require("scope_key")
 local security = require("security")
-local policy_groups = require("policy_groups")
+local policy_coverage = require("policy_coverage")
 local error_envelope = require("error_envelope")
 
 local function invalid(message, field)
@@ -19,7 +20,7 @@ local function groups(value, field)
 end
 
 local function new(dependencies: {fingerprint: ((any) -> (any?, error?))}?): any
-    local fingerprint = dependencies and dependencies.fingerprint or policy_groups.fingerprint
+    local fingerprint = dependencies and dependencies.fingerprint or policy_coverage.fingerprint
 
     local function classify(args)
         if not security.can("funcs.call", "kickside.security.binding:classify_membership_effect") then
@@ -36,7 +37,7 @@ local function new(dependencies: {fingerprint: ((any) -> (any?, error?))}?): any
         end
         local revision = tostring(snapshot:version():id())
         local old, new = {}, {}
-        -- Native group bindings include Security's projected compositions. Compare
+        -- Compare native membership effects without composing access. Compare
         -- policy bytes, so duplicate bindings do not make a redundant grant a loss.
         for _, entry in ipairs(snapshot:find({[".kind"] = "security.policy"})) do
             local was, becomes = false, false
@@ -54,7 +55,7 @@ local function new(dependencies: {fingerprint: ((any) -> (any?, error?))}?): any
                 if becomes then new[policy.digest] = policy end
             end
         end
-        local change = policy_groups.compare(old, new)
+        local change = policy_coverage.compare(old, new)
         -- Membership also supplies component ACL authority. Removing a group
         -- reduces that authority even when its native grants are redundant.
         for id in pairs(before) do
@@ -63,8 +64,20 @@ local function new(dependencies: {fingerprint: ((any) -> (any?, error?))}?): any
         for id in pairs(after) do
             if not before[id] then change.changed = true end
         end
+        local fences = {}
+        for id in pairs(after) do
+            if not before[id] then
+                local projection_id, key_err = scope_key.id(id)
+                if key_err then return nil, key_err end
+                local entry, read_err = snapshot:get(projection_id)
+                if read_err and not errors.is(read_err, errors.NOT_FOUND) then return nil, read_err end
+                if entry and entry.kind == "registry.entry" and entry.meta.type == scope_key.META_TYPE and entry.data.has_scope_sources == true then
+                    fences[#fences + 1] = id
+                end
+            end
+        end
         return {effect = change.reduced and "reduction" or (change.changed and "allow_only" or "unchanged"),
-            revision = revision}, nil
+            revision = revision, fence_groups = fences}, nil
     end
 
     return {classify = classify}

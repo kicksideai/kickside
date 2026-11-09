@@ -12,10 +12,11 @@ entries:
     meta: {type: test, suite: kickside_mcp}
     source: file://policy_retirement_upgrade_test.lua
     method: run
-    modules: [sql, json, funcs, uuid, security]
+    modules: [sql, json, funcs, uuid, security, time]
     imports:
       test: wippy.test:test
       mcp_repo: kickside.mcp.persist:repo
+      owner_hooks: kickside.core.retention.service:owner_hooks
   - name: dep.wippy.test
     kind: ns.dependency
     component: wippy/test
@@ -132,6 +133,13 @@ entries:
       actions: '*'
       effect: allow
 
+  - name: retention_notify_denied
+    kind: security.policy
+    policy:
+      resources: kickside.core.retention:notify
+      actions: funcs.call
+      effect: deny
+
   - name: resolver_binding_open
     kind: security.policy
     meta: { comment: Harness relocation of the Users scope resolver binding. }
@@ -162,6 +170,8 @@ entries:
     - name: kickside.core:target_db
       value: app:db
     - name: kickside.core.lifecycle:process_host
+      value: app:processes
+    - name: kickside.settings:process_host
       value: app:processes
     - name: kickside.core.lifecycle:user_lifecycle_grant
       value:
@@ -553,7 +563,7 @@ entries:
     meta: { type: test, suite: mcp_oauth_http }
     source: file://oauth_http_test.lua
     method: run
-    modules: [sql]
+    modules: [sql, json, funcs, security]
     security:
       actor: { id: system:mcp_oauth_http_test }
       policies: [app:mcp_suite_policy]
@@ -565,6 +575,16 @@ entries:
       oauth_repo: kickside.mcp.oauth:repo
       create: app:create_http_fixture
       update: app:update_http_fixture
+      repo: kickside.mcp.persist:repo
+      dispatcher: kickside.mcp:mcp_dispatcher
+      subjects: app:subjects
+  - name: credential_context_http_probe
+    kind: function.lua
+    source: file://credential_context_http_probe.lua
+    method: handler
+    imports:
+      create: app:create_http_fixture
+      state: app:oauth_http_state
   - name: create_http_fixture
     kind: library.lua
     source: file://fixtures/create_credential.lua

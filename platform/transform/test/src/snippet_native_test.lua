@@ -6,6 +6,32 @@ local json = require("json")
 local uuid = require("uuid")
 local funcs = require("funcs")
 
+-- Each attempt rebuilds an owned fixture write from a fresh snapshot. Other
+-- registry writers may advance the head; all other errors remain test failures.
+local function fixture_write(write)
+    local result, err
+    for _ = 1, 5 do
+        result, err = write()
+        if not errors.is(err, errors.CONFLICT) or err:retryable() ~= true then return result, err end
+        local details = err:details() or {}
+        if details.plan_version == nil or details.current_version == nil then return result, err end
+    end
+    return result, err
+end
+
+local function publish_fixture(artifact, source, sink, options)
+    return fixture_write(function() return snippet.publish_snippet(artifact, source, sink, options) end)
+end
+
+local function remove_fixture(id)
+    local _, err = fixture_write(function()
+        local changes = assert(registry.snapshot()):changes()
+        changes:delete(id)
+        return changes:apply()
+    end)
+    test.is_nil(err)
+end
+
 local function check_schema_error(err, field, raw)
     test.is_true(errors.is(err, errors.INVALID))
     test.eq(err:retryable(), false)
@@ -36,7 +62,7 @@ local function define_tests()
                     local expected_id = "kickside.transform.snippets:" .. assert(snippet.fingerprint(source))
                         .. "_" .. assert(snippet.fingerprint(sink))
                     test.is_nil((registry.get(expected_id)))
-                    local seed = assert(snippet.publish_snippet("confirmed-owned-artifact", source, sink, {strategy = "expression"}))
+                    local seed = assert(publish_fixture("confirmed-owned-artifact", source, sink, {strategy = "expression"}))
                     test.eq(seed.id, expected_id)
                     local ok, failure = pcall(function()
                         local bad_source, bad_sink = source, sink
@@ -55,9 +81,7 @@ local function define_tests()
                         test.is_nil(result)
                         check_schema_error(node_err, field, raw)
                     end)
-                    local changes = assert(registry.snapshot()):changes()
-                    changes:delete(seed.id)
-                    test.is_nil(select(2, changes:apply()))
+                    remove_fixture(seed.id)
                     if not ok then error(failure) end
                 end)
             end
@@ -99,9 +123,7 @@ local function define_tests()
                     local result, err = store.publish_snippet("lookup-write", {}, shape, {strategy = "expression"})
                     local entry = registry.get(id)
                     if entry then
-                        local changes = assert(registry.snapshot()):changes()
-                        changes:delete(id)
-                        test.is_nil(select(2, changes:apply()))
+                        remove_fixture(id)
                     end
                     test.is_nil(entry)
                     test.is_nil(result)
@@ -191,7 +213,7 @@ local function define_tests()
                 content = {type = "string", enum = {marker}},
             }}
             test.eq(snippet.fingerprint(published_sink), snippet.fingerprint(request_sink))
-            local stored = assert(snippet.publish_snippet("{ content: payload.value }", source, published_sink,
+            local stored = assert(publish_fixture("{ content: payload.value }", source, published_sink,
                 {strategy = "expression"}))
             local ok, failure = pcall(function()
                 local state, err = nodes.snippet_search({
@@ -207,9 +229,7 @@ local function define_tests()
                 test.is_nil(state.artifact)
                 test.is_true(#(state.errors or {}) > 0)
             end)
-            local changes = assert(registry.snapshot()):changes()
-            changes:delete(stored.id)
-            test.is_nil(select(2, changes:apply()))
+            remove_fixture(stored.id)
             if not ok then error(failure) end
         end)
         test.it("returns a failed gate result when a reused snippet has no request samples", function()
@@ -217,7 +237,7 @@ local function define_tests()
             local sink = {type = "object", required = {"content"}, properties = {
                 content = {type = "string"},
             }}
-            local stored = assert(snippet.publish_snippet("{ content: payload.value }", source, sink,
+            local stored = assert(publish_fixture("{ content: payload.value }", source, sink,
                 {strategy = "expression"}))
             local ok, failure = pcall(function()
                 local state, err = nodes.snippet_search({
@@ -232,9 +252,7 @@ local function define_tests()
                 test.is_nil(state.artifact)
                 test.is_true(#(state.errors or {}) > 0)
             end)
-            local changes = assert(registry.snapshot()):changes()
-            changes:delete(stored.id)
-            test.is_nil(select(2, changes:apply()))
+            remove_fixture(stored.id)
             if not ok then error(failure) end
         end)
         test.it("marks a reused snippet validated after its request sample passes the gate", function()
@@ -243,7 +261,7 @@ local function define_tests()
                 content = {type = "string"},
             }}
             local artifact = "{ content: payload.value }"
-            local stored = assert(snippet.publish_snippet(artifact, source, sink, {strategy = "expression"}))
+            local stored = assert(publish_fixture(artifact, source, sink, {strategy = "expression"}))
             local ok, failure = pcall(function()
                 local state, err = nodes.snippet_search({
                     source_schema = source,
@@ -257,9 +275,7 @@ local function define_tests()
                 test.is_true(state.validated)
                 test.eq(state.artifact, artifact)
             end)
-            local changes = assert(registry.snapshot()):changes()
-            changes:delete(stored.id)
-            test.is_nil(select(2, changes:apply()))
+            remove_fixture(stored.id)
             if not ok then error(failure) end
         end)
     end)

@@ -1,3 +1,4 @@
+import type { ComponentDeletionState } from '@kickside/ui-kit/useComponentDeletion'
 // Definition-plane types for the workflow builder. The canvas is a DAG of steps:
 // executable nodes are either an exact Block reference or an exact nested Flow;
 // structural nodes carry only their owned control configuration. Edges carry mappings. Notes
@@ -19,7 +20,22 @@ export type NodeKind =
   | 'finish'
   | 'error'
 
-export interface WfNode {
+export interface RetryPolicy {
+  initial_interval?: string | number
+  backoff_coefficient?: number
+  maximum_interval?: string | number
+  maximum_attempts?: number
+  non_retryable_error_types?: string[]
+}
+
+export const RETRY_FIELDS = ['retry_policy', 'start_to_close_timeout', 'schedule_to_close_timeout'] as const
+export interface RetryFields {
+  retry_policy?: RetryPolicy | false
+  start_to_close_timeout?: string | number | false
+  schedule_to_close_timeout?: string | number | false
+}
+
+export interface WfNode extends RetryFields {
   id: string
   kind: NodeKind
   title: string
@@ -142,7 +158,7 @@ export interface ApplyResult {
   can_redo: boolean
 }
 
-export interface WorkflowSummary {
+export interface WorkflowSummary extends ComponentDeletionState {
   id: string
   title: string
   status?: string

@@ -1,11 +1,20 @@
 import { resolve } from 'node:path'
 import vue from '@vitejs/plugin-vue'
 import { wippyComponentPlugin } from '@wippy-fe/vite-plugin'
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
-  resolve: { alias: { '@widgets': resolve(__dirname, '../../widgets/ui/src') } },
+  resolve: {
+    alias: {
+      '@widgets': resolve(__dirname, '../../widgets/ui/src'),
+      // Shared Widgets source consumes the Hub's declared PrimeVue dependency.
+      primevue: resolve(__dirname, 'node_modules/primevue'),
+    },
+    dedupe: ['vue', '@iconify/vue', '@wippy-fe/proxy'],
+  },
   plugins: [vue(), wippyComponentPlugin()],
+  // Specs assert the composed stylesheet, so CSS runs through the Vite pipeline under vitest.
+  test: { css: { include: [/\.css(\?|$)/] } },
   // Lib builds don't auto-replace process.env; provide it so deps that read
   // NODE_ENV don't throw "process is not defined" in the browser/shadow DOM.
   define: {

@@ -15,7 +15,7 @@ defineProps<{ classes: ClassGroup[] }>()
       <EmptyState
         icon="tabler:category-2"
         title="No model classes"
-        hint="Models declare classes via their class field. A class:<name> reference resolves to the highest-priority member."
+        hint="Classes group models by purpose. The highest-priority model in each class is selected automatically."
       />
     </div>
 
@@ -26,13 +26,10 @@ defineProps<{ classes: ClassGroup[] }>()
           <div class="km-class-head-text">
             <div class="km-class-title">
               {{ c.title || c.name }}
-              <code class="km-class-ref">class:{{ c.name }}</code>
             </div>
             <div v-if="c.description" class="km-class-desc">{{ c.description }}</div>
           </div>
           <div class="km-class-meta">
-            <Pill v-if="!c.declared" severity="warn">undeclared</Pill>
-            <Pill severity="secondary">weight {{ c.weight ?? 100 }}</Pill>
             <span class="km-class-count">{{ c.models.length }} model{{ c.models.length === 1 ? '' : 's' }}</span>
           </div>
         </div>
@@ -41,7 +38,6 @@ defineProps<{ classes: ClassGroup[] }>()
             <Pill v-if="i === 0" severity="success" icon="tabler:check">active</Pill>
             <span v-else class="km-class-rank">{{ i + 1 }}</span>
             <span class="km-class-member-name">{{ m.title || m.name }}</span>
-            <span class="km-class-member-id">{{ m.name }}</span>
             <span class="km-class-member-pri">priority {{ m.priority ?? 0 }}</span>
           </div>
         </div>

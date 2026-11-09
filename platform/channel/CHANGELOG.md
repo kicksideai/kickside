@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.2.8](https://github.com/kicksideai/kickside/compare/channel-v0.2.7...channel-v0.2.8) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
+## [0.2.7](https://github.com/kicksideai/kickside/compare/channel-v0.2.6...channel-v0.2.7) (2026-11-05)
+
+
+### Bug Fixes
+
+* **channel:** finish responder-owned cleanup before unregister ([f34d810](https://github.com/kicksideai/kickside/commit/f34d810df66481ce1a0ca2aecc9ff00f2e37f87f))
+* **component:** run deletion cleanup through Jobs ([da3f7ae](https://github.com/kicksideai/kickside/commit/da3f7aee8dce4136a65d1c94bda6604820bc8355))
+
+## [0.2.6](https://github.com/kicksideai/kickside/compare/channel-v0.2.5...channel-v0.2.6) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** resolve live scopes through Security-owned projections ([adad7ee](https://github.com/kicksideai/kickside/commit/adad7ee499f7dfbd1134c57c06368aa440a0ab07))
+
 ## [0.2.5](https://github.com/kicksideai/kickside/compare/channel-v0.2.4...channel-v0.2.5) (2026-10-22)
 
 

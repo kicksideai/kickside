@@ -1,5 +1,77 @@
 # Changelog
 
+## [0.1.95](https://github.com/kicksideai/kickside/compare/sync-v0.1.94...sync-v0.1.95) (2026-11-08)
+
+
+### Bug Fixes
+
+* **sync:** upgrade stored declarations to the current trigger spec on module update ([#361](https://github.com/kicksideai/kickside/issues/361)) ([cd6b101](https://github.com/kicksideai/kickside/commit/cd6b101aa994a3609709c1e293a808cb2d95f0d2))
+
+## [0.1.94](https://github.com/kicksideai/kickside/compare/sync-v0.1.93...sync-v0.1.94) (2026-11-07)
+
+
+### Bug Fixes
+
+* **sync:** decide reconfigure reconcile mode from the installed reconcile drive ([#357](https://github.com/kicksideai/kickside/issues/357)) ([25bcf0b](https://github.com/kicksideai/kickside/commit/25bcf0bebab28942ff368a21a38176e14e32b061))
+
+## [0.1.93](https://github.com/kicksideai/kickside/compare/sync-v0.1.92...sync-v0.1.93) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
+## [0.1.92](https://github.com/kicksideai/kickside/compare/sync-v0.1.91...sync-v0.1.92) (2026-11-07)
+
+
+### Performance Improvements
+
+* **automation:** resolve fixed registry entries once per round ([#335](https://github.com/kicksideai/kickside/issues/335)) ([cee0468](https://github.com/kicksideai/kickside/commit/cee0468266db65f6ee629082833e03afef87c387))
+
+## [0.1.91](https://github.com/kicksideai/kickside/compare/sync-v0.1.90...sync-v0.1.91) (2026-11-07)
+
+
+### Bug Fixes
+
+* **automation:** resolve round authority once per identity at round start ([#322](https://github.com/kicksideai/kickside/issues/322)) ([b798aec](https://github.com/kicksideai/kickside/commit/b798aec3a005d99017f84247931990fc42aa3cc5))
+
+## [0.1.90](https://github.com/kicksideai/kickside/compare/sync-v0.1.89...sync-v0.1.90) (2026-11-03)
+
+
+### Bug Fixes
+
+* **workflows:** create workflows from automation source contracts ([#213](https://github.com/kicksideai/kickside/issues/213)) ([a44c6f7](https://github.com/kicksideai/kickside/commit/a44c6f7b753bceeb9a39cb89784bfffc58b286b5))
+
+## [0.1.89](https://github.com/kicksideai/kickside/compare/sync-v0.1.88...sync-v0.1.89) (2026-10-28)
+
+
+### Features
+
+* **automation:** list automations by event source ([#184](https://github.com/kicksideai/kickside/issues/184)) ([742f652](https://github.com/kicksideai/kickside/commit/742f6522c05fc90bb08e3f91a8f3158825a3793b))
+
+## [0.1.88](https://github.com/kicksideai/kickside/compare/sync-v0.1.87...sync-v0.1.88) (2026-10-28)
+
+
+### Bug Fixes
+
+* **sync:** preserve preparation errors across function calls ([#181](https://github.com/kicksideai/kickside/issues/181)) ([7daae2f](https://github.com/kicksideai/kickside/commit/7daae2ff86cf35f0d20141dbe9f3641af3bba2a6))
+* **sync:** stop automatic retries of missing prepared results ([#182](https://github.com/kicksideai/kickside/issues/182)) ([fcea5be](https://github.com/kicksideai/kickside/commit/fcea5bee10b4be7134962d9301beb7db0ccca5df))
+
+## [0.1.87](https://github.com/kicksideai/kickside/compare/sync-v0.1.86...sync-v0.1.87) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** preserve scope APIs through staged upgrades ([03c8fe8](https://github.com/kicksideai/kickside/commit/03c8fe8c14b79a8cb31cc9c37b2b2f3854a86e68))
+* **sync:** allow editing legacy syncs without reconcile flag ([#174](https://github.com/kicksideai/kickside/issues/174)) ([bf72f38](https://github.com/kicksideai/kickside/commit/bf72f38dedaa7b2300615de190008f0fc6b38638))
+
+## [0.1.86](https://github.com/kicksideai/kickside/compare/sync-v0.1.85...sync-v0.1.86) (2026-10-23)
+
+
+### Bug Fixes
+
+* **automation:** restrict authority-bearing edits to the execution subject ([#68](https://github.com/kicksideai/kickside/issues/68)) ([aed8ab5](https://github.com/kicksideai/kickside/commit/aed8ab5ec044ff0cbe8fb1962a8c7caa44bd88b1))
+
 ## [0.1.85](https://github.com/kicksideai/kickside/compare/sync-v0.1.84...sync-v0.1.85) (2026-10-22)
 
 

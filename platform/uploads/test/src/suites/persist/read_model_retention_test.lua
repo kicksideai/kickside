@@ -8,6 +8,7 @@ local policy = require("uploads_retention_policy")
 local read_model = require("upload_read_model")
 local upload_types = require("upload_types")
 local channel = require("channel")
+local resources = require("uploads_resources")
 
 local DB = "app:db"
 local core_thread_watermarks: { [string]: integer } = {}
@@ -26,8 +27,10 @@ end
 
 local retention = retention_module.new({ core_threads = core_threads() })
 
-local function stamp(days: integer): string
-    return time.now():utc():add(days * 24 * time.HOUR):format_rfc3339()
+-- Hour-old unit fixtures remain inside the live owner's minimum one-day
+-- retention window. The callback case below deliberately uses day-old data.
+local function stamp(hours: integer): string
+    return time.now():utc():add(hours * time.HOUR):format_rfc3339()
 end
 
 local function write(statement: string, params: { any }): ()
@@ -66,37 +69,123 @@ local run_cases = test.run_cases(function()
             return id
         end
 
-        local function model(component_id: string, status: string, age: integer, seq: integer): string
+        local function model(component_id: string, status: string, age_hours: integer, seq: integer): string
             local id = uuid.v4()
             ids[#ids + 1] = id
             write([[INSERT INTO kickside_upload_read_model
                 (upload_id,component_id,status,deleted_at,last_event_seq)
-                VALUES ($1,$2,$3,$4,$5)]], { id, component_id, status, stamp(age), seq })
+                VALUES ($1,$2,$3,$4,$5)]], { id, component_id, status, stamp(age_hours), seq })
             return id
         end
+
+        test.it("bounds Core reads for a protected candidate page", function()
+            local protected_thread = thread(0)
+            local safe_thread = thread(10)
+            local db = assert(sql.get(DB))
+            local prefix = uuid.v4()
+            local _, seed_err = db:execute([[WITH RECURSIVE n(x) AS (
+                SELECT 1 UNION ALL SELECT x+1 FROM n WHERE x<501)
+                INSERT INTO kickside_upload_read_model(upload_id,component_id,status,deleted_at,last_event_seq)
+                SELECT $1 || CAST(x AS TEXT),$2,'deleted',$3,1 FROM n]], {prefix, protected_thread, stamp(-100)})
+            db:release()
+            test.is_nil(seed_err, tostring(seed_err))
+            local safe = model(safe_thread, "deleted", -72, 1)
+            local examined = 0
+            local bounded = retention_module.new({core_threads={prune_boundary=function(_self, args)
+                examined = examined + 1
+                return {max_pruned_seq=core_thread_watermarks[args.thread_id]},nil
+            end}})
+            local removed, err, progress = bounded.prune_deleted(stamp(-1), 1)
+            test.is_nil(err, tostring(err))
+            write("DELETE FROM kickside_upload_read_model WHERE component_id=$1", {protected_thread})
+            test.eq(examined, 500, "one pass examines one candidate page")
+            test.eq(removed, 0)
+            test.is_false(progress.needs_continue, "read-only scans do not spin")
+            test.is_nil(progress.next_at, "Core proofs pace eligibility")
+            test.eq(count(safe), 1)
+            write("DELETE FROM kickside_upload_read_model WHERE component_id=$1", {protected_thread})
+            removed, err = bounded.prune_deleted(stamp(-1), 1)
+            test.is_nil(err, tostring(err))
+            test.eq(removed, 1)
+            test.eq(count(safe), 0)
+        end)
+
+        test.it("releases its SQL handle before reading Core proofs", function()
+            model(thread(10), "deleted", -2, 1)
+            local original = resources.get_db
+            local held = 0
+            resources.get_db = function()
+                local db, err = original()
+                if not db then return nil,err end
+                held = held + 1
+                return {
+                    query=function(_self,...) return db:query(...) end,
+                    execute=function(_self,...) return db:execute(...) end,
+                    begin=function(_self,...) return db:begin(...) end,
+                    release=function(_self) held=held-1; return db:release() end,
+                },nil
+            end
+            local held_at_core = -1
+            local checked = retention_module.new({core_threads={prune_boundary=function()
+                held_at_core = held
+                return {max_pruned_seq=10},nil
+            end}})
+            local ok, removed, err = pcall(checked.prune_deleted, stamp(-1), 1)
+            resources.get_db = original
+            test.is_true(ok, tostring(removed))
+            test.is_nil(err, tostring(err))
+            test.eq(removed, 1)
+            test.eq(held_at_core, 0)
+            test.eq(held, 0)
+        end)
+
+        test.it("bounds a continuous tombstone stream by its existing 30-day window", function()
+            local owner = thread(10)
+            local base = assert(time.parse(time.RFC3339,"2099-01-01T00:00:00Z"))
+            for day = 1,36 do
+                for _ = 1,3 do
+                    local id = model(owner,"deleted",0,1)
+                    write("UPDATE kickside_upload_read_model SET deleted_at=$1 WHERE upload_id=$2",
+                        {base:add(day*24*time.HOUR):format_rfc3339(),id})
+                end
+                local pages = 0
+                repeat
+                    local _, err, progress = retention.prune_deleted(
+                        base:add((day-30)*24*time.HOUR):format_rfc3339(),2)
+                    test.is_nil(err,tostring(err))
+                    pages = pages + 1
+                    test.is_true(pages < 5)
+                    if not progress.needs_continue then break end
+                until false
+                local db = assert(sql.get(DB))
+                local rows = assert(db:query("SELECT COUNT(*) AS n FROM kickside_upload_read_model WHERE component_id=$1",{owner}))
+                db:release()
+                test.eq(tonumber(rows[1].n),math.min(day,30)*3)
+            end
+        end)
 
         test.it("reclaims only old deleted rows whose event is past the Core contract watermark", function()
             local safe_thread = thread(10)
             local blocked_thread = thread(5)
-            local old_a = model(safe_thread, "deleted", -40, 7)
-            local old_b = model(safe_thread, "deleted", -40, 8)
-            local blocked = model(blocked_thread, "deleted", -40, 7)
-            local fresh = model(safe_thread, "deleted", -1, 9)
-            local live = model(safe_thread, "completed", -40, 6)
-            local no_event = model(safe_thread, "deleted", -40, 0)
-            local still_stored = model(safe_thread, "deleted", -40, 6)
+            local old_a = model(safe_thread, "deleted", -2, 7)
+            local old_b = model(safe_thread, "deleted", -2, 8)
+            local blocked = model(blocked_thread, "deleted", -2, 7)
+            local fresh = model(safe_thread, "deleted", 0, 9)
+            local live = model(safe_thread, "completed", -2, 6)
+            local no_event = model(safe_thread, "deleted", -2, 0)
+            local still_stored = model(safe_thread, "deleted", -2, 6)
             write([[INSERT INTO kickside_uploads
                 (uuid,actor_id,size,mime_type,storage_state,storage_id,storage_path,type_id)
                 VALUES ($1,'retention-test',1,'text/plain','completed','app:uploads',$1,'text')]], { still_stored })
 
-            local removed, err = retention.prune_deleted(stamp(-30), 1)
+            local removed, err = retention.prune_deleted(stamp(-1), 1)
             test.is_nil(err, tostring(err))
             test.eq(removed, 1, "first watermark-safe tombstone pass")
-            removed, err = retention.prune_deleted(stamp(-30), 1)
+            removed, err = retention.prune_deleted(stamp(-1), 1)
             test.is_nil(err, tostring(err))
             test.eq(removed, 1, "second watermark-safe tombstone pass")
             test.eq(count(old_a) + count(old_b), 0)
-            removed, err = retention.prune_deleted(stamp(-30), 1)
+            removed, err = retention.prune_deleted(stamp(-1), 1)
             test.is_nil(err, tostring(err))
             test.eq(removed, 0)
             test.eq(count(blocked), 1)
@@ -106,7 +195,13 @@ local run_cases = test.run_cases(function()
             test.eq(count(still_stored), 1)
 
             core_thread_watermarks[blocked_thread] = 7
-            removed, err = retention.prune_deleted(stamp(-30), 1)
+            -- Force a real owner pass at the point where it previously stole
+            -- the mock-watermark fixture from this manually driven test.
+            local owner_result, owner_err = funcs.new():call("kickside.uploads:retention", {})
+            test.is_nil(owner_err, tostring(owner_err))
+            test.is_true(owner_result.success, tostring(owner_result.error))
+            test.eq(count(blocked), 1, "the live owner retains the hour-old unit fixture")
+            removed, err = retention.prune_deleted(stamp(-1), 1)
             test.is_nil(err, tostring(err))
             test.eq(removed, 1, "blocked thread after Core watermark advances")
             test.eq(count(blocked), 0)
@@ -131,7 +226,7 @@ local run_cases = test.run_cases(function()
             test.is_nil(settings)
             test.not_nil(policy_err)
 
-            local id = model(thread(10), "deleted", -40, 7)
+            local id = model(thread(10), "deleted", -40 * 24, 7)
             local result, call_err = funcs.new():call("kickside.uploads:retention", {})
             test.is_nil(call_err, tostring(call_err))
             test.is_true(result.success, tostring(result.error))
@@ -146,7 +241,7 @@ local run_cases = test.run_cases(function()
                 upload_types.EVENT.COMPLETED, upload_types.EVENT.FAILED }) do
                 local _, apply_err = read_model.apply_events(owner_thread, { {
                     id = "late-" .. tostring(seq) .. "-" .. id, seq = seq,
-                    type = event_type, created_at = "2000-01-01T00:00:00Z",
+                    type = event_type, created_at = stamp(-2),
                     body = { upload_id = id, size = 1 },
                 } })
                 test.is_nil(apply_err, tostring(apply_err))
@@ -154,12 +249,12 @@ local run_cases = test.run_cases(function()
             end
             local _, delete_err = read_model.apply_events(owner_thread, { {
                 id = "late-delete-" .. id, seq = 4,
-                type = upload_types.EVENT.DELETED, created_at = "2000-01-01T00:00:00Z",
+                type = upload_types.EVENT.DELETED, created_at = stamp(-2),
                 body = { upload_id = id },
             } })
             test.is_nil(delete_err, tostring(delete_err))
             test.eq(count(id), 1)
-            local pruned, prune_err = retention.prune_deleted(stamp(-30), 1)
+            local pruned, prune_err = retention.prune_deleted(stamp(-1), 1)
             test.is_nil(prune_err, tostring(prune_err))
             test.eq(pruned, 1)
             test.eq(count(id), 0)
@@ -223,10 +318,10 @@ local run_cases = test.run_cases(function()
 
         test.it("reclaims a deleted tombstone after its owner thread is purged", function()
             local owner_thread = thread(0)
-            local old = model(owner_thread, "deleted", -40, 7)
-            local unproved = model(owner_thread, "deleted", -40, 0)
+            local old = model(owner_thread, "deleted", -2, 7)
+            local unproved = model(owner_thread, "deleted", -2, 0)
             core_thread_watermarks[owner_thread] = nil
-            local removed, err = retention.prune_deleted(stamp(-30), 1)
+            local removed, err = retention.prune_deleted(stamp(-1), 1)
             test.is_nil(err, tostring(err))
             test.eq(removed, 1)
             test.eq(count(old), 0)

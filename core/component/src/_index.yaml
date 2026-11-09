@@ -2,6 +2,12 @@ version: "1.0"
 namespace: kickside.component
 
 entries:
+  - name: deletion_progress
+    kind: library.lua
+    source: file://deletion_progress.lua
+    imports:
+      jobs: kickside.core.jobs:jobs
+
   - name: placement_rules
     kind: library.lua
     source: file://placement_rules.lua
@@ -25,6 +31,24 @@ entries:
       retention:
         identity_audits: 30d
 
+  - name: deletion_jobs_policy
+    kind: security.policy
+    meta:
+      private: true
+    policy:
+      resources: kickside.core.jobs.policy:settings_overrides
+      actions: funcs.call
+      effect: allow
+
+  - name: deletion_worker_lookup
+    kind: security.policy
+    meta:
+      private: true
+    policy:
+      resources: kickside.component:delete_worker
+      actions: registry.get
+      effect: allow
+
   - name: retention
     kind: function.lua
     meta:
@@ -34,7 +58,7 @@ entries:
     method: run
     security:
       actor: { id: system:kickside.component.retention }
-      policies: [kickside.component:retention_db_access]
+      policies: [kickside.component:retention_db_access, kickside.component:deletion_jobs_policy, kickside.component:deletion_worker_lookup]
     imports:
       component_command: kickside.component:component_command
       teardown: kickside.component.persist:teardown
@@ -82,8 +106,12 @@ entries:
         path: .meta.target_db
       - entry: kickside.component.migrations:13_unique_component_meta
         path: .meta.target_db
+      - entry: kickside.component.migrations:15_delete_intent
+        path: .meta.target_db
       - entry: kickside.component:db_config
         path: .meta.db_id
+      - entry: kickside.component.system:read_db
+        path: '.policy.resources +='
 
   - name: db_config
     kind: registry.entry
@@ -148,7 +176,7 @@ entries:
     meta:
       comment: Component identity receipt and live principal access checks.
     source: file://identity_access.lua
-    modules: [sql]
+    modules: [json, sql]
     imports:
       persisted_json: kickside.contract:persisted_json
       component_types: kickside.component:types
@@ -192,6 +220,7 @@ entries:
       - registry
       - funcs
     imports:
+      execution_identity: kickside.execution:execution_identity
       component_command: kickside.component:component_command
       committed_error: kickside.contract:committed_error
       autoinit: kickside.component:autoinit
@@ -203,7 +232,7 @@ entries:
 
   # Component fanout reaches the stored audience under this component-owned
   # realtime authority, added to the caller's scope inside notify_access only;
-  # the caller names the component, never its recipients.
+  # request callers name the component; maintenance may carry a captured audience.
   - name: realtime_notify
     kind: security.policy
     meta:
@@ -256,6 +285,7 @@ entries:
       - registry
       - funcs
     imports:
+      execution_identity: kickside.execution:execution_identity
       component_command: kickside.component:component_command
       committed_error: kickside.contract:committed_error
       autoinit: kickside.component:autoinit
@@ -367,3 +397,22 @@ entries:
     modules: [contract]
     imports:
       access_policy: kickside.component:access_policy
+
+  - name: delete_worker
+    kind: function.lua
+    source: file://delete_worker.lua
+    method: run
+    security:
+      actor: {id: system:kickside.component.retention}
+      policies:
+        - kickside.component:retention_db_access
+        - kickside.component:notification_contracts
+        - kickside.component:notification_implementations
+        - kickside.component:notification_methods
+    modules: [sql, security, time]
+    imports:
+      jobs_policy: kickside.core.jobs.policy:runtime
+      component_types: kickside.component:types
+      persisted_json: kickside.contract:persisted_json
+      teardown: kickside.component.persist:teardown
+      error_envelope: kickside.contract:error_envelope

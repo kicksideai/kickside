@@ -4,6 +4,7 @@
 local store = require("store")
 local dataflow_repo = require("dataflow_repo")
 local execution_identity = require("execution_identity")
+local component = require("component")
 
 local M = {}
 
@@ -29,7 +30,7 @@ function M.resume(args: any): (any?, error?)
     local db, open_err = store.open_db()
     if open_err or not db then return nil, open_err end
     local rows, read_err = db:query(
-        "SELECT run_id, execution_identity_json FROM workflow_runs WHERE dataflow_id=$1 LIMIT 2",
+        "SELECT run_id, workflow_id, execution_identity_json FROM workflow_runs WHERE dataflow_id=$1 LIMIT 2",
         { a.dataflow_id })
     db:release()
     if read_err then return nil, read_err end
@@ -37,6 +38,9 @@ function M.resume(args: any): (any?, error?)
         return nil, failure("workflow run not found or ambiguous", errors.PERMISSION_DENIED)
     end
     local run = rows[1] :: Map
+    if type(run.workflow_id) ~= "string" or run.workflow_id == "" then
+        return nil, failure("workflow run has no workflow resource", errors.PERMISSION_DENIED)
+    end
     if type(run.execution_identity_json) ~= "string" or run.execution_identity_json == "" then
         return nil, failure("workflow run has no declared execution identity", errors.PERMISSION_DENIED)
     end
@@ -53,6 +57,30 @@ function M.resume(args: any): (any?, error?)
     local identity, identity_err = execution_identity.from_row((flow :: Map).actor_id,
         run.execution_identity_json)
     if identity_err or not identity then return nil, identity_err end
+
+    -- An Await callback is a durable authorization boundary: resolve the
+    -- captured identity against the current directory, then require that the
+    -- principal may still read the workflow that admitted this run. The
+    -- identity's component root can be a separate automation, or absent.
+    -- Do this before consuming the signal so restoring the grant can retry
+    -- the same decision safely.
+    local authorized, authorize_err = execution_identity.authorize(identity, {
+        deferred_owner = "kickside.workflows.runs:resume",
+        execution_root = identity.component_id,
+    })
+    if authorize_err or not authorized then return nil, authorize_err end
+    local meta = type(authorized.meta) == "table" and authorized.meta or {}
+    local allowed, access_err = component.validate_principal_access(
+        run.workflow_id,
+        component.ACCESS.READ,
+        authorized.principal,
+        meta.security_groups,
+        meta.access_filter
+    )
+    if access_err then return nil, access_err end
+    if allowed ~= true then
+        return nil, failure("workflow execution principal no longer has workflow READ", errors.PERMISSION_DENIED)
+    end
 
     return execution_identity.run_as(identity, "kickside.blocks:resume_under_identity", {
         dataflow_id = a.dataflow_id,

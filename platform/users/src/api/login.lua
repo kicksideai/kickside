@@ -101,14 +101,6 @@ local function handler()
         ip_address = req:remote_addr() or "unknown",
         user_agent = req:header("User-Agent") or "unknown",
     }
-    if type(body.metadata) == "table" then
-        for key, value in pairs(body.metadata) do
-            if key ~= "security_groups" then
-                actor_meta[key] = value
-            end
-        end
-    end
-
     local token_meta = {
         ip = req:remote_addr() or "unknown",
         user_agent = req:header("User-Agent") or "unknown",

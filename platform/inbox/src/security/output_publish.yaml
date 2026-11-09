@@ -41,5 +41,6 @@ entries:
     effect: allow
     resources:
     - kickside.inbox.events:item.created
+    - kickside.inbox.events:item.version
     - kickside.inbox.events:item.deleted
     - kickside.inbox.events:delivery.claimed

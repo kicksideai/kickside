@@ -151,8 +151,3 @@ onBeforeUnmount(() => {
     <slot />
   </div>
 </template>
-
-<style>
-/* Placement-only wrapper; the slotted panel carries its own chrome. */
-.anchored-panel { position: fixed; min-width: 0; overflow: auto; }
-</style>

@@ -9,6 +9,8 @@ local M = {}
 type SettingValue = any
 type JsonSchema = any
 
+type ValueControl = { tag: string, props: { [string]: any }? }
+
 type Definition = {
     namespace: string,
     key: string,
@@ -29,6 +31,7 @@ type Definition = {
     category: string?,
     order: number?,
     ui: string?,
+    control: ValueControl?,
     owner: string?,
 }
 
@@ -52,7 +55,7 @@ type ListArgs = { namespace: string? }
 
 type BasicResponse = { success: boolean, error: string? }
 type GetResponse = { success: boolean, value: SettingValue?, error: string? }
-type NamespaceResponse = { success: boolean, values: { [string]: SettingValue }?, error: string? }
+type NamespaceResponse = { success: boolean, values: { [string]: SettingValue }?, overridden: { string }?, error: string? }
 
 type SettingListRow = {
     namespace: string,
@@ -75,6 +78,7 @@ type SettingListRow = {
     category: string?,
     order: number?,
     ui: string?,
+    control: ValueControl?,
     owner: string?,
 }
 

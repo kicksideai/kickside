@@ -1,5 +1,5 @@
 import { api, host } from '@wippy-fe/proxy'
-import { errMsg as baseErrMsg } from '@widgets/app/errMsg'
+import { errMsg as baseErrMsg } from '@kickside/ui-kit/errMsg'
 import type { AssistResult, AssistStrategy, InputShape, Transform, ValidateResult } from './types.ts'
 
 interface ApiError {

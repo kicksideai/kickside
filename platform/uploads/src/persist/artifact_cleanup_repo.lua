@@ -151,7 +151,7 @@ end
 -- rechecking references: PostgreSQL's FOR UPDATE excludes a concurrent FK
 -- insert, while SQLite's no-op UPDATE takes its writer lock even when foreign
 -- keys are disabled on that connection.
-function artifact_cleanup_repo.prune_orphan_blobs(cutoff: string, limit: integer): (integer?, any?)
+function artifact_cleanup_repo.prune_orphan_blobs(cutoff: string, limit: integer): (integer?, any?, any?)
     if type(cutoff) ~= "string" or cutoff == "" or type(limit) ~= "number"
         or limit ~= math.floor(limit) or limit < 1 or limit > 500 then
         return nil, retention_error("orphan blob cutoff and limit 1..500 required", errors.INVALID)
@@ -215,7 +215,7 @@ function artifact_cleanup_repo.prune_orphan_blobs(cutoff: string, limit: integer
         end
     end
     db:release()
-    return removed, nil
+    return removed, nil, {needs_continue = removed >= limit}
 end
 
 return artifact_cleanup_repo

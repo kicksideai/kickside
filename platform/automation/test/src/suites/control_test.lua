@@ -433,6 +433,61 @@ local function define_tests()
         end)
     end)
 
+    test.describe("source route lookup", function()
+        test.it("finds readable automations by source and exact event filter", function()
+            local visible, hidden, unrelated, source = uuid.v7(), uuid.v7(), uuid.v7(), uuid.v7()
+            local filter = 'payload.category == "reports"'
+            for _, id in ipairs({ visible, hidden, unrelated }) do
+                seed_drive(id, "main", {
+                    source_kind = "event", source_thread_id = source,
+                    action = {source_ref = "fixture:changed"},
+                    applied = { declaration = {
+                        trigger = {filter = {expr = id == unrelated and "false" or filter}},
+                        sink_port = "fixture:destination", sink_config = {resource_id = "library"},
+                    } },
+                })
+            end
+            local comp = component_stub({sets = {}, access = {}}, {[visible] = ACCESS.READ}, {
+                query = function(args)
+                    test.eq(args.actor_id, "viewer")
+                    test.is_nil(args.impl_ids)
+                    test.eq(#args.component_ids, 2)
+                    return {{component_id = visible, impl_id = "kickside.automation.round.fixture:kind",
+                        meta = {title = "Reports route"}, access_level = ACCESS.READ}}, nil
+                end,
+            })
+            comp.get_private_context = function() error("route lookup must not read private contexts") end
+            local rows, err = engine_with("viewer", comp).list_installed({
+                actor_id = "viewer", source_port = "fixture:changed", source_thread_id = source,
+                source_filter = filter,
+            })
+            test.is_nil(err, tostring(err))
+            test.eq(#rows, 1)
+            test.eq(rows[1].routes[1].source_port, "fixture:changed")
+            test.eq(rows[1].routes[1].source_filter, filter)
+            test.eq(rows[1].routes[1].sink_port, "fixture:destination")
+            test.eq(rows[1].routes[1].sink_config.resource_id, "library")
+            local empty, empty_err = engine_with("viewer", comp).list_installed({
+                actor_id = "viewer", source_port = "fixture:other", source_thread_id = source,
+            })
+            test.is_nil(empty_err, tostring(empty_err))
+            test.eq(#empty, 0)
+        end)
+        test.it("rejects incomplete source queries before listing", function()
+            local engine = engine_with("viewer", component_stub({sets = {}, access = {}}, {}))
+            for _, args in ipairs({
+                {source_port = "fixture:changed"},
+                {source_thread_id = uuid.v7()},
+                {source_port = "", source_thread_id = uuid.v7()},
+                {source_port = "fixture:changed", source_thread_id = uuid.v7(), source_filter = false},
+            }) do
+                local rows, err = engine.list_installed(args)
+                test.is_nil(rows)
+                test.is_true(errors.is(err, errors.INVALID), tostring(err))
+            end
+        end)
+    end)
+
     test.describe("status", function()
         test.it("reports retained dead deliveries and their reason in status, listing and readable health", function()
             local visible, other = uuid.v7(), uuid.v7()

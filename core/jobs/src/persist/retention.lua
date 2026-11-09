@@ -8,6 +8,7 @@ local cfg = require("config")
 local clock = require("clock")
 local thread_teardown = require("thread_teardown")
 local sql_boundary = require("sql_boundary")
+local thread_fence = require("thread_fence")
 
 local function bounded(limit: integer?, maximum: integer): integer
     return math.max(0, math.min(maximum, limit or maximum))
@@ -36,15 +37,10 @@ end
 
 local function prelock_ids(tx: any, dbtype: string, table_name: string, ids: { string }): error?
     if dbtype ~= sql.type.POSTGRES then return nil end
-    table.sort(ids)
-    local previous = ""
-    for _, id in ipairs(ids) do
-        if id ~= previous then
-            local _, err = tx:query("SELECT id FROM " .. table_name .. " WHERE id=$1 FOR UPDATE", { id })
-            if err then return errors.wrap(err, table_name .. " prune prelock") end
-            previous = id
-        end
-    end
+    if #ids == 0 then return nil end
+    local _, err = tx:query("SELECT id FROM " .. table_name .. " WHERE id IN ("
+        .. placeholders(1, #ids) .. ") ORDER BY id FOR UPDATE", ids)
+    if err then return errors.wrap(err, table_name .. " prune prelock") end
     return nil
 end
 
@@ -66,10 +62,17 @@ local function prune_owned(db: any, thread_id: string?, cutoff: string, runs: bo
     params[#params + 1] = batch
     local limit_arg = "$" .. tostring(#params)
     local no_runs = runs and "" or " AND NOT EXISTS (SELECT 1 FROM kickside_job_run r WHERE r.job_id=kickside_job.id)"
-    local cols = runs and "id,job_id" or "id"
-    local rows, read_err = db:query("SELECT " .. cols .. " FROM " .. table_name .. " WHERE " .. predicate
+    local cols = runs and "id,job_id,owner_kind,owner_id" or "id,owner_kind,owner_id"
+    local source = table_name
+    local ordered = "finished_at,id"
+    if dbtype == sql.type.SQLITE and all_threads == true then
+        -- The global ordered read stays bounded before planner statistics exist.
+        ordered = "finished_at,rowid"
+        source = source .. " INDEXED BY " .. (runs and "idx_job_run_global_retention" or "idx_job_global_retention")
+    end
+    local rows, read_err = db:query("SELECT " .. cols .. " FROM " .. source .. " WHERE " .. predicate
         .. " AND " .. settled .. " AND finished_at IS NOT NULL AND finished_at < " .. cutoff_arg
-        .. no_runs .. " ORDER BY finished_at,id LIMIT " .. limit_arg, params)
+        .. no_runs .. " ORDER BY " .. ordered .. " LIMIT " .. limit_arg, params)
     if read_err then return nil, errors.wrap(read_err, "job prune candidates") end
     if type(rows) ~= "table" then return nil, response_error("candidates.rows") end
     if #rows == 0 then return 0, nil end
@@ -78,13 +81,28 @@ local function prune_owned(db: any, thread_id: string?, cutoff: string, runs: bo
     if not tx then return nil, response_error("transaction") end
     local job_ids: { string } = {}
     local run_ids: { string } = {}
+    local thread_ids: { string } = {}
     for _, row in ipairs(rows) do
+        if row.owner_kind == "thread" then
+            if type(row.owner_id) ~= "string" or row.owner_id == "" then
+                return nil, sql_boundary.rollback(tx, response_error("candidates.owner"), "retention rollback failed")
+            end
+            thread_ids[#thread_ids + 1] = row.owner_id
+        end
         if runs then
             job_ids[#job_ids + 1] = tostring(row.job_id)
             run_ids[#run_ids + 1] = tostring(row.id)
         else
             job_ids[#job_ids + 1] = tostring(row.id)
         end
+    end
+    -- Match claim/cleanup lock order before retiring any thread-owned row.
+    -- A candidate may be gone after waiting; the bounded DELETE counts reality.
+    if #thread_ids > 0 then
+        local fences, fence_err = thread_fence.lock_many(tx, thread_ids)
+        if fence_err then return nil, sql_boundary.rollback(tx, fence_err, "retention rollback failed") end
+        if type(fences) ~= "table" then return nil, sql_boundary.rollback(tx,
+            response_error("thread_fences"), "retention rollback failed") end
     end
     local job_lock_err = prelock_ids(tx, tostring(dbtype), "kickside_job", job_ids)
     if job_lock_err then return nil, sql_boundary.rollback(tx, job_lock_err, "retention rollback failed") end
@@ -93,9 +111,16 @@ local function prune_owned(db: any, thread_id: string?, cutoff: string, runs: bo
 
     local args: { any } = { cutoff }
     for _, row in ipairs(rows) do args[#args + 1] = row.id end
-    local deleted, delete_err = tx:execute("DELETE FROM " .. table_name .. " WHERE finished_at < $1"
-        .. " AND " .. settled .. " AND id IN (" .. placeholders(2, #rows) .. ")"
-        .. no_runs, args)
+    local delete_source = table_name
+    local selected = "id IN (" .. placeholders(2, #rows) .. ")"
+    if dbtype == sql.type.SQLITE then
+        -- Selected rowids keep the DELETE off scans of every terminal row
+        -- through the status index.
+        delete_source = delete_source .. " NOT INDEXED"
+        selected = "rowid IN (SELECT rowid FROM " .. table_name .. " WHERE " .. selected .. ")"
+    end
+    local deleted, delete_err = tx:execute("DELETE FROM " .. delete_source .. " WHERE finished_at < $1"
+        .. " AND " .. settled .. " AND " .. selected .. no_runs, args)
     if delete_err then return nil, sql_boundary.rollback(tx, errors.wrap(delete_err, "job prune delete"), "retention rollback failed") end
     local total, proof_err = affected(deleted, "job prune delete", batch)
     if proof_err then return nil, sql_boundary.rollback(tx, proof_err, "retention rollback failed") end
@@ -117,18 +142,61 @@ end
 -- Worker identities are process-local; an absent heartbeat older than the
 -- default jobs window cannot resume. The existing last_seen_at index bounds
 -- candidate selection even after many process restarts.
-function M.prune_workers(db: any, cutoff: string, limit: integer?): (integer?, error?)
+local function prune_worker_pulses(db: any, cutoff: string, limit: integer?): (integer?, error?)
     local policy, policy_err = cfg.policy()
     if policy_err or not policy then return nil, policy_err end
     local batch = math.min((policy :: any).retention_batch,
         math.max(1, math.floor(tonumber(limit) or (policy :: any).retention_batch)))
     local result, err = db:execute([[WITH expired AS (
-        SELECT id FROM kickside_job_worker WHERE last_seen_at < $1
-        ORDER BY last_seen_at,id LIMIT $2
-    ) DELETE FROM kickside_job_worker WHERE id IN (SELECT id FROM expired)
-      AND last_seen_at < $1]], { cutoff, batch })
+        SELECT worker_id FROM kickside_job_worker_pulse WHERE last_seen_at < $1
+        ORDER BY last_seen_at LIMIT $2
+    ) DELETE FROM kickside_job_worker_pulse WHERE worker_id IN (SELECT worker_id FROM expired)
+      AND last_seen_at < $1]], {cutoff, batch})
     if err then return nil, errors.wrap(err, "stale worker heartbeats") end
     return affected(result, "stale worker heartbeats", batch)
+end
+
+function M.prune_workers(db: any, cutoff: string, limit: integer?): (integer?, error?)
+    local policy, policy_err = cfg.policy()
+    if policy_err or not policy then return nil, policy_err end
+    local batch = math.min((policy :: any).retention_batch,
+        math.max(1, math.floor(tonumber(limit) or (policy :: any).retention_batch)))
+    local dbtype, type_err = db:type()
+    if type_err then return nil, errors.wrap(type_err, "stale worker dialect") end
+    local eligibility = "last_seen_at < $1 AND NOT EXISTS (SELECT 1 FROM kickside_job_worker_pulse p"
+        .. " WHERE p.worker_id=kickside_job_worker.id AND p.last_seen_at >= $1)"
+    local rows, read_err = db:query("SELECT id FROM kickside_job_worker WHERE " .. eligibility
+        .. " ORDER BY last_seen_at LIMIT $2", {cutoff, batch})
+    if read_err then return nil, errors.wrap(read_err, "stale worker selection") end
+    if type(rows) ~= "table" then return nil, response_error("candidates.rows") end
+    if #rows == 0 then return 0, nil end
+    local tx, begin_err = sql_boundary.begin(db, "stale worker prune begin", "transaction", response_error)
+    if begin_err then return nil, begin_err end
+    if not tx then return nil, response_error("transaction") end
+    local args: {any} = {cutoff}
+    local worker_ids: {string} = {}
+    for _, row in ipairs(rows) do
+        args[#args + 1] = row.id
+        worker_ids[#worker_ids + 1] = row.id
+    end
+    local lock_err = prelock_ids(tx, tostring(dbtype), "kickside_job_worker", worker_ids)
+    if lock_err then return nil, sql_boundary.rollback(tx, lock_err, "retention rollback failed") end
+    -- Registration locks worker then pulse. Recheck pulse age under its
+    -- write lock so a heartbeat that renews after selection stays live.
+    local ids = " IN (" .. placeholders(2, #rows) .. ")"
+    local pulses, pulse_err = tx:execute("DELETE FROM kickside_job_worker_pulse WHERE last_seen_at < $1 AND worker_id" .. ids, args)
+    if pulse_err then return nil, sql_boundary.rollback(tx,
+        errors.wrap(pulse_err, "stale worker pulse delete"), "retention rollback failed") end
+    local _, proof_err = affected(pulses, "stale worker pulse delete", batch)
+    if proof_err then return nil, sql_boundary.rollback(tx, proof_err, "retention rollback failed") end
+    local workers, worker_err = tx:execute("DELETE FROM kickside_job_worker WHERE " .. eligibility .. " AND id" .. ids, args)
+    if worker_err then return nil, sql_boundary.rollback(tx,
+        errors.wrap(worker_err, "stale worker delete"), "retention rollback failed") end
+    local total, count_err = affected(workers, "stale worker delete", batch)
+    if count_err then return nil, sql_boundary.rollback(tx, count_err, "retention rollback failed") end
+    local _, commit_err = tx:commit()
+    if commit_err then return nil, errors.wrap(commit_err, "stale worker prune commit") end
+    return total, nil
 end
 
 -- A wake row has no deliverable demand after its last pending/running
@@ -222,21 +290,26 @@ local function prune_completed_thread_fences(db: any, cutoff: string, limit: int
     return total, nil
 end
 
--- One bounded pass over each Jobs-owned retained table. Repeated exact policy
--- deadlines drain older batches without an idle polling loop.
+-- One bounded pass over each Jobs-owned retained table. Full batch counts
+-- keep the worker pool retention deadline due until the backlog drains.
 function M.sweep(db: any, dbtype: string): (table?, error?)
     local policy, policy_err = cfg.policy()
     if policy_err or not policy then return nil, policy_err end
     local batch = (policy :: any).retention_batch :: integer
     local job_cutoff = days_before(dbtype, (policy :: any).retention_jobs_ms)
     local run_cutoff = days_before(dbtype, (policy :: any).retention_job_runs_ms)
+    -- Jobs retain their runs, so skip the index range still protected by
+    -- either window before checking for remaining runs.
+    local job_candidate_cutoff = job_cutoff < run_cutoff and job_cutoff or run_cutoff
     local receipt_cutoff = days_before(dbtype, (policy :: any).retention_thread_cleanup_receipts_ms)
     local runs, runs_err = M.prune_runs(db, nil, run_cutoff, batch, true)
     if runs_err then return nil, runs_err end
-    local jobs, jobs_err = M.prune_jobs(db, nil, job_cutoff, batch, true)
+    local jobs, jobs_err = M.prune_jobs(db, nil, job_candidate_cutoff, batch, true)
     if jobs_err then return nil, jobs_err end
     local workers, workers_err = M.prune_workers(db, job_cutoff, batch)
     if workers_err then return nil, workers_err end
+    local pulses, pulses_err = prune_worker_pulses(db, job_cutoff, batch)
+    if pulses_err then return nil, pulses_err end
     local wake_rows, wake_err = M.prune_wake_fanout(db, batch)
     if wake_err then return nil, wake_err end
     local cleanup_receipts, receipts_err = prune_thread_cleanup_receipts(db, receipt_cutoff, batch, dbtype)
@@ -247,7 +320,7 @@ function M.sweep(db: any, dbtype: string): (table?, error?)
     if fences_err then return nil, fences_err end
     return {
         jobs = jobs :: integer, job_runs = runs :: integer,
-        workers = workers :: integer, wake_rows = wake_rows :: integer,
+        workers = workers :: integer, worker_pulses = pulses :: integer, wake_rows = wake_rows :: integer,
         thread_cleanup_receipts = cleanup_receipts :: integer,
         thread_cleanup_fences = cleanup_fences :: integer,
         thread_cleanup_leftovers = leftovers :: integer,

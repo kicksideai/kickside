@@ -46,7 +46,7 @@ local function insert_meta(d: any, component_id: string, key: string, value: str
     if err then error("meta insert failed: " .. tostring(err)) end
 end
 
-local function seed_kb(component_id: string, owner: string): ()
+local function seed_kb(component_id: string, owner: string, impl_id: string?): ()
     fixtures[#fixtures + 1] = component_id
     local d = db()
     local identity_context, identity_context_err = json.encode({
@@ -64,7 +64,7 @@ local function seed_kb(component_id: string, owner: string): ()
     local _, comp_err = sql.builder.insert("kickside_components")
         :set_map({
             component_id = component_id,
-            impl_id = "test.kb:embeddable",
+            impl_id = impl_id or "test.kb:embeddable",
             private_context = identity_context,
             created_at = 0,
             updated_at = 0,
@@ -307,6 +307,29 @@ local function define_tests()
             test.eq(0, #(after_rows or {}))
 
             cleanup(component_id)
+        end)
+        test.it("admits content immediately through an engine's declared ledger cursor", function()
+            local owner, component_id = "ledger-writer-" .. uuid.v4(), uuid.v7()
+            seed_kb(component_id, owner, "test.kb:ledger")
+            local actor = security.new_actor(owner, {user_id = owner, status = "active",
+                security_groups = {"app.security:user"}})
+            local threads = contract.get(THREADS_CONTRACT):with_actor(actor):with_scope(limited_scope()):open()
+            local _, ensure_err = threads:ensure_thread({component_id = component_id,
+                impl_id = "app:test_engine_ledger"})
+            test.is_nil(ensure_err, tostring(ensure_err))
+            local result, append_err = funcs.new():with_actor(actor):with_scope(limited_scope()):call(APPEND_PROBE,
+                {kb_id = component_id, content = "A ledger knowledge event", external_id = "ledger-content",
+                 external_version = "1"})
+            test.is_nil(append_err, tostring(append_err))
+            local pair, lookup_err = threads:get_projection_cursor({thread_id = component_id,
+                kind = "fixture.ledger", projection_key = "ledger", cursor_key = "ledger"})
+            test.is_nil(lookup_err)
+            test.eq(result.projection_id, pair.projection.id)
+            test.eq(result.cursor_id, pair.cursor.id)
+            local events, events_err = threads:list_events({thread_id = component_id, limit = 10})
+            test.is_nil(events_err)
+            test.eq(#events.events, 1)
+            test.eq(events.events[1].type, "kickside.knowledge.events:content.upserted")
         end)
         test.it("ingests through a source projection beyond the first listing page", function()
             local owner = "agent-crowded-" .. uuid.v4()

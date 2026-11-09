@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: kickside.component.system
+entries:
+  - name: exists
+    kind: function.lua
+    meta:
+      private: true
+      comment: Trusted existence check; returns no component metadata or private context.
+    source: file://exists.lua
+    method: exists
+    modules: [security, funcs]
+    security:
+      policies: [kickside.component.system:exists_access]
+    imports:
+      component_reader: kickside.component.persist:component_reader
+  - name: read_exists
+    kind: function.lua
+    meta: {private: true}
+    source: file://exists.lua
+    method: read
+    modules: [security, funcs]
+    imports:
+      component_reader: kickside.component.persist:component_reader
+  - name: exists_access
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: [security.policy.get, security.scope.create, funcs.security, funcs.call]
+      resources:
+        - kickside.component.system:read_config
+        - kickside.component.system:read_db
+        - kickside.component.system:read_exists
+        - custom
+        - security
+      effect: allow
+  - name: read_config
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: registry.get
+      resources: kickside.component:db_config
+      effect: allow
+  - name: read_db
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: db.get
+      resources: []
+      effect: allow

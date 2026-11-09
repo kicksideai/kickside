@@ -35,15 +35,15 @@ local function is_str(v: any): boolean
 end
 
 local function validate_trait_contexts(traits: any, trait_contexts: any): error?
-    local validation = capability_context.validate_trait_contexts(traits, trait_contexts, registry.get)
+    local validation, err = capability_context.validate_trait_contexts(traits, trait_contexts, registry.get)
+    if err then return err end
     if validation.ok == true then return nil end
     return fail(errors.INVALID, "capability context invalid: " .. capability_context.error_message(validation))
 end
 
 local function validate_capability_ids(ids: any, capability_type: string): error?
-    local ok, message = capability_visibility.validate_ids(ids, capability_type, registry.get)
-    if ok then return nil end
-    return fail(errors.INVALID, tostring(message))
+    local _, err = capability_visibility.validate_ids(ids, capability_type, registry.get)
+    return err
 end
 
 local function open_component_service(): (any, error?)
@@ -286,8 +286,8 @@ function M.update(args: any): (agent_types.ComponentRef?, error?)
     return ({ component_id = args.component_id }) :: agent_types.ComponentRef, nil
 end
 
--- delete: remove agent component.
-function M.delete(args: any): (agent_types.ComponentRef?, error?)
+-- delete: remove agent component. Returns the component deletion receipt.
+function M.delete(args: any): (agent_types.DeleteResult?, error?)
     args = args or {}
     if not is_str(args.component_id) then return nil, fail(errors.INVALID, "component_id is required") end
 
@@ -299,7 +299,9 @@ function M.delete(args: any): (agent_types.ComponentRef?, error?)
     if not result or not result.success then
         return nil, fail(errors.INTERNAL, "delete_component returned: " .. tostring(result and result.error or "no result"))
     end
-    return ({ component_id = args.component_id }) :: agent_types.ComponentRef, nil
+    return ({ success = true, component_id = args.component_id, deleted = result.deleted == true, in_progress = result.in_progress,
+        status = result.status, cleanup_pending = result.cleanup_pending, job_id = result.job_id,
+        notification_error = result.notification_error }) :: agent_types.DeleteResult, nil
 end
 
 -- list: one offset page of visible agents, newest first. Filters: text?.

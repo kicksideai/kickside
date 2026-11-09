@@ -68,6 +68,23 @@ local function define_tests()
             return thread_id
         end
 
+        test.it("filters kinds sharing a thread class before applying the list limit", function()
+            local threads = open_threads(owner)
+            local selected, create_err = threads:upsert({ thread_class = "shared.events",
+                impl_id = "app:threads_test_event_kind", external_ref = "selected:" .. suffix, title = "Selected kind" })
+            test.is_nil(create_err)
+            local other, other_err = threads:upsert({ thread_class = "shared.events",
+                external_ref = "other:" .. suffix, title = "Other kind" })
+            test.is_nil(other_err)
+            local filtered, list_err = threads:list({ thread_class = "shared.events", impl_id = "app:threads_test_event_kind", limit = 1 })
+            test.is_nil(list_err)
+            test.eq(#filtered.threads, 1)
+            test.eq(filtered.threads[1].component_id, selected.thread_id)
+            local all, all_err = threads:list({ thread_class = "shared.events" })
+            test.is_nil(all_err)
+            test.eq(#all.threads, 2)
+        end)
+
         test.it("list_events returns the thread's events newest-first by default", function()
             local thread_id = new_thread_with_events(3)
             local res, err = as_owner(LIST_EVENTS, { thread_id = thread_id })

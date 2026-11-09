@@ -1,4 +1,7 @@
 @import "@wippy-fe/theme/theme-config.css";
+@import "@widgets/app/wc-mount.css";
 @tailwind base;
 :host { display: block; }
 *, *::before, *::after { box-sizing: border-box; }
+.kx-identity-editor, .kx-manual-launcher { display: grid; gap: 0.75rem; }
+.kx-identity-editor p, .kx-manual-launcher p { margin: 0; }

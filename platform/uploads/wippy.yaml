@@ -17,6 +17,7 @@ exclude_meta:
 embed:
   - kickside.uploads:ui_fs
 exclude:
+  - "wippy.lock"
   - "app:**"
   - "app.env:**"
   - "ui/node_modules/**"

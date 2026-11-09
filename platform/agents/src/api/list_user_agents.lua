@@ -1,3 +1,4 @@
+local deletion_progress = require("deletion_progress")
 local http = require("http")
 local security = require("security")
 local funcs = require("funcs")
@@ -29,6 +30,9 @@ local function agent_payload(comp, include_token: boolean): any
 
     local agent = {
         id = id,
+        deleting_at = comp.deleting_at,
+        deletion_job_id = comp.deletion_job_id,
+        deletion_job = comp.deletion_job,
         title = meta.title or "",
         description = meta.comment or "",
         icon = meta.icon or "tabler:robot",
@@ -144,6 +148,12 @@ local function handler()
             end
         end
 
+        local _, progress_err = deletion_progress.enrich(agents)
+        if progress_err then
+            res:set_status(http.STATUS.INTERNAL_ERROR)
+            res:write_json({success = false, error = tostring(progress_err)})
+            return
+        end
         res:set_status(http.STATUS.OK)
         res:write_json({
             success = true,
@@ -186,6 +196,12 @@ local function handler()
         ::continue::
     end
 
+    local _, progress_err = deletion_progress.enrich(agents)
+    if progress_err then
+        res:set_status(http.STATUS.INTERNAL_ERROR)
+        res:write_json({success = false, error = tostring(progress_err)})
+        return
+    end
     res:set_status(http.STATUS.OK)
     res:write_json({
         success = true,

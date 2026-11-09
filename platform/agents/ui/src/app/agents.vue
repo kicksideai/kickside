@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import ComponentDeletion from '@kickside/ui-kit/ComponentDeletion.vue'
+import { useComponentDeletion } from '@kickside/ui-kit/useComponentDeletion'
+import type { ComponentDeletionState } from '@kickside/ui-kit/useComponentDeletion'
 import { ref, computed, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import Button from 'primevue/button'
@@ -6,14 +9,14 @@ import { api, host, loadByTagName } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import { useComponentEvents } from '../constants.ts'
 import AgentForm from './AgentForm.vue'
-import { errMsg } from '@widgets/app/errMsg'
-import WcMount from '@widgets/app/WcMount.vue'
+import { errMsg } from '@kickside/ui-kit/errMsg'
+import { latestRequest } from '@kickside/ui-kit/latestRequest'
 import { loadToolCatalog } from './toolCatalog.ts'
 
 // Canonical WC: the authenticated client comes from @wippy-fe/proxy; in-component
 // modals replace window.confirm; the universal --p-* theme vocabulary renders it
 // in any host's shadow DOM.
-interface Agent {
+interface Agent extends ComponentDeletionState {
   id: string
   title?: string
   description?: string
@@ -60,18 +63,19 @@ const filtered = computed(() => {
   )
 })
 
+const beginLoad = latestRequest()
 async function load() {
+  const current = beginLoad()
   loading.value = true
   error.value = ''
   try {
     const { data } = await api.get('/api/v1/user-agents')
     if (!data?.success) throw new Error(data?.error || 'failed to load agents')
-    agents.value = (data.agents || []) as Agent[]
+    if (current()) agents.value = (data.agents || []) as Agent[]
   } catch (e) {
-    agents.value = []
-    error.value = errMsg(e, 'could not load agents')
+    if (current()) error.value = errMsg(e, 'could not load agents')
   } finally {
-    loading.value = false
+    if (current()) loading.value = false
   }
 }
 
@@ -93,25 +97,6 @@ async function loadOptions() {
 // agent's session start-token (packed per agent by the API).
 function startChat(a: Agent) {
   if (a.start_token) emit('kickside-chat-open', { kind: 'start', startToken: a.start_token })
-}
-
-const runAgent = ref<Agent | null>(null)
-const runPrompt = ref('')
-const preparedRun = ref<{ parent: string; title: string; target: string } | null>(null)
-const runError = ref('')
-function mayLaunch(a: Agent) { return ((a.access_level || 0) & 2) !== 0 }
-function openBackground(a: Agent) {
-  if (!mayLaunch(a)) return
-  runAgent.value = { ...a }; runPrompt.value = ''; preparedRun.value = null; runError.value = ''
-}
-function closeBackground() { runAgent.value = null; preparedRun.value = null; runError.value = '' }
-function prepareBackground() {
-  if (!runAgent.value || !runPrompt.value.trim() || preparedRun.value) return
-  preparedRun.value = { parent: runAgent.value.id, title: `Run ${runAgent.value.title || 'agent'}`,
-    target: JSON.stringify({ kind: 'agent', agent_id: runAgent.value.id, prompt: runPrompt.value }) }
-}
-function backgroundError(value: unknown) {
-  runError.value = errMsg(value, 'Could not launch the background task')
 }
 
 // ── editor ──
@@ -138,6 +123,7 @@ async function askRemove(a: Agent) {
   try {
     const { data } = await api.delete(`/api/v1/user-agents/${a.id}`)
     if (!data?.success) throw new Error(data?.error || 'delete failed')
+    acceptDeletion(a.id, data)
     await load()
   } catch (e) {
     error.value = errMsg(e, 'delete failed')
@@ -180,6 +166,7 @@ watch([shareOpen, shareHost], async () => {
 useHostVisibilityRefresh(async () => {
   await Promise.all([load(), loadOptions()])
 })
+const {acceptDeletion} = useComponentDeletion(agents, row => row.id, undefined, load)
 </script>
 
 <template>
@@ -206,14 +193,6 @@ useHostVisibilityRefresh(async () => {
 
     <div v-if="error" class="kx-err">{{ error }}</div>
 
-    <section v-if="runAgent" class="kx-background-run" aria-label="Background agent run">
-      <header><h2>Run {{ runAgent.title || 'agent' }} in background</h2><Button type="button" label="Close background run" severity="secondary" outlined @click="closeBackground" /></header>
-      <p>The task runs with its selected account's current access. Its recorded human authorizer still needs access and permission to select that account.</p>
-      <label>Task prompt<textarea v-model="runPrompt" aria-label="Task prompt" :readonly="!!preparedRun" rows="4" /></label>
-      <Button v-if="!preparedRun" type="button" label="Prepare background run" :disabled="!runPrompt.trim()" @click="prepareBackground" />
-      <WcMount v-else tag="wc-manual-task-launcher" :attrs="preparedRun" @error="backgroundError" @created="runError = ''" />
-      <p v-if="runError" role="alert">{{ runError }}</p>
-    </section>
 
     <div class="kx-body">
       <div v-if="loading && !agents.length" class="kx-loading">
@@ -242,10 +221,11 @@ useHostVisibilityRefresh(async () => {
           :key="a.id"
           class="kx-card kx-focus-halo"
           tabindex="0"
-          @click="openEdit(a)"
-          @keydown.enter="openEdit(a)"
-          @keydown.space.prevent="openEdit(a)"
+          @click="!a.deleting_at && openEdit(a)"
+          @keydown.enter="!a.deleting_at && openEdit(a)"
+          @keydown.space.prevent="!a.deleting_at && openEdit(a)"
         >
+          <ComponentDeletion :state="a" @retry="askRemove(a)" />
           <div class="kx-card-head">
             <span class="kx-ficon"><Icon :icon="a.icon || 'tabler:robot'" aria-hidden="true" /></span>
             <div class="kx-card-id">
@@ -258,22 +238,19 @@ useHostVisibilityRefresh(async () => {
               </div>
             </div>
             <div class="kx-card-actions" @click.stop>
-              <Button v-if="mayLaunch(a)" type="button" severity="secondary" outlined size="small" title="Run in background" :aria-label="`Run ${a.title} in background`" @click="openBackground(a)">
-                <template #icon="{ class: iconClass }"><Icon icon="tabler:player-play" :class="iconClass" aria-hidden="true" /></template>
-              </Button>
-              <Button type="button" severity="secondary" outlined size="small" title="Edit" :aria-label="`Edit ${a.title}`" @click="openEdit(a)">
+              <Button type="button" severity="secondary" outlined size="small" title="Edit" :aria-label="`Edit ${a.title}`" @click="!a.deleting_at && openEdit(a)" :disabled="!!a.deleting_at">
                 <template #icon="{ class: iconClass }"><Icon icon="tabler:pencil" :class="iconClass" aria-hidden="true" /></template>
               </Button>
-              <Button type="button" severity="secondary" outlined size="small" title="Share" :aria-label="`Share ${a.title}`" @click="openShare(a)">
+              <Button type="button" severity="secondary" outlined size="small" title="Share" :aria-label="`Share ${a.title}`" @click="openShare(a)" :disabled="!!a.deleting_at">
                 <template #icon="{ class: iconClass }"><Icon icon="tabler:share" :class="iconClass" aria-hidden="true" /></template>
               </Button>
-              <Button type="button" severity="danger" outlined size="small" title="Delete" :aria-label="`Delete ${a.title}`" @click="askRemove(a)">
+              <Button type="button" severity="danger" outlined size="small" title="Delete" :aria-label="`Delete ${a.title}`" @click="askRemove(a)" :disabled="!!a.deleting_at">
                 <template #icon="{ class: iconClass }"><Icon icon="tabler:trash" :class="iconClass" aria-hidden="true" /></template>
               </Button>
             </div>
           </div>
           <div class="kx-card-desc">{{ a.description || 'No description' }}</div>
-          <button class="kx-card-chat" :disabled="!a.start_token" @click.stop="startChat(a)" :title="a.start_token ? 'Chat with this agent' : 'Chat unavailable'">
+          <button class="kx-card-chat" :disabled="!!a.deleting_at || (!a.start_token)" @click.stop="startChat(a)" :title="a.start_token ? 'Chat with this agent' : 'Chat unavailable'">
             <Icon icon="tabler:message" aria-hidden="true" /> Chat
           </button>
         </div>

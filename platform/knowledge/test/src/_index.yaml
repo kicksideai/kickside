@@ -83,6 +83,9 @@ entries:
       comment: Test API router.
       server: gateway
     prefix: /api
+    middleware: [token_auth]
+    options:
+      token_store: kickside.users.security:tokens
 
   - name: test_engine_wiki
     kind: registry.entry
@@ -117,6 +120,59 @@ entries:
         chunk_overlap: 0
         summary_max_chars: 0
 
+  - name: test_engine_ledger
+    kind: registry.entry
+    meta:
+      type: kickside.kb_engine
+      kb_type: ledger_fixture
+      title: Ledger fixture
+      impl_id: test.kb:ledger
+      store_contract: shared:kb_store
+      thread: {class: kickside.knowledge.injection}
+      events:
+        output:
+          - type: kickside.knowledge.events:content.upserted
+      projections:
+        - kind: fixture.ledger
+          projection_key: ledger
+          cursor_key: ledger
+          worker_ref: "func://app:maintenance_stub"
+          input_mode: prefetch_events
+          events:
+            input:
+              - type: kickside.knowledge.events:content.upserted
+
+  - name: test_engine_files
+    kind: contract.binding
+    meta:
+      type: kickside.kb_engine
+      kb_type: files
+      title: File harness engine
+      store_contract: shared:kb_store
+      accepts_files: true
+      events:
+        output:
+          - type: kickside.knowledge.events:content.upserted
+          - type: kickside.knowledge.events:content.deleted
+      projections:
+        - kind: knowledge.injection.source
+          projection_key: source
+          cursor_key: source
+          worker_ref: "proc://kickside.kb10.injection:source_worker_proc"
+          input_mode: prefetch_events
+          batch_size: 1
+          events:
+            input:
+              - type: "kickside.knowledge.events:content.upserted"
+              - type: "kickside.knowledge.events:content.deleted"
+
+    contracts:
+      - contract: kickside.contract:embeddable
+        context_required: [component_id]
+        methods:
+          embed_content: test.kb:embed_content
+          embed_reference: test.kb:embed_reference
+
   - name: test_engine_no_maintenance
     kind: registry.entry
     meta:
@@ -143,6 +199,7 @@ entries:
       comment: Permissive scope the knowledge suites run their scoped actors under.
     groups:
       - kb_test
+      - app:user
     policy:
       resources: '*'
       actions: '*'
@@ -202,6 +259,8 @@ entries:
       - name: kickside.security:ui_server
         value: app:gateway
       - name: kickside.security:process_host
+        value: app:processes
+      - name: kickside.settings:process_host
         value: app:processes
       - name: kickside.users:env_storage
         value: app:env_storage
@@ -407,6 +466,7 @@ entries:
       fetch_url: app:kb_fetch_url_fixture
       http_stub: app:kb_fetch_url_http_stub
       llm_stub: app:kb_fetch_url_llm_stub
+      component_stub: app:kb_fetch_url_component_stub
 
   - name: kb_fetch_url_http_stub
     kind: library.lua
@@ -435,7 +495,6 @@ entries:
       llm: app:kb_fetch_url_llm_stub
       prompt: wippy.llm:prompt
       net_safety: kickside.uploads:net_safety
-      thread_ingest: kickside.knowledge.injection:thread_ingest
 
   - name: planner_llm_stub
     kind: library.lua
@@ -474,7 +533,7 @@ entries:
   - name: fixture_cleanup
     kind: library.lua
     source: file://fixture_cleanup.lua
-    modules: [sql]
+    modules: [sql, time]
     imports:
       component: kickside.component:component
       teardown: kickside.core.threads.persist:teardown

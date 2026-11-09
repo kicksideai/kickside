@@ -8,6 +8,7 @@ local users = require("user_repo")
 local lifecycle = require("user_lifecycle_repo")
 local groups = require("user_groups_repo")
 local session = require("session")
+local reconcile = require("trigger_reconcile")
 local HOST = "kickside.contract:host_credential_eligibility"
 local GUARD = "kickside.users.binding:credential_eligibility"
 local CONFIG = "kickside.users:bot_account_inventory"
@@ -15,6 +16,7 @@ local original
 local owned = {}
 local function replace(entry: any)
     local existing = assert(registry.find({[".id"] = tostring(entry.id)}))
+    test.not_nil((reconcile.trigger()))
     local changes = assert(registry.snapshot()):changes()
     local kind: string = entry.kind
     local meta: {[string]: any} = entry.meta
@@ -25,6 +27,7 @@ local function replace(entry: any)
 end
 
 local function remove(id)
+    test.not_nil((reconcile.trigger()))
     local changes = assert(registry.snapshot()):changes()
     changes:delete(id)
     test.is_nil(select(2, changes:apply()))

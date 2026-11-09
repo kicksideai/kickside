@@ -67,7 +67,7 @@ function M.response_for(actor: any, component_id: any, options: any, deps: any?)
         replay_failed = r.replay_failed,
         discarded = r.discarded,
         status = r.status,
-        in_progress = r.in_progress,
+        job_id = r.job_id, notification_error = r.notification_error, in_progress = r.in_progress,
         deleted = r.deleted,
         cleanup_pending = r.cleanup_pending,
         retryable = r.retryable,

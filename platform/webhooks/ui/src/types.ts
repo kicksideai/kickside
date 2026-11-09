@@ -1,3 +1,4 @@
+import type { ComponentDeletionState } from '@kickside/ui-kit/useComponentDeletion'
 // The webhook views fetch their own data; `mode` is the only host-driven prop
 // (the create view is mounted with mode="create" by the generic picker path).
 export interface ComponentProps {
@@ -6,7 +7,7 @@ export interface ComponentProps {
 
 // A webhook row from GET /api/v1/webhooks — never the secret, only its display
 // prefix. Matches kickside.webhooks repo.list.
-export interface WebhookRow {
+export interface WebhookRow extends ComponentDeletionState {
   webhook_id: string
   secret_prefix?: string
   label?: string

@@ -132,7 +132,7 @@ local function call_threads(exec: any, method: string, args: any): (any, any)
     return result, nil
 end
 
-local function validate_kb_access(kb_id: string, access: any): any?
+local function validate_kb_access(kb_id: string, access: any): (any?, any?)
     local access_mask = access :: integer
     local actor = security.actor()
     if not actor then
@@ -158,7 +158,7 @@ local function validate_kb_access(kb_id: string, access: any): any?
         return errors.new({ message = "access denied: " .. tostring(access_err or (result and result.error) or "component not found"),
             kind = errors.PERMISSION_DENIED, retryable = false })
     end
-    return nil
+    return nil, result
 end
 
 local function current_actor_id()
@@ -227,7 +227,7 @@ local function external_id_for(params: any, metadata: any): string
     return natural_external_id_for(params, metadata) or "content:" .. uuid.v7()
 end
 
-local function external_version_for(params: any, metadata: any, content: string): string
+local function external_version_for(params: any, metadata: any, content: string?): string
     local explicit = trim(params.external_version)
     if explicit ~= "" then return explicit end
 
@@ -239,6 +239,9 @@ local function external_version_for(params: any, metadata: any, content: string)
     if source_version ~= "" then return source_version end
 
     local content_hash = trim(metadata.content_hash or metadata.sha256)
+    if content == nil then
+        return "file:" .. (content_hash ~= "" and content_hash or context_digest(source))
+    end
     if content_hash ~= "" then return content_hash end
 
     return content_sha(content) or "v1"

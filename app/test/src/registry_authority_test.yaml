@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: app
+entries:
+  # An ordinary application user holds the application's user runtime grants
+  # and still cannot claim a module's consistent process name.
+  - name: registry_claim_probe_access
+    kind: security.policy
+    groups: [app.security:user]
+    policy:
+      resources: app:registry_claim_probe
+      actions: funcs.call
+      effect: allow
+
+  - name: registry_claim_probe
+    kind: function.lua
+    source: file://registry_claim_probe.lua
+    method: claim
+    modules: [process]
+
+  - name: registry_authority_test
+    kind: function.lua
+    meta: {type: test, suite: app_security}
+    source: file://registry_authority_test.lua
+    method: run
+    modules: [funcs, security, uuid]
+    imports:
+      test: wippy.test:test

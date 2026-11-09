@@ -2,6 +2,101 @@ version: "1.0"
 namespace: app.blocks_suites
 
 entries:
+  - name: destination_fixture
+    kind: library.lua
+    source: file://destination_fixture.lua
+
+  - name: destination_subject
+    kind: library.lua
+    source: file://destination_subject.lua
+    imports:
+      consts: userspace.dataflow:consts
+      inspection: app.blocks_suites:destination_fixture
+      error_envelope: kickside.contract:error_envelope
+
+  - name: destination_test
+    kind: function.lua
+    meta: { type: test, suite: blocks, group: KickSide Blocks }
+    source: file://destination_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      subject: app.blocks_suites:destination_subject
+      fixture: app.blocks_suites:destination_fixture
+      consts: userspace.dataflow:consts
+
+  - name: signal_fixture
+    kind: function.lua
+    source: file://signal_fixture.lua
+    method: create
+    modules: [uuid]
+    imports:
+      client: userspace.dataflow:client
+      consts: userspace.dataflow:consts
+
+  - name: arm_test
+    kind: function.lua
+    meta: { type: test, suite: blocks, group: KickSide Blocks }
+    source: file://arm_test.lua
+    method: run
+    modules: [security, funcs, uuid]
+    imports:
+      test: wippy.test:test
+
+  - name: resume_execution_frame_fixture
+    kind: library.lua
+    source: file://resume_dependency.lua
+    imports:
+      fixture: app.blocks_suites:resume_fixture
+
+  - name: resume_destination_fixture
+    kind: library.lua
+    source: file://resume_dependency.lua
+    imports:
+      fixture: app.blocks_suites:resume_fixture
+
+  - name: resume_client_fixture
+    kind: library.lua
+    source: file://resume_dependency.lua
+    imports:
+      fixture: app.blocks_suites:resume_fixture
+
+  - name: resume_funcs_fixture
+    kind: library.lua
+    source: file://resume_dependency.lua
+    imports:
+      fixture: app.blocks_suites:resume_fixture
+
+  - name: resume_fixture
+    kind: library.lua
+    source: file://resume_fixture.lua
+    imports:
+      destination: kickside.blocks.internal:signal_destination
+
+  - name: resume_subject
+    kind: library.lua
+    source: file://resume_subject.lua
+    modules: [security]
+    imports:
+      funcs: app.blocks_suites:resume_funcs_fixture
+      client: app.blocks_suites:resume_client_fixture
+      destination: app.blocks_suites:resume_destination_fixture
+      execution_frame: app.blocks_suites:resume_execution_frame_fixture
+
+  - name: resume_test
+    kind: function.lua
+    meta: { type: test, suite: blocks, group: KickSide Blocks }
+    source: file://resume_test.lua
+    method: run
+    security:
+      actor: {id: 'system:blocks-owner', meta: {system: true}}
+      policies: [app:proof_policy]
+    modules: [security, funcs, uuid]
+    imports:
+      test: wippy.test:test
+      subject: app.blocks_suites:resume_subject
+      fixture: app.blocks_suites:resume_fixture
+
   - name: blocks_test
     kind: function.lua
     meta:
@@ -44,3 +139,15 @@ entries:
     imports:
       flow_contract: kickside.blocks:flow_contract
       test: wippy.test:test
+
+  - name: retry_policy_test
+    kind: function.lua
+    meta: { type: test, suite: blocks-retry, group: Block retry policy }
+    source: file://retry_policy_test.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      blocks: kickside.blocks:blocks
+      lower: kickside.blocks:lower
+      retry: userspace.dataflow:retry

@@ -14,6 +14,7 @@ entries:
     method: run
     modules: [sql, uuid, time, contract, security]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
 
   - name: tsplit_placement_test_placement_access

@@ -1,5 +1,70 @@
 # Changelog
 
+## [0.3.13](https://github.com/kicksideai/kickside/compare/core-v0.3.12...core-v0.3.13) (2026-11-07)
+
+
+### Bug Fixes
+
+* **core:** converge the lifecycle boot once the install's migrations are applied ([#352](https://github.com/kicksideai/kickside/issues/352)) ([7652781](https://github.com/kicksideai/kickside/commit/7652781374b81a3be7604acdb08c8cf020a5158f))
+
+## [0.3.12](https://github.com/kicksideai/kickside/compare/core-v0.3.11...core-v0.3.12) (2026-11-07)
+
+
+### Bug Fixes
+
+* carry the component deletion receipt through thread, skill, webhook, workflow and agent deletes ([#341](https://github.com/kicksideai/kickside/issues/341)) ([98e9d03](https://github.com/kicksideai/kickside/commit/98e9d03b522828d63b284dff4174ef7543bef2cb))
+
+## [0.3.11](https://github.com/kicksideai/kickside/compare/core-v0.3.10...core-v0.3.11) (2026-11-07)
+
+
+### Performance Improvements
+
+* **automation:** resolve fixed registry entries once per round ([#335](https://github.com/kicksideai/kickside/issues/335)) ([cee0468](https://github.com/kicksideai/kickside/commit/cee0468266db65f6ee629082833e03afef87c387))
+
+## [0.3.10](https://github.com/kicksideai/kickside/compare/core-v0.3.9...core-v0.3.10) (2026-11-05)
+
+
+### Bug Fixes
+
+* **component:** execute deletion cleanup through Jobs ([c034b5c](https://github.com/kicksideai/kickside/commit/c034b5c8e5cc2c92a5ced4d8ae70107361f2e9d3))
+* **component:** run deletion cleanup through Jobs ([da3f7ae](https://github.com/kicksideai/kickside/commit/da3f7aee8dce4136a65d1c94bda6604820bc8355))
+
+## [0.3.9](https://github.com/kicksideai/kickside/compare/core-v0.3.8...core-v0.3.9) (2026-11-01)
+
+
+### Bug Fixes
+
+* **core:** retry transient retention owner failures ([#279](https://github.com/kicksideai/kickside/issues/279)) ([f1bb3db](https://github.com/kicksideai/kickside/commit/f1bb3db4f3b0012be9e63d05baadcc32a5a22147))
+
+## [0.3.8](https://github.com/kicksideai/kickside/compare/core-v0.3.7...core-v0.3.8) (2026-11-01)
+
+
+### Bug Fixes
+
+* **core:** schedule module-owned retention deadlines ([#277](https://github.com/kicksideai/kickside/issues/277)) ([1289a1c](https://github.com/kicksideai/kickside/commit/1289a1cf59ebb0aa67147c89079e9f601342434b))
+
+## [0.3.7](https://github.com/kicksideai/kickside/compare/core-v0.3.6...core-v0.3.7) (2026-10-29)
+
+
+### Bug Fixes
+
+* **core:** converge thread declarations after concurrent creation ([#232](https://github.com/kicksideai/kickside/issues/232)) ([115401c](https://github.com/kicksideai/kickside/commit/115401c09445cbe8d806e89c45184340b2017f1f))
+* scope automation source pickers to binding kinds ([#214](https://github.com/kicksideai/kickside/issues/214)) ([f9e2577](https://github.com/kicksideai/kickside/commit/f9e2577a4dabfb088925098a96e013792e617e21))
+
+## [0.3.6](https://github.com/kicksideai/kickside/compare/core-v0.3.5...core-v0.3.6) (2026-10-28)
+
+
+### Bug Fixes
+
+* **core:** converge retained thread declarations ([#187](https://github.com/kicksideai/kickside/issues/187)) ([262c781](https://github.com/kicksideai/kickside/commit/262c7810cc7fe702e79d0bdf278ac7c1480693de))
+
+## [0.3.5](https://github.com/kicksideai/kickside/compare/core-v0.3.4...core-v0.3.5) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** resolve live scopes through Security-owned projections ([adad7ee](https://github.com/kicksideai/kickside/commit/adad7ee499f7dfbd1134c57c06368aa440a0ab07))
+
 ## [0.3.4](https://github.com/kicksideai/kickside/compare/core-v0.3.3...core-v0.3.4) (2026-10-23)
 
 

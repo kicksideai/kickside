@@ -1,5 +1,6 @@
 version: "1.0"
 override:
+  "kickside.core.jobs.service:worker.service:lifecycle.auto_start": false
   "kickside.realtime.dispatch:binding:contracts":
     - contract: kickside.contract:realtime_batch
       default: false
@@ -9,6 +10,7 @@ workspace:
   replacements:
     kickside/realtime-dispatch: ../../realtime-dispatch
     kickside/component: ..
+    kickside/jobs: ../../jobs
     kickside/contract: ../../contract
     kickside/execution: ../../execution
 vars:

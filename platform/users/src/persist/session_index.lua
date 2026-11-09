@@ -199,6 +199,8 @@ local function invalidate_delegations_in(tx, user_id)
     return true, nil
 end
 
+M.invalidate_delegations_in = invalidate_delegations_in
+
 -- invalidate_user_in is deliberately usable from a caller's existing account
 -- mutation transaction. Update the generation first: that write takes the
 -- account lock, so concurrent mint attempts wait and then observe the new
@@ -260,6 +262,8 @@ function M.invalidate_user(user_id)
     return result, nil
 end
 
+-- Explicit session invalidation keeps its existing allow-only contract. Custom
+-- scope writes use fence_groups directly and always advance authority epochs.
 local function authority_unchanged(tx, user_id, changed, options)
     local memberships, read_err = sql.builder.select("group_id"):from("app_user_groups")
         :where("user_id = ?", user_id):run_with(tx):query()
@@ -347,8 +351,8 @@ function M.invalidate_groups(group_ids, options)
 end
 
 function M.fence_groups(group_ids, options)
-    return mutate_groups(group_ids, {check_coverage = true, fence_delegations = true,
-        previous_group_rules = options and options.previous_group_rules}, function(tx, user_id)
+    return mutate_groups(group_ids, {check_coverage = options and options.previous_group_rules ~= nil,
+        fence_delegations = true, previous_group_rules = options and options.previous_group_rules}, function(tx, user_id)
         local fenced, err = invalidate_delegations_in(tx, user_id)
         if not fenced then return nil, err end
         return {revoked = 0}, nil

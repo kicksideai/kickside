@@ -55,11 +55,48 @@ Empty item `metadata` and submitted `form` values serialize as JSON objects
 | GET | `/inbox` | list items (`status`, `type`, `priority`, `page`, `limit`) |
 | GET | `/inbox/item-types` | declared item types + render metadata |
 | POST | `/inbox` | enqueue an item |
+| GET | `/inbox/{id}/files/{index}` | read attached file bytes as the current viewer |
 | POST | `/inbox/{id}/{action}` | apply an action declared by the item's canonical item type |
 
 Modules can also enqueue in-process via the `inbox_writer` library. Terminal
 resolution always goes through `inbox_resolve`, which owns action validation and
 callbacks before committing the event.
+
+### Aggregate notices
+
+The writable sink accepts optional `input.aggregate_key` and `input.source_id`
+(also available in destination config). `source_id` names a component. One item
+belongs to the tuple `(source_id, aggregate_key, ambient actor)` across deliveries.
+The actor needs live READ access to that component on every write and read;
+revoked or deleted sources hide their aggregate items from Inbox responses.
+Items without `aggregate_key` keep their existing identity and resolution behavior.
+
+An upsert with `status: pending` (the default) refreshes the title, body, priority
+and metadata and reopens the aggregate. An upsert with `status: resolved`
+explicitly closes it without requiring content. Both use existing `item.version`
+events; resolution returns the writable contract's `updated` receipt. Resolving
+an absent aggregate does not create an item. Replaying a delivery key has no new
+effect, including after a later reopen. Supply a new `idempotency_key` for each
+new snapshot and retain it for retries.
+
+For example, call `kickside.inbox.sink:inbox_sink` through
+`kickside.data:writable.write` with:
+
+```lua
+{ config = {}, sink_op = "upsert", origin = "review-source",
+  idempotency_key = "review-snapshot-3",
+  input = { source_id = component_id, aggregate_key = "pending-review",
+    content = "3 files need review", metadata = { count = 3, link = "/review" } } }
+```
+
+When no work remains, send the same source and key with `status = "resolved"`
+and a new delivery key. Inbox does not infer lifecycle from extension metadata.
+In-process owners can use `inbox_writer.create({ aggregate_key = ..., source_id = ...,
+item_type = ..., title = ..., ... })` and `inbox_writer.resolve_aggregate({
+aggregate_key = ..., source_id = ..., idempotency_key = ... })`.
+Source lifecycle resolution does not invoke human action callbacks. Human
+actions still go through `inbox_resolve`; each refreshed aggregate version has
+its own resolution identity so reopened work can receive a new decision.
 
 Cross-user review delivery requires `inbox.assign` on `user:<assignee>`.
 The application binds `kickside.inbox.security:assignment_security_scope` to its
@@ -69,3 +106,25 @@ recipient's existing component ownership, and records `metadata.assigned_by`.
 It never reconstructs the recipient's actor or reads the recipient's Inbox.
 A recipient must have a provisioned Inbox. Re-arming uses the same event identity
 and does not reopen a resolved decision.
+
+## Files
+
+Item creation, the Inbox sink, SubmitToInbox, and review Block config accept optional
+`files: [{component_id, context?, title?}]` references. This reuses the generic
+`content_provider` reference shape; for example, an upload reference uses
+`component_id: "kickside.uploads:content_provider"` and `context: {upload_id: "..."}`.
+References grant no access. Page queries return attachment counts and the existing
+content-event version without calling providers or exposing references. The selected
+reading view uses `GET /inbox?id=…&status=all` to resolve `get_info` under the viewer's
+actor and scope, returning only filename, content type, size, and the provider's
+optional `view_url`. Inaccessible references return `{locked: true}`. A metadata
+outage affects the file section's manual retry, while the Inbox and item actions
+remain available. Content versions invalidate the selected file metadata even when
+the attachment count is unchanged.
+Resolution responses return the committed outcome without file references or
+provider reads, so unavailable preview storage cannot fail an approved decision.
+The shared resource viewer fetches preview bytes through the item file endpoint,
+which invokes `get_content` under the current viewer identity on every request.
+Existing items without files retain their behavior. Content versions that omit
+`files` preserve existing references; an explicit empty list removes them. No data
+migration is required.

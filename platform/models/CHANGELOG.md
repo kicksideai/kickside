@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.1.72](https://github.com/kicksideai/kickside/compare/models-v0.1.71...models-v0.1.72) (2026-11-08)
+
+
+### Bug Fixes
+
+* UI artifacts in buttons, headings, dialogs and tables ([#371](https://github.com/kicksideai/kickside/issues/371)) ([ea55ea8](https://github.com/kicksideai/kickside/commit/ea55ea8a17ee5802cb73a4dbcf39878d7f56cd2e))
+
+## [0.1.71](https://github.com/kicksideai/kickside/compare/models-v0.1.70...models-v0.1.71) (2026-10-29)
+
+
+### Bug Fixes
+
+* **models:** preserve catalog types through error fixtures ([#234](https://github.com/kicksideai/kickside/issues/234)) ([6c8ca59](https://github.com/kicksideai/kickside/commit/6c8ca59fa6c9dbf1324a635df7a4f2bd3d5f14bf))
+
+## [0.1.70](https://github.com/kicksideai/kickside/compare/models-v0.1.69...models-v0.1.70) (2026-10-28)
+
+
+### Bug Fixes
+
+* **security:** resolve live scopes through Security-owned projections ([adad7ee](https://github.com/kicksideai/kickside/commit/adad7ee499f7dfbd1134c57c06368aa440a0ab07))
+
 ## [0.1.69](https://github.com/kicksideai/kickside/compare/models-v0.1.68...models-v0.1.69) (2026-10-22)
 
 

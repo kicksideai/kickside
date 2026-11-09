@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 -- Integration coverage for kickside.automation.agent:automations_read, driven
 -- through a real funcs call under a real actor + scope: list/types/catalog/
 -- read_config/export against a real installed fixture automation
@@ -68,13 +69,28 @@ local function define_tests()
 
         test.after_all(function()
             if exec and fixture_id then
-                exec:call(MANAGE_TOOL, { action = "uninstall", id = fixture_id })
+                local accepted, accept_err = exec:call(MANAGE_TOOL, { action = "uninstall", id = fixture_id })
+                test.is_nil(accept_err, tostring(accept_err))
+                test.is_true(accepted.success)
+                local finished, finish_err = deletion_worker.run(fixture_id)
+                test.is_nil(finish_err, tostring(finish_err))
+                test.is_true(finished.deleted)
             end
             if exec and second_fixture_id then
-                exec:call(MANAGE_TOOL, { action = "uninstall", id = second_fixture_id })
+                local accepted, accept_err = exec:call(MANAGE_TOOL, { action = "uninstall", id = second_fixture_id })
+                test.is_nil(accept_err, tostring(accept_err))
+                test.is_true(accepted.success)
+                local finished, finish_err = deletion_worker.run(second_fixture_id)
+                test.is_nil(finish_err, tostring(finish_err))
+                test.is_true(finished.deleted)
             end
             if exec and large_fixture_id then
-                exec:call(MANAGE_TOOL, { action = "uninstall", id = large_fixture_id })
+                local accepted, accept_err = exec:call(MANAGE_TOOL, { action = "uninstall", id = large_fixture_id })
+                test.is_nil(accept_err, tostring(accept_err))
+                test.is_true(accepted.success)
+                local finished, finish_err = deletion_worker.run(large_fixture_id)
+                test.is_nil(finish_err, tostring(finish_err))
+                test.is_true(finished.deleted)
             end
         end)
 

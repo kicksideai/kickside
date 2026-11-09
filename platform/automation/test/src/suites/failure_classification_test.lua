@@ -1,5 +1,6 @@
 local test = require("test")
 local errors = require("errors")
+local funcs = require("funcs")
 local failure_classification = require("failure_classification")
 local outcome = require("round_outcome")
 local drive = require("drive")
@@ -191,6 +192,15 @@ local function define_tests()
             test.eq(recorded[1].error.retry_after_ms, 90000)
         end)
 
+        test.it("retains partial delivery receipts when a later slot waits",function()
+            local item={item_key="item",delivery_key="delivery",attempts=0}
+            local recorded,receipts=outcome.ledger_outcomes({item},{delivered={},skipped={},failed={},uncertain={},
+                waiting={{key="delivery",receipts={{map_slot="a",identity_key="record",dest_ref={id="destination"}}}}}},
+                {retry_after_ms=100,max_delay_ms=100})
+            test.eq(#receipts,1)
+            test.is_true(recorded[1].error.sink_effect)
+        end)
+
         test.it("settles the prepared output of an item that failed before any write once it is dead, and keeps a retried one's", function()
             local items = { { item_key = "dead", dedup_key = "dead", delivery_key = "dead-key", attempts = 0 },
                 { item_key = "again", dedup_key = "again", delivery_key = "again-key", attempts = 0 } }
@@ -359,6 +369,25 @@ local function define_tests()
             }))
             test.eq(classified.kind, errors.PERMISSION_DENIED)
             test.eq(classified.retriable, false)
+        end)
+
+        test.it("classifies a call to a target the function registry does not hold as retriable UNAVAILABLE", function()
+            local _, call_err = funcs.call("kickside.automation.test:unregistered_target", {})
+            test.not_nil(call_err)
+            local classified = failure_classification.classify(call_err)
+            test.eq(classified.kind, errors.UNAVAILABLE)
+            test.eq(classified.retriable, true)
+            test.eq((classified.details or {}).target, "kickside.automation.test:unregistered_target")
+            local _, parks = outcome.failure_phase(classified)
+            test.eq(parks, false)
+            local repeated = failure_classification.classify(classified)
+            test.eq(repeated.kind, errors.UNAVAILABLE)
+            test.eq(repeated.retriable, true)
+
+            local missing_record = failure_classification.classify(errors.new({
+                kind = errors.NOT_FOUND, message = "record not found", details = { id = "rec-1" } }))
+            test.eq(missing_record.kind, errors.NOT_FOUND)
+            test.eq(missing_record.retriable, false)
         end)
 
         test.it("classifies raised and unknown failures as retriable INTERNAL", function()

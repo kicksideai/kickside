@@ -11,6 +11,7 @@ const PROPS_SCHEMA: WippyPropsSchema = {
     source: { type: 'string', description: 'Endpoint listing the picker catalog. When absent, the field schema\'s declared source wins, then the thread endpoint default.' },
     schema: { type: 'string', default: '', description: 'Field schema. Its primary field may declare source to select a non-thread picker catalog.' },
     'thread-class': { type: 'string', default: '', description: 'The component class to scope the instance list to (meta.thread_class).' },
+    'impl-id': { type: 'string', default: '', description: 'Stored component implementation binding to scope the instance list to.' },
     meta: { type: 'string', default: '', description: 'JSON object {type:"thread", thread_class}. Supplies thread_class when set; the poller mount passes it.' },
     value: { type: 'string', default: '', description: 'Current selection: a JSON object string {thread_id} or empty.' },
     config: { type: 'string', default: '', description: 'Alias of value: a JSON object string {thread_id}. Used by the poller config form.' },

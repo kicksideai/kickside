@@ -145,6 +145,7 @@
       "exclude-paths": [
         "platform/identity/.wippy",
         "platform/identity/test",
+        "platform/identity/test-bot-accounts",
         "platform/identity/test-support",
         "platform/identity/tests",
         "platform/identity/ui/coverage",
@@ -184,6 +185,7 @@
       "exclude-paths": [
         "platform/mcp/.wippy",
         "platform/mcp/test",
+        "platform/mcp/test-bot-accounts",
         "platform/mcp/test-support",
         "platform/mcp/tests",
         "platform/mcp/ui/coverage",
@@ -252,6 +254,7 @@
       "exclude-paths": [
         "platform/security/.wippy",
         "platform/security/test",
+        "platform/security/test-bot-accounts",
         "platform/security/test-support",
         "platform/security/tests",
         "platform/security/ui/coverage",
@@ -367,7 +370,7 @@
       "extra-files": [
         {
           "type": "json",
-          "path": "platform/ui-kit/package/package.json",
+          "path": "package/package.json",
           "jsonpath": "$.version"
         }
       ],

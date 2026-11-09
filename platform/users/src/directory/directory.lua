@@ -93,9 +93,9 @@ function M.exists(input: any): ({ exists: boolean }?, any?)
 end
 
 -- groups answers a user's live group memberships (A32): the groups an active
--- user holds, exactly those a login stamps into its security_groups. An
--- unknown or inactive user is not active and holds none. A read failure is
--- the caller's typed error.
+-- user holds, exactly those a login stamps into its security_groups. The id is
+-- a canonical user id; an email alias, an unknown or an inactive user is not
+-- active and holds none. A read failure is the caller's typed error.
 function M.groups(input: any): ({ active: boolean, groups: { string } }?, error?)
     input = (type(input) == "table") and input or {}
     local id = input.id
@@ -116,6 +116,7 @@ function M.groups(input: any): ({ active: boolean, groups: { string } }?, error?
         return nil, (errors.new({ message = "directory groups: " .. tostring(detail.message),
             kind = detail.kind, retryable = subject.retriable == true }) :: error)
     end
+    if type(subject.meta) ~= "table" or subject.meta.user_id ~= id then return { active = false, groups = {} }, nil end
     return { active = true, groups = subject.groups or {} }, nil
 end
 

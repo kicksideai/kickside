@@ -83,12 +83,24 @@ local function get_handler()
         return
     end
 
+    -- Navigation is optional presentation metadata. A host without this page
+    -- can still use the authorized file API and its delivery URLs.
+    local base = upload_response.view_base()
+    local public = upload_response.format_get_upload(upload, base)
+    local url, delivery_err = upload_response.delivery_url(upload.storage_id, upload.storage_path, public.raw_url)
+    if delivery_err then
+        res:set_status(http_errors.classify(delivery_err))
+        res:write_json({success = false, error = "Failed to obtain upload delivery URL"})
+        return
+    end
+    public.raw_url = url
+
     -- Return success with upload
     res:set_status(http.STATUS.OK)
     res:write_json({
         success = true,
         component_id = component_id,
-        upload = upload_response.format_get_upload(upload)
+        upload = public
     })
 end
 

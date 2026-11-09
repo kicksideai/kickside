@@ -1,6 +1,8 @@
 @import "@wippy-fe/theme/theme-config.css";
 @import "@kickside/ui-kit/focus.css";
 @import "@kickside/ui-kit/kx-tone.css";
+@import "@widgets/app/wc-mount.css";
+@import "@widgets/app/anchored-panel.css";
 
 .kx-agent-trait-picker {
   display: flex;

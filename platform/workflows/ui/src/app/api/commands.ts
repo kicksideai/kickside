@@ -3,7 +3,7 @@
 // instant it is placed — the seq the backend returns simply confirms it.
 
 import type { CommandType } from '../vocabulary.generated'
-import { CMD, type LayoutDirection, type NodeKind, type NoteKind, type WfNode, type WfEdge } from '../types'
+import { RETRY_FIELDS, CMD, type LayoutDirection, type NodeKind, type NoteKind, type WfNode, type WfEdge } from '../types'
 
 export interface Command {
   type: CommandType
@@ -23,10 +23,11 @@ export function addNode(node: {
   title: string
   ref?: string
   config?: Record<string, unknown>
-}): Command {
+} & Pick<WfNode, typeof RETRY_FIELDS[number]>): Command {
   const body: Record<string, unknown> = { id: node.id || uid(), kind: node.kind, title: node.title }
   if (node.ref) body.ref = node.ref
   if (node.config) body.config = node.config
+  for (const field of RETRY_FIELDS) if (node[field] !== undefined) body[field] = node[field]
   return { type: CMD.NODE_ADD, body }
 }
 

@@ -23,6 +23,7 @@ workspace:
     kickside/contract: ../../contract
     kickside/core: ../../core
     kickside/execution: ../../execution
+    kickside/settings: ../../../platform/settings
 vars:
   sqlite_path: ./.wippy/jobs-test.sqlite
   pg_host: localhost
@@ -33,6 +34,29 @@ vars:
 profiles:
   postgres:
     override:
+      "app:jobs_migration_db:kind": db.sql.postgres
+      "app:jobs_migration_db:host": "${pg_host}"
+      "app:jobs_migration_db:port": "${pg_port}"
+      "app:jobs_migration_db:database": "${pg_database}_jobs_mig"
+      "app:jobs_migration_db:username": "${pg_username}"
+      "app:jobs_migration_db:password": "${pg_password}"
+      "app:jobs_migration_db:options.sslmode": disable
+      "app:policy_migration_db:kind": db.sql.postgres
+      "app:policy_migration_db:host": "${pg_host}"
+      "app:policy_migration_db:port": "${pg_port}"
+      "app:policy_migration_db:database": "${pg_database}"
+      "app:policy_migration_db:username": "${pg_username}"
+      "app:policy_migration_db:password": "${pg_password}"
+      "app:policy_migration_db:options.sslmode": disable
+      "app:policy_migration_db:options.search_path": jobs_policy_migration_test
+      "app:private_queue_claim_policy:kind": db.sql.postgres
+      "app:private_queue_claim_policy:host": "${pg_host}"
+      "app:private_queue_claim_policy:port": "${pg_port}"
+      "app:private_queue_claim_policy:database": "${pg_database}"
+      "app:private_queue_claim_policy:username": "${pg_username}"
+      "app:private_queue_claim_policy:password": "${pg_password}"
+      "app:private_queue_claim_policy:options.sslmode": disable
+      "app:private_queue_claim_policy:options.search_path": jobs_claim_policy_test
       "app:db:kind": db.sql.postgres
       "app:db:host": "${pg_host}"
       "app:db:port": "${pg_port}"
@@ -82,6 +106,16 @@ profiles:
       "app:private_queue_concurrency_claim_test:options.search_path": kickside_private_queue_concurrency_claim_test
       "app:private_queue_concurrency_claim_test:pool.max_open": 8
       "app:private_queue_concurrency_claim_test:pool.max_idle": 4
+      "app:private_queue_capacity_claim_test:kind": db.sql.postgres
+      "app:private_queue_capacity_claim_test:host": "${pg_host}"
+      "app:private_queue_capacity_claim_test:port": "${pg_port}"
+      "app:private_queue_capacity_claim_test:database": "${pg_database}"
+      "app:private_queue_capacity_claim_test:username": "${pg_username}"
+      "app:private_queue_capacity_claim_test:password": "${pg_password}"
+      "app:private_queue_capacity_claim_test:options.sslmode": disable
+      "app:private_queue_capacity_claim_test:options.search_path": kickside_private_queue_capacity_claim_test
+      "app:private_queue_capacity_claim_test:pool.max_open": 8
+      "app:private_queue_capacity_claim_test:pool.max_idle": 4
       "app:private_queue_concurrency_test:kind": db.sql.postgres
       "app:private_queue_concurrency_test:host": "${pg_host}"
       "app:private_queue_concurrency_test:port": "${pg_port}"
@@ -232,3 +266,33 @@ profiles:
       "app:private_queue_claim_exclusion_test:options.search_path": kickside_private_queue_claim_exclusion_test
       "app:private_queue_claim_exclusion_test:pool.max_open": 8
       "app:private_queue_claim_exclusion_test:pool.max_idle": 4
+      "app:private_queue_wake_recovery_test:kind": db.sql.postgres
+      "app:private_queue_wake_recovery_test:host": "${pg_host}"
+      "app:private_queue_wake_recovery_test:port": "${pg_port}"
+      "app:private_queue_wake_recovery_test:database": "${pg_database}"
+      "app:private_queue_wake_recovery_test:username": "${pg_username}"
+      "app:private_queue_wake_recovery_test:password": "${pg_password}"
+      "app:private_queue_wake_recovery_test:options.sslmode": disable
+      "app:private_queue_wake_recovery_test:options.search_path": kickside_private_queue_wake_recovery_test
+      "app:private_queue_wake_recovery_test:pool.max_open": 8
+      "app:private_queue_wake_recovery_test:pool.max_idle": 4
+      "app:private_queue_retention_pace:kind": db.sql.postgres
+      "app:private_queue_retention_pace:host": "${pg_host}"
+      "app:private_queue_retention_pace:port": "${pg_port}"
+      "app:private_queue_retention_pace:database": "${pg_database}"
+      "app:private_queue_retention_pace:username": "${pg_username}"
+      "app:private_queue_retention_pace:password": "${pg_password}"
+      "app:private_queue_retention_pace:options.sslmode": disable
+      "app:private_queue_retention_pace:options.search_path": jobs_retention_pace
+      "app:private_queue_retention_pace:pool.max_open": 8
+      "app:private_queue_retention_pace:pool.max_idle": 4
+      "app:private_queue_retention_dispatch:kind": db.sql.postgres
+      "app:private_queue_retention_dispatch:host": "${pg_host}"
+      "app:private_queue_retention_dispatch:port": "${pg_port}"
+      "app:private_queue_retention_dispatch:database": "${pg_database}"
+      "app:private_queue_retention_dispatch:username": "${pg_username}"
+      "app:private_queue_retention_dispatch:password": "${pg_password}"
+      "app:private_queue_retention_dispatch:options.sslmode": disable
+      "app:private_queue_retention_dispatch:options.search_path": jobs_retention_dispatch
+      "app:private_queue_retention_dispatch:pool.max_open": 8
+      "app:private_queue_retention_dispatch:pool.max_idle": 4

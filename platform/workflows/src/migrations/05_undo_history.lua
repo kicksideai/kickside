@@ -10,6 +10,10 @@ return require("migration").define(function()
                 ]=])
                 if err then error(tostring(err)) end
             end)
+            down(function(db)
+                local _, err = db:execute("DROP TABLE workflow_undo_history")
+                if err then error(tostring(err)) end
+            end)
         end)
         database("sqlite", function()
             up(function(db)
@@ -19,6 +23,10 @@ return require("migration").define(function()
                         tracker TEXT NOT NULL
                     )
                 ]=])
+                if err then error(tostring(err)) end
+            end)
+            down(function(db)
+                local _, err = db:execute("DROP TABLE workflow_undo_history")
                 if err then error(tostring(err)) end
             end)
         end)

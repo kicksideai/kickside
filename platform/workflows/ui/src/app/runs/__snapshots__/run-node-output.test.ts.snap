@@ -5,9 +5,7 @@ exports[`RunNodeOutput — real failed-agent run > matches the captured drawer s
   <div class="wf-panel-hdr wf-panel-hdr--run"><i class="ic" data-icon="tabler:history" aria-hidden="true"></i><span class="wf-panel-hdr-kind">Viewing run</span></div>
   <p class="wf-panel-how"><span class="p-tag p-component p-tag-danger wf-run-status-tag" data-p="danger" data-pc-name="tag" pc1="" data-pc-section="root"><!----><span class="p-tag-label" data-pc-section="label">Failed</span></span><span class="p-tag p-component p-tag-secondary wf-run-version-tag" data-p="secondary" title="Ran published version 1" data-pc-name="tag" pc2="" data-pc-section="root"><!----><span class="p-tag-label" data-pc-section="label">v1</span></span><span> Run 88444c66 · started 23m ago<span> · finished 23m ago</span>. Read-only — nothing here can be edited.</span></p>
   <div class="wf-run-actions"><button class="p-button p-component p-button-secondary p-button-outlined" data-p="outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" pc3="" data-pc-section="root"><i class="ic" data-icon="tabler:refresh" aria-hidden="true"></i><span>Re-run with same input</span></button><button class="p-button p-component p-button-secondary p-button-outlined" data-p="outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" pc4="" data-pc-section="root"><i class="ic" data-icon="tabler:pencil" aria-hidden="true"></i><span>Back to editing</span></button></div>
-  <div class="wf-run-actions"><button class="p-button p-component p-button-secondary p-button-outlined" data-p="outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" pc5="" data-pc-section="root"><i class="ic" data-icon="tabler:download" aria-hidden="true"></i><span>Download run details</span></button>
-    <!--v-if-->
-  </div>
+  <div class="wf-run-actions"><button class="p-button p-component p-button-secondary p-button-outlined" data-p="outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" pc5="" data-pc-section="root"><i class="ic" data-icon="tabler:download" aria-hidden="true"></i><span>Download run details</span></button></div>
   <!--v-if-->
   <div class="p-tabs p-component wf-run-tabs" data-pc-name="tabs" pc6="" data-pc-section="root">
     <div class="p-tablist" data-p="" aria-label="Run inspector sections" data-pc-name="tablist" pc7="" data-pc-section="root">
@@ -20,7 +18,6 @@ exports[`RunNodeOutput — real failed-agent run > matches the captured drawer s
     </div>
   </div>
   <div class="wf-panel-label">Refund Triage</div>
-  <!--v-if-->
   <p class="wf-run-status"><span class="p-tag p-component p-tag-danger wf-run-status-tag" data-p="danger" data-pc-name="tag" pc11="" data-pc-section="root"><!----><span class="p-tag-label" data-pc-section="label">Failed</span></span><span class="wf-run-timing"><i class="ic" data-icon="tabler:clock" aria-hidden="true"></i>3.6s</span></p><!-- Error first: a directed moment — what happened, then what to do next. -->
   <div class="wf-run-fail">
     <div class="wf-run-fail-h"><i class="ic" data-icon="tabler:alert-triangle" aria-hidden="true"></i><span>This step failed.</span></div>

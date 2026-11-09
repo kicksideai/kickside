@@ -21,7 +21,8 @@ Host resources and security groups bind through the install plan.
 
 ## Requirements
 
-Wippy 0.3.x; repository validation uses 0.3.47a. Use current Hub dependencies
+For repository validation, use the Wippy release pinned in
+[CI](https://github.com/kicksideai/kickside/blob/main/.github/workflows/ci.yml). Use current Hub dependencies
 for the contracts declared by the module.
 The standalone harness uses SQLite and declares a PostgreSQL test profile.
 Frontend development also uses Node.js 22, npm, and Make.
@@ -67,6 +68,7 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 | [`kickside.settings:target_db`](src/_index.yaml) | Host supplies the value |
 | [`kickside.settings:api_router`](src/_index.yaml) | Host supplies the value |
 | [`kickside.settings:ui_server`](src/_index.yaml) | Host supplies the value |
+| [`kickside.settings:process_host`](src/_index.yaml) | `app:processes` |
 
 ## Links
 

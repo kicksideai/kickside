@@ -9,6 +9,7 @@ entries:
     modules: [funcs, security, json, registry, channel, time, uuid, process]
     imports:
       test: wippy.test:test
+      deletion_worker: app:deletion_test_worker
       canonical_json: kickside.contract:canonical_json
       component: kickside.component:component
       round_harness: kickside.automation:round_harness
@@ -57,6 +58,10 @@ entries:
     binding: kickside.automation.recurring.fixture:sink
     input_schema: '{ "type": "object" }'
     operations: { upsert: {} }
+  - name: legacy_agent
+    kind: registry.entry
+    meta: { type: agent.gen1, title: Legacy recurring target fixture }
+    prompt: Fixture agent retained for recurring-task compatibility coverage.
   - name: typed_action
     kind: registry.entry
     meta: { type: kickside.automation.port, title: Typed recurring action }
@@ -80,6 +85,7 @@ entries:
     method: run
     modules: [uuid, json]
     imports:
+      deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       canonical_json: kickside.contract:canonical_json
       round_harness: kickside.automation:round_harness

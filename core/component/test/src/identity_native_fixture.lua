@@ -9,10 +9,11 @@ local function record(stage)
 end
 local db = {}
 function db:release() table.insert(M.calls, "release") end
+function db:type(): (string, error?) return "sqlite", nil end
 function db:query(statement, params): (any, error?)
     local _, err = record("query")
     if err then return nil, err end
-    return {{private_context = '{"_execution_identity":{"principal":{"kind":"user","id":"principal"}}}',
+    return {{context_readable = 1, execution_identity = '{"principal":{"kind":"user","id":"principal"}}',
         identity_generation = 1, identity_hash = "hash", declaration_hash = "declaration"}}, nil
 end
 function M.get(id): (any, error?)

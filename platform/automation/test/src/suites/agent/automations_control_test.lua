@@ -1,3 +1,4 @@
+local deletion_worker = require("deletion_worker")
 -- End-to-end execution-identity change and the status/health readers through the MCP
 -- tools, under real user actors: the fixture automation is installed through
 -- the engine's one install path, set_execution_identity runs through the command
@@ -50,7 +51,14 @@ local function define_tests()
         end)
 
         test.after_all(function()
-            if exec and id ~= "" then exec:call(MANAGE_TOOL, { action = "uninstall", id = id }) end
+            if exec and id ~= "" then
+                local accepted, accept_err = exec:call(MANAGE_TOOL, { action = "uninstall", id = id })
+                test.is_nil(accept_err, tostring(accept_err))
+                test.is_true(accepted.success)
+                local finished, finish_err = deletion_worker.run(id)
+                test.is_nil(finish_err, tostring(finish_err))
+                test.is_true(finished.deleted)
+            end
         end)
 
         test.it("selects the owner's own principal and reads the repeated request back", function()

@@ -2,6 +2,7 @@
 -- live in the injected skill filesystem, named by SHA-256 in each manifest.
 
 local component = require("component")
+local envelope = require("envelope")
 local uuid = require("uuid")
 local base64 = require("base64")
 local contract = require("contract")
@@ -405,7 +406,8 @@ function M.share(args: any): (skill_types.ShareResult?, error?)
 end
 
 -- delete: remove the skill component. DELETE access required. The component's
--- deletable impl tears down the history thread + the bundle files.
+-- deletable impl tears down the history thread + the bundle files. Returns the
+-- component deletion receipt.
 function M.delete(args: any): (skill_types.DeleteResult?, error?)
     args = args or {}
     local delete_args = args :: skill_types.SkillDeleteArgs
@@ -417,10 +419,12 @@ function M.delete(args: any): (skill_types.DeleteResult?, error?)
     local svc, serr = component.get_service()
     if serr or not svc then return nil, errors.wrap(serr or errors.new({ kind = errors.UNAVAILABLE, message = "component service missing" }), "component service unavailable") end
     local res, e = svc:delete({ component_id = delete_args.skill_id })
-    if e or not (res and res.success) then
-        return nil, errors.wrap(e or (res and res.error) or errors.new({ kind = errors.INTERNAL, message = "invalid delete response" }), "delete_component")
-    end
-    return ({ skill_id = delete_args.skill_id }) :: skill_types.DeleteResult
+    if e then return nil, envelope.call_error(e, "delete_component") end
+    local delete_err = envelope.error_of(res, "delete_component")
+    if delete_err then return nil, delete_err end
+    return ({ skill_id = delete_args.skill_id, deleted = res.deleted == true, in_progress = res.in_progress,
+        status = res.status, cleanup_pending = res.cleanup_pending, job_id = res.job_id,
+        notification_error = res.notification_error }) :: skill_types.DeleteResult
 end
 
 return M
