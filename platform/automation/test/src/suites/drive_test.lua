@@ -7,6 +7,7 @@ local test = require("test")
 local sql = require("sql")
 local uuid = require("uuid")
 local drive = require("drive")
+local canonical_json = require("canonical_json")
 
 local DB = "app:db"
 
@@ -200,6 +201,81 @@ local function define_tests()
             test.is_false(stale)
             local current = in_tx(function(tx) return drive.ack_wake_tx(tx, id, "main", 1, 2) end)
             test.is_true(current)
+        end)
+
+        for _,change in ipairs({
+            {field="transform",value={kind="expr",expr="payload"},bump=1},
+            {field="sink_port",value="other:sink",bump=1},
+            {field="sink_config",value={mapping={value="name"}},bump=1},
+            {field="trigger",value={source="other:source"},bump=1},
+            {field="trigger",value={source="test:source",config={selector="changed"}},bump=1},
+            {field="trigger",value={source="test:source",filter={expr="false"}},bump=1},
+            {field="trigger",value={source="test:source",backfill="all"},bump=1},
+            {field="target",value={kind="workflow",flow_ref={kind="flow",id="flow",version=2}},bump=1},
+            {field="target",value={kind="agent",agent_id="agent",prompt="changed"},bump=1},
+            {field="target",value={kind="action",port="test:action",config={},input={value=2}},bump=1},
+            {field="title",value="Renamed",bump=0},
+            {field="enabled",value=false,bump=0},
+            {field="schedule",value={type="interval",expression="15m"},bump=0},
+            {field="trigger",value={source="test:source",schedule={type="interval",expression="15m"}},bump=0},
+            {field="trigger",value={source="test:source",poll={page_size=10},delivery={retry_after_ms=500}},bump=0},
+        }) do
+            test.it("compares delivery fields for " .. change.field .. " " .. assert(canonical_json.hash(change.value)),function()
+                local id=uuid.v7()
+                new_drive(id,"main")
+                local before={title="Original",enabled=true,trigger={source="test:source"},
+                    transform={kind="none"},sink_port="test:sink",sink_config={}}
+                local after={}
+                for key,value in pairs(before) do after[key]=value end
+                after[change.field]=change.value
+                local _,seed_err=in_tx(function(tx)
+                    return drive.update_cas_tx(tx,id,"main",{}, {applied_json=assert(canonical_json.encode({declaration=before,policy={}})),
+                        applied_hash=assert(canonical_json.hash(before)),delivery_revision=7})
+                end)
+                test.is_nil(seed_err,tostring(seed_err))
+                local applied={declaration=after,policy={},hash=assert(canonical_json.hash(after))}
+                local _,err=in_tx(function(tx)
+                    local fence_err=drive.fence_for_command_tx(tx,id,{"main"},"apply",1)
+                    if fence_err then return nil,fence_err end
+                    return true,drive.release_command_tx(tx,id,{"main"},"apply",1,applied)
+                end)
+                test.is_nil(err,tostring(err))
+                test.eq(read(id,"main").delivery_revision,7+change.bump)
+                local _,retry_err=in_tx(function(tx)
+                    return true,drive.release_command_tx(tx,id,{"main"},"apply",1,applied)
+                end)
+                test.not_nil(retry_err)
+                test.eq(read(id,"main").delivery_revision,7+change.bump)
+                local _,again_err=in_tx(function(tx)
+                    local fence_err=drive.fence_for_command_tx(tx,id,{"main"},"again",2)
+                    if fence_err then return nil,fence_err end
+                    return true,drive.release_command_tx(tx,id,{"main"},"again",2,applied)
+                end)
+                test.is_nil(again_err,tostring(again_err))
+                test.eq(read(id,"main").delivery_revision,7+change.bump)
+                local _,failed_err=in_tx(function(tx)
+                    local fence_err=drive.fence_for_command_tx(tx,id,{"main"},"failed",3)
+                    if fence_err then return nil,fence_err end
+                    return true,drive.release_command_tx(tx,id,{"main"},"failed",3)
+                end)
+                test.is_nil(failed_err,tostring(failed_err))
+                test.eq(read(id,"main").delivery_revision,7+change.bump)
+                test.eq(read(id,"main").applied_hash,applied.hash)
+            end)
+        end
+
+        test.it("keeps opaque declarations on their existing delivery revision",function()
+            local id=uuid.v7()
+            new_drive(id,"main")
+            local declaration={title="Opaque",custom={value="changed"}}
+            local _,err=in_tx(function(tx)
+                local fence_err=drive.fence_for_command_tx(tx,id,{"main"},"opaque",1)
+                if fence_err then return nil,fence_err end
+                return true,drive.release_command_tx(tx,id,{"main"},"opaque",1,
+                    {declaration=declaration,policy={},hash=assert(canonical_json.hash(declaration))})
+            end)
+            test.is_nil(err,tostring(err))
+            test.eq(read(id,"main").delivery_revision,1)
         end)
 
         test.it("refuses to release a drive pending on another command", function()

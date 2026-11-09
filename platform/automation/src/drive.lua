@@ -13,6 +13,7 @@
 local sql = require("sql")
 local json = require("json")
 local time = require("time")
+local canonical_json = require("canonical_json")
 
 local drive = {}
 
@@ -411,6 +412,14 @@ function drive.fence_for_command_tx(tx: sql.Transaction, automation_id: string, 
     return nil
 end
 
+local function delivery_fingerprint(declaration: any): (string?, error?)
+    local d = type(declaration) == "table" and (declaration :: Map) or {}
+    local trigger = type(d.trigger) == "table" and (d.trigger :: Map) or {}
+    return canonical_json.hash({ source = trigger.source, config = trigger.config,
+        backfill = trigger.backfill, filter = trigger.filter, transform = d.transform,
+        sink_port = d.sink_port, sink_config = d.sink_config, target = d.target })
+end
+
 -- release_command_tx clears a finalized command from its drives and publishes
 -- wake demand so each slot runs under the outcome. Only drives still pending
 -- on exactly this command id and generation are released. `applied` ({
@@ -431,10 +440,17 @@ function drive.release_command_tx(tx: sql.Transaction, automation_id: string, dr
     for _, key in ipairs(drive.sorted_keys(drive_keys)) do
         local result, err
         if applied_json ~= nil then
+            local previous, read_err = drive.get(tx, automation_id, key)
+            if read_err then return read_err end
+            local before, before_err = delivery_fingerprint(previous and previous.applied.declaration)
+            if before_err then return before_err end
+            local after, after_err = delivery_fingerprint((applied :: Map).declaration)
+            if after_err then return after_err end
             result, err = tx:execute("UPDATE " .. drive.TABLE .. " SET pending_command_id = NULL, repair_next_at = NULL, wake_generation = wake_generation + 1,"
-                .. " applied_json = $1, applied_hash = $2"
-                .. " WHERE automation_id = $3 AND drive_key = $4 AND pending_command_id = $5 AND command_generation = $6",
-                { applied_json, (applied :: Map).hash, automation_id, key, command_id, generation })
+                .. " delivery_revision = delivery_revision + $1,"
+                .. " applied_json = $2, applied_hash = $3"
+                .. " WHERE automation_id = $4 AND drive_key = $5 AND pending_command_id = $6 AND command_generation = $7",
+                { before ~= after and 1 or 0, applied_json, (applied :: Map).hash, automation_id, key, command_id, generation })
         else
             result, err = tx:execute("UPDATE " .. drive.TABLE .. " SET pending_command_id = NULL, repair_next_at = NULL, wake_generation = wake_generation + 1"
                 .. " WHERE automation_id = $1 AND drive_key = $2 AND pending_command_id = $3 AND command_generation = $4",

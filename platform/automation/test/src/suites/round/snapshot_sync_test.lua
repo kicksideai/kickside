@@ -9,6 +9,7 @@ local provenance=require("round_provenance")
 local round_write=require("round_write")
 local time=require("time")
 local drive=require("drive")
+local canonical_json=require("canonical_json")
 type Map = {[string]:any}
 local PORT="kickside.automation.round.fixture:records"
 local STORE="kickside.automation.round.fixture:store"
@@ -20,9 +21,10 @@ return test.run_cases(function()
             local count=5
             local items: {Map}={}
             for i=1,count do items[i]={item_key=tostring(i),dedup_key=tostring(i),op="upsert",payload={value=i}} end
+            local declaration={title="Snapshot sync",trigger={v=2,source=PORT},sink_port=STORE,sink_config={},transform={kind="none"},enabled=true}
             h.new_drive({automation_id=id,drive_key="snapshot",source_kind="collection",
-                applied={title="Snapshot sync",trigger={v=2,source=PORT},sink_port=STORE,sink_config={},transform={kind="none"},enabled=true},
-                applied_hash="snapshot-v1",
+                applied=declaration,
+                applied_hash=assert(canonical_json.hash(declaration)),
                 action={source_ref=PORT,config={},schedule={type="interval",expression="5m"}}})
             local passes={}
             local previous_receipts=""
@@ -90,9 +92,10 @@ return test.run_cases(function()
             test.it("settles unchanged unprepared admissions with one probe per commit: " .. h.encoded(sample),function()
                 local env=h.setup("snapshot_no_prepared","kickside.automation.round.fixture:snapshot_sync_kind")
                 local id=env.automation_id
+                local declaration={title="Snapshot sync",trigger={v=2,source=PORT},sink_port=STORE,sink_config={},transform={kind="none"},enabled=true}
                 h.new_drive({automation_id=id,drive_key="snapshot",source_kind="collection",
-                    applied={title="Snapshot sync",trigger={v=2,source=PORT},sink_port=STORE,sink_config={},transform={kind="none"},enabled=true},
-                    applied_hash="snapshot-v1",action={source_ref=PORT,config={}}})
+                    applied=declaration,
+                    applied_hash=assert(canonical_json.hash(declaration)),action={source_ref=PORT,config={}}})
                 local job=h.running_job()
                 local prepared_deletes=0
                 local prepared_probes=0
@@ -178,16 +181,20 @@ return test.run_cases(function()
 
         test.it("redelivers an unchanged snapshot only when its applied declaration changes",function()
             local env=h.setup("snapshot_declaration","kickside.automation.round.fixture:snapshot_sync_kind")
-            local id=env.automation_id
             local items: {Map}={ {item_key="one",dedup_key="one",op="upsert",payload={value=1}} }
             local function declaration(transform: Map, sink_config: Map, filter: string?): Map
-                local trigger: Map={v=2,source=PORT}
+                local trigger: Map={v=2,source=PORT,backfill="all",schedule={type="interval",expression="5m"}}
                 if filter then trigger.filter={expr=filter} end
-                return {title="Snapshot declaration",trigger=trigger,sink_port=STORE,sink_config=sink_config,transform=transform,enabled=true}
+                return {title="Snapshot declaration",trigger=trigger,sink_port="kickside.automation.round.fixture:idempotent_store",sink_config=sink_config,transform=transform,enabled=true}
             end
             local current=declaration({kind="none"},{})
-            h.new_drive({automation_id=id,drive_key="snapshot",source_kind="collection",applied=current,applied_hash="snapshot-v1",
-                action={source_ref=PORT,config={},schedule={type="interval",expression="5m"}}})
+            local manage="kickside.automation.agent:automations_manage"
+            local installed,install_err=env.caller:call(manage,{action="install",type="kickside.sync:sync",input=current})
+            test.is_nil(install_err,tostring(install_err));test.is_true(installed.success)
+            local id=installed.id
+            local initial=h.read_drive(id,"main")
+            test.eq(h.encoded(initial.applied.declaration),h.encoded(current))
+            test.eq(initial.applied_hash,assert(canonical_json.hash(current)))
             local answer: Map={}
             local pass=0
             local function run_as(identity: any,target: string,args: any,opts: any): (any?,any)
@@ -200,41 +207,84 @@ return test.run_cases(function()
                 pass=pass+1
                 answer={}
                 local before=#h.query("SELECT id FROM round_fixture_log WHERE drive_key='sink'",{})
-                h.set_drive(id,"snapshot","next_run_at=$1",{h.PAST})
-                local _,err=env.run(id,"snapshot",run_as)
+                h.set_drive(id,"main","next_run_at=$1",{h.PAST})
+                local _,err=env.run(id,"main",run_as)
                 test.is_nil(err,tostring(err))
                 test.eq(#h.query("SELECT id FROM round_fixture_log WHERE drive_key='sink'",{})-before,expected_calls,
-                    "sink calls for pass " .. tostring(pass) .. " (" .. expected_list .. ")")
+                    "sink calls for pass " .. tostring(pass) .. " (" .. expected_list .. "): " .. h.encoded(answer))
                 for _,name in ipairs({"delivered","skipped","waiting","uncertain","failed"}) do
                     test.eq(#(answer[name] or {}),name==expected_list and 1 or 0,h.encoded(answer))
                 end
             end
-            local function apply(next: Map, hash: string): ()
+            local function apply(next: Map): ()
+                local result,err=env.caller:call(manage,{action="reconfigure",id=id,input=next})
+                test.is_nil(err,tostring(err));test.is_true(result.success)
                 current=next
-                h.set_drive(id,"snapshot","applied_json=$1,applied_hash=$2",
-                    {h.encoded({declaration=current,policy=h.drive_policy(nil)}),hash})
+                local applied=h.read_drive(id,"main")
+                test.eq(h.encoded(applied.applied.declaration),h.encoded(current))
+                test.eq(applied.applied_hash,assert(canonical_json.hash(current)))
             end
 
             run(1,"delivered")
             run(0,"skipped")
-            apply(declaration({kind="expr",expr='{"directive":"remapped"}'},{}),"snapshot-v2-transform")
+            local original=h.read_drive(id,"main").delivery_revision
+            local original_key=h.query("SELECT delivery_key FROM kickside_automation_receipt WHERE owner_id=$1",{id})[1].delivery_key
+            current.title="Renamed snapshot"
+            apply(current)
+            run(0,"delivered")
+            run(0,"skipped")
+            test.eq(h.read_drive(id,"main").delivery_revision,original)
+            test.eq(h.query("SELECT delivery_key FROM kickside_automation_receipt WHERE owner_id=$1",{id})[1].delivery_key,original_key)
+            current.trigger.schedule={type="interval",expression="15m"}
+            apply(current)
+            run(0,"delivered")
+            test.eq(h.read_drive(id,"main").delivery_revision,original)
+            test.eq(h.query("SELECT delivery_key FROM kickside_automation_receipt WHERE owner_id=$1",{id})[1].delivery_key,original_key)
+            current.enabled=false
+            apply(current)
+            current.enabled=true
+            apply(current)
+            run(0,"skipped")
+            test.eq(h.read_drive(id,"main").delivery_revision,original)
+            test.eq(h.query("SELECT delivery_key FROM kickside_automation_receipt WHERE owner_id=$1",{id})[1].delivery_key,original_key)
+            apply(declaration({kind="expr",expr='{"directive":"remapped"}'},{}))
             run(1,"delivered")
+            test.eq(h.read_drive(id,"main").delivery_revision,original+1)
+            test.is_true(h.query("SELECT delivery_key FROM kickside_automation_receipt WHERE owner_id=$1",{id})[1].delivery_key ~= original_key)
             local remapped=h.query("SELECT detail_json FROM round_fixture_log WHERE drive_key='sink' ORDER BY id DESC LIMIT 1",{})[1]
             test.eq(json.decode(remapped.detail_json).directive,"remapped")
             run(0,"skipped")
-            apply(declaration({kind="expr",expr='{"directive":"remapped"}'},{mapping="changed"}),"snapshot-v3-sink")
+            apply(declaration({kind="expr",expr='{"directive":"remapped"}'},{mapping="changed"}))
             run(1,"delivered")
             run(0,"skipped")
-            apply(declaration({kind="expr",expr='{"directive":"remapped"}'},{mapping="changed"},"false"),"snapshot-v4-excluded")
+            apply(declaration({kind="expr",expr='{"directive":"remapped"}'},{mapping="changed"},"false"))
             run(0,"skipped")
             test.eq(answer.skipped[1].reason,"filtered")
-            apply(declaration({kind="expr",expr='{"directive":"remapped"}'},{mapping="changed"},"payload.value > 0"),"snapshot-v5-admitted")
+            apply(declaration({kind="expr",expr='{"directive":"remapped"}'},{mapping="changed"},"payload.value > 0"))
             run(1,"delivered")
             run(0,"skipped")
             local receipt=h.query("SELECT delivery_key,declaration_hash FROM kickside_automation_receipt WHERE owner_id=$1 AND item_key='one'",{id})
             test.eq(#receipt,1)
             test.not_nil(receipt[1].delivery_key)
-            test.eq(receipt[1].declaration_hash,"snapshot-v5-admitted")
+            test.eq(receipt[1].declaration_hash,assert(canonical_json.hash(current)))
+            test.eq(#h.query("SELECT item_key FROM kickside_trigger_item_ledger WHERE owner_id=$1 AND state='dead'",{id}),0)
+            local accepted=h.query("SELECT item_key FROM round_fixture_log WHERE drive_key='idempotent-sink'",{})
+            test.eq(#accepted,4)
+            for i=1,#accepted do for j=i+1,#accepted do test.is_true(accepted[i].item_key ~= accepted[j].item_key) end end
+            local revision=h.read_drive(id,"main").delivery_revision
+            apply(current)
+            test.eq(h.read_drive(id,"main").delivery_revision,revision)
+            h.new_drive({automation_id=id,drive_key="reconcile",source_kind="reconcile",action={source_ref=PORT}})
+            h.set_drive(id,"reconcile","reconcile_pass_id=$1",{"reconfigured-pass"})
+            run(0,"skipped")
+            local seen=h.query("SELECT delivery_key,pass_id FROM kickside_automation_receipt WHERE owner_id=$1",{id})[1]
+            test.eq(seen.delivery_key,receipt[1].delivery_key)
+            test.eq(seen.pass_id,"reconfigured-pass")
+            items={{item_key="one",dedup_key="one",op="delete",payload={}}}
+            run(1,"delivered")
+            test.eq(#h.query("SELECT item_key FROM kickside_automation_receipt WHERE owner_id=$1",{id}),0)
+            run(0,"skipped")
+            test.eq(answer.skipped[1].reason,"no destination")
         end)
     end)
 end)
