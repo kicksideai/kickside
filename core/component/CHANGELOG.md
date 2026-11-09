@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.12](https://github.com/kicksideai/kickside/compare/component-v0.3.11...component-v0.3.12) (2026-11-09)
+
+
+### Bug Fixes
+
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+* **retention:** preserve owner cleanup progress and committed writes ([#389](https://github.com/kicksideai/kickside/issues/389)) ([63f0e85](https://github.com/kicksideai/kickside/commit/63f0e859a1fef74704365e4a8f511f8b159198d4))
+
 ## [0.3.11](https://github.com/kicksideai/kickside/compare/component-v0.3.10...component-v0.3.11) (2026-11-08)
 
 

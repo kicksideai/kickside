@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.26](https://github.com/kicksideai/kickside/compare/security-v0.2.25...security-v0.2.26) (2026-11-09)
+
+
+### Bug Fixes
+
+* **security:** present role permissions and grant states clearly ([#381](https://github.com/kicksideai/kickside/issues/381)) ([274bc83](https://github.com/kicksideai/kickside/commit/274bc83fe92592c408eb479357a9c74c0dcef67d))
+
 ## [0.2.25](https://github.com/kicksideai/kickside/compare/security-v0.2.24...security-v0.2.25) (2026-11-07)
 
 

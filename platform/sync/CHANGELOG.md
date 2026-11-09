@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.96](https://github.com/kicksideai/kickside/compare/sync-v0.1.95...sync-v0.1.96) (2026-11-09)
+
+
+### Bug Fixes
+
+* **automation:** suppress idle delivery history and bound retention ([5560614](https://github.com/kicksideai/kickside/commit/556061470e9ce9e982823a04040a60e00b988996))
+
 ## [0.1.95](https://github.com/kicksideai/kickside/compare/sync-v0.1.94...sync-v0.1.95) (2026-11-08)
 
 

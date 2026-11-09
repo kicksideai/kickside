@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.12](https://github.com/kicksideai/kickside/compare/uploads-v0.3.11...uploads-v0.3.12) (2026-11-09)
+
+
+### Bug Fixes
+
+* **retention:** preserve owner cleanup progress and committed writes ([#389](https://github.com/kicksideai/kickside/issues/389)) ([63f0e85](https://github.com/kicksideai/kickside/commit/63f0e859a1fef74704365e4a8f511f8b159198d4))
+* **uploads,transform:** use plain file labels and code guidance ([#379](https://github.com/kicksideai/kickside/issues/379)) ([d00fad0](https://github.com/kicksideai/kickside/commit/d00fad038decbad7cb0c4f6705e12d48d4fd4591))
+
 ## [0.3.11](https://github.com/kicksideai/kickside/compare/uploads-v0.3.10...uploads-v0.3.11) (2026-11-07)
 
 

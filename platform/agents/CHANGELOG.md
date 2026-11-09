@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.15](https://github.com/kicksideai/kickside/compare/agents-v0.2.14...agents-v0.2.15) (2026-11-09)
+
+
+### Bug Fixes
+
+* **agents:** show capability details once in the editor ([#383](https://github.com/kicksideai/kickside/issues/383)) ([0d304be](https://github.com/kicksideai/kickside/commit/0d304bebcdc05f7a4e8a2aa91da7078765a218e9))
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+
 ## [0.2.14](https://github.com/kicksideai/kickside/compare/agents-v0.2.13...agents-v0.2.14) (2026-11-08)
 
 
