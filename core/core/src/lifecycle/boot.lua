@@ -130,6 +130,9 @@ local function converge_when_ready(ledger_failed: boolean): (string, integer?, e
 end
 
 local function main(_args: any): any
+    -- A registry update can reach the process as soon as its singleton name is visible.
+    local opts_ok, opts_err = process.set_options({ trap_links = true, upgradable = true })
+    if opts_err or opts_ok ~= true then error(opts_err or response_error("options")) end
     -- Listen and claim the boot name before the first convergence so a
     -- migrations-applied message sent meanwhile waits in the listener. An
     -- upgrade keeps the PID, its registered name and the unread listener
@@ -154,12 +157,6 @@ local function main(_args: any): any
     -- Resident from here: upgradable, parked on the events channel and the
     -- migrations-applied listener. A clean return on CANCEL or channel closure
     -- completes graceful shutdown; the supervisor sees no exit otherwise.
-    local opts_ok, opts_err = process.set_options({ trap_links = true, upgradable = true })
-    if opts_err or opts_ok ~= true then
-        local primary = opts_err or response_error("options")
-        if converge_err then primary = error_envelope.wrap_secondary(primary, converge_err, "system lifecycle options failed") end
-        error(primary)
-    end
     logger:info("system lifecycle resident", { upgradable = opts_ok == true })
     while true do
         -- The migrations-applied message is the immediate wake-up. A parked boot
