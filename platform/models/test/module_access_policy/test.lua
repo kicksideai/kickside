@@ -19,6 +19,56 @@ local function composed_scope(root)
 end
 local function define_tests()
     test.describe("Module access composition", function()
+        test.it("grants only the resolver action and resource pairs", function()
+            local scope = composed_scope("kickside.models.security:module_access")
+            local actor = security.new_actor("resolver-policy-member", {})
+            for _, resource in ipairs({"wippy.llm:model_resolver", "resolve"}) do
+                for _, action in ipairs({"registry.get", "contract.get", "contract.open", "contract.call", "contract.implementations"}) do
+                    local expected = (resource == "wippy.llm:model_resolver" and action == "contract.get")
+                        or (resource == "resolve" and action == "contract.call")
+                    test.eq(scope:evaluate(actor, action, resource), expected and "allow" or "undefined", action .. " " .. resource)
+                end
+            end
+        end)
+        test.it("keeps saved provider credentials inside provider execution", function()
+            local profile_id = "member-credential-profile"
+            local name = "member-credential-model"
+            local profile, profile_err = models_repo.create_profile({
+                id = profile_id, name = "Member credential profile",
+                provider_id = "wippy.llm.openai_compat:provider",
+                base_url = "https://provider.example.test/v1", api_key = "fixture-provider-secret",
+            })
+            test.is_nil(profile_err, tostring(profile_err))
+            test.not_nil(profile)
+            local card, save_err = models_repo.upsert_card({
+                name = name, title = "Member credential model", provider_profile_id = profile_id,
+                provider_id = "wippy.llm.openai_compat:provider", provider_model = "fixture",
+                capabilities = {"embed"}, dimensions = 512, max_tokens = 8192, enabled = true,
+            })
+            test.is_nil(save_err, tostring(save_err))
+            test.not_nil(card)
+            local actor = security.new_actor("credential-member", {})
+            local scope = assert(security.named_scope("app:selected_model_members"))
+            local caller = funcs.new():with_actor(actor):with_scope(scope)
+            local resolved, err = caller:call("kickside.models.test.module_access:resolve_probe", {model = name})
+            local readable, read_err = caller:call("kickside.models.test.module_access:store_probe", {})
+            local outside_scope = assert(security.named_scope("app:other_members"))
+            local outside, outside_err = funcs.new():with_actor(actor):with_scope(outside_scope)
+                :call("kickside.models.test.module_access:resolve_probe", {model = name})
+            local _, delete_err = models_repo.delete_profile(profile_id)
+            test.is_nil(delete_err, tostring(delete_err))
+            test.is_nil(err, tostring(err))
+            test.not_nil(resolved)
+            test.eq(resolved.name, name)
+            test.is_nil(readable, "Member reads the private model snapshot")
+            test.not_nil(read_err, "Private store read is denied by the runtime")
+            test.not_nil(tostring(read_err):find("not allowed to access store: kickside.models:cache", 1, true), tostring(read_err))
+            test.is_nil(outside, "Unselected members resolve configured models")
+            test.not_nil(outside_err, "The selected host group excludes other members at runtime")
+            test.is_true(errors.is(outside_err, errors.PERMISSION_DENIED), tostring(outside_err))
+            local serialized = require("json").encode(resolved)
+            test.is_nil(serialized:find("fixture-provider-secret", 1, true), "Resolution discloses a saved provider credential")
+        end)
         test.it("resolves saved models under the member execution scope", function()
             local name = "member-resolver-model"
             local card, save_err = models_repo.upsert_card({name = name, title = "Member model",
@@ -127,6 +177,13 @@ end
 local run_cases = test.run_cases(define_tests)
 return {
     run = function(options) return run_cases(options) end,
+    store_probe = function()
+        local snapshot, err = require("store").get("kickside.models:cache")
+        if err then return nil, err end
+        local value, read_err = snapshot:get("snapshot")
+        snapshot:release()
+        return value, read_err
+    end,
     resolve_probe = function(input)
         local definition, err = require("contract").get("wippy.llm:model_resolver")
         if err then return nil, err end

@@ -107,6 +107,14 @@ entries:
       actions: '*'
       effect: allow
 
+  - name: other_members_probe
+    kind: security.policy
+    groups: [app:other_members]
+    policy:
+      resources: [kickside.models.test.module_access:resolve_probe]
+      actions: [funcs.call]
+      effect: allow
+
   - name: models_smoke_test
     kind: function.lua
     meta:
@@ -135,6 +143,8 @@ entries:
     component: kickside/models
     version: '*'
     parameters:
+    - name: kickside.models.security:user_security_scope
+      value: app:selected_model_members
     - name: kickside.models:target_db
       value: app:db
     - name: kickside.models:api_router
