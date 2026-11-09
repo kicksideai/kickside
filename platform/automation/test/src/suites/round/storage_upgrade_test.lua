@@ -93,10 +93,23 @@ return test.run_cases(function()
             local receipt_params: {any}={"owner","source"}
             local receipt_marks: {string}={}
             for index=1,50 do receipt_params[#receipt_params+1]=tostring(index);receipt_marks[#receipt_marks+1]="$" .. tostring(#receipt_params) end
-            local receipt_lookup="SELECT item_key,map_slot,delivery_key FROM kickside_automation_receipt WHERE owner_id=$1 AND source_port=$2 AND item_key IN (" .. table.concat(receipt_marks,",") .. ")"
+            execute("ANALYZE kickside_automation_receipt")
+            local receipt_lookup="SELECT item_key,map_slot,identity_key,dest_ref_json,dest_version,delivery_key,pass_id FROM kickside_automation_receipt WHERE owner_id=$1 AND source_port=$2 AND item_key IN (" .. table.concat(receipt_marks,",") .. ") ORDER BY item_key,map_slot"
             local receipt_plan,receipt_plan_err=db:query("EXPLAIN " .. (postgres and "(ANALYZE,BUFFERS,FORMAT JSON) " or "QUERY PLAN ") .. receipt_lookup,receipt_params)
             test.is_nil(receipt_plan_err,tostring(receipt_plan_err))
             test.eq(#assert(db:query(receipt_lookup,receipt_params)),50)
+            if postgres then
+                local function bounded(node: any): ()
+                    if tostring(node["Node Type"]):find("Scan",1,true) then
+                        local visited=((tonumber(node["Actual Rows"]) or 0)+(tonumber(node["Rows Removed by Filter"]) or 0))*(tonumber(node["Actual Loops"]) or 1)
+                        test.is_true(visited<=50,"receipt reads visit only the requested batch")
+                    end
+                    for _,child in ipairs(node.Plans or {}) do bounded(child) end
+                end
+                bounded(json.decode(receipt_plan[1]["QUERY PLAN"])[1].Plan)
+            else
+                test.contains(json.encode(receipt_plan),"owner_id=? AND source_port=? AND item_key=?")
+            end
             local legacy_plans={}
             local tx=assert(db:begin())
             started=time.now():unix_nano()
