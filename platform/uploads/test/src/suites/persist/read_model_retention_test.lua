@@ -77,6 +77,50 @@ local run_cases = test.run_cases(function()
             return id
         end
 
+        test.it("reaches eligible tombstones behind a protected full page", function()
+            local protected_thread = thread(0)
+            local safe_thread = thread(10)
+            local db = assert(sql.get(DB))
+            local prefix = uuid.v4()
+            local _, seed_err = db:execute([[WITH RECURSIVE n(x) AS (
+                SELECT 1 UNION ALL SELECT x+1 FROM n WHERE x<501)
+                INSERT INTO kickside_upload_read_model(upload_id,component_id,status,deleted_at,last_event_seq)
+                SELECT $1 || CAST(x AS TEXT),$2,'deleted',$3,1 FROM n]], {prefix, protected_thread, stamp(-100)})
+            db:release()
+            test.is_nil(seed_err, tostring(seed_err))
+            local safe = model(safe_thread, "deleted", -72, 1)
+            local removed, err = retention.prune_deleted(stamp(-1), 1)
+            test.is_nil(err, tostring(err))
+            test.eq(removed, 1)
+            test.eq(count(safe), 0)
+            write("DELETE FROM kickside_upload_read_model WHERE component_id=$1", {protected_thread})
+        end)
+
+        test.it("bounds a continuous tombstone stream by its existing 30-day window", function()
+            local owner = thread(10)
+            local base = assert(time.parse(time.RFC3339,"2099-01-01T00:00:00Z"))
+            for day = 1,36 do
+                for _ = 1,3 do
+                    local id = model(owner,"deleted",0,1)
+                    write("UPDATE kickside_upload_read_model SET deleted_at=$1 WHERE upload_id=$2",
+                        {base:add(day*24*time.HOUR):format_rfc3339(),id})
+                end
+                local pages = 0
+                repeat
+                    local _, err, progress = retention.prune_deleted(
+                        base:add((day-30)*24*time.HOUR):format_rfc3339(),2)
+                    test.is_nil(err,tostring(err))
+                    pages = pages + 1
+                    test.is_true(pages < 5)
+                    if not progress.needs_continue then break end
+                until false
+                local db = assert(sql.get(DB))
+                local rows = assert(db:query("SELECT COUNT(*) AS n FROM kickside_upload_read_model WHERE component_id=$1",{owner}))
+                db:release()
+                test.eq(tonumber(rows[1].n),math.min(day,30)*3)
+            end
+        end)
+
         test.it("reclaims only old deleted rows whose event is past the Core contract watermark", function()
             local safe_thread = thread(10)
             local blocked_thread = thread(5)

@@ -28,14 +28,26 @@ function M.run(): any
     end
     local read_model = read_model_module.new({ core_threads = threads })
     local cutoff = time.now():utc():add(-settings.deleted_read_model_ms * time.MILLISECOND):format_rfc3339()
-    local count, prune_err = read_model.prune_deleted(cutoff, settings.batch_deleted_read_model)
+    local count, prune_err, model_progress = read_model.prune_deleted(cutoff, settings.batch_deleted_read_model)
     if prune_err or count == nil then return { success = false, error = prune_err or missing("prune") } end
     local blob_cutoff = time.now():utc():add(-settings.orphan_blob_ms * time.MILLISECOND):format_rfc3339()
-    local blobs, blob_err = artifact_cleanup.prune_orphan_blobs(blob_cutoff, settings.batch_orphan_blob)
+    local blobs, blob_err, blob_progress = artifact_cleanup.prune_orphan_blobs(blob_cutoff, settings.batch_orphan_blob)
     if blob_err or blobs == nil then return { success = false, error = blob_err or missing("blob prune") } end
     local placements, placement_err = processing_hooks.prune(blob_cutoff, settings.batch_orphan_blob)
     if placement_err or placements == nil then return { success = false, error = placement_err or missing("extension prune") } end
-    return { success = true, deleted = count, blobs_deleted = blobs, placements_deleted = placements }
+    local deadline: number? = nil
+    for _, item in ipairs({ {progress = model_progress, window = settings.deleted_read_model_ms},
+        {progress = blob_progress, window = settings.orphan_blob_ms} }) do
+        if item.progress.next_at ~= nil then
+            local stamp, parse_err = time.parse(time.RFC3339, tostring(item.progress.next_at))
+            if parse_err or not stamp then return {success = false, error = parse_err or missing("deadline")} end
+            local next_ms = math.floor(stamp:unix_nano() / 1000000) + item.window
+            deadline = deadline == nil and next_ms or math.min(deadline, next_ms)
+        end
+    end
+    return { success = true, deleted = count, blobs_deleted = blobs, placements_deleted = placements,
+        needs_continue = model_progress.needs_continue or blob_progress.needs_continue,
+        deadline_ms = deadline }
 end
 
 return M
