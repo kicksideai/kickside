@@ -43,6 +43,8 @@ local function seed_component(component_id: string, owner: string?, kb_type: str
     insert_meta(d, component_id, "class", class)
     insert_meta(d, component_id, "kb_type", kb_type)
     insert_meta(d, component_id, "status", "ready")
+    insert_meta(d, component_id, "title", component_id)
+    insert_meta(d, component_id, "embedding_model", "class:embed")
     d:release()
 end
 
@@ -62,6 +64,44 @@ end
 
 local function define_tests()
     test.describe("Knowledge manager optional maintenance dispatch", function()
+        test.it("upsert applies accepted description changes to the existing component", function()
+            local id = uuid.v7()
+            seed_component(id, "upsert-reader", "wiki", "knowledge_base")
+            local exec = executor("upsert-reader")
+            local result, err = exec:call(TOOL, {
+                action = "upsert_knowledge_base", name = id, description = "Revised reference",
+            })
+            test.is_nil(err, tostring(err))
+            test.is_false(result.created)
+            test.eq(result.kb.meta.comment, "Revised reference")
+            local cleared, clear_err = exec:call(TOOL, {
+                action = "upsert_knowledge_base", name = id, description = "",
+            })
+            test.is_nil(clear_err, tostring(clear_err))
+            test.eq(cleared.kb.meta.comment, "")
+            cleanup(id)
+        end)
+
+        test.it("upsert refuses immutable and unsupported fields before applying changes", function()
+            local id = uuid.v7()
+            seed_component(id, "upsert-owner", "wiki", "knowledge_base")
+            local exec = executor("upsert-owner")
+            for field, value in pairs({ kb_type = "document", embedding_model = "different-embedding", enrichment_agent_id = "another-agent" }) do
+                local args = { action = "upsert_knowledge_base", name = id, description = "Must remain unapplied" }
+                args[field] = value
+                local result, err = exec:call(TOOL, args)
+                test.is_nil(result)
+                test.is_true(errors.is(err, errors.INVALID), tostring(err))
+                test.contains(tostring(err), field)
+            end
+            local same, same_err = exec:call(TOOL, { action = "upsert_knowledge_base", name = id,
+                kb_type = "wiki", embedding_model = "class:embed" })
+            test.is_nil(same_err, tostring(same_err))
+            test.is_false(same.created)
+            test.is_nil(same.kb.meta.comment)
+            cleanup(id)
+        end)
+
         test.it("uses the KB engine's bound contract and preserves the KB context", function()
             local owner = "maintenance-owner-" .. uuid.v4()
             local component_id = uuid.v7()

@@ -19,6 +19,7 @@ local engines = require("engines")
 local stores = require("stores")
 local kb_types = require("kb_types")
 local envelope = require("envelope")
+local update_kb = require("update_kb")
 
 local COMPONENT_SERVICE = "kickside.component:component_service"
 local KB_CLASS = kb_types.COMPONENT_CLASS
@@ -272,6 +273,23 @@ function M.upsert(args: any): (kb_types.UpsertResult?, error?)
     local existing, err = M.find({ name = args.name })
     if err then return nil, err end
     if existing then
+        local meta: any = type(existing.meta) == "table" and existing.meta or {}
+        for _, field in ipairs({ "kb_type", "embedding_model", "enrichment_agent_id", "parent_id" }) do
+            local current = field == "parent_id" and existing.parent_id or meta[field]
+            if args[field] ~= nil and args[field] ~= current then
+                return nil, errors.new({ kind = errors.INVALID, message = field .. " cannot be changed by upsert on an existing knowledge base" })
+            end
+        end
+        if args.description ~= nil or args.config ~= nil or args.icon ~= nil then
+            local updated, update_err = update_kb.update(existing.component_id, {
+                description = args.description, config = args.config, icon = args.icon,
+            })
+            if update_err then return nil, update_err end
+            local refreshed, read_err = M.find({ component_id = updated.component_id })
+            if read_err then return nil, read_err end
+            if not refreshed then return nil, errors.new({ kind = errors.NOT_FOUND, message = "updated knowledge base not found" }) end
+            existing = refreshed
+        end
         return ({ kb = existing, created = false, rollback = nil }) :: kb_types.UpsertResult, nil
     end
     local created, cerr = M.create(args)

@@ -462,7 +462,10 @@ entries:
       only when changing engine settings. List actions return pages of 25 by
       default; pass `next_cursor` as `cursor` for the next page.
       Use `list_knowledge_bases` before mutating an existing base.
-      `upsert_knowledge_base` is idempotent by name and
+      `upsert_knowledge_base` is idempotent by name. On an existing base it
+      applies description and engine config changes through the settings update
+      path. kb_type and embedding_model may be repeated unchanged; changing them
+      or enrichment_agent_id returns a typed error naming the field.
       `delete_knowledge_base` requires the returned `component_id`.
 
       `resummarize_knowledge_base` and `reembed_knowledge_base` also require
@@ -509,7 +512,7 @@ entries:
             "fields": { "type": "array", "items": { "type": "string" }, "description": "List actions: additional provider fields to include. Omit for compact summary rows." },
             "component_id": { "type": "string", "description": "Knowledge-base component id returned by list_knowledge_bases. Required by delete_knowledge_base, resummarize_knowledge_base, reembed_knowledge_base, and knowledge_base_maintenance." },
             "name": { "type": "string", "description": "Knowledge-base name." },
-            "description": { "type": "string" },
+            "description": { "type": "string", "description": "Description to create or update; an empty string clears it." },
             "kb_type": { "type": "string", "description": "kb_type returned by list_kb_engines (for example document), never its registry id." },
             "embedding_model": { "type": "string", "description": "Required for creation. Use class:embed for the configured Embedding model class; class:fast is a generation class." },
             "config": { "type": "object", "description": "Engine-specific configuration declared by list_kb_engines." },
