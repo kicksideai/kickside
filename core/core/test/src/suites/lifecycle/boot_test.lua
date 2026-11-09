@@ -82,7 +82,10 @@ local function define_startup_tests()
                     local selected = channel.select({notifications:case_receive(), deadline:case_receive()})
                     test.eq(selected.channel, notifications, "the owned startup boot does not stop")
                     if selected.channel ~= notifications then error("startup boot cleanup times out") end
-                    if tostring(selected.value.from) == tostring(pid) and selected.value.kind == process.event.EXIT then break end
+                    if tostring(selected.value.from) == tostring(pid) and selected.value.kind == process.event.EXIT then
+                        test.is_nil(selected.value.result.error)
+                        break
+                    end
                 end
             end
             process.unlisten(replies)
