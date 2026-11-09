@@ -21,6 +21,78 @@ local function log_pid(data: any): string?
     return nil
 end
 
+local function define_startup_tests()
+    test.describe("lifecycle boot startup upgrade", function()
+        test.it("applies an update delivered while the named boot is still converging", function()
+            local original_version = assert(registry.current_version())
+            local topic = "test.lifecycle.startup:" .. uuid.v7()
+            local name = topic .. ":owner"
+            local entry_id = "app:startup_boot_" .. uuid.v7():gsub("-", "_")
+            local replies = assert(process.listen(topic))
+            local notifications = process.events()
+            local pid, exited
+            local ok, failure = pcall(function()
+                local entry = assert(registry.get("kickside.core.lifecycle:boot_process"))
+                local source, names = entry.data.source:gsub("consts.BOOT_NAME", string.format("%q", name))
+                test.eq(names, 1)
+                local barrier = "    local release = assert(process.listen(" .. string.format("%q", topic .. ":release") .. "))\n"
+                    .. "    assert(process.send(" .. string.format("%q", tostring(process.pid())) .. ", "
+                    .. string.format("%q", topic) .. ", {phase = 'converging', pid = tostring(process.pid())}))\n"
+                    .. "    local selected = channel.select({release:case_receive(), time.after('10s'):case_receive()})\n"
+                    .. "    assert(selected.channel == release, 'initial convergence barrier is not released')\n"
+                    .. "    process.unlisten(release)\n"
+                local blocked, count = source:gsub("    local converged, converge_err = provision.converge%(actor, scope%)", function(line)
+                    return barrier .. line
+                end, 1)
+                test.eq(count, 1, "the barrier holds the first convergence open")
+                local data = {}
+                for key, value in pairs(entry.data) do data[key] = value end
+                data.source = blocked
+                local changes = assert(registry.snapshot()):changes()
+                changes:create({id = entry_id, kind = entry.kind, data = data})
+                test.is_nil(select(2, changes:apply()))
+                pid = assert(process.spawn_monitored(entry_id, "app:processes"))
+                local function phase(expected: string)
+                    local selected = channel.select({replies:case_receive(), notifications:case_receive(), time.after("10s"):case_receive()})
+                    if selected.channel == notifications and selected.value.kind == process.event.EXIT
+                        and tostring(selected.value.from) == tostring(pid) then exited = true end
+                    test.eq(selected.channel, replies, "boot exits or times out before " .. expected)
+                    if selected.channel ~= replies then error("startup upgrade does not reach " .. expected) end
+                    test.eq(selected.value.phase, expected)
+                    test.eq(selected.value.pid, tostring(pid))
+                    test.eq(tostring(assert(process.registry.lookup(name, process.registry.CONSISTENT))), tostring(pid))
+                end
+                phase("converging")
+                local activation = "    assert(process.send(" .. string.format("%q", tostring(process.pid())) .. ", "
+                    .. string.format("%q", topic) .. ", {phase = 'upgraded', pid = tostring(process.pid())}))\n"
+                data.source, count = source:gsub("local function main%(_args: any%): any\n", function(line)
+                    return line .. activation
+                end, 1)
+                test.eq(count, 1, "the update identifies the new code generation")
+                changes = assert(registry.snapshot()):changes()
+                changes:update({id = entry_id, kind = entry.kind, data = data})
+                test.is_nil(select(2, changes:apply()))
+                test.is_nil(select(2, process.send(pid, topic .. ":release", true)))
+                phase("upgraded")
+            end)
+            if pid and not exited then
+                test.is_nil(select(2, process.cancel(pid)))
+                local deadline = time.after("10s")
+                while true do
+                    local selected = channel.select({notifications:case_receive(), deadline:case_receive()})
+                    test.eq(selected.channel, notifications, "the owned startup boot does not stop")
+                    if selected.channel ~= notifications then error("startup boot cleanup times out") end
+                    if tostring(selected.value.from) == tostring(pid) and selected.value.kind == process.event.EXIT then break end
+                end
+            end
+            process.unlisten(replies)
+            test.is_nil(select(2, registry.apply_version(original_version)))
+            if not ok then error(failure) end
+        end)
+    end)
+
+end
+
 local function define_tests()
     test.describe("lifecycle boot convergence", function()
         local original, subscription, logs, boot_pid, trigger_name, postgres
@@ -268,4 +340,4 @@ local function define_tests()
     end)
 end
 
-return { run = test.run_cases(define_tests) }
+return { run = test.run_cases(define_tests), run_startup = test.run_cases(define_startup_tests) }
