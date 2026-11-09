@@ -450,6 +450,70 @@ local function define_tests()
             end)
         end
 
+        for _,finish in ipairs({"replay","expires","resolves"}) do
+            test.it("preserves prepared ownership after a failure before materialization: " .. finish,function()
+                local key="late-materialization-" .. finish
+                local id=install({{key=key,directive="invalid"}})
+                local original=""
+                h.set_drive(id,"main","next_run_at=$1",{h.PAST})
+                local _,first_err=env.run(id,"main",function(identity,target,args,options)
+                    if target=="kickside.automation:round_deliver" then
+                        local item=args.items[1]
+                        original=item.delivery_key
+                        local value,prepare_err=round_write.prepare({drive=args.drive,key=original,hash="first-attempt",prepared=true},
+                            function() return nil,errors.new({kind=errors.UNAVAILABLE,retryable=true,message="transform unavailable"}) end)
+                        test.is_nil(value);test.not_nil(prepare_err)
+                        return {success=true,outcomes={delivered={},skipped={},waiting={},uncertain={},
+                            failed={{key=original,error={kind=errors.UNAVAILABLE,retriable=true,message="transform unavailable"}}}}},nil
+                    end
+                    return env.run_as(identity,target,args,options)
+                end)
+                test.is_nil(first_err,tostring(first_err))
+                test.eq(ledger(id,key).state,"retrying")
+                test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),0)
+                h.exec("UPDATE kickside_trigger_item_ledger SET next_attempt_at=$1 WHERE owner_id=$2",{h.PAST,id})
+                run(id)
+                test.eq(ledger(id,key).state,"dead")
+                test.eq(transforms(id,key),1)
+                test.eq(#sink_writes(id,key),1)
+                test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1 AND idempotency_key=$2",{id,original}),1)
+                test.eq(replay(id,key .. "-replay").outcome.replayed,1)
+                local row=h.query("SELECT identity_key,envelope_json FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})[1]
+                test.is_true(row.identity_key~=original)
+                if finish=="replay" then
+                    run(id)
+                    test.eq(transforms(id,key),1,"the replay reuses output materialized by the retry")
+                    test.eq(#sink_writes(id,key),2,"the replay reaches the sink with the retained output")
+                    test.eq(ledger(id,key).state,"dead")
+                    test.eq(json.decode(h.query("SELECT execution_identity_json FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})[1].execution_identity_json).prepared_key,original)
+                elseif finish=="expires" then
+                    h.exec("UPDATE kickside_trigger_item_ledger SET state='dead',expires_at='1700-01-01T00:00:00Z' WHERE owner_id=$1",{id})
+                    h.set_drive(id,"main","unresolved_count=0",{})
+                    local n,err=automation_db.in_tx(function(tx) return round_ledger.prune_tx(tx,"1750-01-01T00:00:00Z",100) end)
+                    test.is_nil(err,tostring(err));test.eq(n,1)
+                    test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),0,
+                        "expiry releases output first materialized by a retry")
+                else
+                    h.exec("UPDATE kickside_trigger_item_ledger SET next_attempt_at='2099-01-01T00:00:00Z' WHERE owner_id=$1",{id})
+                    h.set_drive(id,"main","cursor=NULL,next_run_at=$1",{h.PAST})
+                    local _,err=env.run(id,"main",function(identity,target,args,options)
+                        if target=="kickside.automation:round_deliver" then
+                            test.eq(#args.items,1)
+                            test.eq(args.items[1].delivery_key,original)
+                            return {success=true,outcomes={delivered={},skipped={{key=original,reason="already delivered"}},
+                                waiting={},uncertain={},failed={}}},nil
+                        end
+                        return env.run_as(identity,target,args,options)
+                    end)
+                    test.is_nil(err,tostring(err))
+                    test.eq(ledger(id,key).state,"retrying")
+                    test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1 AND idempotency_key=$2",{id,original}),1,
+                        "settling the original leaves output owned by its unresolved replay")
+                    test.is_nil(next(h.read_drive(id,"main").admission))
+                end
+            end)
+        end
+
         test.it("reclaims journal-only output when a repeated snapshot is already delivered",function()
             local key="journal-snapshot"
             local id=install({{key=key,directive="invalid"}})
@@ -524,6 +588,12 @@ local function define_tests()
                 h.set_drive(id,"main","round_token=$1,round_until=$2,admission_json=$3",
                     {token,job.lease_until,json.encode({[item.delivery_key]=json.decode(row.execution_identity_json)})})
                 local before=h.read_drive(id,"main")
+                local refs=0
+                local reclaim=round_ledger.reclaim_prepared_tx
+                round_ledger.reclaim_prepared_tx=function(tx,candidates)
+                    refs=refs+#candidates
+                    return reclaim(tx,candidates)
+                end
                 local result,err=automation_db.in_tx(function(tx)
                     return round_commit.commit_tx(tx,{automation_id=id,drive_key="main",source_port=RECORDS,receipt_port=RECORDS,
                         now=h.PAST,resolved_expires_at="2099-01-01T00:00:00Z",
@@ -531,7 +601,9 @@ local function define_tests()
                             rewind_generation=before.rewind_generation,command_generation=before.command_generation}},
                         {outcomes={{item=item,state=state,next_attempt_at=state=="retrying" and h.PAST or nil}}})
                 end)
+                round_ledger.reclaim_prepared_tx=reclaim
                 test.is_nil(err,tostring(err));test.is_true(result.committed)
+                test.eq(refs,state=="resolved" and 1 or 0,"unresolved journal keys never enter settlement reclamation")
                 test.eq(ledger(id,"journal-outcome").state,state)
                 test.is_nil(next(h.read_drive(id,"main").admission))
                 test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),state=="resolved" and 0 or 1,

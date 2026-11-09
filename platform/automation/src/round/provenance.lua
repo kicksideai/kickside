@@ -35,7 +35,7 @@ local function original(receipt: Map, row: Map?, key: string): (Map?, error?)
     if row and row.execution_identity_json ~= nil then return M.decode(row.execution_identity_json) end
     local generation = receipt.identity_generation
     local stored = receipt.execution_identity
-    local evidence: Map = {identity=stored,generation=generation,prepared_key=row and key or nil}
+    local evidence: Map = {identity=stored,generation=generation,prepared_key=key}
     if row then
         local selected = receipt.identity_selected_at
         if generation ~= 0 and type(selected) == "string" and selected > tostring(row.created_at) then

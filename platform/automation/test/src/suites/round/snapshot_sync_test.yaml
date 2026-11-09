@@ -7,7 +7,7 @@ entries:
   source: file://snapshot_sync_test.lua
   method: run
   meta: {type: test, suite: kickside_automation_round}
-  modules: [json]
+  modules: [json, time]
   imports:
     test: wippy.test:test
     round_harness: kickside.automation:round_harness

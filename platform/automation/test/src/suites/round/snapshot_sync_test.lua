@@ -7,6 +7,7 @@ local commit=require("round_commit")
 local ledger=require("round_ledger")
 local provenance=require("round_provenance")
 local round_write=require("round_write")
+local time=require("time")
 type Map = {[string]:any}
 local PORT="kickside.automation.round.fixture:records"
 local STORE="kickside.automation.round.fixture:store"
@@ -83,48 +84,82 @@ return test.run_cases(function()
             h.exec("INSERT INTO round_fixture_log (automation_id,drive_key,item_key,attempts,detail_json) VALUES ($1,'snapshot','snapshot_passes',0,$2)",{id,h.encoded(passes)})
         end)
 
-        test.it("settles an unchanged skip without prepared delete statements",function()
-            local env=h.setup("snapshot_no_prepared","kickside.automation.round.fixture:snapshot_sync_kind")
-            local id=env.automation_id
-            h.new_drive({automation_id=id,drive_key="snapshot",source_kind="collection",
-                applied={title="Snapshot sync",trigger={v=2,source=PORT},sink_port=STORE,sink_config={},transform={kind="none"},enabled=true},
-                applied_hash="snapshot-v1",action={source_ref=PORT,config={}}})
-            local job=h.running_job()
-            local token="unchanged-snapshot"
-            local item={item_key="unchanged",dedup_key="unchanged",op="upsert",payload={}}
-            item.delivery_key=round_write.keys({automation_id=id,source_port=PORT},item).idempotency_key
-            h.set_drive(id,"snapshot","round_token=$1,round_until=$2",{token,job.lease_until})
-            local before=h.read_drive(id,"snapshot")
-            local captured={round_token=token,round_until=job.lease_until,revision=before.revision,
-                rewind_generation=before.rewind_generation,command_generation=before.command_generation}
-            local admitted,admit_err=provenance.admit({automation_id=id,drive_key="snapshot",source_port=PORT,fence=captured},
-                {item.delivery_key})
-            test.is_nil(admit_err,tostring(admit_err));test.not_nil(admitted)
-            local prepared_statements=0
-            local reclaim=ledger.reclaim_prepared_tx
-            ledger.reclaim_prepared_tx=function(tx,refs)
-                local executor={db_type=function() return tx:db_type() end,
-                    query=function(_,statement,params) return tx:query(statement,params) end,
-                    execute=function(_,statement,params)
-                        if statement:find("DELETE FROM kickside_automation_prepared",1,true) then
-                            prepared_statements=prepared_statements+1
-                        end
-                        return tx:execute(statement,params)
-                    end}
-                return reclaim(executor,refs)
-            end
-            local result,err=automation_db.in_tx(function(tx)
-                return commit.commit_tx(tx,{automation_id=id,drive_key="snapshot",source_port=PORT,receipt_port=PORT,
-                    now=h.PAST,resolved_expires_at="2099-01-01T00:00:00Z",
-                    captured=captured},
-                    {outcomes={{item=item,state="resolved"}},receipts={{item=item,receipts={}}}})
+        for _,has_reference in ipairs({false,true}) do
+            test.it(has_reference and "batches reclamation for 10000 unchanged unprepared items"
+                or "settles keyless admissions without prepared delete statements",function()
+                local env=h.setup("snapshot_no_prepared","kickside.automation.round.fixture:snapshot_sync_kind")
+                local id=env.automation_id
+                h.new_drive({automation_id=id,drive_key="snapshot",source_kind="collection",
+                    applied={title="Snapshot sync",trigger={v=2,source=PORT},sink_port=STORE,sink_config={},transform={kind="none"},enabled=true},
+                    applied_hash="snapshot-v1",action={source_ref=PORT,config={}}})
+                local job=h.running_job()
+                local prepared_statements=0
+                local reclaim_ms=0
+                local commit_ms=0
+                local reclaim=ledger.reclaim_prepared_tx
+                ledger.reclaim_prepared_tx=function(tx,refs)
+                    local executor={db_type=function() return tx:db_type() end,
+                        query=function(_,statement,params) return tx:query(statement,params) end,
+                        execute=function(_,statement,params)
+                            if statement:find("DELETE FROM kickside_automation_prepared",1,true) then
+                                prepared_statements=prepared_statements+1
+                                test.is_true(#params<=400,"prepared deletion binds at most 100 candidates")
+                            end
+                            return tx:execute(statement,params)
+                        end}
+                    local started=time.now():unix_nano()
+                    local err=reclaim(executor,refs)
+                    reclaim_ms=reclaim_ms+(time.now():unix_nano()-started)/1000000
+                    return err
+                end
+                local pages=has_reference and 100 or 1
+                for page=1,pages do
+                    local token="unchanged-snapshot-" .. tostring(page)
+                    h.set_drive(id,"snapshot","round_token=$1,round_until=$2",{token,job.lease_until})
+                    local before=h.read_drive(id,"snapshot")
+                    local captured={round_token=token,round_until=job.lease_until,revision=before.revision,
+                        rewind_generation=before.rewind_generation,command_generation=before.command_generation}
+                    local keys: {string}={}
+                    local outcomes: {Map}={}
+                    local receipts: {Map}={}
+                    for index=1,100 do
+                        local key=tostring((page-1)*100+index)
+                        local item={item_key=key,dedup_key=key,op="upsert",payload={}}
+                        item.delivery_key=round_write.keys({automation_id=id,source_port=PORT},item).idempotency_key
+                        keys[#keys+1]=item.delivery_key
+                        outcomes[#outcomes+1]={item=item,state="resolved"}
+                        receipts[#receipts+1]={item=item,receipts={}}
+                    end
+                    local admitted,admit_err=provenance.admit({automation_id=id,drive_key="snapshot",source_port=PORT,fence=captured},keys)
+                    test.is_nil(admit_err,tostring(admit_err));test.not_nil(admitted)
+                    if not has_reference then
+                        for _,key in ipairs(keys) do admitted.deliveries[key].prepared_key=nil end
+                        h.set_drive(id,"snapshot","admission_json=$1",{h.encoded(admitted.deliveries)})
+                    end
+                    local started=time.now():unix_nano()
+                    local result,err=automation_db.in_tx(function(tx)
+                        return commit.commit_tx(tx,{automation_id=id,drive_key="snapshot",source_port=PORT,receipt_port=PORT,
+                            now=h.PAST,resolved_expires_at="2099-01-01T00:00:00Z",captured=captured},
+                            {outcomes=outcomes,receipts=receipts})
+                    end)
+                    commit_ms=commit_ms+(time.now():unix_nano()-started)/1000000
+                    test.is_nil(err,tostring(err));test.is_true(result.committed)
+                    test.is_nil(next(h.read_drive(id,"snapshot").admission))
+                end
+                ledger.reclaim_prepared_tx=reclaim
+                test.eq(prepared_statements,has_reference and 100 or 0,
+                    "only journal references enter bounded reclamation, independently of consumer prepared keys")
+                test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),0)
+                test.eq(#h.query("SELECT 1 FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id}),0)
+                test.eq(#h.query("SELECT 1 FROM kickside_automation_receipt WHERE owner_id=$1",{id}),0)
+                test.eq(#h.query("SELECT 1 FROM kickside_automation_delivery_history WHERE automation_id=$1",{id}),0)
+                if has_reference then
+                    h.exec("INSERT INTO round_fixture_log (automation_id,drive_key,item_key,attempts,detail_json) VALUES ($1,'snapshot','unprepared_reclaim',0,$2)",
+                        {id,h.encoded({items=pages*100,prepared_deletes=prepared_statements,reclaim_ms=reclaim_ms,commit_ms=commit_ms})})
+                end
+                h.exec("UPDATE kickside_job SET status='done',lease_token=NULL,lease_until=NULL WHERE id=$1",{job.id})
             end)
-            ledger.reclaim_prepared_tx=reclaim
-            test.is_nil(err,tostring(err));test.is_true(result.committed)
-            test.eq(prepared_statements,0,"an unchanged skip without prepared output issues no prepared statement")
-            test.is_nil(next(h.read_drive(id,"snapshot").admission))
-            h.exec("UPDATE kickside_job SET status='done',lease_token=NULL,lease_until=NULL WHERE id=$1",{job.id})
-        end)
+        end
 
         test.it("redelivers an unchanged snapshot only when its applied declaration changes",function()
             local env=h.setup("snapshot_declaration","kickside.automation.round.fixture:snapshot_sync_kind")
