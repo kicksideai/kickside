@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.73](https://github.com/kicksideai/kickside/compare/models-v0.1.72...models-v0.1.73) (2026-11-09)
+
+
+### Bug Fixes
+
+* **ui:** simplify model results and move setup replay ([#380](https://github.com/kicksideai/kickside/issues/380)) ([807df19](https://github.com/kicksideai/kickside/commit/807df195bbef3d6698a47ecaeeed4290b976e471))
+
 ## [0.1.72](https://github.com/kicksideai/kickside/compare/models-v0.1.71...models-v0.1.72) (2026-11-08)
 
 

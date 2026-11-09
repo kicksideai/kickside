@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.80](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.79...knowledge-v0.1.80) (2026-11-09)
+
+
+### Bug Fixes
+
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+* **workflows:** simplify run inspection and knowledge summaries ([#378](https://github.com/kicksideai/kickside/issues/378)) ([d9cd391](https://github.com/kicksideai/kickside/commit/d9cd391d7ebf455f2dbde8e9dd4403253c8afb05))
+
 ## [0.1.79](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.78...knowledge-v0.1.79) (2026-11-08)
 
 

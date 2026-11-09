@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.21](https://github.com/kicksideai/kickside/compare/automation-v0.2.20...automation-v0.2.21) (2026-11-09)
+
+
+### Bug Fixes
+
+* **automation:** simplify task details and history ([#385](https://github.com/kicksideai/kickside/issues/385)) ([6f35496](https://github.com/kicksideai/kickside/commit/6f3549694f6c8524651670d890c0f159dda32cd4))
+* **automation:** suppress idle delivery history and bound retention ([5560614](https://github.com/kicksideai/kickside/commit/556061470e9ce9e982823a04040a60e00b988996))
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+
 ## [0.2.20](https://github.com/kicksideai/kickside/compare/automation-v0.2.19...automation-v0.2.20) (2026-11-08)
 
 
