@@ -525,7 +525,7 @@ local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boole
     local prepared_guard = [[ AND (l.state='dead' OR NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p
         WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key))]]
     local order=orphan and "updated_at" or "state,expires_at"
-    local rows, read_err=tx:query("SELECT owner_id,source_port,item_key,identity_key FROM " .. M.TABLE
+    local rows, read_err=tx:query("SELECT owner_id,source_port,item_key,identity_key,execution_identity_json FROM " .. M.TABLE
         .. " l WHERE " .. predicate .. prepared_guard .. " ORDER BY " .. order .. " LIMIT $2",{cutoff,limit})
     if read_err or type(rows) ~= "table" then return nil,internal("ledger prune page read failed",read_err or "missing result") end
     table.sort(rows,function(a: Map,b: Map): boolean
@@ -534,6 +534,40 @@ local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boole
         end
         return false
     end)
+    if #rows == 0 then return 0,nil end
+    local dbtype,dbtype_err=dialect(tx)
+    if dbtype_err then return nil,dbtype_err end
+    local owners: {string}={}
+    for _,row in ipairs(rows) do
+        if owners[#owners] ~= row.owner_id then owners[#owners+1]=row.owner_id end
+    end
+    local admitted: Map={}
+    -- Admission can precede a new item's first ledger row. Lock its drive
+    -- before ledger deletes so captured prepared references remain stable.
+    for first=1,#owners,100 do
+        local params: {any}={}
+        local marks: {string}={}
+        for index=first,math.min(#owners,first+99) do
+            params[#params+1]=owners[index]
+            marks[#marks+1]="$" .. tostring(#params)
+        end
+        local drives,err=tx:query("SELECT automation_id,admission_json FROM kickside_automation_drive"
+            .. " WHERE automation_id IN (" .. table.concat(marks,",") .. ") ORDER BY automation_id,drive_key"
+            .. (dbtype == sql.type.POSTGRES and " FOR UPDATE" or ""),params)
+        if err then return nil,internal("prepared admission retention read failed",err) end
+        for _,d in ipairs(drives) do
+            if d.admission_json ~= nil then
+                local journal,decode_err=json.decode(d.admission_json)
+                if decode_err then return nil,internal("prepared admission retention decode failed",decode_err) end
+                local refs=admitted[d.automation_id] or {}
+                admitted[d.automation_id]=refs
+                for key,evidence in pairs(journal) do
+                    refs[key]=true
+                    if evidence.prepared_key then refs[evidence.prepared_key]=true end
+                end
+            end
+        end
+    end
     local count=0
     local prepared: {Map}={}
     local seen: Map={}
@@ -549,26 +583,29 @@ local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boole
     local cutoff_field = orphan and "updated_at" or "expires_at"
     local states = "state IN ('resolved','dead')"
     for _, row in ipairs(rows) do
-        local deleted, delete_err = tx:query("DELETE FROM " .. M.TABLE .. " AS l"
-            .. " WHERE owner_id=$1 AND source_port=$2 AND item_key=$3 AND identity_key=$4"
-            .. " AND " .. states .. " AND " .. cutoff_field .. "<=$5" .. orphan_guard .. prepared_guard
-            .. " RETURNING state,execution_identity_json",
-            { row.owner_id, row.source_port, row.item_key, row.identity_key, cutoff })
-        if delete_err or type(deleted) ~= "table" then
-            return nil, internal("ledger prune delete failed", delete_err or "missing result")
+        local prepared_key=row.identity_key
+        if row.execution_identity_json ~= nil then
+            local evidence,decode_err=json.decode(row.execution_identity_json)
+            if decode_err then return nil,internal("dead prepared identity decode failed",decode_err) end
+            if evidence.prepared_key then prepared_key=evidence.prepared_key end
         end
-        if deleted[1] then
-            if deleted[1].state == M.STATE.DEAD then
-                local prepared_key=row.identity_key
-                if deleted[1].execution_identity_json ~= nil then
-                    local evidence,decode_err=json.decode(deleted[1].execution_identity_json)
-                    if decode_err then return nil,internal("dead prepared identity decode failed",decode_err) end
-                    if evidence.prepared_key then prepared_key=evidence.prepared_key end
-                end
-                reclaim(row,row.identity_key)
-                reclaim(row,prepared_key)
+        local refs=admitted[row.owner_id] or {}
+        if not refs[row.identity_key] and not refs[prepared_key] then
+            local deleted, delete_err = tx:query("DELETE FROM " .. M.TABLE .. " AS l"
+                .. " WHERE owner_id=$1 AND source_port=$2 AND item_key=$3 AND identity_key=$4"
+                .. " AND " .. states .. " AND " .. cutoff_field .. "<=$5" .. orphan_guard .. prepared_guard
+                .. " RETURNING state",
+                { row.owner_id, row.source_port, row.item_key, row.identity_key, cutoff })
+            if delete_err or type(deleted) ~= "table" then
+                return nil, internal("ledger prune delete failed", delete_err or "missing result")
             end
-            count=count+1
+            if deleted[1] then
+                if deleted[1].state == M.STATE.DEAD then
+                    reclaim(row,row.identity_key)
+                    reclaim(row,prepared_key)
+                end
+                count=count+1
+            end
         end
     end
     local prepared_err=M.reclaim_prepared_tx(tx,prepared)

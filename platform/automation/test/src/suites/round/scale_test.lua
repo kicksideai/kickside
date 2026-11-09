@@ -264,6 +264,7 @@ local function define_tests()
             local dead_drain={}
             local candidate_plans={}
             local prepared_plans={}
+            local admission_plans={}
             local deadline_plans={}
             local opened=h.db()
             local _,deadline_err=ledger.retention_deadlines({query=function(_,statement,params)
@@ -282,6 +283,11 @@ local function define_tests()
                             local plan,plan_err=tx:query("EXPLAIN " .. (postgres and "(ANALYZE,BUFFERS,WAL,FORMAT JSON) " or "QUERY PLAN ") .. statement,params)
                             if plan_err then return nil,plan_err end
                             candidate_plans[#candidate_plans+1]={sql=statement,params=params,plan=plan}
+                        end
+                        if #admission_plans==0 and statement:find("SELECT automation_id,admission_json",1,true) then
+                            local plan,plan_err=tx:query("EXPLAIN " .. (postgres and "(ANALYZE,BUFFERS,FORMAT JSON) " or "QUERY PLAN ") .. statement,params)
+                            if plan_err then return nil,plan_err end
+                            admission_plans[#admission_plans+1]={sql=statement,params=params,plan=plan}
                         end
                         return tx:query(statement,params)
                     end,execute=function(_,statement,params)
@@ -316,6 +322,9 @@ local function define_tests()
                     test.is_false(encoded:find("TEMP B-TREE",1,true)~=nil,"no unexpired population is sorted")
                 end
             end
+            test.eq(#admission_plans,1)
+            if postgres then test.is_true(postgres_rows(admission_plans[1].plan)<=2,"admission retention seeks only this owner's current drives")
+            else test.contains(h.encoded(admission_plans[1].plan),"automation_id=?") end
             test.eq(#prepared_plans,1)
             local prepared_index=postgres and "kickside_automation_prepared_pkey" or "sqlite_autoindex_kickside_automation_prepared_1"
             test.is_true(h.encoded(prepared_plans[1].plan):find(prepared_index,1,true)~=nil,
@@ -329,7 +338,7 @@ local function define_tests()
                     "replay aliases use the same item primary-key range")
             end
             local dead_proof={prepared_items=100000,total_ledger_items=TOTAL,remaining_prepared=0,pending_command=true,
-                candidate_plans=candidate_plans,prepared_plans=prepared_plans,deadline_plans=deadline_plans,batches=dead_drain}
+                candidate_plans=candidate_plans,admission_plans=admission_plans,prepared_plans=prepared_plans,deadline_plans=deadline_plans,batches=dead_drain}
             local violations: {string}={}
             local last=samples[#samples]
             if postgres then

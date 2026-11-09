@@ -239,6 +239,7 @@ return test.run_cases(function()
             local tx = assert(db:begin())
             local changed = false
             local executor = {
+                db_type = function() return tx:db_type() end,
                 query = function(_self: any, statement: string, params: table): (any, error?)
                     local result, err = tx:query(statement, params)
                     if not err and not changed then

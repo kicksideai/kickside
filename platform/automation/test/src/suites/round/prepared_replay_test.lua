@@ -346,8 +346,8 @@ local function define_tests()
                 test.is_true(replayed.identity_key~=original)
                 test.eq(json.decode(replayed.execution_identity_json).prepared_key,original)
                 h.set_drive(id,"main","cursor=NULL",{})
-                run(id)
-                test.eq(#h.query("SELECT 1 FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id}),2,
+                if mode~="in_flight" then run(id) end
+                test.eq(#h.query("SELECT 1 FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id}),mode=="in_flight" and 1 or 2,
                     "the source can re-present the original delivery after replay changes its ledger key")
                 test.eq(transforms(id,key),1)
                 local live=mode=="mirror" and replayed.identity_key or original
@@ -355,7 +355,7 @@ local function define_tests()
                 local state=(mode=="in_flight" or mode=="mirror") and "retrying" or mode
                 h.exec("UPDATE kickside_trigger_item_ledger SET state=$1,expires_at=NULL,next_attempt_at=$2 WHERE owner_id=$3 AND identity_key=$4",
                     {state,h.PAST,id,live})
-                h.set_drive(id,"main","unresolved_count=1",{})
+                h.set_drive(id,"main","unresolved_count=$1",{mode=="in_flight" and 0 or 1})
                 h.exec("UPDATE kickside_trigger_item_ledger SET expires_at='1800-01-01T00:00:00Z' WHERE owner_id=$1 AND identity_key=$2",{id,expired})
                 local function prune(): ()
                     local _,err=automation_db.in_tx(function(tx) return round_ledger.prune_tx(tx,"1850-01-01T00:00:00Z",100) end)
@@ -381,8 +381,9 @@ local function define_tests()
                     h.exec("UPDATE kickside_trigger_item_ledger SET state='retrying',identity_parked=false,next_attempt_at=$1 WHERE owner_id=$2 AND identity_key=$3",{h.PAST,id,live})
                     run(id)
                 end
+                if mode=="in_flight" then prune() end
                 test.eq(transforms(id,key),1,"the retry reuses replay-unsafe output without recomputation")
-                test.eq(#sink_writes(id,key),4)
+                test.eq(#sink_writes(id,key),mode=="in_flight" and 3 or 4)
                 h.exec("UPDATE kickside_trigger_item_ledger SET expires_at='1800-01-01T00:00:00Z' WHERE owner_id=$1",{id})
                 local _,err=automation_db.in_tx(function(tx) return round_ledger.prune_tx(tx,"1850-01-01T00:00:00Z",100) end)
                 test.is_nil(err,tostring(err))
