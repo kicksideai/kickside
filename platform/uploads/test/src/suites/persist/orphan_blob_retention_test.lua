@@ -97,10 +97,10 @@ return test.run_cases(function()
                     release=function(_self) return db:release() end,
                 },nil
             end
-            local ok, removed, err, progress = pcall(cleanup.prune_orphan_blobs,"1900-01-01T00:00:00Z",1)
+            local removed, err, progress = cleanup.prune_orphan_blobs("1900-01-01T00:00:00Z",1)
             resources.get_db = original
-            test.is_true(ok,tostring(removed))
             test.is_nil(err,tostring(err))
+            test.eq(removed,0,"an empty candidate page removes no blobs")
             test.eq(scans,1,"retained blobs add no cross-table deadline scan")
             test.is_false(progress.needs_continue)
         end)
