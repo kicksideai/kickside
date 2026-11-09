@@ -46,11 +46,15 @@ return test.run_cases(function()
                     '2099-01-01T00:00:00Z','2000-01-01T00:00:00Z','2000-01-01T00:00:00Z',
                     '2000-01-01T00:00:00Z','2000-01-01T00:00:00Z',x FROM n]],{1,1000000})
             test.eq(tonumber(query("SELECT COUNT(*) AS n FROM kickside_automation_delivery_history")[1].n),1000000)
+            local function main_bytes(table_name: string): string
+                return "pg_relation_size('" .. table_name .. "') + COALESCE((SELECT SUM(pg_relation_size(indexrelid)) FROM pg_index WHERE indrelid='" .. table_name .. "'::regclass),0)"
+            end
             local function storage(): any
-                if postgres then return query("SELECT pg_total_relation_size('kickside_automation_delivery_history') AS history_bytes,pg_total_relation_size('kickside_trigger_item_ledger') AS ledger_bytes") end
+                if postgres then return query("SELECT " .. main_bytes("kickside_automation_delivery_history") .. " AS history_bytes,"
+                    .. main_bytes("kickside_trigger_item_ledger") .. " AS ledger_bytes,pg_total_relation_size('kickside_automation_delivery_history') AS history_total_bytes") end
                 return {page_count=query("PRAGMA page_count"),freelist_count=query("PRAGMA freelist_count"),page_size=query("PRAGMA page_size")}
             end
-            local schema=postgres and "SELECT c.relname,c.relfilenode FROM pg_class c WHERE c.oid='kickside_automation_delivery_history'::regclass OR c.oid IN (SELECT indexrelid FROM pg_index WHERE indrelid='kickside_automation_delivery_history'::regclass) ORDER BY c.relname"
+            local schema=postgres and "SELECT c.relname,c.relfilenode,pg_relation_size(c.oid) AS main_bytes FROM pg_class c WHERE c.oid='kickside_automation_delivery_history'::regclass OR c.oid IN (SELECT indexrelid FROM pg_index WHERE indrelid='kickside_automation_delivery_history'::regclass) ORDER BY c.relname"
                 or "SELECT name,rootpage,sql FROM sqlite_master WHERE tbl_name='kickside_automation_delivery_history' ORDER BY name"
             local schema_before=json.encode(query(schema))
             local before=storage()
@@ -72,10 +76,10 @@ return test.run_cases(function()
                 execute(numbers .. "INSERT INTO kickside_automation_receipt (owner_id,source_port,item_key,map_slot,identity_key,dest_ref_json,updated_at)"
                     .. " SELECT 'owner','source',CAST(x AS TEXT),'','record','{}','2000-01-01T00:00:00Z' FROM n",{first,math.min(first+99999,999999)})
             end
-            local receipt_schema=postgres and "SELECT c.relname,c.relfilenode FROM pg_class c WHERE c.oid='kickside_automation_receipt'::regclass OR c.oid IN (SELECT indexrelid FROM pg_index WHERE indrelid='kickside_automation_receipt'::regclass) ORDER BY c.relname"
+            local receipt_schema=postgres and "SELECT c.relname,c.relfilenode,pg_relation_size(c.oid) AS main_bytes FROM pg_class c WHERE c.oid='kickside_automation_receipt'::regclass OR c.oid IN (SELECT indexrelid FROM pg_index WHERE indrelid='kickside_automation_receipt'::regclass) ORDER BY c.relname"
                 or "SELECT name,rootpage FROM sqlite_master WHERE tbl_name='kickside_automation_receipt' ORDER BY name"
             local receipt_schema_before=json.encode(query(receipt_schema))
-            local receipt_bytes_before=postgres and query("SELECT pg_total_relation_size('kickside_automation_receipt') AS bytes")[1].bytes or query("PRAGMA page_count")[1].page_count
+            local receipt_bytes_before=postgres and query("SELECT " .. main_bytes("kickside_automation_receipt") .. " AS bytes")[1].bytes or query("PRAGMA page_count")[1].page_count
             db:release()
             started=time.now():unix_nano()
             migrate("19_receipt_delivery_identity")
@@ -86,7 +90,7 @@ return test.run_cases(function()
             test.is_nil(mapped.delivery_key,"existing mappings retain their data with an absent delivery identity")
             test.eq(tonumber(query("SELECT COUNT(*) AS n FROM kickside_automation_receipt")[1].n),1000000)
             local receipt_schema_after=json.encode(query(receipt_schema))
-            local receipt_bytes_after=postgres and query("SELECT pg_total_relation_size('kickside_automation_receipt') AS bytes")[1].bytes or query("PRAGMA page_count")[1].page_count
+            local receipt_bytes_after=postgres and query("SELECT " .. main_bytes("kickside_automation_receipt") .. " AS bytes")[1].bytes or query("PRAGMA page_count")[1].page_count
             test.eq(receipt_schema_after,receipt_schema_before,"nullable ADD COLUMN rewrites no receipt table or index")
             test.eq(receipt_bytes_after,receipt_bytes_before,"nullable ADD COLUMN adds no receipt data pages")
             test.eq(json.encode(query(schema)),schema_before)
