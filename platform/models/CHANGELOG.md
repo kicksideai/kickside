@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.74](https://github.com/kicksideai/kickside/compare/models-v0.1.73...models-v0.1.74) (2026-11-09)
+
+
+### Bug Fixes
+
+* **models:** preserve enable state when assigning classes ([#393](https://github.com/kicksideai/kickside/issues/393)) ([491847b](https://github.com/kicksideai/kickside/commit/491847ba4e3a184afef858f0d4684d44606d0506))
+
 ## [0.1.73](https://github.com/kicksideai/kickside/compare/models-v0.1.72...models-v0.1.73) (2026-11-09)
 
 
