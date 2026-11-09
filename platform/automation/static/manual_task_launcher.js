@@ -1,7 +1,7 @@
-import { e as _, _ as M, u as V, a as B, W as D } from "./errMsg-kIukmtcj.js";
-import { defineComponent as R, ref as v, computed as E, watch as I, onBeforeUnmount as L, openBlock as l, createElementBlock as h, createVNode as N, unref as c, createCommentVNode as k, createElementVNode as S, toDisplayString as q, createBlock as j } from "vue";
-import { api as U, define as A } from "@wippy-fe/proxy";
-import { s as Q } from "./execution-identity-editor-DaljeKxW.js";
+import { e as _, _ as R, u as V, a as B, W as D } from "./errMsg-kIukmtcj.js";
+import { defineComponent as T, ref as v, computed as E, watch as I, onBeforeUnmount as L, openBlock as l, createElementBlock as h, createVNode as N, unref as c, createCommentVNode as k, createElementVNode as Q, toDisplayString as q, createBlock as S } from "vue";
+import { api as U, define as j } from "@wippy-fe/proxy";
+import { s as A } from "./execution-identity-editor-DaljeKxW.js";
 import "@iconify/vue";
 const W = {
   "aria-label": "Launch task",
@@ -15,7 +15,7 @@ const W = {
 }, O = {
   key: 3,
   role: "status"
-}, P = /* @__PURE__ */ R({
+}, P = /* @__PURE__ */ T({
   __name: "ManualTaskLauncher",
   props: {
     target: {},
@@ -38,11 +38,11 @@ const W = {
     function C(e) {
       o.value = _(e, "Could not queue the task"), g("error", { message: o.value, error: e });
     }
-    function T(e) {
+    function x(e) {
       const r = e;
       a.value || u.value || m || r?.principal?.kind !== "user" || !r.principal.id || (t.value = { kind: "user", id: r.principal.id }, o.value = "");
     }
-    async function x() {
+    async function M() {
       if (!w.value || !t.value || !f.value.target) return;
       const e = s;
       m ||= {
@@ -90,29 +90,29 @@ const W = {
     }), L(() => {
       s += 1;
     }), (e, r) => (l(), h("section", W, [
-      N(M, {
+      N(R, {
         tag: "wc-run-as-picker",
         attrs: { root: "", value: t.value?.id, disabled: a.value || u.value || !!c(m) },
-        onChange: T,
+        onChange: x,
         onError: C
       }, null, 8, ["attrs"]),
       t.value ? k("", !0) : (l(), h("p", $, "Select the account that runs this task.")),
-      S("button", {
+      Q("button", {
         type: "button",
         class: "p-button",
         disabled: !w.value,
-        onClick: x
-      }, q(a.value ? "Queuing…" : d.value ? "Check run admission" : o.value ? "Retry run" : "Queue run"), 9, F),
+        onClick: M
+      }, q(a.value ? "Queuing…" : d.value ? "Check run status" : o.value ? "Retry run" : "Queue run"), 9, F),
       f.value.error || o.value ? (l(), h("p", J, q(f.value.error || o.value), 1)) : k("", !0),
-      d.value ? (l(), h("p", K, "Run admission is pending.")) : k("", !0),
+      d.value ? (l(), h("p", K, "Queuing run…")) : k("", !0),
       u.value ? (l(), h("p", O, "Run queued. Follow the task in Automations.")) : k("", !0)
     ]));
   }
-}), z = /* @__PURE__ */ R({
+}), z = /* @__PURE__ */ T({
   __name: "ManualTaskLauncherElement",
   setup(y) {
     const p = V(), n = B();
-    return (g, t) => (l(), j(P, {
+    return (g, t) => (l(), S(P, {
       target: c(p).target || "",
       parent: c(p).parent || "",
       title: c(p).title || "Manual task",
@@ -127,11 +127,11 @@ const W = {
 } };
 class H extends D {
   static get wippyConfig() {
-    return { propsSchema: G, hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"], inlineCss: Q };
+    return { propsSchema: G, hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"], inlineCss: A };
   }
   static get vueConfig() {
     return { rootComponent: z };
   }
 }
-A(import.meta.url, H);
+j(import.meta.url, H);
 //# sourceMappingURL=manual_task_launcher.js.map
