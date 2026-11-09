@@ -373,8 +373,9 @@ entries:
       suite: kickside_uploads_rasterize
       comment: Discovery, PDF adapter, and the empty-document rasterize pipeline stage.
     source: file://rasterize_test.lua
-    modules: [registry, funcs, fs, uuid, security]
+    modules: [registry, funcs, fs, uuid, security, contract]
     imports:
+      page_images: kickside.uploads.rasterize:page_images
       test: wippy.test:test
       artifact_content_repo: kickside.uploads.persist:artifact_content_repo
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo

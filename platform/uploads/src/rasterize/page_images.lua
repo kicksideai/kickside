@@ -33,10 +33,18 @@ end
 -- decorations are not. When in doubt the set is smaller, so the rasterizer renders.
 function M.extracted_pages(upload_id: string, min_bytes: integer): { any }
     local artifacts = artifact_parts_repo.list_artifacts(upload_id) or {}
+    local counts = {}
+    for _, a in ipairs(artifacts) do
+        local page = type(a.metadata) == "table" and tonumber(a.metadata.page) or nil
+        if a.kind == "image" and a.role == "extracted-image" and page then counts[page] = (counts[page] or 0) + 1 end
+    end
     local out = {}
     for _, a in ipairs(artifacts) do
         if a.kind == "image" and a.role == "extracted-image" and (tonumber(a.size) or 0) >= min_bytes then
-            out[#out + 1] = a
+            local page = type(a.metadata) == "table" and tonumber(a.metadata.page) or nil
+            if not page or (counts[page] == 1 and (not a.metadata.image_count or a.metadata.image_count == 1)) then
+                out[#out + 1] = a
+            end
         end
     end
     table.sort(out, function(a, b)
@@ -82,7 +90,12 @@ function M.page_set(upload_id: string, min_bytes: integer): ({ any }, string)
     local rendered = M.rendered(upload_id)
     local extracted = M.extracted_pages(upload_id, min_bytes)
     local numbered = M.numbered_images(extracted)
-    if next(numbered) == nil then
+    local legacy = true
+    for _, artifact in ipairs(artifact_parts_repo.list_artifacts(upload_id) or {}) do
+        if artifact.kind == "image" and artifact.role == "extracted-image"
+            and type(artifact.metadata) == "table" and artifact.metadata.page ~= nil then legacy = false; break end
+    end
+    if next(numbered) == nil and legacy then
         if #rendered > 0 then return rendered, "rendered" end
         return extracted, "extracted"
     end
@@ -145,19 +158,6 @@ function M.ocr_text_reason(content: any, page_count: any, max_text_per_page: any
     local pages = math.max(1, math.floor(tonumber(page_count) or 1))
     local per_page = math.max(1, math.floor(tonumber(max_text_per_page) or M.DEFAULT_MAX_TEXT_BYTES_PER_PAGE))
     if #text <= (pages * per_page) then return "sparse_text_per_page" end
-
-    if pages == 1 then
-        local tokens, readable = 0, 0
-        -- At most 32 KiB. A word-like token has two letter bytes (ASCII or
-        -- UTF-8 leading bytes) or a digit. Replacement glyphs do not count.
-        for token in text:sub(1, 32768):gmatch("%S+") do
-            tokens = tokens + 1
-            local clean = token:gsub("\239\191\189", "")
-            local _, letters = clean:gsub("[%a\194-\244]", "")
-            if letters >= 2 or clean:find("%d") then readable = readable + 1 end
-        end
-        if tokens > 0 and readable * 2 < tokens then return "unusable_text" end
-    end
 
     if pages > 1 then
         local confident_per_page = math.max(per_page + 1, M.DEFAULT_CONFIDENT_TEXT_BYTES_PER_PAGE)

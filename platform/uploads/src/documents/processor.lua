@@ -252,9 +252,16 @@ local function process(params: any): any
     end
     local markdown_artifact_id = markdown_artifact.artifact_id :: string
 
+    local page_resources = {}
+    if params.mime_type == "application/pdf" and #(document.images or {}) > 0 then
+        local pages, pages_err = doc2md.page_resources({bytes = bytes})
+        if pages_err then error("document page resources failed: " .. tostring(pages_err)) end
+        for _, page in ipairs(pages) do page_resources[page.page] = page.image_count end
+    end
     local image_count = 0
     for index, image in ipairs(document.images or {}) do
         local metadata = image_metadata(upload_id, index, image, source_artifact_id, markdown_artifact_id)
+        metadata.image_count = page_resources[image.page]
         local artifact, image_err = artifact_content_repo.create_artifact({
             upload_id = upload_id,
             parent_artifact_id = source_artifact_id,

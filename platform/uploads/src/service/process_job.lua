@@ -156,6 +156,10 @@ local function run(input: any): (any, any?)
     end
 
 
+    local cancel_ref = nil
+    if tostring(job.id or "") ~= "" and tostring(job.lease_token or "") ~= "" then
+        cancel_ref = {job_id = tostring(job.id), lease_token = tostring(job.lease_token), execution_seq = job.execution_seq}
+    end
     local success, proc_err, processed_upload, retriable = true, nil, upload, nil
     -- Completion is the processing checkpoint. A publication/settings/callback
     -- retry must never repeat conversion or OCR for an already processed upload.
@@ -167,11 +171,7 @@ local function run(input: any): (any, any?)
             end,
             -- Carry the job lease so heavy stages (OCR) can observe cancellation
             -- between their own internal batches, not only between pipeline stages.
-            cancel_ref = {
-                job_id = tostring(job.id or ""),
-                lease_token = tostring(job.lease_token or ""),
-                execution_seq = job.execution_seq,
-            },
+            cancel_ref = cancel_ref,
         })
     end
     if not success then
