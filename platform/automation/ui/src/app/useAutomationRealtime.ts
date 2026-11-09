@@ -15,16 +15,11 @@ export function useAutomationRealtime(
 
   function applyPublicStateEvent(componentId: string, event: ComponentMetaEvent) {
     const meta = event.meta
-    automations.value = automations.value.map(automation => {
-      if (automation.id !== componentId) return automation
-      const next: Automation = {
-        ...automation,
-        public_state: { ...(automation.public_state || {}), ...meta },
-      }
-      if (typeof meta.title === 'string') next.title = meta.title
-      if (typeof meta.comment === 'string') next.description = meta.comment
-      return next
-    })
+    const automation = automations.value.find(automation => automation.id === componentId)
+    if (!automation) return
+    automation.public_state = { ...(automation.public_state || {}), ...meta }
+    if (typeof meta.title === 'string') automation.title = meta.title
+    if (typeof meta.comment === 'string') automation.description = meta.comment
     void refreshDriveStatus(componentId).catch(error => host.handleError('other', { message: String(error) }))
   }
 
@@ -35,7 +30,8 @@ export function useAutomationRealtime(
     const status = await readDriveStatus(componentId)
     if (statusReads.get(componentId) !== request) return
     statusReads.delete(componentId)
-    automations.value = automations.value.map(a => a.id === componentId ? { ...a, drive_status: status } : a)
+    const automation = automations.value.find(automation => automation.id === componentId)
+    if (automation) automation.drive_status = status
   }
 
   function fieldTypesFor(automation: Automation): Record<string, string> {

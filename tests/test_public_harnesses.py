@@ -3,6 +3,8 @@ from pathlib import Path
 import json
 import os
 import re
+import shutil
+import textwrap
 import subprocess
 import tempfile
 import unittest
@@ -20,6 +22,35 @@ class PublicHarnessTests(unittest.TestCase):
             for setup in setups:
                 with self.subTest(workflow=name, setup=setup):
                     self.assertRegex(setup, r'(?m)^        version: 0\.3\.59a$')
+
+    def test_ci_materializes_ui_kit_from_the_checkout(self):
+        workflow = (ROOT / '.github/workflows/ci.yml').read_text()
+        step = re.search(r'    - name: Prepare UI Kit build input\n      run: \|\n(.*?)(?=    - name:)',
+                         workflow, re.DOTALL)
+        self.assertIsNotNone(step, 'frontend gates must use the UI Kit source under test')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'scripts').mkdir()
+            shutil.copy(ROOT / 'scripts/release_artifacts.py', root / 'scripts')
+            shutil.copytree(ROOT / 'platform/ui-kit', root / 'platform/ui-kit',
+                            ignore=shutil.ignore_patterns('node_modules', '.wippy'))
+            (root / '.github').mkdir()
+            for path in ('.github/modules.json', '.release-please-manifest.json'):
+                shutil.copy(ROOT / path, root / path)
+            environment = root / 'github-env'
+            environment.touch()
+            subprocess.run(['bash', '-euo', 'pipefail', '-c', textwrap.dedent(step[1])],
+                           cwd=root, env={**os.environ, 'GITHUB_ENV': str(environment)},
+                           capture_output=True, text=True, check=True, timeout=30)
+            artifact = Path(environment.read_text().strip().removeprefix('UI_KIT_WAPP='))
+            self.assertTrue(artifact.is_file())
+            consumer = root / 'consumer'
+            subprocess.run(['wippy', 'artifacts', 'materialize', str(artifact),
+                            'kickside.ui_kit:package_fs', '--root', str(consumer)],
+                           cwd=root, capture_output=True, text=True, check=True, timeout=30)
+            for name in ('useComponentDeletion.ts', 'ComponentDeletion.vue'):
+                self.assertEqual((consumer / 'npm/@kickside/ui-kit' / name).read_bytes(),
+                                 (ROOT / 'platform/ui-kit/package' / name).read_bytes())
 
     def test_root_make_test_runs_each_package_test_script(self):
         for module, directory in (('workflows', 'platform/workflows/ui'), ('app-main', 'app/frontend/applications/main')):

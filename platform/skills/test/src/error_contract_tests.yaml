@@ -106,6 +106,7 @@ entries:
   source: file://reader_source.lua
   modules: [base64]
   imports:
+    deletion_progress: kickside.component:deletion_progress
     component: app.skill_errors:component_fixture
     envelope: kickside.component:envelope
     types: kickside.skills:types

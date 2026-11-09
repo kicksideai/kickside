@@ -2,6 +2,12 @@ version: "1.0"
 namespace: kickside.component
 
 entries:
+  - name: deletion_progress
+    kind: library.lua
+    source: file://deletion_progress.lua
+    imports:
+      jobs: kickside.core.jobs:jobs
+
   - name: placement_rules
     kind: library.lua
     source: file://placement_rules.lua

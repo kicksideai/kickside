@@ -1,3 +1,4 @@
+local deletion_progress = require("deletion_progress")
 -- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Read side of the skills slice (queries). A skill's metadata lives on its
 -- component (discovery); its body, version history, and file manifests live in the
@@ -254,6 +255,7 @@ function M.list(args: any): ({ skill_types.SkillSummary }?, error?)
                     skill_id = c.component_id,
                     deleting_at = c.deleting_at,
                     deletion_job_id = c.deletion_job_id,
+                    deletion_job = c.deletion_job,
                     name = meta.title,
                     description = meta.comment,
                     status = meta.status,
@@ -268,6 +270,8 @@ function M.list(args: any): ({ skill_types.SkillSummary }?, error?)
             end
         end
     end
+    local _, progress_err = deletion_progress.enrich(out)
+    if progress_err then return nil, progress_err end
     return out
 end
 

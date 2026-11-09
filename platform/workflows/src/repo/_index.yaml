@@ -9,6 +9,7 @@ entries:
     source: file://repo.lua
     modules: [contract, security, hash]
     imports:
+      deletion_progress: kickside.component:deletion_progress
       types: kickside.workflows:types
       component: kickside.component:component
       store: kickside.workflows.store:store

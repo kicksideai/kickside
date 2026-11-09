@@ -34,6 +34,9 @@ type AccessContext = {
 -- One component row as list_components returns it.
 type ComponentRow = {
     component_id: string,
+    deleting_at: string?,
+    deletion_job_id: string?,
+    deletion_job: {status: string, attempts: integer, last_error: string?}?,
     impl_id: string,
     meta: { [string]: any }?,
     created_at: string?,
@@ -183,7 +186,8 @@ end
 -- The display fields a thread component carries in its public meta: the human
 -- title and icon a picker renders. A thread row stores neither (its title lives on
 -- the component, not in the thread attrs), so listing surfaces them alongside ids.
-type ComponentDisplay = { title: string, icon: string }
+type ComponentDisplay = {title: string, icon: string, deleting_at: string?, deletion_job_id: string?,
+    deletion_job: {status: string, attempts: integer, last_error: string?}?}
 
 local function listing_response_error(field: string): error
     return errors.new({kind = errors.INTERNAL, retryable = false,
@@ -267,6 +271,9 @@ function component.list_thread_components(
                 display[row.component_id] = {
                     title = type(title) == "string" and title or "",
                     icon = type(icon) == "string" and icon or "",
+                    deleting_at = row.deleting_at,
+                    deletion_job_id = row.deletion_job_id,
+                    deletion_job = row.deletion_job,
                 }
             end
         end
