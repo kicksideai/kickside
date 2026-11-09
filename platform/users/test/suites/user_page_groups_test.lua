@@ -6,8 +6,8 @@ local users = require("user_repo")
 local groups = require("user_groups_repo")
 local list = require("list_users")
 
-local function execute(statement: string, params: any): any?
-    local db, err = sql.get("app:db")
+local function execute(statement: string, params: any, resource: string?): any?
+    local db, err = sql.get(resource or "app:db")
     if err then return err end
     local _, write_err = db:execute(statement, params)
     db:release()
@@ -60,6 +60,40 @@ local function run()
             end)
             list._user_repo, list._user_groups_repo = old_users, old_groups
             if not ok then error(err) end
+        end)
+
+        test.it("keeps the listed account and its memberships in one snapshot during deletion", function()
+            with_users(1, function(ids)
+                local id = ids[1]
+                local assigned, assign_err = groups.assign_user_to_group(id, "app.security:user")
+                test.is_nil(assign_err)
+                test.not_nil(assigned)
+                local old_users = list._user_repo
+                list._user_repo = { list = function(options, executor)
+                    local rows, read_err = users.list(options, executor)
+                    if read_err then return nil, read_err end
+                    local delete_err = execute("DELETE FROM app_users WHERE user_id=$1", { id }, "kickside.users:user_page_deletion_db")
+                    if delete_err then return nil, delete_err end
+                    return rows, nil
+                end }
+                local ok, failure = pcall(function()
+                    local status, body = list.process(100, 0)
+                    test.eq(status, 200, tostring(body.error))
+                    local found = false
+                    for _, row in ipairs(body.users) do
+                        if row.user_id == id then
+                            found = true
+                            test.eq(row.security_groups[1], "app.security:user")
+                        end
+                    end
+                    test.is_true(found, "the page loses the account from its read snapshot")
+                end)
+                list._user_repo = old_users
+                if not ok then error(failure) end
+                local status, body = list.process(100, 0)
+                test.eq(status, 200)
+                for _, row in ipairs(body.users) do test.is_true(row.user_id ~= id) end
+            end)
         end)
 
         test.it("matches complete singular membership order and retains users with no groups", function()

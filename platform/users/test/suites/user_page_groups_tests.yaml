@@ -16,3 +16,8 @@ entries:
       user_repo: kickside.users.persist:user_repo
       user_groups_repo: kickside.users.persist:user_groups_repo
       list_users: kickside.users.api:list_users
+
+  - name: user_page_deletion_db
+    kind: db.sql.sqlite
+    file: "${sqlite_path}"
+    foreign_keys: true

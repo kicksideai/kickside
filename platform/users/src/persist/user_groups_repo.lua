@@ -201,12 +201,13 @@ function user_groups_repo.get_user_groups(user_id, opts)
     }
 end
 
-function user_groups_repo.get_user_groups_batch(user_ids)
+function user_groups_repo.get_user_groups_batch(user_ids, executor)
     if type(user_ids) == "table" and #user_ids == 0 then return {}, nil end
-    local db, err = get_db()
+    local db, err = executor, nil
+    if not db then db, err = get_db() end
     if err then return nil, err end
     local memberships, read_err = support.read_page_memberships(db, user_ids)
-    db:release()
+    if not executor then db:release() end
     return memberships, read_err
 end
 
