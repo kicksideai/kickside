@@ -1,6 +1,6 @@
 directories:
     modules: .wippy
-    src: .
+    src: /home/wolfy-j/kickside/scratchpad/sol-lanes/cleanup-kickside/repo/platform/channel/test
 modules:
     - name: kickside/component
       version: 0.0.0

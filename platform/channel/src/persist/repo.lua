@@ -11,6 +11,8 @@ local conversation = require("channel_conversation")
 local policy = require("channel_retention_policy")
 
 -- Session mappings, admissions and accepted turns share this owner store.
+local retention_notifier = require("retention_notifier")
+
 local M = {}
 
 local function trim(value: any): string
@@ -221,6 +223,8 @@ function M.rotate_with_archive(db_id: string, table_name: string, provider: stri
         return nil, "session rotation commit failed: " .. tostring(commit_err)
     end
     db:release()
+    local _,wake_err = retention_notifier.notify({kind="channel_session"})
+    if wake_err then return nil,tostring(wake_err) end
     return next_id, nil
 end
 
