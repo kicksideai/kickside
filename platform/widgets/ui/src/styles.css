@@ -7,9 +7,9 @@
    overrides. */
 @tailwind base;
 
-:host { display: inline-block; }
-/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
-:host > div:empty, :host > div:has(> [role=status]) { min-width: 44px; min-height: 32px; }
+:host { display: inline-block; vertical-align: top; }
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host > div:empty, :host > div:has(> [data-lazy-state]) { min-height: 32px; }
 *, *::before, *::after { box-sizing: border-box; }
 
 /* Single component root, layout-transparent so the trigger sizes as before and

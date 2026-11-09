@@ -22,9 +22,9 @@
 .kx-agent-block__field > span { font-weight: 600; }
 .kx-agent-block__field small { color: var(--p-text-muted-color); }
 .kx-agent-block__control { width: 100%; }
-.kx-agent-block__loading { display: flex; align-items: center; gap: .5rem; color: var(--p-text-muted-color); }
+.kx-agent-block__loading { display: flex; align-items: center; gap: .5rem; min-height: 38px; color: var(--p-text-muted-color); }
 .kx-agent-block__spinner { width: 1rem; height: 1rem; }
 wc-agent-picker { display: block; min-width: 0; }
 
-/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
-:host > div:empty, :host > div:has(> [role=status]) { min-height: 240px; }
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host > div:empty, :host > div:has(> [data-lazy-state]) { min-height: 676px; }

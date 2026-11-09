@@ -6,7 +6,7 @@ import type { ComponentProps, Events } from './types'
 
 const Root = lazyControl(
   () => import('./app/WebhookSourceDetail.vue'),
-  { loading: 'Loading webhook details…', failed: 'Could not load the webhook details. Reload the page to try again.' },
+  { immediate: true, loading: 'Loading webhook details…', failed: 'Could not load the webhook details. Reload the page to try again.' },
   useEvents,
 )
 

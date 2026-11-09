@@ -28,8 +28,8 @@
    surface. A reconnect during a pending import can leave a second loader until the mount. */
 wippy-loading, wippy-error { height: 100%; }
 wippy-loading ~ wippy-loading { display: none; }
-/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
-:host(kickside-onboard-models) > div:empty, :host(kickside-onboard-models) > div:has(> [role=status]) { min-height: 240px; }
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host(kickside-onboard-models) > div:empty, :host(kickside-onboard-models) > div:has(> [data-lazy-state]) { min-height: 1142px; }
 *, *::before, *::after { box-sizing: border-box; }
 .km {
   height: 100%;
@@ -1122,6 +1122,8 @@ wippy-loading ~ wippy-loading { display: none; }
    one credential field, then per-class model selection. Tokenized on the host
    theme so it matches the wizard around it. */
 .ob { display: flex; flex-direction: column; min-height: 0; }
+/* Holds the onboarding height while providers and models load. */
+.ob:has(> .km-loading) { min-height: 1142px; }
 .ob-stage { display: flex; flex-direction: column; gap: 20px; }
 .ob-model-warning {
   display: flex;

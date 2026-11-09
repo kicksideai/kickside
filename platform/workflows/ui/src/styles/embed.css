@@ -6,6 +6,7 @@
   padding: 14px; border: 1px solid var(--p-content-border-color); border-radius: var(--wf-radius);
 }
 .wf-embed-note { display: flex; align-items: center; gap: 8px; color: var(--wf-muted); font-size: var(--wf-fs-meta); }
+.wf-embed-note .wf-status-spinner { width: 16px; height: 16px; flex: none; }
 .wf-embed-directed {
   display: flex; align-items: flex-start; gap: 10px; padding: 14px;
   border: 1px solid color-mix(in srgb, var(--p-warn-500) 32%, var(--p-content-border-color));

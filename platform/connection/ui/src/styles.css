@@ -15,9 +15,9 @@
    surface. A reconnect during a pending import can leave a second loader until the mount. */
 wippy-loading, wippy-error { height: 100%; }
 wippy-loading ~ wippy-loading { display: none; }
-/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
-:host(kickside-connection-trait-picker) > div:empty, :host(kickside-connection-trait-picker) > div:has(> [role=status]) { min-height: 42px; }
-:host(kickside-onboard-connections) > div:empty, :host(kickside-onboard-connections) > div:has(> [role=status]) { min-height: 200px; }
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host(kickside-connection-trait-picker) > div:empty, :host(kickside-connection-trait-picker) > div:has(> [data-lazy-state]) { min-height: 42px; }
+:host(kickside-onboard-connections) > div:empty, :host(kickside-onboard-connections) > div:has(> [data-lazy-state]) { min-height: 434px; }
 *, *::before, *::after { box-sizing: border-box; }
 
 .conn-page {
@@ -313,6 +313,8 @@ wippy-loading ~ wippy-loading { display: none; }
 
 /* ── Onboarding (kickside-onboard-connections) ─────────────────────────── */
 .oc { display: flex; flex-direction: column; gap: 22px; background: transparent; }
+/* Holds the service catalog height while it loads. */
+.oc:has(> .oc-loading) { min-height: 434px; }
 .oc-error {
   display: flex; align-items: center; gap: 12px; padding: 16px; border-radius: 10px;
   background: var(--rds); color: var(--rd); font-size: 12.5px;

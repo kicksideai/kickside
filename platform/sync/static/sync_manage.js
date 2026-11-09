@@ -1,37 +1,39 @@
-import { W as l, a as p } from "./wc-runtime-h8e5VJvv.js";
-import { s as d, P as c } from "./styles-C_e6PZ5y.js";
-import { Icon as i } from "@iconify/vue";
-import { defineAsyncComponent as u, defineComponent as m, h as n, onMounted as f } from "vue";
+import { W as d, a as l } from "./wc-runtime-h8e5VJvv.js";
+import { s as p, P as c } from "./styles-B3XDHBFR.js";
+import { Icon as r } from "@iconify/vue";
+import { defineAsyncComponent as m, defineComponent as u, h as n, onMounted as f } from "vue";
 import { define as y } from "@wippy-fe/proxy";
 const g = 3e4, a = "display:flex;align-items:center;justify-content:center;min-height:2rem;font-size:.875rem;", h = "position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;";
 function C(t) {
   matchMedia("(prefers-reduced-motion: reduce)").matches || t.el.animate({ rotate: ["0deg", "360deg"] }, { duration: 1e3, iterations: 1 / 0 });
 }
 function x(t, e, o) {
-  const r = o();
-  f(() => r("error", { message: t, error: e }));
+  const i = o();
+  f(() => i("error", { message: t, error: e }));
 }
 function v(t, e, o) {
-  return u({
+  return m({
     loader: t,
     loadingComponent: {
       render: () => n("span", {
         role: "status",
+        "data-lazy-state": "loading",
         "aria-label": e.loading,
         style: `${a}color:var(--p-text-muted-color);`
-      }, n("span", { style: "display:inline-flex;", onVnodeMounted: C }, n(i, { icon: "tabler:loader-2", "aria-hidden": "true" })))
+      }, n("span", { style: "display:inline-flex;", onVnodeMounted: C }, n(r, { icon: "tabler:loader-2", "aria-hidden": "true" })))
     },
-    errorComponent: m({
+    errorComponent: u({
       props: { error: { type: Error, required: !0 } },
-      setup(r) {
-        return x(e.failed, r.error, o), () => n("span", {
+      setup(i) {
+        return x(e.failed, i.error, o), () => n("span", {
           role: "alert",
+          "data-lazy-state": "failed",
           title: e.iconOnly ? e.failed : void 0,
           style: `${a}color:var(--p-danger-500);`
-        }, e.iconOnly ? [n(i, { icon: "tabler:alert-circle", "aria-hidden": "true" }), n("span", { style: h }, e.failed)] : e.failed);
+        }, e.iconOnly ? [n(r, { icon: "tabler:alert-circle", "aria-hidden": "true" }), n("span", { style: h }, e.failed)] : e.failed);
       }
     }),
-    delay: 200,
+    delay: e.immediate ? 0 : 200,
     timeout: g,
     suspensible: !1
   });
@@ -39,7 +41,7 @@ function v(t, e, o) {
 const M = v(
   () => import("./SyncManage-DBMRKFw-.js"),
   { loading: "Loading data sync…", failed: "Could not load the data sync. Reload the page to try again." },
-  p
+  l
 ), S = {
   type: "object",
   properties: {
@@ -48,23 +50,23 @@ const M = v(
     value: { type: "object" }
   }
 };
-class s extends l {
+class s extends d {
   static get wippyConfig() {
     return {
       propsSchema: S,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: d
+      inlineCss: p
     };
   }
   static get vueConfig() {
     return { rootComponent: M, plugins: [c] };
   }
 }
-async function b() {
+async function V() {
   return s;
 }
 y(import.meta.url, s);
 export {
-  b as webComponent
+  V as webComponent
 };
 //# sourceMappingURL=sync_manage.js.map

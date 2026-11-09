@@ -2,8 +2,8 @@
 @import "@kickside/ui-kit/spin.css";
 @tailwind base;
 :host { display: block; }
-/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
-:host > div:empty, :host > div:has(> [role=status]) { min-height: 48px; }
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host > div:empty, :host > div:has(> [data-lazy-state]) { min-height: 48px; }
 *, *::before, *::after { box-sizing: border-box; }
 .kx-identity-editor, .kx-manual-launcher { display: grid; gap: 0.75rem; }
 .kx-identity-editor p, .kx-manual-launcher p { margin: 0; }

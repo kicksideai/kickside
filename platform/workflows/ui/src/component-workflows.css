@@ -21,5 +21,5 @@
 .cw-spinner { width: 18px; height: 18px; }
 .cw-feedback { margin: 0 24px 10px; }
 @media (max-width: 640px) { .cw-head { padding: 16px 16px 12px; } .cw-feedback { margin-inline: 16px; } }
-/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
-:host > div:empty, :host > div:has(> [role=status]) { min-height: 301px; }
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host > div:empty, :host > div:has(> [data-lazy-state]) { min-height: 301px; }

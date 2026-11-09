@@ -13,8 +13,8 @@
 :host { display: block; height: 100%; min-height: 0; }
 :host > div { height: 100%; min-height: 0; }
 :host { }
-/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
-:host > div:empty, :host > div:has(> [role=status]) { min-height: 240px; }
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host > div:empty, :host > div:has(> [data-lazy-state]) { min-height: 240px; }
 *, *::before, *::after { box-sizing: border-box; }
 
 :host { --system-surface-gutter: var(--kickside-system-surface-gutter, 24px); }

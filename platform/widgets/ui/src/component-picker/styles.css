@@ -5,8 +5,8 @@
    overrides. */
 @tailwind base;
 
-/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
-:host > div:empty, :host > div:has(> [role=status]) { min-height: 36px; }
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host > div:empty, :host > div:has(> [data-lazy-state]) { min-height: 36px; }
 
 .cp-state--stack { align-items: flex-start; flex-direction: column; gap: 8px; }
 .cp-create { padding: 10px; overflow: auto; }

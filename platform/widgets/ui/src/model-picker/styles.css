@@ -10,9 +10,10 @@
 :host {
   display: inline-block;
   position: relative;
+  vertical-align: top;
 }
-/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
-:host > div:empty, :host > div:has(> [role=status]) { min-width: 103px; min-height: 35px; }
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host > div:empty, :host > div:has(> [data-lazy-state]) { min-height: 36px; }
 
 /* Local stacking workaround REMOVED — the platform overlay portal now promotes the
    overlay into the browser top layer (see @wippy-fe/theme primevue-plugin), so the

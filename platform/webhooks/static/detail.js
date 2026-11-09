@@ -1,10 +1,10 @@
 import { W as t, u as o } from "./wc-runtime-KO3cNuNo.js";
-import { l as i, s } from "./styles-BIC5lYg4.js";
+import { l as i, s } from "./styles-BRRHt6og.js";
 import "@iconify/vue";
-import { define as n } from "@wippy-fe/proxy";
-const a = i(
+import { define as a } from "@wippy-fe/proxy";
+const n = i(
   () => import("./WebhookSourceDetail-DnzEXrUF.js"),
-  { loading: "Loading webhook details…", failed: "Could not load the webhook details. Reload the page to try again." },
+  { immediate: !0, loading: "Loading webhook details…", failed: "Could not load the webhook details. Reload the page to try again." },
   o
 ), r = {
   type: "object",
@@ -22,13 +22,13 @@ class e extends t {
     };
   }
   static get vueConfig() {
-    return { rootComponent: a };
+    return { rootComponent: n };
   }
 }
 async function f() {
   return e;
 }
-n(import.meta.url, e);
+a(import.meta.url, e);
 export {
   f as webComponent
 };

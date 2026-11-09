@@ -1,7 +1,7 @@
 import { u as m, W as f } from "./wc-runtime-DjtZy7dL.js";
 import { defineComponent as v, ref as u, openBlock as i, createElementBlock as r, createElementVNode as e, toDisplayString as a, Fragment as y, createTextVNode as k, createCommentVNode as g } from "vue";
 import { api as b, define as h } from "@wippy-fe/proxy";
-import { s as _ } from "./styles-B9e-D7Mq.js";
+import { s as _ } from "./styles-C0mQL9CY.js";
 import "@iconify/vue";
 const C = { class: "ks-about" }, S = {
   key: 0,

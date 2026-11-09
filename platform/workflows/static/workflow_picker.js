@@ -1,8 +1,8 @@
 import { W as t, u as o } from "./wc-runtime-KO3cNuNo.js";
 import { P as r } from "./primevue-plugin-CaP7wV_M.js";
-import { l as s } from "./lazy-CHftQ23z.js";
+import { l as s } from "./lazy-Cfv2E3SG.js";
 import { p as i } from "./pickerselect-CshmdhGQ.js";
-import { s as n } from "./workflow-embed-C-H5XzHN.js";
+import { s as n } from "./workflow-embed-DqDlVIkB.js";
 import "@iconify/vue";
 import { define as p } from "@wippy-fe/proxy";
 const m = s(

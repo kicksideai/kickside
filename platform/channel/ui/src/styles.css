@@ -8,8 +8,8 @@
 @tailwind base;
 
 :host { display: block; }
-/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
-:host(kickside-channel-responder-manage) > div:empty, :host(kickside-channel-responder-manage) > div:has(> [role=status]) { min-height: 320px; }
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host(kickside-channel-responder-manage) > div:empty, :host(kickside-channel-responder-manage) > div:has(> [data-lazy-state]) { min-height: 609px; }
 *, *::before, *::after { box-sizing: border-box; }
 
 .kx-cr {

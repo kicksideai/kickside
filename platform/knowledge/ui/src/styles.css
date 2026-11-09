@@ -20,8 +20,8 @@
    surface. A reconnect during a pending import can leave a second loader until the mount. */
 wippy-loading, wippy-error { height: 100%; }
 wippy-loading ~ wippy-loading { display: none; }
-/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
-:host(kickside-onboard-knowledge) > div:empty, :host(kickside-onboard-knowledge) > div:has(> [role=status]) { min-height: 277px; }
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host(kickside-onboard-knowledge) > div:empty, :host(kickside-onboard-knowledge) > div:has(> [data-lazy-state]) { min-height: 278px; }
 *, *::before, *::after { box-sizing: border-box; }
 /* Knowledge control surface. Styled only with the universal --p-* theme
    vocabulary so it renders correctly inside the shadow DOM of any Wippy host
@@ -362,7 +362,7 @@ wippy-loading ~ wippy-loading { display: none; }
 .kn-primary:hover:not(:disabled) { filter: brightness(1.06); }
 .kn-primary:disabled { opacity: .5; cursor: default; }
 /* Icon-picker wrapper the shared IconField emits around <wc-icon-picker>. */
-.wc-iconfield { display: inline-block; }
+.wc-iconfield { display: inline-block; min-height: 32px; vertical-align: top; }
 
 /* Wiki | Graph view switch in the detail bar (kb10 wiki engine). A segmented
    control sitting with Edit / Share / Delete; the host owns the choice and passes

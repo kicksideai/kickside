@@ -12,8 +12,8 @@
 /* The host element needs a definite box so the field lays out inside the shadow DOM of
    any host. It is compact and grows to content — a host embeds it inline in a form. */
 :host { display: block; }
-/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
-:host > div:empty, :host > div:has(> [role=status]) { min-height: 182px; }
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host > div:empty, :host > div:has(> [data-lazy-state]) { min-height: 183px; }
 *, *::before, *::after { box-sizing: border-box; }
 
 /* Styled only with the universal --p-* theme vocabulary so it renders correctly in the

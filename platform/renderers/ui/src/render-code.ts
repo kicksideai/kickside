@@ -12,7 +12,7 @@ const RenderCode = lazyControl(
 )
 
 // Reserved only while the implementation loads, so a loaded viewer keeps its own size.
-const hostCss = ':host > div:empty, :host > div:has(> [role=status]) { min-height: 96px; }'
+const hostCss = ':host > div:empty, :host > div:has(> [data-lazy-state]) { min-height: 96px; }'
 
 // <wc-render-code> — isolated source/data viewer (highlight.js + CSV/TSV table).
 type Props = { source?: string; sourceUrl?: string; contentType?: string; filename?: string }

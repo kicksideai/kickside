@@ -22,8 +22,8 @@
    surface. A reconnect during a pending import can leave a second loader until the mount. */
 wippy-loading, wippy-error { height: 100%; }
 wippy-loading ~ wippy-loading { display: none; }
-/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
-:host(kickside-onboard-modules) > div:empty, :host(kickside-onboard-modules) > div:has(> [role=status]) { min-height: 200px; }
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host(kickside-onboard-modules) > div:empty, :host(kickside-onboard-modules) > div:has(> [data-lazy-state]) { min-height: 200px; }
 *, *::before, *::after { box-sizing: border-box; }
 
 /* Module button surface, self-contained for the shadow root. Real PrimeVue CSS now

@@ -1,7 +1,7 @@
 import { W as t, a as o } from "./wc-runtime-DjtZy7dL.js";
 import { P as r } from "./primevue-plugin-CaP7wV_M.js";
-import { a as i } from "./lazy-BJ8Fi15o.js";
-import { s } from "./styles-B9e-D7Mq.js";
+import { a as i } from "./lazy-ZWC1tvFC.js";
+import { s } from "./styles-C0mQL9CY.js";
 import "@iconify/vue";
 import { define as n } from "@wippy-fe/proxy";
 const p = i(

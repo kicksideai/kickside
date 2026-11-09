@@ -1,6 +1,6 @@
 import { W as s, a as o } from "./wc-runtime-DjtZy7dL.js";
-import { l as i } from "./lazy-BJ8Fi15o.js";
-import { s as n } from "./styles-B9e-D7Mq.js";
+import { l as i } from "./lazy-ZWC1tvFC.js";
+import { s as n } from "./styles-C0mQL9CY.js";
 import "@iconify/vue";
 import { define as p } from "@wippy-fe/proxy";
 const r = { props: { type: "object", properties: { route: { type: "string", default: "", description: "Deep-link to a settings block by key. Unset selects the first block." } } } }, a = {

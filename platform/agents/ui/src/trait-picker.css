@@ -117,5 +117,5 @@
 .kx-trait-empty-state { margin: 0; padding: 10px 12px; color: var(--p-text-muted-color); font-size: 12px; }
 .kx-trait-empty-state { padding: 0; font-size: 12px; line-height: 1.5; }
 
-/* Reserved only while the implementation loads, so a loaded tag keeps its own size. */
-:host > div:empty, :host > div:has(> [role=status]) { min-height: 96px; }
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host > div:empty, :host > div:has(> [data-lazy-state]) { min-height: 91px; }
