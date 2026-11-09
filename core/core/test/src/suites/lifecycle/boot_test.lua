@@ -143,11 +143,25 @@ local function define_tests()
             test.eq(type(result) == "table" and result.status, "success")
         end
 
-        test.it("converges an upgraded boot only once the install's migrations are applied", function()
+        test.before_each(function()
             subscription = assert(events.subscribe("logs", "logs.entry"))
             logs = subscription:channel()
-            local pid = service_pid()
-            boot_pid = pid
+            boot_pid = service_pid()
+            local entry = assert(registry.get("kickside.core.lifecycle:boot_process"))
+            local changes = assert(registry.snapshot()):changes()
+            entry.meta.comment = tostring(entry.meta.comment or "") .. " startup upgrade " .. uuid.v7()
+            changes:update(entry)
+            test.is_nil(select(2, changes:apply()))
+            test.is_false(await_boot(logs, boot_pid, "system lifecycle resident"),
+                "the startup upgrade fails initial convergence")
+            test.eq(service_pid(), boot_pid, "a startup upgrade preserves the registered process")
+            migrations_applied()
+            test.is_false(await_boot(logs, boot_pid, "system lifecycle converged after migrations"),
+                "initial lifecycle convergence fails before the fixture starts")
+        end)
+
+        test.it("converges an upgraded boot only once the install's migrations are applied", function()
+            local pid = boot_pid :: string
             local id, declared_days = diverge_with_refusal("lifecycle_boot_pending_schema")
             -- The shared stream carries resident logs from other processes.
             logger:info("system lifecycle resident")
@@ -176,10 +190,7 @@ local function define_tests()
         end
 
         test.it("keeps convergence parked on a migrations-applied message while a migration is pending, then converges on the retry", function()
-            subscription = assert(events.subscribe("logs", "logs.entry"))
-            logs = subscription:channel()
-            local pid = service_pid()
-            boot_pid = pid
+            local pid = boot_pid :: string
             local id, declared_days = diverge_with_refusal("lifecycle_boot_pending_schema")
             logger:info("system lifecycle resident")
             upgrade_boot_with_migration("kickside.core.migrations")
@@ -197,10 +208,7 @@ local function define_tests()
         -- installs whose changed modules exclude core, so no message follows.
         for _, namespace in ipairs({ "kickside.component.migrations", "kickside.users.migrations" }) do
             test.it("converges after a dependency-only upgrade's " .. namespace .. " migration without a migrations-applied message", function()
-                subscription = assert(events.subscribe("logs", "logs.entry"))
-                logs = subscription:channel()
-                local pid = service_pid()
-                boot_pid = pid
+                local pid = boot_pid :: string
                 local id, declared_days = diverge_with_refusal("lifecycle_boot_pending_schema")
                 logger:info("system lifecycle resident")
                 upgrade_boot_with_migration(namespace)
@@ -213,10 +221,7 @@ local function define_tests()
         end
 
         test.it("converges on upgrade while a migration outside the convergence schema is pending", function()
-            subscription = assert(events.subscribe("logs", "logs.entry"))
-            logs = subscription:channel()
-            local pid = service_pid()
-            boot_pid = pid
+            local pid = boot_pid :: string
             local id, declared_days = diverge_with_refusal(nil)
             logger:info("system lifecycle resident")
             upgrade_boot_with_migration("app.unrelated.migrations")
@@ -225,10 +230,7 @@ local function define_tests()
         end)
 
         test.it("stays resident after failed convergence and repairs it on the next migrations-applied message", function()
-            subscription = assert(events.subscribe("logs", "logs.entry"))
-            logs = subscription:channel()
-            local pid = service_pid()
-            boot_pid = pid
+            local pid = boot_pid :: string
             local id, declared_days = diverge_with_refusal("boot_refusal_" .. uuid.v7():gsub("-", ""))
             migrations_applied()
             test.eq(await_boot(logs, pid, "system lifecycle converged after migrations"), true, "refused convergence is reported")
