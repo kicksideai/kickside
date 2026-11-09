@@ -114,7 +114,7 @@ function M.receipts(owner_id: string, source_port: string, item_keys: { string }
             marks[#marks + 1] = "$" .. tostring(#params)
         end
         local rows, err = with_db(function(db: any): (any?, any)
-            return db:query("SELECT item_key, map_slot, identity_key, dest_ref_json, dest_version FROM kickside_automation_receipt"
+            return db:query("SELECT item_key, map_slot, identity_key, dest_ref_json, dest_version, delivery_key, declaration_hash, pass_id FROM kickside_automation_receipt"
                 .. " WHERE owner_id = $1 AND source_port = $2 AND item_key IN (" .. table.concat(marks, ", ") .. ")"
                 .. " ORDER BY item_key, map_slot", params)
         end)
@@ -129,7 +129,8 @@ function M.receipts(owner_id: string, source_port: string, item_keys: { string }
             local key = tostring(row.item_key)
             local slots = out[key] or {}
             slots[#slots + 1] = { map_slot = tostring(row.map_slot or ""), identity_key = row.identity_key,
-                dest_ref = dest_ref, dest_version = row.dest_version }
+                dest_ref = dest_ref, dest_version = row.dest_version, delivery_key = row.delivery_key,
+                declaration_hash = row.declaration_hash, pass_id = row.pass_id }
             out[key] = slots
         end
     end
@@ -255,6 +256,13 @@ function M.prepare(spec: Map, compute: () -> (any?, any)): (any?, any)
         local value, decode_err = json.decode(tostring(prior.prepared_json))
         if decode_err then return nil, internal("stored prepared output is not JSON", decode_err) end
         return value, nil
+    end
+    local replayed,replay_err=with_db(function(db: any): (any?,any) return ledger.replayed(db,d,tostring(spec.key)) end)
+    if replay_err then return nil,replay_err end
+    if replayed then
+        local unsent,unsent_err=with_db(function(db: any): (any?,any) return ledger.unsent(db,d,tostring(spec.key)) end)
+        if unsent_err then return nil,unsent_err end
+        if not unsent then return nil,prepared_output.conflict(tostring(spec.key)) end
     end
     local value, compute_err = compute()
     if compute_err ~= nil then return nil, compute_err end

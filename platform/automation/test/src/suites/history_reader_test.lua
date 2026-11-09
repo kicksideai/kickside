@@ -6,7 +6,8 @@ local cf = require("control_fixture")
 local api = require("control_api")
 
 type Map = { [string]: any }
-local AT = "2026-10-10T00:00:00Z"
+local time = require("time")
+local AT = time.now():utc():format(time.RFC3339)
 
 local function encoded(value: any): string
     local text, err = json.encode(value)
@@ -126,7 +127,7 @@ local function define_tests()
             local first=read(id,{kind="deliveries",page_size=1})
             test.eq(first.entries[1].item_key,"c")
             execute("DELETE FROM kickside_automation_delivery_history WHERE automation_id=$1 AND item_key=$2",{id,"c"})
-            seed(id,"new",nil,{round_at="2026-10-11T00:00:00Z"})
+            seed(id,"new",nil,{round_at=time.now():utc():add(time.SECOND):format(time.RFC3339)})
             local next_page=read(id,{kind="deliveries",page_size=2,page_token=first.next_page_token})
             test.eq(#next_page.entries,2)
             test.eq(next_page.entries[1].item_key,"b")

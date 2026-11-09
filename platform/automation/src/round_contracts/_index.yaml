@@ -95,6 +95,7 @@ entries:
     source: file://../round/ledger.lua
     modules: [json, sql, time]
     imports:
+      runtime_policy: kickside.automation:runtime_policy
       drive: kickside.automation:drive
       row_limit: kickside.automation:row_limit
       delivery_identity: kickside.automation:delivery_identity
@@ -154,6 +155,9 @@ entries:
     source: file://../round/history.lua
     modules: [json, sql]
     imports:
+      runtime_policy: kickside.automation:runtime_policy
+      drive: kickside.automation:drive
+      delivery_identity: kickside.automation:delivery_identity
       row_limit: kickside.automation:row_limit
 
   - name: round_acquire

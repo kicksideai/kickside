@@ -110,7 +110,7 @@ entries:
     suite: kickside_automation_history_reader
   source: file://../history_reader_test.lua
   method: run
-  modules: [uuid, json, sql]
+  modules: [uuid, json, sql, time]
   imports:
     test: wippy.test:test
     control_fixture: kickside.automation:control_fixture

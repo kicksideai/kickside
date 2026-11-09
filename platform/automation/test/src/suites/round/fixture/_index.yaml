@@ -337,3 +337,12 @@ entries:
       round_provenance: kickside.automation:round_provenance
       runtime_policy: kickside.automation:runtime_policy
       canonical_json: kickside.contract:canonical_json
+
+  - name: snapshot_sync_kind
+    kind: contract.binding
+    meta: {type: kickside.automation, title: Snapshot Sync Fixture, class: automation}
+    contracts:
+    - contract: kickside.contract:installable
+      methods: {install: 'kickside.automation.round.fixture:install'}
+    - contract: kickside.trigger:round_consumer
+      methods: {deliver: 'kickside.sync:round_deliver'}

@@ -352,6 +352,7 @@ end
 
 -- The fences a guarded write captured; each present field must still match.
 type Fence = {
+    round_seq: integer?,
     revision: integer?,
     rewind_generation: integer?,
     command_generation: integer?,
@@ -376,7 +377,7 @@ function drive.update_cas_tx(tx: sql.Transaction, automation_id: string, drive_k
         end
     end
     update = update:where(key_filter(automation_id, drive_key))
-    for _, column in ipairs({ "revision", "rewind_generation", "command_generation", "round_token" }) do
+    for _, column in ipairs({ "revision", "rewind_generation", "command_generation", "round_token", "round_seq" }) do
         local expected = (fence :: Map)[column]
         if expected ~= nil then update = update:where(sql.builder.eq({ [column] = expected })) end
     end

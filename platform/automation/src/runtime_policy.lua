@@ -33,6 +33,7 @@ type Resolved = {
     limits_max_items: integer,
     delivery_retry_after_ms: integer,
     delivery_max_delay_ms: integer,
+    history_ms: integer,
     ledger_resolved_ms: integer,
     ops_ms: integer,
     prepared_ms: integer,
@@ -112,6 +113,8 @@ function M.resolve(meta: any): (Resolved?, error?)
     if (round_max :: integer) < (round_retry :: integer) or (delivery_max :: integer) < (delivery_retry :: integer) then
         return nil, invalid("a max_delay_ms must not be shorter than its retry_after_ms")
     end
+    local history_ms, history_err = duration_ms(retention.history == nil and "7d" or retention.history, "retention.history")
+    if history_err then return nil, history_err end
     local resolved_ms, e11 = duration_ms(retention.ledger_resolved, "retention.ledger_resolved")
     if e11 then return nil, e11 end
     local ops_ms, ops_err = duration_ms(retention.ops, "retention.ops")
@@ -174,6 +177,7 @@ function M.resolve(meta: any): (Resolved?, error?)
         limits_max_items = limit_items :: integer,
         delivery_retry_after_ms = delivery_retry :: integer,
         delivery_max_delay_ms = delivery_max :: integer,
+        history_ms = history_ms :: integer,
         ledger_resolved_ms = resolved_ms :: integer,
         ops_ms = ops_ms :: integer,
         prepared_ms = prepared_ms :: integer,

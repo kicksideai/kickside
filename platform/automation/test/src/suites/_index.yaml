@@ -402,11 +402,16 @@ entries:
     comment: Prepared output across a reconfigure and an operator replay of an installed collection automation into the fixture store sink.
   source: file://round/prepared_replay_test.lua
   method: run
-  modules: [json]
+  modules: [json, time]
   imports:
+    prepared_retention: kickside.automation:prepared_retention
+    automation_db: kickside.automation:automation_db
     test: wippy.test:test
     round_harness: kickside.automation:round_harness
     round_write: kickside.automation:round_write
+    round_ledger: kickside.automation:round_ledger
+    round_commit: kickside.automation:round_commit
+    runtime_policy: kickside.automation:runtime_policy
 - name: round_control_test
   kind: function.lua
   meta:
@@ -701,7 +706,7 @@ entries:
   meta: {type: test, suite: kickside_automation}
   source: file://dead_retention_test.lua
   method: run
-  modules: [sql, uuid]
+  modules: [sql, uuid, json]
   imports:
     test: wippy.test:test
     ledger: kickside.automation:round_ledger

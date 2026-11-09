@@ -342,7 +342,7 @@ local function define_tests()
             test.eq(states.fail_dead, "dead")
             for _, r in ipairs(rows) do
                 if json.decode(r.detail_json).directive == "fail_dead" then
-                    test.is_nil((ledger_row(automation_id, r.item_key) :: Map).expires_at, "dead evidence has no automatic expiry")
+                    test.not_nil((ledger_row(automation_id, r.item_key) :: Map).expires_at, "dead tombstones expire by age")
                 end
             end
             test.eq(states.wait, "waiting")

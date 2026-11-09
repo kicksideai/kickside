@@ -146,12 +146,37 @@ if name == 'jq': print('0.0.0')
             return next(arg.split('=', 1)[1] for arg in call['args'] if arg.startswith(key + '='))
         main = selected(tests[0], 'vars.pg_database')
         upgrade = selected(tests[0], 'vars.pg_prepared_upgrade_database')
+        history = selected(tests[0], 'vars.pg_history_upgrade_database')
         live = selected(tests[1], 'vars.pg_database')
-        self.assertEqual(len({main, upgrade, live}), 3, 'the live harness must not boot on manually migrated upgrade tables')
+        self.assertEqual(len({main, upgrade, history, live}), 4, 'the live harness must not boot on manually migrated upgrade tables')
         created = [call['args'][0] for call in recorded if call['name'] == 'createdb']
         dropped = [call['args'][0] for call in recorded if call['name'] == 'dropdb']
-        self.assertCountEqual(created, [main, upgrade, live])
+        self.assertCountEqual(created, [main, upgrade, history, live])
         self.assertCountEqual(dropped, created)
+
+    def test_automation_shell_harness_removes_all_owned_sqlite_files(self):
+        for status in (0, 1):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                scratch = root / 'scratch'
+                scratch.mkdir()
+                binary = root / 'wippy'
+                binary.write_text('''#!/usr/bin/env python3
+import os, sys
+from pathlib import Path
+path = next(arg.split('=', 1)[1] for arg in sys.argv if arg.startswith('vars.sqlite_path='))
+for suffix in ('', '-wal', '-shm', '.history-upgrade', '.history-upgrade-wal', '.history-upgrade-shm'):
+    Path(path + suffix).write_text('fixture')
+print('PASSED\\n1 tests' if os.environ['TEST_STATUS'] == '0' else 'FAILED')
+sys.exit(int(os.environ['TEST_STATUS']))
+''')
+                binary.chmod(0o755)
+                result = subprocess.run(['bash', str(ROOT / 'platform/automation/test/run-tests.sh')],
+                                        cwd=root, capture_output=True, text=True, timeout=20,
+                                        env={**os.environ, 'PATH': str(root) + os.pathsep + os.environ['PATH'],
+                                             'TMPDIR': str(scratch), 'WIPPY_TEST_ARGS': '', 'TEST_STATUS': str(status)})
+                self.assertEqual(result.returncode, status, result.stdout + result.stderr)
+                self.assertEqual(list(scratch.iterdir()), [], 'the harness retains an owned database or WAL')
 
     def test_workspace_replacements_resolve_from_public_sources(self):
         paths = subprocess.check_output(['git', 'ls-files', '**/.wippy.yaml', '**/wippy.yaml'],
