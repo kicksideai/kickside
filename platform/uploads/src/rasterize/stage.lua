@@ -7,14 +7,8 @@ local artifact_parts_repo = require("artifact_parts_repo")
 local rasterizer = require("rasterizer")
 local page_images = require("page_images")
 
--- Universal upload pipeline stage. Runs after content extraction on every upload and
--- self-selects: it acts only when the source mime has a registered rasterizer AND the
--- extracted text is empty/below a threshold (a scanned or vector-only document). It
--- renders the pages into role="rendered-page" image artifacts so the OCR/caption path
--- can consume them. When doc2md already extracted one large image per page (the PDF's
--- pages ARE images), rendering is redundant and is skipped -- those extracted images
--- serve as the pages. Best-effort: a render failure is logged and the upload still
--- succeeds with its (empty) text.
+-- Render sparse pages for OCR, retaining usable text pages. A complete set of
+-- extracted page images serves as the existing no-render path for image PDFs.
 
 local SETTINGS_CONTRACT = "kickside.settings:settings"
 local SETTINGS_NS = "kickside.uploads.rasterize"
@@ -111,13 +105,13 @@ local function store_page(params: any, page: any, fmt: string, source_id: string
     return err
 end
 
-local function render_pages(params: any, entry: any, ref: any, total: integer, opts: any, source_id: string?, markdown_id: string?): (integer, string?)
+local function render_pages(params: any, entry: any, ref: any, selected: { integer }, opts: any, source_id: string?, markdown_id: string?): (integer, string?)
     local rendered = 0
     local page = 1
-    while page <= total do
-        local last = math.min((page + opts.batch - 1) :: number, total)
+    while page <= #selected do
+        local last = math.min((page + opts.batch - 1) :: number, #selected)
         local selector: { integer } = {}
-        for p = page, last do selector[#selector + 1] = p end
+        for p = page, last do selector[#selector + 1] = selected[p] end
 
         local res, call_err = funcs.call(entry.processor_func :: string, {
             ref = ref,
@@ -180,8 +174,22 @@ local function process(params: any): any
     end
     local total = tonumber(count_res.ok.total) or 0
     if total < 1 then return { success = true } end
-    local ocr_reason = page_images.ocr_document_reason(primary.content, total, max_text, params.size)
-    if not ocr_reason then return { success = true } end
+    local text_pages = page_images.text_pages(primary.content, primary.metadata and primary.metadata.ocr_page_outcomes)
+    local selected: { integer } = {}
+    local ocr_reason
+    if #text_pages > 0 then
+        for _, page in ipairs(text_pages) do
+            local reason = page_images.ocr_text_reason(page.text, 1, max_text, page.status)
+            if reason then
+                selected[#selected + 1] = page.page
+                ocr_reason = ocr_reason or reason
+            end
+        end
+    else
+        ocr_reason = page_images.ocr_document_reason(primary.content, total, max_text, params.size)
+        if ocr_reason then for page = 1, total do selected[#selected + 1] = page end end
+    end
+    if #selected == 0 then return { success = true } end
 
     -- Skip rendering when doc2md already extracted exactly one full-page image per page
     -- (the PDF's pages are images). Those extracted images are the pages -- re-rendering
@@ -189,13 +197,22 @@ local function process(params: any): any
     -- else (multi-image pages, logos, partial coverage) falls through to rendering.
     local min_page_bytes = setting_int("rasterize_min_page_bytes", page_images.DEFAULT_MIN_PAGE_BYTES)
     local extracted = page_images.extracted_pages(upload_id, min_page_bytes)
-    if #extracted == total then
+    if page_images.complete_coverage(extracted, total) then
         log:info("pages already extracted by doc2md; skipping rasterize", {
             upload_id = upload_id, total_pages = total, extracted_pages = #extracted,
             reason = ocr_reason,
         })
         return { success = true, metadata = { rasterize_skipped = true } }
     end
+
+    local available = page_images.numbered_images(extracted)
+    for _, image in ipairs(page_images.rendered(upload_id)) do
+        if type(image.metadata) == "table" and image.metadata.page then available[image.metadata.page] = image end
+    end
+    local missing: { integer } = {}
+    for _, page in ipairs(selected) do if not available[page] then missing[#missing + 1] = page end end
+    selected = missing
+    if #selected == 0 then return {success = true, metadata = {rasterize_skipped = true}} end
 
     log:info("rasterizing document for OCR", {
         upload_id = upload_id,
@@ -212,7 +229,7 @@ local function process(params: any): any
         quality = setting_int("rasterize_quality", 90),
     }
 
-    local rendered, render_err = render_pages(params, entry, ref, total :: integer, opts, source_id, markdown_id)
+    local rendered, render_err = render_pages(params, entry, ref, selected, opts, source_id, markdown_id)
     if render_err ~= nil then
         log:warn("rasterize render failed", { upload_id = upload_id, rendered = rendered, total = total, error = render_err })
         if rendered == 0 then return { success = true } end

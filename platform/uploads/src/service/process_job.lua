@@ -170,6 +170,7 @@ local function run(input: any): (any, any?)
             cancel_ref = {
                 job_id = tostring(job.id or ""),
                 lease_token = tostring(job.lease_token or ""),
+                execution_seq = job.execution_seq,
             },
         })
     end

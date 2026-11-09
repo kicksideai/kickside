@@ -348,6 +348,16 @@ function artifact_content_repo.update_content(upload_id, artifact_id, content, o
         if existing_blob then storage_id = existing_blob.storage_id end
     end
 
+    local updates = {mime_type = mime_type, updated_at = now()}
+    if options.metadata ~= nil then
+        local merged = {}
+        for key, value in pairs(artifact.metadata or {}) do merged[key] = value end
+        for key, value in pairs(options.metadata) do merged[key] = value end
+        local encoded, metadata_err = encode_json(merged)
+        if metadata_err then return nil, metadata_err end
+        updates.metadata = encoded
+    end
+
     local blob, blob_err = artifact_content_repo.create_blob(mime_type, content, options.blob_metadata, { storage_id = storage_id })
     if blob_err then return nil, blob_err end
     if not blob then return nil, "failed to create artifact blob" end
@@ -355,14 +365,10 @@ function artifact_content_repo.update_content(upload_id, artifact_id, content, o
     local db, err = resources.get_db()
     if err then return nil, err end
 
-    local timestamp = now()
+    local timestamp = updates.updated_at
+    updates.blob_id, updates.checksum = blob.blob_id, blob.checksum
     local _, update_err = sql.builder.update("kickside_upload_artifacts")
-        :set_map({
-            blob_id = blob.blob_id,
-            checksum = blob.checksum,
-            mime_type = mime_type,
-            updated_at = timestamp,
-        })
+        :set_map(updates)
         :where("artifact_id = ?", artifact_id)
         :where("upload_id = ?", upload_id)
         :run_with(db)

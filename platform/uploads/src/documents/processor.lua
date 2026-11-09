@@ -167,6 +167,7 @@ local function image_metadata(upload_id: string, index: number, image: any, sour
         source_artifact_id = source_artifact_id,
         markdown_artifact_id = markdown_artifact_id,
     }
+    put_if_present(metadata, "page", image.page)
     put_if_present(metadata, "width", image.width)
     put_if_present(metadata, "height", image.height)
     return metadata

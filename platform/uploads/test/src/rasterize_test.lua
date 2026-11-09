@@ -187,6 +187,24 @@ local function define_tests()
     end)
 
     test.describe("kickside.uploads.rasterize stage", function()
+        test.it("renders only sparse marker-delimited pages with their original numbers", function()
+            for _, sparse_page in ipairs({ 1, 2 }) do
+                local pages = {}
+                for page = 1, 2 do
+                    local body = page == sparse_page and "" or string.rep("A usable text layer. ", 100)
+                    pages[#pages + 1] = "<!-- page " .. page .. " -->\n\n" .. body
+                end
+                local upload_id = seed_document("application/pdf", table.concat(pages, "\n\n"))
+                local result = run_stage(upload_id, "application/pdf")
+                test.is_true(result.success)
+                test.eq(result.metadata.rendered_page_count, 1)
+                local images = rendered_pages(upload_id)
+                test.eq(#images, 1)
+                test.eq(images[1].metadata.page, sparse_page)
+                test.eq(tonumber(images[1].ordinal), 2000 + sparse_page)
+            end
+        end)
+
         test.it("rasterizes every page of an empty document into rendered-page artifacts (jpeg)", function()
             local upload_id = seed_document("application/pdf", "")
             local result = run_stage(upload_id, "application/pdf")

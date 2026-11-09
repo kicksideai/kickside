@@ -21,6 +21,7 @@ entries:
     imports:
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
       text_trim: kickside.uploads:text_trim
+      doc2md: kickside.convert.doc2md:doc2md
 
   - name: stage
     kind: function.lua
