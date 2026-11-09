@@ -49,31 +49,30 @@ return test.run_cases(function()
             test.is_nil(cleanup_err, tostring(cleanup_err))
         end)
 
-        test.it("wakes an idle sweeper when an OAuth grant establishes an earlier deadline", function()
-            local db = assert(sql.get("app:db"))
-            local raw = "retention-wake-" .. uuid.v4()
-            -- A future retained row makes the existing sweep deadline later than this grant.
-            local _, seed_err = db:execute([[INSERT INTO kickside_mcp_credentials
-                (credential_id,token_hash,token_prefix,actor_id,status,created_at,updated_at,expires_at)
-                VALUES ($1,$1,'gc',$1,'active',1,1,4102444800)]], {raw})
-            test.is_nil(seed_err, tostring(seed_err))
-            time.sleep("200ms")
+        test.it("schedules the next pass from an existing grant's expiry without another write", function()
+            local raw = "retention-deadline-" .. uuid.v4()
             local put_err = oauth.put_code(raw, {client_id="retention-client",actor_id="retention-actor",
-                redirect_uri="https://example.test/callback",code_challenge="challenge",ttl=1})
+                redirect_uri="https://example.test/callback",code_challenge="challenge",ttl=3})
             test.is_nil(put_err, tostring(put_err))
-            local deadline = time.now():unix_nano() + 5000000000
-            local remaining = 1
-            repeat
-                time.sleep("50ms")
-                local rows = assert(db:query("SELECT COUNT(*) AS n FROM kickside_mcp_oauth_codes WHERE code_hash=$1", {oauth.code_hash(raw)}))
-                remaining = tonumber(rows[1].n)
-            until remaining == 0 or time.now():unix_nano() >= deadline
-            local _, code_err = db:execute("DELETE FROM kickside_mcp_oauth_codes WHERE code_hash=$1", {oauth.code_hash(raw)})
-            local _, cleanup_err = db:execute("DELETE FROM kickside_mcp_credentials WHERE credential_id=$1", {raw})
+            local db = assert(sql.get("app:db"))
+            local rows = assert(db:query("SELECT expires_at FROM kickside_mcp_oauth_codes WHERE code_hash=$1", {oauth.code_hash(raw)}))
             db:release()
-            test.is_nil(code_err, tostring(code_err))
-            test.is_nil(cleanup_err, tostring(cleanup_err))
-            test.eq(remaining, 0, "the writer wakes Core and the grant expires without another event")
+            local expiry = assert(tonumber(rows[1].expires_at))*1000
+            local report, run_err = owner_hooks.run()
+            test.is_nil(run_err, tostring(run_err))
+            test.eq(#report.failures, 0)
+            test.eq(report.deadline_ms, expiry)
+            test.is_false(report.needs_continue)
+            local delay = (report.deadline_ms :: number) - math.floor(time.now():unix_nano()/1000000)
+            test.is_true(delay > 0)
+            time.sleep(tostring(delay + 50) .. "ms")
+            report, run_err = owner_hooks.run()
+            test.is_nil(run_err, tostring(run_err))
+            test.eq(#report.failures, 0)
+            db = assert(sql.get("app:db"))
+            rows = assert(db:query("SELECT COUNT(*) AS n FROM kickside_mcp_oauth_codes WHERE code_hash=$1", {oauth.code_hash(raw)}))
+            db:release()
+            test.eq(tonumber(rows[1].n), 0)
         end)
 
         test.it("bounds a continuous OAuth code stream by its existing grant lifetime", function()

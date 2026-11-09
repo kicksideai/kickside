@@ -33,7 +33,6 @@ entries:
   - funcs
   imports:
     mcp_repo: kickside.mcp.persist:repo
-    retention_notifier: kickside.core.retention:notifier
     test: wippy.test:test
     owner_hooks: kickside.core.retention.service:owner_hooks
     subjects: app:subjects
@@ -50,7 +49,6 @@ entries:
   - sql
   - time
   imports:
-    retention_notifier: kickside.core.retention:notifier
     test: wippy.test:test
     mcp_oauth_repo: kickside.mcp.oauth:repo
     owner_hooks: kickside.core.retention.service:owner_hooks

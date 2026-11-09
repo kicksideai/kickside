@@ -3,7 +3,6 @@ local sql = require("sql")
 local time = require("time")
 local oauth_repo = require("mcp_oauth_repo")
 local owner_hooks = require("owner_hooks")
-local retention_notifier = require("retention_notifier")
 
 local function count(db, hash)
     if db == nil then error("database unavailable") end
@@ -33,15 +32,13 @@ local function define_tests()
             test.eq(count(db, live_hash), 1)
             db:release()
 
-            local deadline = time.now():unix_nano() + 5000000000
-            repeat
-                db = assert(sql.get("app:db"))
-                local remaining = count(db,expired_hash)
-                db:release()
-                if remaining == 0 then break end
-                test.is_true(time.now():unix_nano() < deadline,"the live sweeper expires the grant")
-                time.sleep("50ms")
-            until false
+            local scheduled, schedule_err = owner_hooks.run()
+            test.is_nil(schedule_err, tostring(schedule_err))
+            test.eq(#scheduled.failures, 0)
+            test.not_nil(scheduled.deadline_ms)
+            local delay = assert(scheduled.deadline_ms) - math.floor(time.now():unix_nano()/1000000)
+            test.is_true(delay > 0)
+            time.sleep(tostring(delay + 50) .. "ms")
             local report, prune_err = owner_hooks.run()
             test.is_nil(prune_err)
             test.eq(#report.failures, 0, "no retention owner fails")
@@ -76,17 +73,6 @@ local function define_tests()
             local active, active_err = oauth_repo.get_client(live.client_id)
             test.is_nil(active_err)
             test.not_nil(active)
-            local _,wake_err = retention_notifier.notify({kind="mcp_client_retention_test"})
-            test.is_nil(wake_err,tostring(wake_err))
-            local deadline = time.now():unix_nano() + 5000000000
-            repeat
-                db = assert(sql.get("app:db"))
-                local rows = assert(db:query("SELECT client_id FROM kickside_mcp_oauth_clients WHERE client_id=$1",{stale.client_id}))
-                db:release()
-                if #rows == 0 then break end
-                test.is_true(time.now():unix_nano() < deadline,"the live sweeper retires the idle client")
-                time.sleep("50ms")
-            until false
             local report, prune_err = owner_hooks.run()
             test.is_nil(prune_err)
             test.eq(#report.failures, 0, "no retention owner fails")

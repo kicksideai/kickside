@@ -51,7 +51,6 @@ entries:
     source: file://repo.lua
     modules: [sql, json, uuid, time, hash, crypto, base64]
     imports:
-      retention_notifier: kickside.core.retention:notifier
       mcp_types: kickside.mcp:mcp_types
       persisted_json: kickside.contract:persisted_json
       credential_quota: kickside.mcp.persist:credential_quota
@@ -139,7 +138,6 @@ entries:
       actor:
         id: kickside.mcp.oauth:register
       policies:
-        - kickside.core.retention:notify_access
         - kickside.mcp.security:endpoint_public_url
         - kickside.mcp.security:endpoint_db_access
         - kickside.mcp.security:endpoint_registry_read
@@ -240,7 +238,7 @@ entries:
       mcp_consts: kickside.mcp:consts
 
     security:
-      policies: [kickside.mcp.security:credential_eligibility_call, kickside.core.retention:notify_access]
+      policies: [kickside.mcp.security:credential_eligibility_call]
 
   - name: consent.endpoint
     kind: http.endpoint

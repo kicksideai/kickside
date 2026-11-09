@@ -62,7 +62,7 @@ entries:
       mcp_presets: kickside.mcp:mcp_presets
 
     security:
-      policies: [kickside.mcp.security:credential_eligibility_call, kickside.core.retention:notify_access]
+      policies: [kickside.mcp.security:credential_eligibility_call]
 
   - name: create_credential.endpoint
     kind: http.endpoint
@@ -114,9 +114,6 @@ entries:
     modules: [http, security]
     imports:
       mcp_repo: kickside.mcp.persist:repo
-
-    security:
-      policies: [kickside.core.retention:notify_access]
 
   - name: revoke_credential.endpoint
     kind: http.endpoint

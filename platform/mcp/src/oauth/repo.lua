@@ -13,7 +13,6 @@ local base64 = require("base64")
 local mcp_types = require("mcp_types")
 local persisted_json = require("persisted_json")
 local quota = require("credential_quota")
-local retention_notifier = require("retention_notifier")
 local limits = require("mcp_consts").OAUTH_LIMITS
 
 local M = {}
@@ -120,8 +119,6 @@ function M.register_client(args: any): (any?, any?)
     })
     db:release()
     if ins_err or not inserted then return nil, ins_err end
-    local _, wake_err = retention_notifier.notify({kind = "mcp_oauth_client"})
-    if wake_err then return nil, wake_err end
 
     return {
         client_id = client_id,
@@ -254,8 +251,7 @@ function M.put_code(raw_code: string, args: any): string?
         :run_with(db):exec()
     db:release()
     if err then return tostring(err) end
-    local _, wake_err = retention_notifier.notify({kind = "mcp_oauth_code"})
-    return wake_err and tostring(wake_err) or nil
+    return nil
 end
 
 -- consume_code atomically marks the code used and returns its grant. A second

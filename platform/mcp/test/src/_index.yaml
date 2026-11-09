@@ -133,6 +133,13 @@ entries:
       actions: '*'
       effect: allow
 
+  - name: retention_notify_denied
+    kind: security.policy
+    policy:
+      resources: kickside.core.retention:notify
+      actions: funcs.call
+      effect: deny
+
   - name: resolver_binding_open
     kind: security.policy
     meta: { comment: Harness relocation of the Users scope resolver binding. }
@@ -419,7 +426,6 @@ entries:
     source: file://mint_func.lua
     method: handler
     imports:
-      retention_notifier: kickside.core.retention:notifier
       mcp_repo: kickside.mcp.persist:repo
 
   - name: oauth_grant_func
