@@ -44,7 +44,7 @@ end
 return test.run_cases(function()
     test.describe("dead delivery evidence retention", function()
         for _,legacy in ipairs({false,true}) do
-            test.it("reclaims eligible tombstones behind prepared output " .. tostring(legacy), function()
+            test.it("reclaims expired dead tombstones together with prepared output " .. tostring(legacy), function()
                 local db=assert(sql.get("app:db"))
                 local id=owner(db)
                 local expiry=legacy and sql.NULL or "1900-01-01T00:00:00Z"
@@ -80,15 +80,71 @@ return test.run_cases(function()
                 tx:commit()
                 local retained=rows(db,id)
                 local after=deadline()
+                local prepared=assert(db:query("SELECT idempotency_key FROM kickside_automation_prepared WHERE automation_id=$1",{id}))
+                test.eq(#prepared,3,"the same transaction removes exactly the expired candidates outputs")
                 execute(db,"DELETE FROM kickside_automation_prepared WHERE automation_id=$1",{id})
                 cleanup(db,id)
                 db:release()
-                test.eq(before,"1901-01-01T00:00:00Z","blocked candidates cannot hide the next eligible deadline")
-                test.eq(removed,1,"blocked candidates cannot starve a later eligible tombstone")
-                test.eq(#retained,5)
-                test.is_true(after==nil or after>"1950-01-01T00:00:00Z","blocked proof never rearms an ineffective maintenance pass")
+                test.eq(before,"1900-01-01T00:00:00Z","dead prepared output expires with its tombstone")
+                test.eq(removed,2,"expired prepared output cannot block a bounded maintenance page")
+                test.eq(#retained,4)
+                test.eq(after,"1900-01-01T00:00:00Z","maintenance remains due until the backlog drains")
             end)
         end
+        test.it("rolls back both dead evidence deletes if prepared cleanup fails",function()
+            local db=assert(sql.get("app:db"))
+            local id=owner(db)
+            record(db,id,ledger.STATE.DEAD)
+            local key=rows(db,id)[1].identity_key
+            execute(db,[[INSERT INTO kickside_automation_prepared
+                (automation_id,idempotency_key,payload_hash,prepared_json,created_at)
+                VALUES ($1,$2,'hash','{}','1900-01-01T00:00:00Z')]],{id,key})
+            local tx=assert(db:begin())
+            local executor={query=function(_,statement,params) return tx:query(statement,params) end,
+                execute=function(_,statement,params)
+                    if statement:find("DELETE FROM kickside_automation_prepared",1,true) then
+                        return nil,errors.new({kind=errors.INTERNAL,message="injected prepared delete failure"})
+                    end
+                    return tx:execute(statement,params)
+                end}
+            local _,err=ledger.prune_tx(executor,"2002-01-01T00:00:00Z",100)
+            tx:rollback()
+            test.not_nil(err,"failure reaches the maintenance transaction")
+            test.eq(#rows(db,id),1)
+            test.eq(#assert(db:query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id})),1)
+            execute(db,"DELETE FROM kickside_automation_prepared WHERE automation_id=$1",{id})
+            cleanup(db,id);db:release()
+        end)
+        test.it("preserves unresolved output and output needed by pending commands",function()
+            local db=assert(sql.get("app:db"))
+            local id,pending=owner(db),owner(db)
+            for _,state in ipairs({"retrying","waiting","uncertain","parked"}) do
+                execute(db,[[INSERT INTO kickside_trigger_item_ledger
+                    (owner_id,source_port,item_key,identity_key,envelope_json,state,first_failed_at,last_failed_at,created_at,updated_at,expires_at)
+                    VALUES ($1,'source',$2,$2,'{}',$2,$3,$3,$3,$3,$3)]],{id,state,"1900-01-01T00:00:00Z"})
+                execute(db,[[INSERT INTO kickside_automation_prepared
+                    (automation_id,idempotency_key,payload_hash,prepared_json,created_at)
+                    VALUES ($1,$2,'hash','{}','1900-01-01T00:00:00Z')]],{id,state})
+            end
+            record(db,pending,ledger.STATE.DEAD)
+            local key=rows(db,pending)[1].identity_key
+            execute(db,[[INSERT INTO kickside_automation_prepared
+                (automation_id,idempotency_key,payload_hash,prepared_json,created_at)
+                VALUES ($1,$2,'hash','{}','1900-01-01T00:00:00Z')]],{pending,key})
+            execute(db,[[INSERT INTO kickside_automation_command
+                (automation_id,generation,pending_request_id,pending_digest,pending_kind,pending_input_json,pending_drives_json,pending_step)
+                VALUES ($1,1,'install','digest','install','{}','[]','install')]],{pending})
+            prune(db)
+            test.eq(#rows(db,id),4)
+            test.eq(#rows(db,pending),1)
+            test.eq(#assert(db:query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id IN ($1,$2)",{id,pending})),5)
+            execute(db,"DELETE FROM kickside_automation_command WHERE automation_id=$1",{pending})
+            prune(db)
+            test.eq(#rows(db,pending),0)
+            test.eq(#assert(db:query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{pending})),0)
+            execute(db,"DELETE FROM kickside_automation_prepared WHERE automation_id=$1",{id})
+            cleanup(db,id);cleanup(db,pending);db:release()
+        end)
         test.it("expires failed delivery tombstones after their dedupe window", function()
             local db = assert(sql.get("app:db"))
             local id = owner(db)

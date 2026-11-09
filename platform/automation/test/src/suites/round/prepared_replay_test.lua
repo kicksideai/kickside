@@ -14,6 +14,9 @@ local automation_db = require("automation_db")
 local json = require("json")
 local h = require("round_harness")
 local round_write = require("round_write")
+local round_ledger = require("round_ledger")
+local time = require("time")
+local runtime_policy = require("runtime_policy")
 
 type Map = { [string]: any }
 
@@ -296,6 +299,70 @@ local function define_tests()
             run(id)
             test.eq(#sink_writes(id,"aged-output"),2)
             test.eq(transforms(id,"aged-output"),1,"cached prepared output remains available")
+        end)
+
+        test.it("expires dead prepared output on a live drive and refuses replay after expiry",function()
+            local id=install({{key="expiring",directive="invalid"}})
+            run(id)
+            test.eq(transforms(id,"expiring"),1)
+            local function prune(at: string): integer
+                local count,err=automation_db.in_tx(function(tx) return round_ledger.prune_tx(tx,at,100) end)
+                test.is_nil(err,tostring(err))
+                return count
+            end
+            prune("1900-01-01T00:00:00Z")
+            test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),1)
+            test.eq(replay(id,"before-expiry").outcome.replayed,1)
+            run(id)
+            test.eq(transforms(id,"expiring"),1,"within the window replay uses cached output")
+            h.exec("UPDATE kickside_trigger_item_ledger SET expires_at='1900-01-01T00:00:00Z' WHERE owner_id=$1",{id})
+            prune("1950-01-01T00:00:00Z")
+            test.eq(#h.query("SELECT 1 FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id}),0)
+            test.eq(#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id}),0)
+            local answer,err=env.caller:call(MANAGE_TOOL,{action="control",id=id,control="replay",drive_key="main",
+                request_id="after-expiry",keys={"expiring"}})
+            test.not_nil(err,"aged-out evidence explicitly refuses replay")
+            test.contains(tostring(err),"replay evidence predates this version or has aged out")
+            test.eq(err:details().code,"replay_evidence_unavailable")
+            test.eq(transforms(id,"expiring"),1)
+            test.eq(#sink_writes(id,"expiring"),2)
+            reconfigure(id,{{key="expiring",dedup_key="version-2",directive="deliver"}})
+            h.set_drive(id,"main","cursor=NULL",{})
+            run(id)
+            test.eq(transforms(id,"expiring"),2,"a new source version is a fresh delivery")
+            test.eq(#sink_writes(id,"expiring"),3)
+        end)
+
+        test.it("bounds permanently rejected prepared items by arrival rate times the dedupe window",function()
+            local id=install({})
+            local policy=assert(runtime_policy.policy())
+            local window=policy.ledger_resolved_ms
+            local start=time.now():utc()
+            local clock=start
+            local ok,message=pcall(function()
+                local populations={}
+                for pass=0,7 do
+                    clock=start:add(pass*window/3*time.MILLISECOND)
+                    local key="rejected-" .. tostring(pass)
+                    reconfigure(id,{{key=key,directive="invalid"}})
+                    h.set_drive(id,"main","cursor=NULL",{})
+                    run(id)
+                    h.exec("UPDATE kickside_trigger_item_ledger SET expires_at=$1 WHERE owner_id=$2 AND item_key=$3",
+                        {clock:add(window*time.MILLISECOND):format(time.RFC3339),id,key})
+                    test.eq(ledger(id,key).state,"dead")
+                    test.eq(transforms(id,key),1)
+                    local _,err=automation_db.in_tx(function(tx) return round_ledger.prune_tx(tx,clock:format(time.RFC3339),100) end)
+                    test.is_nil(err,tostring(err))
+                    local ledgers=#h.query("SELECT 1 FROM kickside_trigger_item_ledger WHERE owner_id=$1",{id})
+                    local prepared=#h.query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1",{id})
+                    test.eq(ledgers,math.min(pass+1,3),"three arrivals fit the dedupe window")
+                    test.eq(prepared,ledgers,"expired failures leave no prepared payload")
+                    populations[#populations+1]={pass=pass,ledger_rows=ledgers,prepared_rows=prepared}
+                end
+                h.exec("INSERT INTO round_fixture_log (automation_id,drive_key,item_key,attempts,detail_json) VALUES ($1,'main','dead_steady_state',0,$2)",
+                    {id,h.encoded(populations)})
+            end)
+            if not ok then error(message) end
         end)
 
         test.it("never renews unavailable replay proof through repeated refusals",function()

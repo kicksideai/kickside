@@ -26,6 +26,14 @@ local function define_tests()
             test.it("retains the authenticated initiator of " .. control .. " without changing its response or digest", function()
                 local id = uuid.v7()
                 cf.seed_drive(id, "main")
+                if control == "replay" then
+                    local _,seed_err=cf.in_tx(function(tx)
+                        return tx:execute([[INSERT INTO kickside_trigger_item_ledger
+                            (owner_id,source_port,item_key,identity_key,envelope_json,state,first_failed_at,last_failed_at,created_at,updated_at)
+                            VALUES ($1,'timer:main','unused','unused','{}','dead',$2,$2,$2,$2)]],{id,"2026-01-01T00:00:00Z"})
+                    end)
+                    test.is_nil(seed_err,tostring(seed_err))
+                end
                 local args = {control = control, request_id = "initiate", keys = {"unused"},
                     actor_id = "forged", initiation = {actor_id = "forged"},
                     execution_identity = {principal = {kind = "user", id = "forged"}}}

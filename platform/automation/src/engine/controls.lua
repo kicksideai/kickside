@@ -108,6 +108,20 @@ function part.attach(M: any, dependencies: any, P: any): ()
             .. " WHERE owner_id=$1 AND source_port=$2 AND state IN ('dead','uncertain','retrying','waiting','parked')" .. key_filter,
             params)
         if read_err then return nil, read_err end
+        if key_filter ~= "" then
+            local retained,retained_err=tx:query("SELECT DISTINCT item_key FROM " .. ledger.TABLE
+                .. " WHERE owner_id=$1 AND source_port=$2" .. key_filter,params)
+            if retained_err then return nil,retained_err end
+            local found: Map={}
+            for _,row in ipairs(retained) do found[row.item_key]=true end
+            for _,key in ipairs(keys) do
+                if not found[tostring(key)] then
+                    return nil,errors.new({kind=errors.INVALID,retryable=false,
+                        message="item replay evidence predates this version or has aged out",
+                        details={code="replay_evidence_unavailable"}})
+                end
+            end
+        end
         local replayed = 0
         for _, row in ipairs(rows :: { Map }) do
             local item, decode_err = (dependencies.json :: any).decode(tostring(row.envelope_json))

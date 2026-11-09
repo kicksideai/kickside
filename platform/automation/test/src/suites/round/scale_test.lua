@@ -238,6 +238,64 @@ local function define_tests()
                 local round_ms=round()
                 drain[#drain+1]={rows=count,ms=elapsed,round_ms=round_ms,statements=statements,wal=wal}
             end
+            -- Keep the million-row fixture within its budget: 100,000 dead items
+            -- retain output; all other tombstones remain outside the cutoff.
+            h.exec([[INSERT INTO kickside_automation_prepared
+                (automation_id,idempotency_key,payload_hash,prepared_json,created_at)
+                SELECT owner_id,identity_key,'hash','{}',updated_at FROM kickside_trigger_item_ledger
+                WHERE owner_id=$1 AND state='dead' AND delivery_order>$2 AND delivery_order<=$3]],
+                {ledger_owner,UNRESOLVED,UNRESOLVED+100000})
+            h.exec([[UPDATE kickside_trigger_item_ledger SET expires_at=$1
+                WHERE owner_id=$2 AND state='dead' AND delivery_order>$3 AND delivery_order<=$4]],
+                {NOW,ledger_owner,UNRESOLVED,UNRESOLVED+90000})
+            h.exec([[UPDATE kickside_trigger_item_ledger SET expires_at=NULL
+                WHERE owner_id=$1 AND state='dead' AND delivery_order>$2 AND delivery_order<=$3]],
+                {ledger_owner,UNRESOLVED+90000,UNRESOLVED+100000})
+            h.exec("ANALYZE kickside_trigger_item_ledger")
+            h.exec("ANALYZE kickside_automation_prepared")
+            local dead_drain={}
+            local candidate_plans={}
+            local deadline_plans={}
+            local opened=h.db()
+            local _,deadline_err=ledger.retention_deadlines({query=function(_,statement,params)
+                deadline_plans[#deadline_plans+1]={sql=statement,params=params,plan=explain(postgres,statement,params)}
+                return opened:query(statement,params)
+            end},100)
+            opened:release()
+            test.is_nil(deadline_err,tostring(deadline_err))
+            for pass=1,100 do
+                local legacy=pass>90
+                local size=1000
+                local started=time.now():unix_nano()
+                local count,err=automation_db.in_tx(function(tx)
+                    local executor={query=function(_,statement,params)
+                        if statement:find("SELECT owner_id,source_port,item_key,identity_key",1,true) and (pass==1 or pass==91) then
+                            local plan,plan_err=tx:query("EXPLAIN " .. (postgres and "(ANALYZE,BUFFERS,WAL,FORMAT JSON) " or "QUERY PLAN ") .. statement,params)
+                            if plan_err then return nil,plan_err end
+                            candidate_plans[#candidate_plans+1]={sql=statement,params=params,plan=plan}
+                        end
+                        return tx:query(statement,params)
+                    end,execute=function(_,statement,params) return tx:execute(statement,params) end}
+                    if legacy then return ledger.prune_orphans_tx(executor,NOW,size) end
+                    return ledger.prune_tx(executor,NOW,size)
+                end)
+                local ms=(time.now():unix_nano()-started)/1000000
+                test.is_nil(err,tostring(err));test.eq(count,size,"each batch reaches expired prepared items")
+                local round_ms=nil
+                if pass%10==0 then round_ms=round() end
+                dead_drain[#dead_drain+1]={pass=pass,legacy=legacy,rows=count,ms=ms,round_ms=round_ms}
+            end
+            test.eq(tonumber(h.query("SELECT COUNT(*) AS n FROM kickside_automation_prepared WHERE automation_id=$1",{ledger_owner})[1].n),0)
+            for _,call in ipairs(candidate_plans) do
+                if postgres then test.is_true(postgres_rows(call.plan)<=1000,"prune examines only its indexed expired page")
+                else
+                    local encoded=h.encoded(call.plan)
+                    test.is_true(encoded:find("idx_trigger_ledger_gc",1,true)~=nil or encoded:find("idx_trigger_ledger_legacy_retention",1,true)~=nil)
+                    test.is_false(encoded:find("TEMP B-TREE",1,true)~=nil,"no unexpired population is sorted")
+                end
+            end
+            local dead_proof={prepared_items=100000,total_ledger_items=TOTAL,remaining_prepared=0,
+                candidate_plans=candidate_plans,deadline_plans=deadline_plans,batches=dead_drain}
             local violations: {string}={}
             local last=samples[#samples]
             if postgres then
@@ -261,7 +319,7 @@ local function define_tests()
             end
             h.exec("INSERT INTO round_fixture_log (automation_id,drive_key,item_key,attempts,detail_json) VALUES ($1,'history-0','scale',0,$2)",
                 {id,h.encoded({engine=postgres and "postgres" or "sqlite",history_rows=TOTAL,ledger_rows=TOTAL,
-                    unresolved_rows=UNRESOLVED,samples=samples,idle_round_ms=idle,unchanged_writes=0,drain=drain})})
+                    unresolved_rows=UNRESOLVED,dead_retention=dead_proof,samples=samples,idle_round_ms=idle,unchanged_writes=0,drain=drain})})
             test.eq(#violations,0,table.concat(violations,"; "))
             h.exec("DELETE FROM kickside_automation_delivery_history WHERE automation_id=$1",{id})
             h.exec("DELETE FROM kickside_trigger_item_ledger WHERE owner_id=$1",{ledger_owner})

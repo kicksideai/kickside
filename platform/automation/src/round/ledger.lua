@@ -484,10 +484,10 @@ end
 local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boolean): (integer?, error?)
     local predicate = orphan and "updated_at <= $1 AND expires_at IS NULL AND state IN ('resolved','dead')"
         or "expires_at <= $1 AND state IN ('resolved','dead')"
-    -- Retain delivery proof until its prepared output has been reclaimed, even
-    -- when bounded passes visit the two tables in different key orders.
-    local prepared_guard = [[ AND NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p
-        WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key)]]
+    local prepared_guard = [[ AND (l.state='dead' OR NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p
+        WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key))
+        AND (l.state<>'dead' OR NOT EXISTS (SELECT 1 FROM kickside_automation_command c
+            WHERE c.automation_id=l.owner_id AND c.pending_request_id IS NOT NULL))]]
     local order=orphan and "updated_at" or "state,expires_at"
     local rows, read_err=tx:query("SELECT owner_id,source_port,item_key,identity_key FROM " .. M.TABLE
         .. " l WHERE " .. predicate .. prepared_guard .. " ORDER BY " .. order .. " LIMIT $2",{cutoff,limit})
@@ -503,14 +503,31 @@ local function prune_page(tx: any, cutoff: string, limit: integer, orphan: boole
     local cutoff_field = orphan and "updated_at" or "expires_at"
     local states = "state IN ('resolved','dead')"
     for _, row in ipairs(rows) do
-        local deleted, delete_err = tx:execute("DELETE FROM " .. M.TABLE .. " AS l"
+        local deleted, delete_err = tx:query("DELETE FROM " .. M.TABLE .. " AS l"
             .. " WHERE owner_id=$1 AND source_port=$2 AND item_key=$3 AND identity_key=$4"
-            .. " AND " .. states .. " AND " .. cutoff_field .. "<=$5" .. orphan_guard .. prepared_guard,
+            .. " AND " .. states .. " AND " .. cutoff_field .. "<=$5" .. orphan_guard .. prepared_guard
+            .. " RETURNING state,execution_identity_json",
             { row.owner_id, row.source_port, row.item_key, row.identity_key, cutoff })
-        if delete_err or not deleted or tonumber(deleted.rows_affected) == nil then
-            return nil, internal("ledger prune delete failed", delete_err or "missing affected-row count")
+        if delete_err or type(deleted) ~= "table" then
+            return nil, internal("ledger prune delete failed", delete_err or "missing result")
         end
-        if tonumber(deleted.rows_affected) == 1 then count = count + 1 end
+        if deleted[1] then
+            if deleted[1].state == M.STATE.DEAD then
+                local prepared_key=row.identity_key
+                if deleted[1].execution_identity_json ~= nil then
+                    local evidence,decode_err=json.decode(deleted[1].execution_identity_json)
+                    if decode_err then return nil,internal("dead prepared identity decode failed",decode_err) end
+                    if evidence.prepared_key then prepared_key=evidence.prepared_key end
+                end
+                -- DELETE RETURNING locks and rechecks the tombstone before its output.
+                -- Both deletes commit together, so a crash cannot orphan either half.
+                local _,prepared_err=tx:execute("DELETE FROM kickside_automation_prepared"
+                    .. " WHERE automation_id=$1 AND idempotency_key IN ($2,$3)",
+                    {row.owner_id,row.identity_key,prepared_key})
+                if prepared_err then return nil,internal("dead prepared output prune failed",prepared_err) end
+            end
+            count=count+1
+        end
     end
     return count, nil
 end
@@ -520,14 +537,16 @@ function M.retention_deadlines(executor: any,limit: integer): ({Map}?,error?)
     for _,state in ipairs({"resolved","dead"}) do
         local rows,err=executor:query("SELECT MIN(expires_at) AS expires_at FROM (SELECT expires_at FROM " .. M.TABLE
             .. " l WHERE state='" .. state .. "' AND expires_at IS NOT NULL"
-            .. " AND NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key)"
+            .. (state == "resolved" and " AND NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key)" or "")
+            .. " AND (l.state<>'dead' OR NOT EXISTS (SELECT 1 FROM kickside_automation_command c WHERE c.automation_id=l.owner_id AND c.pending_request_id IS NOT NULL))"
             .. " ORDER BY expires_at LIMIT $1) eligible",{limit})
         if err then return nil,internal("ledger retention deadline read fails",err) end
         if rows[1] then deadlines[#deadlines+1]=rows[1] end
     end
     local rows,err=executor:query("SELECT MIN(updated_at) AS updated_at FROM (SELECT updated_at FROM " .. M.TABLE
         .. " l WHERE state IN ('resolved','dead') AND expires_at IS NULL"
-        .. " AND NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key)"
+        .. " AND (l.state='dead' OR NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key))"
+        .. " AND (l.state<>'dead' OR NOT EXISTS (SELECT 1 FROM kickside_automation_command c WHERE c.automation_id=l.owner_id AND c.pending_request_id IS NOT NULL))"
         .. " ORDER BY updated_at LIMIT $1) eligible",{limit})
     if err then return nil,internal("legacy ledger retention deadline read fails",err) end
     if rows[1] then deadlines[#deadlines+1]=rows[1] end

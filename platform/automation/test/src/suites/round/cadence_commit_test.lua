@@ -38,6 +38,44 @@ local function define_tests()
             test.eq(timer, "2026-11-08T12:01:50Z", "timer occurrences retain their cadence boundary")
         end)
 
+        for _,cooldown_ms in ipairs({60000,1000}) do
+            test.it("honors the later of the source cooldown and interval after max_pages with " .. tostring(cooldown_ms) .. "ms cooldown",function()
+                local env=h.setup("cadence_cooldown")
+                local start=time.now():utc()
+                local clock=start
+                local original_now,original_after=drive.utc_now,drive.utc_after
+                drive.utc_now=function() return clock:format(time.RFC3339) end
+                drive.utc_after=function(ms) return clock:add(ms*time.MILLISECOND):format(time.RFC3339) end
+                local ok,message=pcall(function()
+                    h.new_drive({automation_id=env.automation_id,drive_key="poll",source_kind="collection",
+                        action={source_ref=PORT,config={items={},continuing=true,retry_after_ms=cooldown_ms},
+                            schedule={type="interval",expression="5s"}},policy={round={max_pages=1}}})
+                    h.set_drive(env.automation_id,"poll","next_run_at=$1",{h.PAST})
+                    local _,err=env.run(env.automation_id,"poll")
+                    test.is_nil(err,tostring(err))
+                    local completed=h.read_drive(env.automation_id,"poll")
+                    local delay=math.max(cooldown_ms,5000)
+                    local expected=start:add(delay*time.MILLISECOND):format(time.RFC3339)
+                    test.eq(completed.pass_pages,0,"max_pages ends the pass")
+                    test.eq(completed.next_run_at,expected)
+                    test.eq(env.last_completion().options.rearm,expected)
+
+                    clock=start:add(math.min(cooldown_ms,5000)*time.MILLISECOND)
+                    local _,early_err=env.run(env.automation_id,"poll")
+                    test.is_nil(early_err,tostring(early_err))
+                    test.eq(h.read_drive(env.automation_id,"poll").round_seq,completed.round_seq,
+                        "the shorter deadline cannot start another acquisition")
+                    clock=start:add(delay*time.MILLISECOND)
+                    local _,due_err=env.run(env.automation_id,"poll")
+                    test.is_nil(due_err,tostring(due_err))
+                    test.eq(h.read_drive(env.automation_id,"poll").round_seq,completed.round_seq+1,
+                        "acquisition resumes when both deadlines pass")
+                end)
+                drive.utc_now,drive.utc_after=original_now,original_after
+                if not ok then error(message) end
+            end)
+        end
+
         for _,case in ipairs({{kind="collection",schedule={type="cron",expression="* * * * *"}},
             {kind="timer",schedule={type="cron",expression="* * * * *"}},
             {kind="timer",schedule={type="interval",expression="1m"}}}) do

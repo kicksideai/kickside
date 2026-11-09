@@ -515,6 +515,7 @@ local function run(deps: Map, input: any): (Map?, error?)
     if acquiring and not continues and not reconciling and not manual and not result.failure and claim.interval_poll(d) then
         local due,due_err=claim.next_after_round(d,now,drive.utc_now())
         if due_err then return nil,due_err end
+        if next_due and (due == nil or next_due > due) then due=next_due end
         local changed,update_err=with_db(function(db: any): (any?,error?)
             return drive.update_cas_tx(db,automation_id,drive_key,
                 {round_seq=d.round_seq,round_token=sql.NULL,revision=d.revision,
