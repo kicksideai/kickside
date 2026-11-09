@@ -110,10 +110,10 @@ function M.run(limit: integer): (any?, error?)
     local db, open_err = sql.get(component_types.db_id())
     if open_err or not db then return nil, failure("identity audit retention database unavailable", open_err) end
     local cutoff = time.now():utc():add(-p.history_days * 24 * time.HOUR):format_rfc3339()
-    local owners, owners_err = db:query("SELECT DISTINCT a.component_id FROM " .. AUDIT .. " a"
+    local owners, owners_err = db:query("SELECT a.component_id FROM " .. AUDIT .. " a"
         .. " JOIN kickside_components c ON c.component_id=a.component_id"
         .. " WHERE a.published_at IS NOT NULL AND a.created_at<=$1 AND a.identity_generation<>c.identity_generation"
-        .. " ORDER BY a.component_id LIMIT $2",
+        .. " ORDER BY a.created_at,a.component_id,a.identity_generation LIMIT $2",
         { cutoff, limit })
     if owners_err or type(owners) ~= "table" then
         return nil, error_envelope.cleanup(function(): (any, error?) return db:release() end,
@@ -128,9 +128,27 @@ function M.run(limit: integer): (any?, error?)
         pruned = pruned + (removed :: integer)
         if pruned >= limit then break end
     end
+    local remaining, remaining_err = db:query("SELECT a.created_at FROM " .. AUDIT .. " a"
+        .. " JOIN kickside_components c ON c.component_id=a.component_id"
+        .. " WHERE a.published_at IS NOT NULL AND a.identity_generation<>c.identity_generation"
+        .. " ORDER BY a.created_at,a.component_id,a.identity_generation LIMIT 1")
+    if remaining_err or type(remaining) ~= "table" then
+        return nil, error_envelope.cleanup(function(): (any, error?) return db:release() end,
+            failure("identity audit deadline scan failed", remaining_err), "release audit retention database")
+    end
+    local deadline: number? = nil
+    if remaining[1] then
+        local created, parse_err = time.parse(time.RFC3339, tostring(remaining[1].created_at))
+        if parse_err or not created then
+            return nil, error_envelope.cleanup(function(): (any, error?) return db:release() end,
+                failure("identity audit deadline is invalid", parse_err), "release audit retention database")
+        end
+        deadline = math.floor(created:unix_nano() / 1000000) + p.history_days * 86400000
+    end
     local release_err = error_envelope.cleanup(function(): (any, error?) return db:release() end, nil, "release audit retention database")
     if release_err then return nil, release_err end
-    return { published = published, pruned = pruned }, nil
+    return { published = published, pruned = pruned,
+        needs_continue = published >= limit or pruned >= limit, deadline_ms = deadline }, nil
 end
 
 return M
