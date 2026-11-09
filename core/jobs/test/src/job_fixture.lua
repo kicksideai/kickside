@@ -77,7 +77,7 @@ fixture.no_retention_schedule = {
 }
 
 -- The queue closure, parents first: kickside_job_run references kickside_job.
-local QUEUE_TABLES = { "kickside_wake_fanout", "kickside_job_thread_cleanup", "kickside_job", "kickside_job_run",
+local QUEUE_TABLES = { "kickside_wake_fanout", "kickside_job_thread_cleanup", "kickside_job_thread_cleanup_receipt", "kickside_job", "kickside_job_run",
     "kickside_job_worker", "kickside_job_worker_pulse" }
 
 local IDENTIFIER = "^[a-z_][a-z0-9_]*$"
@@ -388,5 +388,22 @@ function fixture.observe_tx(tx: sql.Transaction, on_query: (string) -> (), on_ex
     }
 end
 
+
+function fixture.seed_runs(db: any, total: integer, job_id: string, owner: string, finished_at: string): integer
+    local dbtype = tostring(db:type())
+    local numbers = dbtype == sql.type.POSTGRES
+        and "SELECT generate_series(1," .. tostring(total) .. ") AS n"
+        or "WITH RECURSIVE seq(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM seq WHERE n<"
+            .. tostring(total) .. ") SELECT n FROM seq"
+    local id = dbtype == sql.type.POSTGRES and "md5($1::text || n::text)::uuid" or "lower(hex(randomblob(16)))"
+    local job_ref = dbtype == sql.type.POSTGRES and "$1::uuid" or "$1"
+    local stamp = dbtype == sql.type.POSTGRES and "$3::timestamptz" or "$3"
+    local result, err = db:execute([[INSERT INTO kickside_job_run
+        (id,job_id,owner_kind,owner_id,job_type,attempt_no,execution_seq,status,lease_token,started_at,finished_at)
+        SELECT ]] .. id .. "," .. job_ref .. [[,'test',$2,'test.retention',1,n + 1000,'success','seed',]] .. stamp .. "," .. stamp .. [[
+        FROM (]] .. numbers .. ") numbered", {job_id, owner, finished_at})
+    if err then error(err) end
+    return math.floor(tonumber(result.rows_affected) :: number)
+end
 
 return fixture

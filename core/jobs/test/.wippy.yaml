@@ -276,3 +276,19 @@ profiles:
       "app:private_queue_wake_recovery_test:options.search_path": kickside_private_queue_wake_recovery_test
       "app:private_queue_wake_recovery_test:pool.max_open": 8
       "app:private_queue_wake_recovery_test:pool.max_idle": 4
+      "app:private_queue_retention_pace:kind": db.sql.postgres
+      "app:private_queue_retention_pace:host": "${pg_host}"
+      "app:private_queue_retention_pace:port": "${pg_port}"
+      "app:private_queue_retention_pace:database": "${pg_database}"
+      "app:private_queue_retention_pace:username": "${pg_username}"
+      "app:private_queue_retention_pace:password": "${pg_password}"
+      "app:private_queue_retention_pace:options.sslmode": disable
+      "app:private_queue_retention_pace:options.search_path": jobs_retention_pace
+      "app:private_queue_retention_dispatch:kind": db.sql.postgres
+      "app:private_queue_retention_dispatch:host": "${pg_host}"
+      "app:private_queue_retention_dispatch:port": "${pg_port}"
+      "app:private_queue_retention_dispatch:database": "${pg_database}"
+      "app:private_queue_retention_dispatch:username": "${pg_username}"
+      "app:private_queue_retention_dispatch:password": "${pg_password}"
+      "app:private_queue_retention_dispatch:options.sslmode": disable
+      "app:private_queue_retention_dispatch:options.search_path": jobs_retention_dispatch
