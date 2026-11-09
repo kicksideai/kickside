@@ -281,7 +281,9 @@ function M.upsert(args: any): (kb_types.UpsertResult?, error?)
             current.enrichment_agent_id = store_row and store_row.enrichment_agent_id or ""
         end
         for _, field in ipairs({ "kb_type", "embedding_model", "enrichment_agent_id", "parent_id" }) do
-            if args[field] ~= nil and args[field] ~= current[field] then
+            local requested = args[field]
+            if field == "parent_id" then requested = is_str(requested) and requested or nil end
+            if args[field] ~= nil and requested ~= current[field] then
                 return nil, errors.new({ kind = errors.INVALID, message = field .. " cannot be changed by upsert on an existing knowledge base" })
             end
         end

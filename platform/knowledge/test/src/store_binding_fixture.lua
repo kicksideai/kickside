@@ -27,7 +27,18 @@ local function bound_accepted(_args: any): (any, error?)
     return { success = true, served_by = "bound" }, nil
 end
 
+local function bound_update(args: any): (any, error?)
+    local sql = require("sql")
+    local db, err = sql.get("app:db")
+    if err then return nil, err end
+    local _, write_err = db:execute("UPDATE kickside_components SET updated_at = CAST(CAST(updated_at AS BIGINT) + 1 AS TEXT) WHERE component_id = $1", { args.component_id })
+    db:release()
+    if write_err then return nil, write_err end
+    return bound_accepted(args)
+end
+
 return {
+    bound_update = bound_update,
     BOUND_KB = BOUND_KB,
     default_get = default_get,
     bound_get = bound_get,

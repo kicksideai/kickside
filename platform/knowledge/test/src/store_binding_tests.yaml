@@ -30,6 +30,12 @@ entries:
     source: file://store_binding_fixture.lua
     method: bound_accepted
 
+  - name: bound_update
+    kind: function.lua
+    source: file://store_binding_fixture.lua
+    method: bound_update
+    modules: [sql]
+
   - name: default_store
     kind: contract.binding
     contracts:
@@ -48,7 +54,7 @@ entries:
         methods:
           create_store: app.store_binding:bound_accepted
           get_store: app.store_binding:bound_get
-          update_config: app.store_binding:bound_accepted
+          update_config: app.store_binding:bound_update
           delete_store: app.store_binding:bound_accepted
 
   - name: engine_bound

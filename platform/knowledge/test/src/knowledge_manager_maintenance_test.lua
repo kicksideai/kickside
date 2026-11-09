@@ -114,6 +114,42 @@ local function define_tests()
             cleanup(id)
         end)
 
+        test.it("repeated matching config upserts perform no store writes through the tool", function()
+            local id = "3d9ba14d-4cd3-47b7-a63b-25868c2dcaff"
+            seed_component(id, "upsert-config-owner", "bound", "knowledge_base")
+            local exec = executor("upsert-config-owner")
+            for _ = 1, 2 do
+                local result, err = exec:call(TOOL, {
+                    action = "upsert_knowledge_base", name = id, config = { served_by = "bound" },
+                })
+                test.is_nil(err, tostring(err))
+                test.is_false(result.created)
+                local d = db()
+                local rows, read_err = d:query("SELECT updated_at FROM kickside_components WHERE component_id = $1", { id })
+                d:release()
+                test.is_nil(read_err, tostring(read_err))
+                test.eq(tonumber(rows[1].updated_at), 0, "fixture counts every store update")
+            end
+            cleanup(id)
+        end)
+
+        test.it("repeats root placement with an empty parent id", function()
+            local id = uuid.v7()
+            seed_component(id, "upsert-root-owner", "wiki", "knowledge_base")
+            local exec = executor("upsert-root-owner")
+            for _ = 1, 2 do
+                local result, err = exec:call("kickside.knowledge.registry:kb_upsert", { name = id, parent_id = "" })
+                test.is_nil(err, tostring(err))
+                test.is_false(result.created)
+                test.eq(result.kb.component_id, id)
+            end
+            local refused, err = exec:call("kickside.knowledge.registry:kb_upsert", { name = id, parent_id = uuid.v7() })
+            test.is_nil(refused)
+            test.is_true(errors.is(err, errors.INVALID), tostring(err))
+            test.contains(tostring(err), "parent_id")
+            cleanup(id)
+        end)
+
         test.it("uses the KB engine's bound contract and preserves the KB context", function()
             local owner = "maintenance-owner-" .. uuid.v4()
             local component_id = uuid.v7()
