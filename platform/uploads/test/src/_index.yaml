@@ -401,6 +401,23 @@ entries:
       fixtures: app:rasterize_fixtures
     method: run
 
+  - name: document_batches_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_uploads_documents
+      comment: Document conversion in page batches with a progress report after each batch.
+    source: file://document_batches_test.lua
+    modules: [funcs, fs, uuid, process, channel, time, contract]
+    imports:
+      test: wippy.test:test
+      doc2md: kickside.convert.doc2md:doc2md
+      proc_supervisor: kickside.core.jobs:proc_supervisor
+      artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+      upload_record_repo: kickside.uploads.persist:upload_record_repo
+      fixtures: app:rasterize_fixtures
+    method: run
+
   - name: dep.kickside.uploads
     version: '*'
     kind: ns.dependency

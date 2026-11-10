@@ -6,7 +6,7 @@ local artifact_content_repo = require("artifact_content_repo")
 local artifact_parts_repo = require("artifact_parts_repo")
 local rasterizer = require("rasterizer")
 local page_images = require("page_images")
-local jobs = require("jobs")
+local stage_progress = require("stage_progress")
 
 -- Render sparse pages for OCR, retaining usable text pages. A complete set of
 -- extracted page images serves as the existing no-render path for image PDFs.
@@ -106,15 +106,6 @@ local function store_page(params: any, page: any, fmt: string, source_id: string
     return err
 end
 
--- Report rendering progress to the processing job so a long render continues.
-local function report_progress(params: any): string?
-    local ref = type(params.cancel_ref) == "table" and params.cancel_ref or nil
-    if not ref or type(ref.job_id) ~= "string" or ref.job_id == "" then return nil end
-    local _, err = jobs.report_progress(ref.job_id, { token = ref.lease_token, execution_seq = ref.execution_seq })
-    if err then return tostring(err) end
-    return nil
-end
-
 local function render_call(entry: any, ref: any, pages: { integer }, opts: any): ({ any }?, string?)
     local res, call_err = funcs.call(entry.processor_func :: string, {
         ref = ref,
@@ -171,8 +162,9 @@ local function render_pages(params: any, entry: any, ref: any, selected: { integ
                 end
             end
         end
-        local progress_err = report_progress(params)
-        if progress_err then return rendered, failures, progress_err end
+        -- Each rendered batch is progress, so a long render continues.
+        local progress_err = stage_progress.report(params.cancel_ref)
+        if progress_err then return rendered, failures, tostring(progress_err) end
 
         page = last + 1
     end

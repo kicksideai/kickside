@@ -342,6 +342,14 @@ entries:
         - kickside.uploads.documents
         - kickside.uploads.rasterize
 
+  - name: stage_progress
+    kind: library.lua
+    meta:
+      comment: Progress report from a pipeline stage to the upload processing job it runs under, renewing the job's execution ceiling.
+    source: file://stage_progress.lua
+    imports:
+      jobs: kickside.core.jobs:jobs
+
   - name: net_safety
     kind: library.lua
     meta:

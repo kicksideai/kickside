@@ -5,9 +5,9 @@ entries:
   - name: dependency.doc2md
     kind: ns.dependency
     meta:
-      comment: Pure Doc2MD WebAssembly converter used by the document upload wrapper; page markers need 0.8.15.
+      comment: Pure Doc2MD WebAssembly converter used by the document upload wrapper; page-range conversion needs 0.8.19.
     component: kickside/doc2md
-    version: '>=0.8.15'
+    version: '>=0.8.19'
 
   - name: env.document_image_artifacts_enabled
     kind: env.variable
@@ -35,6 +35,23 @@ entries:
     editable: true
     visible: true
 
+  - name: setting.convert_batch_pages
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Pages converted per Doc2MD call; the processor reports progress after each batch.
+    namespace: kickside.uploads.documents
+    key: convert_batch_pages
+    value_type: int
+    default: 8
+    title: Pages per conversion batch
+    category: Limits
+    order: 20
+    description: Number of document pages converted to Markdown per converter call. Each completed batch renews the processing time limit, so lower values bound the time between progress reports on large scanned PDFs.
+    scope: global
+    editable: true
+    visible: true
+
   # Document upload settings are surfaced through the consolidated Files & Uploads
   # block (kickside.settings:block.storage), which claims this namespace — so this
   # module declares no standalone block of its own.
@@ -54,6 +71,7 @@ entries:
       uploads_resources: kickside.uploads.binding:uploads_resources
       artifact_content_repo: kickside.uploads.persist:artifact_content_repo
       doc2md: kickside.convert.doc2md:doc2md
+      stage_progress: kickside.uploads:stage_progress
     method: process
     pool:
       type: static

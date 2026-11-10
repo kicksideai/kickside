@@ -4,32 +4,43 @@ local hash = require("hash")
 local contract = require("contract")
 local artifact_content_repo = require("artifact_content_repo")
 local doc2md = require("doc2md")
+local stage_progress = require("stage_progress")
 
 local ENV_DOCUMENT_IMAGE_ARTIFACTS_ENABLED = "kickside.uploads.documents:env.document_image_artifacts_enabled"
 local SETTINGS_CONTRACT = "kickside.settings:settings"
 local SETTINGS_NS = "kickside.uploads.documents"
 local SETTING_MAX_UPLOAD_BYTES = "max_upload_bytes"
+local SETTING_CONVERT_BATCH_PAGES = "convert_batch_pages"
+local DEFAULT_CONVERT_BATCH_PAGES = 8
 
 -- The converter's hard input ceiling: the runtime upload limit can never exceed it.
 local CONVERTER_CEILING = doc2md.limits.max_input_bytes :: integer
 
--- The effective upload limit: the admin-tunable kickside.settings value (served
--- from the warmed cache), clamped to the converter ceiling. A settings outage
--- degrades to the converter ceiling rather than blocking uploads.
-local function max_file_size(): integer
-    local configured: number? = nil
+-- A numeric kickside.settings value of this namespace, served from the warmed
+-- cache; nil when unset or when settings are unavailable.
+local function setting_number(key: string): number?
     local def = contract.get(SETTINGS_CONTRACT)
-    if def then
-        local inst = def:open()
-        if inst then
-            local r = inst:get({ namespace = SETTINGS_NS, key = SETTING_MAX_UPLOAD_BYTES })
-            if r and r.success and tonumber(r.value) then
-                configured = tonumber(r.value)
-            end
-        end
-    end
+    if not def then return nil end
+    local inst = def:open()
+    if not inst then return nil end
+    local r = inst:get({ namespace = SETTINGS_NS, key = key })
+    if r and r.success then return tonumber(r.value) end
+    return nil
+end
+
+-- The effective upload limit: the admin-tunable setting clamped to the converter
+-- ceiling. A settings outage degrades to the converter ceiling rather than
+-- blocking uploads.
+local function max_file_size(): integer
+    local configured = setting_number(SETTING_MAX_UPLOAD_BYTES)
     if not configured then return CONVERTER_CEILING end
     return math.min(math.floor(configured :: number), CONVERTER_CEILING) :: integer
+end
+
+local function convert_batch_pages(): integer
+    local configured = setting_number(SETTING_CONVERT_BATCH_PAGES)
+    if not configured then return DEFAULT_CONVERT_BATCH_PAGES end
+    return math.max(1, math.floor(configured :: number)) :: integer
 end
 
 local CANONICAL_METADATA_FIELDS = {
@@ -173,6 +184,50 @@ local function image_metadata(upload_id: string, index: number, image: any, sour
     return metadata
 end
 
+-- Converts the document in batches of pages, one Doc2MD call per batch, and
+-- reports progress to the processing job after each batch, so the attempt
+-- ceiling bounds one batch rather than the whole document. The batches
+-- concatenate to the whole-document Markdown and images; Doc2MD treats a
+-- non-PDF document as one page. Returns the Markdown, the images and, for PDF
+-- pages with images, each page's image-resource count.
+local function convert_document(params: any, bytes: string): (string, { any }, { [integer]: integer })
+    local batch = convert_batch_pages()
+    local extract_images = extract_images_enabled(params)
+    local parts, images, image_counts = {}, {}, {}
+    local first = 1
+    while true do
+        local range = { first = first, last = first + batch - 1 }
+        -- Page markers are hidden comments that let readers cite the PDF page or
+        -- PPTX slide a passage comes from.
+        local document, convert_err = doc2md.convert(
+            { bytes = bytes },
+            { extract_images = extract_images, page_markers = true, pages = range }
+        )
+        if convert_err ~= nil then
+            error("document conversion failed: " .. tostring(convert_err))
+        end
+        if type(document) ~= "table" or type(document.markdown) ~= "string" then
+            error("document conversion returned invalid markdown")
+        end
+        parts[#parts + 1] = document.markdown
+        for _, image in ipairs(document.images or {}) do images[#images + 1] = image end
+
+        if params.mime_type == "application/pdf" and #(document.images or {}) > 0 then
+            local pages, pages_err = doc2md.page_resources({ bytes = bytes }, { pages = range })
+            if pages_err then error("document page resources failed: " .. tostring(pages_err)) end
+            for _, page in ipairs(pages) do image_counts[page.page] = page.image_count end
+        end
+
+        local progress_err = stage_progress.report(params.cancel_ref)
+        if progress_err then
+            error("document conversion progress report failed: " .. tostring(progress_err))
+        end
+        if range.last >= document.page_count then break end
+        first = range.last + 1
+    end
+    return table.concat(parts), images, image_counts
+end
+
 local function process(params: any): any
     if not params.upload_id or not params.storage_id or not params.storage_path then
         error("missing required parameters")
@@ -203,18 +258,7 @@ local function process(params: any): any
         error("file too large after read: " .. tostring(#bytes) .. " bytes")
     end
 
-    -- Convert options are the second argument. Page markers are hidden comments
-    -- that let readers cite the PDF page or PPTX slide a passage comes from.
-    local document, convert_err = doc2md.convert(
-        { bytes = bytes },
-        { extract_images = extract_images_enabled(params), page_markers = true }
-    )
-    if convert_err ~= nil then
-        error("document conversion failed: " .. tostring(convert_err))
-    end
-    if type(document) ~= "table" or type(document.markdown) ~= "string" then
-        error("document conversion returned invalid markdown")
-    end
+    local markdown, images, image_counts = convert_document(params, bytes)
 
     local metadata = document_metadata(params)
 
@@ -233,7 +277,7 @@ local function process(params: any): any
         mime_type = "text/markdown",
         label = metadata.filename or metadata.original_filename or "converted.md",
         ordinal = 1,
-        content = document.markdown,
+        content = markdown,
         storage_id = storage_id,
         blob_metadata = {
             source = "doc2md",
@@ -252,16 +296,10 @@ local function process(params: any): any
     end
     local markdown_artifact_id = markdown_artifact.artifact_id :: string
 
-    local page_resources = {}
-    if params.mime_type == "application/pdf" and #(document.images or {}) > 0 then
-        local pages, pages_err = doc2md.page_resources({bytes = bytes})
-        if pages_err then error("document page resources failed: " .. tostring(pages_err)) end
-        for _, page in ipairs(pages) do page_resources[page.page] = page.image_count end
-    end
     local image_count = 0
-    for index, image in ipairs(document.images or {}) do
+    for index, image in ipairs(images) do
         local metadata = image_metadata(upload_id, index, image, source_artifact_id, markdown_artifact_id)
-        metadata.image_count = page_resources[image.page]
+        metadata.image_count = image_counts[image.page]
         local artifact, image_err = artifact_content_repo.create_artifact({
             upload_id = upload_id,
             parent_artifact_id = source_artifact_id,

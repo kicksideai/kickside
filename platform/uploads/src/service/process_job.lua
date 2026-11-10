@@ -11,6 +11,7 @@ local upload_types = require("types")
 local jobs = require("jobs")
 local job_types = require("job_types")
 local processing_hooks = require("processing_hooks")
+local stage_progress = require("stage_progress")
 
 local log = logger:named("upload_job")
 
@@ -47,18 +48,6 @@ local function ensure_running(job: any): (boolean, string?)
     if active ~= true then
         return false, "job cancelled"
     end
-    return true, nil
-end
-
--- Report execution progress to the job, renewing its execution ceiling.
-local function report_progress(job: any): (boolean, any?)
-    if type(job) ~= "table" or tostring(job.id or "") == "" or tostring(job.lease_token or "") == "" then
-        return true, nil
-    end
-    local _, err = jobs.report_progress(tostring(job.id), {
-        token = tostring(job.lease_token), execution_seq = tonumber(job.execution_seq),
-    })
-    if err then return false, err end
     return true, nil
 end
 
@@ -182,7 +171,9 @@ local function run(input: any): (any, any?)
                 return ensure_running(job)
             end,
             progress = function(_stage)
-                return report_progress(job)
+                local err = stage_progress.report(cancel_ref)
+                if err then return false, err end
+                return true, nil
             end,
             -- Carry the job lease so heavy stages (OCR) can observe cancellation
             -- between their own internal batches, not only between pipeline stages.

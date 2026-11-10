@@ -42,6 +42,7 @@ entries:
       jobs: kickside.core.jobs:jobs
       job_types: kickside.core.jobs:types
       processing_hooks: kickside.uploads.binding:processing_hooks_default
+      stage_progress: kickside.uploads:stage_progress
     method: main
 
   - name: callback_job
