@@ -4,7 +4,7 @@
   "core/core": "0.3.14",
   "core/execution": "0.2.7",
   "core/jobs": "0.1.76",
-  "platform/agents": "0.2.15",
+  "platform/agents": "0.2.16",
   "platform/automation": "0.2.24",
   "platform/blocks": "0.1.43",
   "platform/channel": "0.2.9",
@@ -13,7 +13,7 @@
   "platform/hub": "0.1.73",
   "platform/identity": "0.1.44",
   "platform/inbox": "0.1.74",
-  "platform/knowledge": "0.1.81",
+  "platform/knowledge": "0.1.82",
   "platform/mcp": "0.2.10",
   "platform/models": "0.1.75",
   "platform/oauth": "0.1.43",
@@ -33,7 +33,7 @@
   "platform/uploads": "0.3.13",
   "platform/users": "0.2.19",
   "platform/webhooks": "0.1.44",
-  "platform/widgets": "0.1.61",
+  "platform/widgets": "0.1.62",
   "platform/workflows": "0.2.12",
   "app": "0.2.35"
 }

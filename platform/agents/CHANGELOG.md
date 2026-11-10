@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.16](https://github.com/kicksideai/kickside/compare/agents-v0.2.15...agents-v0.2.16) (2026-11-10)
+
+
+### Bug Fixes
+
+* **agents:** collapse capability details and remove standalone tool selection ([#408](https://github.com/kicksideai/kickside/issues/408)) ([8e75d94](https://github.com/kicksideai/kickside/commit/8e75d94c0eb1af17d878e4fb8724042eda08f8a3))
+
 ## [0.2.15](https://github.com/kicksideai/kickside/compare/agents-v0.2.14...agents-v0.2.15) (2026-11-09)
 
 
