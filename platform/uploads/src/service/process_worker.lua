@@ -27,9 +27,10 @@ local function failure(message: string, kind: string, error_kind: string, retrya
         details = { error_kind = error_kind } })
 end
 
--- Admin-tunable hard ceiling for one processing attempt, served from the warmed
--- settings cache. The worker uses it as the per-job termination deadline. A
--- settings outage degrades to the code default rather than blocking the upload.
+-- Admin-tunable ceiling for one processing attempt without progress, served from
+-- the warmed settings cache. The worker uses it as the per-job termination
+-- deadline, renewed by each progress report. A settings outage degrades to the
+-- code default rather than blocking the upload.
 local function max_execution_ms(): integer
     local def = contract.get(SETTINGS_CONTRACT)
     if def then

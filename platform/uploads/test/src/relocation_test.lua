@@ -3,6 +3,7 @@ local test = require("test")
 local fs = require("fs")
 local uuid = require("uuid")
 local pipeline = require("pipeline")
+local upload_type = require("upload_type")
 local records = require("upload_record_repo")
 local queries = require("upload_query_repo")
 local artifacts = require("artifact_content_repo")
@@ -745,6 +746,23 @@ return {
 				records.delete(second_id)
 			end)
 
+			test.it("fails the attempt when a stage's progress cannot be reported", function()
+				local id, owner = path("progress-error"), path("progress-error-owner")
+				local upload = create_upload(assert(fs.get(SOURCE)), id, id, "stage source", owner)
+				upload.type_id = "app:types.failing"
+				upload.metadata = pipeline_metadata(owner)
+				local success, err, _, retriable = pipeline.process_upload(upload, {
+					progress = function()
+						return false, errors.new({ kind = errors.UNAVAILABLE, retryable = true, message = "progress refused" })
+					end,
+				})
+				test.is_false(success)
+				test.contains(tostring(err), "progress refused")
+				test.is_true(retriable)
+				remove(assert(fs.get(SOURCE)), id)
+				records.delete(id)
+			end)
+
 			test.it("passes committed relocation values to later stages", function()
 				local source = assert(fs.get(SOURCE))
 				local destination = assert(fs.get(DESTINATION))
@@ -783,9 +801,21 @@ return {
 					})
 				))
 				db:release()
-				local success, pipeline_err, processed = pipeline.process_upload(upload)
+				local reported = {}
+				local success, pipeline_err, processed = pipeline.process_upload(upload, {
+					progress = function(stage)
+						reported[#reported + 1] = stage
+						return true, nil
+					end,
+				})
 				test.is_nil(pipeline_err, tostring(pipeline_err))
 				test.is_true(success)
+				-- Each completed stage reports progress to the processing job.
+				local stages = assert(upload_type.get_pipeline(upload.type_id))
+				test.eq(#stages, #reported)
+				for index, stage in ipairs(stages) do test.eq(stage.title, reported[index]) end
+				test.eq("Relocate test stage", reported[1])
+				test.eq("Observe relocation stage", reported[2])
 				test.eq(original_target, processed.storage_path)
 				local persisted = assert(queries.get(upload_id))
 				test.eq(original_target, persisted.storage_path)

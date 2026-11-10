@@ -19,6 +19,7 @@ entries:
     imports:
       test: wippy.test:test
       pipeline: kickside.uploads:pipeline
+      upload_type: kickside.uploads:upload_type
       upload_record_repo: kickside.uploads.persist:upload_record_repo
       upload_query_repo: kickside.uploads.persist:upload_query_repo
       artifact_content_repo: kickside.uploads.persist:artifact_content_repo

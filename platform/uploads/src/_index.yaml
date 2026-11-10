@@ -308,7 +308,7 @@ entries:
     kind: registry.entry
     meta:
       type: kickside.settings:definition
-      comment: Hard wall-clock ceiling for one upload processing attempt; the supervising job worker terminates a run that exceeds it.
+      comment: Ceiling for one upload processing attempt without progress; each completed stage or stage batch renews it, and the supervising job worker terminates a run that exceeds it.
     namespace: kickside.uploads
     key: process_max_execution_ms
     value_type: int
@@ -316,7 +316,7 @@ entries:
     title: Processing time limit (ms)
     category: Limits
     order: 20
-    description: Maximum milliseconds a single upload processing attempt (conversion + OCR) may run before the job worker terminates it and retries.
+    description: Maximum milliseconds an upload processing attempt may run without progress before the job worker terminates it and retries. Each completed stage, rendered page batch and transcribed page batch counts as progress.
     scope: global
     editable: true
     visible: true

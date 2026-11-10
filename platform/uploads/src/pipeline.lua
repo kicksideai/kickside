@@ -399,6 +399,9 @@ function pipeline_lib.process_upload(upload, opts)
     end
     opts = type(opts) == "table" and opts or {}
     local should_continue = type(opts.should_continue) == "function" and opts.should_continue or nil
+    -- progress(stage_title) -> (ok, err) reports each completed stage to the
+    -- processing job, so an attempt that keeps completing stages continues.
+    local progress = type(opts.progress) == "function" and opts.progress or nil
     local cancel_ref = type(opts.cancel_ref) == "table" and opts.cancel_ref or nil
 
     -- Check if upload has a type_id
@@ -549,6 +552,17 @@ function pipeline_lib.process_upload(upload, opts)
             else
                 -- Update local copy of metadata
                 upload.metadata = merged_metadata
+            end
+        end
+
+        if not reported_error and progress then
+            local reported, progress_err = progress(stage_title)
+            if not reported then
+                local source = progress_err or errors.new({ message = "upload progress report failed",
+                    kind = errors.INTERNAL, retryable = true })
+                local retryable = nil
+                if type(source) == "userdata" then retryable = (source :: error):retryable() end
+                return false, stage_error(stage_title, processor_id, source), nil, retryable
             end
         end
 

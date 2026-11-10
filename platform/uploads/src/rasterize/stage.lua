@@ -6,6 +6,7 @@ local artifact_content_repo = require("artifact_content_repo")
 local artifact_parts_repo = require("artifact_parts_repo")
 local rasterizer = require("rasterizer")
 local page_images = require("page_images")
+local jobs = require("jobs")
 
 -- Render sparse pages for OCR, retaining usable text pages. A complete set of
 -- extracted page images serves as the existing no-render path for image PDFs.
@@ -105,6 +106,15 @@ local function store_page(params: any, page: any, fmt: string, source_id: string
     return err
 end
 
+-- Report rendering progress to the processing job so a long render continues.
+local function report_progress(params: any): string?
+    local ref = type(params.cancel_ref) == "table" and params.cancel_ref or nil
+    if not ref or type(ref.job_id) ~= "string" or ref.job_id == "" then return nil end
+    local _, err = jobs.report_progress(ref.job_id, { token = ref.lease_token, execution_seq = ref.execution_seq })
+    if err then return tostring(err) end
+    return nil
+end
+
 local function render_call(entry: any, ref: any, pages: { integer }, opts: any): ({ any }?, string?)
     local res, call_err = funcs.call(entry.processor_func :: string, {
         ref = ref,
@@ -126,7 +136,7 @@ end
 -- Render the selected pages in batches. A failed batch is rendered page by page,
 -- so every page that cannot render is reported with its own error while the
 -- other pages still render. Returns the rendered count, the page failures and
--- a storage error that fails the stage.
+-- an infrastructure error (storing or progress) that fails the stage.
 local function render_pages(params: any, entry: any, ref: any, selected: { integer }, opts: any, source_id: string?, markdown_id: string?): (integer, { any }, string?)
     local rendered = 0
     local failures: { any } = {}
@@ -161,6 +171,9 @@ local function render_pages(params: any, entry: any, ref: any, selected: { integ
                 end
             end
         end
+        local progress_err = report_progress(params)
+        if progress_err then return rendered, failures, progress_err end
+
         page = last + 1
     end
     return rendered, failures, nil

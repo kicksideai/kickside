@@ -50,6 +50,18 @@ local function ensure_running(job: any): (boolean, string?)
     return true, nil
 end
 
+-- Report execution progress to the job, renewing its execution ceiling.
+local function report_progress(job: any): (boolean, any?)
+    if type(job) ~= "table" or tostring(job.id or "") == "" or tostring(job.lease_token or "") == "" then
+        return true, nil
+    end
+    local _, err = jobs.report_progress(tostring(job.id), {
+        token = tostring(job.lease_token), execution_seq = tonumber(job.execution_seq),
+    })
+    if err then return false, err end
+    return true, nil
+end
+
 local function upload_event(upload: any, etype: string, body: any, trace_context: any?): table
     return {
         type = etype,
@@ -168,6 +180,9 @@ local function run(input: any): (any, any?)
             final_attempt = is_final_attempt(job),
             should_continue = function(_phase)
                 return ensure_running(job)
+            end,
+            progress = function(_stage)
+                return report_progress(job)
             end,
             -- Carry the job lease so heavy stages (OCR) can observe cancellation
             -- between their own internal batches, not only between pipeline stages.

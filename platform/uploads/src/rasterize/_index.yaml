@@ -36,6 +36,7 @@ entries:
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
       rasterizer: kickside.uploads.rasterize:rasterizer
       page_images: kickside.uploads.rasterize:page_images
+      jobs: kickside.core.jobs:jobs
     pool:
       type: static
       size: 4
