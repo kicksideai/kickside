@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 -->
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted } from 'vue'
 import { getLayoutManager, on } from '@wippy-fe/proxy'

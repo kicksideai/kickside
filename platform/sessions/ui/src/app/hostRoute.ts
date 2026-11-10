@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 // Route and layout helpers shared by the two host-realm coordinators
 // (ArtifactCoordinator and ChatCoordinator). Pure functions: no host access,
 // so both read the same facts the same way.

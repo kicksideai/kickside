@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 // The host `chat` panel is a drawer on a narrow screen and a column on a wide
 // one. The shell only cares about the drawer: an open chat drawer and the
 // shell's own mobile drawers must not be open together.
