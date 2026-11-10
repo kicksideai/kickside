@@ -18,9 +18,30 @@ local function sorted_by_ordinal(list: { any }): { any }
     return list :: { any }
 end
 
+-- Derived images belong to the primary document's source revision. Historical
+-- source artifacts remain addressable when an upload's bytes are replaced.
+local function document_artifacts(upload_id: string): { any }
+    local artifacts = artifact_parts_repo.list_artifacts(upload_id) or {}
+    local source_id
+    for _, artifact in ipairs(artifacts) do
+        if artifact.role == "primary" and artifact.parent_artifact_id then
+            source_id = artifact.parent_artifact_id
+            break
+        end
+    end
+    if not source_id then return artifacts end
+    local current = {}
+    for _, artifact in ipairs(artifacts) do
+        if not artifact.parent_artifact_id or artifact.parent_artifact_id == source_id then
+            current[#current + 1] = artifact
+        end
+    end
+    return current
+end
+
 -- Rendered-page screenshots produced by the rasterizer.
 function M.rendered(upload_id: string): { any }
-    local artifacts = artifact_parts_repo.list_artifacts(upload_id) or {}
+    local artifacts = document_artifacts(upload_id)
     local out = {}
     for _, a in ipairs(artifacts) do
         if a.kind == "image" and a.role == "rendered-page" then out[#out + 1] = a end
@@ -32,7 +53,7 @@ end
 -- inline figure). Byte size is the page-size proxy: a scanned page is substantial,
 -- decorations are not. When in doubt the set is smaller, so the rasterizer renders.
 function M.extracted_pages(upload_id: string, min_bytes: integer): { any }
-    local artifacts = artifact_parts_repo.list_artifacts(upload_id) or {}
+    local artifacts = document_artifacts(upload_id)
     local counts = {}
     for _, a in ipairs(artifacts) do
         local page = type(a.metadata) == "table" and tonumber(a.metadata.page) or nil
@@ -91,7 +112,7 @@ function M.page_set(upload_id: string, min_bytes: integer): ({ any }, string)
     local extracted = M.extracted_pages(upload_id, min_bytes)
     local numbered = M.numbered_images(extracted)
     local legacy = true
-    for _, artifact in ipairs(artifact_parts_repo.list_artifacts(upload_id) or {}) do
+    for _, artifact in ipairs(document_artifacts(upload_id)) do
         if artifact.kind == "image" and artifact.role == "extracted-image"
             and type(artifact.metadata) == "table" and artifact.metadata.page ~= nil then legacy = false; break end
     end
