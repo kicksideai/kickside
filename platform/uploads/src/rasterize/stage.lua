@@ -144,7 +144,7 @@ local function process(params: any): any
     -- A universal best-effort stage must never fail the upload: malformed params is a
     -- no-op, not a throw (which the pipeline would record as a failed upload).
     if type(params) ~= "table" or type(params.upload_id) ~= "string" then
-        return { success = true }
+        return { success = true, completed = false }
     end
     local upload_id = params.upload_id :: string
 
@@ -161,7 +161,7 @@ local function process(params: any): any
 
     local max_text = setting_int("rasterize_max_text_bytes", page_images.DEFAULT_MAX_TEXT_BYTES_PER_PAGE)
     local primary, primary_err = artifact_parts_repo.read_primary_content(upload_id)
-    if primary_err or type(primary) ~= "table" then return { success = true } end
+    if primary_err or type(primary) ~= "table" then return { success = true, completed = false } end
 
     local source_id = type(primary.artifact) == "table" and primary.artifact.parent_artifact_id or source_artifact_id(upload_id)
     local markdown_id = type(primary.artifact) == "table" and primary.artifact.artifact_id or nil
@@ -171,9 +171,10 @@ local function process(params: any): any
     local count_res, count_err = funcs.call(entry.processor_func :: string, { ref = ref, count_only = true })
     if count_err ~= nil or type(count_res) ~= "table" or type(count_res.ok) ~= "table" then
         log:warn("rasterize page count failed", { upload_id = upload_id, error = tostring(count_err) })
-        return { success = true }
+        return { success = true, completed = false }
     end
-    local total = tonumber(count_res.ok.total) or 0
+    local total = tonumber(count_res.ok.total)
+    if not total then return {success = true, completed = false} end
     if total < 1 then return { success = true } end
     local text_pages = page_images.text_pages(primary.content, primary.metadata and primary.metadata.ocr_page_outcomes)
     local selected: { integer } = {}
@@ -233,7 +234,6 @@ local function process(params: any): any
     local rendered, render_err = render_pages(params, entry, ref, selected, opts, source_id, markdown_id)
     if render_err ~= nil then
         log:warn("rasterize render failed", { upload_id = upload_id, rendered = rendered, total = total, error = render_err })
-        if rendered == 0 then return { success = true } end
     end
 
     log:info("rasterized empty document", {
@@ -241,7 +241,13 @@ local function process(params: any): any
         format = opts.format, rasterizer = entry.id, reason = ocr_reason,
     })
 
-    return { success = true, metadata = { rendered_page_count = rendered, rasterize_reason = ocr_reason } }
+    local completed = render_err == nil
+    local stored = page_images.numbered_images(page_images.rendered(upload_id))
+    for _, page in ipairs(selected) do
+        if not stored[page] then completed = false end
+    end
+    return { success = true, completed = completed,
+        metadata = { rendered_page_count = rendered, rasterize_reason = ocr_reason } }
 end
 
 return { process = process }

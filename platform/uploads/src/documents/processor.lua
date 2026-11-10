@@ -234,37 +234,29 @@ local function process(params: any): any
     end
     local source_artifact_id = source_artifact.artifact_id :: string
 
-    local markdown_artifact, artifact_err = artifact_parts_repo.get_primary_content_artifact(upload_id)
-    if artifact_err and not errors.is(artifact_err, errors.NOT_FOUND) then
-        error("failed to load markdown artifact: " .. tostring(artifact_err))
-    end
-    -- The immutable source artifact identifies this conversion's input. Retain
-    -- enrichment written by later stages when conversion re-enters for that input.
-    if not markdown_artifact or markdown_artifact.parent_artifact_id ~= source_artifact_id then
-        markdown_artifact, artifact_err = artifact_content_repo.upsert_artifact({
-            upload_id = upload_id,
-            cancel_ref = params.cancel_ref,
-            parent_artifact_id = source_artifact_id,
-            kind = "markdown",
-            role = "primary",
-            mime_type = "text/markdown",
-            label = metadata.filename or metadata.original_filename or "converted.md",
-            ordinal = 1,
-            content = document.markdown,
-            storage_id = storage_id,
-            blob_metadata = {
-                source = "doc2md",
-                original_upload_id = upload_id,
-                original_mime_type = params.mime_type,
-                source_artifact_id = source_artifact_id,
-            },
-            locator = {
-                type = "document.markdown",
-                source_artifact_id = source_artifact_id,
-            },
-            metadata = metadata,
-        })
-    end
+    local markdown_artifact, artifact_err = artifact_content_repo.upsert_artifact({
+        upload_id = upload_id,
+        cancel_ref = params.cancel_ref,
+        parent_artifact_id = source_artifact_id,
+        kind = "markdown",
+        role = "primary",
+        mime_type = "text/markdown",
+        label = metadata.filename or metadata.original_filename or "converted.md",
+        ordinal = 1,
+        content = document.markdown,
+        storage_id = storage_id,
+        blob_metadata = {
+            source = "doc2md",
+            original_upload_id = upload_id,
+            original_mime_type = params.mime_type,
+            source_artifact_id = source_artifact_id,
+        },
+        locator = {
+            type = "document.markdown",
+            source_artifact_id = source_artifact_id,
+        },
+        metadata = metadata,
+    })
     if artifact_err or not markdown_artifact then
         error("failed to store markdown artifact: " .. tostring(artifact_err))
     end

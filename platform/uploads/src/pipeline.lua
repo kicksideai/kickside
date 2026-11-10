@@ -6,7 +6,6 @@ local logger = require("logger")
 local execution_identity = require("execution_identity")
 local jobs = require("jobs")
 local hash = require("hash")
-local json = require("json")
 local security = require("security")
 local funcs = require("funcs")
 local artifact_parts_repo = require("artifact_parts_repo")
@@ -389,19 +388,6 @@ function pipeline_lib.invoke_upload_token(upload, success, error_msg)
     return true, nil
 end
 
-local function pipeline_signature(upload, pipeline)
-    local source = upload.content_sha256
-    if type(source) ~= "string" or source == "" then
-        source = {storage_id = upload.storage_id, storage_path = upload.storage_path}
-    end
-    local definition, encode_err = json.encode({source = source, size = upload.size,
-        mime_type = upload.mime_type, type_id = upload.type_id, pipeline = pipeline})
-    if encode_err then return nil, encode_err end
-    local signature, hash_err = hash.sha256(definition)
-    if hash_err then return nil, hash_err end
-    return signature, nil
-end
-
 -- Process a single upload using funcs library. Execution authority lives in
 -- kickside_job; this function only runs stages and updates upload artifacts.
 function pipeline_lib.process_upload(upload, opts)
@@ -445,12 +431,12 @@ function pipeline_lib.process_upload(upload, opts)
         return false, error_msg
     end
 
-    -- A successful no-output stage also needs a durable outcome.
-    local signature, signature_err = pipeline_signature(upload, pipeline)
-    if signature_err then return false, signature_err end
+    -- Automatic attempts share the job identity; a new job starts every stage.
+    -- No-output stages need the same durable completion outcome as artifact stages.
+    local job_id = cancel_ref and cancel_ref.job_id
     local outcome = type(upload.metadata) == "table" and upload.metadata.__pipeline or nil
     local completed = 0
-    if type(outcome) == "table" and outcome.signature == signature then
+    if job_id and type(outcome) == "table" and outcome.job_id == job_id then
         completed = tonumber(outcome.completed) or 0
     end
 
@@ -517,6 +503,7 @@ function pipeline_lib.process_upload(upload, opts)
                 end
             end
 
+            local stage_completed = result.completed ~= false
             local reported_error: string? = nil
             local retriable = true
             if result.success == false then
@@ -525,6 +512,7 @@ function pipeline_lib.process_upload(upload, opts)
             else
                 local reported_key, reported_code, reported_text = transcription_error(result.metadata)
                 if reported_key then
+                    stage_completed = false
                     reported_error = reported_key .. ": " .. tostring(reported_code)
                     retriable = not TRANSCRIPTION_PERMANENT_ERRORS[reported_code]
                     if reported_text ~= reported_code then
@@ -556,16 +544,13 @@ function pipeline_lib.process_upload(upload, opts)
                     return false, stage_error(stage_title, processor_id, source), nil, retryable
                 end
                 upload = relocated
-                if result.relocation then
-                    signature, signature_err = pipeline_signature(upload, pipeline)
-                    if signature_err then return false, signature_err end
-                end
             end
 
             local merged_metadata = pipeline_lib.merge_metadata(upload.metadata or {}, result.metadata or {})
-            if not reported_error then
-                merged_metadata.__pipeline = {signature = signature, completed = i}
+            if not reported_error and stage_completed and i == completed + 1 then
+                completed = i
             end
+            merged_metadata.__pipeline = job_id and {job_id = job_id, completed = completed} or nil
             local _, metadata_err = upload_record_repo.update_metadata(upload.uuid, merged_metadata, cancel_ref)
             if metadata_err then
                 return false, stage_error(stage_title, processor_id, "failed to persist document metadata: " .. tostring(metadata_err))

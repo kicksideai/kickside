@@ -353,7 +353,7 @@ entries:
     meta:
       comment: Library for upload processing pipeline functions.
     source: file://pipeline.lua
-    modules: [logger, hash, json, security, funcs]
+    modules: [logger, hash, security, funcs]
     imports:
       upload_record_repo: kickside.uploads.persist:upload_record_repo
       upload_type: kickside.uploads:upload_type

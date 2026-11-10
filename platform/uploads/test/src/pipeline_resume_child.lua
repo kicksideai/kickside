@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local pipeline = require("pipeline")
 local upload_type = require("upload_type")
 local query = require("query")
@@ -51,7 +52,7 @@ local function main(input)
             return {success = true}
         end}
     end
-    local ok, err = pipeline.process_upload(upload)
+    local ok, err = pipeline.process_upload(upload, {cancel_ref = input.cancel_ref})
     assert(ok, tostring(err))
     assert(process.send(input.parent, input.topic, {completed = true}))
 end

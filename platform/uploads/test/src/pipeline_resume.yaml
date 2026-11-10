@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 version: '1.0'
 namespace: app
 entries:
@@ -6,7 +7,7 @@ entries:
     source: file://pipeline_resume_test.lua
     method: run
     meta: {type: test, suite: pipeline_resume}
-    modules: [uuid, process, channel, time, fs, funcs]
+    modules: [uuid, process, channel, time, fs, funcs, sql, contract]
     imports:
       test: wippy.test:test
       pipeline: kickside.uploads:pipeline
@@ -16,6 +17,11 @@ entries:
       content: kickside.uploads.persist:artifact_content_repo
       parts: kickside.uploads.persist:artifact_parts_repo
       fixtures: app:rasterize_fixtures
+      upload_lib: kickside.uploads:uploads
+      process_worker: kickside.uploads.service:process_worker
+      jobs: kickside.core.jobs:jobs
+      claim: kickside.core.jobs.persist:claim
+      page_images: kickside.uploads.rasterize:page_images
   - name: pipeline_resume_child
     kind: process.lua
     source: file://pipeline_resume_child.lua
@@ -27,3 +33,13 @@ entries:
       query: kickside.uploads.persist:upload_query_repo
       content: kickside.uploads.persist:artifact_content_repo
       parts: kickside.uploads.persist:artifact_parts_repo
+  - name: pipeline_resume_renderer
+    kind: function.lua
+    source: file://pipeline_resume_renderer.lua
+    method: render
+    modules: [fs]
+  - name: pipeline_resume_rasterizer
+    kind: registry.entry
+    meta: {type: convert.rasterizer}
+    input_mime_types: [application/x-upload-resume-test]
+    processor_func: app:pipeline_resume_renderer
