@@ -235,8 +235,12 @@ end
 
 -- Lock the owning attempt through the artifact write. A lease check before
 -- inference cannot fence a checkpoint produced after that attempt loses ownership.
-local function write_artifact(db, query, ref)
-    if ref == nil then return query:run_with(db):exec() end
+function artifact_content_repo.write_fenced(db, query, ref)
+    local function execute(target)
+        if type(query) == "function" then return query(target) end
+        return query:run_with(target):exec()
+    end
+    if ref == nil then return execute(db) end
     if type(ref) ~= "table" or type(ref.job_id) ~= "string" or ref.job_id == ""
         or type(ref.lease_token) ~= "string" or ref.lease_token == ""
         or type(ref.execution_seq) ~= "number" then
@@ -258,14 +262,14 @@ local function write_artifact(db, query, ref)
         tx:rollback()
         return nil, fence_err or typed(errors.CONFLICT, "artifact write loses job lease")
     end
-    local result, write_err = query:run_with(tx):exec()
+    local result, write_err = execute(tx)
     if write_err then tx:rollback(); return nil, write_err end
     local _, commit_err = tx:commit()
     if commit_err then return nil, commit_err end
     return result, nil
 end
 
-function artifact_content_repo.create_artifact(args)
+local function store_artifact(args, replace)
     args = args or {}
     local schema_ok, schema_err = artifact_schema.validate_artifact_args(args)
     if not schema_ok then return nil, schema_err end
@@ -340,7 +344,24 @@ function artifact_content_repo.create_artifact(args)
             updated_at = timestamp,
         })
 
-    local _, insert_err = write_artifact(db, query, args.cancel_ref)
+    local _, insert_err = artifact_content_repo.write_fenced(db, function(target)
+        if replace then
+            local existing, find_err = sql.builder.select("artifact_id", "created_at")
+                :from("kickside_upload_artifacts")
+                :where("upload_id = ? AND role = ? AND ordinal = ?", args.upload_id, args.role, tonumber(args.ordinal) or 0)
+                :order_by("created_at ASC, artifact_id ASC"):limit(1):run_with(target):query()
+            if find_err then return nil, find_err end
+            if #existing > 0 then
+                artifact_id = existing[1].artifact_id
+                query = sql.builder.update("kickside_upload_artifacts"):set_map({
+                    parent_artifact_id = nullable(args.parent_artifact_id), blob_id = nullable(blob_id),
+                    checksum = nullable(checksum), kind = args.kind, mime_type = mime_type,
+                    label = nullable(args.label), locator = locator_json, metadata = metadata_json, updated_at = timestamp,
+                }):where("upload_id = ? AND artifact_id = ?", args.upload_id, artifact_id)
+            end
+        end
+        return query:run_with(target):exec()
+    end, args.cancel_ref)
     db:release()
     if insert_err then return nil, "failed to create artifact: " .. tostring(insert_err) end
 
@@ -360,6 +381,19 @@ function artifact_content_repo.create_artifact(args)
         created_at = timestamp,
         updated_at = timestamp,
     }
+end
+
+function artifact_content_repo.create_artifact(args)
+    return store_artifact(args, false)
+end
+
+-- A processing stage owns one artifact per role and ordinal (page/image index).
+-- Re-entering it retains the artifact id and replaces its content and provenance.
+function artifact_content_repo.upsert_artifact(args)
+    if type(args) ~= "table" or type(args.role) ~= "string" or args.role == "" then
+        return nil, "role is required for an idempotent artifact write"
+    end
+    return store_artifact(args, true)
 end
 
 -- Replace an artifact's content: stores a new (dedup-aware) blob and repoints the
@@ -404,7 +438,7 @@ function artifact_content_repo.update_content(upload_id, artifact_id, content, o
         :set_map(updates)
         :where("artifact_id = ?", artifact_id)
         :where("upload_id = ?", upload_id)
-    local _, update_err = write_artifact(db, query, options.cancel_ref)
+    local _, update_err = artifact_content_repo.write_fenced(db, query, options.cancel_ref)
     db:release()
     if update_err then return nil, "failed to update artifact content: " .. tostring(update_err) end
     if type(artifact.blob_id) == "string" and artifact.blob_id ~= "" and artifact.blob_id ~= blob.blob_id then

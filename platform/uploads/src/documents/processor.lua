@@ -3,6 +3,7 @@ local env = require("env")
 local hash = require("hash")
 local contract = require("contract")
 local artifact_content_repo = require("artifact_content_repo")
+local artifact_parts_repo = require("artifact_parts_repo")
 local doc2md = require("doc2md")
 
 local ENV_DOCUMENT_IMAGE_ARTIFACTS_ENABLED = "kickside.uploads.documents:env.document_image_artifacts_enabled"
@@ -99,14 +100,22 @@ local function checksum_for(bytes: string): string
     return checksum
 end
 
-local function create_source_artifact(upload_id: string, params: any, checksum: string, metadata: any): (any, string?)
+type ArtifactError = string | error
+
+local function create_source_artifact(upload_id: string, params: any, checksum: string, metadata: any): (any, ArtifactError?)
     local storage_id = params.storage_id :: string
     local storage_path = params.storage_path :: string
     local label = metadata.original_filename or metadata.filename or storage_path
     local mime_type = params.mime_type or "application/octet-stream"
 
+    local artifacts, list_err = artifact_parts_repo.list_artifacts(upload_id)
+    if list_err then return nil, list_err end
+    for _, artifact in ipairs(artifacts) do
+        if artifact.role == "source" and artifact.checksum == checksum then return artifact, nil end
+    end
     return artifact_content_repo.create_artifact({
         upload_id = upload_id,
+        cancel_ref = params.cancel_ref,
         kind = "file",
         role = "source",
         mime_type = mime_type,
@@ -225,8 +234,9 @@ local function process(params: any): any
     end
     local source_artifact_id = source_artifact.artifact_id :: string
 
-    local markdown_artifact, artifact_err = artifact_content_repo.create_artifact({
+    local markdown_artifact, artifact_err = artifact_content_repo.upsert_artifact({
         upload_id = upload_id,
+        cancel_ref = params.cancel_ref,
         parent_artifact_id = source_artifact_id,
         kind = "markdown",
         role = "primary",
@@ -262,8 +272,9 @@ local function process(params: any): any
     for index, image in ipairs(document.images or {}) do
         local metadata = image_metadata(upload_id, index, image, source_artifact_id, markdown_artifact_id)
         metadata.image_count = page_resources[image.page]
-        local artifact, image_err = artifact_content_repo.create_artifact({
+        local artifact, image_err = artifact_content_repo.upsert_artifact({
             upload_id = upload_id,
+            cancel_ref = params.cancel_ref,
             parent_artifact_id = source_artifact_id,
             kind = "image",
             role = "extracted-image",
