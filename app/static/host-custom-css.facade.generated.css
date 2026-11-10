@@ -70,10 +70,19 @@
 }
 
 /* px sizes of the chat, divided by the zoom: the side padding of the message list
-   and the meta row (10px), the composer's upload list height (200px) and the
-   width of an attached file (230px). */
+   and the meta row (10px), the composer's upload list height (200px), the
+   width of an attached file (230px) and the focus ring width and offset. */
 :where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container {
   --wippy-host-chat-padding-x: calc(10px / 0.8125);
+  --kickside-chat-focus-ring-width: calc(var(--p-focus-ring-width) / 0.8125);
+  --kickside-chat-focus-ring-offset: calc(var(--p-focus-ring-offset) / 0.8125);
+}
+/* The zoom draws a 2px ring 1.625px wide, and Chrome draws that as 1px. The
+   zoomed body reads the ring tokens divided above, on the container, because a
+   custom property cannot be set from its own value. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container > :not(.session-selector, .chat-container__header-actions) {
+  --p-focus-ring-width: var(--kickside-chat-focus-ring-width);
+  --p-focus-ring-offset: var(--kickside-chat-focus-ring-offset);
 }
 :where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container.chat-container .chat-input__upload-list {
   max-height: calc(200px / 0.8125);
