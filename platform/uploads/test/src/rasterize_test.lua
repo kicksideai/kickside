@@ -6,10 +6,13 @@ local security = require("security")
 local artifact_content_repo = require("artifact_content_repo")
 local artifact_parts_repo = require("artifact_parts_repo")
 local upload_record_repo = require("upload_record_repo")
+local upload_query_repo = require("upload_query_repo")
 local rasterizer = require("rasterizer")
 local fixtures = require("fixtures")
 local page_images = require("page_images")
 local contract = require("contract")
+local json = require("json")
+local time = require("time")
 
 local STORAGE_ID = "app:uploads"
 -- Synthetic image-only PDF (no text layer, no embedded fonts): doc2md extracts no
@@ -100,14 +103,36 @@ local function rendered_pages(upload_id: string): { any }
     return out :: { any }
 end
 
-local function run_stage(upload_id: string, mime: string, size: any?): any
+local function run_stage(upload_id: string, mime: string, size: any?, path: string?): any
     local result, err = executor("user-raster"):call(RASTERIZE_STAGE, {
         upload_id = upload_id, mime_type = mime,
-        storage_id = STORAGE_ID, storage_path = FIXTURE_PATH,
+        storage_id = STORAGE_ID, storage_path = path or FIXTURE_PATH,
         size = size ~= nil and size or FIXTURE_SIZE,
     })
     test.is_nil(err)
     return result
+end
+
+local SCRIPTED_MIME = "application/x-scripted-pdf"
+local PRIVATE_ERROR = "cannot open /private/renderer/input.pdf\nstack traceback:\n renderer.lua:42"
+local function scripted_document(config: any): string
+    local path = uuid_v4() .. ".json"
+    local written, err = assert(fs.get(STORAGE_ID)):writefile(path, assert(json.encode(config)))
+    test.is_nil(err)
+    test.is_true(written)
+    return path
+end
+
+local function script_state(path: string): any
+    return assert(json.decode(assert(assert(fs.get(STORAGE_ID)):readfile(path))))
+end
+
+local function save_stage_metadata(upload_id: string, result: any): any
+    local upload = assert(upload_query_repo.get(upload_id))
+    for key, value in pairs(result.metadata or {}) do upload.metadata[key] = value end
+    local _, err = upload_record_repo.update_metadata(upload_id, upload.metadata)
+    test.is_nil(err)
+    return assert(upload_query_repo.get(upload_id)).metadata
 end
 
 local function define_tests()
@@ -224,6 +249,116 @@ local function define_tests()
             test.eq(#page_images.page_set(upload_id, 51200), 0)
         end)
 
+        test.it("renders the other pages and reports each page that fails to render", function()
+            local flaky = "application/x-kickside-flaky-pdf"
+            local upload_id = seed_document(flaky, "")
+            local result = run_stage(upload_id, flaky)
+            test.is_true(result.success)
+            test.eq(result.metadata.rendered_page_count, 2)
+            local failures = result.metadata.rasterize_failures
+            test.not_nil(failures)
+            test.eq(#failures, 1)
+            test.eq(failures[1].page, 2)
+            test.eq(failures[1].error, "Unable to render document pages.")
+            test.eq(failures[1].code, "render_failed")
+            local images = rendered_pages(upload_id)
+            test.eq(#images, 2)
+            test.eq(images[1].metadata.page, 1)
+            test.eq(images[2].metadata.page, 3)
+        end)
+
+        test.it("reports one document failure when the renderer refuses every page", function()
+            local upload_id = seed_document("application/pdf", "")
+            local settings = assert(assert(contract.get("kickside.settings:settings")):open())
+            test.is_true(settings:set({namespace = "kickside.uploads.rasterize", key = "rasterize_format", value = "invalid"}).success)
+            local result = run_stage(upload_id, "application/pdf")
+            test.is_true(settings:set({namespace = "kickside.uploads.rasterize", key = "rasterize_format", value = "jpeg"}).success)
+            test.is_true(result.success)
+            test.eq(result.metadata.rendered_page_count, 0)
+            test.eq(#result.metadata.rasterize_failures, 1)
+            test.is_nil(result.metadata.rasterize_failures[1].page)
+            test.not_nil(result.metadata.rasterize_failures[1].error)
+        end)
+
+        test.it("bounds a document-wide failure to one batch and its individual pages", function()
+            local path = scripted_document({ total = 16, fail_all = true,
+                failure = { code = "renderer_unavailable", kind = "unavailable", message = PRIVATE_ERROR } })
+            local upload_id = seed_document(SCRIPTED_MIME, "")
+            local started = time.now():unix_nano()
+            local result = run_stage(upload_id, SCRIPTED_MIME, nil, path)
+            test.is_true(time.now():unix_nano() - started < 5 * time.SECOND)
+            test.is_true(result.success)
+            test.eq(result.metadata.rendered_page_count, 0)
+            test.eq(#script_state(path).calls, 10) -- Count, batch, then eight individual pages.
+            local failures = result.metadata.rasterize_failures
+            test.eq(#failures, 1)
+            test.is_nil(failures[1].page)
+            test.eq(failures[1].code, "renderer_unavailable")
+            test.eq(failures[1].kind, "unavailable")
+            test.eq(failures[1].error, "Unable to render document pages.")
+        end)
+
+        test.it("keeps private renderer text out of count and render failures", function()
+            for _, failure in ipairs({ PRIVATE_ERROR, { code = "bad_document", kind = "invalid", message = PRIVATE_ERROR },
+                { code = PRIVATE_ERROR, kind = PRIVATE_ERROR, message = PRIVATE_ERROR } }) do
+                for _, count_error in ipairs({ false, true }) do
+                    local path = scripted_document({ total = 1, fail_all = true, count_error = count_error, failure = failure })
+                    local result = run_stage(seed_document(SCRIPTED_MIME, ""), SCRIPTED_MIME, nil, path)
+                    test.is_true(result.success)
+                    local reported = result.metadata.rasterize_failures[1]
+                    test.eq(reported.error, count_error and "Unable to count document pages." or "Unable to render document pages.")
+                    local expected = type(failure) == "table" and failure.code == "bad_document" and "bad_document"
+                        or (count_error and "page_count_failed" or "render_failed")
+                    test.eq(reported.code, expected)
+                    test.is_nil((assert(json.encode(result.metadata)):find("private", 1, true)))
+                    test.is_nil((assert(json.encode(result.metadata)):find("stack", 1, true)))
+                end
+            end
+            for _, count_error in ipairs({ false, true }) do
+                local path = scripted_document({ total = 1, fail_all = true, count_error = count_error,
+                    throw = true, failure = PRIVATE_ERROR })
+                local result = run_stage(seed_document(SCRIPTED_MIME, ""), SCRIPTED_MIME, nil, path)
+                test.eq(result.metadata.rasterize_failures[1].error,
+                    count_error and "Unable to count document pages." or "Unable to render document pages.")
+            end
+        end)
+
+        test.it("continues rescuing pages across batches after partial render success", function()
+            local path = scripted_document({ total = 16, fail_pages = { 2, 10 }, failure = "page cannot render" })
+            local upload_id = seed_document(SCRIPTED_MIME, "")
+            local result = run_stage(upload_id, SCRIPTED_MIME, nil, path)
+            test.is_true(result.success)
+            test.eq(result.metadata.rendered_page_count, 14)
+            test.eq(#result.metadata.rasterize_failures, 2)
+            test.eq(result.metadata.rasterize_failures[1].page, 2)
+            test.eq(result.metadata.rasterize_failures[2].page, 10)
+            test.eq(#rendered_pages(upload_id), 14)
+        end)
+
+        test.it("clears recorded failures on every clean reconciliation skip", function()
+            for _, skip in ipairs({ "nothing_missing", "no_selected_pages", "extracted_coverage", "no_pages" }) do
+                local markdown = skip == "no_selected_pages" and string.rep("Usable text. ", 1000) or ""
+                local upload_id = seed_document(SCRIPTED_MIME, markdown)
+                local failed_path = scripted_document({ total = 2, count_error = true, failure = PRIVATE_ERROR })
+                local failed = run_stage(upload_id, SCRIPTED_MIME, nil, failed_path)
+                test.eq(#save_stage_metadata(upload_id, failed).rasterize_failures, 1)
+                if skip == "nothing_missing" or skip == "extracted_coverage" then
+                    for page = 1, 2 do
+                        local _, err = artifact_content_repo.create_artifact({ upload_id = upload_id, kind = "image",
+                            role = skip == "nothing_missing" and "rendered-page" or "extracted-image",
+                            mime_type = "image/jpeg", ordinal = 2000 + page, content = string.rep("X", 60000),
+                            storage_id = STORAGE_ID, metadata = { page = page } })
+                        test.is_nil(err)
+                    end
+                end
+                local clean_path = scripted_document({ total = skip == "no_pages" and 0 or 2 })
+                local clean = run_stage(upload_id, SCRIPTED_MIME, nil, clean_path)
+                test.is_true(clean.success)
+                test.eq(#script_state(clean_path).calls, 1)
+                test.eq(save_stage_metadata(upload_id, clean).rasterize_failures, false)
+            end
+        end)
+
         test.it("renders only sparse marker-delimited pages with their original numbers", function()
             for _, sparse_page in ipairs({ 1, 2 }) do
                 local pages = {}
@@ -331,7 +466,7 @@ local function define_tests()
             local upload_id = seed_document("application/pdf", string.rep("real extracted text. ", 300))
             local result = run_stage(upload_id, "application/pdf")
             test.is_true(result.success)
-            test.is_nil(result.metadata)
+            test.eq(result.metadata.rasterize_failures, false)
             test.eq(#rendered_pages(upload_id), 0)
         end)
 
