@@ -77,6 +77,16 @@ local function enqueue_proc_and_claim(db: sql.DB, dbtype: string, thread_id: str
     })
 end
 
+-- Process a leased job as its execution child does: the child registers its
+-- execution name, through which progress reaches the proc supervisor.
+local function process_as_child(db: sql.DB, dbtype: string, job: table)
+    local name = proc_supervisor.child_name(tostring(job.id), tostring(job.lease_token))
+    local registered, register_err = process.registry.register(name, nil, process.registry.CONSISTENT)
+    if register_err or registered ~= true then error("child name registration failed: " .. tostring(register_err)) end
+    worker.process_job(db, dbtype, "test-pid-" .. uuid.v7(), job)
+    process.registry.unregister(name, process.registry.CONSISTENT)
+end
+
 local function thread_events_for(db: sql.DB, thread_id: string, event_type: string): { table }
     return sql.builder.select("type", "body", "trace_id", "run_id", "correlation_key")
         :from("kickside_event")
@@ -100,6 +110,46 @@ local function define_tests()
                 local run = latest_run(db, job.id)
                 test.not_nil(run)
                 test.eq(run.status, "completed")
+            end)
+        end)
+
+        test.it("keeps a proc running past max_execution while it reports progress", function()
+            with_db(function(db: sql.DB)
+                local dbtype = tostring(db:type())
+                local thread_id = make_thread(db)
+                -- 2.4s of work under a 1s ceiling, reporting progress every 300ms.
+                local job = enqueue_proc_and_claim(db, dbtype, thread_id, {
+                    max_execution_ms = 1000, progress_every_ms = 300, progress_count = 8,
+                })
+
+                process_as_child(db, dbtype, job :: table)
+
+                local run = latest_run(db, job.id)
+                test.not_nil(run)
+                test.eq(run.status, "completed")
+                test.eq(job_row(db, job.id).status, job_types.JOB_STATE.DONE)
+            end)
+        end)
+
+        test.it("ends a proc at max_execution measured from its latest progress", function()
+            with_db(function(db: sql.DB)
+                local dbtype = tostring(db:type())
+                local thread_id = make_thread(db)
+                -- Progress for 0.9s, then 3s without progress under a 1s ceiling.
+                local job = enqueue_proc_and_claim(db, dbtype, thread_id, {
+                    max_execution_ms = 1000, progress_every_ms = 300, progress_count = 3, sleep_ms = 3000,
+                })
+                local started = time.now()
+
+                process_as_child(db, dbtype, job :: table)
+
+                local elapsed_ms = (tonumber(time.now():sub(started):nanoseconds()) or 0) / 1000000
+                local run = latest_run(db, job.id)
+                test.not_nil(run)
+                test.eq(run.status, job_types.RUN_STATE.FAILED)
+                test.contains(tostring(run.error_text), dispatch.PROC_TIMEOUT_MARKER)
+                test.is_true(elapsed_ms >= 1800, "the ceiling restarts at the latest progress")
+                test.is_true(elapsed_ms < 3000, "the ceiling ends work that stops progressing")
             end)
         end)
 

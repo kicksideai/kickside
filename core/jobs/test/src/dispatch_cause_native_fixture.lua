@@ -15,6 +15,8 @@ function M.spawn_linked_monitored(...)
     return M.result("spawn", "child")
 end
 function M.events() return {} end
+function M.listen(...) return {} end
+function M.unlisten(...) return true end
 function M.wait_once(...) return {kind = "exit", result = {value = {ok = true, output = {result = {marker = "kept"}}}}} end
 function M.supervise_loop(hooks, pid, opts)
     local signal = hooks.wait()

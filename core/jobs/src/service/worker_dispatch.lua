@@ -149,9 +149,9 @@ local function unattributed_scope(): (any?, error?)
 end
 worker.unattributed_scope = unattributed_scope
 
--- Per-job hard execution ceiling in milliseconds: a payload override, else the
--- policy's proc.max_execution. Used to bound a supervised proc:// job's
--- wall-clock time.
+-- Per-job execution ceiling in milliseconds: a payload override, else the
+-- policy's proc.max_execution. It bounds a supervised job's wall-clock time
+-- since its start or its latest reported progress (jobs.report_progress).
 local function resolve_max_execution_ms(job: table, policy: any): (integer?, error?)
     local payload, decode_err = lifecycle.decode_payload(job.payload)
     if decode_err then return nil, decode_err end
@@ -272,7 +272,8 @@ end
 worker.supervise_proc_loop = supervise_proc_loop
 
 -- Live supervision wiring: spawn the worker non-blocking under the worker
--- frame, then wait over process events and its hard max_execution deadline.
+-- frame, then wait over process events, execution progress and its
+-- max_execution deadline.
 -- The outer job supervisor owns committed revocations and the lease deadline.
 local function build_proc_hooks(db: sql.DB, dbtype: string, job: table, binding: table, run_id: string?, policy: any): (table?, error?)
     local input, context, input_err = build_worker_input(job)
@@ -285,6 +286,7 @@ local function build_proc_hooks(db: sql.DB, dbtype: string, job: table, binding:
     local host = trim(cfg.process_host())
     local child_pid = ""
     local events_ch: any = nil
+    local control_ch: any = nil
     local deadline: any = nil
 
     return {
@@ -292,6 +294,9 @@ local function build_proc_hooks(db: sql.DB, dbtype: string, job: table, binding:
             if host == "" then
                 return nil, (errors.new({ message = "proc:// job worker requires a process host", kind = errors.INVALID }) :: error)
             end
+            -- Listen before the target starts so its first progress report
+            -- reaches this supervisor.
+            control_ch = process.listen(proc_supervisor.CONTROL_TOPIC)
             local builder = process.with_context(context or {}):with_scope(scope)
             -- Link and monitor the proc target atomically: a separate link after
             -- spawn_monitored races a fast-exiting child (Topology.Link rejects
@@ -314,7 +319,19 @@ local function build_proc_hooks(db: sql.DB, dbtype: string, job: table, binding:
             process.terminate(pid)
         end,
         wait = function(): table
-            return proc_supervisor.wait_once(events_ch, deadline, child_pid)
+            local signal = proc_supervisor.wait_once(events_ch, deadline, child_pid, nil, control_ch)
+            if signal.kind ~= "control" then return signal end
+            local message = proc_supervisor.execution_control(signal.message, job.lease_token, job.execution_seq)
+            if message and message.kind == "progress" then
+                -- Reported progress measures the ceiling from now.
+                deadline = time.now():add((max_execution_ms :: integer) * time.MILLISECOND)
+                return { kind = "progress" }
+            end
+            return { kind = "other" }
+        end,
+        release = function(): ()
+            if control_ch then process.unlisten(control_ch) end
+            control_ch = nil
         end,
         wait_termination = function(grace_deadline: any): table
             return proc_supervisor.wait_once(events_ch, nil, child_pid, nil, nil, nil, grace_deadline)
@@ -341,10 +358,14 @@ local function run_supervised_proc(db: sql.DB?, dbtype: string, job: table, bind
         return nil, (errors.new({ message = "proc supervisor requires a spawn hook", kind = errors.INTERNAL }) :: error), nil
     end
     local child_pid, spawn_err = spawn()
+    local release = (hooks :: any).release
     if spawn_err or not child_pid then
+        if type(release) == "function" then release() end
         return nil, spawn_err or (errors.new({ message = "proc spawn returned no pid", kind = errors.INTERNAL }) :: error), nil
     end
-    return supervise_proc_loop(hooks, tostring(child_pid))
+    local output, err, control = supervise_proc_loop(hooks, tostring(child_pid))
+    if type(release) == "function" then release() end
+    return output, err, control
 end
 worker.run_supervised_proc = run_supervised_proc
 

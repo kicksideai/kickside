@@ -94,8 +94,8 @@ local function supervise_job_child(job: table, run_id: string?, heartbeat_pid: s
     end
     local hooks = {
         spawn = function(): (string?, error?)
-            -- The child learns the instant its execution ceiling ends, so its
-            -- work can finish with its own outcome before the ceiling.
+            -- The child learns the instant its execution ceiling ends unless it
+            -- reports progress, so its work can finish with its own outcome.
             local ceiling = time.now():add((max_execution_ms :: integer) * time.MILLISECOND)
             job.execution_deadline = ceiling:utc():format(time.RFC3339)
             local pid, err = process.spawn_linked_monitored("kickside.core.jobs.service:job_child", host, { job = job, run_id = run_id })
@@ -129,6 +129,12 @@ local function supervise_job_child(job: table, run_id: string?, heartbeat_pid: s
                 return { kind = "other" }
             end
             if message.kind == "revoked" then return { kind = "revoked" } end
+            if message.kind == "progress" then
+                -- Reported progress measures the ceiling from now: a progressing
+                -- execution continues, one without progress ends at its ceiling.
+                deadline = time.now():add((max_execution_ms :: integer) * time.MILLISECOND)
+                return { kind = "progress" }
+            end
             if message.kind == "lease_renewed" then
                 local renewed, parse_err = proc_supervisor.parse_deadline(message.lease_until)
                 if parse_err or not renewed then return { kind = "lease_expired" } end

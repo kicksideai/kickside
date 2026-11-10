@@ -17,6 +17,7 @@ local claim = require("claim")
 local error_envelope = require("error_envelope")
 local committed_error = require("committed_error")
 local sql_boundary = require("sql_boundary")
+local proc_supervisor = require("proc_supervisor")
 
 local runtime_policy = require("runtime_policy")
 local jobs = {}
@@ -225,6 +226,18 @@ function jobs.lease_valid(id: string, lease: table): (boolean?, error?)
         }, dbtype)
         return current == true, err
     end)
+end
+
+-- report_progress(id, lease) renews the running execution's ceiling: an
+-- execution that reports progress continues past proc.max_execution, measured
+-- from its latest report. Returns true when an execution owner received it.
+function jobs.report_progress(id: string, lease: table): (boolean?, error?)
+    if type(id) ~= "string" or id == "" or type(lease) ~= "table"
+        or type(lease.token) ~= "string" or lease.token == ""
+        or type(lease.execution_seq) ~= "number" then
+        return nil, (errors.new({ message = "report_progress requires a job id and lease fence", kind = errors.INVALID }) :: error)
+    end
+    return proc_supervisor.notify(id, lease.token, lease.execution_seq :: number, "progress", nil)
 end
 
 function jobs.wake_tx(tx: sql.Transaction, key: string, dbtype: string?): (table?, error?)

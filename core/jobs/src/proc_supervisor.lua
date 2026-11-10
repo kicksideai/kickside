@@ -71,7 +71,7 @@ end
 
 local CONTROL_TOPIC = "kickside.core.jobs:execution_control"
 local EXECUTION_SIGNAL = "kickside.core.jobs:execution_signal"
-local CONTROL_KINDS: { [string]: boolean } = { revoked = true, lease_renewed = true }
+local CONTROL_KINDS: { [string]: boolean } = { revoked = true, lease_renewed = true, progress = true }
 local NAME_PREFIX = "kickside.core.jobs.execution:"
 local CHILD_PREFIX = "kickside.core.jobs.execution_child:"
 local DEFAULT_TERMINATE_GRACE_MS = 2000
@@ -102,10 +102,11 @@ function M.child_alive(job_id: string, lease_token: string): (boolean, error?)
     return pid ~= nil, nil
 end
 
--- notify delivers one committed lease control (revocation or renewal) to the
--- token-qualified execution owner. Delivery runs in the execution_signal
--- function under the Jobs identity, so revoking and renewing principals need no
--- process messaging authority. Returns false when no owner is registered.
+-- notify delivers one execution control (revocation, renewal or progress) to
+-- the token-qualified execution owner. Delivery runs in the execution_signal
+-- function under the Jobs identity, so revoking, renewing and progressing
+-- principals need no process messaging authority. Returns false when no owner
+-- is registered.
 function M.notify(job_id: string, lease_token: string, execution_seq: number,
         kind: string, lease_until: string?): (boolean, error?)
     local sent, call_err = funcs.call(EXECUTION_SIGNAL, job_id, lease_token, execution_seq, kind, lease_until)
@@ -118,24 +119,43 @@ function M.signal_execution(job_id: string, lease_token: string, execution_seq: 
     if not CONTROL_KINDS[kind] then
         return false, (errors.new({ message = "unknown job execution control: " .. tostring(kind), kind = errors.INVALID }) :: error)
     end
-    local name = M.execution_name(job_id, lease_token)
-    local pid, lookup_err = process.registry.lookup(name, process.registry.CONSISTENT)
-    if lookup_err then
-        if errors.is(lookup_err, errors.NOT_FOUND) then return false, nil end
-        return false, (errors.wrap(lookup_err, "job execution owner lookup failed") :: error)
-    end
-    if not pid then return false, nil end
-    local sent, err = process.send(tostring(pid), CONTROL_TOPIC, {
+    local message = {
         kind = kind,
         job_id = job_id,
         lease_token = lease_token,
         execution_seq = execution_seq,
         lease_until = lease_until,
-    })
-    if err then
-        return false, (errors.wrap(err, "job execution notification failed") :: error)
+    }
+    -- Progress renews every execution ceiling of the attempt: the supervising
+    -- owner's and the execution child's own ceiling over its proc target.
+    local names = { M.execution_name(job_id, lease_token) }
+    if kind == "progress" then names[2] = M.child_name(job_id, lease_token) end
+    local delivered = false
+    for _, name in ipairs(names) do
+        local pid, lookup_err = process.registry.lookup(name, process.registry.CONSISTENT)
+        if lookup_err and not errors.is(lookup_err, errors.NOT_FOUND) then
+            return false, (errors.wrap(lookup_err, "job execution owner lookup failed") :: error)
+        end
+        if pid then
+            local sent, err = process.send(tostring(pid), CONTROL_TOPIC, message)
+            if err then
+                return false, (errors.wrap(err, "job execution notification failed") :: error)
+            end
+            delivered = delivered or sent == true
+        end
     end
-    return sent == true, nil
+    return delivered, nil
+end
+
+-- The control message addressed to this execution, or nil for another
+-- execution's message.
+function M.execution_control(message: any, lease_token: any, execution_seq: any): table?
+    if type(message) ~= "table" then return nil end
+    if tostring(message.lease_token or "") ~= tostring(lease_token or "")
+        or tonumber(message.execution_seq) ~= tonumber(execution_seq) then
+        return nil
+    end
+    return message :: table
 end
 
 M.parse_deadline = clock.parse
@@ -364,9 +384,10 @@ local function supervise(hooks: table, child_pid: string, opts: table, state: ta
             end
         elseif kind == "peer_down" then
             return await_peer_exit(hooks, child_pid, opts, grace, state)
-        elseif kind == "other" or kind == "lease_renewed" then
-            -- Event noise and a committed extension are direct inputs. Neither
-            -- changes the max-execution deadline.
+        elseif kind == "other" or kind == "lease_renewed" or kind == "progress" then
+            -- Event noise, a committed extension and reported progress are
+            -- direct inputs. The wait hook owns the deadline that progress
+            -- renews; the loop has nothing further to settle.
         else
             return nil, (errors.new({ message = "proc supervise unknown signal: " .. kind, kind = errors.INTERNAL }) :: error), nil
         end

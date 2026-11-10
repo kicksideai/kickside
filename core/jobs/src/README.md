@@ -64,6 +64,15 @@ makes the job claimable only after its registered execution child has ended.
 A gone child recovers in the same pass; a live child retains the termination fence.
 Heartbeats renew only matching, unexpired executions without a termination fence.
 
+`jobs.report_progress(id, { token, execution_seq }): (boolean?, error?)` renews
+the running execution's ceiling. A proc or function worker that reports progress
+continues past `proc.max_execution` (or its payload `max_execution_ms`), which is
+then measured from its latest report; an execution without progress ends at the
+ceiling as before. The report is delivered to the token-qualified execution owner
+and its execution child under the Jobs identity, so callers need no process
+messaging authority. It returns `true` when an owner received it and `false` when
+no execution of that lease is registered.
+
 `jobs.health()` reports `stranded_jobs` with `job_ids` for erroneous pending
 one-shot jobs without a schedule. This invariant is unhealthy immediately; the
 existing `health.overdue_grace` bounds due-work diagnostics only. Scheduled retry

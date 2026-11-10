@@ -307,6 +307,7 @@ entries:
       - process
     imports:
       job_types: kickside.core.jobs:types
+      jobs: kickside.core.jobs:jobs
 
   - name: job_crash_probe
     kind: process.lua
@@ -2470,6 +2471,7 @@ entries:
       error_envelope: kickside.contract:error_envelope
       committed_error: kickside.contract:committed_error
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      proc_supervisor: kickside.core.jobs:proc_supervisor
 
   - name: scope_native_config
     kind: library.lua
@@ -2749,6 +2751,7 @@ entries:
       error_envelope: kickside.contract:error_envelope
       committed_error: kickside.contract:committed_error
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      proc_supervisor: kickside.core.jobs:proc_supervisor
 
   - name: transaction_native_test
     kind: function.lua
@@ -2917,6 +2920,7 @@ entries:
       error_envelope: kickside.contract:error_envelope
       committed_error: kickside.contract:committed_error
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      proc_supervisor: kickside.core.jobs:proc_supervisor
 
   - name: health_native_test
     kind: function.lua

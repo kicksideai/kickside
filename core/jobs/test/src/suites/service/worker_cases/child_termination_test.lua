@@ -159,6 +159,29 @@ local function define_tests()
             verify_db:release()
         end)
 
+        test.it("keeps a supervised proc child past max_execution while it reports progress", function()
+            local db, db_err = sql.get("app:db")
+            if not db then error("test database unavailable: " .. tostring(db_err)) end
+            local dbtype = tostring(db:type())
+            local thread_id = make_thread(db)
+            -- 2.4s of work under a 1s ceiling, reporting progress every 300ms.
+            local job = enqueue_proc_and_claim(db, dbtype, thread_id, {
+                max_execution_ms = 1000, progress_every_ms = 300, progress_count = 8,
+            })
+            db:release()
+
+            local child_err = worker_child.supervise_job_child(job :: table)
+            test.is_nil(child_err)
+
+            local verify_db, verify_err = sql.get("app:db")
+            if not verify_db then error("test database unavailable: " .. tostring(verify_err)) end
+            test.eq(job_row(verify_db, job.id).status, job_types.JOB_STATE.DONE)
+            local run = latest_run(verify_db, job.id)
+            test.not_nil(run)
+            test.eq(run.status, "completed")
+            verify_db:release()
+        end)
+
         test.it("terminates a proc that exceeds max_execution and retries it", function()
             with_db(function(db: sql.DB)
                 local dbtype = tostring(db:type())

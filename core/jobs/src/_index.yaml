@@ -180,7 +180,7 @@ entries:
   - name: proc_supervisor
     kind: library.lua
     meta:
-      comment: Monitored process supervision with a hard execution deadline.
+      comment: Monitored process supervision with an execution deadline that reported progress renews.
     source: file://proc_supervisor.lua
     modules:
       - time
@@ -228,7 +228,7 @@ entries:
     kind: function.lua
     meta:
       private: true
-      comment: Delivers one committed lease revocation or renewal to its token-qualified execution owner.
+      comment: Delivers one lease revocation, lease renewal or execution progress report to its token-qualified execution owner.
     source: file://proc_supervisor.lua
     method: signal_execution
     modules: [time, channel, process, funcs]
@@ -258,7 +258,7 @@ entries:
   - name: jobs
     kind: library.lua
     meta:
-      comment: "Durable jobs API: enqueue, post-commit nudge, slot purge, fenced cancellation, lease validation, completion, listing, retention, and health."
+      comment: "Durable jobs API: enqueue, post-commit nudge, slot purge, fenced cancellation, lease validation, execution progress, completion, listing, retention, and health."
     source: file://jobs.lua
     modules:
       - sql
@@ -282,6 +282,7 @@ entries:
       error_envelope: kickside.contract:error_envelope
       committed_error: kickside.contract:committed_error
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      proc_supervisor: kickside.core.jobs:proc_supervisor
 
   # The config suite's env.set/env.get fixtures (int/duration parsers and the
   # worker-count override path) are registered in the standalone test harness
