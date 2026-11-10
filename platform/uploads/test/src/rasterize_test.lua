@@ -8,6 +8,8 @@ local artifact_parts_repo = require("artifact_parts_repo")
 local upload_record_repo = require("upload_record_repo")
 local rasterizer = require("rasterizer")
 local fixtures = require("fixtures")
+local page_images = require("page_images")
+local contract = require("contract")
 
 local STORAGE_ID = "app:uploads"
 -- Synthetic image-only PDF (no text layer, no embedded fonts): doc2md extracts no
@@ -187,6 +189,59 @@ local function define_tests()
     end)
 
     test.describe("kickside.uploads.rasterize stage", function()
+        test.it("renders a page with a large image and an additional small image", function()
+            local upload_id = seed_document("application/pdf", "<!-- page 1 -->\n\n<!-- page 2 -->")
+            for _, size in ipairs({60000, 100}) do
+                local _, err = artifact_content_repo.create_artifact({upload_id = upload_id,
+                    kind = "image", role = "extracted-image", mime_type = "image/png", ordinal = size,
+                    content = string.rep("I", size), storage_id = STORAGE_ID, metadata = {page = 1}})
+                test.is_nil(err)
+            end
+            local result = run_stage(upload_id, "application/pdf")
+            test.is_true(result.success)
+            local images = rendered_pages(upload_id)
+            test.eq(#images, 2)
+            test.eq(images[1].metadata.page, 1)
+            test.eq(images[2].metadata.page, 2)
+        end)
+
+        test.it("keeps ambiguous numbered images unavailable after a render failure", function()
+            local upload_id = seed_document("application/pdf", "<!-- page 1 -->")
+            for index = 1, 2 do
+                local _, err = artifact_content_repo.create_artifact({upload_id = upload_id,
+                    kind = "image", role = "extracted-image", mime_type = "image/png", ordinal = index,
+                    content = string.rep(tostring(index), 60000), storage_id = STORAGE_ID, metadata = {page = 1}})
+                test.is_nil(err)
+            end
+            local settings = assert(assert(contract.get("kickside.settings:settings")):open())
+            test.is_true(settings:set({namespace = "kickside.uploads.rasterize", key = "rasterize_format", value = "invalid"}).success)
+            local result, err = executor("user-raster"):call(RASTERIZE_STAGE, {upload_id = upload_id,
+                mime_type = "application/pdf", size = FIXTURE_SIZE, storage_id = STORAGE_ID, storage_path = FIXTURE_PATH})
+            test.is_true(settings:set({namespace = "kickside.uploads.rasterize", key = "rasterize_format", value = "jpeg"}).success)
+            test.is_nil(err)
+            test.is_true(result.success)
+            test.eq(#rendered_pages(upload_id), 0)
+            test.eq(#page_images.page_set(upload_id, 51200), 0)
+        end)
+
+        test.it("renders only sparse marker-delimited pages with their original numbers", function()
+            for _, sparse_page in ipairs({ 1, 2 }) do
+                local pages = {}
+                for page = 1, 2 do
+                    local body = page == sparse_page and "" or string.rep("A usable text layer. ", 100)
+                    pages[#pages + 1] = "<!-- page " .. page .. " -->\n\n" .. body
+                end
+                local upload_id = seed_document("application/pdf", table.concat(pages, "\n\n"))
+                local result = run_stage(upload_id, "application/pdf")
+                test.is_true(result.success)
+                test.eq(result.metadata.rendered_page_count, 1)
+                local images = rendered_pages(upload_id)
+                test.eq(#images, 1)
+                test.eq(images[1].metadata.page, sparse_page)
+                test.eq(tonumber(images[1].ordinal), 2000 + sparse_page)
+            end
+        end)
+
         test.it("rasterizes every page of an empty document into rendered-page artifacts (jpeg)", function()
             local upload_id = seed_document("application/pdf", "")
             local result = run_stage(upload_id, "application/pdf")

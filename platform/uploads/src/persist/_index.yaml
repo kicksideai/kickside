@@ -16,6 +16,7 @@ entries:
     modules: [json, time, uuid, hash, sql]
     imports:
       persisted_json: kickside.contract:persisted_json
+      job_types: kickside.core.jobs:types
       uploads_resources: kickside.uploads.binding:uploads_resources
       artifact_schema: kickside.uploads.persist:artifact_schema
       artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo
