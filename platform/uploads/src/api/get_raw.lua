@@ -4,12 +4,13 @@ local uploads_resources = require("uploads_resources")
 
 local upload_query_repo = require("upload_query_repo")
 local component = require("component")
+local access_policy = require("access_policy")
+local execution_identity = require("execution_identity")
 local upload_tokens = require("upload_tokens")
 local types = require("types")
 local http_errors = require("http_errors")
 
--- Stream the original stored bytes of an upload, with its real mime type, so the
--- frontend viewer can render images, PDFs, and text inline. Owner-scoped.
+-- Stream original bytes after verifying upload access or an authorized reference.
 local function raw_handler()
     local req = http.request()
     local res = http.response()
@@ -56,15 +57,15 @@ local function raw_handler()
             bearer_ok = true
         end
     end
+    local container_id = types.component_id_for_owner(upload.actor_id)
     if not bearer_ok then
-        local component_id = types.component_id_for_owner(upload.actor_id)
-        if not component_id then
+        if not container_id then
             res:set_status(http.STATUS.INTERNAL_ERROR)
             res:set_content_type(http.CONTENT.JSON)
             res:write_json({ success = false, error = "Upload owner is invalid" })
             return
         end
-        local _, container_err = component.validate_access(component_id, component.ACCESS.READ)
+        local _, container_err = component.validate_access(container_id, component.ACCESS.READ)
         if not container_err then
             bearer_ok = true
         elseif not errors.is(container_err, errors.PERMISSION_DENIED) and not errors.is(container_err, errors.NOT_FOUND) then
@@ -75,11 +76,54 @@ local function raw_handler()
         end
     end
     if not bearer_ok then
-        local _, access_err = component.get_context_by_meta({ upload_id = uuid }, component.ACCESS.READ)
-        if access_err then
+        local references, reference_err = component.query({meta = {upload_id = uuid},
+            access_mask = component.ACCESS.READ, include = {meta = false}})
+        if reference_err then
+            res:set_status(http_errors.classify(reference_err))
+            res:set_content_type(http.CONTENT.JSON)
+            res:write_json({success = false, error = tostring(reference_err)})
+            return
+        end
+        for _, reference in ipairs(references or {}) do
+            local context, context_err = component.get_private_context(reference.component_id)
+            if context_err then
+                res:set_status(http_errors.classify(context_err))
+                res:set_content_type(http.CONTENT.JSON)
+                res:write_json({success = false, error = tostring(context_err)})
+                return
+            end
+            -- Public metadata cannot establish who authorizes a reference. Core
+            -- captures this principal at creation and rejects generic writes to it.
+            local captured = context and context._execution_identity
+            if captured and captured.principal then
+                local principal, principal_err = execution_identity.check_principal(captured.principal, "reference creator")
+                if principal_err then
+                    res:set_status(http_errors.classify(principal_err))
+                    res:set_content_type(http.CONTENT.JSON)
+                    res:write_json({success = false, error = tostring(principal_err)})
+                    return
+                end
+                if execution_identity.actor_key(principal) == upload.actor_id then
+                    bearer_ok = true
+                    break
+                end
+                local masks, masks_err = component.principal_masks_system(principal, {container_id})
+                if masks_err then
+                    res:set_status(http_errors.classify(masks_err))
+                    res:set_content_type(http.CONTENT.JSON)
+                    res:write_json({success = false, error = tostring(masks_err)})
+                    return
+                end
+                if access_policy.has_all((masks or {})[container_id] or 0, component.ACCESS.READ) then
+                    bearer_ok = true
+                    break
+                end
+            end
+        end
+        if not bearer_ok then
             res:set_status(http.STATUS.FORBIDDEN)
             res:set_content_type(http.CONTENT.JSON)
-            res:write_json({ success = false, error = "Access denied" })
+            res:write_json({success = false, error = "Access denied"})
             return
         end
     end

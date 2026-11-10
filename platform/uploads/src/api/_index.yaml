@@ -234,6 +234,8 @@ entries:
       http_errors: kickside.contract:http_errors
       upload_query_repo: kickside.uploads.persist:upload_query_repo
       component: kickside.component:component
+      access_policy: kickside.component:access_policy
+      execution_identity: kickside.execution:execution_identity
       upload_tokens: kickside.uploads.persist:upload_tokens
     method: raw_handler
     modules:
