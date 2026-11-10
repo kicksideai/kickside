@@ -1,6 +1,7 @@
 import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
+import type { Trait } from './app/agent-form.types'
 import MasterNamespacePicker from './app/MasterNamespacePicker.vue'
 import stylesText from './styles.css?inline'
 
@@ -10,16 +11,21 @@ import stylesText from './styles.css?inline'
 // `config-changed` — the generic trait config contract the agent editor consumes.
 
 interface MasterPickerProps {
+  schema?: Trait['context_schema']
   config?: { namespaces?: string[]; trait_ids?: string[]; inject_trait_catalog?: boolean } | string[] | null
 }
 
 interface MasterPickerEvents {
-  'config-changed': { namespaces: string[]; trait_ids: string[]; inject_trait_catalog: boolean }
+  'config-changed': { namespaces?: string[]; trait_ids?: string[]; inject_trait_catalog?: boolean }
 }
 
 const PROPS_SCHEMA: WippyPropsSchema = {
   type: 'object',
   properties: {
+    schema: {
+      type: 'object',
+      description: 'Capability context schema; controls the available configuration fields.',
+    },
     config: {
       type: 'object',
       description: 'Capability context: { namespaces: string[], trait_ids: string[], inject_trait_catalog: boolean }',

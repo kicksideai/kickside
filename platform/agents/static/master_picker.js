@@ -1,5 +1,5 @@
 import { u as H, g as z, W as F, P as G } from "./primevue-plugin-BTxKP425.js";
-import { defineComponent as J, ref as r, watch as Q, onMounted as X, computed as $, openBlock as s, createElementBlock as i, createElementVNode as l, createCommentVNode as p, Fragment as h, renderList as j, createTextVNode as Y, toDisplayString as A, createVNode as v, unref as k, withCtx as Z, normalizeClass as ee, createBlock as te } from "vue";
+import { defineComponent as J, ref as r, watch as Q, onMounted as X, computed as $, openBlock as s, createElementBlock as i, createElementVNode as l, createCommentVNode as p, Fragment as g, renderList as j, createTextVNode as Y, toDisplayString as A, createVNode as v, unref as k, withCtx as Z, normalizeClass as ee, createBlock as te } from "vue";
 import { Icon as f } from "@iconify/vue";
 import { api as L, define as ae } from "@wippy-fe/proxy";
 import { l as se, _ as ne } from "./toolCatalog-W6OjlU7E.js";
@@ -14,10 +14,10 @@ const oe = { class: "kx-ns" }, re = {
 }, pe = { class: "kx-ns-chips" }, de = ["aria-label", "onClick"], me = {
   key: 0,
   class: "kx-ns-empty"
-}, ve = { class: "kx-ns-add" }, _e = ["aria-expanded"], ge = {
+}, ve = { class: "kx-ns-add" }, _e = ["aria-expanded"], he = {
   class: "kx-ns-menu",
   role: "listbox"
-}, he = { class: "kx-ns-group" }, ke = ["aria-selected", "onClick"], fe = { class: "kx-ns-opt-label" }, be = {
+}, ge = { class: "kx-ns-group" }, ke = ["aria-selected", "onClick"], fe = { class: "kx-ns-opt-label" }, be = {
   key: 0,
   class: "kx-ns-menu-empty"
 }, xe = {
@@ -68,7 +68,7 @@ const oe = { class: "kx-ns" }, re = {
       ...C.value.filter((e) => M(e.id) || u.value.includes(e.id)),
       ...u.value.filter((e) => !C.value.some((t) => t.id === e)).map((e) => ({ id: e }))
     ]), V = (e) => y.value.find((t) => t.id === e)?.label || e, w = (e) => n.value.includes(e);
-    function g() {
+    function h() {
       S("config-changed", {
         ...c("namespaces") ? { namespaces: [...n.value] } : {},
         ...c("trait_ids") ? { trait_ids: [...u.value] } : {},
@@ -77,16 +77,16 @@ const oe = { class: "kx-ns" }, re = {
     }
     function K(e) {
       const t = n.value.indexOf(e);
-      t >= 0 ? n.value.splice(t, 1) : n.value.push(e), g();
+      t >= 0 ? n.value.splice(t, 1) : n.value.push(e), h();
     }
     function U(e) {
-      u.value = e, g();
+      u.value = e, h();
     }
     function W(e) {
-      n.value.splice(e, 1), g();
+      n.value.splice(e, 1), h();
     }
     function q() {
-      d.value = !d.value, g();
+      d.value = !d.value, h();
     }
     return (e, t) => (s(), i("div", oe, [
       c("inject_trait_catalog") ? (s(), i("label", re, [
@@ -105,7 +105,7 @@ const oe = { class: "kx-ns" }, re = {
       c("namespaces") ? (s(), i("div", ue, [
         t[5] || (t[5] = l("div", { class: "kx-ns-label" }, "Limit which packages it can use", -1)),
         l("div", pe, [
-          (s(!0), i(h, null, j(n.value, (a, o) => (s(), i("span", {
+          (s(!0), i(g, null, j(n.value, (a, o) => (s(), i("span", {
             key: a,
             class: "kx-ns-chip"
           }, [
@@ -152,12 +152,12 @@ const oe = { class: "kx-ns" }, re = {
             "min-width": 240
           }, {
             default: Z(() => [
-              l("div", ge, [
-                (s(!0), i(h, null, j(O.value, (a) => (s(), i(h, {
+              l("div", he, [
+                (s(!0), i(g, null, j(O.value, (a) => (s(), i(g, {
                   key: a.kind
                 }, [
-                  l("div", he, A(a.label), 1),
-                  (s(!0), i(h, null, j(a.items, (o) => (s(), i("button", {
+                  l("div", ge, A(a.label), 1),
+                  (s(!0), i(g, null, j(a.items, (o) => (s(), i("button", {
                     key: o.id,
                     type: "button",
                     class: ee(["kx-ns-opt", w(o.id) && "kx-ns-opt-on"]),
@@ -195,6 +195,10 @@ const oe = { class: "kx-ns" }, re = {
 }), Ce = {
   type: "object",
   properties: {
+    schema: {
+      type: "object",
+      description: "Capability context schema; controls the available configuration fields."
+    },
     config: {
       type: "object",
       description: "Capability context: { namespaces: string[], trait_ids: string[], inject_trait_catalog: boolean }"
