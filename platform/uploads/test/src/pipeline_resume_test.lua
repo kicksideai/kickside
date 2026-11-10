@@ -66,8 +66,10 @@ local function define_tests()
                 end}
             end
             local ok, err = pcall(function()
-                test.is_false(pipeline.process_upload(upload, opts))
-                test.is_false(pipeline.process_upload(assert(query.get(upload.uuid)), opts))
+                local processed, process_err = pipeline.process_upload(upload, opts)
+                test.is_false(processed, tostring(process_err))
+                processed, process_err = pipeline.process_upload(assert(query.get(upload.uuid)), opts)
+                test.is_false(processed, tostring(process_err))
                 test.eq(calls, 1)
             end)
             upload_type.get_pipeline, pipeline.upload_stage_executor, pipeline.apply_relocation =
@@ -205,7 +207,7 @@ local function define_tests()
             end
             pipeline.upload_stage_executor = function()
                 return {call = function(_, stage)
-                    calls[stage] = calls[stage] + 1
+                    calls[stage] = assert(calls[stage], "unexpected pipeline stage") + 1
                     if stage == "convert" then
                         assert(content.upsert_artifact({upload_id = upload.uuid, role = "primary", kind = "markdown",
                             content = "", mime_type = "text/markdown", storage_id = "app:uploads", ordinal = 1}))
@@ -283,10 +285,12 @@ local function define_tests()
                     end}
                 end
                 local ok, err = pcall(function()
-                    test.is_false(pipeline.process_upload(upload, opts))
+                    local processed, process_err = pipeline.process_upload(upload, opts)
+                    test.is_false(processed, tostring(process_err))
                     test.eq(assert(query.get(upload.uuid)).metadata.__pipeline.completed, 0)
                     assert(storage:writefile(upload.storage_path, "complete"))
-                    test.is_true(pipeline.process_upload(upload, opts))
+                    processed, process_err = pipeline.process_upload(upload, opts)
+                    test.is_true(processed, tostring(process_err))
                     test.eq(renders, 2)
                     local images = page_images.rendered(upload.uuid)
                     test.eq(#images, 2)
@@ -313,19 +317,22 @@ local function define_tests()
             upload_type.get_pipeline = function() return {{func = "convert"}, {func = "rasterize"}, {func = "ocr"}} end
             pipeline.upload_stage_executor = function()
                 return {call = function(_, stage)
-                    calls[stage] = calls[stage] + 1
+                    calls[stage] = assert(calls[stage], "unexpected pipeline stage") + 1
                     if stage == "ocr" and calls.ocr < 3 then return nil, "OCR failed" end
                     return {success = true}
                 end}
             end
             local ok, err = pcall(function()
-                test.is_false(pipeline.process_upload(upload, opts))
-                test.is_false(pipeline.process_upload(assert(query.get(upload.uuid)), opts))
+                local processed, process_err = pipeline.process_upload(upload, opts)
+                test.is_false(processed, tostring(process_err))
+                processed, process_err = pipeline.process_upload(assert(query.get(upload.uuid)), opts)
+                test.is_false(processed, tostring(process_err))
                 test.eq(calls.convert, 1)
                 test.eq(calls.rasterize, 1)
                 assert(records.mark_storage_failed(upload.uuid))
                 test.not_nil(assert(upload_lib.retry_upload(upload.uuid)))
-                test.is_true(pipeline.process_upload(assert(query.get(upload.uuid)), opts))
+                processed, process_err = pipeline.process_upload(assert(query.get(upload.uuid)), opts)
+                test.is_true(processed, tostring(process_err))
                 test.eq(calls.convert, 2)
                 test.eq(calls.rasterize, 2)
                 test.eq(calls.ocr, 3)
@@ -342,15 +349,17 @@ local function define_tests()
             upload_type.get_pipeline = function() return {{func = "render"}, {func = "enrich"}, {func = "ocr"}} end
             pipeline.upload_stage_executor = function()
                 return {call = function(_, stage)
-                    calls[stage] = calls[stage] + 1
+                    calls[stage] = assert(calls[stage], "unexpected pipeline stage") + 1
                     if stage == "render" then return {success = true, completed = calls.render > 1} end
                     if stage == "ocr" and calls.ocr == 1 then return nil, "OCR failed" end
                     return {success = true}
                 end}
             end
             local ok, err = pcall(function()
-                test.is_false(pipeline.process_upload(upload, opts))
-                test.is_true(pipeline.process_upload(assert(query.get(upload.uuid)), opts))
+                local processed, process_err = pipeline.process_upload(upload, opts)
+                test.is_false(processed, tostring(process_err))
+                processed, process_err = pipeline.process_upload(assert(query.get(upload.uuid)), opts)
+                test.is_true(processed, tostring(process_err))
                 test.eq(calls.render, 2)
                 test.eq(calls.enrich, 2)
             end)
@@ -377,7 +386,7 @@ local function define_tests()
             assert(db:execute("UPDATE kickside_upload_artifacts SET created_at=$1 WHERE upload_id=$2",
                 {"2026-01-01T00:00:00Z", upload.uuid}))
             db:release()
-            local index = primaries[1].artifact_id < primaries[2].artifact_id and 1 or 2
+            local index: integer = primaries[1].artifact_id < primaries[2].artifact_id and 1 or 2
             local chosen = primaries[index]
             test.eq(assert(parts.get_primary_content_artifact(upload.uuid)).artifact_id, chosen.artifact_id)
             local list = assert(parts.list_artifacts(upload.uuid))
