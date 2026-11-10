@@ -1,0 +1,17 @@
+[package]
+name = "delayed-converter"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = { version = "0.58", default-features = false, features = ["macros", "realloc", "bitflags"] }
+dlmalloc = { version = "0.2", features = ["global"] }
+
+[profile.release]
+opt-level = 3
+strip = true
