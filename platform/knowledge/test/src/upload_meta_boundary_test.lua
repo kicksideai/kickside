@@ -447,6 +447,57 @@ local function define_tests()
             end)
         end
 
+        test.it("references extracted images and OCR page renders but not page preview renditions", function()
+            local owner = uuid.v4()
+            local component_id, upload_id = uuid.v7(), uuid.v7()
+            fixtures[#fixtures + 1] = component_id
+            seed_kb(component_id, owner, "app:test_engine_files")
+            seed_upload_without_primary(upload_id, owner, "application/pdf", upload_id)
+            local primary = assert(artifact_content_repo.create_artifact({
+                upload_id = upload_id, kind = "markdown", role = "primary", mime_type = "text/markdown",
+                label = "document.md", ordinal = 1, content = "# Document text",
+                storage_id = "app:uploads", metadata = { filename = "document.pdf" },
+            }))
+            local expected: { [string]: string } = {}
+            for index, role in ipairs({ "extracted-image", "rendered-page", "page-preview", "page-thumbnail" }) do
+                local image = assert(artifact_content_repo.create_artifact({
+                    upload_id = upload_id, kind = "image", role = role, mime_type = "image/jpeg",
+                    label = role .. ".jpg", ordinal = 1000 * index + 1, content = role .. " bytes",
+                    storage_id = "app:uploads", metadata = { page = 1, markdown_artifact_id = primary.artifact_id },
+                }))
+                if role == "extracted-image" or role == "rendered-page" then expected[image.artifact_id] = role end
+            end
+            local actor, actor_scope = security.new_actor(owner, {}), scope()
+            local threads = assert(assert(contract.get("kickside.core:threads")):with_actor(actor):with_scope(actor_scope):open())
+            local _, ensure_err = threads:ensure_thread({ component_id = component_id,
+                impl_id = "app:test_engine_files", thread_class = "kickside.knowledge.injection" })
+            test.is_nil(ensure_err)
+
+            local admission, admission_err = funcs.new():with_actor(actor):with_scope(actor_scope):call("app:ingest_upload_probe", {
+                upload_id = upload_id, kb_id = component_id,
+                file = { mime_type = "application/pdf", size = 12, metadata = { filename = "document.pdf" } },
+            })
+            test.is_nil(admission_err)
+            test.not_nil(admission.result, admission.error)
+            local completed, callback_err = funcs.new():with_actor(actor):with_scope(actor_scope):call(CALLBACK, {
+                upload_id = upload_id, status = "completed", mime_type = "application/pdf",
+                size = 12, metadata = { filename = "document.pdf" }, params = { kb_id = component_id },
+            })
+            test.is_nil(callback_err)
+            test.eq(completed.success, true)
+            local page, pull_err = funcs.new():with_actor(actor):with_scope(actor_scope)
+                :call("kickside.core.threads:events_pullable", {
+                    config = { thread_id = component_id, event_type = "kickside.knowledge.events:content.upserted" },
+                    cursor = 0, limit = 10, idempotency_key = "image-references",
+                })
+            cleanup_upload(upload_id)
+            test.is_nil(pull_err)
+            test.eq(#page.items, 1)
+            local refs = page.items[1].payload.metadata.image_artifacts or {}
+            test.eq(#refs, 2)
+            for _, ref in ipairs(refs) do test.eq(ref.role, expected[ref.artifact_id]) end
+        end)
+
         test.it("treats upload callbacks for a deleted KB as a handled cancellation", function()
             local owner = uuid.v4()
             local deleted_kb = uuid.v7()

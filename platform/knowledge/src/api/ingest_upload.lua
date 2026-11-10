@@ -203,6 +203,10 @@ local function ingest_archive_children(kb_id: string, upload_id: string, file: a
     }, nil
 end
 
+-- Page previews and their thumbnails are renditions of pages whose content the
+-- document already carries as text, a rendered page or an extracted scan.
+local PAGE_RENDITION_ROLES: { [string]: boolean } = { ["page-preview"] = true, ["page-thumbnail"] = true }
+
 -- doc2md extracts source images into image artifacts (kind=image,
 -- role=extracted-image) parented to the upload. Carry a reference to each on the
 -- content event so the materializer can fetch the bytes from the upload artifact
@@ -218,7 +222,7 @@ local function image_artifact_refs(upload_id: string): {any}?
         local role = type(artifact.role) == "string" and artifact.role or ""
         local mime = type(artifact.mime_type) == "string" and artifact.mime_type or ""
         local is_image = kind == "image" or role == "extracted-image" or mime:sub(1, 6) == "image/"
-        if is_image and type(artifact.artifact_id) == "string" and artifact.artifact_id ~= "" then
+        if is_image and not PAGE_RENDITION_ROLES[role] and type(artifact.artifact_id) == "string" and artifact.artifact_id ~= "" then
             local meta = type(artifact.metadata) == "table" and artifact.metadata or {}
             refs[#refs + 1] = {
                 artifact_id = artifact.artifact_id,
