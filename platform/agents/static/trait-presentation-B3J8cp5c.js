@@ -85,13 +85,13 @@ const I = /* @__PURE__ */ z({
       n.value && c.includes(n.value) || e.anchor && c.includes(e.anchor) || s("update:open", !1);
     }
     function f(r) {
-      e.open && r.key === "Escape" && s("update:open", !1);
+      !e.open || r.key !== "Escape" || (r.preventDefault(), r.stopImmediatePropagation(), s("update:open", !1));
     }
     function u() {
       e.open && l();
     }
-    return document.addEventListener("click", g), document.addEventListener("keydown", f), window.addEventListener("resize", u), window.addEventListener("scroll", u, !0), $(() => {
-      h(), document.removeEventListener("click", g), document.removeEventListener("keydown", f), window.removeEventListener("resize", u), window.removeEventListener("scroll", u, !0);
+    return document.addEventListener("click", g), document.addEventListener("keydown", f, !0), window.addEventListener("resize", u), window.addEventListener("scroll", u, !0), $(() => {
+      h(), document.removeEventListener("click", g), document.removeEventListener("keydown", f, !0), window.removeEventListener("resize", u), window.removeEventListener("scroll", u, !0);
     }), (r, c) => t.open ? (W(), B("div", {
       key: 0,
       ref_key: "panel",
@@ -107,7 +107,7 @@ const I = /* @__PURE__ */ z({
   { key: "behavior", label: "behavior" },
   { key: "memory", label: "memory" }
 ];
-function A(t) {
+function P(t) {
   const o = x(/* @__PURE__ */ new Set()), e = (n) => o.value.has(n);
   function s(n) {
     const a = new Set(o.value);
@@ -117,7 +117,7 @@ function A(t) {
     o.value = new Set([...o.value].filter((a) => n.includes(a)));
   }), { isTraitOpen: e, toggleTraitOpen: s };
 }
-function P(t) {
+function A(t) {
   const o = t.affects || {};
   return o.memory ? "memory" : o.behavior ? "behavior" : o.tools ? "tools" : "plain";
 }
@@ -139,7 +139,7 @@ export {
   I as _,
   D as b,
   j as r,
-  P as t,
-  A as u
+  A as t,
+  P as u
 };
-//# sourceMappingURL=trait-presentation-v3U6eC0-.js.map
+//# sourceMappingURL=trait-presentation-B3J8cp5c.js.map

@@ -3,7 +3,7 @@ import { defineComponent as er, ref as f, computed as A, watch as D, onMounted a
 import { Icon as z } from "@iconify/vue";
 import { api as sr, define as lr } from "@wippy-fe/proxy";
 import { _ as vr } from "./WcMount.vue_vue_type_script_setup_true_lang-CNWT59Oh.js";
-import { r as dr, u as ur, _ as fr, t as U, b as j } from "./trait-presentation-v3U6eC0-.js";
+import { r as dr, u as ur, _ as fr, t as U, b as j } from "./trait-presentation-B3J8cp5c.js";
 const gr = {
   class: "kx-agent-trait-picker",
   "data-testid": "agent-trait-picker"

@@ -64,7 +64,10 @@ function onTraitQueryKeydown(event: KeyboardEvent) {
     return
   }
   if (event.key === 'Escape') {
-    if (traitMenuOpen.value) event.stopPropagation()
+    if (traitMenuOpen.value) {
+      event.preventDefault()
+      event.stopPropagation()
+    }
     traitMenuOpen.value = false
     return
   }

@@ -1,7 +1,7 @@
 import { u as T, a as I, W as U } from "./index-C70m2Vvt.js";
 import { defineComponent as V, ref as t, computed as x, watch as A, onBeforeUnmount as D, openBlock as p, createElementBlock as i, createElementVNode as u, withModifiers as k, normalizeClass as z, createVNode as n, unref as v, withCtx as P, withDirectives as q, vModelText as B, createCommentVNode as R, createTextVNode as $, toDisplayString as F, Fragment as K, renderList as L, nextTick as O } from "vue";
 import { Icon as d } from "@iconify/vue";
-import { _ as W } from "./AnchoredPanel.vue_vue_type_script_setup_true_lang-DSLnUKFT.js";
+import { _ as W } from "./AnchoredPanel.vue_vue_type_script_setup_true_lang-CU5LLZRq.js";
 import { define as G } from "@wippy-fe/proxy";
 const H = () => T(), J = () => I(), Q = { class: "ip-root" }, X = { class: "ip-search" }, Y = {
   key: 0,

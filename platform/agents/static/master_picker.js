@@ -2,8 +2,8 @@ import { u as D, g as H, W as z, P as F } from "./primevue-plugin-BTxKP425.js";
 import { defineComponent as G, ref as r, watch as J, onMounted as Q, computed as V, openBlock as i, createElementBlock as l, createElementVNode as s, Fragment as v, renderList as y, createTextVNode as X, toDisplayString as C, createVNode as u, unref as _, createCommentVNode as $, withCtx as Y, normalizeClass as Z } from "vue";
 import { Icon as g } from "@iconify/vue";
 import { api as L, define as ee } from "@wippy-fe/proxy";
-import { l as te, _ as ae } from "./toolCatalog-CE8HFruH.js";
-import { _ as se } from "./trait-presentation-v3U6eC0-.js";
+import { l as te, _ as ae } from "./toolCatalog-W6OjlU7E.js";
+import { _ as se } from "./trait-presentation-B3J8cp5c.js";
 import { s as ne } from "./styles-DLfU4ZNr.js";
 const ie = { class: "kx-ns" }, le = { class: "kx-ns-toggle" }, oe = ["checked"], re = { class: "kx-ns-section" }, ce = { class: "kx-ns-chips" }, ue = ["aria-label", "onClick"], pe = {
   key: 0,

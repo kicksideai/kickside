@@ -1,6 +1,6 @@
 import { defineComponent as G, computed as D, ref as y, useId as J, watch as W, openBlock as i, createElementBlock as o, createElementVNode as s, toDisplayString as d, withDirectives as X, vModelText as Y, createVNode as m, withCtx as Z, Fragment as w, renderList as T, normalizeClass as $, unref as c, withModifiers as z, createCommentVNode as v, renderSlot as ee, nextTick as P } from "vue";
 import { Icon as C } from "@iconify/vue";
-import { u as te, r as ae, _ as ie, t as V, b as U } from "./trait-presentation-v3U6eC0-.js";
+import { u as te, r as ae, _ as ie, t as V, b as U } from "./trait-presentation-B3J8cp5c.js";
 import { api as oe } from "@wippy-fe/proxy";
 const se = { class: "kx-group kx-capability-picker" }, le = { class: "kx-group-head" }, ne = { class: "kx-group-title" }, re = { class: "kx-group-meta" }, de = ["aria-expanded", "aria-activedescendant"], ce = ["id", "onMouseenter", "onClick"], ue = { class: "kx-tadd-opt" }, pe = { class: "kx-tadd-opt-text" }, ke = { class: "kx-trait-name" }, ve = { class: "kx-trait-badges" }, he = ["aria-expanded", "aria-label", "onClick"], fe = {
   key: 0,
@@ -79,7 +79,7 @@ const se = { class: "kx-group kx-capability-picker" }, le = { class: "kx-group-h
         return;
       }
       if (t.key === "Escape") {
-        r.value && t.stopPropagation(), r.value = !1;
+        r.value && (t.preventDefault(), t.stopPropagation()), r.value = !1;
         return;
       }
       if (t.key === "Tab") {
@@ -311,4 +311,4 @@ export {
   qe as _,
   Be as l
 };
-//# sourceMappingURL=toolCatalog-CE8HFruH.js.map
+//# sourceMappingURL=toolCatalog-W6OjlU7E.js.map

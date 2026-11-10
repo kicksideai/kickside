@@ -2,7 +2,7 @@ import { u as sr, a as lr, W as dr } from "./index-C70m2Vvt.js";
 import { defineComponent as vr, computed as m, ref as h, watch as ur, openBlock as c, createElementBlock as t, Fragment as b, createElementVNode as x, withKeys as W, withModifiers as hr, normalizeClass as $, createVNode as k, unref as w, createTextVNode as _, toDisplayString as M, withCtx as fr, renderList as gr, normalizeStyle as mr, createBlock as H, createCommentVNode as br } from "vue";
 import { Icon as y } from "@iconify/vue";
 import { api as G, define as wr } from "@wippy-fe/proxy";
-import { _ as yr } from "./AnchoredPanel.vue_vue_type_script_setup_true_lang-DSLnUKFT.js";
+import { _ as yr } from "./AnchoredPanel.vue_vue_type_script_setup_true_lang-CU5LLZRq.js";
 const xr = () => sr(), kr = () => lr(), _r = ["aria-expanded", "onKeydown"], zr = { class: "cp-value-id" }, Cr = { class: "cp-pop" }, Sr = {
   key: 0,
   class: "cp-state"
