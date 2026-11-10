@@ -1,0 +1,29 @@
+version: '1.0'
+namespace: app
+entries:
+  - name: pipeline_resume_test
+    kind: function.lua
+    source: file://pipeline_resume_test.lua
+    method: run
+    meta: {type: test, suite: pipeline_resume}
+    modules: [uuid, process, channel, time, fs, funcs]
+    imports:
+      test: wippy.test:test
+      pipeline: kickside.uploads:pipeline
+      upload_type: kickside.uploads:upload_type
+      records: kickside.uploads.persist:upload_record_repo
+      query: kickside.uploads.persist:upload_query_repo
+      content: kickside.uploads.persist:artifact_content_repo
+      parts: kickside.uploads.persist:artifact_parts_repo
+      fixtures: app:rasterize_fixtures
+  - name: pipeline_resume_child
+    kind: process.lua
+    source: file://pipeline_resume_child.lua
+    method: main
+    modules: [process, channel]
+    imports:
+      pipeline: kickside.uploads:pipeline
+      upload_type: kickside.uploads:upload_type
+      query: kickside.uploads.persist:upload_query_repo
+      content: kickside.uploads.persist:artifact_content_repo
+      parts: kickside.uploads.persist:artifact_parts_repo

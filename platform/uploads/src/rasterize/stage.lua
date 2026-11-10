@@ -66,8 +66,9 @@ local function store_page(params: any, page: any, fmt: string, source_id: string
     local page_no = tonumber(page.page) or 0
     local mime = format_mime(fmt)
     local name = "page_" .. tostring(page_no) .. "." .. (FORMAT_EXT[fmt] or "jpg")
-    local _, err = artifact_content_repo.create_artifact({
+    local _, err = artifact_content_repo.upsert_artifact({
         upload_id = params.upload_id,
+        cancel_ref = params.cancel_ref,
         parent_artifact_id = source_id,
         kind = "image",
         role = "rendered-page",
@@ -162,7 +163,7 @@ local function process(params: any): any
     local primary, primary_err = artifact_parts_repo.read_primary_content(upload_id)
     if primary_err or type(primary) ~= "table" then return { success = true } end
 
-    local source_id = source_artifact_id(upload_id)
+    local source_id = type(primary.artifact) == "table" and primary.artifact.parent_artifact_id or source_artifact_id(upload_id)
     local markdown_id = type(primary.artifact) == "table" and primary.artifact.artifact_id or nil
 
     local ref = { storage_id = params.storage_id, storage_path = params.storage_path }

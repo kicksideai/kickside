@@ -6,6 +6,7 @@ local logger = require("logger")
 local execution_identity = require("execution_identity")
 local jobs = require("jobs")
 local hash = require("hash")
+local json = require("json")
 local security = require("security")
 local funcs = require("funcs")
 local artifact_parts_repo = require("artifact_parts_repo")
@@ -388,6 +389,19 @@ function pipeline_lib.invoke_upload_token(upload, success, error_msg)
     return true, nil
 end
 
+local function pipeline_signature(upload, pipeline)
+    local source = upload.content_sha256
+    if type(source) ~= "string" or source == "" then
+        source = {storage_id = upload.storage_id, storage_path = upload.storage_path}
+    end
+    local definition, encode_err = json.encode({source = source, size = upload.size,
+        mime_type = upload.mime_type, type_id = upload.type_id, pipeline = pipeline})
+    if encode_err then return nil, encode_err end
+    local signature, hash_err = hash.sha256(definition)
+    if hash_err then return nil, hash_err end
+    return signature, nil
+end
+
 -- Process a single upload using funcs library. Execution authority lives in
 -- kickside_job; this function only runs stages and updates upload artifacts.
 function pipeline_lib.process_upload(upload, opts)
@@ -431,6 +445,15 @@ function pipeline_lib.process_upload(upload, opts)
         return false, error_msg
     end
 
+    -- A successful no-output stage also needs a durable outcome.
+    local signature, signature_err = pipeline_signature(upload, pipeline)
+    if signature_err then return false, signature_err end
+    local outcome = type(upload.metadata) == "table" and upload.metadata.__pipeline or nil
+    local completed = 0
+    if type(outcome) == "table" and outcome.signature == signature then
+        completed = tonumber(outcome.completed) or 0
+    end
+
     -- Execute each processor in sequence
     local trace_context = upload_trace_context(upload)
     for i, stage in ipairs(pipeline) do
@@ -446,122 +469,120 @@ function pipeline_lib.process_upload(upload, opts)
             end
         end
 
-        log:info("running upload processor", {
-            upload_id = upload.uuid,
-            processor_id = processor_id,
-            stage = stage_title,
-            index = i,
-        })
-
-        -- Call the processor function
-        local result, err = executor:call(tostring(processor_id), {
-            upload_id = upload.uuid,
-            mime_type = upload.mime_type,
-            storage_id = upload.storage_id,
-            storage_path = upload.storage_path,
-            size = upload.size,
-            metadata = upload.metadata,
-            processor_id = processor_id,
-            options = (stage :: any).options,
-            trace_context = trace_context,
-            cancel_ref = cancel_ref,
-        })
-
-        -- Native failures keep their retry decision; response-shaped failures use
-        -- the processor's retriable flag below.
-        if err or not result then
-            local source = err or ("Processing failed at step " .. i)
-            local error_msg = stage_error(stage_title, processor_id, source)
-            log:error("upload processor failed", {
+        if i > completed then
+            log:info("running upload processor", {
                 upload_id = upload.uuid,
                 processor_id = processor_id,
                 stage = stage_title,
-                error = tostring(source),
+                index = i,
             })
-            local retryable = nil
-            if type(err) == "userdata" then retryable = err:retryable() end
-            return false, error_msg, nil, retryable
-        end
 
-        continue = should_continue
-        if continue then
-            local continue_ok, continue_err = continue(stage_title)
-            if not continue_ok then
-                local error_msg = tostring(continue_err or "job cancelled")
-                log:info("upload processing stopped after processor", { upload_id = upload.uuid, stage = stage_title, error = error_msg })
-                return false, error_msg
-            end
-        end
+            -- Call the processor function
+            local result, err = executor:call(tostring(processor_id), {
+                upload_id = upload.uuid,
+                mime_type = upload.mime_type,
+                storage_id = upload.storage_id,
+                storage_path = upload.storage_path,
+                size = upload.size,
+                metadata = upload.metadata,
+                processor_id = processor_id,
+                options = (stage :: any).options,
+                trace_context = trace_context,
+                cancel_ref = cancel_ref,
+            })
 
-        local reported_error: string? = nil
-        local retriable = true
-        if result.success == false then
-            reported_error = tostring(result.error or ("Processing failed at step " .. i))
-            retriable = (result :: any).retriable ~= false
-        else
-            local reported_key, reported_code, reported_text = transcription_error(result.metadata)
-            if reported_key then
-                reported_error = reported_key .. ": " .. tostring(reported_code)
-                retriable = not TRANSCRIPTION_PERMANENT_ERRORS[reported_code]
-                if reported_text ~= reported_code then
-                    log:warn("upload processor reported provider text", {
-                        upload_id = upload.uuid,
-                        processor_id = processor_id,
-                        stage = stage_title,
-                        detail = reported_text,
-                    })
-                end
-                if (not retriable or opts.final_attempt == true) and has_primary_text(upload.uuid) then
-                    log:warn("upload keeps primary text after transcription failure", {
-                        upload_id = upload.uuid,
-                        stage = stage_title,
-                        error = reported_error,
-                    })
-                    reported_error = nil
-                end
-            end
-        end
-
-        if result.success ~= false then
-            local relocated, relocation_err = pipeline_lib.apply_relocation(upload, result.relocation)
-            if relocation_err or not relocated then
-                local source = relocation_err or errors.new({message = "upload relocation returned no record",
-                    kind = errors.INTERNAL, retryable = true})
+            -- Native failures keep their retry decision; response-shaped failures use
+            -- the processor's retriable flag below.
+            if err or not result then
+                local source = err or ("Processing failed at step " .. i)
+                local error_msg = stage_error(stage_title, processor_id, source)
+                log:error("upload processor failed", {
+                    upload_id = upload.uuid,
+                    processor_id = processor_id,
+                    stage = stage_title,
+                    error = tostring(source),
+                })
                 local retryable = nil
-                if type(source) == "userdata" then retryable = (source :: error):retryable() end
-                return false, stage_error(stage_title, processor_id, source), nil, retryable
+                if type(err) == "userdata" then retryable = err:retryable() end
+                return false, error_msg, nil, retryable
             end
-            upload = relocated
-        end
 
-        -- If the processor returned updated metadata, merge with existing metadata
-        if result.metadata then
-            -- Get existing metadata
-            local existing_metadata = upload.metadata or {}
+            continue = should_continue
+            if continue then
+                local continue_ok, continue_err = continue(stage_title)
+                if not continue_ok then
+                    local error_msg = tostring(continue_err or "job cancelled")
+                    log:info("upload processing stopped after processor", { upload_id = upload.uuid, stage = stage_title, error = error_msg })
+                    return false, error_msg
+                end
+            end
 
-            -- Merge with new metadata
-            local merged_metadata = pipeline_lib.merge_metadata(existing_metadata, result.metadata)
+            local reported_error: string? = nil
+            local retriable = true
+            if result.success == false then
+                reported_error = tostring(result.error or ("Processing failed at step " .. i))
+                retriable = (result :: any).retriable ~= false
+            else
+                local reported_key, reported_code, reported_text = transcription_error(result.metadata)
+                if reported_key then
+                    reported_error = reported_key .. ": " .. tostring(reported_code)
+                    retriable = not TRANSCRIPTION_PERMANENT_ERRORS[reported_code]
+                    if reported_text ~= reported_code then
+                        log:warn("upload processor reported provider text", {
+                            upload_id = upload.uuid,
+                            processor_id = processor_id,
+                            stage = stage_title,
+                            detail = reported_text,
+                        })
+                    end
+                    if (not retriable or opts.final_attempt == true) and has_primary_text(upload.uuid) then
+                        log:warn("upload keeps primary text after transcription failure", {
+                            upload_id = upload.uuid,
+                            stage = stage_title,
+                            error = reported_error,
+                        })
+                        reported_error = nil
+                    end
+                end
+            end
 
-            -- Update the upload record with merged metadata
-            local _, metadata_err = upload_record_repo.update_metadata(upload.uuid, merged_metadata)
+            if result.success ~= false then
+                local relocated, relocation_err = pipeline_lib.apply_relocation(upload, result.relocation)
+                if relocation_err or not relocated then
+                    local source = relocation_err or errors.new({message = "upload relocation returned no record",
+                        kind = errors.INTERNAL, retryable = true})
+                    local retryable = nil
+                    if type(source) == "userdata" then retryable = (source :: error):retryable() end
+                    return false, stage_error(stage_title, processor_id, source), nil, retryable
+                end
+                upload = relocated
+                if result.relocation then
+                    signature, signature_err = pipeline_signature(upload, pipeline)
+                    if signature_err then return false, signature_err end
+                end
+            end
+
+            local merged_metadata = pipeline_lib.merge_metadata(upload.metadata or {}, result.metadata or {})
+            if not reported_error then
+                merged_metadata.__pipeline = {signature = signature, completed = i}
+            end
+            local _, metadata_err = upload_record_repo.update_metadata(upload.uuid, merged_metadata, cancel_ref)
             if metadata_err then
                 return false, stage_error(stage_title, processor_id, "failed to persist document metadata: " .. tostring(metadata_err))
-            else
-                -- Update local copy of metadata
-                upload.metadata = merged_metadata
             end
-        end
+            upload.metadata = merged_metadata
 
-        if reported_error then
-            local error_msg = stage_error(stage_title, processor_id, reported_error)
-            log:error("upload processor reported failure", {
-                upload_id = upload.uuid,
-                processor_id = processor_id,
-                stage = stage_title,
-                error = reported_error,
-                retriable = retriable,
-            })
-            return false, error_msg, nil, retriable
+            if reported_error then
+                local error_msg = stage_error(stage_title, processor_id, reported_error)
+                log:error("upload processor reported failure", {
+                    upload_id = upload.uuid,
+                    processor_id = processor_id,
+                    stage = stage_title,
+                    error = reported_error,
+                    retriable = retriable,
+                })
+                return false, error_msg, nil, retriable
+            end
         end
     end
 

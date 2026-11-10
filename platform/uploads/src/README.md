@@ -45,6 +45,18 @@ An upload moves through storage, processing, and completion:
 3. When processing settles as `completed` or `error`, Uploads runs every
    completion callback attached to the upload.
 
+Each successful stage records its outcome in private upload metadata under the
+current job lease. A retry skips the completed prefix for the same source and
+pipeline definition, then enters the first incomplete stage. Relocation preserves
+that outcome; a changed source or pipeline definition starts processing again.
+The execution limit still applies independently to each attempt.
+
+Stage artifact writes use `artifact_content_repo.upsert_artifact` to retain one
+artifact per upload, role and ordinal (the page or extracted-image index). Source
+artifacts identify immutable input bytes by checksum. Conversion retains primary
+text enriched by later stages for that source, including OCR page outcomes.
+`create_artifact` keeps its existing append semantics for other callers.
+
 Work that depends on a processed file attaches a completion callback instead of
 polling upload status. A callback is an upload token minted by the module that
 owns the follow-up work:
