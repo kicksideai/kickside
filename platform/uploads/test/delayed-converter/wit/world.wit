@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 package kickside:doc2md;
 
 world converter {

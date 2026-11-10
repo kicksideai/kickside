@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 """Exercise a 95 second conversion through the upload job worker."""
 from pathlib import Path
 import argparse

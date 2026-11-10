@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: MIT
 [package]
 name = "delayed-converter"
 version = "0.1.0"

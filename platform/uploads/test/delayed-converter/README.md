@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: MIT -->
 # Conversion budget fixture
 
 This component implements the Doc2MD result contract and spends 95 seconds in one conversion call. The upload harness substitutes its binary into the existing converter entry, preserving that entry's execution limit. The tests admit a document through the upload API and inspect the durable job attempt and upload state.
