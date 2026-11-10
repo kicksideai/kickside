@@ -506,7 +506,9 @@ entries:
           definable), and reading it takes read access to that component, grants on its ancestors
           included. It is checked before anything is read. A caller without read access to a target
           is answered as if the target did not exist: not_found for the from target, an
-          unknown_target problem for a joined one.
+          unknown_target problem for a joined one. This unknown_target problem in details.problems,
+          under invalid_request/invalid_query, covers a joined target that does not exist or is not
+          visible without distinguishing the two.
 
           What the grammar cannot say, plan enforces. Nothing here mutates, and a read never moves
           data_version. A literal, a param and a lookup key fit the type of what they compare with:
@@ -969,7 +971,7 @@ entries:
                     "required": ["code", "path", "message"],
                     "description": "The shape every entry of error.details.problems takes as well.",
                     "properties": {
-                      "code": { "type": "string", "minLength": 1, "description": "One of: malformed (a request the grammar does not take: an unknown field, a value of the wrong shape, a constant to group or order by), unknown_target (in a join), unknown_column, ambiguous_column, unknown_alias, duplicate_alias, alias_required, ref_misplaced, type_mismatch, not_grouped, aggregate_misplaced, nested_aggregate, window_misplaced, unknown_function, arity, unknown_param, missing_param, unsupported_capability, unsupported_grain, unsupported_op, scope_unsupported, lineage_unsupported, relation_unknown, join_incompatible, join_not_keyed, limit_exceeded, targets_not_co_located." },
+                      "code": { "type": "string", "minLength": 1, "description": "One of: malformed (a request the grammar does not take: an unknown field, a value of the wrong shape, a constant to group or order by), unknown_target (a joined target that does not exist or is not visible), unknown_column, ambiguous_column, unknown_alias, duplicate_alias, alias_required, ref_misplaced, type_mismatch, not_grouped, aggregate_misplaced, nested_aggregate, window_misplaced, unknown_function, arity, unknown_param, missing_param, unsupported_capability, unsupported_grain, unsupported_op, scope_unsupported, lineage_unsupported, relation_unknown, join_incompatible, join_not_keyed, limit_exceeded, targets_not_co_located." },
                       "path": { "type": "string", "description": "JSON pointer into the request, e.g. /select/2/expr/args/0." },
                       "message": { "type": "string" },
                       "hint": { "type": "string", "description": "What would make it pass, when the receiver can say." }
@@ -1071,7 +1073,9 @@ entries:
           definable), and reading it takes read access to that component, grants on its ancestors
           included. It is checked before any row is read. A caller without read access to a target
           is answered as if the target did not exist: not_found for the from target, an
-          unknown_target problem for a joined one.
+          unknown_target problem for a joined one. This unknown_target problem in details.problems,
+          under invalid_request/invalid_query, covers a joined target that does not exist or is not
+          visible without distinguishing the two.
         input_schemas:
           - format: application/schema+json
             definition: |

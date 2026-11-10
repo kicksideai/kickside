@@ -1703,6 +1703,11 @@ jobs:
         persist-credentials: false
     - name: Check native harness database ownership
       run: python3 -m unittest discover -s tests -p test_public_harnesses.py
+    - name: Validate data contract schemas and example payloads
+      if: matrix.module == 'core/contract' && matrix.engine == 'sqlite'
+      run: |
+        python3 -m pip install -r core/contract/test/requirements.txt
+        make -C core/contract test-schemas
     - name: Prepare UI Kit build input
       run: |
         set -euo pipefail

@@ -8,10 +8,19 @@ Published contract IDs and existing method names remain available.
 
 The family uses independent component ACL bits (READ=1, WRITE=2, DELETE=4),
 unioning grants on the component and its ancestors. Visibility comes first:
-an existing target without READ returns `not_found`, even when WRITE or DELETE
-is granted. `permission_denied` applies only to a visible target lacking the
+a directly addressed target without READ returns `not_found`, even when WRITE
+or DELETE is granted. `permission_denied` applies only to a visible target lacking the
 required permission. Loading requires READ and WRITE, removal requires READ
 and DELETE, and planning an existing definition requires READ.
+
+Within `plan` and `query`, a joined target that does not exist or is not visible
+produces an `unknown_target` problem in `error.details.problems`, under
+`invalid_request` with reason `invalid_query`. Both cases have the same refusal.
+The primary `from` target uses `not_found` for both cases. This follows the query
+problem vocabulary, which reports invalid parts of a query by path.
+
+`scripts/contract-dispatch.json` records the generic dispatch surface and intended
+usage by future external modules; its data entries do not identify existing consumers.
 
 This module installs independently into a [KickSide](https://kickside.ai) host.
 
@@ -43,11 +52,15 @@ Development uses Make and the Wippy CLI.
 From this module directory:
 
 ```sh
+python3 -m pip install -r test/requirements.txt
 make lockrefresh
 make lint
 make test
 (cd test && wippy test --profile postgres --set vars.pg_database=kickside_readme_test)
 ```
+
+`make test` runs the Python schema payload tests and the native contract suite.
+CI runs both checks as well.
 
 Create a dedicated PostgreSQL database before the profile run and drop it
 afterward. Set the `pg_host`, `pg_port`, `pg_username`, and `pg_password`
