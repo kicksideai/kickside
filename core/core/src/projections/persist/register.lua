@@ -21,6 +21,7 @@ local retention_pin = require("retention_pin")
 local persisted_json = require("persisted_json")
 local sql_boundary = require("sql_boundary")
 local committed_error = require("committed_error")
+local canonical_json = require("canonical_json")
 
 local writer = {}
 
@@ -72,11 +73,28 @@ local DECLARATION_BODY_KEYS = {
     "drop_notify",
 }
 
+-- The declaration fields that decide what the fold sees and computes. A change
+-- to any of them invalidates the folded state; drop_notify is a teardown hook
+-- and leaves the fold intact.
+local FOLD_DECLARATION_KEYS = {
+    "meta",
+    "worker_config",
+    "events",
+}
+
 local function apply_declaration_fields(target: table, declaration: table): table
     for _, key in ipairs(DECLARATION_BODY_KEYS) do
         target[key] = declaration[key]
     end
     return target
+end
+
+local function fold_declaration(declaration: table): table
+    local out = {}
+    for _, key in ipairs(FOLD_DECLARATION_KEYS) do
+        out[key] = declaration[key]
+    end
+    return out
 end
 
 -- Structural equality over the declaration fields. Used to detect that a module
@@ -131,32 +149,10 @@ local function identity_row_from_params(params: table): (any?, error?)
     }) :: error)
 end
 
--- register_projection_tx upserts a projection and its cursor within a caller-
--- owned transaction. Validates params, derives runtime/defaults, reads the
--- thread row, upserts the projection (merging the body's read-model on
--- re-register unless reset=true), and upserts the cursor. No tx management:
--- the caller begins and commits; on error the caller rolls back. Declaration
--- convergence passes ensure=true to refresh declarations while preserving the
--- fold and cursor state. A changed declaration fences previously loaded workers.
-function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thread_id: string, params: table): (RegisterResult?, error?)
-    if type(params) ~= "table" then
-        return nil, (errors.new({ message = "projection registration params must be an object", kind = errors.INVALID }) :: error)
-    end
-    for _, key in ipairs({ "trigger_policy", "coalesce_key", "batch_size",
-        "window_max_events", "window_idle_timeout_ms", "window_max_duration_ms", "worker_runtime" }) do
-        if params[key] ~= nil then
-            return nil, (errors.new({ message = key .. " is not part of the projection cursor contract", kind = errors.INVALID }) :: error)
-        end
-    end
-
-    local kind = trim(params.kind)
-    if kind == "" then
-        return nil, (errors.new({ message = "kind is required", kind = errors.INVALID }) :: error)
-    end
-    if #kind > types.KIND_MAX_LEN then
-        return nil, (errors.new({ message = "kind is too long (max " .. tostring(types.KIND_MAX_LEN) .. ")", kind = errors.INVALID }) :: error)
-    end
-
+-- declaration_body validates the declaration fields of registration params and
+-- returns the declaration part of the projection body: meta (worker reference,
+-- runtime, input mode), worker_config, events and drop_notify.
+function writer.declaration_body(params: table): (table?, error?)
     local worker_ref = trim(params.worker_ref)
     if worker_ref == "" then
         return nil, (errors.new({ message = "worker_ref is required", kind = errors.INVALID }) :: error)
@@ -185,6 +181,80 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
     if worker_input_mode ~= types.WORKER_INPUT_MODE.PREFETCH_EVENTS and worker_input_mode ~= types.WORKER_INPUT_MODE.CURSOR_ONLY then
         return nil, (errors.new({ message = "worker_input_mode must be one of: prefetch_events, cursor_only", kind = errors.INVALID }) :: error)
     end
+
+    local body: table = {
+        meta = {
+            worker_ref = worker_ref,
+            worker_runtime = worker_runtime,
+            worker_input_mode = worker_input_mode,
+        },
+    }
+    if type(params.worker_config) == "table" then
+        body.worker_config = params.worker_config
+    end
+    if type(params.events) == "table" then
+        body.events = params.events
+    end
+    -- drop_notify is a subscriber-declared teardown hook: { thread_id, type, body }.
+    -- When the thread this projection lives on is torn down, the threads slice appends
+    -- the declared typed event to thread_id so the subscriber surfaces the loss of its
+    -- source through its own read model. A declaration field, like worker_config.
+    if type(params.drop_notify) == "table" then
+        body.drop_notify = params.drop_notify
+    end
+    return body, nil
+end
+
+-- declaration_digest is the canonical hash of a declaration body. Registration
+-- stores it on the projection row, so convergence finds a stored projection
+-- whose declaration differs from the current one without decoding its body.
+function writer.declaration_digest(body: table): (string?, error?)
+    local digest, err = canonical_json.hash(apply_declaration_fields({}, body))
+    if err then return nil, errors.wrap(err, "failed to hash projection declaration") end
+    if type(digest) ~= "string" or digest == "" then
+        return nil, response_error("declaration_digest", "projection declaration hash returns no result")
+    end
+    return digest :: string, nil
+end
+
+-- register_projection_tx upserts a projection and its cursor within a caller-
+-- owned transaction. Validates params, derives runtime/defaults, reads the
+-- thread row, upserts the projection (merging the body's read-model on
+-- re-register unless reset=true), and upserts the cursor. No tx management:
+-- the caller begins and commits; on error the caller rolls back. Declaration
+-- convergence passes ensure=true to refresh declarations. An ensure whose fold
+-- declaration (worker, worker_config, events) is unchanged preserves the fold
+-- and cursor state; a changed fold declaration rebuilds: the fold state is
+-- discarded and every cursor of the projection replays the thread from
+-- start_seq, because events the old declaration filtered out lie behind the
+-- cursors. A changed declaration fences previously loaded workers.
+function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thread_id: string, params: table): (RegisterResult?, error?)
+    if type(params) ~= "table" then
+        return nil, (errors.new({ message = "projection registration params must be an object", kind = errors.INVALID }) :: error)
+    end
+    for _, key in ipairs({ "trigger_policy", "coalesce_key", "batch_size",
+        "window_max_events", "window_idle_timeout_ms", "window_max_duration_ms", "worker_runtime" }) do
+        if params[key] ~= nil then
+            return nil, (errors.new({ message = key .. " is not part of the projection cursor contract", kind = errors.INVALID }) :: error)
+        end
+    end
+
+    local kind = trim(params.kind)
+    if kind == "" then
+        return nil, (errors.new({ message = "kind is required", kind = errors.INVALID }) :: error)
+    end
+    if #kind > types.KIND_MAX_LEN then
+        return nil, (errors.new({ message = "kind is too long (max " .. tostring(types.KIND_MAX_LEN) .. ")", kind = errors.INVALID }) :: error)
+    end
+
+    local body, declaration_err = writer.declaration_body(params)
+    if declaration_err then return nil, declaration_err end
+    if not body then return nil, response_error("declaration") end
+    local meta = body.meta :: table
+    local worker_ref = meta.worker_ref :: string
+    local worker_input_mode = meta.worker_input_mode :: string
+    local declaration_digest, digest_err = writer.declaration_digest(body)
+    if digest_err then return nil, digest_err end
 
     local projection_key = trim(params.projection_key)
     if projection_key == "" then
@@ -268,26 +338,6 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
         actor_context_col = (id_row :: any).actor_context :: string?
     end
 
-    local body = {
-        meta = {
-            worker_ref = worker_ref,
-            worker_runtime = worker_runtime,
-            worker_input_mode = worker_input_mode,
-        },
-    }
-    if type(params.worker_config) == "table" then
-        body.worker_config = params.worker_config
-    end
-    if type(params.events) == "table" then
-        body.events = params.events
-    end
-    -- drop_notify is a subscriber-declared teardown hook: { thread_id, type, body }.
-    -- When the thread this projection lives on is torn down, the threads slice appends
-    -- the declared typed event to thread_id so the subscriber surfaces the loss of its
-    -- source through its own read model. A declaration field, like worker_config.
-    if type(params.drop_notify) == "table" then
-        body.drop_notify = params.drop_notify
-    end
     local body_json, body_encode_err = json.encode(body)
     if body_encode_err then return nil, errors.wrap(body_encode_err, "failed to encode projection body") end
     if not body_json then
@@ -297,7 +347,8 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
     local projection_id: string
     local created_projection = false
     local declaration_changed = false
-    local projection_rows, projection_query_err = sql.builder.select("id", "body")
+    local rebuild = reset
+    local projection_rows, projection_query_err = sql.builder.select("id", "body", "declaration_digest")
         :from("kickside_projection")
         :where(sql.builder.eq({ thread_id = thread_id, kind = kind, projection_key = projection_key }))
         :limit(1)
@@ -315,37 +366,45 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
         -- ensure_thread convergence) refreshes just those declaration fields and
         -- keeps every other key, so a re-registration never drops the read-model.
         -- reset is the explicit rebuild: it replaces the whole body and rewinds the
-        -- cursor so the fold reconstructs the read-model from start_seq.
+        -- cursor so the fold reconstructs the read-model from start_seq. An ensure
+        -- whose fold declaration changed rebuilds the same way.
         local body_to_write = body_json
         if not reset then
             local merged, decode_err = persisted_json.decode_table(projection_rows[1].body, "kickside_projection.body")
             if decode_err then return nil, errors.wrap(decode_err, "failed to decode existing projection body") end
             local stored_declaration = apply_declaration_fields({}, merged :: table)
             declaration_changed = not same_declaration(stored_declaration, apply_declaration_fields({}, body))
-            apply_declaration_fields(merged :: table, body)
-            local merged_json, merged_err = json.encode(merged)
-            if merged_err then return nil, errors.wrap(merged_err, "failed to encode merged projection body") end
-            if not merged_json then
-                return nil, response_error("merged_body", "merged projection body encoder returns no result")
+            rebuild = params.ensure == true
+                and not same_declaration(fold_declaration(stored_declaration), fold_declaration(body))
+            if not rebuild then
+                apply_declaration_fields(merged :: table, body)
+                local merged_json, merged_err = json.encode(merged)
+                if merged_err then return nil, errors.wrap(merged_err, "failed to encode merged projection body") end
+                if not merged_json then
+                    return nil, response_error("merged_body", "merged projection body encoder returns no result")
+                end
+                body_to_write = merged_json :: string
             end
-            body_to_write = merged_json :: string
         end
-        if params.ensure ~= true or declaration_changed then
+        local digest_stale = projection_rows[1].declaration_digest ~= declaration_digest
+        if params.ensure ~= true or declaration_changed or digest_stale then
             local projection_update = sql.builder.update("kickside_projection")
                 :set("body", body_to_write)
+                :set("declaration_digest", declaration_digest)
                 :set("updated_at", now)
             if params.ensure ~= true then
                 projection_update = projection_update:set("actor_id", actor_id_col):set("actor_context", actor_context_col)
             end
-            if reset then
-                -- reset rewinds the projection to start_seq and marks it pending so
+            if rebuild then
+                -- A rebuild rewinds the projection to start_seq and marks it pending so
                 -- catch-up rebuilds it from scratch.
                 projection_update = projection_update:set("state", core_types.PROJECTION_STATE.PENDING):set("last_event_seq", start_seq)
             elseif declaration_changed then
                 -- INVALID records a fault in the PREVIOUS declaration (an unresolvable
                 -- worker_ref, an unsupported runtime). A new declaration retires that
                 -- verdict: the projection returns to pending and resumes from the seq it
-                -- already reached, so a corrected module upgrade heals without a replay.
+                -- already reached. A changed fold declaration under ensure takes the
+                -- rebuild branch instead.
                 projection_update = projection_update:set("state", core_types.PROJECTION_STATE.PENDING)
             end
             local updated, update_err = projection_update
@@ -365,6 +424,7 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
                 kind = kind,
                 projection_key = projection_key,
                 body = body_json,
+                declaration_digest = declaration_digest,
                 state = core_types.PROJECTION_STATE.PENDING,
                 last_event_seq = start_seq,
                 actor_id = actor_id_col,
@@ -384,9 +444,16 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
 
     end
 
+    -- An ensure rebuild rewinds every cursor of the projection: they share the
+    -- discarded fold state.
+    local ensure_rebuild = rebuild and params.ensure == true
     if declaration_changed then
-        local fenced, fence_err = sql.builder.update("kickside_projection_cursor")
+        local fence = sql.builder.update("kickside_projection_cursor")
             :set("generation", sql.builder.expr("generation + 1")):set("updated_at", now)
+        if ensure_rebuild then
+            fence = fence:set("last_seq", start_seq)
+        end
+        local fenced, fence_err = fence
             :where(sql.builder.eq({ projection_id = projection_id })):run_with(tx):exec()
         if fence_err then return nil, errors.wrap(fence_err, "failed to fence refreshed projection") end
         local _, proof_err = sql_boundary.number_value(type(fenced) == "table" and fenced.rows_affected or nil,
@@ -407,7 +474,7 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
     local cursor_head = start_seq
     if #cursor_rows > 0 then
         cursor_id = tostring(cursor_rows[1].id)
-        cursor_head = reset and start_seq or tonumber(cursor_rows[1].last_seq)
+        cursor_head = rebuild and start_seq or tonumber(cursor_rows[1].last_seq)
         if cursor_head == nil then return fail("projection cursor position is missing", errors.INTERNAL) end
         if cursor_head < pruned_seq then return fail("projection cursor is behind pruned history", errors.CONFLICT) end
         local prior_generation = tonumber(cursor_rows[1].generation)
@@ -472,6 +539,21 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
     if params.ensure ~= true and cursor_rows and cursor_rows[1] and (cursor_head < event_count or reset) then
         local _, wake_err = jobs_wake.wake_job(tx, job_id, { control = true }, dbtype)
         if wake_err then return nil, wake_err end
+    end
+    if ensure_rebuild and start_seq < event_count then
+        local slots, slots_err = sql.builder.select("job_id")
+            :from("kickside_projection_cursor")
+            :where(sql.builder.eq({ projection_id = projection_id }))
+            :where("job_id IS NOT NULL")
+            :order_by("id")
+            :run_with(tx):query()
+        slots, slots_err = sql_boundary.rows(slots, slots_err,
+            "failed to load rebuilt projection slots", "cursor.slots", response_error)
+        if slots_err then return nil, slots_err end
+        for _, slot in ipairs((slots or {}) :: table[]) do
+            local _, wake_err = jobs_wake.wake_job(tx, tostring(slot.job_id), { control = true }, dbtype)
+            if wake_err then return nil, wake_err end
+        end
     end
     -- A cursor at the thread head has no event left to fold, so its slot parks
     -- and no advance runs: the projection is current at that head.

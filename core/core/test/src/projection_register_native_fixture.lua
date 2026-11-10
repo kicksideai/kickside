@@ -1,5 +1,6 @@
 local sql = require("sql")
 local json = require("json")
+local canonical_json = require("canonical_json")
 local M = {stage = "", source = nil, dbtype = "", existing = false,
     queries = 0, writes = 0, encodes = 0, begins = 0, commits = 0, rollbacks = 0, notifications = 0}
 function M.reset(dbtype: string, stage: string, source: any, existing: boolean)
@@ -16,7 +17,11 @@ local function query(): (any, error?)
     if M.stage == "query_" .. tostring(M.queries) then return nil, M.source end
     if M.queries == 1 then return {{id = "thread", event_count = 0, max_pruned_seq = 0}}, nil end
     if not M.existing then return {}, nil end
-    if M.queries == 2 then return {{id = "projection", body = M.body}}, nil end
+    if M.queries == 2 then
+        -- A stored projection carries the digest of the declaration it holds.
+        local digest = assert(canonical_json.hash(assert(json.decode(M.body))))
+        return {{id = "projection", body = M.body, declaration_digest = digest}}, nil
+    end
     return {{id = "cursor", last_seq = 0, generation = 1, job_id = "job"}}, nil
 end
 local function exec(): (any, error?)

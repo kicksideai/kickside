@@ -63,9 +63,10 @@ local function declaration_response(field: string): error
         details = {code = "thread_declaration_response", field = field}})
 end
 
--- identity: { row?, system?, error? } from the contract's declared_identity.
-local function register_declared_projection(db: DB, thread_id: string, p: table, identity: { [string]: any }): error?
-    local params = {
+-- The registration params of a kind's declared projection binding, without
+-- the execution identity.
+local function declared_projection_params(p: table): table
+    return {
         kind = p.kind,
         worker_ref = p.worker_ref,
         worker_input_mode = p.input_mode,
@@ -75,10 +76,24 @@ local function register_declared_projection(db: DB, thread_id: string, p: table,
         debounce_max_ms = p.debounce_max_ms,
         worker_config = p.worker_config,
         events = p.events,
-        execution_identity_row = identity.row,
-        system_identity = identity.system == true,
         ensure = true,
     }
+end
+
+-- declared_projection_digest is the declaration digest a declared projection
+-- binding registers with; convergence compares it with the stored digest.
+function M.declared_projection_digest(p: table): (string?, error?)
+    local body, body_err = proj_writer.declaration_body(declared_projection_params(p))
+    if body_err then return nil, body_err end
+    if not body then return nil, declaration_response("declaration") end
+    return proj_writer.declaration_digest(body)
+end
+
+-- identity: { row?, system?, error? } from the contract's declared_identity.
+local function register_declared_projection(db: DB, thread_id: string, p: table, identity: { [string]: any }): error?
+    local params = declared_projection_params(p)
+    params.execution_identity_row = identity.row
+    params.system_identity = identity.system == true
     -- Validate existing cursor identities, then refresh through the registration
     -- transaction that serializes on the thread row.
     local rows, read_err = db:query([[SELECT c.id FROM kickside_projection p

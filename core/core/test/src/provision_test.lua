@@ -16,6 +16,7 @@ local process = require("process")
 local time = require("time")
 local json = require("json")
 local funcs = require("funcs")
+local registry = require("registry")
 
 local DB = "app:db"
 local PROCESS_SCOPE = "wippy.security:process"
@@ -566,6 +567,77 @@ local function define_tests()
             local d2 = db()
             test.is_true(count(d2, "kickside_projection", "thread_id", component_id) >= 1)
             d2:release()
+        end)
+
+        test.it("converge rebuilds a projection whose declaration gained input event types", function()
+            local owner = security.new_actor("drift-owner-" .. uuid.v4():sub(1, 8), { security_groups = {} })
+            local component_id = uuid.v4()
+            local impl_id = "app:converge_drift_decl"
+            local cinst = (contract.get("kickside.component:component_service") :: any)
+                :with_actor(owner):with_scope(scope()):open()
+            local reg = cinst:register({ component_id = component_id, impl_id = impl_id,
+                meta = { class = "test_drift", title = "Drift" } })
+            test.is_true(reg.success)
+            local tinst = (contract.get("kickside.core:threads") :: any):with_actor(owner):with_scope(scope()):open()
+            local _, ensure_err = tinst:ensure_thread({ component_id = component_id, impl_id = impl_id })
+            test.is_nil(ensure_err)
+            for _, event_type in ipairs({ "app:threads_drift_kept", "app:threads_drift_added" }) do
+                local _, append_err = tinst:append_event({ thread_id = component_id, event = { type = event_type, body = {} } })
+                test.is_nil(append_err)
+            end
+            -- The fold has passed both events; the second was outside its inputs.
+            local seed = db()
+            local seeded = seed:query([[SELECT c.id,c.generation FROM kickside_projection_cursor c
+                JOIN kickside_projection p ON p.id=c.projection_id WHERE p.thread_id=$1 AND p.kind='test.drift']], { component_id })
+            test.eq(#seeded, 1)
+            local cursor_id = seeded[1].id
+            local generation = assert(tonumber(seeded[1].generation))
+            test.is_nil(select(2, seed:execute("UPDATE kickside_projection_cursor SET last_seq=2 WHERE id=$1", { cursor_id })))
+            seed:release()
+
+            local original = assert(registry.current_version())
+            local ok, failure = pcall(function()
+                local entry = assert(registry.get(impl_id))
+                local data = {}
+                for key, value in pairs(entry.data or {}) do data[key] = value end
+                local meta = {}
+                for key, value in pairs(entry.meta or {}) do meta[key] = value end
+                meta.projections = { {
+                    kind = "test.drift",
+                    worker_ref = "func://app:test_count_worker",
+                    input_mode = "prefetch_events",
+                    events = { input = { { type = "app:threads_drift_kept" }, { type = "app:threads_drift_added" } } },
+                } }
+                local changes = assert(registry.snapshot()):changes()
+                changes:update({ id = impl_id, kind = entry.kind, meta = meta, data = data })
+                test.is_nil(select(2, changes:apply()))
+
+                local system = security.new_actor("system:lifecycle", { system = true, security_groups = {} })
+                local summary, converge_err = provision.converge(system, scope())
+                test.is_nil(converge_err)
+                for _, skipped in ipairs((summary :: any).skipped) do
+                    test.neq(skipped.component_id, component_id, tostring(skipped.reason))
+                end
+                local d = db()
+                local rows = d:query([[SELECT p.body,c.last_seq,c.generation FROM kickside_projection p
+                    JOIN kickside_projection_cursor c ON c.projection_id=p.id WHERE c.id=$1]], { cursor_id })
+                d:release()
+                local body = json.decode(rows[1].body)
+                test.eq(#body.events.input, 2, "the stored declaration matches the upgraded binding")
+                test.eq(body.events.input[2].type, "app:threads_drift_added")
+                test.eq(tonumber(rows[1].last_seq), 0, "events before the upgrade replay under the new inputs")
+                test.eq(tonumber(rows[1].generation), generation + 1)
+
+                local again, again_err = provision.converge(system, scope())
+                test.is_nil(again_err)
+                test.not_nil(again)
+                local d2 = db()
+                local settled = d2:query("SELECT generation FROM kickside_projection_cursor WHERE id=$1", { cursor_id })
+                d2:release()
+                test.eq(tonumber(settled[1].generation), generation + 1, "a converged declaration is not rebuilt again")
+            end)
+            test.is_nil(select(2, registry.apply_version(original)))
+            if not ok then error(failure) end
         end)
 
         test.it("converge registers a declared projection for a kind without a primary thread", function()

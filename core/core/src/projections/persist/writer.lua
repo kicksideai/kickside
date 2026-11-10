@@ -16,6 +16,8 @@ local retention_pin = require("retention_pin")
 local M = {
     register_projection = register.register_projection,
     register_projection_tx = register.register_projection_tx,
+    declaration_body = register.declaration_body,
+    declaration_digest = register.declaration_digest,
 }
 -- The cancellation dependency can be replaced by colocated tests to inspect
 -- aggregate lock order without changing the production call path.

@@ -27,6 +27,7 @@ local execution_identity = require("execution_identity")
 local component_identity = require("component_identity")
 local component_envelope = require("component_envelope")
 local error_envelope = require("error_envelope")
+local thread_crud = require("threads_thread_crud")
 
 local M = {}
 
@@ -182,7 +183,9 @@ end
 
 -- converge makes every component of a declaring kind match its declaration: a
 -- missing thread row is recreated (thread-declaring kinds), a missing declared
--- projection or cursor is registered (any kind declaring projections). Declared state thereby survives anything — a partial
+-- projection or cursor is registered and a projection whose stored declaration
+-- digest differs from the declaration is re-registered (any kind declaring
+-- projections). Declared state thereby survives anything — a partial
 -- delete, a lost row, a module uninstall/reinstall — because the next service
 -- start reasserts the declaration. Boot runs it on service start and after
 -- each install's migrations are applied. Each component converges under its own
@@ -202,7 +205,7 @@ function M.converge(opener_actor: any, opener_scope: any): ({ [string]: any }, e
     local _db = db :: sql.DB
 
     -- One divergence set per declaring kind: components missing their thread row,
-    -- plus components missing declared projections.
+    -- plus components missing declared projections or carrying a stale declaration.
     local function divergent_components(kind: { [string]: any }): ({ [string]: boolean }, error?)
         local ids: { [string]: boolean } = {}
         -- A missing thread is recreatable only for a kind that declares its
@@ -237,16 +240,23 @@ function M.converge(opener_actor: any, opener_scope: any): ({ [string]: any }, e
             local escaped_key = tostring(declared_key):gsub("'", "''")
             local cursor_key = type(decl.cursor_key) == "string" and decl.cursor_key ~= "" and decl.cursor_key or proj_types.KEY_DEFAULT
             local escaped_cursor = cursor_key:gsub("'", "''")
-            local missing_rows, proj_err = sql.builder
+            local missing_query = sql.builder
                 .select("c.component_id AS component_id")
                 :from("kickside_components c")
                 :join("kickside_thread t ON t.id = c.component_id")
                 :left_join("kickside_projection p ON p.thread_id = t.id AND p.kind = '" .. escaped_kind .. "' AND p.projection_key = '" .. escaped_key .. "'")
                 :left_join("kickside_projection_cursor pc ON pc.projection_id=p.id AND pc.cursor_key='" .. escaped_cursor .. "'")
                 :left_join("kickside_job j ON j.id=pc.job_id")
-                :where("(p.id IS NULL OR pc.id IS NULL OR j.id IS NULL)")
                 :where("c.impl_id = ?", tostring(kind.component_impl_id or kind.impl_id))
-                :run_with(_db):query()
+            -- A declaration that cannot be digested cannot be registered either:
+            -- every component converges and reports the registration error.
+            local digest, digest_err = thread_crud.declared_projection_digest(decl)
+            if not digest_err then
+                missing_query = missing_query:where(
+                    "(p.id IS NULL OR pc.id IS NULL OR j.id IS NULL OR p.declaration_digest IS NULL OR p.declaration_digest <> ?)",
+                    digest)
+            end
+            local missing_rows, proj_err = missing_query:run_with(_db):query()
             if proj_err then
                 return ids, (errors.wrap(proj_err, "converge: projection scan failed") :: error)
             end

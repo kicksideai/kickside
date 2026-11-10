@@ -158,6 +158,14 @@ entries:
     kind: registry.entry
     meta: { type: kickside.core.threads.event }
     schema: { type: object }
+  - name: threads_drift_kept
+    kind: registry.entry
+    meta: { type: kickside.core.threads.event }
+    schema: { type: object }
+  - name: threads_drift_added
+    kind: registry.entry
+    meta: { type: kickside.core.threads.event }
+    schema: { type: object }
   - name: threads_sys_reap
     kind: registry.entry
     meta: { type: kickside.core.threads.event }
@@ -623,7 +631,7 @@ entries:
     kind: function.lua
     source: file://provision_test.lua
     method: declarations
-    modules: [process, time, channel, sql, uuid, security, contract, json, funcs]
+    modules: [registry, process, time, channel, sql, uuid, security, contract, json, funcs]
     imports:
       test: wippy.test:test
       provision: kickside.core.threads:provision
@@ -701,6 +709,32 @@ entries:
         methods:
           get_status: kickside.core.threads:thread_status
 
+  # A kind whose projection declaration a test upgrades in the registry, as a
+  # module release that adds input event types does.
+  - name: converge_drift_decl
+    kind: contract.binding
+    meta:
+      title: Test Converge Drift Kind
+      class:
+        - test_drift
+      thread:
+        class: test.drift.thread
+      projections:
+        - kind: test.drift
+          worker_ref: "func://app:test_count_worker"
+          input_mode: prefetch_events
+          events:
+            input:
+              - type: app:threads_drift_kept
+      events:
+        input:
+          - type: app:threads_drift_kept
+          - type: app:threads_drift_added
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
   - name: provision_system_test_decl
     kind: contract.binding
     meta:
@@ -738,6 +772,7 @@ entries:
     source: file://provision_test.lua
     method: run
     modules:
+      - registry
       - process
       - time
       - channel
@@ -897,6 +932,7 @@ entries:
       execution_identity: kickside.execution:execution_identity
       proj_types: kickside.core.projections:types
       component_identity: kickside.core.threads:component_identity
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
 
   - name: thread_provision_race_test
     kind: function.lua
@@ -1262,6 +1298,7 @@ entries:
       retention_pin: kickside.core.retention:pin
       persisted_json: kickside.contract:persisted_json
       error_envelope: kickside.contract:error_envelope
+      canonical_json: kickside.contract:canonical_json
 
   - name: projection_conflict_test
     kind: function.lua
@@ -2726,6 +2763,7 @@ entries:
       proj_types: kickside.core.projections:types
       component_envelope: kickside.component:envelope
       error_envelope: kickside.contract:error_envelope
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
 
   - name: provision_native_test
     kind: function.lua
@@ -2761,6 +2799,8 @@ entries:
     kind: library.lua
     source: file://projection_register_native_fixture.lua
     modules: [sql, json]
+    imports:
+      canonical_json: kickside.contract:canonical_json
 
   - name: projection_register_native_sql_adapter
     kind: library.lua
@@ -2793,6 +2833,7 @@ entries:
       persisted_json: kickside.contract:persisted_json
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       committed_error: kickside.contract:committed_error
+      canonical_json: kickside.contract:canonical_json
 
   - name: projection_register_native_test
     kind: function.lua

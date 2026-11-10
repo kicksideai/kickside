@@ -237,6 +237,7 @@ entries:
       execution_identity: kickside.execution:execution_identity
       proj_types: kickside.core.projections:types
       component_identity: kickside.core.threads:component_identity
+      threads_thread_crud: kickside.core.threads.persist:thread_crud
 
   - name: workspace_plugin
     kind: process.lua
@@ -497,7 +498,7 @@ entries:
   - name: converge_thread_method
     kind: function.lua
     meta:
-      comment: kickside.core:threads converge_thread — make a component's thread state match its kind's declaration (create if absent, apply missing projections/cursors if present). Boot/install convergence primitive, never a hot path.
+      comment: kickside.core:threads converge_thread — make a component's thread state match its kind's declaration (create if absent; apply missing projections/cursors and refresh changed declarations if present). Boot/install convergence primitive, never a hot path.
     source: file://contract/resource.lua
     method: converge_thread
     modules: [crypto]
