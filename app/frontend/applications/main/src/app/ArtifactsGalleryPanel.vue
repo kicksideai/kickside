@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { setWippyVisibility } from '@wippy-fe/shared'
 import { useWippy } from '../composables/useWippy'
+import { useHostReturnRefresh } from './hostReturn'
 
 const props = withDefaults(defineProps<{ visible?: boolean }>(), {
   visible: false,
@@ -68,6 +69,7 @@ async function mountArtifacts() {
 }
 
 watch(() => props.visible, visible => { if (element) setWippyVisibility(element, visible) })
+useHostReturnRefresh(() => element, () => props.visible)
 onMounted(mountArtifacts)
 onBeforeUnmount(detach)
 </script>

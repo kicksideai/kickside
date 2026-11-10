@@ -17,6 +17,7 @@ import SessionsPanel from './SessionsPanel.vue'
 import ArtifactsGalleryPanel from './ArtifactsGalleryPanel.vue'
 import { useChatController, isKicksideChatOpenDetail, type KicksideChatOpenDetail } from './useChatController'
 import { HOST_CHAT_PANEL, isChatDrawerOpen } from './chatDrawer'
+import { provideHostReturn } from './hostReturn'
 import { useShellBranding } from './useShellBranding'
 import { useShellAccount } from './useShellAccount'
 import { useSessionWorkspace } from './useSessionWorkspace'
@@ -37,6 +38,9 @@ const host = useHost()
 const instance = useWippy()
 
 const chat = useChatController()
+// The host retires this page behind Keeper or Git and brings it back. The surfaces
+// refresh on that return (hostReturn.ts), because the proxy no longer reloads the page.
+provideHostReturn(handler => instance.on('@visibility', handler))
 const portalsReady = ref(false)
 const mobileNavOpen = ref(false)
 const mobileSessionsOpen = ref(false)
