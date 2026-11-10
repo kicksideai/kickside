@@ -19,8 +19,9 @@
    zooming the trigger makes the overlay too wide for it. The session selector
    row and the close button are therefore sized here in plain pixels, taken from
    the old sidebar (13px root), and the selector's list is sized the same way in
-   35-chat-selector-overlay.css. Overlays of the meta row (agent and model menus,
-   context menu) open in <body> at the host's 16px and are not adjusted.
+   35-chat-selector-overlay.css. The meta row's agent menu also opens in <body>
+   and is sized in 36-chat-agent-menu.css. Other overlays that open in <body>
+   stay at the host's 16px.
 
    Scope: `:where()` adds no specificity. Several host rules here are scoped
    Vue styles (four classes deep), so the rules below raise their own weight by
