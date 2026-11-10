@@ -1,5 +1,5 @@
-import { b as t } from "./index-CAXh6BYi.js";
-import { B as i } from "./primevue-plugin-Dn0ACs8V.js";
+import { b as t } from "./index-GqAeG0Jm.js";
+import { B as i } from "./primevue-plugin-BTxKP425.js";
 import { openBlock as e, createElementBlock as s, mergeProps as r, createElementVNode as p } from "vue";
 var a = `
     .p-progressspinner {
@@ -140,4 +140,4 @@ g.render = m;
 export {
   g as s
 };
-//# sourceMappingURL=index-BvJc5yvO.js.map
+//# sourceMappingURL=index-BooApU3W.js.map

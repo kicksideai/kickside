@@ -130,17 +130,23 @@ function onDocClick(e: MouseEvent) {
   if ((panel.value && path.includes(panel.value)) || (props.anchor && path.includes(props.anchor))) return
   emit('update:open', false)
 }
-function onKey(e: KeyboardEvent) { if (props.open && e.key === 'Escape') emit('update:open', false) }
+function onKey(e: KeyboardEvent) {
+  if (!props.open || e.key !== 'Escape') return
+  e.preventDefault()
+  e.stopImmediatePropagation()
+  emit('update:open', false)
+}
 function reflow() { if (props.open) place() }
 
 document.addEventListener('click', onDocClick)
-document.addEventListener('keydown', onKey)
+// Capture Escape before a surrounding dialog or a menu item's key handler owns it.
+document.addEventListener('keydown', onKey, true)
 window.addEventListener('resize', reflow)
 window.addEventListener('scroll', reflow, true)
 onBeforeUnmount(() => {
   unobserveSize()
   document.removeEventListener('click', onDocClick)
-  document.removeEventListener('keydown', onKey)
+  document.removeEventListener('keydown', onKey, true)
   window.removeEventListener('resize', reflow)
   window.removeEventListener('scroll', reflow, true)
 })

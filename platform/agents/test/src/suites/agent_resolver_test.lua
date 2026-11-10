@@ -203,6 +203,24 @@ local function define_tests()
             test.eq(loaded.current_agent_id, "user_agent:" .. cid)
         end)
 
+        test.it("offers a tool selected directly and through a capability once", function()
+            local tool_id = "kickside.uploads.traits:count_files"
+            for _, traits in ipairs({ {}, { "kickside.uploads.traits:file_manager" } }) do
+                local cid = register_agent({
+                    prompt = "Compile selected tools.", model = "class:fast",
+                    tools = { tool_id }, traits = traits,
+                }, "Tool composition agent")
+                local loaded, err = new_executor(owner):call(CONTEXT_PROBE, { agent_id = cid })
+                test.is_nil(err, tostring(err))
+                test.is_true(loaded.success, loaded.error)
+                local count = 0
+                for _, tool in pairs(loaded.agent.tools or {}) do
+                    if tool.registry_id == tool_id then count = count + 1 end
+                end
+                test.eq(count, 1, "direct tools remain available and overlapping trait tools compile once")
+            end
+        end)
+
         test.it("preserves agent-level runtime options for compiler overlay", function()
             local cid = register_agent({
                 prompt = "Runtime options prompt.",

@@ -5,7 +5,7 @@ import { on as dt, api as mo, define as pt } from "@wippy-fe/proxy";
 import { p as ut } from "./pickerValue-SPnnNBeX.js";
 import { _ as bt } from "./WcMount.vue_vue_type_script_setup_true_lang-CNWT59Oh.js";
 import { B as wo, l as To, s as gt, a as xo, f as go, R as vt, b as ft } from "./index-nfQnU_Pv.js";
-import { _ as ht } from "./AnchoredPanel.vue_vue_type_script_setup_true_lang-DSLnUKFT.js";
+import { _ as ht } from "./AnchoredPanel.vue_vue_type_script_setup_true_lang-CU5LLZRq.js";
 const mt = () => nt(), yt = () => rt();
 var wt = `
     .p-badge {

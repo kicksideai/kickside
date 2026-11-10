@@ -1,4 +1,4 @@
-import { computed, ref, type Ref } from 'vue'
+import { computed, type Ref } from 'vue'
 import type { Form, Trait } from './agent-form.types.ts'
 
 interface AgentCapabilitiesOptions {
@@ -8,7 +8,6 @@ interface AgentCapabilitiesOptions {
 }
 
 export function useAgentCapabilities({ form, traits, redirectTrait }: AgentCapabilitiesOptions) {
-  const showAdvancedTools = ref(true)
   const selectableTraits = computed(() => traits().filter(t => t.id !== redirectTrait))
   const traitOn = (trait: Trait) => form.value.traits.includes(trait.id)
   const activeTraits = computed(() => selectableTraits.value.filter(traitOn))
@@ -41,10 +40,8 @@ export function useAgentCapabilities({ form, traits, redirectTrait }: AgentCapab
     form.value.traits = [...form.value.traits.filter(id => id === redirectTrait), ...ids]
   }
 
-  function onToolsChange(ids: string[]) { form.value.tools = [...ids] }
-
   return {
-    showAdvancedTools, selectableTraits, selectedCapabilities, activeTraits,
-    traitMountConfig, onTraitConfig, onCapabilitiesChange, onToolsChange,
+    selectableTraits, selectedCapabilities, activeTraits,
+    traitMountConfig, onTraitConfig, onCapabilitiesChange,
   }
 }

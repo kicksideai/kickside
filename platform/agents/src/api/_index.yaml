@@ -166,6 +166,8 @@ entries:
     imports:
       query_params: kickside.agents.api:query_params
       capability_context: kickside.agents.traits:capability_context
+      list_tools: kickside.agents.api:list_tools
+      tool_visibility: kickside.agents.registry:tool_visibility
     method: handler
 
   - name: list_traits.endpoint

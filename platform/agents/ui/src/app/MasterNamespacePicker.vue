@@ -15,8 +15,11 @@ interface Config {
 }
 interface Ns { id: string; label: string; kind: string }
 
-const props = useProps<{ config?: Config | string[] | null }>()
+const props = useProps<{ config?: Config | string[] | null; schema?: Trait['context_schema'] }>()
 const emit = useEvents<{ 'config-changed': Config }>()
+function supports(field: keyof Config): boolean {
+  return !props.value.schema || Object.prototype.hasOwnProperty.call(props.value.schema.properties || {}, field)
+}
 
 function list(v: any): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && x !== '') : []
@@ -85,9 +88,9 @@ const nsHas = (id: string) => namespaces.value.includes(id)
 
 function publish() {
   emit('config-changed', {
-    namespaces: [...namespaces.value],
-    trait_ids: [...traitIds.value],
-    inject_trait_catalog: injectTraitCatalog.value,
+    ...(supports('namespaces') ? { namespaces: [...namespaces.value] } : {}),
+    ...(supports('trait_ids') ? { trait_ids: [...traitIds.value] } : {}),
+    ...(supports('inject_trait_catalog') ? { inject_trait_catalog: injectTraitCatalog.value } : {}),
   })
 }
 function toggleNs(id: string) {
@@ -106,13 +109,13 @@ function toggleCatalog() { injectTraitCatalog.value = !injectTraitCatalog.value;
 
 <template>
   <div class="kx-ns">
-    <label class="kx-ns-toggle">
+    <label v-if="supports('inject_trait_catalog')" class="kx-ns-toggle">
       <input class="kx-ns-switch-input" type="checkbox" :checked="injectTraitCatalog" @change="toggleCatalog" />
       <span class="kx-ns-switch" aria-hidden="true"></span>
       <span>Show available capabilities in the prompt</span>
     </label>
 
-    <div class="kx-ns-section">
+    <div v-if="supports('namespaces')" class="kx-ns-section">
       <div class="kx-ns-label">Limit which packages it can use</div>
       <div class="kx-ns-chips">
         <span v-for="(ns, i) in namespaces" :key="ns" class="kx-ns-chip">
@@ -152,9 +155,9 @@ function toggleCatalog() { injectTraitCatalog.value = !injectTraitCatalog.value;
       </div>
     </div>
 
-    <CapabilityPicker :traits="visibleTraits" :tools="tools" :selected="traitIds"
+    <CapabilityPicker v-if="supports('trait_ids')" :traits="visibleTraits" :tools="tools" :selected="traitIds"
       label="Limit which capabilities it can turn on" empty-message="All available capabilities are allowed."
       @change="setTraits" />
-    <p class="kx-ns-hint">Leave the limits empty to allow all available capabilities.</p>
+    <p v-if="supports('trait_ids')" class="kx-ns-hint">Leave the limits empty to allow all available capabilities.</p>
   </div>
 </template>
