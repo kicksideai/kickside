@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: app
+entries:
+- name: uploads_conversion_budget_test
+  kind: function.lua
+  meta:
+    type: test_support
+    suite: uploads_conversion_budget
+    comment: Runs with the delayed converter fixture to exercise the upload job deadline.
+  source: file://uploads_background_jobs_test.lua
+  security:
+    policies:
+    - kickside.uploads.security:deferred_owner
+    - kickside.uploads.security:deferred_actor
+  modules:
+  - registry
+  - funcs
+  - fs
+  - uuid
+  - security
+  - json
+  - compress
+  - sql
+  - time
+  - base64
+  - hash
+  - process
+  imports:
+    test: wippy.test:test
+    artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+    artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+    metadata_sanitizer: kickside.uploads:metadata_sanitizer
+    execution_identity: kickside.execution:execution_identity
+    upload_record_repo: kickside.uploads.persist:upload_record_repo
+    processing_intent_repo: kickside.uploads.persist:processing_intent_repo
+    upload_query_repo: kickside.uploads.persist:upload_query_repo
+    upload_read_model: kickside.uploads.persist:upload_read_model
+    upload_lib: kickside.uploads:uploads
+    upload_tokens: kickside.uploads.persist:upload_tokens
+    uploads_events: kickside.uploads.persist:uploads_events
+    types: kickside.uploads:types
+    provision: kickside.core.threads:provision
+    pipeline_lib: kickside.uploads:pipeline
+    process_worker: kickside.uploads.service:process_worker
+    process_job: kickside.uploads.service:process_job_proc
+    callback_job: kickside.uploads.service:callback_job
+    upload_response: kickside.uploads.api:upload_response
+    processor: kickside.uploads.documents:processor
+    file_provider: kickside.uploads.binding:file_provider_func
+    settings_writer: kickside.settings.persist:settings_writer
+    jobs: kickside.core.jobs:jobs
+  method: run_budget
