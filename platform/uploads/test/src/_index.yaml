@@ -368,6 +368,37 @@ entries:
     source: file://rasterize_fixtures.lua
     modules: [base64]
 
+  - name: flaky_rasterizer
+    kind: function.lua
+    meta:
+      comment: Test-only rasterizer whose page 2 never renders.
+    source: file://flaky_rasterizer.lua
+    method: run
+
+  - name: flaky_rasterizer.capability
+    kind: registry.entry
+    meta:
+      type: convert.rasterizer
+      comment: Advertises the test-only flaky rasterizer for its private mime type.
+    input_mime_types:
+      - application/x-kickside-flaky-pdf
+    processor_func: app:flaky_rasterizer
+    priority: 100
+
+  - name: scripted_rasterizer
+    kind: function.lua
+    source: file://scripted_rasterizer.lua
+    method: run
+    modules: [fs, json]
+
+  - name: scripted_rasterizer.capability
+    kind: registry.entry
+    meta:
+      type: convert.rasterizer
+    input_mime_types: [application/x-scripted-pdf]
+    processor_func: app:scripted_rasterizer
+    priority: 100
+
   - name: rasterize_test
     kind: function.lua
     meta:
@@ -375,7 +406,7 @@ entries:
       suite: kickside_uploads_rasterize
       comment: Discovery, PDF adapter, and the empty-document rasterize pipeline stage.
     source: file://rasterize_test.lua
-    modules: [registry, funcs, fs, uuid, security, contract]
+    modules: [registry, funcs, fs, uuid, security, contract, json, time]
     imports:
       page_images: kickside.uploads.rasterize:page_images
       test: wippy.test:test
@@ -384,6 +415,7 @@ entries:
       upload_record_repo: kickside.uploads.persist:upload_record_repo
       rasterizer: kickside.uploads.rasterize:rasterizer
       fixtures: app:rasterize_fixtures
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
     method: run
 
   - name: dep.kickside.uploads

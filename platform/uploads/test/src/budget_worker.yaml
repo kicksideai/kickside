@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: app
+entries:
+  - name: single_worker_pool
+    kind: process.lua
+    source: file://suites/single_worker_pool.lua
+    method: main
+    modules: [sql]
+    imports:
+      worker_pool: kickside.core.jobs.service:worker_pool
+      config: kickside.core.jobs:config
