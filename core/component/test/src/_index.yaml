@@ -1402,6 +1402,7 @@ entries:
       component_command: kickside.component:component_command
       context_policy: kickside.component:context_policy
       identity_access: kickside.component:identity_access
+      delete_children: kickside.component:delete_children
 
   - name: system_delete_native_test
     kind: function.lua
@@ -1451,6 +1452,7 @@ entries:
       component_command: kickside.component:component_command
       context_policy: app:singleton_emit_context
       identity_access: kickside.component:identity_access
+      delete_children: kickside.component:delete_children
       contract: app:singleton_emit_contract
 
   - name: singleton_emit_native_test

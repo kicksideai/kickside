@@ -12,11 +12,14 @@ user-facing CRUD API.
     reversible operations.
 - **Registry** — the canonical binding for `knowledge_bases`.
 - **Lifecycle ownership** — every KB deletion goes through `knowledge_bases`,
-  which tears down each engine store before removing the component. Higher-level
+  which deletes placement dependents before submitting the KB to its engine's
+  deletable teardown and component removal. Higher-level
   packages may reference a KB, but they do not own or intercept its lifecycle.
-  A component another module placed under a KB does not block the deletion: the
-  deletion moves it to the root (`child_policy = reparent_root`), and the module
-  that placed it removes it in its own cleanup of the KB.
+  Deletion checks DELETE access on every placement descendant before changing
+  any component, then deletes descendants children-first through the component
+  service. Each kind's `kickside.contract:deletable` binding tears down its data.
+  A denied child or failed teardown stops KB deletion with a conflict naming
+  that child. Children remain attached until deleted; none move to the root.
 - **Engine seam** — the model-agnostic `kb_store_lifecycle` contract that the
   knowledge control plane uses to create/read/update/delete a KB engine's
   per-component store row. Node/edge/embedding/summary/graph operations never

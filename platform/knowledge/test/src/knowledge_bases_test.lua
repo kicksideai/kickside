@@ -46,17 +46,32 @@ local function define_tests()
     end)
 
     test.describe("knowledge_bases delete", function()
-        test.it("deletes a knowledge base that has child components and moves the children to the root", function()
-            local result, err = funcs.new()
-                :with_actor(security.new_actor("kb-parent-owner", {}))
-                :with_scope(security.named_scope("wippy.security:process"))
-                :call("kickside.knowledge.registry:knowledge_bases_probe")
-            test.is_nil(err, tostring(err))
-            test.is_nil(result.delete_error, tostring(result.delete_error))
-            test.is_true(result.kb_gone, "the knowledge base outlived its deletion")
-            test.is_true(result.child_found, "the child went away with its parent")
-            test.is_nil(result.child_parent, "the child still points at the deleted knowledge base")
-        end)
+        for _, mode in ipairs({"child", "nested", "denied", "failed", "empty"}) do
+            test.it("deletes dependents children-first or reports the blocking child: " .. mode, function()
+                local policies = {security.policy("app:user")}
+                if mode == "denied" then policies[#policies + 1] = security.policy("kickside.knowledge.registry:deny_child") end
+                local result, err = funcs.new()
+                    :with_actor(security.new_actor("kb-parent-owner", {}))
+                    :with_scope(security.new_scope(policies))
+                    :call("kickside.knowledge.registry:knowledge_bases_probe", {mode = mode})
+                test.is_nil(err, tostring(err))
+                if mode == "denied" or mode == "failed" then
+                    test.is_true(result.conflict, tostring(result.delete_error))
+                    test.is_true(result.names_child, tostring(result.delete_error))
+                    test.is_true(result.kb_present)
+                    test.is_true(result.children_attached)
+                    test.eq(result.cleaned, 0)
+                    if mode == "denied" then test.eq(result.marked, 0)
+                    else test.is_true(result.delete_error:find("dependent teardown refuses deletion", 1, true) ~= nil) end
+                else
+                    test.is_nil(result.delete_error, tostring(result.delete_error))
+                    test.is_false(result.kb_present)
+                    test.eq(result.children_remaining, 0)
+                    test.eq(result.cleaned, mode == "nested" and 2 or (mode == "child" and 1 or 0))
+                    test.is_true(result.children_first)
+                end
+            end)
+        end
     end)
 end
 
