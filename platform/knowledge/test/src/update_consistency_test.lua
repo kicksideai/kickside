@@ -55,6 +55,58 @@ local function define_tests()
             test.is_true(ok)
         end)
 
+        test.it("writes only changed effective config and metadata on repeated updates", function()
+            local current = {}
+            local meta = { comment = "Before", icon = "book" }
+            local config_writes, meta_writes = 0, 0
+            local last_meta: any = nil
+            local c = collaborators({
+                get_component = function() return { meta = meta }, nil end,
+                prepare_config = function(_, _, patch)
+                    return consistency.config_plan(current, patch, function(config)
+                        if config.enabled == nil then config.enabled = false end
+                        return config
+                    end)
+                end,
+                update_config = function(_, _, config)
+                    config_writes = config_writes + 1
+                    current = config
+                    return true, nil
+                end,
+                set_meta = function(_, fields)
+                    meta_writes = meta_writes + 1
+                    last_meta = fields
+                    for key, value in pairs(fields) do meta[key] = value end
+                    return true, nil
+                end,
+            })
+            local function apply(fields, patch)
+                local ok, err = consistency.apply("kb-repeat", { meta_fields = fields, config_patch = patch }, c)
+                test.is_nil(err, tostring(err))
+                test.is_true(ok)
+            end
+            apply({ comment = "Before", icon = "book" }, { enabled = false })
+            test.eq(config_writes, 0, "effective defaults cause no store write")
+            test.eq(meta_writes, 0, "matching metadata causes no write")
+            local fields = { comment = "After", icon = "" }
+            local patch = { enabled = true, nested = { labels = { "one", "two" } } }
+            apply(fields, patch)
+            test.eq(config_writes, 1)
+            test.eq(meta_writes, 1)
+            apply(fields, { nested = { labels = { "one", "two" } }, enabled = true })
+            test.eq(config_writes, 1, "identical config causes no second write")
+            test.eq(meta_writes, 1, "identical metadata causes no second write")
+            apply({ comment = "", icon = "" }, { enabled = true })
+            test.eq(config_writes, 1, "a partial matching config causes no write")
+            test.eq(meta_writes, 2)
+            test.is_nil(last_meta.icon, "only changed metadata fields are written")
+            test.eq(meta.comment, "")
+            test.eq(meta.icon, "")
+            apply(nil, { enabled = false })
+            test.eq(config_writes, 2, "false remains a change from true")
+            test.eq(meta_writes, 2)
+        end)
+
         for _, key in ipairs({ "summary_model", "summary_prompt", "summary_max_chars" }) do
             test.it("schedules maintenance after saving a changed " .. key, function()
                 local c = collaborators({ prepare_config = function()
@@ -248,8 +300,9 @@ local function define_tests()
             }, c)
             test.is_nil(err)
             test.is_true(ok == true)
-            test.eq(#c.calls, 1)
-            test.eq(c.calls[1].op, "set_meta")
+            test.eq(#c.calls, 2)
+            test.eq(c.calls[1].op, "get_component")
+            test.eq(c.calls[2].op, "set_meta")
         end)
 
         test.it("config-only updates do not write component metadata", function()

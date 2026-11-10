@@ -555,6 +555,8 @@ entries:
     config: kickside.core.jobs:config
 - name: round_live_probe
   kind: function.lua
+  meta:
+    job_class: awaited
   source: file://round/live_probe.lua
   method: run
   modules: [sql, process]
