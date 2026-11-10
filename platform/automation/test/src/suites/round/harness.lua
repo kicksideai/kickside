@@ -120,8 +120,9 @@ function M.receive_logged(listener: Map, timeout: string?, diagnostic: (() -> st
     return data :: Map
 end
 
--- A probe sharing the round's concurrency key cannot run until that round's
--- claim has completed. Its direct reply is the completion barrier.
+-- The probe shares the round's awaited class, so its later due time follows
+-- the round before it acquires their shared concurrency key. Its direct reply
+-- is the completion barrier.
 function M.await_worker_pass(concurrency_key: string, park_job_id: string?): ()
     local topic = "round.worker.probe." .. uuid.v7()
     local ready = process.listen(topic, { message = true })
