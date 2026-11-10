@@ -1,8 +1,6 @@
 version: '1.0'
 override:
   app:gateway:addr: ":${http_port}"
-  kickside.users.security:tokens:data.token_key_env: ""
-  kickside.users.security:tokens:data.token_key: "0123456789abcdef0123456789abcdef"
   app:db:file: ${sqlite_path}
   kickside.core.jobs.service:worker.service:lifecycle.auto_start: false
 workspace:
