@@ -273,8 +273,15 @@ local function define_tests()
                         if stage == "rasterize" then
                             renders = renders + 1
                             local result = assert(funcs.call("kickside.uploads.rasterize:stage", params))
-                            if renders == 1 then test.is_false(result.completed)
-                            else test.eq(result.metadata.rendered_page_count, failure == "count-error" and 2 or 1) end
+                            if renders == 1 then
+                                test.is_false(result.completed)
+                                if failure ~= "partial" then
+                                    test.eq(#result.metadata.rasterize_failures, 1)
+                                end
+                            else
+                                test.eq(result.metadata.rendered_page_count, failure == "count-error" and 2 or 1)
+                                test.is_false(result.metadata.rasterize_failures)
+                            end
                             return result
                         end
                         if stage == "ocr" then

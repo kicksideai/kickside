@@ -106,38 +106,86 @@ local function store_page(params: any, page: any, fmt: string, source_id: string
     return err
 end
 
-local function render_pages(params: any, entry: any, ref: any, selected: { integer }, opts: any, source_id: string?, markdown_id: string?): (integer, string?)
+local function error_identifier(value: any): string?
+    if type(value) == "string" and #value <= 64 and value:match("^[%w_][%w_.%-]*$") then return value end
+    return nil
+end
+
+local function public_failure(err: any, code: string, message: string): any
+    local kind
+    if type(err) == "userdata" then
+        local native = err :: error
+        kind = error_identifier(native:kind())
+        code = error_identifier((native:details() or {}).code) or code
+    elseif type(err) == "table" then
+        kind = error_identifier(err.kind)
+        code = error_identifier(err.code) or code
+    end
+    return { code = code, kind = kind, error = message }
+end
+
+local function render_call(entry: any, ref: any, pages: { integer }, opts: any): ({ any }?, any?)
+    local res, call_err = funcs.call(entry.processor_func :: string, {
+        ref = ref,
+        dpi = opts.dpi,
+        format = opts.format,
+        quality = opts.quality,
+        pages = pages,
+    })
+    if call_err ~= nil or type(res) ~= "table" or res.err ~= nil then
+        local err = call_err or (type(res) == "table" and res.err)
+        return nil, public_failure(err, "render_failed", "Unable to render document pages.")
+    end
+    local ok = type(res.ok) == "table" and res.ok or {}
+    return ok.pages or {}, nil
+end
+
+-- Probe the first failed batch page by page. If no page renders, report one
+-- document failure and stop; otherwise retain per-page failures and usable pages.
+local function render_pages(params: any, entry: any, ref: any, selected: { integer }, opts: any, source_id: string?, markdown_id: string?): (integer, { any }, string?)
     local rendered = 0
+    local failures: { any } = {}
+    local diagnosed = false
+    local function store_all(pages: { any }): string?
+        for _, p in ipairs(pages) do
+            local store_err = store_page(params, p, opts.format :: string, source_id, markdown_id)
+            if store_err ~= nil then return tostring(store_err) end
+            rendered = rendered + 1
+        end
+        return nil
+    end
     local page = 1
     while page <= #selected do
         local last = math.min((page + opts.batch - 1) :: number, #selected)
         local selector: { integer } = {}
         for p = page, last do selector[#selector + 1] = selected[p] end
 
-        local res, call_err = funcs.call(entry.processor_func :: string, {
-            ref = ref,
-            dpi = opts.dpi,
-            format = opts.format,
-            quality = opts.quality,
-            pages = selector,
-        })
-        if call_err ~= nil then return rendered, tostring(call_err) end
-        if type(res) ~= "table" then return rendered, "rasterize: empty render result" end
-        if res.err ~= nil then
-            local msg = (type(res.err) == "table" and res.err.message) or tostring(res.err)
-            return rendered, tostring(msg)
+        local pages, render_err = render_call(entry, ref, selector, opts)
+        if render_err == nil then
+            local store_err = store_all(pages :: { any })
+            if store_err then return rendered, failures, store_err end
+        elseif #selector == 1 then
+            if not diagnosed then return rendered, { render_err }, nil end
+            render_err.page = selector[1]
+            failures[#failures + 1] = render_err
+        else
+            local before = #failures
+            for _, number in ipairs(selector) do
+                local single, single_err = render_call(entry, ref, { number }, opts)
+                if single_err ~= nil then
+                    single_err.page = number
+                    failures[#failures + 1] = single_err
+                else
+                    local store_err = store_all(single :: { any })
+                    if store_err then return rendered, failures, store_err end
+                end
+            end
+            if not diagnosed and #failures - before == #selector then return rendered, { render_err }, nil end
+            diagnosed = true
         end
-
-        local ok = type(res.ok) == "table" and res.ok or {}
-        for _, p in ipairs(ok.pages or {}) do
-            local store_err = store_page(params, p, opts.format :: string, source_id, markdown_id)
-            if store_err ~= nil then return rendered, tostring(store_err) end
-            rendered = rendered + 1
-        end
-
         page = last + 1
     end
-    return rendered, nil
+    return rendered, failures, nil
 end
 
 local function process(params: any): any
@@ -170,12 +218,14 @@ local function process(params: any): any
 
     local count_res, count_err = funcs.call(entry.processor_func :: string, { ref = ref, count_only = true })
     if count_err ~= nil or type(count_res) ~= "table" or type(count_res.ok) ~= "table" then
-        log:warn("rasterize page count failed", { upload_id = upload_id, error = tostring(count_err) })
-        return { success = true, completed = false }
+        local err = count_err or (type(count_res) == "table" and count_res.err)
+        log:warn("rasterize page count failed", { upload_id = upload_id, error = tostring(err) })
+        return { success = true, completed = false, metadata = { rasterize_failures = {
+            public_failure(err, "page_count_failed", "Unable to count document pages.") } } }
     end
     local total = tonumber(count_res.ok.total)
-    if not total then return {success = true, completed = false} end
-    if total < 1 then return { success = true } end
+    if not total then return { success = true, completed = false } end
+    if total < 1 then return { success = true, metadata = { rasterize_failures = false } } end
     local text_pages = page_images.text_pages(primary.content, primary.metadata and primary.metadata.ocr_page_outcomes)
     local selected: { integer } = {}
     local ocr_reason
@@ -191,7 +241,7 @@ local function process(params: any): any
         ocr_reason = page_images.ocr_document_reason(primary.content, total, max_text, params.size)
         if ocr_reason then for page = 1, total do selected[#selected + 1] = page end end
     end
-    if #selected == 0 then return { success = true } end
+    if #selected == 0 then return { success = true, metadata = { rasterize_failures = false } } end
 
     -- Skip rendering when doc2md already extracted exactly one full-page image per page
     -- (the PDF's pages are images). Those extracted images are the pages -- re-rendering
@@ -204,7 +254,7 @@ local function process(params: any): any
             upload_id = upload_id, total_pages = total, extracted_pages = #extracted,
             reason = ocr_reason,
         })
-        return { success = true, metadata = { rasterize_skipped = true } }
+        return { success = true, metadata = { rasterize_skipped = true, rasterize_failures = false } }
     end
 
     local available = page_images.numbered_images(extracted)
@@ -214,7 +264,9 @@ local function process(params: any): any
     local missing: { integer } = {}
     for _, page in ipairs(selected) do if not available[page] then missing[#missing + 1] = page end end
     selected = missing
-    if #selected == 0 then return {success = true, metadata = {rasterize_skipped = true}} end
+    if #selected == 0 then
+        return { success = true, metadata = { rasterize_skipped = true, rasterize_failures = false } }
+    end
 
     log:info("rasterizing document for OCR", {
         upload_id = upload_id,
@@ -231,9 +283,14 @@ local function process(params: any): any
         quality = setting_int("rasterize_quality", 90),
     }
 
-    local rendered, render_err = render_pages(params, entry, ref, selected, opts, source_id, markdown_id)
-    if render_err ~= nil then
-        log:warn("rasterize render failed", { upload_id = upload_id, rendered = rendered, total = total, error = render_err })
+    local rendered, failures, stage_err = render_pages(params, entry, ref, selected, opts, source_id, markdown_id)
+    if stage_err ~= nil then
+        log:error("rasterize stage failed", { upload_id = upload_id, rendered = rendered, total = total, error = stage_err })
+        return { success = false, error = "rasterize: " .. stage_err }
+    end
+    if #failures > 0 then
+        log:warn("rasterize render failed", { upload_id = upload_id, rendered = rendered, failed = #failures,
+            total = total, error = failures[1].error })
     end
 
     log:info("rasterized empty document", {
@@ -241,13 +298,15 @@ local function process(params: any): any
         format = opts.format, rasterizer = entry.id, reason = ocr_reason,
     })
 
-    local completed = render_err == nil
+    local completed = #failures == 0
     local stored = page_images.numbered_images(page_images.rendered(upload_id))
     for _, page in ipairs(selected) do
         if not stored[page] then completed = false end
     end
-    return { success = true, completed = completed,
-        metadata = { rendered_page_count = rendered, rasterize_reason = ocr_reason } }
+    -- Pages that did not render stay without an image, so OCR records them as
+    -- failed pages; their render errors are reported here.
+    return { success = true, completed = completed, metadata = { rendered_page_count = rendered, rasterize_reason = ocr_reason,
+        rasterize_failures = #failures > 0 and failures or false } }
 end
 
 return { process = process }
