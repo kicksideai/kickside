@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Test-only convert.rasterizer: a three-page document whose page 2 cannot render.
 -- Any render request that includes page 2 fails as a whole, like a converter call
 -- that exceeds its deadline.
