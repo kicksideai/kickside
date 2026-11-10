@@ -1043,3 +1043,17 @@ entries:
     method: GET
     path: /uploads/{uuid}/raw
     func: kickside.uploads.api:raw_handler
+
+  - name: reference_artifacts.endpoint
+    kind: http.endpoint
+    meta: {router: reference_api}
+    method: GET
+    path: /uploads/{uuid}/artifacts
+    func: kickside.uploads.api:artifacts_handler
+
+  - name: reference_artifact_raw.endpoint
+    kind: http.endpoint
+    meta: {router: reference_api}
+    method: GET
+    path: /uploads/{uuid}/artifacts/{artifact_id}/raw
+    func: kickside.uploads.api:artifact_raw_handler

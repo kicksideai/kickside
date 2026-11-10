@@ -27,7 +27,13 @@ local function raw_handler()
     end
 
     local upload, err = upload_query_repo.get(uuid)
-    if err or not upload then
+    if err and not errors.is(err, errors.NOT_FOUND) then
+        res:set_status(http_errors.classify(err))
+        res:set_content_type(http.CONTENT.JSON)
+        res:write_json({success = false, error = tostring(err)})
+        return
+    end
+    if not upload then
         res:set_status(http.STATUS.NOT_FOUND)
         res:set_content_type(http.CONTENT.JSON)
         res:write_json({ success = false, error = "Upload not found" })
@@ -77,13 +83,14 @@ local function raw_handler()
     end
     if not bearer_ok then
         local references, reference_err = component.query({meta = {upload_id = uuid},
-            access_mask = component.ACCESS.READ, include = {meta = false}})
+            access_mask = component.ACCESS.READ, limit = 16, include = {meta = false}})
         if reference_err then
             res:set_status(http_errors.classify(reference_err))
             res:set_content_type(http.CONTENT.JSON)
             res:write_json({success = false, error = tostring(reference_err)})
             return
         end
+        local checked: {[string]: boolean} = {}
         for _, reference in ipairs(references or {}) do
             local context, context_err = component.get_private_context(reference.component_id)
             if context_err then
@@ -103,27 +110,31 @@ local function raw_handler()
                     res:write_json({success = false, error = tostring(principal_err)})
                     return
                 end
-                if execution_identity.actor_key(principal) == upload.actor_id then
-                    bearer_ok = true
-                    break
-                end
-                local masks, masks_err = component.principal_masks_system(principal, {container_id})
-                if masks_err then
-                    res:set_status(http_errors.classify(masks_err))
-                    res:set_content_type(http.CONTENT.JSON)
-                    res:write_json({success = false, error = tostring(masks_err)})
-                    return
-                end
-                if access_policy.has_all((masks or {})[container_id] or 0, component.ACCESS.READ) then
-                    bearer_ok = true
-                    break
+                local principal_key = execution_identity.actor_key(principal)
+                if not checked[principal_key] then
+                    checked[principal_key] = true
+                    if principal_key == upload.actor_id then
+                        bearer_ok = true
+                        break
+                    end
+                    local masks, masks_err = component.principal_masks_system(principal, {container_id})
+                    if masks_err then
+                        res:set_status(http_errors.classify(masks_err))
+                        res:set_content_type(http.CONTENT.JSON)
+                        res:write_json({success = false, error = tostring(masks_err)})
+                        return
+                    end
+                    if access_policy.has_all((masks or {})[container_id] or 0, component.ACCESS.READ) then
+                        bearer_ok = true
+                        break
+                    end
                 end
             end
         end
         if not bearer_ok then
-            res:set_status(http.STATUS.FORBIDDEN)
+            res:set_status(http.STATUS.NOT_FOUND)
             res:set_content_type(http.CONTENT.JSON)
-            res:write_json({success = false, error = "Access denied"})
+            res:write_json({success = false, error = "Upload not found"})
             return
         end
     end

@@ -258,8 +258,9 @@ entries:
   - name: meta_ops
     kind: library.lua
     source: file://meta_ops.lua
-    modules: [sql, time, uuid, json, registry]
+    modules: [sql, time, uuid, json, registry, funcs, security]
     imports:
+      execution_identity: kickside.execution:execution_identity
       component_types: kickside.component:types
       error_envelope: kickside.contract:error_envelope
 
