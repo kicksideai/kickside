@@ -8,6 +8,8 @@ local trim = require("text_trim").trim
 -- decisions from diverging.
 local M = {}
 
+M.PREVIEW_ROLE = "page-preview"
+M.THUMBNAIL_ROLE = "page-thumbnail"
 M.DEFAULT_MIN_PAGE_BYTES = 51200
 M.DEFAULT_MAX_TEXT_BYTES_PER_PAGE = 800
 M.DEFAULT_CONFIDENT_TEXT_BYTES_PER_PAGE = 1600
@@ -107,6 +109,57 @@ function M.page_set(upload_id: string, min_bytes: integer): ({ any }, string)
     for _, image in pairs(numbered) do pages[#pages + 1] = image end
     table.sort(pages, function(a, b) return a.metadata.page < b.metadata.page end)
     return pages, #rendered > 0 and "rendered" or "extracted"
+end
+
+-- The image that stands for each page number: its page_set image (a page
+-- rendered for OCR, else a numbered extracted scan), else its preview rendition.
+function M.page_image_map(upload_id: string, min_bytes: integer): { [integer]: any }
+    local images: { [integer]: any } = {}
+    for _, a in ipairs(artifact_parts_repo.list_artifacts(upload_id) or {}) do
+        local page = type(a.metadata) == "table" and math.tointeger(tonumber(a.metadata.page)) or nil
+        if a.kind == "image" and a.role == M.PREVIEW_ROLE and page then images[page] = a end
+    end
+    for _, image in ipairs((M.page_set(upload_id, min_bytes))) do
+        local page = type(image.metadata) == "table" and math.tointeger(tonumber(image.metadata.page)) or nil
+        if page then images[page] = image end
+    end
+    return images
+end
+
+-- Thumbnails the rasterize stage rendered, one per page. Each records the page
+-- and the artifact that stands for that page, so the thumbnails are the
+-- published page map.
+function M.thumbnails(upload_id: string): ({ any }, string | error | nil)
+    local artifacts, err = artifact_parts_repo.list_artifacts(upload_id)
+    if err then return {}, err end
+    local out = {}
+    for _, a in ipairs(artifacts or {}) do
+        if a.kind == "image" and a.role == M.THUMBNAIL_ROLE then out[#out + 1] = a end
+    end
+    return sorted_by_ordinal(out), nil
+end
+
+-- pages(upload_id) -> { page, image, thumbnail } per page in page order, where
+-- image and thumbnail are artifact rows of this upload.
+function M.pages(upload_id: string): ({ any }, string | error | nil)
+    local artifacts, err = artifact_parts_repo.list_artifacts(upload_id)
+    if err then return {}, err end
+    local by_id = {}
+    for _, a in ipairs(artifacts or {}) do by_id[a.artifact_id] = a end
+    local out = {}
+    for _, a in ipairs(artifacts or {}) do
+        if a.kind == "image" and a.role == M.THUMBNAIL_ROLE then
+            local meta = type(a.metadata) == "table" and a.metadata or {}
+            local image = by_id[meta.image_artifact_id]
+            if not image then
+                return {}, errors.new({ kind = errors.INTERNAL,
+                    message = "thumbnail of page " .. tostring(meta.page) .. " names no image artifact of the upload" })
+            end
+            out[#out + 1] = { page = tonumber(meta.page), image = image, thumbnail = a }
+        end
+    end
+    table.sort(out, function(a, b) return a.page < b.page end)
+    return out, nil
 end
 
 -- Keep the original page bodies and byte boundaries so OCR can replace only

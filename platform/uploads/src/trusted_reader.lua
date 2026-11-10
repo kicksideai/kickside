@@ -10,6 +10,7 @@ local upload_query_repo = require("upload_query_repo")
 local artifact_parts_repo = require("artifact_parts_repo")
 local artifact_content_repo = require("artifact_content_repo")
 local metadata_sanitizer = require("metadata_sanitizer")
+local page_images = require("page_images")
 
 local M = {}
 
@@ -22,6 +23,8 @@ type Provenance = { [string]: unknown }
 type PrimaryText = { text: string, chars: integer, truncated: boolean, content_type: string?, artifact_id: string, metadata: unknown? }
 type SourceImage = { artifact_id: string, content_type: string, size: number? }
 type ImageBytes = { bytes: string, content_type: string, size: integer }
+type Page = { page: integer, image_artifact_id: string, image_content_type: string?,
+    thumbnail_artifact_id: string, thumbnail_content_type: string? }
 
 local function status_of(storage_state: unknown): string
     if storage_state == "completed" then return "completed" end
@@ -130,6 +133,25 @@ function M.image_bytes(upload_id: string, artifact_id: string, max_bytes: number
         return nil, errors.new({ kind = errors.INVALID, message = "image is too large", details = { code = "too_large" } })
     end
     return { bytes = content, content_type = mime, size = #content }, nil
+end
+
+-- pages(upload_id) -> the published page map of a document upload in page
+-- order: per page, the image artifact that stands for the page and its
+-- thumbnail. Empty until processing renders the page previews.
+function M.pages(upload_id: string): ({ Page }?, any?)
+    local pages, err = page_images.pages(upload_id)
+    if err then return nil, err end
+    local out: { Page } = {}
+    for _, entry in ipairs(pages) do
+        out[#out + 1] = {
+            page = entry.page,
+            image_artifact_id = entry.image.artifact_id,
+            image_content_type = entry.image.mime_type,
+            thumbnail_artifact_id = entry.thumbnail.artifact_id,
+            thumbnail_content_type = entry.thumbnail.mime_type,
+        }
+    end
+    return out, nil
 end
 
 return M

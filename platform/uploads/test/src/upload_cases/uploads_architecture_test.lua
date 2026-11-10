@@ -300,6 +300,7 @@ local function define_tests()
 
             entry("kickside.uploads.api:artifacts_handler.endpoint")
             entry("kickside.uploads.api:artifact_raw_handler.endpoint")
+            entry("kickside.uploads.api:pages_handler.endpoint")
         end)
 
         test.it("publishes the consolidated storage settings block", function()

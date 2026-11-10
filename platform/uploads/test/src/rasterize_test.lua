@@ -10,6 +10,7 @@ local rasterizer = require("rasterizer")
 local fixtures = require("fixtures")
 local page_images = require("page_images")
 local contract = require("contract")
+local trusted_reader = require("trusted_reader")
 
 local STORAGE_ID = "app:uploads"
 -- Synthetic image-only PDF (no text layer, no embedded fonts): doc2md extracts no
@@ -34,6 +35,29 @@ local function is_jpeg(blob: any): boolean
 end
 local function is_webp(blob: any): boolean
     return type(blob) == "string" and #blob > 12 and blob:sub(1, 4) == "RIFF" and blob:sub(9, 12) == "WEBP"
+end
+
+-- Pixel width from a baseline or progressive JPEG frame header.
+local function jpeg_width(blob: string): integer?
+    local at = 3
+    while at + 8 <= #blob do
+        if blob:byte(at) ~= 0xFF then return nil end
+        local marker = blob:byte(at + 1)
+        local length = blob:byte(at + 2) * 256 + blob:byte(at + 3)
+        if marker == 0xC0 or marker == 0xC1 or marker == 0xC2 then
+            return blob:byte(at + 7) * 256 + blob:byte(at + 8)
+        end
+        at = at + 2 + length
+    end
+    return nil
+end
+
+local function settings_instance(): any
+    return assert(assert(contract.get("kickside.settings:settings")):open())
+end
+
+local function set_setting(key: string, value: any)
+    test.is_true(settings_instance():set({ namespace = "kickside.uploads.rasterize", key = key, value = value }).success)
 end
 
 local function fixture_bytes(): string
@@ -98,6 +122,25 @@ local function rendered_pages(upload_id: string): { any }
     end
     table.sort(out, function(a, b) return (tonumber(a.ordinal) or 0) < (tonumber(b.ordinal) or 0) end)
     return out :: { any }
+end
+
+local function artifacts_with_role(upload_id: string, role: string): { any }
+    local artifacts, err = artifact_parts_repo.list_artifacts(upload_id)
+    test.is_nil(err)
+    local out = {}
+    for _, a in ipairs(artifacts or {}) do
+        if a.kind == "image" and a.role == role then out[#out + 1] = a end
+    end
+    table.sort(out, function(a, b) return (tonumber(a.metadata.page) or 0) < (tonumber(b.metadata.page) or 0) end)
+    return out :: { any }
+end
+
+local function text_layer(pages: integer): string
+    local out = {}
+    for page = 1, pages do
+        out[#out + 1] = "<!-- page " .. page .. " -->\n\n" .. string.rep("A usable text layer. ", 100)
+    end
+    return table.concat(out, "\n\n")
 end
 
 local function run_stage(upload_id: string, mime: string, size: any?): any
@@ -185,6 +228,110 @@ local function define_tests()
         test.it("returns an error for non-PDF bytes", function()
             local res = rasterize({ ref = { bytes = "not a pdf at all" } })
             test.not_nil(res.err)
+        end)
+    end)
+
+    test.describe("kickside.uploads.rasterize page previews", function()
+        test.it("renders a preview and a smaller thumbnail of every page of a text-layer document", function()
+            local upload_id = seed_document("application/pdf", text_layer(FIXTURE_PAGES))
+            test.eq(#page_images.pages(upload_id), 0)
+            local result = run_stage(upload_id, "application/pdf")
+            test.is_true(result.success)
+            test.is_nil(result.metadata)
+            test.eq(#rendered_pages(upload_id), 0)
+
+            local previews = artifacts_with_role(upload_id, "page-preview")
+            local thumbnails = artifacts_with_role(upload_id, "page-thumbnail")
+            test.eq(#previews, FIXTURE_PAGES)
+            test.eq(#thumbnails, FIXTURE_PAGES)
+            local pages = page_images.pages(upload_id)
+            test.eq(#pages, FIXTURE_PAGES)
+            for i = 1, FIXTURE_PAGES do
+                test.eq(pages[i].page, i)
+                test.eq(pages[i].image.artifact_id, previews[i].artifact_id)
+                test.eq(pages[i].thumbnail.artifact_id, thumbnails[i].artifact_id)
+                test.eq(thumbnails[i].metadata.image_artifact_id, previews[i].artifact_id)
+                test.eq(thumbnails[i].mime_type, "image/jpeg")
+                local image_bytes = assert(artifact_content_repo.read_artifact_content(upload_id, previews[i].artifact_id))
+                local thumbnail_bytes = assert(artifact_content_repo.read_artifact_content(upload_id, thumbnails[i].artifact_id))
+                local image_width, thumbnail_width = jpeg_width(image_bytes), jpeg_width(thumbnail_bytes)
+                test.not_nil(image_width)
+                test.not_nil(thumbnail_width)
+                test.is_true((thumbnail_width :: integer) < (image_width :: integer))
+            end
+            -- Previews are page renditions, not content parts of the upload.
+            test.eq(artifact_parts_repo.count_artifact_parts(upload_id), 0)
+        end)
+
+        test.it("publishes OCR renders and extracted scans as page images without rendering previews", function()
+            local upload_id = seed_document("application/pdf", "<!-- page 1 -->\n\n<!-- page 2 -->")
+            local scan = assert(artifact_content_repo.create_artifact({ upload_id = upload_id,
+                kind = "image", role = "extracted-image", mime_type = "image/png", ordinal = 1001,
+                content = string.rep("S", 60000), storage_id = STORAGE_ID, metadata = { page = 1 } }))
+            local result = run_stage(upload_id, "application/pdf")
+            test.is_true(result.success)
+            test.eq(result.metadata.rendered_page_count, 1)
+            local images = rendered_pages(upload_id)
+            test.eq(#images, 1)
+            test.eq(images[1].metadata.page, 2)
+            test.eq(#artifacts_with_role(upload_id, "page-preview"), 0)
+            local pages = page_images.pages(upload_id)
+            test.eq(#pages, 2)
+            test.eq(pages[1].image.artifact_id, scan.artifact_id)
+            test.eq(pages[2].image.artifact_id, images[1].artifact_id)
+            test.eq(pages[1].thumbnail.metadata.image_artifact_id, scan.artifact_id)
+            test.eq(pages[2].thumbnail.metadata.image_artifact_id, images[1].artifact_id)
+        end)
+
+        test.it("keeps the published page map when the stage runs again", function()
+            local upload_id = seed_document("application/pdf", text_layer(FIXTURE_PAGES))
+            run_stage(upload_id, "application/pdf")
+            local first = page_images.pages(upload_id)
+            local again = run_stage(upload_id, "application/pdf")
+            test.is_true(again.success)
+            test.eq(#artifacts_with_role(upload_id, "page-preview"), FIXTURE_PAGES)
+            test.eq(#artifacts_with_role(upload_id, "page-thumbnail"), FIXTURE_PAGES)
+            local second = page_images.pages(upload_id)
+            test.eq(#second, FIXTURE_PAGES)
+            for i = 1, FIXTURE_PAGES do
+                test.eq(second[i].image.artifact_id, first[i].image.artifact_id)
+                test.eq(second[i].thumbnail.artifact_id, first[i].thumbnail.artifact_id)
+            end
+        end)
+
+        test.it("renders previews of a source below the OCR size threshold", function()
+            local upload_id = seed_document("application/pdf", text_layer(FIXTURE_PAGES))
+            local result = run_stage(upload_id, "application/pdf", 10)
+            test.is_true(result.success)
+            test.eq(#page_images.pages(upload_id), FIXTURE_PAGES)
+        end)
+
+        test.it("renders no previews when page previews are off", function()
+            local upload_id = seed_document("application/pdf", text_layer(FIXTURE_PAGES))
+            set_setting("rasterize_page_previews", false)
+            local result = run_stage(upload_id, "application/pdf")
+            set_setting("rasterize_page_previews", true)
+            test.is_true(result.success)
+            test.eq(#artifacts_with_role(upload_id, "page-preview"), 0)
+            test.eq(#artifacts_with_role(upload_id, "page-thumbnail"), 0)
+            test.eq(#page_images.pages(upload_id), 0)
+        end)
+
+        test.it("exposes the page map to trusted readers", function()
+            local upload_id = seed_document("application/pdf", text_layer(FIXTURE_PAGES))
+            run_stage(upload_id, "application/pdf")
+            local pages = page_images.pages(upload_id)
+            local trusted, err = trusted_reader.pages(upload_id)
+            test.is_nil(err)
+            test.eq(#(trusted :: { any }), FIXTURE_PAGES)
+            for i = 1, FIXTURE_PAGES do
+                local entry = (trusted :: { any })[i]
+                test.eq(entry.page, i)
+                test.eq(entry.image_artifact_id, pages[i].image.artifact_id)
+                test.eq(entry.image_content_type, "image/jpeg")
+                test.eq(entry.thumbnail_artifact_id, pages[i].thumbnail.artifact_id)
+                test.eq(entry.thumbnail_content_type, "image/jpeg")
+            end
         end)
     end)
 

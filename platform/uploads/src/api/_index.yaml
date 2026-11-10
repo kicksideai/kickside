@@ -230,15 +230,12 @@ entries:
     source: file://get_raw.lua
     imports:
       uploads_resources: kickside.uploads.binding:uploads_resources
-      types: kickside.uploads:types
       http_errors: kickside.contract:http_errors
       upload_query_repo: kickside.uploads.persist:upload_query_repo
-      component: kickside.component:component
-      upload_tokens: kickside.uploads.persist:upload_tokens
+      read_access: kickside.uploads.api:read_access
     method: raw_handler
     modules:
       - http
-      - security
       - fs
     pool:
       size: 4
@@ -261,18 +258,16 @@ entries:
     source: file://artifacts.lua
     imports:
       upload_response: kickside.uploads.api:upload_response
-      component: kickside.component:component
-      types: kickside.uploads:types
       http_errors: kickside.contract:http_errors
       upload_query_repo: kickside.uploads.persist:upload_query_repo
       artifact_content_repo: kickside.uploads.persist:artifact_content_repo
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
       metadata_sanitizer: kickside.uploads:metadata_sanitizer
-      upload_tokens: kickside.uploads.persist:upload_tokens
+      read_access: kickside.uploads.api:read_access
+      page_images: kickside.uploads.rasterize:page_images
     method: artifacts_handler
     modules:
       - http
-      - security
     pool:
       size: 4
 
@@ -294,18 +289,16 @@ entries:
     source: file://artifacts.lua
     imports:
       upload_response: kickside.uploads.api:upload_response
-      component: kickside.component:component
-      types: kickside.uploads:types
       http_errors: kickside.contract:http_errors
       upload_query_repo: kickside.uploads.persist:upload_query_repo
       artifact_content_repo: kickside.uploads.persist:artifact_content_repo
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
       metadata_sanitizer: kickside.uploads:metadata_sanitizer
-      upload_tokens: kickside.uploads.persist:upload_tokens
+      read_access: kickside.uploads.api:read_access
+      page_images: kickside.uploads.rasterize:page_images
     method: artifact_raw_handler
     modules:
       - http
-      - security
     pool:
       size: 4
 
@@ -318,3 +311,47 @@ entries:
     func: artifact_raw_handler
     method: GET
     path: /uploads/{uuid}/artifacts/{artifact_id}/raw
+
+  # kickside.uploads.api:pages_handler
+  - name: pages_handler
+    kind: function.lua
+    meta:
+      comment: List the published page map (page image and thumbnail per page) of an upload.
+    source: file://artifacts.lua
+    imports:
+      upload_response: kickside.uploads.api:upload_response
+      http_errors: kickside.contract:http_errors
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+      metadata_sanitizer: kickside.uploads:metadata_sanitizer
+      read_access: kickside.uploads.api:read_access
+      page_images: kickside.uploads.rasterize:page_images
+    method: pages_handler
+    modules:
+      - http
+    pool:
+      size: 4
+
+  # kickside.uploads.api:pages_handler.endpoint
+  - name: pages_handler.endpoint
+    kind: http.endpoint
+    meta:
+      comment: Upload page map endpoint.
+      router: router
+    func: pages_handler
+    method: GET
+    path: /uploads/{uuid}/pages
+
+  # kickside.uploads.api:read_access
+  - name: read_access
+    kind: library.lua
+    meta:
+      comment: The upload read rule shared by the original, artifact and page map endpoints.
+    source: file://read_access.lua
+    modules:
+      - security
+    imports:
+      component: kickside.component:component
+      upload_tokens: kickside.uploads.persist:upload_tokens
+      types: kickside.uploads:types

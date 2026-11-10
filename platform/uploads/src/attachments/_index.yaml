@@ -52,10 +52,11 @@ entries:
   - name: trusted_reader
     kind: library.lua
     meta:
-      comment: Read-only text, image and provenance of any upload for a module that authorizes the read itself.
+      comment: Read-only text, images, page map and provenance of any upload for a module that authorizes the read itself.
     source: file://../trusted_reader.lua
     imports:
       upload_query_repo: kickside.uploads.persist:upload_query_repo
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
       artifact_content_repo: kickside.uploads.persist:artifact_content_repo
       metadata_sanitizer: kickside.uploads:metadata_sanitizer
+      page_images: kickside.uploads.rasterize:page_images

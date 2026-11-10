@@ -18,6 +18,7 @@ local function define_tests()
                 "kickside.uploads.api:delete_handler.endpoint",
                 "kickside.uploads.api:get_handler.endpoint",
                 "kickside.uploads.api:list_handler.endpoint",
+                "kickside.uploads.api:pages_handler.endpoint",
                 "kickside.uploads.api:presigned_handler.endpoint",
                 "kickside.uploads.api:raw_handler.endpoint",
                 "kickside.uploads.api:retry_handler.endpoint",

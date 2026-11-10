@@ -1,15 +1,13 @@
 local http = require("http")
-local security = require("security")
 local uploads_resources = require("uploads_resources")
 
 local upload_query_repo = require("upload_query_repo")
-local component = require("component")
-local upload_tokens = require("upload_tokens")
-local types = require("types")
+local read_access = require("read_access")
 local http_errors = require("http_errors")
 
 -- Stream the original stored bytes of an upload, with its real mime type, so the
--- frontend viewer can render images, PDFs, and text inline. Owner-scoped.
+-- frontend viewer can render images, PDFs, and text inline, under the upload
+-- read rule.
 local function raw_handler()
     local req = http.request()
     local res = http.response()
@@ -33,55 +31,24 @@ local function raw_handler()
         return
     end
 
-    local bearer_ok = false
-    local token = req:query("token")
-    if type(token) == "string" and token ~= "" then
-        local cap = upload_tokens.unpack_read(token, { upload_id = uuid, artifact_id = false })
-        bearer_ok = cap ~= nil
+    local denial, access_err = read_access.check(upload, { token = req:query("token"), artifact_id = false })
+    if access_err then
+        res:set_status(http_errors.classify(access_err))
+        res:set_content_type(http.CONTENT.JSON)
+        res:write_json({ success = false, error = tostring(access_err) })
+        return
     end
-    -- The upload actor always reads their own bytes. Otherwise the upload may be exposed
-    -- through a shared component (e.g. a workspace file component carrying
-    -- meta.upload_id): honor component READ so a recipient of a shared file can
-    -- actually fetch it, instead of 403-ing on the blob while the component is shared.
-    if not bearer_ok then
-        local actor = security.actor()
-        if not actor then
-            res:set_status(http.STATUS.UNAUTHORIZED)
-            res:set_content_type(http.CONTENT.JSON)
-            res:write_json({ success = false, error = "Authentication required" })
-            return
-        end
-        local actor_id = actor:id()
-        if upload.actor_id == actor_id then
-            bearer_ok = true
-        end
+    if denial == read_access.UNAUTHENTICATED then
+        res:set_status(http.STATUS.UNAUTHORIZED)
+        res:set_content_type(http.CONTENT.JSON)
+        res:write_json({ success = false, error = "Authentication required" })
+        return
     end
-    if not bearer_ok then
-        local component_id = types.component_id_for_owner(upload.actor_id)
-        if not component_id then
-            res:set_status(http.STATUS.INTERNAL_ERROR)
-            res:set_content_type(http.CONTENT.JSON)
-            res:write_json({ success = false, error = "Upload owner is invalid" })
-            return
-        end
-        local _, container_err = component.validate_access(component_id, component.ACCESS.READ)
-        if not container_err then
-            bearer_ok = true
-        elseif not errors.is(container_err, errors.PERMISSION_DENIED) and not errors.is(container_err, errors.NOT_FOUND) then
-            res:set_status(http_errors.classify(container_err))
-            res:set_content_type(http.CONTENT.JSON)
-            res:write_json({ success = false, error = tostring(container_err) })
-            return
-        end
-    end
-    if not bearer_ok then
-        local _, access_err = component.get_context_by_meta({ upload_id = uuid }, component.ACCESS.READ)
-        if access_err then
-            res:set_status(http.STATUS.FORBIDDEN)
-            res:set_content_type(http.CONTENT.JSON)
-            res:write_json({ success = false, error = "Access denied" })
-            return
-        end
+    if denial then
+        res:set_status(http.STATUS.FORBIDDEN)
+        res:set_content_type(http.CONTENT.JSON)
+        res:write_json({ success = false, error = "Access denied" })
+        return
     end
 
     local storage = uploads_resources.get_storage(upload.storage_id :: string)

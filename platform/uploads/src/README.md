@@ -132,6 +132,26 @@ not guarantee the record's filename; the UI download action supplies its name.
 Consumers using these capabilities must require Uploads >=0.3.2. An older
 installed package satisfying a wildcard dependency does not provide them.
 
+## Page previews
+
+With `rasterize_page_previews` on (the default), the rasterize stage gives every
+page of a rasterizable document an image and a thumbnail. A page's image is the
+page rendered for OCR (`rendered-page`), else its numbered doc2md page scan
+(`extracted-image`), else a preview rendition (`page-preview`). Each thumbnail
+(`page-thumbnail`, rendered at `rasterize_thumbnail_dpi`) records its page and
+`image_artifact_id`; a page keeps the image it was first published with. Previews
+and thumbnails are not listed among the upload's parts.
+
+`GET /uploads/{uuid}/pages` returns the page map in page order:
+`{ page, image = { artifact_id, mime_type, raw_url }, thumbnail = { ... } }`.
+`trusted_reader.pages(upload_id)` returns the same map for a module that
+authorizes the read itself.
+
+The original (`/raw`), the artifact list, artifact bytes and the page map share
+one read rule: a read token for the upload or artifact (byte endpoints only),
+the uploader, READ on the uploader's uploads component, or READ on a component
+that references the upload through `meta.upload_id`.
+
 ## Trusted reader and provider attachments
 
 `kickside.uploads:trusted_reader` is a read-only library over any upload,
@@ -139,7 +159,8 @@ regardless of its owner: `info`, `provenance` (the upload's metadata as the
 uploader wrote it, without the private keys the upload API also hides, such as
 `__upload_token`), `primary_text` (converted text, cut UTF-8 safely at
 `max_chars` bytes), `source_image` (the original artifact of an image upload,
-`nil` for documents) and `image_bytes` (one image artifact of that upload). Like
+`nil` for documents), `image_bytes` (one image artifact of that upload) and
+`pages` (the page map, see Page previews). Like
 `delivery_url`, it does not authorize the caller: the importing module must
 check its own access rule and the upload's provenance (for example a key it
 wrote into `att.metadata` when it ingested the file) before calling it.

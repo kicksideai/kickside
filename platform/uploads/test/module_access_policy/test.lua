@@ -32,6 +32,7 @@ local function define_tests()
                 ["kickside.uploads.api:delete_handler.endpoint"] = true,
                 ["kickside.uploads.api:get_handler.endpoint"] = true,
                 ["kickside.uploads.api:list_handler.endpoint"] = true,
+                ["kickside.uploads.api:pages_handler.endpoint"] = true,
                 ["kickside.uploads.api:presigned_handler.endpoint"] = true,
                 ["kickside.uploads.api:raw_handler.endpoint"] = true,
                 ["kickside.uploads.api:retry_handler.endpoint"] = true,
@@ -86,6 +87,7 @@ local function define_tests()
                 "kickside.uploads.api:retry_handler.endpoint",
                 "kickside.uploads.api:artifacts_handler.endpoint",
                 "kickside.uploads.api:artifact_raw_handler.endpoint",
+                "kickside.uploads.api:pages_handler.endpoint",
             }) do
                 test.not_nil(registry.get(id), id)
                 test.eq(policy:evaluate(actor, "access", id), "allow", id)

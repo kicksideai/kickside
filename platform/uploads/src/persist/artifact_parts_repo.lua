@@ -218,10 +218,12 @@ function artifact_parts_repo.list_artifacts(upload_id)
     return rows
 end
 
--- Extracted parts are every artifact except the original source and the primary
--- content: the images and other pieces a single upload can fan out into (hundreds
--- for a large document), surfaced as a paginated list rather than loaded at once.
-local PARTS_WHERE = "a.role NOT IN ('source', 'primary')"
+-- Extracted parts are every artifact except the original source, the primary
+-- content and the page preview renditions: the images and other pieces a single
+-- upload can fan out into (hundreds for a large document), surfaced as a
+-- paginated list rather than loaded at once. Page previews and thumbnails are
+-- published through the page map.
+local PARTS_WHERE = "a.role NOT IN ('source', 'primary', 'page-preview', 'page-thumbnail')"
 
 local function artifact_part_rows(upload_id, opts)
     if not upload_id or upload_id == "" then return nil, "upload_id is required" end

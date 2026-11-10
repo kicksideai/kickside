@@ -1,14 +1,11 @@
 local http = require("http")
 local upload_response = require("upload_response")
-local security = require("security")
-
 local upload_query_repo = require("upload_query_repo")
 local artifact_content_repo = require("artifact_content_repo")
 local artifact_parts_repo = require("artifact_parts_repo")
 local metadata_sanitizer = require("metadata_sanitizer")
-local upload_tokens = require("upload_tokens")
-local component = require("component")
-local types = require("types")
+local read_access = require("read_access")
+local page_images = require("page_images")
 local http_errors = require("http_errors")
 
 local function json_error(res: any, status: any, message: string, details: any?)
@@ -19,84 +16,35 @@ local function json_error(res: any, status: any, message: string, details: any?)
     res:write_json(body)
 end
 
-local function require_owned_upload(req: any, res: any): (any?, string?)
-    local actor = security.actor()
-    if not actor then
-        json_error(res, http.STATUS.UNAUTHORIZED, "Authentication required")
-        return nil, "unauthorized"
-    end
-
-    local actor_id = actor:id()
-    if not actor_id or actor_id == "" then
-        json_error(res, http.STATUS.UNAUTHORIZED, "Invalid actor ID")
-        return nil, "unauthorized"
-    end
-
+-- Resolve the upload named by the path and apply the upload read rule; a read
+-- token is honoured only where opts.token is passed. Writes the failure response.
+local function require_readable_upload(req: any, res: any, opts: any?): any?
     local upload_id = req:param("uuid")
     if not upload_id or upload_id == "" then
         json_error(res, http.STATUS.BAD_REQUEST, "Upload ID is required")
-        return nil, "bad_request"
+        return nil
     end
 
     local upload, err = upload_query_repo.get(upload_id)
     if err or not upload then
         json_error(res, http.STATUS.NOT_FOUND, "Upload not found", err)
-        return nil, "not_found"
+        return nil
     end
-    local component_id = types.component_id_for_owner(upload.actor_id)
-    if not component_id then
-        json_error(res, http.STATUS.INTERNAL_ERROR, "Upload owner is invalid")
-        return nil, "invalid_owner"
-    end
-    local _, access_err = component.validate_access(component_id, component.ACCESS.READ)
+
+    local denial, access_err = read_access.check(upload, opts)
     if access_err then
         json_error(res, http_errors.classify(access_err), tostring(access_err))
-        return nil, "forbidden"
+        return nil
     end
-    return upload, nil
-end
-
-local function require_readable_upload(req: any, res: any, artifact_id: string?): (any?, string?)
-    local upload_id = req:param("uuid")
-    if not upload_id or upload_id == "" then
-        json_error(res, http.STATUS.BAD_REQUEST, "Upload ID is required")
-        return nil, "bad_request"
-    end
-
-    local upload, err = upload_query_repo.get(upload_id)
-    if err or not upload then
-        json_error(res, http.STATUS.NOT_FOUND, "Upload not found", err)
-        return nil, "not_found"
-    end
-
-    local token = req:query("token")
-    if type(token) == "string" and token ~= "" then
-        local cap = upload_tokens.unpack_read(token, { upload_id = upload_id, artifact_id = artifact_id })
-        if cap then return upload, nil end
-    end
-
-    local actor = security.actor()
-    if not actor then
+    if denial == read_access.UNAUTHENTICATED then
         json_error(res, http.STATUS.UNAUTHORIZED, "Authentication required")
-        return nil, "unauthorized"
+        return nil
     end
-
-    local actor_id = actor:id()
-    if not actor_id or actor_id == "" then
-        json_error(res, http.STATUS.UNAUTHORIZED, "Invalid actor ID")
-        return nil, "unauthorized"
+    if denial then
+        json_error(res, http.STATUS.FORBIDDEN, "Access denied")
+        return nil
     end
-    local component_id = types.component_id_for_owner(upload.actor_id)
-    if not component_id then
-        json_error(res, http.STATUS.INTERNAL_ERROR, "Upload owner is invalid")
-        return nil, "invalid_owner"
-    end
-    local _, access_err = component.validate_access(component_id, component.ACCESS.READ)
-    if access_err then
-        json_error(res, http_errors.classify(access_err), tostring(access_err))
-        return nil, "forbidden"
-    end
-    return upload, nil
+    return upload
 end
 
 local function has_readable_bytes(artifact: any): boolean
@@ -166,7 +114,7 @@ local function artifacts_handler()
     end
     res:set_content_type(http.CONTENT.JSON)
 
-    local upload = require_owned_upload(req, res)
+    local upload = require_readable_upload(req, res)
     if not upload then return end
     local upload_id = tostring(upload.uuid or "")
 
@@ -241,7 +189,7 @@ local function artifact_raw_handler()
         return
     end
 
-    local upload = require_readable_upload(req, res, artifact_id)
+    local upload = require_readable_upload(req, res, { token = req:query("token"), artifact_id = artifact_id })
     if not upload then return end
 
     local artifact, artifact_err = artifact_content_repo.get_artifact(upload.uuid, artifact_id)
@@ -262,7 +210,49 @@ local function artifact_raw_handler()
     res:write(content)
 end
 
+local function page_artifact(upload_id: string, artifact: any): (any?, any?)
+    local url, url_err = raw_url(upload_id, artifact)
+    if url_err then return nil, url_err end
+    return { artifact_id = tostring(artifact.artifact_id), mime_type = artifact.mime_type, raw_url = url }, nil
+end
+
+-- The published page map of a document upload: per page, the image that stands
+-- for the page and its thumbnail, in page order.
+local function pages_handler()
+    local req = http.request()
+    local res = http.response()
+    if not req or not res then
+        return nil, "Failed to get HTTP context"
+    end
+    res:set_content_type(http.CONTENT.JSON)
+
+    local upload = require_readable_upload(req, res)
+    if not upload then return end
+    local upload_id = tostring(upload.uuid or "")
+
+    local pages, pages_err = page_images.pages(upload_id)
+    if pages_err then
+        json_error(res, http_errors.classify(pages_err), "Failed to read the page map", pages_err)
+        return
+    end
+    local out = {}
+    for i, entry in ipairs(pages) do
+        local image, image_err = page_artifact(upload_id, entry.image)
+        local thumbnail, thumbnail_err = page_artifact(upload_id, entry.thumbnail)
+        local delivery_err = image_err or thumbnail_err
+        if delivery_err then
+            json_error(res, http_errors.classify(delivery_err), "Failed to obtain artifact delivery URL")
+            return
+        end
+        out[i] = { page = entry.page, image = image, thumbnail = thumbnail }
+    end
+
+    res:set_status(http.STATUS.OK)
+    res:write_json({ success = true, upload_id = upload.uuid, pages = out })
+end
+
 return {
     artifacts_handler = artifacts_handler,
     artifact_raw_handler = artifact_raw_handler,
+    pages_handler = pages_handler,
 }

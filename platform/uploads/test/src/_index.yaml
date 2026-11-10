@@ -41,7 +41,6 @@ entries:
   - name: upload_artifacts_fixture
     kind: library.lua
     source: file://fixtures/artifacts.lua
-    modules: [security]
     imports:
       http: app:upload_http_probe
       upload_response: app:signed_upload_response
@@ -49,9 +48,8 @@ entries:
       artifact_content_repo: kickside.uploads.persist:artifact_content_repo
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
       metadata_sanitizer: kickside.uploads:metadata_sanitizer
-      upload_tokens: kickside.uploads.persist:upload_tokens
-      component: kickside.component:component
-      types: kickside.uploads:types
+      read_access: kickside.uploads.api:read_access
+      page_images: kickside.uploads.rasterize:page_images
       http_errors: kickside.contract:http_errors
   - name: upload_delete_fixture
     kind: library.lua
@@ -130,17 +128,52 @@ entries:
       delete_api: app:upload_delete_fixture
       execution_identity: kickside.execution:execution_identity
       types: kickside.uploads:types
+  - name: upload_artifact_raw_probe
+    kind: function.lua
+    modules: [security, contract]
+    source: file://upload_read_probe.lua
+    method: artifact_raw
+    imports:
+      raw_api: app:upload_raw_fixture
+      api: app:upload_get_fixture
+      probe: app:upload_http_probe
+      artifacts: app:upload_artifacts_fixture
+      delete_api: app:upload_delete_fixture
+      execution_identity: kickside.execution:execution_identity
+      types: kickside.uploads:types
+  - name: upload_pages_probe
+    kind: function.lua
+    modules: [security, contract]
+    source: file://upload_read_probe.lua
+    method: pages
+    imports:
+      raw_api: app:upload_raw_fixture
+      api: app:upload_get_fixture
+      probe: app:upload_http_probe
+      artifacts: app:upload_artifacts_fixture
+      delete_api: app:upload_delete_fixture
+      execution_identity: kickside.execution:execution_identity
+      types: kickside.uploads:types
+  - name: referenced_upload_access_test
+    kind: function.lua
+    meta: { type: test, suite: uploads }
+    source: file://referenced_upload_access_test.lua
+    method: run
+    modules: [uuid, security, funcs, contract, sql, fs]
+    imports:
+      test: wippy.test:test
+      provision: kickside.core.threads:provision
+      records: kickside.uploads.persist:upload_record_repo
+      artifacts: kickside.uploads.persist:artifact_content_repo
   - name: upload_raw_fixture
     kind: library.lua
     source: file://fixtures/get_raw.lua
-    modules: [security, fs]
+    modules: [fs]
     imports:
       uploads_resources: kickside.uploads.binding:uploads_resources
       http: app:upload_http_probe
       upload_query_repo: kickside.uploads.persist:upload_query_repo
-      component: kickside.component:component
-      upload_tokens: kickside.uploads.persist:upload_tokens
-      types: kickside.uploads:types
+      read_access: kickside.uploads.api:read_access
       http_errors: kickside.contract:http_errors
   - name: shared_upload_access_test
     kind: function.lua
@@ -382,6 +415,7 @@ entries:
       upload_record_repo: kickside.uploads.persist:upload_record_repo
       rasterizer: kickside.uploads.rasterize:rasterizer
       fixtures: app:rasterize_fixtures
+      trusted_reader: kickside.uploads:trusted_reader
     method: run
 
   - name: dep.kickside.uploads

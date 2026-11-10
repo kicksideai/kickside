@@ -16,7 +16,7 @@ entries:
   - name: page_images
     kind: library.lua
     meta:
-      comment: Shared definition of a document's page images (rendered screenshots, or large doc2md-extracted page images).
+      comment: Shared definition of a document's page images (rendered screenshots, or large doc2md-extracted page images) and its published page map.
     source: file://page_images.lua
     imports:
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
@@ -27,7 +27,7 @@ entries:
     kind: function.lua
     meta:
       type: processor
-      comment: Universal upload stage; renders empty/low-text documents to rendered-page image artifacts.
+      comment: Universal upload stage; renders page images and thumbnails, or only the pages that need OCR when page previews are off.
     source: file://stage.lua
     method: process
     modules: [funcs, contract, logger]
@@ -45,7 +45,7 @@ entries:
     kind: registry.entry
     meta:
       type: upload.stage
-      comment: Runs the rasterizer after content extraction on every upload (self-gates to empty documents).
+      comment: Runs the rasterizer after content extraction on every upload (self-gates to rasterizable documents).
     scope: universal
     func: kickside.uploads.rasterize:stage
     title: Rendering pages
@@ -64,6 +64,40 @@ entries:
     category: Rasterization
     order: 10
     description: When a converted document has little or no extractable text, render its pages to images for embedding.
+    scope: global
+    editable: true
+    visible: true
+
+  - name: setting.rasterize_page_previews
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Render an image and a thumbnail of every page so document viewers can preview each page.
+    namespace: kickside.uploads.rasterize
+    key: rasterize_page_previews
+    value_type: bool
+    default: true
+    title: Page previews
+    category: Rasterization
+    order: 15
+    description: Render an image and a thumbnail of every page of a document. When off, only pages that need OCR are rendered.
+    scope: global
+    editable: true
+    visible: true
+
+  - name: setting.rasterize_thumbnail_dpi
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Render resolution for page thumbnails.
+    namespace: kickside.uploads.rasterize
+    key: rasterize_thumbnail_dpi
+    value_type: int
+    default: 36
+    title: Thumbnail resolution (DPI)
+    category: Rasterization
+    order: 35
+    description: Dots-per-inch used when rendering page thumbnails.
     scope: global
     editable: true
     visible: true

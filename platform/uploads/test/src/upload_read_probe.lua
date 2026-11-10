@@ -17,6 +17,16 @@ local function read_artifacts()
     artifacts.artifacts_handler()
     return { status = http.status, body = http.body }
 end
+local function read_artifact_raw()
+    http.reset()
+    artifacts.artifact_raw_handler()
+    return { status = http.status, body = http.body }
+end
+local function read_pages()
+    http.reset()
+    artifacts.pages_handler()
+    return { status = http.status, body = http.body }
+end
 local function delete()
     http.reset()
     delete_api.delete_handler()
@@ -38,4 +48,4 @@ local function events()
     if open_err then return nil, open_err end
     return run:list_events({ thread_id = types.component_id_for_owner(security.actor():id()) })
 end
-return { read = read, raw = raw, artifacts = read_artifacts, delete = delete, frozen = frozen, events = events }
+return { read = read, raw = raw, artifacts = read_artifacts, artifact_raw = read_artifact_raw, pages = read_pages, delete = delete, frozen = frozen, events = events }

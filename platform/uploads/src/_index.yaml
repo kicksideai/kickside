@@ -261,6 +261,8 @@ entries:
         path: .meta.router
       - entry: kickside.uploads.api:artifact_raw_handler.endpoint
         path: .meta.router
+      - entry: kickside.uploads.api:pages_handler.endpoint
+        path: .meta.router
 
   - name: content_provider
     kind: contract.binding
