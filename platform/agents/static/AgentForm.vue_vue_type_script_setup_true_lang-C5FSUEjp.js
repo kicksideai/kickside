@@ -1,6 +1,6 @@
 import { openBlock as u, createElementBlock as g, mergeProps as S, renderSlot as B, createTextVNode as D, toDisplayString as L, resolveComponent as lt, resolveDirective as jt, withDirectives as V, createBlock as H, resolveDynamicComponent as mt, withCtx as M, createCommentVNode as z, normalizeClass as R, createElementVNode as l, computed as I, createVNode as $, Transition as ge, Fragment as K, defineComponent as J, renderList as vt, unref as b, ref as N, onMounted as Ft, watch as yt, onBeforeUnmount as fe, shallowRef as he, vModelText as Z, nextTick as me } from "vue";
 import { Icon as T } from "@iconify/vue";
-import { B as rt, l as Vt, b as Rt, L as ve, d as X, f as q, U as ye, i as It, j as ke, r as Ht, m as we, a as xe, v as Ce, C as _e, n as Se, S as $e, _ as ze, o as Ee } from "./primevue-plugin-BTxKP425.js";
+import { B as rt, l as Vt, b as Rt, L as ve, d as X, f as q, U as ye, i as It, j as ke, r as Ht, m as xe, a as we, v as Ce, C as _e, n as Se, S as $e, _ as ze, o as Ee } from "./primevue-plugin-BTxKP425.js";
 import { b as _t, f as Y, R as Nt, d as Ie, c as Ut, B as Le, a as Pe, x as gt, s as Be } from "./index-GqAeG0Jm.js";
 import { loadByTagName as kt, api as ft } from "@wippy-fe/proxy";
 import { _ as De } from "./WcMount.vue_vue_type_script_setup_true_lang-CNWT59Oh.js";
@@ -1059,7 +1059,7 @@ var st = {
   }
 }, qe = ["data-p"], Je = ["data-p"];
 function Qe(t, e, n, o, s, r) {
-  var v = lt("SpinnerIcon"), x = lt("Badge"), f = jt("ripple");
+  var v = lt("SpinnerIcon"), w = lt("Badge"), f = jt("ripple");
   return t.asChild ? B(t.$slots, "default", {
     key: 1,
     class: R(t.cx("root")),
@@ -1097,7 +1097,7 @@ function Qe(t, e, n, o, s, r) {
           class: t.cx("label")
         }, t.ptm("label"), {
           "data-p": r.dataLabelP
-        }), L(t.label), 17, Je)) : z("", !0), t.badge ? (u(), H(x, {
+        }), L(t.label), 17, Je)) : z("", !0), t.badge ? (u(), H(w, {
           key: 3,
           value: t.badge,
           class: R(t.badgeClass),
@@ -1124,18 +1124,18 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
 }
 function nn(t, e) {
   if (t) {
-    if (typeof t == "string") return wt(t, e);
+    if (typeof t == "string") return xt(t, e);
     var n = {}.toString.call(t).slice(8, -1);
-    return n === "Object" && t.constructor && (n = t.constructor.name), n === "Map" || n === "Set" ? Array.from(t) : n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n) ? wt(t, e) : void 0;
+    return n === "Object" && t.constructor && (n = t.constructor.name), n === "Map" || n === "Set" ? Array.from(t) : n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n) ? xt(t, e) : void 0;
   }
 }
 function on(t) {
   if (typeof Symbol < "u" && t[Symbol.iterator] != null || t["@@iterator"] != null) return Array.from(t);
 }
 function rn(t) {
-  if (Array.isArray(t)) return wt(t);
+  if (Array.isArray(t)) return xt(t);
 }
-function wt(t, e) {
+function xt(t, e) {
   (e == null || e > t.length) && (e = t.length);
   for (var n = 0, o = Array(e); n < e; n++) o[n] = t[n];
   return o;
@@ -1168,18 +1168,18 @@ In order to be iterable, non-array objects must have a [Symbol.iterator]() metho
 }
 function dn(t, e) {
   if (t) {
-    if (typeof t == "string") return xt(t, e);
+    if (typeof t == "string") return wt(t, e);
     var n = {}.toString.call(t).slice(8, -1);
-    return n === "Object" && t.constructor && (n = t.constructor.name), n === "Map" || n === "Set" ? Array.from(t) : n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n) ? xt(t, e) : void 0;
+    return n === "Object" && t.constructor && (n = t.constructor.name), n === "Map" || n === "Set" ? Array.from(t) : n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n) ? wt(t, e) : void 0;
   }
 }
 function un(t) {
   if (typeof Symbol < "u" && t[Symbol.iterator] != null || t["@@iterator"] != null) return Array.from(t);
 }
 function cn(t) {
-  if (Array.isArray(t)) return xt(t);
+  if (Array.isArray(t)) return wt(t);
 }
-function xt(t, e) {
+function wt(t, e) {
   (e == null || e > t.length) && (e = t.length);
   for (var n = 0, o = Array(e); n < e; n++) o[n] = t[n];
   return o;
@@ -1268,22 +1268,22 @@ var vn = gn.extend("focustrap", {
     },
     bind: function(e, n) {
       var o = this, s = n.value || {}, r = s.onFocusIn, v = s.onFocusOut;
-      e.$_pfocustrap_mutationobserver = new MutationObserver(function(x) {
-        x.forEach(function(f) {
+      e.$_pfocustrap_mutationobserver = new MutationObserver(function(w) {
+        w.forEach(function(f) {
           if (f.type === "childList" && !e.contains(document.activeElement)) {
-            var w = function(c) {
+            var x = function(c) {
               var y = It(c) ? It(c, o.getComputedSelector(e.$_pfocustrap_focusableselector)) ? c : q(e, o.getComputedSelector(e.$_pfocustrap_focusableselector)) : q(c);
-              return Rt(y) ? y : c.nextSibling && w(c.nextSibling);
+              return Rt(y) ? y : c.nextSibling && x(c.nextSibling);
             };
-            X(w(f.nextSibling));
+            X(x(f.nextSibling));
           }
         });
       }), e.$_pfocustrap_mutationobserver.disconnect(), e.$_pfocustrap_mutationobserver.observe(e, {
         childList: !0
-      }), e.$_pfocustrap_focusinlistener = function(x) {
-        return r && r(x);
-      }, e.$_pfocustrap_focusoutlistener = function(x) {
-        return v && v(x);
+      }), e.$_pfocustrap_focusinlistener = function(w) {
+        return r && r(w);
+      }, e.$_pfocustrap_focusoutlistener = function(w) {
+        return v && v(w);
       }, e.addEventListener("focusin", e.$_pfocustrap_focusinlistener), e.addEventListener("focusout", e.$_pfocustrap_focusoutlistener);
     },
     unbind: function(e) {
@@ -1297,8 +1297,8 @@ var vn = gn.extend("focustrap", {
       });
     },
     autoElementFocus: function(e, n) {
-      var o = n.value || {}, s = o.autoFocusSelector, r = s === void 0 ? "" : s, v = o.firstFocusableSelector, x = v === void 0 ? "" : v, f = o.autoFocus, w = f === void 0 ? !1 : f, _ = q(e, "[autofocus]".concat(this.getComputedSelector(r)));
-      w && !_ && (_ = q(e, this.getComputedSelector(x))), X(_);
+      var o = n.value || {}, s = o.autoFocusSelector, r = s === void 0 ? "" : s, v = o.firstFocusableSelector, w = v === void 0 ? "" : v, f = o.autoFocus, x = f === void 0 ? !1 : f, _ = q(e, "[autofocus]".concat(this.getComputedSelector(r)));
+      x && !_ && (_ = q(e, this.getComputedSelector(w))), X(_);
     },
     onFirstHiddenElementFocus: function(e) {
       var n, o = e.currentTarget, s = e.relatedTarget, r = s === o.$_pfocustrap_lasthiddenfocusableelement || !((n = this.$el) !== null && n !== void 0 && n.contains(s)) ? q(o.parentElement, this.getComputedSelector(o.$_pfocustrap_focusableselector)) : o.$_pfocustrap_lasthiddenfocusableelement;
@@ -1309,7 +1309,7 @@ var vn = gn.extend("focustrap", {
       X(r);
     },
     createHiddenFocusableElements: function(e, n) {
-      var o = this, s = n.value || {}, r = s.tabIndex, v = r === void 0 ? 0 : r, x = s.firstFocusableSelector, f = x === void 0 ? "" : x, w = s.lastFocusableSelector, _ = w === void 0 ? "" : w, c = function(m) {
+      var o = this, s = n.value || {}, r = s.tabIndex, v = r === void 0 ? 0 : r, w = s.firstFocusableSelector, f = w === void 0 ? "" : w, x = s.lastFocusableSelector, _ = x === void 0 ? "" : x, c = function(m) {
         return ye("span", {
           class: "p-hidden-accessible p-hidden-focusable",
           tabIndex: v,
@@ -1325,7 +1325,7 @@ var vn = gn.extend("focustrap", {
   }
 });
 function Dt() {
-  we({
+  xe({
     variableName: Ht("scrollbar.width").name
   });
 }
@@ -1452,7 +1452,7 @@ var yn = `
     flexDirection: "column",
     pointerEvents: "auto"
   }
-}, wn = {
+}, xn = {
   mask: function(e) {
     var n = e.props, o = ["left", "right", "top", "topleft", "topright", "bottom", "bottomleft", "bottomright"], s = o.find(function(r) {
       return r === n.position;
@@ -1474,10 +1474,10 @@ var yn = `
   pcCloseButton: "p-dialog-close-button",
   content: "p-dialog-content",
   footer: "p-dialog-footer"
-}, xn = rt.extend({
+}, wn = rt.extend({
   name: "dialog",
   style: yn,
-  classes: wn,
+  classes: xn,
   inlineStyles: kn
 }), Cn = {
   name: "BaseDialog",
@@ -1605,7 +1605,7 @@ var yn = `
     },
     _instance: null
   },
-  style: xn,
+  style: wn,
   provide: function() {
     return {
       $pcDialog: this,
@@ -1764,8 +1764,8 @@ var yn = `
       var e = this;
       this.documentDragListener = function(n) {
         if (e.dragging) {
-          var o = Ce(e.container), s = _e(e.container), r = n.pageX - e.lastPageX, v = n.pageY - e.lastPageY, x = e.container.getBoundingClientRect(), f = x.left + r, w = x.top + v, _ = Se(), c = getComputedStyle(e.container), y = parseFloat(c.marginLeft), i = parseFloat(c.marginTop);
-          e.container.style.position = "fixed", e.keepInViewport ? (f >= e.minX && f + o < _.width && (e.lastPageX = n.pageX, e.container.style.left = f - y + "px"), w >= e.minY && w + s < _.height && (e.lastPageY = n.pageY, e.container.style.top = w - i + "px")) : (e.lastPageX = n.pageX, e.container.style.left = f - y + "px", e.lastPageY = n.pageY, e.container.style.top = w - i + "px");
+          var o = Ce(e.container), s = _e(e.container), r = n.pageX - e.lastPageX, v = n.pageY - e.lastPageY, w = e.container.getBoundingClientRect(), f = w.left + r, x = w.top + v, _ = Se(), c = getComputedStyle(e.container), y = parseFloat(c.marginLeft), i = parseFloat(c.marginTop);
+          e.container.style.position = "fixed", e.keepInViewport ? (f >= e.minX && f + o < _.width && (e.lastPageX = n.pageX, e.container.style.left = f - y + "px"), x >= e.minY && x + s < _.height && (e.lastPageY = n.pageY, e.container.style.top = x - i + "px")) : (e.lastPageX = n.pageX, e.container.style.left = f - y + "px", e.lastPageY = n.pageY, e.container.style.top = x - i + "px");
         }
       }, window.document.addEventListener("mousemove", this.documentDragListener);
     },
@@ -1805,7 +1805,7 @@ var yn = `
   },
   components: {
     Button: st,
-    Portal: xe,
+    Portal: we,
     WindowMinimizeIcon: Zt,
     WindowMaximizeIcon: Wt,
     TimesIcon: Pe
@@ -1859,8 +1859,8 @@ function $n(t, e) {
 }
 var zn = ["data-p"], En = ["aria-labelledby", "aria-modal", "data-p"], In = ["id"], Ln = ["data-p"];
 function Pn(t, e, n, o, s, r) {
-  var v = lt("Button"), x = lt("Portal"), f = jt("focustrap");
-  return u(), H(x, {
+  var v = lt("Button"), w = lt("Portal"), f = jt("focustrap");
+  return u(), H(w, {
     appendTo: t.appendTo
   }, {
     default: M(function() {
@@ -1942,12 +1942,12 @@ function Pn(t, e, n, o, s, r) {
               pt: t.ptm("pcMaximizeButton"),
               "data-pc-group-section": "headericon"
             }), {
-              icon: M(function(w) {
+              icon: M(function(x) {
                 return [B(t.$slots, "maximizeicon", {
                   maximized: s.maximized
                 }, function() {
                   return [(u(), H(mt(r.maximizeIconComponent), S({
-                    class: [w.class, s.maximized ? t.minimizeIcon : t.maximizeIcon]
+                    class: [x.class, s.maximized ? t.minimizeIcon : t.maximizeIcon]
                   }, t.ptm("pcMaximizeButton").icon), null, 16, ["class"]))];
                 })];
               }),
@@ -1968,10 +1968,10 @@ function Pn(t, e, n, o, s, r) {
               pt: t.ptm("pcCloseButton"),
               "data-pc-group-section": "headericon"
             }), {
-              icon: M(function(w) {
+              icon: M(function(x) {
                 return [B(t.$slots, "closeicon", {}, function() {
                   return [(u(), H(mt(t.closeIcon ? "span" : "TimesIcon"), S({
-                    class: [t.closeIcon, w.class]
+                    class: [t.closeIcon, x.class]
                   }, t.ptm("pcCloseButton").icon), null, 16, ["class"]))];
                 })];
               }),
@@ -2317,7 +2317,7 @@ const Hn = {
     function v(f) {
       o("update:modelValue", f.detail || "");
     }
-    async function x() {
+    async function w() {
       if (s.value) {
         r && r.removeEventListener("select", v), s.value.innerHTML = "";
         try {
@@ -2327,11 +2327,11 @@ const Hn = {
         s.value && (r = document.createElement("wc-icon-picker"), r.setAttribute("value", n.modelValue || ""), n.fallback && r.setAttribute("fallback", n.fallback), r.addEventListener("select", v), s.value.appendChild(r));
       }
     }
-    return Ft(x), yt(() => n.modelValue, (f) => {
+    return Ft(w), yt(() => n.modelValue, (f) => {
       r && r.getAttribute("value") !== f && r.setAttribute("value", f || "");
     }), fe(() => {
       r && r.removeEventListener("select", v);
-    }), (f, w) => (u(), g("div", {
+    }), (f, x) => (u(), g("div", {
       ref_key: "host",
       ref: s,
       class: "wc-iconfield"
@@ -2343,7 +2343,7 @@ function Yn({ form: t, traits: e, redirectTrait: n }) {
   function v(c) {
     return !!c && typeof c == "object" && !Array.isArray(c);
   }
-  function x(c) {
+  function w(c) {
     const y = v(t.value.trait_contexts[c]) ? t.value.trait_contexts[c] : {}, i = v(t.value.trait_agent_options[c]) ? t.value.trait_agent_options[c] : null;
     return i ? { ...y, agent_options: i } : y;
   }
@@ -2358,15 +2358,15 @@ function Yn({ form: t, traits: e, redirectTrait: n }) {
     const i = { ...t.value.trait_agent_options };
     delete i[c], t.value.trait_agent_options = i;
   }
-  const w = I(() => t.value.traits.filter((c) => c !== n));
+  const x = I(() => t.value.traits.filter((c) => c !== n));
   function _(c) {
     t.value.traits = [...t.value.traits.filter((y) => y === n), ...c];
   }
   return {
     selectableTraits: o,
-    selectedCapabilities: w,
+    selectedCapabilities: x,
     activeTraits: r,
-    traitMountConfig: x,
+    traitMountConfig: w,
     onTraitConfig: f,
     onCapabilitiesChange: _
   };
@@ -2382,10 +2382,10 @@ function Jn({ form: t, agentId: e, agents: n, redirectTrait: o }) {
     const m = new Set([e(), `${it}${e()}`].filter(Boolean));
     t.value.delegates = h.filter((C) => !m.has(C));
   }
-  const x = (h) => h.startsWith(it) ? h.slice(it.length) : h, f = I(() => {
+  const w = (h) => h.startsWith(it) ? h.slice(it.length) : h, f = I(() => {
     const h = t.value.trait_contexts[o];
     return h && Array.isArray(h.targets) ? h.targets : [];
-  }), w = I(() => f.value.map((h) => h.agent_id));
+  }), x = I(() => f.value.map((h) => h.agent_id));
   function _(h) {
     t.value.trait_contexts = { ...t.value.trait_contexts, [o]: { targets: h } };
     const m = t.value.traits.indexOf(o);
@@ -2396,13 +2396,13 @@ function Jn({ form: t, agentId: e, agents: n, redirectTrait: o }) {
     _(C.map((E) => ({ agent_id: E, comment: p.get(E) || "" })));
   }
   function y(h) {
-    const m = x(h);
+    const m = w(h);
     return n().find((C) => C.id === m)?.title || m;
   }
   function i(h, m) {
     _(f.value.map((C) => C.agent_id === h ? { ...C, comment: m } : C));
   }
-  return { routeView: s, pickIds: r, onDelegatesChange: v, redirectTargets: f, redirectSelectedIds: w, setRedirects: _, onRedirectsChange: c, redirectLabel: y, setRedirectCommentById: i };
+  return { routeView: s, pickIds: r, onDelegatesChange: v, redirectTargets: f, redirectSelectedIds: x, setRedirects: _, onRedirectsChange: c, redirectLabel: y, setRedirectCommentById: i };
 }
 function Mt(t, e) {
   if (t && typeof t == "object") {
@@ -2414,10 +2414,10 @@ function Mt(t, e) {
   }
   return e;
 }
-function Qn({ form: t, valid: e, tab: n, blank: o, agentId: s, parentId: r, models: v, redirectTrait: x, emitSaved: f }) {
-  const w = N(!1), _ = N(!1), c = N("");
+function Qn({ form: t, valid: e, tab: n, blank: o, agentId: s, parentId: r, models: v, redirectTrait: w, emitSaved: f }) {
+  const x = N(!1), _ = N(!1), c = N("");
   async function y(m) {
-    w.value = !0, t.value = o(!1);
+    x.value = !0, t.value = o(!1);
     try {
       const { data: C } = await ft.get(`/api/v1/user-agents/${m}`);
       if (C?.success && C.agent) {
@@ -2444,7 +2444,7 @@ function Qn({ form: t, valid: e, tab: n, blank: o, agentId: s, parentId: r, mode
     } catch (C) {
       c.value = Mt(C, "could not load agent");
     } finally {
-      w.value = !1;
+      x.value = !1;
     }
   }
   function i(m) {
@@ -2480,10 +2480,10 @@ function Qn({ form: t, valid: e, tab: n, blank: o, agentId: s, parentId: r, mode
     if (C) {
       const p = /* @__PURE__ */ new Set([C, `user_agent:${C}`]);
       m.delegates = m.delegates.filter((j) => !p.has(j));
-      const E = m.trait_contexts?.[x];
+      const E = m.trait_contexts?.[w];
       if (E && Array.isArray(E.targets)) {
         const j = E.targets.filter((U) => !p.has(U.agent_id));
-        m.trait_contexts = { ...m.trait_contexts, [x]: { ...E, targets: j } }, j.length || (m.traits = m.traits.filter((U) => U !== x));
+        m.trait_contexts = { ...m.trait_contexts, [w]: { ...E, targets: j } }, j.length || (m.traits = m.traits.filter((U) => U !== w));
       }
     }
     try {
@@ -2503,7 +2503,7 @@ function Qn({ form: t, valid: e, tab: n, blank: o, agentId: s, parentId: r, mode
       _.value = !1;
     }
   }
-  return { loading: w, saving: _, error: c, loadAgent: y, save: h };
+  return { loading: x, saving: _, error: c, loadAgent: y, save: h };
 }
 const to = { class: "kx-modal-head" }, eo = { class: "kx-modal-head-icon" }, no = { class: "kx-modal-head-text" }, oo = { class: "kx-modal-head-title" }, ro = { class: "kx-modal-head-sub" }, ao = {
   key: 0,
@@ -2517,7 +2517,7 @@ const to = { class: "kx-modal-head" }, eo = { class: "kx-modal-head-icon" }, no 
 }, vo = { class: "kx-field kx-field-grow" }, yo = {
   key: 1,
   class: "kx-form"
-}, ko = { class: "kx-field" }, wo = ["value"], xo = { class: "kx-field" }, Co = ["max"], _o = {
+}, ko = { class: "kx-field" }, xo = ["value"], wo = { class: "kx-field" }, Co = ["max"], _o = {
   key: 0,
   class: "kx-field-err"
 }, So = { class: "kx-field" }, $o = { class: "kx-toggle" }, zo = {
@@ -2587,7 +2587,7 @@ const to = { class: "kx-modal-head" }, eo = { class: "kx-modal-head-icon" }, no 
       render() {
         return n.value ? n.value() : null;
       }
-    }), r = t, v = e, x = I(() => {
+    }), r = t, v = e, w = I(() => {
       switch (f.value) {
         case "model":
           return "Model";
@@ -2598,11 +2598,11 @@ const to = { class: "kx-modal-head" }, eo = { class: "kx-modal-head-icon" }, no 
         default:
           return "Prompt";
       }
-    }), f = N("prompt"), w = ["fast", "nano", "balanced", "premium"], _ = I(() => {
+    }), f = N("prompt"), x = ["fast", "nano", "balanced", "premium"], _ = I(() => {
       const k = /* @__PURE__ */ new Set();
       for (const a of r.models) for (const d of a.class || []) k.add(d);
       return [...k].sort((a, d) => {
-        const O = w.indexOf(a), pt = w.indexOf(d);
+        const O = x.indexOf(a), pt = x.indexOf(d);
         return (O < 0 ? 99 : O) - (pt < 0 ? 99 : pt) || a.localeCompare(d);
       });
     });
@@ -2785,7 +2785,7 @@ const to = { class: "kx-modal-head" }, eo = { class: "kx-modal-head-icon" }, no 
               }, null, 8, ["items", "active"])
             ]),
             l("div", go, [
-              l("div", fo, L(x.value), 1),
+              l("div", fo, L(w.value), 1),
               l("div", ho, [
                 f.value === "prompt" ? (u(), g("div", mo, [
                   l("label", vo, [
@@ -2808,9 +2808,9 @@ const to = { class: "kx-modal-head" }, eo = { class: "kx-modal-head-icon" }, no 
                     l("wc-model-picker", {
                       value: i.value.model || "",
                       onSelect: te
-                    }, null, 40, wo)
+                    }, null, 40, xo)
                   ]),
-                  l("label", xo, [
+                  l("label", wo, [
                     a[23] || (a[23] = l("span", { class: "kx-field-lbl" }, [
                       D("Max tokens "),
                       l("span", { class: "kx-field-hint-inline" }, "— response length cap")
@@ -2910,9 +2910,10 @@ const to = { class: "kx-modal-head" }, eo = { class: "kx-modal-head-icon" }, no 
                         key: 0,
                         tag: d.web_component,
                         config: b(oe)(d.id),
+                        schema: d.context_schema,
                         provider: d.provider,
                         onChange: (O) => b(re)(d.id, O)
-                      }, null, 8, ["tag", "config", "provider", "onChange"])) : z("", !0)
+                      }, null, 8, ["tag", "config", "schema", "provider", "onChange"])) : z("", !0)
                     ]),
                     _: 1
                   }, 8, ["traits", "tools", "selected", "onChange"]),
@@ -3075,4 +3076,4 @@ export {
   Mt as e,
   st as s
 };
-//# sourceMappingURL=AgentForm.vue_vue_type_script_setup_true_lang-DvIju0IO.js.map
+//# sourceMappingURL=AgentForm.vue_vue_type_script_setup_true_lang-C5FSUEjp.js.map

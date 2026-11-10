@@ -8,6 +8,7 @@ export interface Trait {
   tags?: string[]
   tools?: string[]
   tool_details?: Tool[]
+  context_schema?: { properties?: Record<string, unknown> }
   web_component?: string
   provider?: string
   affects?: TraitAffects

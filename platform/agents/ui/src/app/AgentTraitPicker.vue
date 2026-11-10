@@ -265,6 +265,7 @@ onMounted(() => { void loadTraits() })
           <WcMount
             :tag="trait.web_component"
             :config="selected.trait_contexts[trait.id] || {}"
+            :schema="trait.context_schema"
             :provider="trait.provider"
             @change="(config: unknown) => onTraitConfig(trait.id, config)"
           />

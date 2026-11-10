@@ -1,5 +1,5 @@
 import { u as Z, g as rr, W as ar, P as or } from "./primevue-plugin-BTxKP425.js";
-import { defineComponent as er, ref as f, computed as A, watch as D, onMounted as tr, openBlock as t, createElementBlock as i, createElementVNode as p, toDisplayString as d, withDirectives as ir, vModelText as pr, createVNode as x, withCtx as cr, Fragment as b, renderList as y, normalizeClass as k, unref as l, createCommentVNode as u, createTextVNode as nr, nextTick as N } from "vue";
+import { defineComponent as er, ref as f, computed as A, watch as D, onMounted as tr, openBlock as t, createElementBlock as i, createElementVNode as p, toDisplayString as d, withDirectives as ir, vModelText as pr, createVNode as m, withCtx as cr, Fragment as b, renderList as y, normalizeClass as k, unref as l, createCommentVNode as u, createTextVNode as nr, nextTick as N } from "vue";
 import { Icon as z } from "@iconify/vue";
 import { api as sr, define as lr } from "@wippy-fe/proxy";
 import { _ as vr } from "./WcMount.vue_vue_type_script_setup_true_lang-CNWT59Oh.js";
@@ -7,7 +7,7 @@ import { r as dr, u as ur, _ as fr, t as U, b as j } from "./trait-presentation-
 const gr = {
   class: "kx-agent-trait-picker",
   "data-testid": "agent-trait-picker"
-}, xr = { class: "kx-group-head" }, mr = { class: "kx-group-meta" }, hr = ["aria-expanded", "aria-activedescendant"], br = ["id", "onMouseenter", "onClick"], yr = { class: "kx-trait-option-text" }, kr = { class: "kx-trait-name" }, wr = {
+}, mr = { class: "kx-group-head" }, xr = { class: "kx-group-meta" }, hr = ["aria-expanded", "aria-activedescendant"], br = ["id", "onMouseenter", "onClick"], yr = { class: "kx-trait-option-text" }, kr = { class: "kx-trait-name" }, wr = {
   key: 0,
   class: "kx-trait-description"
 }, _r = { class: "kx-trait-badges" }, Cr = {
@@ -41,7 +41,7 @@ const gr = {
 }, H = "agent-trait-picker-listbox", Rr = /* @__PURE__ */ er({
   __name: "AgentTraitPicker",
   setup(K) {
-    const m = Z(), R = rr(), h = f([]), q = A(() => new Map(h.value.map((r) => [r.id, dr(r, [])]))), c = f(V(m.value.value)), { isTraitOpen: w, toggleTraitOpen: Q } = ur(() => c.value.traits), O = A(() => h.value.filter((r) => c.value.traits.includes(r.id))), _ = (r) => c.value.traits.includes(r), C = f(""), n = f(!1), I = f(null), M = f(null), $ = f([]), v = f(-1);
+    const x = Z(), R = rr(), h = f([]), q = A(() => new Map(h.value.map((r) => [r.id, dr(r, [])]))), c = f(V(x.value.value)), { isTraitOpen: w, toggleTraitOpen: Q } = ur(() => c.value.traits), O = A(() => h.value.filter((r) => c.value.traits.includes(r.id))), _ = (r) => c.value.traits.includes(r), C = f(""), n = f(!1), I = f(null), M = f(null), $ = f([]), v = f(-1);
     let E = 0;
     const g = A(() => {
       const r = C.value.trim().toLowerCase();
@@ -49,9 +49,9 @@ const gr = {
     }), B = A(() => v.value >= 0 ? `agent-trait-picker-option-${v.value}` : void 0);
     D([n, g], ([r, o]) => {
       $.value = [], v.value = r && o.length ? 0 : -1;
-    }), D(() => m.value.value, (r) => {
+    }), D(() => x.value.value, (r) => {
       c.value = V(r);
-    }), D(() => m.value.refreshKey, (r, o) => {
+    }), D(() => x.value.refreshKey, (r, o) => {
       r !== o && L();
     });
     function V(r) {
@@ -78,8 +78,8 @@ const gr = {
       v.value = r, !(!o || r < 0) && N(() => $.value[r]?.scrollIntoView?.({ block: "nearest" }));
     }
     function P(r) {
-      _(r) || T({ ...c.value, traits: [...c.value.traits, r] }), C.value = "", m.value.keepMenuOpenOnAdd || (v.value = -1), N(() => {
-        M.value?.focus({ preventScroll: !0 }), m.value.keepMenuOpenOnAdd || (n.value = !1);
+      _(r) || T({ ...c.value, traits: [...c.value.traits, r] }), C.value = "", x.value.keepMenuOpenOnAdd || (v.value = -1), N(() => {
+        M.value?.focus({ preventScroll: !0 }), x.value.keepMenuOpenOnAdd || (n.value = !1);
       });
     }
     function W(r) {
@@ -139,9 +139,9 @@ const gr = {
     return tr(() => {
       L();
     }), (r, o) => (t(), i("div", gr, [
-      p("div", xr, [
+      p("div", mr, [
         o[3] || (o[3] = p("span", { class: "kx-group-title" }, "Capabilities", -1)),
-        p("span", mr, d(O.value.length) + " active", 1)
+        p("span", xr, d(O.value.length) + " active", 1)
       ]),
       p("div", {
         ref_key: "traitAddRoot",
@@ -167,7 +167,7 @@ const gr = {
         }, null, 40, hr), [
           [pr, C.value]
         ]),
-        x(fr, {
+        m(fr, {
           open: n.value,
           "onUpdate:open": o[2] || (o[2] = (a) => n.value = a),
           anchor: I.value
@@ -195,7 +195,7 @@ const gr = {
                 p("span", {
                   class: k(["kx-trait-icon", `kx-tint-${l(U)(a)}`])
                 }, [
-                  x(l(z), {
+                  m(l(z), {
                     icon: a.icon || "tabler:puzzle",
                     "aria-hidden": "true"
                   }, null, 8, ["icon"])
@@ -227,7 +227,7 @@ const gr = {
             p("span", {
               class: k(["kx-trait-icon", `kx-tint-${l(U)(a)}`])
             }, [
-              x(l(z), {
+              m(l(z), {
                 icon: a.icon || "tabler:puzzle",
                 "aria-hidden": "true"
               }, null, 8, ["icon"])
@@ -253,7 +253,7 @@ const gr = {
                 "aria-label": l(w)(a.id) ? "Hide details" : "Show details",
                 onClick: (e) => l(Q)(a.id)
               }, [
-                x(l(z), {
+                m(l(z), {
                   icon: l(w)(a.id) ? "tabler:chevron-down" : "tabler:chevron-right",
                   "aria-hidden": "true"
                 }, null, 8, ["icon"])
@@ -264,7 +264,7 @@ const gr = {
                 "aria-label": `Remove ${a.title || a.id} capability`,
                 onClick: (e) => W(a.id)
               }, [
-                x(l(z), {
+                m(l(z), {
                   icon: "tabler:x",
                   "aria-hidden": "true"
                 })
@@ -285,12 +285,13 @@ const gr = {
             ])) : u("", !0)
           ])) : u("", !0),
           a.web_component ? (t(), i("div", Hr, [
-            x(vr, {
+            m(vr, {
               tag: a.web_component,
               config: c.value.trait_contexts[a.id] || {},
+              schema: a.context_schema,
               provider: a.provider,
               onChange: (e) => J(a.id, e)
-            }, null, 8, ["tag", "config", "provider", "onChange"])
+            }, null, 8, ["tag", "config", "schema", "provider", "onChange"])
           ])) : u("", !0)
         ], 8, Ar))), 128))
       ])) : (t(), i("p", Kr, "No capabilities yet."))

@@ -294,7 +294,7 @@ const navItems = computed(() => [
             <div v-else-if="tab === 'caps'" class="kx-form">
               <CapabilityPicker :traits="selectableTraits" :tools="tools" :selected="selectedCapabilities" @change="onCapabilitiesChange">
                 <template #config="{ trait }">
-                  <WcMount v-if="trait.web_component" :tag="trait.web_component" :config="traitMountConfig(trait.id)"
+                  <WcMount v-if="trait.web_component" :tag="trait.web_component" :config="traitMountConfig(trait.id)" :schema="trait.context_schema"
                     :provider="trait.provider" @change="(config: unknown) => onTraitConfig(trait.id, config)" />
                 </template>
               </CapabilityPicker>
