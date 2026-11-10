@@ -120,6 +120,63 @@ local function write_meta(component_id: string, fields: { [string]: any }): (boo
     return false, problem(message, status)
 end
 
+local function update(kb_id: string, body: any): (any?, error?)
+    local _, access_err = component.validate_access(kb_id, component.ACCESS.WRITE)
+    if access_err then return nil, access_err end
+    local has_changes = false
+    if body.embedding_model ~= nil then
+        return nil, errors.new({ kind = errors.INVALID, message = "embedding_model is immutable; create a new knowledge base to change it" })
+    end
+    if body.kb_type ~= nil then
+        return nil, errors.new({ kind = errors.INVALID, message = "kb_type is immutable; create a new knowledge base to change it" })
+    end
+
+    local meta_fields = {}
+    if body.name ~= nil then meta_fields.title = body.name end
+    if body.description ~= nil then meta_fields.comment = body.description end
+    if body.icon ~= nil then meta_fields.icon = body.icon end
+
+    if body.config ~= nil then
+        if type(body.config) ~= "table" then
+            return nil, errors.new({ kind = errors.INVALID, message = "config must be an object" })
+        end
+        has_changes = true
+    end
+
+    if next(meta_fields) ~= nil then has_changes = true end
+
+    if not has_changes then
+        return nil, errors.new({ kind = errors.INVALID, message = "no fields to update" })
+    end
+
+    local ok, update_err = update_consistency.apply(kb_id, {
+        meta_fields = meta_fields,
+        config_patch = body.config,
+    }, {
+        get_component = get_component,
+        prepare_config = prepare_config,
+        update_config = write_config,
+        set_meta = write_meta,
+        request_maintenance = request_maintenance,
+    })
+    if not ok then
+        local err: any = type(update_err) == "table" and update_err or {
+            message = tostring(update_err or "update failed"),
+            status = http.STATUS.INTERNAL_ERROR,
+        }
+        local message = tostring(err.message or "update failed")
+        if type(err.rollback) == "table" then
+            message = message .. "; config rollback failed: "
+                .. tostring(err.rollback.message or "unknown error")
+        end
+        local kinds = { [400] = errors.INVALID, [403] = errors.PERMISSION_DENIED, [404] = errors.NOT_FOUND,
+            [409] = errors.CONFLICT, [429] = errors.RATE_LIMITED, [503] = errors.UNAVAILABLE, [504] = errors.TIMEOUT }
+        return nil, errors.new({ kind = kinds[tonumber(err.status)] or errors.INTERNAL, message = message })
+    end
+
+    return { component_id = kb_id }, nil
+end
+
 local function handler()
     local res = http.response()
     local req = http.request()
@@ -143,15 +200,6 @@ local function handler()
         return
     end
 
-    local _, access_err = component.validate_access(kb_id, component.ACCESS.WRITE)
-    if access_err then
-        local status = http_errors.classify(access_err)
-        local msg = tostring(access_err or "access denied")
-        res:set_status(status)
-        res:write_json({ success = false, error = msg })
-        return
-    end
-
     local raw, raw_err = req:body()
     if raw_err or type(raw) ~= "string" then
         res:set_status(http.STATUS.BAD_REQUEST)
@@ -165,68 +213,10 @@ local function handler()
         return
     end
 
-    local has_changes = false
-    if body.embedding_model ~= nil then
-        res:set_status(http.STATUS.BAD_REQUEST)
-        res:write_json({
-            success = false,
-            error = "embedding_model is immutable; create a new knowledge base to change it",
-        })
-        return
-    end
-    if body.kb_type ~= nil then
-        res:set_status(http.STATUS.BAD_REQUEST)
-        res:write_json({
-            success = false,
-            error = "kb_type is immutable; create a new knowledge base to change it",
-        })
-        return
-    end
-
-    local meta_fields = {}
-    if body.name ~= nil then meta_fields.title = body.name end
-    if body.description ~= nil then meta_fields.comment = body.description end
-    if body.icon ~= nil then meta_fields.icon = body.icon end
-
-    if body.config ~= nil then
-        if type(body.config) ~= "table" then
-            res:set_status(http.STATUS.BAD_REQUEST)
-            res:write_json({ success = false, error = "config must be an object" })
-            return
-        end
-        has_changes = true
-    end
-
-    if next(meta_fields) ~= nil then has_changes = true end
-
-    if not has_changes then
-        res:set_status(http.STATUS.BAD_REQUEST)
-        res:write_json({ success = false, error = "no fields to update" })
-        return
-    end
-
-    local ok, update_err = update_consistency.apply(kb_id, {
-        meta_fields = meta_fields,
-        config_patch = body.config,
-    }, {
-        get_component = get_component,
-        prepare_config = prepare_config,
-        update_config = write_config,
-        set_meta = write_meta,
-        request_maintenance = request_maintenance,
-    })
-    if not ok then
-        local err: any = type(update_err) == "table" and update_err or {
-            message = tostring(update_err or "update failed"),
-            status = http.STATUS.INTERNAL_ERROR,
-        }
-        local message = tostring(err.message or "update failed")
-        if type(err.rollback) == "table" then
-            message = message .. "; config rollback failed: "
-                .. tostring(err.rollback.message or "unknown error")
-        end
-        res:set_status(tonumber(err.status) or http.STATUS.INTERNAL_ERROR)
-        res:write_json({ success = false, error = message })
+    local updated, update_err = update(kb_id, body)
+    if not updated then
+        res:set_status((http_errors.classify(update_err)))
+        res:write_json(http_errors.response(update_err))
         return
     end
 
@@ -234,4 +224,4 @@ local function handler()
     res:write_json({ success = true, id = kb_id })
 end
 
-return { handler = handler }
+return { handler = handler, update = update }

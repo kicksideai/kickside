@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.9](https://github.com/kicksideai/kickside/compare/channel-v0.2.8...channel-v0.2.9) (2026-11-09)
+
+
+### Bug Fixes
+
+* **retention:** preserve owner cleanup progress and committed writes ([#389](https://github.com/kicksideai/kickside/issues/389)) ([63f0e85](https://github.com/kicksideai/kickside/commit/63f0e859a1fef74704365e4a8f511f8b159198d4))
+
 ## [0.2.8](https://github.com/kicksideai/kickside/compare/channel-v0.2.7...channel-v0.2.8) (2026-11-07)
 
 

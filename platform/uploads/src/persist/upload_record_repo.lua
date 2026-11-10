@@ -5,6 +5,7 @@ local errors = require("errors")
 
 local resources = require("uploads_resources")
 local persisted_json = require("persisted_json")
+local artifact_content_repo = require("artifact_content_repo")
 
 local upload_record_repo = {}
 
@@ -446,7 +447,7 @@ function upload_record_repo.update_storage(uuid, storage_id, storage_path, tx)
 end
 
 -- Update upload metadata
-function upload_record_repo.update_metadata(uuid, metadata)
+function upload_record_repo.update_metadata(uuid, metadata, cancel_ref)
     if not uuid or uuid == "" then
         return nil, "Upload ID is required"
     end
@@ -472,8 +473,7 @@ function upload_record_repo.update_metadata(uuid, metadata)
         :where("uuid = ?", uuid)
 
     -- Execute the query
-    local executor = query:run_with(db)
-    local result, err = executor:exec()
+    local result, err = artifact_content_repo.write_fenced(db, query, cancel_ref)
 
     db:release()
 

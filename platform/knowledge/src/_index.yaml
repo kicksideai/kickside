@@ -91,6 +91,7 @@ entries:
   # service via component.validate_access.
   - name: api_router
     kind: ns.requirement
+    default: app:api
     meta:
       value_kind: http.router
       comment: HTTP router the knowledge endpoints attach to. Must enforce auth + endpoint_firewall.
@@ -130,6 +131,7 @@ entries:
   # knowledge HTTP API; it ships and serves its own built bundle.
   - name: ui_server
     kind: ns.requirement
+    default: app:gateway
     meta:
       value_kind: http.service
       comment: HTTP server the knowledge UI static mount attaches to.

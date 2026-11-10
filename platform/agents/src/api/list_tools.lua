@@ -11,7 +11,7 @@ local DEFAULT_PICKER_LIMIT = 25
 
 local M = {}
 
-local function row_for(entry: any): any
+function M.describe(entry: any): any
     local id = entry.id or ""
     local meta = entry.meta or {}
     local tool = {
@@ -19,7 +19,7 @@ local function row_for(entry: any): any
         title = meta.title or meta.name or "",
         llm_alias = meta.llm_alias or "",
         llm_description = meta.llm_description or meta.description or meta.comment or "",
-        public = true,
+        public = tool_visibility.entry_is_public_tool(entry),
     }
     tool.input_schema = tool_schema.decode(meta.input_schema)
     if meta.output_schema ~= nil then
@@ -51,7 +51,7 @@ function M.page(entries: { any }?, args: any): ({ any }, string?)
                     or string.find(string.lower(llm_alias), q, 1, true) ~= nil
                     or string.find(string.lower(llm_description), q, 1, true) ~= nil
             end
-            if include then matched[#matched + 1] = row_for(entry) end
+            if include then matched[#matched + 1] = M.describe(entry) end
         end
     end
     table.sort(matched, function(a, b) return tostring(a.id) < tostring(b.id) end)

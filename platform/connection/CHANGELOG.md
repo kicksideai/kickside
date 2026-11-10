@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.6](https://github.com/kicksideai/kickside/compare/connection-v0.5.5...connection-v0.5.6) (2026-11-09)
+
+
+### Bug Fixes
+
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+
 ## [0.5.5](https://github.com/kicksideai/kickside/compare/connection-v0.5.4...connection-v0.5.5) (2026-11-07)
 
 

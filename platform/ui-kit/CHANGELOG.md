@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.1](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.0...ui-kit-v1.7.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+
 ## [1.7.0](https://github.com/kicksideai/kickside/compare/ui-kit-v1.6.2...ui-kit-v1.7.0) (2026-11-08)
 
 

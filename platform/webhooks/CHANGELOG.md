@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.44](https://github.com/kicksideai/kickside/compare/webhooks-v0.1.43...webhooks-v0.1.44) (2026-11-09)
+
+
+### Bug Fixes
+
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+
 ## [0.1.43](https://github.com/kicksideai/kickside/compare/webhooks-v0.1.42...webhooks-v0.1.43) (2026-11-07)
 
 

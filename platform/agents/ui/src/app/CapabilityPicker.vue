@@ -4,7 +4,7 @@ import { computed, nextTick, ref, useId, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import AnchoredPanel from '@widgets/app/AnchoredPanel.vue'
 import type { Tool, Trait } from './agent-form.types'
-import { badgesOf, resolveTraitTools, tintOf, useCollapsedTraits } from './trait-presentation'
+import { badgesOf, resolveTraitTools, tintOf, useOpenedTraits } from './trait-presentation'
 
 const props = withDefaults(defineProps<{
   traits: Trait[]
@@ -14,7 +14,7 @@ const props = withDefaults(defineProps<{
   emptyMessage?: string
 }>(), { label: 'Capabilities', emptyMessage: 'No capabilities yet. Add one above to give this agent what it can do.' })
 const emit = defineEmits<{ change: [ids: string[]] }>()
-const { collapsedTraits, isTraitCollapsed, toggleTraitCollapsed } = useCollapsedTraits()
+const { isTraitOpen, toggleTraitOpen } = useOpenedTraits(() => props.selected)
 const activeTraits = computed(() => props.traits.filter(trait => props.selected.includes(trait.id)))
 const traitTools = computed(() => new Map(props.traits.map(trait => [trait.id, resolveTraitTools(trait, props.tools)])))
 const traitPreviewId = ref<string | null>(null)
@@ -64,6 +64,10 @@ function onTraitQueryKeydown(event: KeyboardEvent) {
     return
   }
   if (event.key === 'Escape') {
+    if (traitMenuOpen.value) {
+      event.preventDefault()
+      event.stopPropagation()
+    }
     traitMenuOpen.value = false
     return
   }
@@ -96,13 +100,14 @@ function addTrait(id: string) {
   if (!props.selected.includes(id)) emit('change', [...props.selected, id])
   traitPreviewId.value = null
   traitQuery.value = ''
-  traitMenuOpen.value = false
   traitActiveIndex.value = -1
-  void nextTick(() => traitSearchInput.value?.focus({ preventScroll: true }))
+  void nextTick(() => {
+    traitSearchInput.value?.focus({ preventScroll: true })
+    traitMenuOpen.value = false
+  })
 }
 function toggleTrait(id: string) {
   emit('change', props.selected.filter(selected => selected !== id))
-  if (collapsedTraits.value.has(id)) toggleTraitCollapsed(id)
 }
 </script>
 
@@ -187,20 +192,20 @@ function toggleTrait(id: string) {
           </span>
           <span class="kx-trait-actions">
             <button
-              v-if="($slots.config && t.web_component) || t.description || t.prompt || t.tools?.length"
+              v-if="t.description || t.prompt || t.tools?.length"
               type="button"
               class="kx-trait-fold"
-              :aria-expanded="!isTraitCollapsed(t.id)"
-              :title="isTraitCollapsed(t.id) ? 'Show details' : 'Hide details'"
-              :aria-label="isTraitCollapsed(t.id) ? 'Show details' : 'Hide details'"
-              @click="toggleTraitCollapsed(t.id)"
+              :aria-expanded="isTraitOpen(t.id)"
+              :title="!isTraitOpen(t.id) ? 'Show details' : 'Hide details'"
+              :aria-label="!isTraitOpen(t.id) ? 'Show details' : 'Hide details'"
+              @click="toggleTraitOpen(t.id)"
             >
-              <Icon :icon="isTraitCollapsed(t.id) ? 'tabler:chevron-right' : 'tabler:chevron-down'" aria-hidden="true" />
+              <Icon :icon="!isTraitOpen(t.id) ? 'tabler:chevron-right' : 'tabler:chevron-down'" aria-hidden="true" />
             </button>
             <button type="button" class="kx-trait-x" :aria-label="`Remove ${t.title || t.id} capability`" @click="toggleTrait(t.id)"><Icon icon="tabler:x" aria-hidden="true" /></button>
           </span>
         </div>
-        <div v-if="!isTraitCollapsed(t.id)" class="kx-trait-cfg">
+        <div v-if="isTraitOpen(t.id)" class="kx-trait-cfg">
           <p v-if="t.description" class="kx-trait-description">{{ t.description }}</p>
           <p v-if="t.prompt" class="kx-trait-description">{{ t.prompt }}</p>
           <ul v-if="t.tools?.length" class="kx-trait-tools" aria-label="Declared tools">
@@ -209,6 +214,8 @@ function toggleTrait(id: string) {
               <p class="kx-trait-description">{{ tool?.llm_description || (tool ? 'No description declared.' : 'This tool is not in the available catalog.') }}</p>
             </li>
           </ul>
+        </div>
+        <div v-if="$slots.config && t.web_component" class="kx-trait-cfg">
           <slot name="config" :trait="t" />
         </div>
       </li>

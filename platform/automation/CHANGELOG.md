@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.2.24](https://github.com/kicksideai/kickside/compare/automation-v0.2.23...automation-v0.2.24) (2026-11-10)
+
+
+### Bug Fixes
+
+* reserve round capacity without starving general jobs ([#401](https://github.com/kicksideai/kickside/issues/401)) ([b44ba27](https://github.com/kicksideai/kickside/commit/b44ba272f604a7d33685f7addc28351392a4ea15))
+
+## [0.2.23](https://github.com/kicksideai/kickside/compare/automation-v0.2.22...automation-v0.2.23) (2026-11-09)
+
+
+### Bug Fixes
+
+* **automation:** advance delivery identity when delivery inputs change ([#392](https://github.com/kicksideai/kickside/issues/392)) ([013a3c1](https://github.com/kicksideai/kickside/commit/013a3c19b5cc15e949f65314eff42701728684a7))
+
+## [0.2.22](https://github.com/kicksideai/kickside/compare/automation-v0.2.21...automation-v0.2.22) (2026-11-09)
+
+
+### Bug Fixes
+
+* **automation:** reclaim prepared references when admission settles ([#390](https://github.com/kicksideai/kickside/issues/390)) ([241a29d](https://github.com/kicksideai/kickside/commit/241a29d2cc1e6163adc1be13202b56905ddf9f95))
+
+## [0.2.21](https://github.com/kicksideai/kickside/compare/automation-v0.2.20...automation-v0.2.21) (2026-11-09)
+
+
+### Bug Fixes
+
+* **automation:** simplify task details and history ([#385](https://github.com/kicksideai/kickside/issues/385)) ([6f35496](https://github.com/kicksideai/kickside/commit/6f3549694f6c8524651670d890c0f159dda32cd4))
+* **automation:** suppress idle delivery history and bound retention ([5560614](https://github.com/kicksideai/kickside/commit/556061470e9ce9e982823a04040a60e00b988996))
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+
 ## [0.2.20](https://github.com/kicksideai/kickside/compare/automation-v0.2.19...automation-v0.2.20) (2026-11-08)
 
 

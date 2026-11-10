@@ -3,6 +3,30 @@ local security = require("security")
 local registry = require("registry")
 local query_params = require("query_params")
 local capability_context = require("capability_context")
+local list_tools = require("list_tools")
+local tool_visibility = require("tool_visibility")
+
+local M = {}
+
+function M.declared_tools(declarations)
+    local details, seen = {}, {}
+    for _, declaration in ipairs(declarations or {}) do
+        local entries, err = registry.find({
+            [".id"] = declaration,
+            [".kind"] = "function.lua",
+            ["meta.type"] = "tool",
+        })
+        if err then return nil, errors.wrap(err, "declared tool catalog read failed") end
+        for _, entry in ipairs(entries) do
+            if not seen[entry.id] and not tool_visibility.meta_is_private(entry.meta) then
+                seen[entry.id] = true
+                details[#details + 1] = list_tools.describe(entry)
+            end
+        end
+    end
+    table.sort(details, function(a, b) return a.id < b.id end)
+    return details, nil
+end
 
 local TRAIT_TYPE = "agent.trait"
 local MAX_PICKER_LIMIT = 100
@@ -128,12 +152,20 @@ local function handler()
             id = id,
             title = title,
             description = description,
+            prompt = entry_data.prompt,
             tags = entry.meta.tags or {},
             tools = entry_data.tools or {},
             affects = trait_affects(entry.meta, entry_data),
             context_schema = entry.meta.context_schema,
             context_requirements = capability_context.summary(entry.meta.context_schema),
         }
+        local details, details_err = M.declared_tools(trait.tools)
+        if details_err then
+            res:set_status(http.STATUS.INTERNAL_ERROR)
+            res:write_json({ success = false, error = tostring(details_err) })
+            return
+        end
+        trait.tool_details = details
         if entry.meta.icon then
             trait.icon = entry.meta.icon
         end
@@ -158,6 +190,5 @@ local function handler()
     })
 end
 
-return {
-    handler = handler
-}
+M.handler = handler
+return M

@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.1.82](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.81...knowledge-v0.1.82) (2026-11-10)
+
+
+### Bug Fixes
+
+* **knowledge:** default host bindings for dependency installation ([#410](https://github.com/kicksideai/kickside/issues/410)) ([70ca063](https://github.com/kicksideai/kickside/commit/70ca063beb59d5a77b0ed73d31c4a575549c4e72))
+
+## [0.1.81](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.80...knowledge-v0.1.81) (2026-11-09)
+
+
+### Bug Fixes
+
+* **knowledge:** apply accepted existing-base upsert changes ([#400](https://github.com/kicksideai/kickside/issues/400)) ([ba360d2](https://github.com/kicksideai/kickside/commit/ba360d21d694db3bdc1d5eb4f94f7c207e443f51))
+
+## [0.1.80](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.79...knowledge-v0.1.80) (2026-11-09)
+
+
+### Bug Fixes
+
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+* **workflows:** simplify run inspection and knowledge summaries ([#378](https://github.com/kicksideai/kickside/issues/378)) ([d9cd391](https://github.com/kicksideai/kickside/commit/d9cd391d7ebf455f2dbde8e9dd4403253c8afb05))
+
 ## [0.1.79](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.78...knowledge-v0.1.79) (2026-11-08)
 
 

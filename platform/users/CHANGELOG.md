@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.19](https://github.com/kicksideai/kickside/compare/users-v0.2.18...users-v0.2.19) (2026-11-09)
+
+
+### Bug Fixes
+
+* preserve lifecycle upgrades and user directory snapshots ([#386](https://github.com/kicksideai/kickside/issues/386)) ([0a842c1](https://github.com/kicksideai/kickside/commit/0a842c16e53b4865771cad9be71680d5e189391d))
+
 ## [0.2.18](https://github.com/kicksideai/kickside/compare/users-v0.2.17...users-v0.2.18) (2026-11-07)
 
 

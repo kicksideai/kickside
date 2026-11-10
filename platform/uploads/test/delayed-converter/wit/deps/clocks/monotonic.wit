@@ -1,0 +1,6 @@
+// SPDX-License-Identifier: MIT
+package wasi:clocks@0.2.8;
+interface monotonic-clock {
+    type instant = u64;
+    now: func() -> instant;
+}

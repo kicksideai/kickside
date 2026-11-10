@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.73](https://github.com/kicksideai/kickside/compare/hub-v0.1.72...hub-v0.1.73) (2026-11-09)
+
+
+### Bug Fixes
+
+* **hub:** use plain language in module management ([#377](https://github.com/kicksideai/kickside/issues/377)) ([5981f6d](https://github.com/kicksideai/kickside/commit/5981f6dbed35d7d0454cbfc950884e3bb47847b5))
+
 ## [0.1.72](https://github.com/kicksideai/kickside/compare/hub-v0.1.71...hub-v0.1.72) (2026-11-08)
 
 

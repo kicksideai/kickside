@@ -3,5 +3,5 @@ directories:
     src: src
 modules:
     - name: kickside/ui-kit
-      version: 1.7.0
-      hash: f2442cb32889c3c1aa5b8fbaa2ee387093998b6020f5f12625d6abdaf848953b
+      version: 1.7.1
+      hash: c339db7b51a60bf2f5636cbc02a0eb304710ded378068c0316e8c50472ca7c5a

@@ -51,26 +51,28 @@ end
 local function define_tests()
     test.describe("jobs.claim", function()
 
-        test.it("addresses a due request beyond the normal candidate page and keeps ordinary progress", function()
-            with_db(function(db: sql.DB)
-                local dbtype = tostring(db:type())
-                local thread = make_thread(db)
-                for _ = 1, 100 do enqueue(db, dbtype, thread, "test.awaited", "2000-01-01T00:00:00Z") end
-                local id = enqueue(db, dbtype, thread, "test.awaited", "2001-01-01T00:00:00Z")
-                local before = db:query("SELECT scheduled_at,attempts FROM kickside_job WHERE id=$1", { id })
-                test.is_nil(select(2, wake.wake_job(db, id, { control = true, ensure_due = true }, dbtype)))
-                local after = db:query("SELECT scheduled_at,attempts FROM kickside_job WHERE id=$1", { id })
-                test.eq(after[1].scheduled_at, before[1].scheduled_at)
-                test.eq(after[1].attempts, before[1].attempts)
-                local batch, err = claim.claim_batch(db, dbtype, 2, nil, nil, nil, nil,
-                    { awaited_types = { "test.awaited" }, general_capacity = 1, tier_step = 0 })
-                test.is_nil(err)
-                test.eq(#batch, 2)
-                local found = false
-                for _, job in ipairs(batch) do if job.id == id then found = true end end
-                test.is_true(found)
+        for _, general in ipairs({1, 2}) do
+            test.it("addresses a due request beyond the normal candidate page and keeps ordinary progress at general capacity " .. tostring(general), function()
+                with_db(function(db: sql.DB)
+                    local dbtype = tostring(db:type())
+                    local thread = make_thread(db)
+                    for _ = 1, 100 do enqueue(db, dbtype, thread, "test.awaited", "2000-01-01T00:00:00Z") end
+                    local id = enqueue(db, dbtype, thread, "test.awaited", "2001-01-01T00:00:00Z")
+                    local before = db:query("SELECT scheduled_at,attempts FROM kickside_job WHERE id=$1", { id })
+                    test.is_nil(select(2, wake.wake_job(db, id, { control = true, ensure_due = true }, dbtype)))
+                    local after = db:query("SELECT scheduled_at,attempts FROM kickside_job WHERE id=$1", { id })
+                    test.eq(after[1].scheduled_at, before[1].scheduled_at)
+                    test.eq(after[1].attempts, before[1].attempts)
+                    local batch, err = claim.claim_batch(db, dbtype, 2, nil, nil, nil, nil,
+                        { awaited_types = { "test.awaited" }, general_capacity = general, tier_step = 0 })
+                    test.is_nil(err)
+                    test.eq(#batch, 2)
+                    local found = false
+                    for _, job in ipairs(batch) do if job.id == id then found = true end end
+                    test.is_true(found)
+                end)
             end)
-        end)
+        end
 
         test.it("reserves concurrency keys once and excludes another claimant without waiting", function()
             local queries = 0
@@ -164,6 +166,91 @@ local function define_tests()
                 end
                 test.eq(awaited_count, 2)
                 test.eq(general_count, 1)
+            end)
+        end)
+
+        for _, slots in ipairs({{idle = 3, general = 2}, {idle = 2, general = 2}, {idle = 1, general = 1}}) do
+            test.it("keeps " .. tostring(slots.general) .. " general slots progressing beside awaited backlog with "
+                .. tostring(slots.idle) .. " idle workers", function()
+                with_db(function(db: sql.DB)
+                    local dbtype = tostring(db:type())
+                    for _ = 1, 100 do enqueue(db, dbtype, make_thread(db), "test.awaited") end
+                    for _ = 1, 8 do enqueue(db, dbtype, make_thread(db), "test.general") end
+                    local batch, err = claim.claim_batch(db, dbtype, slots.idle, nil, nil, nil, nil,
+                        { awaited_types = { "test.awaited" }, general_capacity = slots.general, tier_step = 0 })
+                    test.is_nil(err, tostring(err))
+                    test.eq(#batch, slots.idle)
+                    local general = 0
+                    for _, job in ipairs(batch) do
+                        if job.job_type == "test.general" then general = general + 1 end
+                    end
+                    test.eq(general, slots.general)
+                end)
+            end)
+        end
+
+        test.it("rotates every tier of both classes across repeated mixed claims", function()
+            with_db(function(db: sql.DB)
+                local dbtype = tostring(db:type())
+                local seen: { [string]: number } = {}
+                local step: integer = 0
+                for _ = 1, 20 do
+                    for _, class in ipairs({"awaited", "general"}) do
+                        for _, tier in ipairs({"live", "backfill", "maintenance"}) do
+                            for _ = 1, 3 do
+                                local id = enqueue(db, dbtype, make_thread(db), "test." .. class)
+                                test.is_nil(select(2, db:execute("UPDATE kickside_job SET queue_tier=$1 WHERE id=$2", {tier, id})))
+                            end
+                        end
+                    end
+                    local batch, err, next_step = claim.claim_batch(db, dbtype, 3, nil, nil, nil, nil,
+                        { awaited_types = { "test.awaited" }, general_capacity = 2, tier_step = step })
+                    test.is_nil(err, tostring(err))
+                    test.eq(#batch, 3)
+                    local general: number = 0
+                    for _, job in ipairs(batch) do
+                        local key = tostring(job.job_type) .. ":" .. tostring(job.queue_tier)
+                        seen[key] = (seen[key] or 0) + 1
+                        if job.job_type == "test.general" then general = general + 1 end
+                        test.is_nil(lifecycle.complete_job(db, job, dbtype))
+                    end
+                    test.eq(general, 2)
+                    step = next_step :: integer
+                end
+                for _, class in ipairs({"awaited", "general"}) do
+                    for _, tier in ipairs({"live", "backfill", "maintenance"}) do
+                        local key = "test." .. class .. ":" .. tier
+                        test.is_true((seen[key] or 0) > 0, key .. " never runs across repeated claims")
+                    end
+                end
+            end)
+        end)
+
+        test.it("keeps awaited tier shares when general work leaves capacity unused", function()
+            with_db(function(db: sql.DB)
+                local dbtype = tostring(db:type())
+                for _, tier in ipairs({"live", "backfill", "maintenance"}) do
+                    for _ = 1, 8 do
+                        local id = enqueue(db, dbtype, make_thread(db), "test.awaited")
+                        test.is_nil(select(2, db:execute("UPDATE kickside_job SET queue_tier=$1 WHERE id=$2", {tier, id})))
+                    end
+                end
+                local batch, err = claim.claim_batch(db, dbtype, 3, nil, nil, nil, nil,
+                    { awaited_types = { "test.awaited" }, general_capacity = 2, tier_step = 5 })
+                test.is_nil(err, tostring(err))
+                test.eq(#batch, 3)
+                local live, backfill, maintenance = 0, 0, 0
+                for _, job in ipairs(batch) do
+                    if job.queue_tier == "live" then live = live + 1
+                    elseif job.queue_tier == "backfill" then backfill = backfill + 1
+                    else
+                        test.eq(job.queue_tier, "maintenance")
+                        maintenance = maintenance + 1
+                    end
+                end
+                test.eq(live, 1)
+                test.eq(backfill, 2)
+                test.eq(maintenance, 0)
             end)
         end)
 

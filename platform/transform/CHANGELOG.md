@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.53](https://github.com/kicksideai/kickside/compare/transform-v0.1.52...transform-v0.1.53) (2026-11-09)
+
+
+### Bug Fixes
+
+* **uploads,transform:** use plain file labels and code guidance ([#379](https://github.com/kicksideai/kickside/issues/379)) ([d00fad0](https://github.com/kicksideai/kickside/commit/d00fad038decbad7cb0c4f6705e12d48d4fd4591))
+
 ## [0.1.52](https://github.com/kicksideai/kickside/compare/transform-v0.1.51...transform-v0.1.52) (2026-11-07)
 
 
