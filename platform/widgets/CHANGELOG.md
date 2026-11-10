@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.62](https://github.com/kicksideai/kickside/compare/widgets-v0.1.61...widgets-v0.1.62) (2026-11-10)
+
+
+### Bug Fixes
+
+* **agents:** collapse capability details and remove standalone tool selection ([#408](https://github.com/kicksideai/kickside/issues/408)) ([8e75d94](https://github.com/kicksideai/kickside/commit/8e75d94c0eb1af17d878e4fb8724042eda08f8a3))
+
 ## [0.1.61](https://github.com/kicksideai/kickside/compare/widgets-v0.1.60...widgets-v0.1.61) (2026-11-09)
 
 
