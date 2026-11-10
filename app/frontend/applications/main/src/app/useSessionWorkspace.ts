@@ -2,6 +2,7 @@ import { computed, nextTick, watch, type Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import type { useHost } from '../composables/useWippy'
 import { useChatController } from './useChatController'
+import { HOST_CHAT_PANEL } from './chatDrawer'
 import { sessionIdFromPath, sessionPath } from './sessionRoute'
 
 export function useSessionWorkspace(deps: {
@@ -60,6 +61,9 @@ export function useSessionWorkspace(deps: {
     mobileNavOpen.value = false
     mobileSessionsOpen.value = false
     broadcastArtifactSession('')
+    // Blank the host chat drawer before leaving, so Sessions does not carry a
+    // drawer session inline and "New chat" really starts empty.
+    host.layout.updatePanel(HOST_CHAT_PANEL, { props: { sessionId: null, startToken: null } })
     chat.newChat()
     if (route.path !== '/sessions' || route.query.view) void router.push('/sessions')
   }
@@ -69,18 +73,6 @@ export function useSessionWorkspace(deps: {
     mobileSessionsOpen.value = false
     host.layout.broadcast('kickside:artifact-close', { panelId: 'artifact' })
     void router.push({ path: '/sessions', query: { view: 'artifacts' } })
-  }
-
-  function openSessionInPanel(sessionId: string) {
-    if (sessionId) chat.openSession(sessionId)
-  }
-
-  function closeChatPanel() {
-    if (isSessionsRoute.value) {
-      newSessionChat()
-      return
-    }
-    chat.close()
   }
 
   function recordStartedSession(sessionId: string) {
@@ -103,8 +95,6 @@ export function useSessionWorkspace(deps: {
     selectArtifactFromSessions,
     newSessionChat,
     openArtifactsWorkspace,
-    openSessionInPanel,
-    closeChatPanel,
     recordStartedSession,
   }
 }

@@ -5,7 +5,7 @@ import W from "primevue/button";
 import { on as De, host as Ne } from "@wippy-fe/proxy";
 import { b as Le } from "./wc-runtime-BJD-5iaH.js";
 import { a as Pe, u as Ae } from "./constants-C0dj8rIt.js";
-import { u as Te } from "./useSessionsApi-P7vRdJK6.js";
+import { u as Te } from "./useSessionsApi-DkMU6ZyM.js";
 import Oe from "primevue/drawer";
 const Be = ["title", "aria-label"], Ue = {
   key: 0,
@@ -777,4 +777,4 @@ const Be = ["title", "aria-label"], Ue = {
 export {
   It as mountConfig
 };
-//# sourceMappingURL=index-mount-BSKOGeEl.js.map
+//# sourceMappingURL=index-mount-Cjm-8Ijp.js.map

@@ -2,16 +2,14 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import { on } from '@wippy-fe/proxy'
-import { useHostVisibilityRefresh, useLayoutBus } from '@wippy-fe/webcomponent-vue'
+import type { host as proxyHost } from '@wippy-fe/proxy'
+import { useHost, useHostVisibilityRefresh, useLayoutBus } from '@wippy-fe/webcomponent-vue'
 import Select from 'primevue/select'
 import type { ArtifactSummary } from '../types.ts'
 import { artifactId } from './artifactPresentation.ts'
+import { ARTIFACT_PANEL_ID, acceptsArtifactSession, sessionIdFromPath } from './hostRoute.ts'
+import type { LayoutEvent, LayoutLike } from './hostRoute.ts'
 import { useSessionsApi } from './useSessionsApi.ts'
-
-interface LayoutEvent {
-  channel?: string
-  payload?: unknown
-}
 
 interface ArtifactIntent {
   intent?: string
@@ -26,6 +24,7 @@ interface SessionIntent {
 
 const api = useSessionsApi()
 const bus = useLayoutBus()
+const host = useHost<typeof proxyHost>()
 const artifacts = ref<ArtifactSummary[]>([])
 const selectedId = ref('')
 const activeSessionId = ref(sessionIdFromPath(window.location.pathname))
@@ -52,12 +51,6 @@ function eventSessionId(payload: unknown): string {
   if (!payload || typeof payload !== 'object') return ''
   const intent = payload as SessionIntent
   return String(intent.sessionId || intent.session_id || '')
-}
-
-function sessionIdFromPath(path: string): string {
-  if (!path.startsWith('/sessions/')) return ''
-  const encoded = path.slice('/sessions/'.length).split('/')[0] || ''
-  try { return decodeURIComponent(encoded) } catch { return '' }
 }
 
 async function loadCatalog() {
@@ -168,6 +161,10 @@ function setActiveSession(sessionId: string) {
 
 function onLayoutEvent(event: LayoutEvent) {
   if (event.channel === 'kickside:artifact-session') {
+    // The coordinator applies the same rule to its own state, so the panel and
+    // the drawer around it always agree on the session.
+    const layout = host?.layout.snapshot as LayoutLike | null | undefined
+    if (!acceptsArtifactSession(event.sourcePanelId, layout, window.location.pathname)) return
     setActiveSession(eventSessionId(event.payload))
     return
   }
@@ -240,7 +237,7 @@ async function saveArtifact() {
 }
 
 function closePanel() {
-  bus?.broadcast('kickside:artifact-close', { panelId: 'artifact' })
+  bus?.broadcast('kickside:artifact-close', { panelId: ARTIFACT_PANEL_ID })
 }
 
 const hostVisible = useHostVisibilityRefresh(queueRefresh)

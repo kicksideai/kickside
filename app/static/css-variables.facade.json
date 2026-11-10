@@ -16,6 +16,9 @@
   "--p-info-600": "#2563eb",
   "--p-info-700": "#1d4ed8",
   "--wippy-host-splitter-color": "#e4e4e7",
+  "--wippy-panel-tab-bg": "var(--p-surface-50)",
+  "--wippy-panel-tab-border": "var(--p-surface-200)",
+  "--wippy-panel-tab-color": "var(--p-surface-600)",
 
   "--p-primary-color": "var(--p-primary-600)",
   "--p-primary-contrast-color": "var(--p-surface-950)",
@@ -316,6 +319,13 @@
     "--wippy-host-meta-bar-border-color": "#1e222c",
     "--wippy-host-splitter-color": "#1e222c",
     "--wippy-host-layout-bg": "#0c0e12",
+    "--wippy-layout-drawer-bg": "var(--p-content-background)",
+    "--wippy-layout-drawer-fg": "var(--p-text-color)",
+    "--wippy-layout-modal-bg": "var(--p-content-background)",
+    "--wippy-layout-modal-fg": "var(--p-text-color)",
+    "--wippy-panel-tab-bg": "var(--p-surface-700)",
+    "--wippy-panel-tab-border": "var(--p-surface-600)",
+    "--wippy-panel-tab-color": "var(--p-surface-300)",
 
     "--p-primary-contrast-color": "var(--p-surface-950)",
     "--p-danger-contrast-color": "#fff",

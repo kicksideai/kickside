@@ -10,7 +10,6 @@ export interface ShellLayoutOptions {
   sessionsRoute: boolean
   horizontalNav: boolean
   navCollapsed: boolean
-  chatOpen: boolean
   navOpen?: boolean
   /** Retained for callers compiled against the former separate Sessions drawer. */
   sessionsOpen?: boolean
@@ -57,26 +56,8 @@ function contentTree(opts: ShellLayoutOptions, narrow: boolean): PanelTree {
     ])
   }
 
-  if (narrow) {
-    return row([
-      inline('surface', '1fr'),
-      inline('chat', '480px', {
-        display: 'drawer-right',
-        drawerSize: { width: '480px' },
-      }),
-    ])
-  }
-
-  return row([
-    inline('surface', '1fr', { minSize: '320px' }),
-    inline('chat', '416px', {
-      minSize: '320px',
-      maxSize: '672px',
-      collapsible: true,
-      collapsed: !opts.chatOpen,
-      collapseSize: '0px',
-    }),
-  ])
+  // Off Sessions the chat is the host's `chat` panel, outside this page.
+  return row([inline('surface', '1fr', narrow ? {} : { minSize: '320px' })])
 }
 
 function withNavigation(opts: ShellLayoutOptions, content: PanelTree, narrow: boolean): PanelTree {
@@ -122,12 +103,7 @@ export function buildShellLayout(
       title: 'Sessions',
       drawerOpen: !opts.navOpen && !!opts.sessionsOpen,
     },
-    chat: {
-      component: components.chat,
-      props: { targetId: CHAT_TARGET },
-      title: 'Chat',
-      drawerOpen: !opts.navOpen && !opts.sessionsOpen && (opts.chatOpen || opts.sessionsRoute),
-    },
+    chat: { component: components.chat, props: { targetId: CHAT_TARGET }, title: 'Chat' },
   }
 
   return {

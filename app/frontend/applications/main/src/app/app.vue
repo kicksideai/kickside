@@ -13,14 +13,13 @@ import AppNavigation from './AppNavigation.vue'
 import LayoutPortalTarget from './LayoutPortalTarget.vue'
 import BufferedSurfaceHost from './BufferedSurfaceHost.vue'
 import ChatPanel from './ChatPanel.vue'
-import ChatFlap from './ChatFlap.vue'
 import SessionsPanel from './SessionsPanel.vue'
 import ArtifactsGalleryPanel from './ArtifactsGalleryPanel.vue'
-import { useChatController, isKicksideChatOpenDetail, type ChatContext, type KicksideChatOpenDetail } from './useChatController'
+import { useChatController, isKicksideChatOpenDetail, type KicksideChatOpenDetail } from './useChatController'
+import { HOST_CHAT_PANEL, isChatDrawerOpen } from './chatDrawer'
 import { useShellBranding } from './useShellBranding'
 import { useShellAccount } from './useShellAccount'
 import { useSessionWorkspace } from './useSessionWorkspace'
-import { sessionPath } from './sessionRoute'
 import { completeSplashNavigation as navigateAfterSplash } from './splashNavigation'
 import { useToneOverlay } from './useToneOverlay'
 import {
@@ -37,9 +36,7 @@ const api = useApi()
 const host = useHost()
 const instance = useWippy()
 
-const chat = useChatController((sessionId, context) => {
-  host.setContext(context.context, sessionId, context.source)
-})
+const chat = useChatController()
 const portalsReady = ref(false)
 const mobileNavOpen = ref(false)
 const mobileSessionsOpen = ref(false)
@@ -76,7 +73,7 @@ const sessionWorkspace = useSessionWorkspace({
 const {
   isSessionsRoute, isArtifactsWorkspace, activeSessionId, isNewChatRoute,
   selectSession, selectArtifactFromSessions, newSessionChat, openArtifactsWorkspace,
-  openSessionInPanel, closeChatPanel, recordStartedSession,
+  recordStartedSession,
 } = sessionWorkspace
 
 let lastNavResumeRefresh = 0
@@ -146,7 +143,6 @@ const layoutManager = new LayoutManager(buildShellLayout({
   sessionsRoute: isSessionsRoute.value,
   horizontalNav: layout.value === 'horizontal',
   navCollapsed: railCollapsed.value,
-  chatOpen: chat.open.value,
   navOpen: mobileNavOpen.value,
   sessionsOpen: mobileSessionsOpen.value,
 }, panelComponents))
@@ -169,7 +165,6 @@ function syncManagedLayout() {
     sessionsRoute: isSessionsRoute.value,
     horizontalNav: layout.value === 'horizontal',
     navCollapsed: railCollapsed.value,
-    chatOpen: chat.open.value,
     navOpen: mobileNavOpen.value,
     sessionsOpen: mobileSessionsOpen.value,
   }, panelComponents))
@@ -179,7 +174,6 @@ watch([
   isSessionsRoute,
   () => layout.value,
   railCollapsed,
-  () => chat.open.value,
   mobileNavOpen,
   mobileSessionsOpen,
 ], syncManagedLayout)
@@ -194,28 +188,19 @@ function handleChatOpen(event: Event) {
   openChat(detail)
 }
 
-function openChat(detail: KicksideChatOpenDetail, context?: ChatContext) {
+// On /sessions the chat is this page's inline panel. Anywhere else the chat is
+// the host's `chat` panel, which the host-side chat coordinator drives, so the
+// request goes to the host.
+function openChat(detail: KicksideChatOpenDetail) {
   mobileNavOpen.value = false
   mobileSessionsOpen.value = false
-  if (detail.kind === 'session') chat.openSession(detail.sessionId, context)
-  else chat.startChat(detail.startToken, context)
-}
-
-const unsubChatOpen = host.layout.on('kickside:chat-open', ({ payload }) => {
-  if (!isRecord(payload)) return
-  const detail = payload.intent === 'startChat'
-    ? { kind: 'start', startToken: payload.startToken }
-    : payload.intent === 'openSession'
-      ? { kind: 'session', sessionId: payload.uuid }
-      : null
-  if (!isKicksideChatOpenDetail(detail)) return
-  const context = payload.context as ChatContext | undefined
-  if (payload.sidebar && !isSessionsRoute.value) openChat(detail, context)
-  else {
-    const path = detail.kind === 'session' ? sessionPath(detail.sessionId) : '/sessions'
-    router.push(path).then(() => openChat(detail, context)).catch(reportOwnedPanelError)
+  if (isSessionsRoute.value) {
+    if (detail.kind === 'session') chat.openSession(detail.sessionId)
+    else chat.startChat(detail.startToken)
   }
-})
+  else if (detail.kind === 'session') host.openSession(detail.sessionId, { sidebar: true })
+  else host.startChat(detail.startToken, { sidebar: true })
+}
 
 async function completeSplashNavigation(detail: {path: string; startToken?: string}) {
   await navigateAfterSplash(detail, {
@@ -228,15 +213,30 @@ async function completeSplashNavigation(detail: {path: string; startToken?: stri
   })
 }
 
+// On a narrow screen the host chat drawer and these drawers share the edge of
+// the screen, so opening one closes the other. The host reports the chat
+// drawer opening through `@layout-change`.
 function openMobileNavigation() {
   mobileSessionsOpen.value = false
   mobileNavOpen.value = true
+  host.layout.closeDrawer(HOST_CHAT_PANEL)
 }
 
 function openMobileSessions() {
   mobileNavOpen.value = false
   mobileSessionsOpen.value = true
+  host.layout.closeDrawer(HOST_CHAT_PANEL)
 }
+
+let chatDrawerWasOpen = isChatDrawerOpen(host.layout.snapshot)
+const unsubLayoutChange = instance.on('@layout-change', (snapshot) => {
+  const open = isChatDrawerOpen(snapshot)
+  if (open && !chatDrawerWasOpen) {
+    mobileNavOpen.value = false
+    mobileSessionsOpen.value = false
+  }
+  chatDrawerWasOpen = open
+})
 
 function reportOwnedPanelError(error: Error) {
   console.error('[kickside-shell] managed panel failed', error)
@@ -337,7 +337,7 @@ onUnmounted(() => {
   window.removeEventListener('kickside:nav-changed', refreshShellRegistryState)
   window.removeEventListener('kickside:modules-changed', scheduleRegistryRefresh)
   toneOverlay.stop()
-  unsubChatOpen()
+  unsubLayoutChange?.()
   unsubNavigate?.()
   unsubNavChanged?.()
   unsubHubChanged?.()
@@ -409,7 +409,7 @@ onUnmounted(() => {
       />
     </Teleport>
 
-    <Teleport v-if="portalsReady" :to="`#${CHAT_TARGET}`">
+    <Teleport v-if="portalsReady && isSessionsRoute" :to="`#${CHAT_TARGET}`">
       <ArtifactsGalleryPanel
         v-if="isArtifactsWorkspace"
         :visible="isArtifactsWorkspace"
@@ -421,19 +421,10 @@ onUnmounted(() => {
         :session-id="chat.sessionId.value"
         :start-token="chat.startToken.value"
         :generation="chat.generation.value"
-        :closable="!isSessionsRoute"
-        :sessions-appearance="isSessionsRoute"
         @session-started="recordStartedSession"
-        @session-select="openSessionInPanel"
-        @close="closeChatPanel"
         @error="reportOwnedPanelError"
       />
     </Teleport>
-
-    <ChatFlap
-      v-if="!isSessionsRoute && !chat.open.value"
-      @show="chat.show"
-    />
 
     <!-- Command palette (mod+K): mounts ui.command actions by tag. -->
     <CommandPalette />

@@ -1,14 +1,15 @@
 # Facade CSS sources
 
 The facade (`app.deps:facade`, `wippy/facade`) serves theme CSS that the web-host
-runtime injects into the SPA host document **and** every web-component shadow root.
-Two payloads are plain CSS; keeping them as one big file each got unwieldy, so they
+runtime injects into the SPA host document and into web-component shadow roots.
+Three payloads are plain CSS; keeping them as one big file each got unwieldy, so they
 are authored here as small partials and **assembled** into the served files.
 
 ```
 app/facade-src/
-  custom/*.css     -> app/static/custom-css.facade.generated.css      (custom_css)
+  custom/*.css     -> app/static/custom-css.facade.generated.css           (custom_css)
   children/*.css   -> app/static/children-custom-css.facade.generated.css  (children_custom_css)
+  host/*.css       -> app/static/host-custom-css.facade.generated.css      (host_custom_css)
 ```
 
 Partials are concatenated in **filename order** (hence the `NN-` prefixes).
@@ -28,12 +29,32 @@ only assembly that reaches the shadows.
 
 ## Which file gets what
 
-`custom_css` and `children_custom_css` are **delivery-equivalent**
-(both reach the host document and every WC shadow). The split is organizational:
+The three payloads differ in where the web host injects them:
+
+| Payload | Reaches |
+|---|---|
+| `custom_css` | the SPA host document **and** every iframe and web-component shadow root |
+| `children_custom_css` | iframes and web-component shadow roots **only** |
+| `host_custom_css` | the SPA host document **only** |
 
 - `custom/` — PrimeVue `.p-*` component chrome (dialog, button, input, popover, …).
-- `children/` — WC-internal base rules: the preflight border reset and
-  `.p-hidden-accessible`.
+  It must reach both places, because PrimeVue renders in both.
+- `children/` — WC-internal base rules: the preflight border reset,
+  `.p-hidden-accessible` and the focus baseline for bare elements in a shadow root.
+- `host/` — rules for the Web Host's own chrome, which lives in the host document and
+  never sees `children/`. Today that is the focus baseline for the chat drawer (the
+  host `chat` panel), scoped with `:where(.wippy-host-app [data-wippy-panel-mount="chat"])`.
+  `:where()` adds no specificity, so a component rule such as `.p-button` in
+  `custom/40-button.css` keeps precedence.
+
+The managed layout draws drawers and modals from `--wippy-layout-drawer-*` and
+`--wippy-layout-modal-*` tokens, which default to white. Their dark values are in
+`css-variables.facade.json` (`@dark`), mapped to the surface tokens, so the chat
+drawer follows the theme.
+
+**Tone preview.** The appearance page's live tone preview applies to the app page's
+own document and the shadow roots inside it. The chat drawer lives in the host
+document, outside that iframe, so it takes a new tone only after **Save**.
 
 Design tokens (`--p-*`) are separate: `app/static/css-variables.facade.json`
 (`css_variables`), served compiled at `/api/public/facade/variables.css`.
@@ -74,7 +95,8 @@ borderless) and `div.kx-drop` (guessed borderless because it has `tabindex`)
 regressed. The component knows. The component owns the rule.
 
 - `children/20-focus-ring.css` — the baseline for bare HTML inside a shadow
-  root, carrying no class names. It asserts the **bordered** treatment only for
+  root, carrying no class names. `host/20-chat-focus-ring.css` is the same baseline for the
+  host chat drawer, scoped to its panel mount. It asserts the **bordered** treatment only for
   `input` / `textarea` / `select`, whose border is guaranteed by the element
   type. Everything else, `button` included, gets the **bare** treatment.
 

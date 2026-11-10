@@ -26,6 +26,15 @@ export interface Session {
   meta?: { tokens?: Record<string, number> } & Record<string, unknown>
 }
 
+// An agent a new chat can start with, as the wippy/agent list API returns it.
+// `start_token` is packed per agent; starting a chat with it uses that agent.
+export interface ChatAgent {
+  name: string
+  title: string
+  comment?: string
+  start_token: string
+}
+
 export interface ProviderBadge {
   icon: string
   label: string

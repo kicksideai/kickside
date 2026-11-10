@@ -1,5 +1,5 @@
 import { api } from '@wippy-fe/proxy'
-import type { ArtifactSummary, ProviderBadge, Session, SessionMessage } from '../types.ts'
+import type { ArtifactSummary, ChatAgent, ProviderBadge, Session, SessionMessage } from '../types.ts'
 
 const BASE = '/api/v1'
 
@@ -8,6 +8,11 @@ interface MessagesResponse { success: boolean, count: number, messages: SessionM
 interface TokenResponse { success: boolean, token?: string, error?: string }
 interface MutationResponse { success: boolean, error?: string }
 interface AgentsResponse { success: boolean, agents?: { id: string, title?: string }[] }
+interface ChatAgentsResponse {
+  success?: boolean
+  agents?: ChatAgent[]
+  error?: string
+}
 interface ProviderBadgesResponse { success: boolean, providers?: { provider?: string, title?: string, icon?: string }[] }
 interface ArtifactsResponse {
   success: boolean
@@ -39,6 +44,14 @@ export function useSessionsApi() {
     } catch {
       return {}
     }
+  }
+
+  // The agents a new chat can start with, in the API's order. An agent
+  // without a start token cannot start a chat.
+  async function chatAgents(): Promise<ChatAgent[]> {
+    const { data } = await api.get<ChatAgentsResponse>(`${BASE}/agents/list`)
+    if (!data?.success) throw new Error(data?.error || 'Failed to load agents')
+    return (data.agents || []).filter((agent: ChatAgent) => agent.name && agent.start_token)
   }
 
   // A compact, authenticated registry catalogue. It deliberately contains
@@ -127,5 +140,5 @@ export function useSessionsApi() {
     return typeof data === 'string' ? data : JSON.stringify(data, null, 2)
   }
 
-  return { list, messages, rename, remove, setFavorite, startToken, agentTitles, providerBadges, artifacts, artifact, artifactContent }
+  return { list, messages, rename, remove, setFavorite, startToken, agentTitles, chatAgents, providerBadges, artifacts, artifact, artifactContent }
 }

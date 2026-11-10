@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Facade CSS bundler. Concatenates app/facade-src/{custom,children}/*.css (sorted by
+// Facade CSS bundler. Concatenates app/facade-src/{custom,children,host}/*.css (sorted by
 // filename) into app/static/*.facade.generated.css. The facade reads the generated
 // files (fs:// in app/src/app/deps/_index.yaml) and serves them at
 // /app/*.facade.generated.css for non-host pages to <link>. @import cannot be used
@@ -20,9 +20,30 @@ const appDir = join(dirname(fileURLToPath(import.meta.url)), '..') // app/
 const SRC = join(appDir, 'facade-src')
 const OUT = join(appDir, 'static')
 
+// `delivery` and `role` are printed in each generated banner: where the web host
+// injects the payload, and what belongs in it.
 const BUNDLES = [
-  { src: 'custom', out: 'custom-css.facade.generated.css' },
-  { src: 'children', out: 'children-custom-css.facade.generated.css' },
+  {
+    src: 'custom',
+    out: 'custom-css.facade.generated.css',
+    param: 'custom_css',
+    delivery: 'the SPA host document AND every iframe/web-component shadow root',
+    role: 'PrimeVue .p-* component chrome',
+  },
+  {
+    src: 'children',
+    out: 'children-custom-css.facade.generated.css',
+    param: 'children_custom_css',
+    delivery: 'iframes and web-component shadow roots only, NOT the SPA host document',
+    role: 'web-component base rules (border reset, .p-hidden-accessible, focus baseline)',
+  },
+  {
+    src: 'host',
+    out: 'host-custom-css.facade.generated.css',
+    param: 'host_custom_css',
+    delivery: 'the SPA host document only, NOT iframes or shadow roots',
+    role: 'rules for the web host chrome itself, such as the chat drawer',
+  },
 ]
 
 const lf = (s) => s.replace(/\r\n/g, '\n')
@@ -32,10 +53,9 @@ function banner(bundle, files) {
    GENERATED — do not edit. Source: app/facade-src/${bundle.src}/*.css
    Rebuild: make facade-css  (Windows: make.bat facade-css)
 
-   On web-host 1.0.44 custom_css and children_custom_css are delivery-equivalent
-   (both injected into the SPA host document AND every WC shadow root). The split is
-   organizational: PrimeVue .p-* chrome -> custom_css; WC-internal base rules (border
-   reset, .p-hidden-accessible) -> children_custom_css.
+   Facade parameter: ${bundle.param}
+   Delivered to: ${bundle.delivery}.
+   Holds: ${bundle.role}.
    Assembled from: ${files.join(', ')}
    ===================================================================== */
 `
@@ -106,7 +126,7 @@ if (check) {
   }
   process.once('SIGINT', closeWatchers)
   process.once('SIGTERM', closeWatchers)
-  console.log('watching facade-src/custom and facade-src/children')
+  console.log(`watching ${BUNDLES.map((bundle) => `facade-src/${bundle.src}`).join(', ')}`)
 } else {
   writeBundles()
 }

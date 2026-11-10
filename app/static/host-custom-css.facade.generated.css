@@ -1,0 +1,44 @@
+/* =====================================================================
+   GENERATED — do not edit. Source: app/facade-src/host/*.css
+   Rebuild: make facade-css  (Windows: make.bat facade-css)
+
+   Facade parameter: host_custom_css
+   Delivered to: the SPA host document only, NOT iframes or shadow roots.
+   Holds: rules for the web host chrome itself, such as the chat drawer.
+   Assembled from: 20-chat-focus-ring.css
+   ===================================================================== */
+
+/* --- host/20-chat-focus-ring.css --- */
+/* Focus baseline for the host chat drawer (the `chat` panel, @HOST/chat-wrapper).
+
+   The drawer is the Web Host's own chat, rendered in the host document rather
+   than a web component shadow root, so the baseline in children/20-focus-ring.css
+   never reaches it. This is that same baseline, scoped to the one panel mount
+   (`data-wippy-panel-mount` is set by @wippy-fe/layout, `wippy-host-app` is the
+   host-only CSS scope on the managed root).
+
+   The scope is `:where()`, so it adds no specificity and the rules keep exactly
+   the weight they have in children/20-focus-ring.css. A component that draws a
+   box and owns its ring (`.p-button` in custom/40-button.css, 3/5/5) still wins.
+   Same canon, same tokens, no class names: see README.md "Focus canon". */
+
+/* Bordered - input types that always draw a border. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) input:not([type='checkbox']):not([type='radio']):not([type='range']):focus,
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) textarea:focus,
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) select:focus {
+  border-color: var(--p-focus-ring-color);
+  outline: none;
+  box-shadow: var(--p-focus-ring-shadow);
+}
+
+/* Bare - nothing to highlight, so an offset outline and no halo. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) button:focus-visible,
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) summary:focus-visible,
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) a[href]:focus-visible,
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) input[type='checkbox']:focus-visible,
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) input[type='radio']:focus-visible,
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) input[type='range']:focus-visible {
+  outline: var(--p-focus-ring-width) var(--p-focus-ring-style) var(--p-focus-ring-color);
+  outline-offset: var(--p-focus-ring-offset);
+  box-shadow: none;
+}

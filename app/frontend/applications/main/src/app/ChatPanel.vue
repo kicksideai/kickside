@@ -9,24 +9,13 @@ const props = defineProps<{
   sessionId?: string
   startToken?: string
   generation: number
-  closable?: boolean
-  sessionsAppearance?: boolean
-  /** Render the chat's own session selector in addition to the header one. */
-  inChatSelector?: boolean
 }>()
 
 const emit = defineEmits<{
   ready: []
   error: [error: Error]
   sessionStarted: [sessionId: string]
-  sessionSelect: [sessionId: string]
-  close: []
 }>()
-
-function onSessionPick(event: Event) {
-  const id = sessionIdFromEvent(event)
-  if (id) emit('sessionSelect', id)
-}
 
 const host = ref<HTMLElement | null>(null)
 /** Mount-time only: there is no chat to show, so replacing the body is right. */
@@ -97,21 +86,16 @@ function syncAttributes() {
   element?.setAttribute('initial-message', initialMessage.value)
   element?.setAttribute('session-id', props.sessionId ?? '')
   element?.setAttribute('start-token', props.startToken ?? '')
-  // The panel header owns the session picker, so the chat's built-in one is
-  // off by default - two pickers stacked is redundant. Both work, and both
-  // drive the same shared session, so this can be turned on for a surface
-  // that has no header of its own.
-  element?.setAttribute('show-selector', props.inChatSelector ? 'true' : 'false')
+  // The Sessions list beside this panel owns session choice, so the chat's
+  // built-in selector stays off.
+  element?.setAttribute('show-selector', 'false')
   // Our own look, handed to the chat rather than reached in and injected. The
   // host appends it last in the shadow cascade, which is where the hand-rolled
   // <style> used to sit, so ordering is unchanged.
-  if (props.sessionsAppearance)
-    element?.setAttribute('custom-css', CHAT_APPEARANCE_CSS)
-  else
-    element?.removeAttribute('custom-css')
+  element?.setAttribute('custom-css', CHAT_APPEARANCE_CSS)
   // Ordering of the agent/model row is a layout choice the host exposes
   // generically, so it stays a prop.
-  if (props.sessionsAppearance && !blankChat.value)
+  if (!blankChat.value)
     element?.setAttribute('meta-placement', 'before-composer')
   else
     element?.removeAttribute('meta-placement')
@@ -137,16 +121,6 @@ function resetBlankChat() {
   host.value.replaceChildren(element)
 }
 
-async function waitForChatDefinitions(): Promise<void> {
-  // Both tags, not just the chat: the header renders <wippy-session-selector>
-  // too, and an undefined custom element is an inert unknown tag rather than a
-  // visible failure - the picker would simply never appear.
-  await Promise.all([
-    waitForCustomElement('wippy-chat', 5000),
-    waitForCustomElement('wippy-session-selector', 5000),
-  ])
-}
-
 async function mountChat() {
   const currentAttempt = ++attempt
   mounting.value = true
@@ -157,7 +131,7 @@ async function mountChat() {
   detach()
   host.value?.replaceChildren()
   try {
-    await waitForChatDefinitions()
+    await waitForCustomElement('wippy-chat', 5000)
     if (currentAttempt !== attempt || !host.value) return
     const chat = createChatElement()
     element = chat
@@ -187,30 +161,13 @@ watch(
 )
 watch(initialMessage, syncAttributes)
 
-watch(() => props.sessionsAppearance, syncAttributes)
 onBeforeUnmount(() => { attempt++; detach() })
 </script>
 
 <template>
   <section class="chat-panel" aria-label="Chat">
-    <header v-if="closable" class="chat-panel__header">
-      <!--
-        The host's own session picker, not a copy of it. It fetches the session
-        list into the chat manager's shared store, which is the same store the
-        chat's built-in selector reads - so mounting it here makes both work,
-        and either one alone still does.
-      -->
-      <wippy-session-selector
-        class="chat-panel__session-picker"
-        :active-session-id="sessionId ?? ''"
-        @select="onSessionPick"
-      />
-      <button v-if="closable" type="button" class="chat-panel__close" aria-label="Close chat" title="Close chat" @click="emit('close')">
-        <Icon icon="tabler:x" aria-hidden="true" />
-      </button>
-    </header>
-    <div class="chat-panel__body" :class="{ 'chat-panel__body--blank': sessionsAppearance && blankChat && !failure }">
-      <ChatEmptyState v-if="sessionsAppearance && blankChat && !failure" v-model="initialMessage" />
+    <div class="chat-panel__body" :class="{ 'chat-panel__body--blank': blankChat && !failure }">
+      <ChatEmptyState v-if="blankChat && !failure" v-model="initialMessage" />
       <div v-if="mounting && !blankChat && !failure" class="chat-panel__mounting" role="status">
         <Icon icon="tabler:loader-2" aria-hidden="true" />
         <span>Loading chat…</span>
@@ -239,15 +196,6 @@ onBeforeUnmount(() => { attempt++; detach() })
 .chat-panel__body--blank { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 12px; padding: 24px; overflow-y: auto; }
 .chat-panel__body--blank .chat-panel__host { width: min(760px, 100%); height: 80px; flex: 0 0 auto; }
 .chat-panel__host { width: 100%; height: 100%; min-width: 0; min-height: 0; }
-.chat-panel__session-picker {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.chat-panel__header { display: flex; flex: 0 0 auto; justify-content: flex-end; align-items: center; min-width: 0; padding: 4px 8px; background: var(--p-content-background); }
-.chat-panel__close { display: grid; width: 30px; height: 30px; padding: 6px; place-items: center; border-radius: 6px; background: transparent; color: var(--p-text-muted-color); }
-.chat-panel__close:hover { background: var(--p-content-hover-background); color: var(--p-text-color); }
-.chat-panel__close :deep(svg) { width: 18px; height: 18px; }
 .chat-panel__failure { height: 100%; display: grid; place-content: center; gap: .75rem; padding: 1.5rem; text-align: center; color: var(--p-text-muted-color); }
 .chat-panel__failure strong { color: var(--p-text-color); }
 .chat-panel__failure button { justify-self: center; padding: .5rem .9rem; border-radius: var(--kx-radius-8); background: var(--p-primary-color); color: var(--p-primary-contrast-color); }
