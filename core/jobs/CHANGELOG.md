@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.76](https://github.com/kicksideai/kickside/compare/jobs-v0.1.75...jobs-v0.1.76) (2026-11-10)
+
+
+### Bug Fixes
+
+* reserve round capacity without starving general jobs ([#401](https://github.com/kicksideai/kickside/issues/401)) ([b44ba27](https://github.com/kicksideai/kickside/commit/b44ba272f604a7d33685f7addc28351392a4ea15))
+
 ## [0.1.75](https://github.com/kicksideai/kickside/compare/jobs-v0.1.74...jobs-v0.1.75) (2026-11-09)
 
 
