@@ -46,7 +46,7 @@ local function define_tests()
     end)
 
     test.describe("knowledge_bases delete", function()
-        for _, mode in ipairs({"child", "nested", "denied", "failed", "empty"}) do
+        for _, mode in ipairs({"child", "nested", "denied", "failed", "partial", "empty"}) do
             test.it("deletes dependents children-first or reports the blocking child: " .. mode, function()
                 local policies = {security.policy("app:user")}
                 if mode == "denied" then policies[#policies + 1] = security.policy("kickside.knowledge.registry:deny_child") end
@@ -55,12 +55,16 @@ local function define_tests()
                     :with_scope(security.new_scope(policies))
                     :call("kickside.knowledge.registry:knowledge_bases_probe", {mode = mode})
                 test.is_nil(err, tostring(err))
-                if mode == "denied" or mode == "failed" then
+                if mode == "denied" or mode == "failed" or mode == "partial" then
                     test.is_true(result.conflict, tostring(result.delete_error))
-                    test.is_true(result.names_child, tostring(result.delete_error))
+                    if mode == "denied" then
+                        test.is_false(result.names_child, tostring(result.delete_error))
+                        test.is_false(result.details_name_child)
+                    else test.is_true(result.names_child, tostring(result.delete_error)) end
                     test.is_true(result.kb_present)
                     test.is_true(result.children_attached)
-                    test.eq(result.cleaned, 0)
+                    test.eq(result.cleaned, mode == "partial" and 1 or 0)
+                    test.eq(result.deleted_count, mode == "partial" and 1 or 0)
                     if mode == "denied" then test.eq(result.marked, 0)
                     else test.is_true(result.delete_error:find("dependent teardown refuses deletion", 1, true) ~= nil) end
                 else

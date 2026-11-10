@@ -27,9 +27,9 @@ local function delete_with_child(args: any): any
         :with_actor(security.actor()):with_scope(security.new_scope({security.policy("app:user")})):open())
     local ids: {string} = {}
     local parent_id = kb_id
-    for index = 1, (mode == "empty" and 0 or ((mode == "nested" or mode == "denied") and 2 or 1)) do
+    for index = 1, (mode == "empty" and 0 or ((mode == "nested" or mode == "denied" or mode == "partial") and 2 or 1)) do
         local row = assert(svc:register({impl_id = "kickside.knowledge.registry:" .. (mode == "denied" and index == 1 and "allowed_child" or "child"),
-            parent_id = parent_id, private_context = {fail = mode == "failed"}}))
+            parent_id = parent_id, private_context = {fail = mode == "failed" or (mode == "partial" and index == 1)}}))
         assert(row.success, tostring(row.error))
         ids[#ids + 1] = row.component_id
         db = assert(sql.get("app:db"))
@@ -60,6 +60,8 @@ local function delete_with_child(args: any): any
     local blocking_child = mode == "denied" and ids[2] or ids[1]
     return {delete_error = delete_err and tostring(delete_err), conflict = delete_err ~= nil and errors.is(delete_err, errors.CONFLICT),
         names_child = delete_err ~= nil and tostring(delete_err):find(blocking_child, 1, true) ~= nil,
+        deleted_count = delete_err and delete_err:details().deleted_count,
+        details_name_child = delete_err ~= nil and delete_err:details().component_id ~= nil,
         kb_present = #query("SELECT component_id FROM kickside_components WHERE component_id=$1", {kb_id}) > 0,
         children_remaining = remaining, cleaned = cleaned, marked = marked, children_attached = attached,
         children_first = #query("SELECT component_id FROM knowledge_child_cleanup WHERE parent_id=$1 AND cleaned<0", {kb_id}) == 0}

@@ -18,8 +18,12 @@ user-facing CRUD API.
   Deletion checks DELETE access on every placement descendant before changing
   any component, then deletes descendants children-first through the component
   service. Each kind's `kickside.contract:deletable` binding tears down its data.
-  A denied child or failed teardown stops KB deletion with a conflict naming
-  that child. Children remain attached until deleted; none move to the root.
+  A denied child or failed teardown stops KB deletion with a conflict and the
+  number of children already removed. Only readable blockers are identified;
+  invisible children produce a generic conflict with no id. Children remain
+  attached until deleted; none move to the root. Traversal is iterative, checks
+  a 30-second deadline before every read and delete, and rejects trees above
+  1,000 descendants before any deletion, asking the caller to delete in parts.
 - **Engine seam** — the model-agnostic `kb_store_lifecycle` contract that the
   knowledge control plane uses to create/read/update/delete a KB engine's
   per-component store row. Node/edge/embedding/summary/graph operations never

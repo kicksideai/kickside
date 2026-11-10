@@ -2935,3 +2935,48 @@ entries:
     kind: library.lua
     source: file://deletion_notify_fixture.lua
     imports: {fixture: app:teardown_tx_cleanup_fixture}
+
+  - name: delete_children_fixture
+    kind: library.lua
+    source: file://delete_children_fixture.lua
+
+  - name: delete_children_source
+    kind: library.lua
+    source: file://delete_children_source.lua
+    imports:
+      time: app:delete_children_time
+      component_reader: app:delete_children_component_reader
+      context_policy: app:delete_children_context_policy
+      jobs: app:delete_children_jobs
+      component_types: kickside.component:types
+      envelope: kickside.component:envelope
+
+  - name: delete_children_test
+    kind: function.lua
+    source: file://delete_children_test.lua
+    method: run
+    meta: {type: test, suite: component_delete_children}
+    imports:
+      test: wippy.test:test
+      subject: app:delete_children_source
+      fixture: app:delete_children_fixture
+
+  - name: delete_children_time
+    kind: library.lua
+    source: file://delete_children_dependency.lua
+    imports: {fixture: 'app:delete_children_fixture'}
+
+  - name: delete_children_component_reader
+    kind: library.lua
+    source: file://delete_children_dependency.lua
+    imports: {fixture: 'app:delete_children_fixture'}
+
+  - name: delete_children_context_policy
+    kind: library.lua
+    source: file://delete_children_dependency.lua
+    imports: {fixture: 'app:delete_children_fixture'}
+
+  - name: delete_children_jobs
+    kind: library.lua
+    source: file://delete_children_dependency.lua
+    imports: {fixture: 'app:delete_children_fixture'}

@@ -56,7 +56,13 @@ values instead of replacing them. It adds no table, requirement or migration.
 preflights DELETE access to every placement descendant before changing any
 component. It deletes descendants children-first through the normal component
 service, including each kind's deletable teardown. It observes existing deletion
-jobs for up to 30 seconds and returns a conflict naming the blocked child on an
-access refusal, teardown failure or incomplete deletion. The parent remains
-untouched; successfully deleted children stay deleted if later cleanup fails.
+jobs within a 30-second request deadline that starts before traversal and is
+checked before each read and delete. Iterative traversal handles at most 1,000
+descendants per request; larger trees return a conflict asking to delete in parts
+before any deletion. An access refusal, teardown failure or incomplete deletion
+returns a conflict with `deleted_count`. It names a blocker only when the caller
+can read it; hidden access blockers return a generic conflict without an id.
+The parent remains untouched; successfully deleted children stay deleted if
+later cleanup fails. Pending or running jobs retain historical errors without
+stopping the wait; terminal dead or cancelled jobs stop deletion.
 No child is reparented. Callers delete the parent only after this function succeeds.
