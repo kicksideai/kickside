@@ -11,10 +11,11 @@ entries:
     methods:
       - name: list
         description: |
-          Targets a caller may read, for a picker or an agent choosing what to look at. A target that
-          is also a load target says loadable = true; a receiver may list targets nothing can load into
-          (reference data edited by hand), and never lists one it transforms on the way out (rule 2).
-          query is an optional substring filter on id and title.
+          Targets the caller may read -- those whose component it holds read access to (see describe)
+          -- for a picker or an agent choosing what to look at. A target that is also a load target
+          says loadable = true; a receiver may list targets nothing can load into (reference data
+          edited by hand), and never lists one it transforms on the way out (rule 2). query is an
+          optional substring filter on id and title.
         input_schemas:
           - format: application/schema+json
             definition: |
@@ -123,6 +124,11 @@ entries:
           on the way out -- masking, computed values, a read hook -- is not readable at all, because
           an aggregate over stored values would answer what a row read hides; a secret column is never
           among the columns described.
+
+          Access: a target is a platform component (see definable), and reading it takes read access
+          to that component, grants on its ancestors included. A caller without read access to the
+          target is answered as if the target did not exist: not_found, as for a target this receiver
+          does not publish.
         input_schemas:
           - format: application/schema+json
             definition: |
@@ -433,8 +439,15 @@ entries:
           one canonical form read the same thing. rendered, when capabilities.render is true, is a
           human-readable SQL-like form for logs and a "supporting query" -- it is never executable.
 
-          plan and query validate identically: a query plan accepted is refused later only for
-          permission or infrastructure reasons.
+          plan and query validate identically, access included: a query whose plan was accepted is
+          refused only if access changed in between, or for what running it meets -- the
+          infrastructure, a timeout, a statement the engine refused on the data (query_failed).
+
+          Access: every target the request names, joins included, is a platform component (see
+          definable), and reading it takes read access to that component, grants on its ancestors
+          included. It is checked before anything is read. A caller without read access to a target
+          is answered as if the target did not exist: not_found for the from target, an
+          unknown_target problem for a joined one.
 
           What the grammar cannot say, plan enforces. Nothing here mutates, and a read never moves
           data_version. A literal, a param and a lookup key fit the type of what they compare with:
@@ -927,7 +940,7 @@ entries:
                       "provider_code": { "type": "string" },
                       "details": {
                         "type": "object",
-                        "description": "reason, and for invalid_query the problems array (see Problem). Reasons on the closed codes: invalid_request / invalid_query (with problems), keys_invalid, limit_exceeded, unsupported_capability; not_found for an unknown primary target; permission_denied with target; provider_unavailable / timeout (retriable = false) or infrastructure (retriable = true); provider_error / query_failed (the engine refused the statement on the data it met: a division by zero, an overflow, a cast that failed; retriable = false); rate_limited."
+                        "description": "reason, and for invalid_query the problems array (see Problem). Reasons on the closed codes: invalid_request / invalid_query (with problems), keys_invalid, limit_exceeded, unsupported_capability; not_found for a primary target that is unknown or the caller may not read; provider_unavailable / timeout (retriable = false) or infrastructure (retriable = true); provider_error / query_failed (the engine refused the statement on the data it met: a division by zero, an overflow, a cast that failed; retriable = false); rate_limited."
                       }
                     },
                     "required": ["code", "message", "retriable", "scope"]
@@ -960,12 +973,18 @@ entries:
 
           A row is an object keyed by result column name, every value typed as its column declares
           whatever the engine returned, and a null is an absent key. Every validation refusal is
-          invalid_request/invalid_query with details.problems naming each problem by path; access is checked per target before any row is read and one denied target is
-          permission_denied for the whole call. A receiver whose engine stops a query by time answers
-          provider_unavailable/timeout with retriable = false; one that cannot bounds the work by its
-          limits instead. A statement the engine refused on the data it met -- a division by zero, an
-          overflow, a cast that failed -- is provider_error/query_failed, retriable = false: a retry
-          would compute the same thing over the same rows.
+          invalid_request/invalid_query with details.problems naming each problem by path. A receiver
+          whose engine stops a query by time answers provider_unavailable/timeout with retriable =
+          false; one that cannot bounds the work by its limits instead. A statement the engine refused
+          on the data it met -- a division by zero, an overflow, a cast that failed -- is
+          provider_error/query_failed, retriable = false: a retry would compute the same thing over
+          the same rows.
+
+          Access: every target the request names, joins included, is a platform component (see
+          definable), and reading it takes read access to that component, grants on its ancestors
+          included. It is checked before any row is read. A caller without read access to a target
+          is answered as if the target did not exist: not_found for the from target, an
+          unknown_target problem for a joined one.
         input_schemas:
           - format: application/schema+json
             definition: |
@@ -1444,7 +1463,7 @@ entries:
                       "provider_code": { "type": "string" },
                       "details": {
                         "type": "object",
-                        "description": "reason, and for invalid_query the problems array ({ code, path, message, hint? }). Reasons on the closed codes: invalid_request / invalid_query (with problems), keys_invalid, limit_exceeded, unsupported_capability; not_found for an unknown primary target; permission_denied with target; provider_unavailable / timeout (retriable = false) or infrastructure (retriable = true); provider_error / query_failed (the engine refused the statement on the data it met: a division by zero, an overflow, a cast that failed; retriable = false); rate_limited."
+                        "description": "reason, and for invalid_query the problems array ({ code, path, message, hint? }). Reasons on the closed codes: invalid_request / invalid_query (with problems), keys_invalid, limit_exceeded, unsupported_capability; not_found for a primary target that is unknown or the caller may not read; provider_unavailable / timeout (retriable = false) or infrastructure (retriable = true); provider_error / query_failed (the engine refused the statement on the data it met: a division by zero, an overflow, a cast that failed; retriable = false); rate_limited."
                       }
                     },
                     "required": ["code", "message", "retriable", "scope"]
@@ -1465,6 +1484,11 @@ entries:
           own because a membership test over thousands of composite keys is not a predicate any
           receiver wants to compile from an expression tree. The answer is read in one snapshot and
           mutates nothing.
+
+          Access: a target is a platform component (see definable), and reading it takes read access
+          to that component, grants on its ancestors included. A caller without read access to the
+          target is answered as if the target did not exist: not_found, as for a target this receiver
+          does not publish.
         input_schemas:
           - format: application/schema+json
             definition: |

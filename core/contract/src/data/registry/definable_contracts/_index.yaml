@@ -128,12 +128,20 @@ entries:
           Well-known blocker codes: unsupported_type, unsupported_option, invalid_code, code_taken,
           type_conflict, key_unknown_column, key_nullable, period_conflict, immutable.
 
-          Access: types is open to whoever may load; define and remove run under the right to
-          define, which a host grants separately from the right to load. On top of it the
-          receiver's own rule for a target that exists decides: a receiver whose targets are
-          platform components alters one only for a caller who may write that component, and
-          answers permission_denied otherwise. A dry run writes nothing, so the right to define is
-          all it needs.
+          A target is a platform component: the receiver registers one for every target it creates
+          and keeps it for the target's life. Every define that is not a dry run answers its
+          component_id, one that changed nothing included.
+
+          Access: what a caller may do with a target is what that component's ACL grants it, grants
+          on the component's ancestors included, so a caller that places the component in its own
+          tree shares the target with whoever holds that tree. types is open to whoever may load;
+          define and remove run under the right to define, which a host grants separately from the
+          right to load. On top of it, a define of a target that exists takes write access to its
+          component, whether or not it changes anything, and anyone else is permission_denied with
+          details.target. A dry run writes nothing: one that would create a target needs the right to
+          define alone, and one about a target that exists takes read access to its component -- it
+          answers what readable.describe would show -- and anyone else is permission_denied with
+          details.target.
 
           Adding a column to a target that already holds rows is an addition, never a retype: the rows
           already there have nothing to put in a column that did not exist, so such a column is
@@ -236,6 +244,7 @@ entries:
                   "target": { "type": "string", "pattern": "^[^\\s:]+:[^\\s:]+$", "description": "The id a load names. For a creation this is the receiver's answer to code." },
                   "created": { "type": "boolean", "description": "True when the target did not exist; false when an existing one was brought up to the columns." },
                   "planned": { "type": "boolean", "description": "True when dry_run answered and nothing was written." },
+                  "component_id": { "type": "string", "minLength": 1, "description": "The platform component the target is. Access to the target is this component's ACL, grants on its ancestors included. Answered by every define that is not a dry run; a dry run leaves it out." },
                   "changes": {
                     "type": "array",
                     "description": "What was done, or would be. Empty means the target already matched.",
@@ -247,7 +256,7 @@ entries:
                         "action": {
                           "type": "string",
                           "minLength": 1,
-                          "description": "The receiver's own word for what it did. Well-known values: target_created, column_added, column_optional (a column asked for as required, added optional to a target that already exists), options_changed, key_set, period_set, label_changed (a column's label set or cleared), description_changed (the description of the target, or of the column the change names, set or cleared)."
+                          "description": "The receiver's own word for what it did. Well-known values: target_created, column_added, column_optional (a column asked for as required, added optional to a target that already exists), options_changed, key_set, period_set, label_changed (a column's label set or cleared), description_changed (the description of the target, or of the column the change names, set or cleared), title_changed (the target's title replaced)."
                         },
                         "column": { "type": "string" },
                         "detail": { "type": "string" }
@@ -288,11 +297,19 @@ entries:
                 "allOf": [
                   {
                     "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
-                    "then": { "required": ["target", "created", "changes"], "properties": { "error": false } }
+                    "then": { "required": ["target", "created", "planned", "changes"], "properties": { "error": false } }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": true }, "planned": { "const": false } }, "required": ["success", "planned"] },
+                    "then": { "required": ["component_id"] }
+                  },
+                  {
+                    "if": { "properties": { "planned": { "const": true } }, "required": ["planned"] },
+                    "then": { "properties": { "component_id": false } }
                   },
                   {
                     "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
-                    "then": { "required": ["error"], "properties": { "target": false, "created": false, "planned": false, "changes": false, "describe": false } }
+                    "then": { "required": ["error"], "properties": { "target": false, "created": false, "planned": false, "component_id": false, "changes": false, "describe": false } }
                   }
                 ],
                 "$defs": {
@@ -333,9 +350,8 @@ entries:
           A target that is already gone is no refusal: retrying a removal, or removing what another
           caller removed first, succeeds. A target id this receiver does not publish is not_found.
 
-          Access: remove runs under the right to define, as define does, and the receiver's own rule
-          for the target decides on top of it: a receiver whose targets are platform components drops
-          one only for a caller who may delete that component, and answers permission_denied
+          Access: remove runs under the right to define, as define does, and on top of it drops a
+          target only for a caller who may delete its component, answering permission_denied
           otherwise. A target something else still depends on -- another target that relates to it,
           a lock the receiver keeps on it -- is conflict, with details.reason naming why.
         input_schemas:
