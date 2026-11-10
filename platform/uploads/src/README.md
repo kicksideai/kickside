@@ -45,6 +45,11 @@ An upload moves through storage, processing, and completion:
 3. When processing settles as `completed` or `error`, Uploads runs every
    completion callback attached to the upload.
 
+`POST /uploads` returns `{ success: true, uuid, component_id }`. When the
+same user uploads bytes that already belong to an existing upload, the response
+returns that upload's `uuid` and includes `deduped: true`. A newly created upload
+omits `deduped`.
+
 Each completed stage records its outcome in private upload metadata under the
 current job lease. Automatic retries of that job skip the completed prefix and
 enter the first incomplete stage. A new processing job, including a user-requested

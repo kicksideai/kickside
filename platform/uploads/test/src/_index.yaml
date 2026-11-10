@@ -2,6 +2,23 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: upload_create_probe
+    kind: function.lua
+    source: file://upload_create_probe.lua
+    method: run
+    imports:
+      api: kickside.uploads.api:upload_handler
+      http: app:upload_http_probe
+  - name: upload_http_dedup_test
+    kind: function.lua
+    source: file://upload_http_dedup_test.lua
+    method: run
+    meta: { type: test, suite: upload_http_dedup }
+    modules: [uuid, security, funcs, sql]
+    imports:
+      test: wippy.test:test
+      provision: kickside.core.threads:provision
+      types: kickside.uploads:types
   - name: upload_app_policy_test
     kind: function.lua
     meta: { type: test, suite: uploads }
