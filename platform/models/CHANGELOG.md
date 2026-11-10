@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.75](https://github.com/kicksideai/kickside/compare/models-v0.1.74...models-v0.1.75) (2026-11-09)
+
+
+### Bug Fixes
+
+* **models:** retain eligible ranked class candidates during resolution ([#399](https://github.com/kicksideai/kickside/issues/399)) ([cab10e7](https://github.com/kicksideai/kickside/commit/cab10e7533c0ff556255fcd7623b5845e2aee683))
+
 ## [0.1.74](https://github.com/kicksideai/kickside/compare/models-v0.1.73...models-v0.1.74) (2026-11-09)
 
 
