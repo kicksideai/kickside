@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.13](https://github.com/kicksideai/kickside/compare/uploads-v0.3.12...uploads-v0.3.13) (2026-11-10)
+
+
+### Bug Fixes
+
+* **uploads:** preserve sparse PDF pages through OCR ([#402](https://github.com/kicksideai/kickside/issues/402)) ([8c98fbe](https://github.com/kicksideai/kickside/commit/8c98fbe1482be90ad7303cf7edc78336975a2e7a))
+
 ## [0.3.12](https://github.com/kicksideai/kickside/compare/uploads-v0.3.11...uploads-v0.3.12) (2026-11-09)
 
 
