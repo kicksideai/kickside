@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.82](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.81...knowledge-v0.1.82) (2026-11-10)
+
+
+### Bug Fixes
+
+* **knowledge:** default host bindings for dependency installation ([#410](https://github.com/kicksideai/kickside/issues/410)) ([70ca063](https://github.com/kicksideai/kickside/commit/70ca063beb59d5a77b0ed73d31c4a575549c4e72))
+
 ## [0.1.81](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.80...knowledge-v0.1.81) (2026-11-09)
 
 
