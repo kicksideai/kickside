@@ -178,6 +178,58 @@ local function define_tests()
         end)
     end)
     test.describe("kickside.data packaging", function()
+        test.it("applies independent ACL bits and visibility before every target operation", function()
+            for _, name in ipairs({ "definable", "loadable", "readable" }) do
+                local entry, err = registry.get("kickside.data:" .. name)
+                test.is_nil(err)
+                local methods: { any } = value(entry, "methods") :: { any }
+                local access = ""
+                for _, raw in ipairs(methods) do
+                    local method = raw :: any
+                    local text = tostring(method.description):gsub("%s+", " ")
+                    access = access .. " " .. text
+                    test.is_nil(text:find("anyone else is permission_denied", 1, true),
+                        name .. "." .. tostring(method.name) .. " discloses an invisible target")
+                    if name == "definable" and method.name ~= "types" then
+                        test.not_nil(text:find("visibility first", 1, true), tostring(method.name) .. " omits visibility")
+                        test.not_nil(text:find("not_found", 1, true), tostring(method.name) .. " exposes invisible targets")
+                        test.not_nil(text:find("visible target", 1, true), tostring(method.name) .. " omits visible refusals")
+                    end
+                end
+                for _, rule in ipairs({ "READ=1, WRITE=2, DELETE=4", "union", "visibility first" }) do
+                    test.not_nil(access:find(rule, 1, true), name .. " omits the ACL rule: " .. rule)
+                end
+            end
+            local entry, err = registry.get("kickside.data:loadable")
+            test.is_nil(err)
+            for _, raw in ipairs(value(entry, "methods") :: { any }) do
+                local method = raw :: any
+                if method.name ~= "list" then
+                    local text = tostring(method.description):gsub("%s+", " ")
+                    test.not_nil(text:find("read and write access", 1, true),
+                        tostring(method.name) .. " omits READ and WRITE")
+                    test.not_nil(text:find("not_found", 1, true),
+                        tostring(method.name) .. " omits the invisible-target refusal")
+                end
+            end
+        end)
+
+        test.it("compares only load-stamped owners in commit and rehearsal assertions", function()
+            local entry, err = registry.get("kickside.data:loadable")
+            test.is_nil(err)
+            for _, raw in ipairs(value(entry, "methods") :: { any }) do
+                local method = raw :: any
+                if method.name == "commit" or method.name == "rehearse" then
+                    local input = schema_json(method.input_schemas[1], tostring(method.name) .. " input")
+                    local owners = input.properties.targets.items.properties.expect.properties.owners
+                    local description = tostring(owners.items.properties.run_ids.description)
+                    test.not_nil(description:find("no load owns rows", 1, true), "empty owners means no load owns rows")
+                    test.not_nil(description:find("Rows no load stamped", 1, true), "unstamped rows are excluded")
+                    test.is_nil(description:find("holds no rows", 1, true), "empty owners does not mean no rows exist")
+                end
+            end
+        end)
+
         test.it("publishes every data contract definition with methods", function()
             for _, name in ipairs(DATA_CONTRACTS) do
                 local id = "kickside.data:" .. name
@@ -437,7 +489,7 @@ local function define_tests()
                 "plan promises that a query it accepted fails only when access or the infrastructure changes")
         end)
 
-        test.it("loads into a target only for a caller with write access to its component, and hides it from a caller with none", function()
+        test.it("loads only with independent read and write grants and hides targets without read", function()
             local entry, entry_err = registry.get("kickside.data:loadable")
             test.is_nil(entry_err)
             local said: { [string]: string } = {}
@@ -462,18 +514,18 @@ local function define_tests()
             test.not_nil(said.list:find("component", 1, true), "list does not say whose access decides what it lists")
             for _, method in ipairs({ "describe", "describe_scope", "begin" }) do
                 local text = said[method]
-                test.not_nil(text:find("write access to that component, grants on its ancestors included", 1, true),
+                test.not_nil(text:find("read and write access to that component, grants on its ancestors included", 1, true),
                     method .. " does not say what loading into a target takes")
-                test.not_nil(text:find("no access to the target at all", 1, true) and text:find("as if the target did not exist", 1, true),
+                test.not_nil(text:find("without READ, even with WRITE or DELETE", 1, true) and text:find("as if the target did not exist", 1, true),
                     method .. " does not say how a target the caller cannot reach is answered")
                 test.not_nil(text:find("may read the target but not write it is permission_denied with details.target", 1, true),
                     method .. " does not say how a reader who may not load is answered")
-                test.not_nil(details[method]:find("the caller has no access to at all", 1, true),
+                test.not_nil(details[method]:find("the caller cannot read, even with WRITE or DELETE", 1, true),
                     method .. " gives not_found no meaning for a target the caller cannot reach")
-                test.not_nil(details[method]:find("for one the caller may read but not write", 1, true),
+                test.not_nil(details[method]:find("only for a visible target the caller may read but not write", 1, true),
                     method .. " gives permission_denied no meaning")
             end
-            test.not_nil(said.begin:find("inherit that decision", 1, true), "begin does not say that the rest of a load runs under its decision")
+            test.not_nil(said.begin:find("apply the same access rule on every call", 1, true), "begin does not recheck access throughout the load")
             test.not_nil(said.begin:find("does not exist yet needs only the right to load", 1, true),
                 "begin does not say what a define of a target that does not exist yet takes")
             test.not_nil(said.begin:find("as definable.define answers the same request", 1, true),
@@ -514,7 +566,7 @@ local function define_tests()
             test.not_nil(said.list:find("read and write access", 1, true), "list does not say a caller has to see a target to load into it")
             test.not_nil(said.describe:find("Read access is what makes a component visible at all", 1, true),
                 "describe does not say a caller who may only write a target cannot reach it")
-            test.not_nil(details.begin:find("or that a define names and the caller may not write", 1, true),
+            test.not_nil(details.begin:find("including one that a define names", 1, true),
                 "begin's permission_denied leaves out a define of a target the caller may not write")
         end)
     end)

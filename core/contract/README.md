@@ -2,6 +2,17 @@
 
 Shared contracts for components, providers, and data capabilities.
 
+The `kickside.data:definable`, `kickside.data:loadable`, and `kickside.data:readable`
+family is provisional and has no consumers yet. Further revisions are expected.
+Published contract IDs and existing method names remain available.
+
+The family uses independent component ACL bits (READ=1, WRITE=2, DELETE=4),
+unioning grants on the component and its ancestors. Visibility comes first:
+an existing target without READ returns `not_found`, even when WRITE or DELETE
+is granted. `permission_denied` applies only to a visible target lacking the
+required permission. Loading requires READ and WRITE, removal requires READ
+and DELETE, and planning an existing definition requires READ.
+
 This module installs independently into a [KickSide](https://kickside.ai) host.
 
 ## Quick start
@@ -60,7 +71,7 @@ Import shared contracts and error, paging, or writable-origin helpers from their
 | [`kickside.contract:portable`](src/_index.yaml) | `export`, `import_into` |
 | [`kickside.data:pullable`](src/data/_index.yaml) | `pull` |
 | [`kickside.data.records:external_record_writer`](src/data/records/_index.yaml) | `describe`, `update_record` |
-| [`kickside.data:definable`](src/data/registry/definable_contracts/_index.yaml) | `types`, `define` |
+| [`kickside.data:definable`](src/data/registry/definable_contracts/_index.yaml) | `types`, `define`, `remove` |
 | [`kickside.data:loadable`](src/data/registry/loadable_contracts/_index.yaml) | `list`, `describe`, `describe_scope`, `begin`, `append`, `commit`, `rehearse`, `discard` |
 | [`kickside.data:readable`](src/data/registry/readable_contracts/_index.yaml) | `list`, `describe`, `plan`, `query`, `lookup` |
 | [`kickside.data:writable`](src/data/registry/writable_contracts/_index.yaml) | `write` |

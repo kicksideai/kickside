@@ -1,3 +1,4 @@
+# Provisional data target contracts have no consumers yet; revisions are expected.
 version: "1.0"
 namespace: kickside.data
 
@@ -84,9 +85,37 @@ entries:
                         "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
                       },
                       "provider_code": { "type": "string" },
-                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch, run_taken. not_found for an unknown target or load; permission_denied with target; provider_unavailable with infrastructure or timeout." }
+                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch, run_taken. not_found for an unknown target or load, or an existing target the caller cannot read, even with WRITE or DELETE; permission_denied only for a visible target the caller may read but not write, with target; provider_unavailable with infrastructure or timeout." }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }
@@ -114,11 +143,12 @@ entries:
           multi_target = false means begin takes exactly one target, replace_scope = false means
           append only, allow_shrink = false means no replace below the floor.
 
-          Access: a target is a platform component (see definable), and loading into it takes write
+          Access: a target is a platform component (see definable), and loading into it takes read and write
           access to that component, grants on its ancestors included. It is decided under the
           calling actor, here, at describe_scope and at begin. Read access is what makes a component
-          visible at all, so a caller that may write a target but not read it has no access to it. A
-          caller with no access to the target at all is answered as if the target did not exist:
+          visible at all. ACL bits are independent (READ=1, WRITE=2, DELETE=4); effective access is
+          the union of grants on the component and its ancestors. Apply visibility first: a caller
+          without READ, even with WRITE or DELETE, is answered as if the target did not exist:
           not_found, as for a target this receiver does not publish. One that may read the target but
           not write it is permission_denied with details.target.
         input_schemas:
@@ -270,9 +300,37 @@ entries:
                         "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
                       },
                       "provider_code": { "type": "string" },
-                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch, run_taken. not_found for an unknown load, or for a target that is unknown or the caller has no access to at all; permission_denied with target, for one the caller may read but not write; provider_unavailable with infrastructure or timeout." }
+                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch, run_taken. not_found for an unknown load, or for a target that is unknown or the caller cannot read, even with WRITE or DELETE; permission_denied only for a visible target the caller may read but not write, with target; provider_unavailable with infrastructure or timeout." }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }
@@ -292,9 +350,9 @@ entries:
           expect. A receiver with supports.expect=false answers owners=[] and no data_version, but
           MUST still answer rows.
 
-          Access: a target is a platform component (see definable), and loading into it takes write
+          Access: a target is a platform component (see definable), and loading into it takes read and write
           access to that component, grants on its ancestors included; describe_scope decides it
-          under the calling actor, as describe does. A caller with no access to the target at all is
+          under the calling actor, as describe does. A caller without READ, even with WRITE or DELETE, is
           answered as if the target did not exist: not_found. One that may read the target but not
           write it is permission_denied with details.target.
         input_schemas:
@@ -381,9 +439,37 @@ entries:
                         "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
                       },
                       "provider_code": { "type": "string" },
-                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch, run_taken. not_found for an unknown load, or for a target that is unknown or the caller has no access to at all; permission_denied with target, for one the caller may read but not write; provider_unavailable with infrastructure or timeout." }
+                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch, run_taken. not_found for an unknown load, or for a target that is unknown or the caller cannot read, even with WRITE or DELETE; permission_denied only for a visible target the caller may read but not write, with target; provider_unavailable with infrastructure or timeout." }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }
@@ -416,21 +502,22 @@ entries:
           exist yet, target MUST be what define(dry_run) answered for the same request; anything else
           is invalid_request/define_target_mismatch.
 
-          Access: a target is a platform component (see definable), and loading into it takes write
+          Access: a target is a platform component (see definable), and loading into it takes read and write
           access to that component, grants on its ancestors included. It is decided here for every
           target of the load, under the calling actor, before anything else about the target is
-          judged, and one target refused refuses the whole begin. A caller with no access to the
-          target at all is answered as if the target did not exist: not_found. One that may read the
+          judged, and one target refused refuses the whole begin. A caller without READ, even with
+          WRITE or DELETE, is answered as if the target did not exist: not_found. One that may read the
           target but not write it is permission_denied with details.target. append, rehearse, commit
-          and discard inherit that decision -- load_id is the right they run under, only for the
-          caller that began the load, so a grant taken back after begin does not stop the load, and
+          and discard apply the same access rule on every call. load_id identifies a load only for the
+          caller that began the load; access is rechecked before any target is read or changed, and
           to anyone else the load is an unknown one. A run belongs to the caller that began it: a
           begin for a run another caller began is conflict/run_taken, and nothing of that load is
           answered. A define of a target that does not exist yet needs only the right to load: a
           rehearsal leaves nothing behind, and should the target exist by the time the load is
-          rehearsed, rehearse takes write access to it as begin would have. A define of a target that
-          exists takes write access to it, decided before the definition is judged, and anyone else is
-          permission_denied with details.target, as definable.define answers the same request.
+          rehearsed, rehearse takes read and write access to it as begin would have. A define of a
+          target that exists applies visibility first: without READ it is not_found; a visible
+          target without WRITE is permission_denied with details.target, before the definition is
+          judged, as definable.define answers the same request.
 
           A begin for a run the receiver no longer remembers -- committed before rule 6's window ran
           out -- opens a new load, and the rows of both commits carry the run_id as one lineage.
@@ -522,15 +609,47 @@ entries:
                         "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
                       },
                       "provider_code": { "type": "string" },
-                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch, run_taken. not_found for an unknown load, or for a target that is unknown or the caller has no access to at all; permission_denied with target, for one the caller may read but not write, or that a define names and the caller may not write; provider_unavailable with infrastructure or timeout." }
+                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch, run_taken. not_found for an unknown load, or for a target that is unknown or the caller cannot read, even with WRITE or DELETE; permission_denied only for a visible target the caller may read but not write, including one that a define names, with target; provider_unavailable with infrastructure or timeout." }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }
 
       - name: append
         description: |
+          Apply begin's access rule: read and write access to every existing target is rechecked;
+          a target without READ is not_found, and a visible target without WRITE is permission_denied
+          with details.target. Refusal stages nothing.
+
           Stage one batch for one target of the load. Rows are plain objects keyed by column name with
           JSON scalar values; a column a row omits or carries as null or as "" is absent and stored as
           NULL, and NULL in a column described nullable = false is invalid_request/missing_value. A
@@ -612,15 +731,47 @@ entries:
                         "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
                       },
                       "provider_code": { "type": "string" },
-                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch, run_taken. not_found for an unknown target or load; permission_denied with target; provider_unavailable with infrastructure or timeout." }
+                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch, run_taken. not_found for an unknown target or load, or an existing target the caller cannot read, even with WRITE or DELETE; permission_denied only for a visible target the caller may read but not write, with target; provider_unavailable with infrastructure or timeout." }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }
 
       - name: commit
         description: |
+          Apply begin's access rule: read and write access to every existing target is rechecked;
+          a target without READ is not_found, and a visible target without WRITE is permission_denied
+          with details.target. Refusal changes no target.
+
           Apply the load as one transaction across every target it was opened for. A target with no
           plan entry is committed in append mode. The effect matrix is normative, per target:
           replace_scope omitted MUST insert and delete nothing and return result=appended;
@@ -714,7 +865,7 @@ entries:
                                   "run_ids": {
                                     "type": "array",
                                     "items": { "type": "string", "minLength": 1 },
-                                    "description": "The complete owner set the caller saw. Empty asserts the period holds no rows."
+                                    "description": "The complete set of runs owning rows in the period, or the whole target when period is absent. Empty asserts no load owns rows there. Rows no load stamped are excluded, even when present."
                                   }
                                 }
                               }
@@ -796,9 +947,37 @@ entries:
                         "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
                       },
                       "provider_code": { "type": "string" },
-                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch, run_taken. not_found for an unknown target or load; permission_denied with target; provider_unavailable with infrastructure or timeout." }
+                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch, run_taken. not_found for an unknown target or load, or an existing target the caller cannot read, even with WRITE or DELETE; permission_denied only for a visible target the caller may read but not write, with target; provider_unavailable with infrastructure or timeout." }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }
@@ -817,9 +996,12 @@ entries:
           and describes its targets with supports.rehearse = false. data_version in the answer is the
           one the rehearsal saw: nothing moved, so there is nothing to carry into a later expect.
 
-          A load another caller began is not_found, as an unknown load. A target a define named that
-          did not exist when the load began, and exists now, takes write access first, as begin would
-          have taken it: anyone else is permission_denied with details.target.
+          A load another caller began is not_found, as an unknown load. Apply begin's access rule:
+          read and write access to every existing target is rechecked, including a target a define
+          named that did not exist when the load began and exists now. Apply visibility first:
+          without READ it is not_found; a visible target without WRITE is permission_denied with
+          details.target. Refusal changes no target. Ownership assertions compare only runs owning
+          load-stamped rows, as in commit; an empty run_ids does not assert that no rows exist.
         input_schemas:
           - format: application/schema+json
             definition: |
@@ -874,7 +1056,7 @@ entries:
                                   "run_ids": {
                                     "type": "array",
                                     "items": { "type": "string", "minLength": 1 },
-                                    "description": "The complete owner set the caller saw. Empty asserts the period holds no rows."
+                                    "description": "The complete set of runs owning rows in the period, or the whole target when period is absent. Empty asserts no load owns rows there. Rows no load stamped are excluded, even when present."
                                   }
                                 }
                               }
@@ -956,15 +1138,47 @@ entries:
                         "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
                       },
                       "provider_code": { "type": "string" },
-                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch, run_taken. not_found for an unknown target or load; permission_denied with target; provider_unavailable with infrastructure or timeout." }
+                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch, run_taken. not_found for an unknown target or load, or an existing target the caller cannot read, even with WRITE or DELETE; permission_denied only for a visible target the caller may read but not write, with target; provider_unavailable with infrastructure or timeout." }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }
 
       - name: discard
         description: |
+          For a known load owned by the caller, apply begin's access rule: read and write access
+          to every existing target is rechecked; a target without READ is not_found, and a visible
+          target without WRITE is permission_denied with details.target. Refusal discards nothing.
+
           Drop a load's staged rows, every target of it. Idempotent, and discarding an unknown load is
           success: the postcondition the caller wants is already true. A load another caller began is
           an unknown one here too: the answer is success, and that load stays as it is. Discarding a committed load is
@@ -1026,9 +1240,37 @@ entries:
                         "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
                       },
                       "provider_code": { "type": "string" },
-                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch, run_taken. not_found for an unknown target or load; permission_denied with target; provider_unavailable with infrastructure or timeout." }
+                      "details": { "type": "object", "description": "reason, and what it names. invalid_request: malformed (a request the grammar does not take, with field), unknown_column, type_mismatch (with column, row and the receiver's own rule), missing_value, batch_too_large, load_closed, period_missing, period_not_in_scope, period_unsupported, period_invalid, batches_incomplete, rehearsal_only, run_targets_differ, targets_not_co_located, unsupported_column, unsupported_option (with option), expect_invalid, define_target_mismatch, limit_exceeded (with limit). conflict: owner_changed, version_changed, shrink, duplicate_key, schema_changed, already_committed (with result), batch_mismatch, run_taken. not_found for an unknown target or load, or an existing target the caller cannot read, even with WRITE or DELETE; permission_denied only for a visible target the caller may read but not write, with target; provider_unavailable with infrastructure or timeout." }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }

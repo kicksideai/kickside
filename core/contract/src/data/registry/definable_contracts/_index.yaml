@@ -1,3 +1,4 @@
+# Provisional data target contracts have no consumers yet; revisions are expected.
 version: "1.0"
 namespace: kickside.data
 
@@ -67,7 +68,10 @@ entries:
                           "enum": ["string", "number", "integer", "boolean", "date", "datetime", "time"],
                           "description": "What loadable.describe answers as the type of a column of this type: the storage type a producer coerces a value to. Absent when no bulk load can fill such a column."
                         }
-                      }
+                      },
+                      "if": { "properties": { "bulk_writable": { "const": false } }, "required": ["bulk_writable"] },
+                      "then": { "properties": { "coerces_to": false } },
+                      "else": { "required": ["coerces_to"] }
                     }
                   },
                   "error": { "$ref": "#/$defs/DataError" }
@@ -108,7 +112,35 @@ entries:
                       "provider_code": { "type": "string" },
                       "details": { "type": "object" }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }
@@ -132,16 +164,16 @@ entries:
           and keeps it for the target's life. Every define that is not a dry run answers its
           component_id, one that changed nothing included.
 
-          Access: what a caller may do with a target is what that component's ACL grants it, grants
-          on the component's ancestors included, so a caller that places the component in its own
-          tree shares the target with whoever holds that tree. types is open to whoever may load;
+          Access: component ACL bits are independent (READ=1, WRITE=2, DELETE=4); effective access
+          is the union of grants on the component and its ancestors. Apply visibility first on
+          every method: without READ an existing target is not_found, even with WRITE or DELETE,
+          before judging its definition. permission_denied is only for a visible target lacking
+          the required permission, with details.target. types is open to whoever may load;
           define and remove run under the right to define, which a host grants separately from the
-          right to load. On top of it, a define of a target that exists takes write access to its
-          component, whether or not it changes anything, and anyone else is permission_denied with
-          details.target. A dry run writes nothing: one that would create a target needs the right to
-          define alone, and one about a target that exists takes read access to its component -- it
-          answers what readable.describe would show -- and anyone else is permission_denied with
-          details.target.
+          right to load. On top of it, a define of a target that exists takes read and write access
+          to its component, whether or not it changes anything. A dry run writes nothing: one that
+          would create a target needs the right to define alone, and one about a target that exists
+          takes read access to its component -- it answers what readable.describe would show.
 
           Adding a column to a target that already holds rows is an addition, never a retype: the rows
           already there have nothing to put in a column that did not exist, so such a column is
@@ -337,7 +369,35 @@ entries:
                       "provider_code": { "type": "string" },
                       "details": { "type": "object" }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }
@@ -350,9 +410,11 @@ entries:
           A target that is already gone is no refusal: retrying a removal, or removing what another
           caller removed first, succeeds. A target id this receiver does not publish is not_found.
 
-          Access: remove runs under the right to define, as define does, and on top of it drops a
-          target only for a caller who may delete its component, answering permission_denied
-          otherwise. A target something else still depends on -- another target that relates to it,
+          Access: remove runs under the right to define, as define does. Apply visibility first:
+          an existing target without READ is not_found, even if DELETE is granted. A visible target
+          requires DELETE on its component; without it the answer is permission_denied with
+          details.target. Grants on the component and its ancestors are unioned, as in define.
+          A target something else still depends on -- another target that relates to it,
           a lock the receiver keeps on it -- is conflict, with details.reason naming why.
         input_schemas:
           - format: application/schema+json
@@ -417,7 +479,35 @@ entries:
                       "provider_code": { "type": "string" },
                       "details": { "type": "object" }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }

@@ -1,3 +1,4 @@
+# Provisional data target contracts have no consumers yet; revisions are expected.
 version: "1.0"
 namespace: kickside.data
 
@@ -91,7 +92,35 @@ entries:
                       "provider_code": { "type": "string" },
                       "details": { "type": "object" }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }
@@ -128,7 +157,9 @@ entries:
           Access: a target is a platform component (see definable), and reading it takes read access
           to that component, grants on its ancestors included. A caller without read access to the
           target is answered as if the target did not exist: not_found, as for a target this receiver
-          does not publish.
+          does not publish. ACL bits are independent (READ=1, WRITE=2, DELETE=4); effective access
+          is the union of grants on the component and its ancestors. Apply visibility first on
+          every method: WRITE or DELETE alone never makes a target visible.
         input_schemas:
           - format: application/schema+json
             definition: |
@@ -415,7 +446,35 @@ entries:
                       "provider_code": { "type": "string" },
                       "details": { "type": "object" }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }
@@ -943,7 +1002,35 @@ entries:
                         "description": "reason, and for invalid_query the problems array (see Problem). Reasons on the closed codes: invalid_request / invalid_query (with problems), keys_invalid, limit_exceeded, unsupported_capability; not_found for a primary target that is unknown or the caller may not read; provider_unavailable / timeout (retriable = false) or infrastructure (retriable = true); provider_error / query_failed (the engine refused the statement on the data it met: a division by zero, an overflow, a cast that failed; retriable = false); rate_limited."
                       }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }
@@ -1466,7 +1553,35 @@ entries:
                         "description": "reason, and for invalid_query the problems array ({ code, path, message, hint? }). Reasons on the closed codes: invalid_request / invalid_query (with problems), keys_invalid, limit_exceeded, unsupported_capability; not_found for a primary target that is unknown or the caller may not read; provider_unavailable / timeout (retriable = false) or infrastructure (retriable = true); provider_error / query_failed (the engine refused the statement on the data it met: a division by zero, an overflow, a cast that failed; retriable = false); rate_limited."
                       }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }
@@ -1634,7 +1749,35 @@ entries:
                       "provider_code": { "type": "string" },
                       "details": { "type": "object" }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }
