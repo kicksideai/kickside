@@ -366,6 +366,23 @@ entries:
     source: file://rasterize_fixtures.lua
     modules: [base64]
 
+  - name: flaky_rasterizer
+    kind: function.lua
+    meta:
+      comment: Test-only rasterizer whose page 2 never renders.
+    source: file://flaky_rasterizer.lua
+    method: run
+
+  - name: flaky_rasterizer.capability
+    kind: registry.entry
+    meta:
+      type: convert.rasterizer
+      comment: Advertises the test-only flaky rasterizer for its private mime type.
+    input_mime_types:
+      - application/x-kickside-flaky-pdf
+    processor_func: app:flaky_rasterizer
+    priority: 100
+
   - name: rasterize_test
     kind: function.lua
     meta:

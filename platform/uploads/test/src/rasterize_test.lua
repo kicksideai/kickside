@@ -224,6 +224,38 @@ local function define_tests()
             test.eq(#page_images.page_set(upload_id, 51200), 0)
         end)
 
+        test.it("renders the other pages and reports each page that fails to render", function()
+            local flaky = "application/x-kickside-flaky-pdf"
+            local upload_id = seed_document(flaky, "")
+            local result = run_stage(upload_id, flaky)
+            test.is_true(result.success)
+            test.eq(result.metadata.rendered_page_count, 2)
+            local failures = result.metadata.rasterize_failures
+            test.not_nil(failures)
+            test.eq(#failures, 1)
+            test.eq(failures[1].page, 2)
+            test.contains(failures[1].error, "exceeded its deadline")
+            local images = rendered_pages(upload_id)
+            test.eq(#images, 2)
+            test.eq(images[1].metadata.page, 1)
+            test.eq(images[2].metadata.page, 3)
+        end)
+
+        test.it("reports every page when the renderer refuses the request", function()
+            local upload_id = seed_document("application/pdf", "")
+            local settings = assert(assert(contract.get("kickside.settings:settings")):open())
+            test.is_true(settings:set({namespace = "kickside.uploads.rasterize", key = "rasterize_format", value = "invalid"}).success)
+            local result = run_stage(upload_id, "application/pdf")
+            test.is_true(settings:set({namespace = "kickside.uploads.rasterize", key = "rasterize_format", value = "jpeg"}).success)
+            test.is_true(result.success)
+            test.eq(result.metadata.rendered_page_count, 0)
+            test.eq(#result.metadata.rasterize_failures, FIXTURE_PAGES)
+            for index, failure in ipairs(result.metadata.rasterize_failures) do
+                test.eq(failure.page, index)
+                test.not_nil(failure.error)
+            end
+        end)
+
         test.it("renders only sparse marker-delimited pages with their original numbers", function()
             for _, sparse_page in ipairs({ 1, 2 }) do
                 local pages = {}
