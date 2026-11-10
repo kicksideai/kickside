@@ -260,12 +260,6 @@ select.kx-input { appearance: none; padding-right: 28px; cursor: pointer; }
 .kx-msfield { display: block; width: 100%; }
 /* Icon-picker wrapper the shared IconField emits around <wc-icon-picker>. */
 .wc-iconfield { display: inline-block; }
-.kx-group-toggle {
-  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
-  background: transparent; border: 0; padding: 0; cursor: pointer; color: var(--p-text-color);
-}
-.kx-group-toggle:hover .kx-group-title, .kx-group-toggle:hover .kx-adv-caret { color: var(--p-primary-color); }
-.kx-group-toggle .kx-group-meta { margin-left: auto; }
 
 /* Reusable search box (mirrors the KB dialog catalog search). */
 .kx-cat-search {
@@ -528,7 +522,6 @@ select.kx-input { appearance: none; padding-right: 28px; cursor: pointer; }
 .kx-think { margin-top: 8px; display: flex; flex-direction: column; gap: 5px; }
 
 /* Caret for the collapsible Tools group header. */
-.kx-adv-caret { width: 16px; height: 16px; color: var(--p-text-muted-color); flex: none; transition: color .15s; }
 
 /* Trait config web component mount (WcMount). */
 .kx-wcmount { margin-top: 4px; }
@@ -609,13 +602,8 @@ select.kx-input { appearance: none; padding-right: 28px; cursor: pointer; }
 }
 
 /* Agent creation: full tool documentation inside the component shadow root. */
-.tool-reference { display: flex; flex-direction: column; gap: .75rem; min-width: 0; }
-.tool-reference__list { list-style: none; margin: 0; padding: 0; display: grid; gap: .75rem; }
-.tool-reference__item { padding: .75rem; border: 1px solid var(--p-content-border-color); border-radius: var(--kx-radius-8); }
-.tool-reference__title { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
-.tool-reference__description { white-space: pre-wrap; overflow-wrap: anywhere; margin: .5rem 0; line-height: 1.5; color: var(--p-text-muted-color); }
-.tool-reference summary { cursor: pointer; font-weight: 600; overflow-wrap: anywhere; }
-.tool-reference code, .tool-reference pre { font-size: .8rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.kx-direct-tools { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.kx-direct-tools li { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; }
 
 .kx-trait-description { white-space: pre-wrap; overflow-wrap: anywhere; margin: .5rem 0; line-height: 1.5; color: var(--p-text-muted-color); }
 .kx-trait-tools { list-style: none; margin: .5rem 0; padding: 0; display: grid; gap: .5rem; }

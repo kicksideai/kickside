@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- The drive slot worker (kickside.automation:round, A21): one round per
 -- attempt through the production round runner.
 local round_runner = require("round_runner")

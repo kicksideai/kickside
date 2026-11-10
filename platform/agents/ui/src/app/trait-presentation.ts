@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import type { Tool, Trait } from './agent-form.types'
 
 type TraitAffects = { tools?: boolean; behavior?: boolean; memory?: boolean }
@@ -11,15 +11,18 @@ const BADGES: { key: keyof TraitAffects; label: string }[] = [
   { key: 'memory', label: 'memory' },
 ]
 
-export function useCollapsedTraits() {
-  const collapsedTraits = ref<Set<string>>(new Set())
-  const isTraitCollapsed = (id: string) => collapsedTraits.value.has(id)
-  function toggleTraitCollapsed(id: string) {
-    const next = new Set(collapsedTraits.value)
+export function useOpenedTraits(selected: () => string[]) {
+  const openedTraits = ref<Set<string>>(new Set())
+  const isTraitOpen = (id: string) => openedTraits.value.has(id)
+  function toggleTraitOpen(id: string) {
+    const next = new Set(openedTraits.value)
     next.has(id) ? next.delete(id) : next.add(id)
-    collapsedTraits.value = next
+    openedTraits.value = next
   }
-  return { collapsedTraits, isTraitCollapsed, toggleTraitCollapsed }
+  watch(() => [...selected()], ids => {
+    openedTraits.value = new Set([...openedTraits.value].filter(id => ids.includes(id)))
+  })
+  return { isTraitOpen, toggleTraitOpen }
 }
 
 export function tintOf(trait: TraitPresentationInput): TraitTint {
@@ -38,10 +41,12 @@ export function badgesOf(trait: TraitPresentationInput) {
 interface DeclaredTool { id: string; tool?: Tool }
 export function resolveTraitTools(trait: Trait, tools: Tool[]): DeclaredTool[] {
   const resolved = new Map<string, DeclaredTool>()
+  const catalog = new Map(tools.map(tool => [tool.id, tool]))
+  for (const tool of trait.tool_details || []) catalog.set(tool.id, tool)
   for (const declaration of trait.tools || []) {
     const pattern = new RegExp('^' + declaration.split('*')
       .map(part => part.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*') + '$')
-    const matches = tools.filter(tool => pattern.test(tool.id))
+    const matches = [...catalog.values()].filter(tool => pattern.test(tool.id))
     if (!matches.length) resolved.set(declaration, { id: declaration })
     for (const tool of matches) resolved.set(tool.id, { id: tool.id, tool })
   }

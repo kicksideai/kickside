@@ -6,7 +6,7 @@ import { useEvents, useProps } from '@wippy-fe/webcomponent-vue'
 import WcMount from '@widgets/app/WcMount.vue'
 import AnchoredPanel from '@widgets/app/AnchoredPanel.vue'
 import type { Trait } from './agent-form.types.ts'
-import { badgesOf, tintOf, useCollapsedTraits } from './trait-presentation.ts'
+import { badgesOf, resolveTraitTools, tintOf, useOpenedTraits } from './trait-presentation.ts'
 
 export interface AgentTraitPickerValue {
   traits: string[]
@@ -19,8 +19,9 @@ interface Events { change: AgentTraitPickerValue }
 const props = useProps<Props>()
 const emit = useEvents<Events>()
 const traits = ref<Trait[]>([])
+const traitTools = computed(() => new Map(traits.value.map(trait => [trait.id, resolveTraitTools(trait, [])])))
 const selected = ref(normalizeValue(props.value.value))
-const { collapsedTraits, isTraitCollapsed, toggleTraitCollapsed } = useCollapsedTraits()
+const { isTraitOpen, toggleTraitOpen } = useOpenedTraits(() => selected.value.traits)
 
 const activeTraits = computed(() => traits.value.filter(trait => selected.value.traits.includes(trait.id)))
 const traitOn = (id: string) => selected.value.traits.includes(id)
@@ -48,7 +49,6 @@ watch([traitMenuOpen, addableTraits], ([open, options]) => {
 })
 watch(() => props.value.value, value => {
   selected.value = normalizeValue(value)
-  collapsedTraits.value = new Set([...collapsedTraits.value].filter(id => selected.value.traits.includes(id)))
 })
 watch(() => props.value.refreshKey, (value, previous) => {
   if (value !== previous) void loadTraits()
@@ -91,10 +91,12 @@ function addTrait(id: string) {
   if (!traitOn(id)) publish({ ...selected.value, traits: [...selected.value.traits, id] })
   traitQuery.value = ''
   if (!props.value.keepMenuOpenOnAdd) {
-    traitMenuOpen.value = false
     traitActiveIndex.value = -1
   }
-  void nextTick(() => traitSearchInput.value?.focus({ preventScroll: true }))
+  void nextTick(() => {
+    traitSearchInput.value?.focus({ preventScroll: true })
+    if (!props.value.keepMenuOpenOnAdd) traitMenuOpen.value = false
+  })
 }
 
 function toggleTrait(id: string) {
@@ -106,7 +108,6 @@ function toggleTrait(id: string) {
     return
   }
   delete traitContexts[id]
-  if (collapsedTraits.value.has(id)) toggleTraitCollapsed(id)
   publish({ traits, trait_contexts: traitContexts })
 }
 
@@ -125,6 +126,7 @@ function onTraitQueryInput() {
 function onTraitQueryKeydown(event: KeyboardEvent) {
   const count = addableTraits.value.length
   if (event.key === 'Escape' || event.key === 'Tab') {
+    if (event.key === 'Escape' && traitMenuOpen.value) event.stopPropagation()
     traitMenuOpen.value = false
     return
   }
@@ -224,36 +226,46 @@ onMounted(() => { void loadTraits() })
     </div>
 
     <ul v-if="activeTraits.length" class="kx-trait-list">
-      <li v-for="trait in activeTraits" :key="trait.id" class="kx-trait-row-wrap">
+      <li v-for="trait in activeTraits" :key="trait.id" :data-trait-id="trait.id" class="kx-trait-row-wrap">
         <div class="kx-trait-row">
           <span class="kx-trait-icon" :class="`kx-tint-${tintOf(trait)}`"><Icon :icon="trait.icon || 'tabler:puzzle'" aria-hidden="true" /></span>
           <span class="kx-trait-text">
             <span class="kx-trait-name">{{ traitLabel(trait) }}<span v-if="!trait.title?.trim()" class="kx-trait-id"> {{ trait.id }}</span></span>
-            <span v-if="trait.description" class="kx-trait-description">{{ trait.description }}</span>
           </span>
           <span class="kx-trait-badges">
             <span v-for="badge in badgesOf(trait)" :key="badge.key" class="kx-trait-badge" :class="`kx-badge-${badge.key}`">{{ badge.label }}</span>
           </span>
           <span class="kx-trait-actions">
             <button
-              v-if="trait.web_component"
+              v-if="trait.description || trait.prompt || trait.tools?.length"
               type="button"
               class="kx-trait-fold kx-focus-outline"
-              :aria-expanded="!isTraitCollapsed(trait.id)"
-              :aria-label="isTraitCollapsed(trait.id) ? 'Show settings' : 'Hide settings'"
-              @click="toggleTraitCollapsed(trait.id)"
+              :aria-expanded="isTraitOpen(trait.id)"
+              :aria-label="!isTraitOpen(trait.id) ? 'Show details' : 'Hide details'"
+              @click="toggleTraitOpen(trait.id)"
             >
-              <Icon :icon="isTraitCollapsed(trait.id) ? 'tabler:chevron-right' : 'tabler:chevron-down'" aria-hidden="true" />
+              <Icon :icon="!isTraitOpen(trait.id) ? 'tabler:chevron-right' : 'tabler:chevron-down'" aria-hidden="true" />
             </button>
             <button type="button" class="kx-trait-remove kx-focus-outline" :aria-label="`Remove ${trait.title || trait.id} capability`" @click="toggleTrait(trait.id)">
               <Icon icon="tabler:x" aria-hidden="true" />
             </button>
           </span>
         </div>
-        <div v-if="trait.web_component && !isTraitCollapsed(trait.id)" class="kx-trait-config">
+        <div v-if="isTraitOpen(trait.id)" class="kx-trait-config kx-trait-details">
+          <p v-if="trait.description" class="kx-trait-description">{{ trait.description }}</p>
+          <p v-if="trait.prompt" class="kx-trait-description">{{ trait.prompt }}</p>
+          <ul v-if="trait.tools?.length" class="kx-trait-tools" aria-label="Declared tools">
+            <li v-for="{ id, tool } in traitTools.get(trait.id)" :key="id" :data-declared-tool-id="id">
+              <strong>{{ tool?.title || id }}</strong>
+              <p class="kx-trait-description">{{ tool?.llm_description || (tool ? 'No description declared.' : 'This tool is not in the available catalog.') }}</p>
+            </li>
+          </ul>
+        </div>
+        <div v-if="trait.web_component" class="kx-trait-config">
           <WcMount
             :tag="trait.web_component"
             :config="selected.trait_contexts[trait.id] || {}"
+            :schema="trait.context_schema"
             :provider="trait.provider"
             @change="(config: unknown) => onTraitConfig(trait.id, config)"
           />

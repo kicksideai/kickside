@@ -256,6 +256,9 @@ entries:
         config:
           type: object
           description: "Capability context: { namespaces: string[], trait_ids: string[], inject_trait_catalog: boolean }."
+        schema:
+          type: object
+          description: Capability context schema; controls the available configuration fields.
 
   # Module-owned nav entry: installing this module adds the Agents surface to the
   # nav; uninstalling removes it. The host bundle renders route_name "agents" by

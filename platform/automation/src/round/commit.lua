@@ -281,6 +281,8 @@ function M.commit_tx(tx: any, round: Map, result: Map): (Map?, error?)
     local journal: Map=d.admission or {}
     local receipt_of: Map={}
     for _,receipt in ipairs(result.receipts or {}) do receipt_of[receipt.item.delivery_key]=receipt end
+    local settled_prepared: {Map}={}
+    local seen_prepared: Map={}
     for _,entry in ipairs(result.outcomes or {}) do
         local key=tostring(entry.item.delivery_key)
         if journal[key] ~= nil then
@@ -289,6 +291,12 @@ function M.commit_tx(tx: any, round: Map, result: Map): (Map?, error?)
             entry.execution_identity_json=encoded
             local receipt=receipt_of[key]
             if receipt and type(receipt.prepared_key) == "string" then receipt.original_prepared_key=journal[key].prepared_key end
+            local prepared_key=journal[key].prepared_key
+            if entry.state == ledger.STATE.RESOLVED and type(prepared_key) == "string" and prepared_key ~= ""
+                and not (receipt and type(receipt.prepared_key) == "string") and not seen_prepared[prepared_key] then
+                seen_prepared[prepared_key]=true
+                settled_prepared[#settled_prepared+1]={owner=round.automation_id,port=round.source_port,item=entry.item.item_key,key=prepared_key}
+            end
             journal[key]=nil
         end
     end
@@ -301,6 +309,17 @@ function M.commit_tx(tx: any, round: Map, result: Map): (Map?, error?)
     if history_err then return nil,history_err end
     local receipt_err = record_receipts_tx(tx, round, result.receipts or {}, pass_id, result.deliveries, d.applied_hash)
     if receipt_err then return nil, receipt_err end
+    if #settled_prepared > 0 then
+        local prepared,read_err=tx:query("SELECT 1 FROM kickside_automation_prepared WHERE automation_id=$1 LIMIT 1",
+            {round.automation_id})
+        if read_err or type(prepared) ~= "table" then
+            return nil,internal("prepared settlement lookup failed",read_err or "missing result")
+        end
+        if prepared[1] then
+            local reclaim_err=ledger.reclaim_prepared_tx(tx,settled_prepared)
+            if reclaim_err then return nil,reclaim_err end
+        end
+    end
     local fields: Map = {
         round_token = sql.NULL, round_until = sql.NULL, admission_json=admission_json,
         phase = result.backpressure and drive.PHASE.BACKPRESSURE or drive.PHASE.ACTIVE,

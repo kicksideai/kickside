@@ -23,9 +23,26 @@ contracts (`component`, `deletable`).
 
 A module reserves a public read-model key with a `registry.entry` whose
 `meta.type` is `kickside.component.owned_meta_key` and whose `meta.key` is the
-exact field name. Public registration, metadata writes and deletion reject that
-key; fields without a reservation retain their existing behavior. Reservations
-contain no host resources or caller identities.
+exact field name. Without a validator, public registration, metadata writes and
+removal reject that key; unreserved fields retain their behavior.
+
+An owner can add `validator: namespace:function_id` to that declaration. Public
+registration, `set_meta` and batched `SET_META` invoke it before opening the
+write transaction, alongside request authorization. It receives
+`{component_id, key, principal, old_value, new_value}` and returns `true` or an
+error. The principal comes from the acting security identity; maintenance
+actors have no principal. Values use the stored string encoding; initial
+creation has no old value and removal has no new value. Assignments, including
+same-value writes, replacements and removals all validate. Batched changes
+receive the values resulting from earlier commands in that request. A refusal
+prevents the entire request from writing.
+
+Validators perform read-only request authorization. The old value is a
+pre-write snapshot, not a transactional precondition. Callbacks run after the
+read connection is released, so they can read the same database on SQLite.
+Trusted persistence callers authorize before opening their transaction; raw
+persistence operations do not invoke callbacks. Reservations contain no host
+resources or caller identities.
 
 Trusted owners use `component_ops.raise_meta_floor(tx, component_id, key, value)`
 in their transaction after checking component access. The operation locks the

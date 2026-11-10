@@ -23,7 +23,7 @@ end
 return {run = test.run_cases(function()
     test.describe("native metadata transaction causes", function()
         for _, trusted in ipairs({false, true}) do
-            local stages = {"actor", "actor_id", "open", "begin", "metadata", "dbtype", "summary", "lifecycle", "snapshot", "commit", "release", "committed", "notify"}
+            local stages = {"actor", "actor_id", "metadata_authorization", "open", "begin", "metadata", "dbtype", "summary", "lifecycle", "snapshot", "commit", "release", "committed", "notify"}
             if trusted then stages[#stages + 1] = "lock"; stages[#stages + 1] = "registry"; stages[#stages + 1] = "permission"
             else stages[#stages + 1] = "access" end
             for _, stage in ipairs(stages) do
@@ -37,7 +37,7 @@ return {run = test.run_cases(function()
                             else
                                 local committed = stage == "commit" or stage == "release" or stage == "committed" or stage == "notify"
                                 native(result, source, committed)
-                                if stage == "actor" or stage == "actor_id" then test.eq(fixture.opens, 0)
+                                if stage == "actor" or stage == "actor_id" or stage == "metadata_authorization" then test.eq(fixture.opens, 0)
                                 else test.eq(fixture.releases, stage == "open" and 0 or 1) end
                                 if not committed then test.eq(fixture.commits, 0); test.eq(fixture.notifications, 0) end
                                 if stage == "release" or stage == "commit" then test.eq(fixture.committed_calls, 0) end

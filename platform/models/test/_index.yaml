@@ -280,3 +280,15 @@ entries:
     imports:
       test: wippy.test:test
       models_repo: kickside.models.persist:repo
+
+  - name: models_class_candidates_test
+    kind: function.lua
+    meta:
+      type: test
+    source: file://models_class_candidates_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      model_catalog: kickside.models.catalog:model_catalog
+      registry_models: wippy.llm.discovery:models
+      models_repo: kickside.models.persist:repo

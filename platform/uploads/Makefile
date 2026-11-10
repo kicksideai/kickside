@@ -32,3 +32,10 @@ publish: build
 lockrefresh:
 	bash test/prepare.sh
 	cd test && wippy update $(WIPPY_UPDATE_ARGS)
+
+.PHONY: test-conversion-budget
+test-conversion-budget: lockrefresh
+	@test -n "$(RUN_ROOT)" || { echo 'RUN_ROOT is required' >&2; exit 1; }
+	cd test/delayed-converter && cargo build --release --target wasm32-unknown-unknown
+	wasm-tools component new test/delayed-converter/target/wasm32-unknown-unknown/release/delayed_converter.wasm -o test/delayed-converter/target/delayed_converter.wasm
+	python3 test/conversion_budget.py --engine $(or $(ENGINE),both) --run-root "$(RUN_ROOT)"

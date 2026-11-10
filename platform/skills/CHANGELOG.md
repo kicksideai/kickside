@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.48](https://github.com/kicksideai/kickside/compare/skills-v0.1.47...skills-v0.1.48) (2026-11-09)
+
+
+### Bug Fixes
+
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+
 ## [0.1.47](https://github.com/kicksideai/kickside/compare/skills-v0.1.46...skills-v0.1.47) (2026-11-07)
 
 

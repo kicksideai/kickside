@@ -73,4 +73,5 @@ function M.dispatch(tx, db, command)
     end
     return M.result("dispatch", result)
 end
+function M.validate_public_meta_changes(...) return M.result("metadata_authorization", {}) end
 return M

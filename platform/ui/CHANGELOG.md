@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.9](https://github.com/kicksideai/kickside/compare/ui-v0.2.8...ui-v0.2.9) (2026-11-09)
+
+
+### Bug Fixes
+
+* **ui:** simplify model results and move setup replay ([#380](https://github.com/kicksideai/kickside/issues/380)) ([807df19](https://github.com/kicksideai/kickside/commit/807df195bbef3d6698a47ecaeeed4290b976e471))
+
 ## [0.2.8](https://github.com/kicksideai/kickside/compare/ui-v0.2.7...ui-v0.2.8) (2026-11-08)
 
 

@@ -6,6 +6,7 @@ entries:
     meta:
       comment: The drive slot worker (A21) — one round per attempt through the round runner.
       private: true
+      job_class: awaited
     source: file://../round/worker.lua
     method: run
     security:

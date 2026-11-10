@@ -21,6 +21,7 @@ entries:
     imports:
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
       text_trim: kickside.uploads:text_trim
+      doc2md: kickside.convert.doc2md:doc2md
 
   - name: stage
     kind: function.lua
@@ -88,7 +89,7 @@ entries:
     kind: registry.entry
     meta:
       type: kickside.settings:definition
-      comment: Minimum original file size before rasterization is attempted.
+      comment: Minimum original file size for rasterization without page markers.
     namespace: kickside.uploads.rasterize
     key: rasterize_min_source_bytes
     value_type: int
@@ -96,7 +97,7 @@ entries:
     title: Minimum source size (bytes)
     category: Thresholds
     order: 20
-    description: Skip rasterization for source files smaller than this many bytes (genuinely empty documents).
+    description: Skip smaller sources without page markers. Marked pages use their text content to select pages for rasterization.
     scope: global
     editable: true
     visible: true
