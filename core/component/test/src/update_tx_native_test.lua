@@ -23,7 +23,7 @@ return {run = test.run_cases(function()
     test.describe("native update transaction causes", function()
         for _, command in ipairs({fixture.COMMAND_TYPES.SET_CONTEXT, fixture.COMMAND_TYPES.PATCH_CONTEXT, fixture.COMMAND_TYPES.SET_META}) do
             local stages = {"actor", "actor_id", "open", "begin", "access", "expected", "dispatch", "dbtype", "summary", "lifecycle", "revision", "commit", "release", "committed"}
-            if command == fixture.COMMAND_TYPES.SET_META then stages[#stages + 1] = "snapshot"; stages[#stages + 1] = "notify" end
+            if command == fixture.COMMAND_TYPES.SET_META then stages[#stages + 1] = "metadata_authorization"; stages[#stages + 1] = "snapshot"; stages[#stages + 1] = "notify" end
             for _, stage in ipairs(stages) do
                 for _, kind in ipairs(kinds) do
                     for _, options in ipairs({{}, {retryable = false}, {retryable = true}}) do
@@ -33,7 +33,7 @@ return {run = test.run_cases(function()
                             fixture.reset(false, stage, source); local result = invoke(command)
                             local committed = stage == "commit" or stage == "release" or stage == "committed" or stage == "notify"
                             native(result, source, committed)
-                            if stage == "actor" or stage == "actor_id" then test.eq(fixture.opens, 0)
+                            if stage == "actor" or stage == "actor_id" or stage == "metadata_authorization" then test.eq(fixture.opens, 0)
                             else test.eq(fixture.releases, stage == "open" and 0 or 1) end
                             if not committed then test.eq(fixture.commits, 0); test.eq(fixture.notifications, 0) end
                             if stage == "release" or stage == "commit" then test.eq(fixture.committed_calls, 0) end

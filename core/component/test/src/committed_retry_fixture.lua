@@ -55,4 +55,5 @@ M.ACCESS = {WRITE = 2}
 function M.check_context_revision(...) return nil end
 function M.context_revision_tx(...) return 9, nil end
 M.COMMAND_TYPES = {CREATE_COMPONENT = "create", SET_CONTEXT = "set_context", PATCH_CONTEXT = "patch_context", SET_META = "set_meta", SET_PLACEMENT = "set_placement"}
+function M.validate_public_meta_changes(...) return {}, nil end
 return M
