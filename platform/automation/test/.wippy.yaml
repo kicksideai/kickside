@@ -21,6 +21,8 @@ registry:
 workspace:
   replacements:
     kickside/users: ../../users
+    kickside/security: ../../security
+    kickside/settings: ../../settings
     kickside/sync: ../../sync
     kickside/transform: ../../transform
     kickside/realtime: ../../realtime
