@@ -113,6 +113,9 @@ local function handle(request_dto)
         return envelope.fail(VALIDATION_ERRORS.INVALID_THREAD, errors.INVALID)
     end
 
+    local _, metadata_err = ops.validate_public_meta_changes(component_id, meta, nil, {})
+    if metadata_err then return envelope.from_error(metadata_err) end
+
     local _, transaction_err = component_command.with_component_tx(function(tx: sql.Transaction, db: sql.DB): (any?, error?)
         if parent_id ~= nil then
             local has_parent_access, parent_access_err = ops.check_user_access(tx, user_id, parent_id :: string, ops.ACCESS.WRITE)

@@ -1,12 +1,18 @@
 <!-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 -->
-# Knowledge dependency installation defaults
+# Upload reference authorization
 
-Installing a module that depends on Knowledge leaves its HTTP service and router requirements unbound when the host does not supply explicit parameters. Knowledge now defaults those requirements to the standard host gateway and authenticated API router. Explicit bindings still take precedence.
+Component metadata owners can declare a read-only authorization validator on their existing owned-key registry entry. Registration, metadata assignments, replacements, removals and batched metadata commands invoke it before a write transaction opens. Rejection prevents the request from writing. Existing reservations without a callback keep their owner-only behavior.
+
+Uploads owns `upload_id`. Assigning it requires the acting principal to own the upload or hold READ on its uploads component. Shared original-byte reads also verify a stored reference's core-captured principal. The read examines at most 16 readable components and checks each principal once. Public ownership metadata supplies no authority.
 
 ## Validation
 
-The first-agent memory browser guard reproduces a boot failure before these defaults and verifies the real member splash with the defaults. The Knowledge packaging guard checks both defaults in the live registry.
+Real HTTP regressions cover forged assignments, shared-component writes, replacements, stored references, independent READ and WRITE capabilities, revocation, ownership metadata changes, missing principals and scoped tokens. A combined harness invokes the real workspace file stage with the upload validator installed and verifies shared original-byte reads. General validator tests cover creation, updates, same-value assignments, removal, batched transitions and rejection before any writes. Transaction fault tests cover authorization error propagation. Full component and uploads suites and CI-profile lint pass on SQLite and PostgreSQL with the release runtime. Focused knowledge, CRM, uploads and channel attachment guards pass on both engines.
 
 ## Compatibility
 
-The existing requirement identities and targets stay unchanged. Hosts with explicit bindings keep their current behavior. The change adds no endpoint, data shape, migration, table write path or retention schedule. It creates no steady-state rows at 10x or 100x load.
+Endpoint paths, existing registry identities, contracts, requirements, events and stored shapes stay unchanged. The validator is an optional field on existing metadata-owner declarations. Legitimate stored references retain their captured principal without a migration; no reference kind receives implicit trust when that principal is absent. Live READ revocation removes access through that principal's references. Only the first 16 readable references can authorize a request; references beyond that bound do not supply authority. References assigned before validation cannot recover the historical writer from existing data; the read retains its captured-principal check.
+
+Unauthorized upload references now fail at assignment. Missing and unreadable originals and artifacts return the same 404 response; no documented client contract requires different responses. Upload owners, uploads-component READ grants and scoped read tokens retain access. The explicit component-metadata writer runs under the uploading principal; document, record and chat attachment stores use their own authorization paths.
+
+No new table, stored field, retention schedule or migration is introduced. An upload reference uses the existing unique `(component_id, key)` metadata row. Additional steady-state table size is zero at both 10x and 100x load.

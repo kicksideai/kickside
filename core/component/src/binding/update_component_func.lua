@@ -120,6 +120,16 @@ local function handle(request_dto)
         return envelope.from_error(validate_error)
     end
 
+    local metadata: {[string]: string}? = nil
+    for _, command in ipairs(request_dto.commands) do
+        if command.type == ops.COMMAND_TYPES.SET_META then
+            local metadata_err
+            metadata, metadata_err = ops.validate_public_meta_changes(request_dto.component_id,
+                command.payload.fields, command.payload.delete_keys, metadata)
+            if metadata_err then return envelope.from_error(metadata_err) end
+        end
+    end
+
     local results = table.create(#request_dto.commands, 0)
     local changes_made = false
     local meta_changed = false

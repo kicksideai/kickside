@@ -41,6 +41,13 @@ M.METHODS = {
 M.SELF_PATH = "core/component/src/component.lua"
 
 M.ALLOW = {
+    ["platform/uploads/src/api/get_raw.lua"] = {
+        get_private_context = {
+            count = 1,
+            why = "after caller READ on the reference, verify the core-captured principal can read the upload; private context never leaves the handler",
+            entry = "kickside.uploads.api:raw_handler",
+        },
+    },
     ["platform/automation/src/declaration_writer.lua"] = {
         get_private_context = {
             count = 1,

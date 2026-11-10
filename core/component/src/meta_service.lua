@@ -241,6 +241,9 @@ function M.set_meta(request_dto: { [string]: any }?)
         return envelope.fail("Invalid actor ID", errors.PERMISSION_DENIED)
     end
 
+    local _, metadata_err = ops.validate_public_meta_changes(component_id, fields, request_dto.delete_keys)
+    if metadata_err then return envelope.from_error(metadata_err) end
+
     local results: any = nil
     local changed: any = false
     local public_meta_snapshot: component_types.JsonMap? = nil

@@ -139,6 +139,8 @@ entries:
       http: app:upload_http_probe
       upload_query_repo: kickside.uploads.persist:upload_query_repo
       component: kickside.component:component
+      access_policy: kickside.component:access_policy
+      execution_identity: kickside.execution:execution_identity
       upload_tokens: kickside.uploads.persist:upload_tokens
       types: kickside.uploads:types
       http_errors: kickside.contract:http_errors
@@ -1045,3 +1047,45 @@ entries:
       claim: kickside.core.jobs.persist:claim
       lifecycle: kickside.core.jobs.persist:lifecycle
       completion: kickside.core.jobs.service:worker_completion
+
+  - name: referenced_upload_access_test
+    kind: function.lua
+    meta: {type: test, suite: uploads}
+    source: file://referenced_upload_access_test.lua
+    method: run
+    modules: [uuid, security, funcs, fs, sql, registry, http_client]
+    imports:
+      test: wippy.test:test
+      records: kickside.uploads.persist:upload_record_repo
+      types: kickside.uploads:types
+      upload_tokens: kickside.uploads.persist:upload_tokens
+
+  - name: reference_api
+    kind: http.router
+    meta: {server: gateway}
+    prefix: /reference
+    middleware: [token_auth]
+    options:
+      token_store: kickside.users.security:tokens
+    post_middleware: [endpoint_firewall]
+
+  - name: reference_raw.endpoint
+    kind: http.endpoint
+    meta: {router: reference_api}
+    method: GET
+    path: /uploads/{uuid}/raw
+    func: kickside.uploads.api:raw_handler
+
+  - name: reference_artifacts.endpoint
+    kind: http.endpoint
+    meta: {router: reference_api}
+    method: GET
+    path: /uploads/{uuid}/artifacts
+    func: kickside.uploads.api:artifacts_handler
+
+  - name: reference_artifact_raw.endpoint
+    kind: http.endpoint
+    meta: {router: reference_api}
+    method: GET
+    path: /uploads/{uuid}/artifacts/{artifact_id}/raw
+    func: kickside.uploads.api:artifact_raw_handler

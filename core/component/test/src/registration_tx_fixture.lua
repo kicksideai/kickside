@@ -41,4 +41,5 @@ end
 function M.component_summary_tx() return M.result("parent", {impl_id = "parent-impl"}) end
 function M.created(input) M.events = M.events + 1; M.event = input; return M.stage == "lifecycle" and M.source or nil end
 function M.committed() M.notifications = M.notifications + 1; return M.stage == "notify" and M.source or nil end
+function M.validate_public_meta_changes(...) return M.result("metadata_authorization", {}) end
 return M

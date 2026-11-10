@@ -1,6 +1,9 @@
 -- Public metadata writes share the caller's component transaction.
 local sql = require("sql")
 local registry = require("registry")
+local funcs = require("funcs")
+local security = require("security")
+local execution_identity = require("execution_identity")
 local time = require("time")
 local uuid = require("uuid")
 local json = require("json")
@@ -8,7 +11,7 @@ local component_types = require("component_types")
 local error_envelope = require("error_envelope")
 type Executor = sql.DB | sql.Transaction
 
-local function validate_public_meta_key(key: any): error?
+local function validate_public_meta_key(key: any): (error?, string?)
     if type(key) ~= "string" or key == "" then
         return (errors.new({ message = "component public metadata key must be a non-empty string", kind = errors.INVALID }) :: error)
     end
@@ -23,6 +26,16 @@ local function validate_public_meta_key(key: any): error?
         ["meta.type"] = "kickside.component.owned_meta_key", ["meta.key"] = key})
     if owner_err then return owner_err end
     if owners and #owners > 0 then
+        if #owners ~= 1 then
+            return errors.new({kind = errors.INVALID, message = "component metadata key has multiple owners: " .. key}), nil
+        end
+        local validator = owners[1].data and owners[1].data.validator
+        if validator ~= nil then
+            if type(validator) ~= "string" or validator == "" then
+                return errors.new({kind = errors.INVALID, message = "component metadata validator must be a function id: " .. key}), nil
+            end
+            return nil, validator
+        end
         return (errors.new({kind = errors.INVALID, retryable = false,
             message = "component metadata key belongs to its declared owner: " .. key,
             details = {code = "component_meta_owner_required"}}) :: error)
@@ -184,6 +197,68 @@ local function public_meta_tx(tx: Executor, component_id: string?, lock: boolean
     return out, nil
 end
 
+-- Request authorization runs before a write transaction. Release the read
+-- connection before invoking a module owner, which can read the same database.
+local function validate_public_meta_changes(component_id: string, fields: any, delete_keys: any?,
+    old_meta: {[string]: string}?): ({[string]: string}?, error?)
+    if type(fields) ~= "table" or (delete_keys ~= nil and type(delete_keys) ~= "table") then
+        return nil, errors.new({kind = errors.INVALID, message = "metadata fields and delete_keys must be tables"})
+    end
+    local changes: {any} = {}
+    for _, key in ipairs(delete_keys or {}) do
+        local key_err, validator = validate_public_meta_key(key)
+        if key_err then return nil, key_err end
+        changes[#changes + 1] = {key = key, validator = validator}
+    end
+    for key, value in pairs(fields) do
+        local key_err, validator = validate_public_meta_key(key)
+        if key_err then return nil, key_err end
+        local encoded, encode_err = encode_public_meta_value(key, value)
+        if encode_err then return nil, encode_err end
+        changes[#changes + 1] = {key = key, validator = validator, value = encoded}
+    end
+    if old_meta == nil then
+        local db, db_err = sql.get(component_types.db_id())
+        if db_err then return nil, db_err end
+        if not db then return nil, errors.new({kind = errors.INTERNAL, message = "component database unavailable"}) end
+        local read_err
+        old_meta, read_err = public_meta_tx(db, component_id)
+        read_err = error_envelope.cleanup(function(): (any, error?) return db:release() end, read_err, "release metadata authorization database")
+        if read_err then return nil, read_err end
+    end
+    local snapshot: {[string]: string} = {}
+    for key, value in pairs(old_meta or {}) do snapshot[key] = value end
+    local principal: any = nil
+    local resolved = false
+    for _, change in ipairs(changes) do
+        if change.validator then
+            if not resolved then
+                local actor, actor_err = security.actor()
+                if actor_err then return nil, actor_err end
+                if not actor then return nil, errors.new({kind = errors.PERMISSION_DENIED, message = "metadata validation requires an actor"}) end
+                local actor_id, id_err = actor:id()
+                if id_err then return nil, id_err end
+                if not execution_identity.is_maintenance_key(actor_id) then
+                    local principal_err
+                    principal, principal_err = execution_identity.principal_of_key(actor_id)
+                    if principal_err then return nil, principal_err end
+                end
+                resolved = true
+            end
+            local accepted, validation_err = funcs.call(change.validator, {
+                component_id = component_id, key = change.key, principal = principal,
+                old_value = snapshot[change.key], new_value = change.value,
+            })
+            if validation_err then return nil, validation_err end
+            if accepted ~= true then
+                return nil, errors.new({kind = errors.PERMISSION_DENIED, message = "component metadata validator refuses: " .. change.key})
+            end
+        end
+        snapshot[change.key] = change.value
+    end
+    return snapshot, nil
+end
+
 local function raise_meta_floor(tx: Executor, component_id: string, key: string, value: any): (integer?, error?)
     if type(component_id) ~= "string" or component_id == "" or type(key) ~= "string" or key == "" then
         return nil, (errors.new({kind = errors.INVALID, retryable = false,
@@ -243,6 +318,7 @@ end
 
 return {
     raise_meta_floor = raise_meta_floor,
+    validate_public_meta_changes = validate_public_meta_changes,
     validate_public_meta_key = validate_public_meta_key,
     encode_public_meta_value = encode_public_meta_value,
     set_public_meta = set_public_meta,

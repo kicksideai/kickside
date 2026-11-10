@@ -19,15 +19,15 @@ local function native(result: any, source: error, committed: boolean?)
 end
 return {run = test.run_cases(function()
     test.describe("native component registration transactions", function()
-        for _, stage in ipairs({"open", "begin", "parent_access", "create", "access", "dbtype", "parent", "lifecycle", "commit", "release", "notify"}) do
+        for _, stage in ipairs({"metadata_authorization", "open", "begin", "parent_access", "create", "access", "dbtype", "parent", "lifecycle", "commit", "release", "notify"}) do
             for _, kind in ipairs(kinds) do
                 for _, options in ipairs({{}, {retryable = false}, {retryable = true}}) do
                     test.it(stage .. "/" .. kind .. "/" .. tostring(options.retryable), function()
                         local source = errors.new({kind = kind, retryable = options.retryable, message = "registration dependency refused",
                             details = {code = "registration_dependency", nested = {marker = "kept"}}})
                         fixture.reset(stage, source); local result = invoke(); native(result, source, stage == "commit" or stage == "release" or stage == "notify")
-                        test.eq(fixture.releases, stage == "open" and 0 or 1)
-                        if stage == "open" or stage == "begin" or stage == "parent_access" then test.eq(fixture.creates, 0) end
+                        test.eq(fixture.releases, (stage == "open" or stage == "metadata_authorization") and 0 or 1)
+                        if stage == "metadata_authorization" or stage == "open" or stage == "begin" or stage == "parent_access" then test.eq(fixture.creates, 0) end
                         if stage == "release" then test.eq(fixture.notifications, 0) end
                         if stage == "notify" then test.eq(fixture.commits, 1); test.eq(fixture.notifications, 1) end
                     end)

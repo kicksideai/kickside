@@ -1109,8 +1109,9 @@ entries:
   - name: meta_native_source
     kind: library.lua
     source: file://meta_native_source.lua
-    modules: [time, uuid]
+    modules: [time, uuid, funcs, security]
     imports:
+      execution_identity: kickside.execution:execution_identity
       sql: app:meta_native_sql_adapter
       registry: app:meta_native_registry_adapter
       json: app:meta_native_json_adapter
