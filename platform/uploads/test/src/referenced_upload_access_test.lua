@@ -19,13 +19,12 @@ end
 
 return {run = test.run_cases(function()
     test.describe("Referenced upload bytes", function()
-        local owner, writer, reader, upload_id, storage, components, tokens
+        local owner, writer, reader, upload_id, storage, tokens
         local function register(actor, metadata, component_id, impl_id)
             local result, err = call_as(actor, "kickside.component.binding:register_component_func", upload_id,
                 {impl_id = impl_id or "kickside.core:thread", component_id = component_id, meta = metadata or {}})
             test.is_nil(err, tostring(err))
             test.is_true(result.success, result.error)
-            components[#components + 1] = result.component_id
             return result.component_id
         end
         local function share(actor, id, subject, mask)
@@ -61,7 +60,6 @@ return {run = test.run_cases(function()
         end
         test.before_each(function()
             owner, writer, reader, upload_id = uuid.v4(), uuid.v4(), uuid.v4(), uuid.v4()
-            components = {}
             storage = assert(fs.get("app:uploads"))
             assert(storage:writefile(upload_id, "private bytes"))
             assert(records.create(upload_id, owner, 13, "text/plain", "app:uploads", upload_id,
@@ -148,6 +146,24 @@ return {run = test.run_cases(function()
                 {root_component_id = container, subject = {subject_id = writer, subject_type = "user"}})
             test.is_nil(revoke_err, tostring(revoke_err))
             test.is_true(revoked.success, revoked.error)
+            test.eq(raw(reader).status_code, 404)
+        end)
+        test.it("authorizes assignments with uploads READ and rejects them after revocation", function()
+            local container = register(owner, {}, types.component_id_for_owner(owner), types.IMPL)
+            share(owner, container, writer, 2)
+            local refused, refuse_err = call_as(writer, "kickside.component.binding:register_component_func", upload_id,
+                {impl_id = "kickside.core:thread", meta = {upload_id = upload_id}})
+            denied(refused, refuse_err)
+            share(owner, container, writer, 1)
+            local reference = register(writer, {upload_id = upload_id})
+            share(writer, reference, reader, 1)
+            test.eq(raw(reader).status_code, 200)
+            local revoked, revoke_err = call_as(owner, "kickside.component.binding:revoke_subtree_func", upload_id,
+                {root_component_id = container, subject = {subject_id = writer, subject_type = "user"}})
+            test.is_nil(revoke_err, tostring(revoke_err)); test.is_true(revoked.success, revoked.error)
+            local reassigned, reassign_err = call_as(writer, "kickside.component.binding:set_meta_component_func", upload_id,
+                {component_id = reference, fields = {upload_id = upload_id}})
+            denied(reassigned, reassign_err)
             test.eq(raw(reader).status_code, 404)
         end)
         test.it("preserves upload-scoped read tokens used by document readers", function()
