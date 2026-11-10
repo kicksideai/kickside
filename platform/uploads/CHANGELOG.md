@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.14](https://github.com/kicksideai/kickside/compare/uploads-v0.3.13...uploads-v0.3.14) (2026-11-10)
+
+
+### Bug Fixes
+
+* **uploads:** authorize component reference assignments ([#418](https://github.com/kicksideai/kickside/issues/418)) ([08e59ef](https://github.com/kicksideai/kickside/commit/08e59ef254be2cbf91114dba3d2072ac1920aeea))
+* **uploads:** render sparse marked pages below the source-size threshold ([#409](https://github.com/kicksideai/kickside/issues/409)) ([ab9c255](https://github.com/kicksideai/kickside/commit/ab9c255dd42c54fadcdff41823d6670e6d51794e))
+* **uploads:** report pages the rasterizer could not render ([#411](https://github.com/kicksideai/kickside/issues/411)) ([aca0978](https://github.com/kicksideai/kickside/commit/aca0978c97bd88ea56e449e59f331899e0d64118))
+* **uploads:** resume completed stages across processing attempts ([#417](https://github.com/kicksideai/kickside/issues/417)) ([bff7b59](https://github.com/kicksideai/kickside/commit/bff7b59d42a00923081733f239d41df2c9680c27))
+
 ## [0.3.13](https://github.com/kicksideai/kickside/compare/uploads-v0.3.12...uploads-v0.3.13) (2026-11-10)
 
 

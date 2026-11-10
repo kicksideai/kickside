@@ -1,5 +1,5 @@
 {
-  "core/component": "0.3.12",
+  "core/component": "0.3.13",
   "core/contract": "0.3.4",
   "core/core": "0.3.14",
   "core/execution": "0.2.7",
@@ -30,7 +30,7 @@
   "platform/transform": "0.1.53",
   "platform/ui": "0.2.9",
   "platform/ui-kit": "1.7.1",
-  "platform/uploads": "0.3.13",
+  "platform/uploads": "0.3.14",
   "platform/users": "0.2.19",
   "platform/webhooks": "0.1.44",
   "platform/widgets": "0.1.62",

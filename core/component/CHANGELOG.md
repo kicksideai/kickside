@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.13](https://github.com/kicksideai/kickside/compare/component-v0.3.12...component-v0.3.13) (2026-11-10)
+
+
+### Bug Fixes
+
+* **uploads:** authorize component reference assignments ([#418](https://github.com/kicksideai/kickside/issues/418)) ([08e59ef](https://github.com/kicksideai/kickside/commit/08e59ef254be2cbf91114dba3d2072ac1920aeea))
+
 ## [0.3.12](https://github.com/kicksideai/kickside/compare/component-v0.3.11...component-v0.3.12) (2026-11-09)
 
 
