@@ -7,7 +7,6 @@ import ToggleSwitch from 'primevue/toggleswitch'
 import { loadByTagName } from '@wippy-fe/proxy'
 import WcMount from '@widgets/app/WcMount.vue'
 import AgentNav from './AgentNav.vue'
-import ToolReference from './ToolReference.vue'
 import CapabilityPicker from './CapabilityPicker.vue'
 import IconField from '@widgets/app/IconField.vue'
 import { useAgentCapabilities } from './useAgentCapabilities.ts'
@@ -88,6 +87,9 @@ function blank(includeCreateDefaults = true): Form {
 const form = ref<Form>(blank())
 
 const isEdit = computed(() => !!props.agentId)
+const directTools = computed(() => form.value.tools.map(id => ({
+  id, title: props.tools.find(tool => tool.id === id)?.title || id,
+})))
 
 // Non-embedded Dialog visibility: bound to `open`; the Dialog's dismiss paths
 // (mask click, Escape, header/programmatic close) flip it false, which we relay as
@@ -159,7 +161,7 @@ const thinkingOn = computed({
   set: (on: boolean) => { form.value.thinking_effort = on ? (form.value.thinking_effort ?? 50) : null },
 })
 
-const { showAdvancedTools, selectableTraits, selectedCapabilities, activeTraits, traitMountConfig, onTraitConfig, onCapabilitiesChange, onToolsChange } =
+const { selectableTraits, selectedCapabilities, activeTraits, traitMountConfig, onTraitConfig, onCapabilitiesChange } =
   useAgentCapabilities({ form, traits: () => props.traits, redirectTrait: REDIRECT_TRAIT })
 
 const routing = useAgentRouting({
@@ -297,21 +299,21 @@ const navItems = computed(() => [
                 </template>
               </CapabilityPicker>
 
-              <div class="kx-group">
-                <button type="button" class="kx-group-toggle" :aria-expanded="showAdvancedTools" @click="showAdvancedTools = !showAdvancedTools">
-                  <Icon :icon="showAdvancedTools ? 'tabler:chevron-down' : 'tabler:chevron-right'" class="kx-adv-caret" aria-hidden="true" />
-                  <span class="kx-group-title">Tools</span>
-                  <span class="kx-group-meta">{{ form.tools.length }} selected</span>
-                </button>
-                <template v-if="showAdvancedTools">
-                  <p class="kx-sec-foot">Capabilities add the tools they need automatically. Pick individual tools only for fine-grained control.</p>
-                  <ToolReference
-                    :tools="tools"
-                    :selected="form.tools"
-                    @change="onToolsChange"
-                  />
-                </template>
-              </div>
+              <section v-if="form.tools.length" class="kx-group" aria-label="Existing direct tools">
+                <div class="kx-group-head">
+                  <span class="kx-group-title">Existing direct tools</span>
+                  <span class="kx-group-meta">{{ form.tools.length }}</span>
+                </div>
+                <ul class="kx-direct-tools">
+                  <li v-for="{ id, title } in directTools" :key="id" :data-tool-id="id">
+                    <span>{{ title }}</span>
+                    <button type="button" class="kx-trait-x" :aria-label="`Remove ${title} tool`"
+                      @click="form.tools = form.tools.filter(toolId => toolId !== id)">
+                      <Icon icon="tabler:x" aria-hidden="true" />
+                    </button>
+                  </li>
+                </ul>
+              </section>
             </div>
 
             <!-- Routing — delegates + redirects merged, segmented toggle. -->

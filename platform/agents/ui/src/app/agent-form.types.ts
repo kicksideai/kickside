@@ -7,6 +7,7 @@ export interface Trait {
   icon?: string
   tags?: string[]
   tools?: string[]
+  tool_details?: Tool[]
   web_component?: string
   provider?: string
   affects?: TraitAffects

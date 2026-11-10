@@ -3,6 +3,7 @@ local sql = require("sql")
 local json = require("json")
 local uuid_v4 = require("uuid").v4
 local registry = require("registry")
+local list_traits = require("list_traits")
 
 local IMPL_ID = "kickside.agents:user_agent"
 
@@ -144,6 +145,48 @@ local function define_tests()
                     end
                 end
                 test.eq(#missing, 0, "missing tools: " .. table.concat(missing, ", "))
+            end)
+
+            test.it("public capabilities describe their declared tools independently of standalone visibility", function()
+                local traits, err = registry.find({
+                    [".kind"] = "registry.entry",
+                    ["meta.type"] = "agent.trait",
+                    ["meta.public"] = true,
+                })
+                test.is_nil(err, tostring(err))
+                local missing = {}
+                for _, trait in ipairs(traits) do
+                    local declarations = (trait.data or {}).tools or {}
+                    local details, details_err = list_traits.declared_tools(declarations)
+                    test.is_nil(details_err, tostring(details_err))
+                    local by_id = {}
+                    for _, tool in ipairs(details) do by_id[tool.id] = tool end
+                    for _, declaration in ipairs(declarations) do
+                        local expected, expected_err = registry.find({
+                            [".id"] = declaration, [".kind"] = "function.lua", ["meta.type"] = "tool",
+                        })
+                        test.is_nil(expected_err, tostring(expected_err))
+                        for _, tool in ipairs(expected) do
+                            if not by_id[tool.id] or by_id[tool.id].llm_description == "" then
+                                missing[#missing + 1] = trait.id .. " -> " .. tool.id
+                            end
+                        end
+                    end
+                end
+                test.eq(#missing, 0, "public capability tools absent from catalog: " .. table.concat(missing, ", "))
+            end)
+
+            test.it("deduplicates declared descriptions and keeps explicitly private tools out", function()
+                local details, err = list_traits.declared_tools({
+                    "app:public_tool_probe", "app:public_tool_probe", "app:missing_public_tool_probe",
+                    "app:private_tool_probe", "app:malformed_private_tool_probe",
+                })
+                test.is_nil(err, tostring(err))
+                test.eq(#details, 2)
+                test.eq(details[1].id, "app:missing_public_tool_probe")
+                test.is_false(details[1].public)
+                test.eq(details[2].id, "app:public_tool_probe")
+                test.is_true(details[2].public)
             end)
 
             test.it("every trait with web_component has the component registered", function()
