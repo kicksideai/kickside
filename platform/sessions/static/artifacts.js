@@ -1,6 +1,6 @@
 import { W as o, c as r } from "./wc-runtime-BJD-5iaH.js";
 import { l as i } from "./lazy-DX8B4FNv.js";
-import { s } from "./styles-CKLWbXzy.js";
+import { s } from "./styles-BfuGB-97.js";
 import "@iconify/vue";
 import { define as n } from "@wippy-fe/proxy";
 class e extends o {
@@ -14,7 +14,7 @@ class e extends o {
   static get vueConfig() {
     return {
       lazyConfig: i(
-        () => import("./artifacts-mount-DccQr7lc.js").then((t) => t.mountConfig),
+        () => import("./artifacts-mount-CBDZZeKM.js").then((t) => t.mountConfig),
         "Could not load the artifact gallery. Reload the page to try again.",
         r
       )

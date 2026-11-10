@@ -31,8 +31,15 @@ export interface Session {
 export interface ChatAgent {
   name: string
   title: string
+  icon?: string
   comment?: string
   start_token: string
+}
+
+/** A titled run of agents, as the agent picker lists them. A blank title is unlabeled. */
+export interface ChatAgentGroup {
+  title: string
+  agents: ChatAgent[]
 }
 
 export interface ProviderBadge {

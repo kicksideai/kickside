@@ -5,13 +5,10 @@ import type { host as proxyHost } from '@wippy-fe/proxy'
 import { useHost, useLayoutBus } from '@wippy-fe/webcomponent-vue'
 import {
   ARTIFACT_PANEL_ID,
-  CHAT_PANEL_ID,
   acceptsArtifactSession,
-  isDrawerSlot,
   mainAppRoute,
   parseRoute,
   sessionIdFromPath,
-  slotFor,
 } from './hostRoute.ts'
 import type { LayoutEvent, LayoutLike } from './hostRoute.ts'
 import { useSessionsApi } from './useSessionsApi.ts'
@@ -89,13 +86,9 @@ function eventSessionId(payload: unknown): string {
 
 function reveal() {
   manager?.expandPanel(ARTIFACT_PANEL_ID)
+  // On a narrow screen the chat and artifact drawers must not stack. The chat
+  // coordinator watches the layout for either one opening and closes the other.
   manager?.openDrawer(ARTIFACT_PANEL_ID)
-  // On a narrow screen both panels are drawers and must not stack. The chat
-  // coordinator closes the artifact drawer when the chat opens; this is the
-  // reverse.
-  const layout = readLayout()
-  if (manager && layout && isDrawerSlot(slotFor(layout, manager.activeBreakpoint, CHAT_PANEL_ID)))
-    manager.closeDrawer(CHAT_PANEL_ID)
 }
 
 function hide() {

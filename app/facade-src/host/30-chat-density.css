@@ -1,0 +1,78 @@
+/* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
+/* The host chat drawer at the density of the Kickside app page.
+
+   Why this file exists. The chat used to sit inside the app page, where the
+   document root is 13px (app/frontend/applications/main/src/styles.css). Every
+   rem in the chat, its avatar rule included, resolved against that root. The
+   drawer is the Web Host's own chat in the host document, whose root is 16px,
+   so the same chat came out a quarter larger and lost its avatars: the host
+   hides them in a container narrower than 25rem, which is 325px at a 13px root
+   and 400px at 16px, and the drawer's messages are 396px wide.
+
+   `zoom: 13 / 16` on the chat body reproduces the 13px root for everything the
+   chat draws (text, avatars, bubbles, meta row, composer and the empty state).
+   It is applied to the children of the chat container, not to the container or
+   the panel mount: those carry the width the layout gave the panel.
+
+   Two parts stay out of the zoom because they open a PrimeVue overlay. PrimeVue
+   places the overlay in <body> from the size and position of its trigger, and
+   zooming the trigger makes the overlay too wide for it. The session selector
+   row and the close button are therefore sized here in plain pixels, taken from
+   the old sidebar (13px root), and the selector's list is sized the same way in
+   35-chat-selector-overlay.css. Overlays of the meta row (agent and model menus,
+   context menu) open in <body> at the host's 16px and are not adjusted.
+
+   Scope: `:where()` adds no specificity. Several host rules here are scoped
+   Vue styles (four classes deep), so the rules below raise their own weight by
+   repeating `.chat-container` instead of using !important. */
+
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container > :not(.session-selector, .chat-container__header-actions) {
+  zoom: 0.8125;
+}
+
+/* The text colour is the theme's, as it was in the app page. The host document
+   has no body colour of its own, so the chat would otherwise draw black on white
+   and pure white on dark. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .layout-chat-wrapper {
+  color: var(--p-text-color);
+}
+
+/* Session selector row: 13px-root geometry. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container.chat-container .session-selector[part="session-selector"] {
+  padding: 10.5px 44.5px 10.5px 14.5px;
+  font-size: 13px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .session-selector .p-select {
+  height: 34.5px;
+  border-radius: 4.875px;
+  font-size: 13px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .session-selector .p-select-label {
+  padding: 6.5px 9.75px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .session-selector .p-select-dropdown {
+  width: 32.5px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .session-selector .p-select-dropdown-icon {
+  width: 13px;
+  height: 13px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .session-selector .session-icon {
+  font-size: 14.625px;
+}
+
+/* Close button: a 30px muted icon button, as the old panel header drew it. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container.chat-container .chat-container__header-actions {
+  top: 12.75px;
+  inset-inline-end: 8px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container__header-actions .layout-chat-wrapper__close.layout-chat-wrapper__close {
+  width: 30px;
+  height: 30px;
+  font-size: 18px;
+  color: var(--p-text-muted-color);
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container__header-actions .layout-chat-wrapper__close.layout-chat-wrapper__close:hover {
+  background: var(--p-content-hover-background);
+  color: var(--p-text-color);
+}

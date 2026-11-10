@@ -1,6 +1,6 @@
 import { W as o, c as r } from "./wc-runtime-BJD-5iaH.js";
 import { l as s } from "./lazy-DX8B4FNv.js";
-import { s as i } from "./styles-CKLWbXzy.js";
+import { s as i } from "./styles-BfuGB-97.js";
 import "@iconify/vue";
 import { define as n } from "@wippy-fe/proxy";
 class t extends o {
@@ -14,7 +14,7 @@ class t extends o {
   static get vueConfig() {
     return {
       lazyConfig: s(
-        () => import("./chat_empty_state-mount-D4n0yuXF.js").then((e) => e.mountConfig),
+        () => import("./chat_empty_state-mount-CmGdpCQh.js").then((e) => e.mountConfig),
         "Could not load the chat start screen. Reload the page to try again.",
         r
       )

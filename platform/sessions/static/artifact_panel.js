@@ -5,9 +5,9 @@ import { Icon as E } from "@iconify/vue";
 import { on as F, define as de } from "@wippy-fe/proxy";
 import ve from "primevue/select";
 import { a as y } from "./artifactPresentation-Dgf5Fs_k.js";
-import { s as pe, a as me, A as ye } from "./hostRoute-C2evkQJy.js";
-import { u as be } from "./useSessionsApi-DkMU6ZyM.js";
-import { s as he } from "./styles-CKLWbXzy.js";
+import { s as pe, a as me, A as ye } from "./hostRoute-CVDsnWuq.js";
+import { u as be } from "./useSessionsApi-BQAm970o.js";
+import { s as he } from "./styles-BfuGB-97.js";
 const _e = {
   class: "kx-artifact-panel",
   "aria-label": "Artifact preview"

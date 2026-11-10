@@ -73,7 +73,8 @@ let route: HostRoute = parseRoute(hostPath)
 /** Layout name (not breakpoint name) the panel state was last applied to. */
 let activeLayout = 'default'
 let lastPropsKey = '|'
-let lastDrawerOpen = false
+let lastChatDrawer = false
+let lastArtifactDrawer = false
 let lastSyncKey = ''
 let pending: PendingStart | null = null
 /** Tabs this coordinator took away under /sessions, to put back afterwards. */
@@ -131,11 +132,31 @@ function hide(layout: LayoutLike | null) {
     manager.collapsePanel(CHAT_PANEL_ID)
 }
 
-/** On a narrow screen the chat and artifact drawers must not stack. */
-function closeArtifactDrawer(layout: LayoutLike) {
+function drawersOpen(layout: LayoutLike): { chat: boolean, artifact: boolean } {
+  const breakpoint = manager?.activeBreakpoint
+  return {
+    chat: isPanelDrawerOpen(layout, breakpoint, CHAT_PANEL_ID),
+    artifact: isPanelDrawerOpen(layout, breakpoint, ARTIFACT_PANEL_ID),
+  }
+}
+
+/**
+ * On a narrow screen the chat and artifact drawers must not stack, however the
+ * second one was opened: by a coordinator, by the chat tab, or by any panel
+ * calling `host.layout.openDrawer`. This reads the layout, so it sees all of
+ * them. Whichever drawer just opened stays; the other closes. When both are
+ * found open and neither just opened (at start), or both opened in one change
+ * (a breakpoint switch), the chat stays.
+ */
+function keepOneDrawer(layout: LayoutLike) {
   if (!manager) return
-  if (isPanelDrawerOpen(layout, manager.activeBreakpoint, ARTIFACT_PANEL_ID))
-    manager.closeDrawer(ARTIFACT_PANEL_ID)
+  const { chat, artifact } = drawersOpen(layout)
+  if (chat && artifact) {
+    if (!lastArtifactDrawer && lastChatDrawer) manager.closeDrawer(CHAT_PANEL_ID)
+    else manager.closeDrawer(ARTIFACT_PANEL_ID)
+  }
+  lastChatDrawer = chat
+  lastArtifactDrawer = artifact
 }
 
 /**
@@ -293,19 +314,17 @@ function watchPanel(layout: LayoutLike) {
     if (key === '|') setPending(null)
     lastPropsKey = key
   }
-  const open = isPanelDrawerOpen(layout, manager.activeBreakpoint, CHAT_PANEL_ID)
-  if (open && !lastDrawerOpen) closeArtifactDrawer(layout)
-  lastDrawerOpen = open
+  keepOneDrawer(layout)
 }
 
 /**
  * What the sync reacts to: the route, the chat panel's session and token, and
- * whether its drawer is open. A splitter drag changes the layout many times
- * without touching any of them.
+ * whether the chat or artifact drawer is open. A splitter drag changes the
+ * layout many times without touching any of them.
  */
 function syncKey(layout: LayoutLike): string {
-  const open = manager ? isPanelDrawerOpen(layout, manager.activeBreakpoint, CHAT_PANEL_ID) : false
-  return `${routeKey(readRoute(layout))}#${propsKey(layout)}#${open}`
+  const { chat, artifact } = drawersOpen(layout)
+  return `${routeKey(readRoute(layout))}#${propsKey(layout)}#${chat}#${artifact}`
 }
 
 function sync() {
@@ -349,7 +368,8 @@ onMounted(() => {
   route = readRoute(layout)
   activeLayout = layoutName(layout, manager.activeBreakpoint)
   lastPropsKey = propsKey(layout)
-  lastDrawerOpen = isPanelDrawerOpen(layout, manager.activeBreakpoint, CHAT_PANEL_ID)
+  lastChatDrawer = drawersOpen(layout).chat
+  lastArtifactDrawer = drawersOpen(layout).artifact
   lastSyncKey = syncKey(layout)
   if (isSessionsPath(route.path)) {
     hide(layout)
