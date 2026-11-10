@@ -42,15 +42,24 @@ The three payloads differ in where the web host injects them:
 - `children/` — WC-internal base rules: the preflight border reset,
   `.p-hidden-accessible` and the focus baseline for bare elements in a shadow root.
 - `host/` — rules for the Web Host's own chrome, which lives in the host document and
-  never sees `children/`. Today that is the focus baseline for the chat drawer (the
-  host `chat` panel), scoped with `:where(.wippy-host-app [data-wippy-panel-mount="chat"])`.
+  never sees `children/`. All of it is the chat drawer (the host `chat` panel) and
+  its tab. Each file has one scope kind, which `facade-host-bundle.test.ts` checks:
+
+  | File | Scope |
+  |---|---|
+  | `20-chat-focus-ring.css` | panel mount: `:where(.wippy-host-app [data-wippy-panel-mount="chat"])` |
+  | `30-chat-density.css` | panel mount, the same scope |
+  | `35-chat-selector-overlay.css` | the session selector's list, `.p-select-overlay[data-wippy-attention="exclude"]`, which PrimeVue opens in `<body>` |
+  | `36-chat-menus.css` | the agent, model and composer menus, `.p-menu-overlay:is(.agent-menu, .model-menu, [data-wippy-attention="exclude"])`, which PrimeVue opens in `<body>` |
+  | `40-chat-tab.css` | the floating tab: `[data-wippy-floating]`, whose frame is teleported to `<body>` |
+
   `:where()` adds no specificity, so a component rule such as `.p-button` in
-  `custom/40-button.css` keeps precedence.
+  `custom/40-button.css` keeps precedence over the panel-mount rules.
 
 The managed layout draws drawers and modals from `--wippy-layout-drawer-*` and
 `--wippy-layout-modal-*` tokens, which default to white. Their dark values are in
-`css-variables.facade.json` (`@dark`), mapped to the surface tokens, so the chat
-drawer follows the theme.
+`css-variables.facade.json` (`@dark`), mapped to `--p-content-background` and
+`--p-text-color`, so the chat drawer follows the theme.
 
 **Tone preview.** The appearance page's live tone preview applies to the app page's
 own document and the shadow roots inside it. The chat drawer lives in the host

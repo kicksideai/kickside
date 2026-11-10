@@ -1,27 +1,18 @@
 /* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
-/* The host chat drawer at the density of the Kickside app page.
+/* The host chat drawer at the density of the Kickside app page, a 13px
+   document root. The host document's root is 16px.
 
-   Why this file exists. The chat used to sit inside the app page, where the
-   document root is 13px (app/frontend/applications/main/src/styles.css). Every
-   rem in the chat, its avatar rule included, resolved against that root. The
-   drawer is the Web Host's own chat in the host document, whose root is 16px,
-   so the same chat came out a quarter larger and lost its avatars: the host
-   hides them in a container narrower than 25rem, which is 325px at a 13px root
-   and 400px at 16px, and the drawer's messages are 396px wide.
+   `zoom: 13 / 16` on the chat body gives every rem and em size in the chat
+   (text, avatars, bubbles, meta row, composer, empty state) its 13px-root value.
+   Sizes the chat declares in px are scaled by the zoom as well, so the ones that
+   are visible are divided back below. The zoom is on the children of the chat
+   container, not on the container or the panel mount, which carry the width the
+   layout gave the panel.
 
-   `zoom: 13 / 16` on the chat body reproduces the 13px root for everything the
-   chat draws (text, avatars, bubbles, meta row, composer and the empty state).
-   It is applied to the children of the chat container, not to the container or
-   the panel mount: those carry the width the layout gave the panel.
-
-   Two parts stay out of the zoom because they open a PrimeVue overlay. PrimeVue
-   places the overlay in <body> from the size and position of its trigger, and
-   zooming the trigger makes the overlay too wide for it. The session selector
-   row and the close button are therefore sized here in plain pixels, taken from
-   the old sidebar (13px root), and the selector's list is sized the same way in
-   35-chat-selector-overlay.css. The meta row's agent menu also opens in <body>
-   and is sized in 36-chat-agent-menu.css. Other overlays that open in <body>
-   stay at the host's 16px.
+   The session selector row and the close button are not zoomed: PrimeVue opens
+   the selector's list in <body> from the size of its trigger. They are sized in
+   plain px here, and the list in 35-chat-selector-overlay.css. The menus that
+   open in <body> are sized in 36-chat-menus.css.
 
    Scope: `:where()` adds no specificity. Several host rules here are scoped
    Vue styles (four classes deep), so the rules below raise their own weight by
@@ -31,9 +22,21 @@
   zoom: 0.8125;
 }
 
-/* The text colour is the theme's, as it was in the app page. The host document
-   has no body colour of its own, so the chat would otherwise draw black on white
-   and pure white on dark. */
+/* px sizes of the chat, divided by the zoom: the side padding of the message list
+   and the meta row (10px), the composer's upload list height (200px) and the
+   width of an attached file (230px). */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container {
+  --wippy-host-chat-padding-x: calc(10px / 0.8125);
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container.chat-container .chat-input__upload-list {
+  max-height: calc(200px / 0.8125);
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container.chat-container .message-input__files .w-file {
+  max-width: calc(230px / 0.8125);
+}
+
+/* The text colour is the theme's. The host document has no body colour of its
+   own, so the chat would otherwise draw black on white and pure white on dark. */
 :where(.wippy-host-app [data-wippy-panel-mount="chat"]) .layout-chat-wrapper {
   color: var(--p-text-color);
 }
@@ -62,7 +65,7 @@
   font-size: 14.625px;
 }
 
-/* Close button: a 30px muted icon button, as the old panel header drew it. */
+/* Close button: a 30px muted icon button. */
 :where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container.chat-container .chat-container__header-actions {
   top: 12.75px;
   inset-inline-end: 8px;

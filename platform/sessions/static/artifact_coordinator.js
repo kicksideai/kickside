@@ -1,108 +1,95 @@
-import { u as x, a as R, W as T } from "./wc-runtime-BJD-5iaH.js";
-import { defineComponent as F, ref as O, onMounted as q, onBeforeUnmount as H, openBlock as W, createElementBlock as z } from "vue";
-import { getLayoutManager as K, on as I, define as N } from "@wippy-fe/proxy";
-import { s as P, p as U, m as V, a as Z, A as s } from "./hostRoute-CVDsnWuq.js";
+import { u as B, a as x, W as R } from "./wc-runtime-BJD-5iaH.js";
+import { defineComponent as T, ref as O, onMounted as j, onBeforeUnmount as q, openBlock as F, createElementBlock as H } from "vue";
+import { getLayoutManager as W, on as g, define as z } from "@wippy-fe/proxy";
+import { s as P, p as K, m as N, l as b, a as U, e as V, b as Z, A as r } from "./hostRoute-CHFKAd6h.js";
 import { u as G } from "./useSessionsApi-BQAm970o.js";
 import "@iconify/vue";
-const J = { "aria-hidden": "true" }, p = "artifact-modal", Q = /* @__PURE__ */ F({
+const J = { "aria-hidden": "true" }, p = "artifact-modal", Q = /* @__PURE__ */ T({
   __name: "ArtifactCoordinator",
-  setup(v) {
-    const M = { width: "80vw", height: "80vh" }, e = x(), d = R(), C = G(), i = e ? K(e) : null, r = [];
+  setup(I) {
+    const M = { width: "80vw", height: "80vh" }, e = B(), d = x(), C = G(), a = e ? W(e) : null, s = [];
     let u = window.location.pathname;
     function m() {
-      return e?.layout.snapshot ?? null;
+      return K(N(b(e)) ?? u).path;
+    }
+    let l = m();
+    const c = O(P(l));
+    let f = 0;
+    function E() {
+      a?.expandPanel(r), a?.openDrawer(r);
     }
     function h() {
-      return U(V(m()) ?? u).path;
-    }
-    let f = h();
-    const c = O(P(f));
-    let l = 0;
-    function E(t) {
-      if (!t || typeof t != "object") return "";
-      const n = t;
-      return String(n.uuid || n.artifactId || "");
-    }
-    function L(t) {
-      if (!t || typeof t != "object") return "";
-      const n = t;
-      return String(n.sessionId || n.session_id || "");
-    }
-    function D() {
-      i?.expandPanel(s), i?.openDrawer(s);
+      a?.closeDrawer(r), a?.collapsePanel(r);
     }
     function y() {
-      i?.closeDrawer(s), i?.collapsePanel(s);
-    }
-    function _() {
-      l++, e?.layout?.closeModal(p);
+      f++, e?.layout?.closeModal(p);
     }
     async function A(t) {
-      const n = ++l;
-      let o = "Artifact";
+      const o = ++f;
+      let n = "Artifact";
       try {
-        const a = await C.artifact(t);
-        a?.title && (o = a.title);
+        const i = await C.artifact(t);
+        i?.title && (n = i.title);
       } catch {
       }
-      n === l && (e?.layout?.closeModal(p), e?.layout?.openModal(p, {
+      o === f && (e?.layout?.closeModal(p), e?.layout?.openModal(p, {
         kind: "artifact",
         id: t,
-        title: o,
+        title: n,
         dismissable: !0,
         size: M
       }));
     }
-    function w(t, n, o) {
-      if (n?.target === "modal") {
+    function _(t, o, n) {
+      if (o?.target === "modal") {
         A(t);
         return;
       }
-      if (!(!!c.value && o !== s)) {
-        if (n?.reason === "arrival") return;
+      if (!(!!c.value && n !== r)) {
+        if (o?.reason === "arrival") return;
         A(t);
         return;
       }
-      D(), window.setTimeout(() => d?.broadcast("kickside:artifact-open", { uuid: t }), 0);
+      E(), window.setTimeout(() => d?.broadcast("kickside:artifact-open", { uuid: t }), 0);
     }
-    function S(t) {
-      _(), t !== c.value && (c.value = t, y());
+    function w(t) {
+      y(), t !== c.value && (c.value = t, h());
     }
-    function g() {
-      const t = h();
-      t !== f && (f = t, S(P(t)));
+    function S() {
+      const t = m();
+      t !== l && (l = t, w(P(t)));
     }
-    function B(t) {
+    function D(t) {
       if (t.channel === "kickside:artifact-session") {
-        if (!Z(t.sourcePanelId, m(), u)) return;
-        S(L(t.payload));
+        if (!U(t.sourcePanelId, b(e), u)) return;
+        w(V(t.payload));
         return;
       }
       if (t.channel === "@HOST/intent") {
-        const n = t.payload, o = E(n);
-        n?.intent === "openArtifact" && o && w(o, n, t.sourcePanelId);
+        const o = t.payload, n = Z(o);
+        o?.intent === "openArtifact" && n && _(n, o, t.sourcePanelId);
         return;
       }
-      t.channel === "kickside:artifact-close" && (_(), y());
+      t.channel === "kickside:artifact-close" && (y(), h());
     }
-    function j(t) {
+    function L(t) {
       if (!t || typeof t != "object") return;
-      const n = t, [, o] = String(n.topic || "").split(":");
-      if (o !== "sidebar") return;
-      const a = String(n.data?.artifact_uuid || "");
-      if (!a) return;
-      const b = String(n.data?.session_id || "");
-      b && b !== c.value || w(a, { reason: "arrival" });
+      const o = t, [, n] = String(o.topic || "").split(":");
+      if (n !== "sidebar") return;
+      const i = String(o.data?.artifact_uuid || "");
+      if (!i) return;
+      const v = String(o.data?.session_id || "");
+      v && v !== c.value || _(i, { reason: "arrival" });
     }
-    return q(() => {
-      const t = d?.subscribe(B);
-      t && r.push(t), r.push(I("action:*", j)), r.push(I("@history", ({ path: n }) => {
-        u = n, g();
-      })), i && r.push(i.on("change", g));
-    }), H(() => r.forEach((t) => t())), (t, n) => (W(), z("span", J));
+    return j(() => {
+      const t = d?.subscribe(D);
+      t && s.push(t), s.push(g("action:*", L)), s.push(g("@history", ({ path: o }) => {
+        u = o, S();
+      })), a && s.push(a.on("change", S));
+    }), q(() => s.forEach((t) => t())), (t, o) => (F(), H("span", J));
   }
 });
-class k extends T {
+class k extends R {
   static get wippyConfig() {
     return { propsSchema: { type: "object", properties: {} } };
   }
@@ -113,7 +100,7 @@ class k extends T {
 async function et() {
   return k;
 }
-N(import.meta.url, k);
+z(import.meta.url, k);
 export {
   et as webComponent
 };

@@ -283,9 +283,9 @@ wippy-loading ~ wippy-loading { display: none; }
 .kx-msg-body { margin: 6px 0 0; font: inherit; font-size: 13px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
 
 /* ── Chat drawer empty state ───────────────────────────────────
-   The full empty-state slot of the host chat drawer, laid out as the old
-   sidebar chat laid out its own: icon, title, help text, then "Select Agent"
-   and a separate "Start Chat". Sizes are rem, like the host's own empty state,
+   The full empty-state slot of the host chat drawer, centred in the drawer
+   body: icon, title, help text, then "Select Agent" and a separate "Start
+   Chat". Sizes are rem, like the host's own empty state,
    so the drawer's 13px-root density (app/facade-src/host/30-chat-density.css)
    applies to it too. The agent list is a disclosure inside this shadow root, not
    a body-level overlay, so the dark mode below reaches it. The font is the

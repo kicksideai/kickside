@@ -10,10 +10,10 @@ import type { LayoutEvent } from './hostRoute.ts'
 import { useSessionsApi } from './useSessionsApi.ts'
 
 // The empty state of the host chat drawer (the `emptyState` of the `chat`
-// panel), laid out as the old sidebar chat laid out its own: a heading, a line
-// of help, "Select Agent" and a separate "Start Chat". The drawer's session
-// selector stays above it. Start Chat hands the agent's start token to the
-// host, and the chat coordinator shows the new session in the drawer.
+// panel): a heading, a line of help, a "Select Agent" control and a separate
+// "Start Chat" button. The drawer's session selector stays above it. Start Chat
+// hands the agent's start token to the host, and the chat coordinator shows the
+// new session in the drawer.
 //
 // The agent list is a small disclosure inside this element, not a PrimeVue
 // overlay: PrimeVue opens its panel in <body>, outside this shadow root, where
@@ -29,8 +29,10 @@ const open = ref(false)
 const query = ref('')
 /**
  * A start is in flight. Both controls stay locked until the chat coordinator
- * reports that no start is pending (it finished, failed or was cancelled) or
- * until this element is removed, which the drawer does once a session exists.
+ * reports that no start is pending (it finished, was cancelled, or failed: the
+ * host clears the panel's token when the token exchange fails, and the
+ * coordinator reads that as the end of the start) or until this element is
+ * removed, which the drawer does once a session exists.
  */
 const starting = ref(false)
 const root = ref<HTMLElement | null>(null)

@@ -7,20 +7,16 @@ import { useHost, useHostVisibilityRefresh, useLayoutBus } from '@wippy-fe/webco
 import Select from 'primevue/select'
 import type { ArtifactSummary } from '../types.ts'
 import { artifactId } from './artifactPresentation.ts'
-import { ARTIFACT_PANEL_ID, acceptsArtifactSession, sessionIdFromPath } from './hostRoute.ts'
-import type { LayoutEvent, LayoutLike } from './hostRoute.ts'
+import {
+  ARTIFACT_PANEL_ID,
+  acceptsArtifactSession,
+  eventArtifactId,
+  eventSessionId,
+  layoutSnapshot,
+  sessionIdFromPath,
+} from './hostRoute.ts'
+import type { LayoutEvent } from './hostRoute.ts'
 import { useSessionsApi } from './useSessionsApi.ts'
-
-interface ArtifactIntent {
-  intent?: string
-  uuid?: string
-  artifactId?: string
-}
-
-interface SessionIntent {
-  sessionId?: string
-  session_id?: string
-}
 
 const api = useSessionsApi()
 const bus = useLayoutBus()
@@ -40,18 +36,6 @@ let selectionSequence = 0
 let pendingSelectionId = ''
 
 const selected = computed(() => artifacts.value.find(item => artifactId(item) === selectedId.value))
-
-function eventArtifactId(payload: unknown): string {
-  if (!payload || typeof payload !== 'object') return ''
-  const intent = payload as ArtifactIntent
-  return String(intent.uuid || intent.artifactId || '')
-}
-
-function eventSessionId(payload: unknown): string {
-  if (!payload || typeof payload !== 'object') return ''
-  const intent = payload as SessionIntent
-  return String(intent.sessionId || intent.session_id || '')
-}
 
 async function loadCatalog() {
   const sessionId = activeSessionId.value
@@ -161,10 +145,12 @@ function setActiveSession(sessionId: string) {
 
 function onLayoutEvent(event: LayoutEvent) {
   if (event.channel === 'kickside:artifact-session') {
-    // The coordinator applies the same rule to its own state, so the panel and
-    // the drawer around it always agree on the session.
-    const layout = host?.layout.snapshot as LayoutLike | null | undefined
-    if (!acceptsArtifactSession(event.sourcePanelId, layout, window.location.pathname)) return
+    // The coordinator applies the same rule to its own state, but not from the
+    // same inputs: it follows route changes and `@history`, this panel reads
+    // `window.location.pathname`. Both accept the same announcements while the
+    // app page reports its route; before that, the host path stands in and the
+    // two read it from different places.
+    if (!acceptsArtifactSession(event.sourcePanelId, layoutSnapshot(host), window.location.pathname)) return
     setActiveSession(eventSessionId(event.payload))
     return
   }

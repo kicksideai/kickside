@@ -1,9 +1,9 @@
-import { P as G } from "./primevue-plugin-CaP7wV_M.js";
-import { defineComponent as H, ref as r, computed as B, watch as K, nextTick as q, onMounted as j, onBeforeUnmount as z, openBlock as s, createElementBlock as n, createVNode as f, unref as d, createElementVNode as a, toDisplayString as m, withDirectives as J, vModelText as O, Fragment as w, renderList as A, createCommentVNode as p, createBlock as Q, createTextVNode as D } from "vue";
+import { P as F } from "./primevue-plugin-CaP7wV_M.js";
+import { defineComponent as G, ref as r, computed as B, watch as H, nextTick as q, onMounted as K, onBeforeUnmount as z, openBlock as s, createElementBlock as n, createVNode as m, unref as d, createElementVNode as a, toDisplayString as f, withDirectives as J, vModelText as O, Fragment as w, renderList as A, createCommentVNode as p, createBlock as Q, createTextVNode as D } from "vue";
 import { Icon as v } from "@iconify/vue";
 import { host as W } from "@wippy-fe/proxy";
 import { a as X, b as Y } from "./wc-runtime-BJD-5iaH.js";
-import { f as Z } from "./hostRoute-CVDsnWuq.js";
+import { j as Z } from "./hostRoute-CHFKAd6h.js";
 import { u as tt } from "./useSessionsApi-BQAm970o.js";
 const et = { class: "kx-chat-start-controls" }, at = { class: "kx-chat-start-agent" }, st = ["aria-expanded", "disabled"], nt = {
   key: 0,
@@ -25,9 +25,9 @@ const et = { class: "kx-chat-start-controls" }, at = { class: "kx-chat-start-age
 }, ht = {
   key: 1,
   class: "kx-chat-start-note"
-}, ft = /* @__PURE__ */ H({
+}, mt = /* @__PURE__ */ G({
   __name: "ChatEmptyState",
-  setup(mt) {
+  setup(ft) {
     const M = tt(), I = X(), k = r([]), u = r(null), y = r(!0), b = r(""), l = r(!1), _ = r(""), c = r(!1), g = r(null), S = r(null), L = r(null);
     let x = 0, P;
     const C = B(() => k.value.length > 0), E = B(() => {
@@ -67,12 +67,12 @@ const et = { class: "kx-chat-start-controls" }, at = { class: "kx-chat-start-age
     function V(t) {
       l.value && g.value && !t.composedPath().includes(g.value) && h();
     }
-    function F(t) {
+    function j(t) {
       t.key === "Escape" && l.value && (t.stopPropagation(), h(!0));
     }
-    return K(l, (t) => {
+    return H(l, (t) => {
       t && q(() => S.value?.focus());
-    }), Y(N), j(() => {
+    }), Y(N), K(() => {
       P = I?.subscribe(U), document.addEventListener("pointerdown", V, !0);
     }), z(() => {
       P?.(), document.removeEventListener("pointerdown", V, !0);
@@ -81,9 +81,9 @@ const et = { class: "kx-chat-start-controls" }, at = { class: "kx-chat-start-age
       ref: g,
       class: "kx-chat-start",
       "aria-label": "Start a chat",
-      onKeydown: F
+      onKeydown: j
     }, [
-      f(d(v), {
+      m(d(v), {
         class: "kx-chat-start-icon",
         icon: "tabler:message-circle",
         "aria-hidden": "true"
@@ -102,12 +102,12 @@ const et = { class: "kx-chat-start-controls" }, at = { class: "kx-chat-start-age
             disabled: y.value || c.value || !C.value,
             onClick: R
           }, [
-            f(d(v), {
+            m(d(v), {
               icon: "wippy:agent",
               "aria-hidden": "true"
             }),
-            a("span", null, m(u.value ? u.value.title : "Select Agent"), 1),
-            f(d(v), {
+            a("span", null, f(u.value ? u.value.title : "Select Agent"), 1),
+            m(d(v), {
               icon: "tabler:caret-down-filled",
               class: "kx-chat-start-caret",
               "aria-hidden": "true"
@@ -136,7 +136,7 @@ const et = { class: "kx-chat-start-controls" }, at = { class: "kx-chat-start-age
               (s(!0), n(w, null, A(E.value, (o) => (s(), n(w, {
                 key: o.title
               }, [
-                o.title ? (s(), n("div", lt, m(o.title), 1)) : p("", !0),
+                o.title ? (s(), n("div", lt, f(o.title), 1)) : p("", !0),
                 (s(!0), n(w, null, A(o.agents, (i) => (s(), n("button", {
                   key: `${o.title}:${i.name}`,
                   type: "button",
@@ -145,13 +145,13 @@ const et = { class: "kx-chat-start-controls" }, at = { class: "kx-chat-start-age
                   onClick: (kt) => T(i)
                 }, [
                   a("span", ut, [
-                    f(d(v), {
+                    m(d(v), {
                       icon: i.icon || "wippy:agent",
                       "aria-hidden": "true"
                     }, null, 8, ["icon"]),
-                    a("span", null, m(i.title || i.name), 1)
+                    a("span", null, f(i.title || i.name), 1)
                   ]),
-                  i.comment ? (s(), n("span", ct, m(i.comment), 1)) : p("", !0)
+                  i.comment ? (s(), n("span", ct, f(i.comment), 1)) : p("", !0)
                 ], 8, it))), 128))
               ], 64))), 128)),
               E.value.length === 0 ? (s(), n("p", dt, "No agents match.")) : p("", !0)
@@ -174,14 +174,14 @@ const et = { class: "kx-chat-start-controls" }, at = { class: "kx-chat-start-age
         ], 8, pt)
       ]),
       b.value ? (s(), n("p", vt, [
-        D(m(b.value) + " ", 1),
+        D(f(b.value) + " ", 1),
         a("button", {
           type: "button",
           class: "kx-chat-start-retry",
           onClick: N
         }, "Retry")
       ])) : !y.value && !C.value ? (s(), n("p", ht, [
-        f(d(v), {
+        m(d(v), {
           icon: "tabler:alert-circle",
           "aria-hidden": "true"
         }),
@@ -190,10 +190,10 @@ const et = { class: "kx-chat-start-controls" }, at = { class: "kx-chat-start-age
     ], 544));
   }
 }), St = {
-  rootComponent: ft,
-  plugins: [G]
+  rootComponent: mt,
+  plugins: [F]
 };
 export {
   St as mountConfig
 };
-//# sourceMappingURL=chat_empty_state-mount-CmGdpCQh.js.map
+//# sourceMappingURL=chat_empty_state-mount-qlEp1gLJ.js.map

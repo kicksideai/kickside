@@ -39,7 +39,7 @@ const instance = useWippy()
 
 const chat = useChatController()
 // The host retires this page behind Keeper or Git and brings it back. The surfaces
-// refresh on that return (hostReturn.ts), because the proxy no longer reloads the page.
+// and System refresh their data on that return (hostReturn.ts).
 provideHostReturn(handler => instance.on('@visibility', handler))
 const portalsReady = ref(false)
 const mobileNavOpen = ref(false)

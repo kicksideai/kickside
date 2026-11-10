@@ -6,25 +6,15 @@ import { useHost, useLayoutBus } from '@wippy-fe/webcomponent-vue'
 import {
   ARTIFACT_PANEL_ID,
   acceptsArtifactSession,
+  eventArtifactId,
+  eventSessionId,
+  layoutSnapshot,
   mainAppRoute,
   parseRoute,
   sessionIdFromPath,
 } from './hostRoute.ts'
-import type { LayoutEvent, LayoutLike } from './hostRoute.ts'
+import type { ArtifactIntent, LayoutEvent } from './hostRoute.ts'
 import { useSessionsApi } from './useSessionsApi.ts'
-
-interface ArtifactIntent {
-  intent?: string
-  uuid?: string
-  artifactId?: string
-  target?: 'sidebar' | 'modal'
-  reason?: 'click' | 'arrival'
-}
-
-interface SessionIntent {
-  sessionId?: string
-  session_id?: string
-}
 
 const MODAL_ID = 'artifact-modal'
 /** Verified rendering size; the shell draws no header at all without one. */
@@ -46,12 +36,8 @@ const stops: Array<() => void> = []
  */
 let hostPath = window.location.pathname
 
-function readLayout(): LayoutLike | null {
-  return (host?.layout.snapshot as LayoutLike | null | undefined) ?? null
-}
-
 function currentPath(): string {
-  return parseRoute(mainAppRoute(readLayout()) ?? hostPath).path
+  return parseRoute(mainAppRoute(layoutSnapshot(host)) ?? hostPath).path
 }
 
 let lastPath = currentPath()
@@ -71,18 +57,6 @@ const activeSessionId = ref(sessionIdFromPath(lastPath))
  * artifact overwrite a newer one, because `MODAL_ID` is a singleton.
  */
 let modalSequence = 0
-
-function artifactIdFrom(value: unknown): string {
-  if (!value || typeof value !== 'object') return ''
-  const payload = value as ArtifactIntent
-  return String(payload.uuid || payload.artifactId || '')
-}
-
-function eventSessionId(payload: unknown): string {
-  if (!payload || typeof payload !== 'object') return ''
-  const intent = payload as SessionIntent
-  return String(intent.sessionId || intent.session_id || '')
-}
 
 function reveal() {
   manager?.expandPanel(ARTIFACT_PANEL_ID)
@@ -206,13 +180,13 @@ function onLayoutEvent(event: LayoutEvent) {
   if (event.channel === 'kickside:artifact-session') {
     // This announces the session a navigation is about to reach. The same rule
     // decides it in the panel (hostRoute.acceptsArtifactSession).
-    if (!acceptsArtifactSession(event.sourcePanelId, readLayout(), hostPath)) return
+    if (!acceptsArtifactSession(event.sourcePanelId, layoutSnapshot(host), hostPath)) return
     setActiveSession(eventSessionId(event.payload))
     return
   }
   if (event.channel === '@HOST/intent') {
     const payload = event.payload as ArtifactIntent | undefined
-    const id = artifactIdFrom(payload)
+    const id = eventArtifactId(payload)
     if (payload?.intent === 'openArtifact' && id)
       showArtifact(id, payload, event.sourcePanelId)
     return

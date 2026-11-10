@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 // Route and layout helpers shared by the two host-realm coordinators
-// (ArtifactCoordinator and ChatCoordinator). Pure functions: no host access,
-// so both read the same facts the same way.
+// (ArtifactCoordinator and ChatCoordinator) and the artifact panel. Pure
+// functions that read only what they are given, so each reads the same facts
+// the same way.
 
 export const MAIN_PANEL_ID = 'main'
 export const CHAT_PANEL_ID = 'chat'
@@ -20,7 +21,6 @@ export interface LayoutLike {
   layouts?: Record<string, unknown>
   panels?: Record<string, unknown>
   floating?: Record<string, unknown>
-  activeBreakpoint?: string
 }
 
 interface SlotLike {
@@ -36,8 +36,42 @@ export interface LayoutEvent {
   sourcePanelId?: string | null
 }
 
+/** The fields of an `@HOST/intent` payload that the artifact coordinator and panel read. */
+export interface ArtifactIntent {
+  intent?: string
+  uuid?: string
+  artifactId?: string
+  target?: 'sidebar' | 'modal'
+  reason?: 'click' | 'arrival'
+}
+
+/** The payload of a `kickside:artifact-session` announcement; the id has two spellings. */
+export interface SessionIntent {
+  sessionId?: string
+  session_id?: string
+}
+
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
+}
+
+/** The host's current layout snapshot, or null before the layout has one. */
+export function layoutSnapshot(host: { layout: { snapshot: unknown } } | null | undefined): LayoutLike | null {
+  return (host?.layout.snapshot as LayoutLike | null | undefined) ?? null
+}
+
+/** The artifact id of an `openArtifact` payload, or '' when it names none. */
+export function eventArtifactId(payload: unknown): string {
+  if (!isRecord(payload)) return ''
+  const intent = payload as ArtifactIntent
+  return String(intent.uuid || intent.artifactId || '')
+}
+
+/** The session id of a `kickside:artifact-session` payload, or '' for the blank chat. */
+export function eventSessionId(payload: unknown): string {
+  if (!isRecord(payload)) return ''
+  const intent = payload as SessionIntent
+  return String(intent.sessionId || intent.session_id || '')
 }
 
 export function parseRoute(value: string): HostRoute {

@@ -1,8 +1,10 @@
 /* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
-/* The chat tab at rest and on hover, as the old chat flap behaved.
+/* The chat tab: 40px wide, 4px in view at rest, 32px on hover or keyboard focus.
 
-   The flap was a 40px tab tucked 4px into view at rest and 32px on hover. The
-   host's @HOST/panel-tab draws the tab 48px wide, 19px into view at rest.
+   The host's @HOST/panel-tab draws it 48px wide and 19px in view. That default
+   stays on screens without hover, where a 4px target in the back-gesture zone
+   could not be hit.
+
    The floating frame is teleported to <body>, outside `.wippy-host-app`, so
    this is scoped to the frame itself (`data-wippy-floating`). Kickside declares
    one tab, for the chat, on the right edge.
@@ -10,13 +12,15 @@
    Colours, border and shadow come from the --wippy-panel-tab-* tokens in
    app/static/css-variables.facade.json, light and dark. */
 
-[data-wippy-floating] .wippy-panel-tab.wippy-panel-tab--right {
-  width: 40px;
-  transform: translateX(44px);
-}
-[data-wippy-floating] .wippy-panel-tab.wippy-panel-tab--right:hover,
-[data-wippy-floating] .wippy-panel-tab.wippy-panel-tab--right:focus-within {
-  transform: translateX(16px);
+@media (hover: hover) {
+  [data-wippy-floating] .wippy-panel-tab.wippy-panel-tab--right {
+    width: 40px;
+    transform: translateX(44px);
+  }
+  [data-wippy-floating] .wippy-panel-tab.wippy-panel-tab--right:hover,
+  [data-wippy-floating] .wippy-panel-tab.wippy-panel-tab--right:focus-within {
+    transform: translateX(16px);
+  }
 }
 
 /* Only the visible part of the tab takes the pointer. The frame is a 48px box

@@ -14,6 +14,7 @@ import {
   isRecord,
   isSessionsPath,
   layoutName,
+  layoutSnapshot,
   mainAppRoute,
   panelProps,
   parseRoute,
@@ -32,7 +33,7 @@ import type { HostRoute, LayoutEvent, LayoutLike } from './hostRoute.ts'
  * chat request goes, how `/sessions` (which keeps its own inline chat) and the
  * drawer hand a session to each other, and how the panel behaves across
  * breakpoints. It is eager because it is headless and must hear the first
- * intent; the module is a few kilobytes.
+ * intent.
  */
 
 /** Bus channel on which this coordinator tells the chat empty state whether a start is in flight. */
@@ -61,6 +62,12 @@ interface PendingStart {
   section: string
   /** The session the panel held before this start, put back if the start is cancelled. */
   previousSessionId: string
+  /**
+   * The snapshot has shown this start's token. A cleared panel counts as the end
+   * of the start only after that: before it, the token's patch is still on its
+   * way, and the clear belongs to an earlier start.
+   */
+  seen: boolean
 }
 
 const host = useHost<typeof proxyHost>()
@@ -77,6 +84,12 @@ let lastChatDrawer = false
 let lastArtifactDrawer = false
 let lastSyncKey = ''
 let pending: PendingStart | null = null
+/**
+ * The session this coordinator's latest patch gave the panel, until the
+ * snapshot shows it. A patch applies in a later task, so until then the
+ * snapshot still holds the session from before it.
+ */
+let patchedSession: string | null = null
 /** Tabs this coordinator took away under /sessions, to put back afterwards. */
 const removedTabs = new Map<string, unknown>()
 
@@ -85,7 +98,18 @@ function text(value: unknown): string {
 }
 
 function readLayout(): LayoutLike | null {
-  return (host?.layout.snapshot as LayoutLike | null | undefined) ?? null
+  return layoutSnapshot(host)
+}
+
+type LayoutManager = NonNullable<typeof manager>
+
+/**
+ * The layout manager. onMounted subscribes every handler only after it found
+ * one, so none can run without it; this is the single place that says so.
+ */
+function requireManager(): LayoutManager {
+  if (!manager) throw new Error('[kickside-chat-coordinator] used before it started')
+  return manager
 }
 
 /**
@@ -108,7 +132,19 @@ function propsKey(layout: LayoutLike | null): string {
 }
 
 function patchChat(props: Record<string, unknown>) {
+  if ('sessionId' in props) patchedSession = text(props.sessionId)
   host?.layout.updatePanel(CHAT_PANEL_ID, { props })
+}
+
+/**
+ * Record what the snapshot now shows of the pending start and of the latest
+ * patch. A start's own patch carries no session, which tells it apart from an
+ * earlier finished start that left the same token in the panel.
+ */
+function noteSnapshot(layout: LayoutLike) {
+  const props = panelProps(layout, CHAT_PANEL_ID)
+  if (pending && text(props.startToken) === pending.token && !text(props.sessionId)) pending.seen = true
+  if (patchedSession !== null && text(props.sessionId) === patchedSession) patchedSession = null
 }
 
 /**
@@ -117,23 +153,25 @@ function patchChat(props: Record<string, unknown>) {
  * outlive a change of breakpoint.
  */
 function reveal(layout: LayoutLike | null) {
-  if (!manager || !layout) return
-  if (isDrawerSlot(slotFor(layout, manager.activeBreakpoint, CHAT_PANEL_ID)))
-    manager.openDrawer(CHAT_PANEL_ID)
+  if (!layout) return
+  const layoutManager = requireManager()
+  if (isDrawerSlot(slotFor(layout, layoutManager.activeBreakpoint, CHAT_PANEL_ID)))
+    layoutManager.openDrawer(CHAT_PANEL_ID)
   else
-    manager.expandPanel(CHAT_PANEL_ID)
+    layoutManager.expandPanel(CHAT_PANEL_ID)
 }
 
 function hide(layout: LayoutLike | null) {
-  if (!manager || !layout) return
-  if (isDrawerSlot(slotFor(layout, manager.activeBreakpoint, CHAT_PANEL_ID)))
-    manager.closeDrawer(CHAT_PANEL_ID)
+  if (!layout) return
+  const layoutManager = requireManager()
+  if (isDrawerSlot(slotFor(layout, layoutManager.activeBreakpoint, CHAT_PANEL_ID)))
+    layoutManager.closeDrawer(CHAT_PANEL_ID)
   else
-    manager.collapsePanel(CHAT_PANEL_ID)
+    layoutManager.collapsePanel(CHAT_PANEL_ID)
 }
 
 function drawersOpen(layout: LayoutLike): { chat: boolean, artifact: boolean } {
-  const breakpoint = manager?.activeBreakpoint
+  const breakpoint = requireManager().activeBreakpoint
   return {
     chat: isPanelDrawerOpen(layout, breakpoint, CHAT_PANEL_ID),
     artifact: isPanelDrawerOpen(layout, breakpoint, ARTIFACT_PANEL_ID),
@@ -144,16 +182,18 @@ function drawersOpen(layout: LayoutLike): { chat: boolean, artifact: boolean } {
  * On a narrow screen the chat and artifact drawers must not stack, however the
  * second one was opened: by a coordinator, by the chat tab, or by any panel
  * calling `host.layout.openDrawer`. This reads the layout, so it sees all of
- * them. Whichever drawer just opened stays; the other closes. When both are
- * found open and neither just opened (at start), or both opened in one change
- * (a breakpoint switch), the chat stays.
+ * them. Whichever drawer just opened stays; the other closes. When both opened
+ * in one change (a breakpoint switch), the chat stays. Both found open when the
+ * coordinator starts are settled the same way, once, at mount; after that only
+ * an opening is acted on.
  */
 function keepOneDrawer(layout: LayoutLike) {
-  if (!manager) return
   const { chat, artifact } = drawersOpen(layout)
   if (chat && artifact) {
-    if (!lastArtifactDrawer && lastChatDrawer) manager.closeDrawer(CHAT_PANEL_ID)
-    else manager.closeDrawer(ARTIFACT_PANEL_ID)
+    const chatOpened = !lastChatDrawer
+    const artifactOpened = !lastArtifactDrawer
+    if (artifactOpened && !chatOpened) requireManager().closeDrawer(CHAT_PANEL_ID)
+    else if (chatOpened) requireManager().closeDrawer(ARTIFACT_PANEL_ID)
   }
   lastChatDrawer = chat
   lastArtifactDrawer = artifact
@@ -161,8 +201,9 @@ function keepOneDrawer(layout: LayoutLike) {
 
 /**
  * Edge tabs that open the chat panel. Under /sessions the page has its own
- * chat, so the tab is removed rather than hidden: a hidden tab is still a
- * focus stop.
+ * chat and the panel stays closed. A tab in `mode: auto` shows whenever its
+ * panel is closed, so it would stay on screen offering a chat that never opens
+ * there; it is removed, and put back on leaving /sessions.
  */
 function removeChatTabs(layout: LayoutLike | null) {
   for (const [id, def] of Object.entries(layout?.floating ?? {})) {
@@ -230,27 +271,51 @@ function startChat(intent: ChatIntent, token: string) {
   const layout = readLayout()
   const current = readRoute(layout)
   const fullPage = isFullPage(intent, current)
-  // A start replaced by this one hands on the session it was going to restore.
-  const previousSessionId = pending ? pending.previousSessionId : text(panelProps(layout, CHAT_PANEL_ID).sessionId)
-  setPending({ token, fullPage, context: intent.context, section: pathSection(current.path), previousSessionId })
+  const section = pathSection(current.path)
+  // The same token again is the start the panel already runs, or is about to:
+  // a second patch would reset the panel and start another session. Only where
+  // the session goes changes.
+  const merged = pending !== null && pending.token === token
+  if (pending && merged) {
+    pending = { ...pending, fullPage, context: intent.context, section }
+  }
+  else {
+    // A start replaced by this one hands on the session it was going to restore;
+    // otherwise it is the session the panel shows, or is about to show.
+    const previousSessionId = pending
+      ? pending.previousSessionId
+      : patchedSession ?? text(panelProps(layout, CHAT_PANEL_ID).sessionId)
+    setPending({ token, fullPage, context: intent.context, section, previousSessionId, seen: false })
+  }
   // A full-page start never shows the panel: its session opens on the page.
-  if (fullPage && manager && layout && isPanelOpen(layout, manager.activeBreakpoint, CHAT_PANEL_ID)) hide(layout)
-  patchChat({ startToken: token, sessionId: null })
+  if (fullPage && layout && isPanelOpen(layout, requireManager().activeBreakpoint, CHAT_PANEL_ID)) hide(layout)
+  if (!merged) patchChat({ startToken: token, sessionId: null })
   if (!fullPage) reveal(layout)
 }
 
 /**
- * The chat panel announced a session: either its token start finished
+ * The chat panel announced a session: either a token start finished
  * (`{ sessionId }`, token kept) or the reader picked one in its selector
  * (`{ sessionId, startToken: null }`). The panel already shows it, so only a
- * start has anything left to do, and it counts only while the panel still
- * carries its token; anything else is a pick, which supersedes the start.
+ * start has anything left to do. The token the panel carries says which it was:
+ *  - the pending start's token: that start finished;
+ *  - no token: a pick, which supersedes the start;
+ *  - another token: an older start finished while the pending start's token was
+ *    still on its way to the panel (a patch applies in a later task), so the
+ *    pending start keeps waiting.
+ * A pick made before the start's patch landed is put in again, so that the patch
+ * does not replace it.
  */
 function onPanelAnnounced(sessionId: string) {
   const start = pending
   if (!start) return
+  const token = text(panelProps(readLayout(), CHAT_PANEL_ID).startToken)
+  if (token && token !== start.token) return
   setPending(null)
-  if (text(panelProps(readLayout(), CHAT_PANEL_ID).startToken) !== start.token) return
+  if (token !== start.token) {
+    if (!start.seen) patchChat({ sessionId, startToken: null })
+    return
+  }
   applyContext(start.context, sessionId)
   if (start.fullPage) {
     host?.navigate(sessionPath(sessionId))
@@ -300,18 +365,25 @@ function onNavigated(prev: HostRoute, next: HostRoute, layout: LayoutLike) {
   }
   else if (!isSessions && wasSessions) {
     const left = sessionIdFromPath(prev.path)
-    if (left) patchChat({ sessionId: left, startToken: null })
+    if (left) {
+      // The patch pins the session left behind, so the panel cancels its token
+      // exchange, closes the late session and announces nothing. The start is
+      // over; what the reader does next decides what comes after it.
+      setPending(null)
+      patchChat({ sessionId: left, startToken: null })
+    }
     hide(layout)
     restoreChatTabs()
   }
 }
 
 function watchPanel(layout: LayoutLike) {
-  if (!manager) return
   const key = propsKey(layout)
   if (key !== lastPropsKey) {
-    // "New chat" clears both props; a start still waiting must not revive them.
-    if (key === '|') setPending(null)
+    // "New chat" clears both props, and so does the Host when a token exchange
+    // fails; a start still waiting must not revive them. A start whose token
+    // has not been seen yet is not the one cleared: its patch is still queued.
+    if (key === '|' && pending?.seen) setPending(null)
     lastPropsKey = key
   }
   keepOneDrawer(layout)
@@ -330,6 +402,7 @@ function syncKey(layout: LayoutLike): string {
 function sync() {
   const layout = readLayout()
   if (!layout) return
+  noteSnapshot(layout)
   const key = syncKey(layout)
   if (key === lastSyncKey) return
   lastSyncKey = key
@@ -345,8 +418,8 @@ function sync() {
  */
 function onBreakpoint() {
   const layout = readLayout()
-  if (!manager || !layout) return
-  const next = layoutName(layout, manager.activeBreakpoint)
+  if (!layout) return
+  const next = layoutName(layout, requireManager().activeBreakpoint)
   const prev = activeLayout
   if (next === prev) return
   activeLayout = next
@@ -368,8 +441,10 @@ onMounted(() => {
   route = readRoute(layout)
   activeLayout = layoutName(layout, manager.activeBreakpoint)
   lastPropsKey = propsKey(layout)
-  lastChatDrawer = drawersOpen(layout).chat
-  lastArtifactDrawer = drawersOpen(layout).artifact
+  const { chat, artifact } = drawersOpen(layout)
+  if (chat && artifact) manager.closeDrawer(ARTIFACT_PANEL_ID)
+  lastChatDrawer = chat
+  lastArtifactDrawer = artifact && !chat
   lastSyncKey = syncKey(layout)
   if (isSessionsPath(route.path)) {
     hide(layout)
