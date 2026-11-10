@@ -14,6 +14,9 @@ user-facing CRUD API.
 - **Lifecycle ownership** — every KB deletion goes through `knowledge_bases`,
   which tears down each engine store before removing the component. Higher-level
   packages may reference a KB, but they do not own or intercept its lifecycle.
+  A component another module placed under a KB does not block the deletion: the
+  deletion moves it to the root (`child_policy = reparent_root`), and the module
+  that placed it removes it in its own cleanup of the KB.
 - **Engine seam** — the model-agnostic `kb_store_lifecycle` contract that the
   knowledge control plane uses to create/read/update/delete a KB engine's
   per-component store row. Node/edge/embedding/summary/graph operations never

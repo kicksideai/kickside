@@ -1,5 +1,7 @@
 local test = require("test")
 local errors = require("errors")
+local funcs = require("funcs")
+local security = require("security")
 local knowledge_bases = require("knowledge_bases")
 
 local function define_tests()
@@ -40,6 +42,20 @@ local function define_tests()
             }
             local err = knowledge_bases._validate_enrichment_agent(svc, "real-agent")
             test.is_nil(err)
+        end)
+    end)
+
+    test.describe("knowledge_bases delete", function()
+        test.it("deletes a knowledge base that has child components and moves the children to the root", function()
+            local result, err = funcs.new()
+                :with_actor(security.new_actor("kb-parent-owner", {}))
+                :with_scope(security.named_scope("wippy.security:process"))
+                :call("kickside.knowledge.registry:knowledge_bases_probe")
+            test.is_nil(err, tostring(err))
+            test.is_nil(result.delete_error, tostring(result.delete_error))
+            test.is_true(result.kb_gone, "the knowledge base outlived its deletion")
+            test.is_true(result.child_found, "the child went away with its parent")
+            test.is_nil(result.child_parent, "the child still points at the deleted knowledge base")
         end)
     end)
 end

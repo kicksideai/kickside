@@ -7,8 +7,17 @@ entries:
     meta: { type: test, suite: knowledge_registry }
     source: file://knowledge_bases_test.lua
     method: run
+    modules: [funcs, security]
     imports:
       test: wippy.test:test
+      knowledge_bases: kickside.knowledge.registry:knowledge_bases_lib
+
+  - name: knowledge_bases_probe
+    kind: function.lua
+    source: file://knowledge_bases_probe.lua
+    method: delete_with_child
+    modules: [contract, security, uuid, time]
+    imports:
       knowledge_bases: kickside.knowledge.registry:knowledge_bases_lib
 
   - name: composer_catalog_test
