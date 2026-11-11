@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.83](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.82...knowledge-v0.1.83) (2026-11-11)
+
+
+### Bug Fixes
+
+* tear down knowledge base dependents before deletion ([#425](https://github.com/kicksideai/kickside/issues/425)) ([4e260f0](https://github.com/kicksideai/kickside/commit/4e260f0ce160f34ef099a79f511a4d025fd73c00))
+
 ## [0.1.82](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.81...knowledge-v0.1.82) (2026-11-10)
 
 

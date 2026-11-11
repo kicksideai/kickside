@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.15](https://github.com/kicksideai/kickside/compare/uploads-v0.3.14...uploads-v0.3.15) (2026-11-11)
+
+
+### Bug Fixes
+
+* **uploads:** expose and test HTTP deduplication responses ([#423](https://github.com/kicksideai/kickside/issues/423)) ([1812bc8](https://github.com/kicksideai/kickside/commit/1812bc86714bd3596e7fa8415eee8da5089b775f))
+
 ## [0.3.14](https://github.com/kicksideai/kickside/compare/uploads-v0.3.13...uploads-v0.3.14) (2026-11-10)
 
 
