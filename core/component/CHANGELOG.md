@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.14](https://github.com/kicksideai/kickside/compare/component-v0.3.13...component-v0.3.14) (2026-11-11)
+
+
+### Bug Fixes
+
+* tear down knowledge base dependents before deletion ([#425](https://github.com/kicksideai/kickside/issues/425)) ([4e260f0](https://github.com/kicksideai/kickside/commit/4e260f0ce160f34ef099a79f511a4d025fd73c00))
+
 ## [0.3.13](https://github.com/kicksideai/kickside/compare/component-v0.3.12...component-v0.3.13) (2026-11-10)
 
 
