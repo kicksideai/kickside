@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.15](https://github.com/kicksideai/kickside/compare/component-v0.3.14...component-v0.3.15) (2026-11-11)
+
+
+### Bug Fixes
+
+* **component:** separate principal authority from caller visibility ([#432](https://github.com/kicksideai/kickside/issues/432)) ([3eaf008](https://github.com/kicksideai/kickside/commit/3eaf00814af66fd56114f1d495ba5af60b9a9c81))
+
 ## [0.3.14](https://github.com/kicksideai/kickside/compare/component-v0.3.13...component-v0.3.14) (2026-11-11)
 
 
