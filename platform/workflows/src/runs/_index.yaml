@@ -289,10 +289,8 @@ entries:
     kind: library.lua
     meta: { comment: "Run completion projection, output reads, and node inspection." }
     source: file://completion.lua
-    modules: [env]
     imports:
       runs_read: kickside.workflows.runs:runs_read
-      run_time: kickside.workflows.runs:run_time
       admission: kickside.workflows.runs:admission
       engine_api: kickside.workflows.runs:engine_api
 
@@ -300,8 +298,10 @@ entries:
     kind: library.lua
     meta: { comment: "Read-only run debug projection: engine linkage, raw export, and paged normalized timeline." }
     source: file://debug.lua
+    modules: [env, registry]
     imports:
       runs_read: kickside.workflows.runs:runs_read
+      runs_completion: kickside.workflows.runs:runs_completion
 
   - name: run_completed
     kind: function.lua
@@ -312,10 +312,8 @@ entries:
       comment: Best-effort engine completion hook projects persisted terminal status; maintenance publishes and refreshes public counts.
     source: file://completion.lua
     method: run_completed
-    modules: [env]
     imports:
       runs_read: kickside.workflows.runs:runs_read
-      run_time: kickside.workflows.runs:run_time
       admission: kickside.workflows.runs:admission
       engine_api: kickside.workflows.runs:engine_api
 

@@ -2,7 +2,7 @@ import { u as ue, a as ie, s as w, W as de, P as ce } from "./index-BhiG6P-P.js"
 import { defineComponent as fe, defineAsyncComponent as ve, computed as _, ref as h, onBeforeUnmount as pe, watch as me, openBlock as n, createElementBlock as m, createVNode as d, unref as a, createElementVNode as u, createBlock as v, withCtx as c, createTextVNode as b, toDisplayString as k, withModifiers as be, createCommentVNode as I, Fragment as he } from "vue";
 import { L as ye, Z as we, f as A, m as ke, J as ge, h as _e, X as Ce, Y as Ee } from "./wc-mount-krbIT6pk.js";
 import { s as z } from "./index-BpA9WGJi.js";
-import { a as Re, b as Se, C as We, s as Ie, _ as K, g as Pe, D as Oe, z as Ae, i as je } from "./http-error-DfC6O1G2.js";
+import { a as Re, b as Se, C as We, s as Ie, _ as K, g as Pe, D as Oe, z as Ae, i as je } from "./http-error-CWW1qxDV.js";
 import { on as Y, define as Ve } from "@wippy-fe/proxy";
 import { Icon as j } from "@iconify/vue";
 import { _ as $e, s as Le } from "./workflow-embed-BXNW4FQr.js";
@@ -107,7 +107,7 @@ const Be = { class: "wf-embed" }, He = {
 }, ut = { class: "wf-embed-actions" }, it = /* @__PURE__ */ fe({
   __name: "EmbedWorkflow",
   setup(t) {
-    const r = ve(() => import("./SchemaEditor-Bmft86hu.js")), l = ue(), f = ie(), i = _(() => Te(l.value)), o = h(null), S = h(!1), C = h(""), P = h({}), B = h(0), L = h(!0), p = h("ready"), V = h(!1), E = h(""), g = h(""), y = h(null);
+    const r = ve(() => import("./SchemaEditor-CSH-lFn2.js")), l = ue(), f = ie(), i = _(() => Te(l.value)), o = h(null), S = h(!1), C = h(""), P = h({}), B = h(0), L = h(!0), p = h("ready"), V = h(!1), E = h(""), g = h(""), y = h(null);
     let N = null, H = null, x = !1;
     const X = _(() => o.value ? `/workflows/${o.value.id}` : "");
     function Z() {

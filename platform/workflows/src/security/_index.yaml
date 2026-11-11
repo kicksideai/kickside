@@ -104,6 +104,6 @@ entries:
     kind: security.policy
     groups: []
     policy:
-      resources: userspace.dataflow.env:diagnostic_retention_days
-      actions: env.get
+      resources: [userspace.dataflow.env:diagnostic_retention_days, userspace.dataflow.retention:service]
+      actions: [env.get, registry.get]
       effect: allow

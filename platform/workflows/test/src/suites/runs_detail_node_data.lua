@@ -340,40 +340,39 @@ local function define_tests()
             test.eq((result.output :: Map).passages, "found")
         end)
 
-        for _, fixture in ipairs({
-            { status = "completed", age = 31, expired = true },
-            { status = "failed", age = 31, expired = true },
-            { status = "completed", age = 1, expired = false },
-            { status = "running", age = 31, expired = false },
-        }) do
-            test.it("classifies missing step references for " .. fixture.status .. " at " .. fixture.age .. " days", function()
+        for _, status in ipairs({ "completed", "failed", "cancelled", "terminated", "running" }) do
+            test.it("classifies missing step references for " .. status, function()
                 local id = wid()
                 publishable(id)
                 runs._client_new = function() return stub_client({ created = 0, started = 0 }) end
                 runs._update_public_meta = function(_c, _p) end
                 local launched = select(1, runs.launch(id, { version = 1, input = {} })) :: Map
-                local time = require("time")
-                local stamp = time.now():add(-fixture.age * 24 * time.HOUR):format(time.RFC3339)
                 local db = select(1, store.open_db())
-                local _, update_err = db:execute("UPDATE workflow_runs SET status=$1, finished_at=$2 WHERE run_id=$3",
-                    { fixture.status, stamp, launched.run_id })
+                local _, update_err = db:execute("UPDATE workflow_runs SET status=$1 WHERE run_id=$2",
+                    { status, launched.run_id })
                 db:release()
                 test.is_nil(update_err)
-                local node_reader, data_reader = dedup_scaffold.readers({
-                    { node_id = "engine-code", type = "func", status = "completed", metadata = { def_node_id = "code" } },
-                }, {
-                    { data_id = "completion", node_id = "engine-code", type = "node.result", created_at = stamp,
-                        content = { success = true, data_ids = { "missing-output" } } },
-                })
-                local scoped_runs = runs.new({ node_reader = node_reader, data_reader = data_reader })
-                local rows, err = scoped_runs.run_node_data(id, launched.run_id, "code", {})
-                if fixture.expired then
+                local function inspection(): any
+                    local node_reader, data_reader = dedup_scaffold.readers({
+                        { node_id = "engine-code", type = "func", status = "completed", metadata = { def_node_id = "code" } },
+                    }, {
+                        { data_id = "completion", node_id = "engine-code", type = "node.result", content = { success = true, data_ids = { "missing-output" } } },
+                    })
+                    return runs.new({ node_reader = node_reader, data_reader = data_reader,
+                        dataflow_get = function(flow_id: string): (any?, any?) return stub_flows[flow_id], nil end })
+                end
+                local rows, err = inspection().run_node_data(id, launched.run_id, "code", {})
+                if types.RUN_TERMINAL[status] then
                     test.is_nil(err, tostring(err))
                     test.eq(#rows, 1)
-                    test.eq(rows[1].data_expired, true)
-                    test.eq(rows[1].retention_days, 30)
+                    test.eq(rows[1].data_unavailable, true)
                     test.is_nil(rows[1].content)
-                    test.eq(rows[1].created_at, stamp)
+                    stub_flows[launched.dataflow_id] = { status = status }
+                    local export, export_err = inspection().run_export(id, launched.run_id)
+                    test.is_nil(export_err, tostring(export_err))
+                    test.eq(export.data[1].data_unavailable, true)
+                    test.is_nil(export.data[1].content)
+                    test.is_nil(export.run.step_data_retention_days)
                 else
                     test.is_nil(rows)
                     test.is_true(errors.is(err, errors.INTERNAL))
@@ -426,7 +425,13 @@ local function define_tests()
                     if selector == "data" then test.eq(values[1], "output-1") end
                 end
             end)
-            local scoped_runs = runs.new({ node_reader = node_reader, data_reader = data_reader })
+            local scoped_runs = runs.new({ node_reader = node_reader, data_reader = data_reader,
+                dataflow_get = function(flow_id: string): (any?, any?) return stub_flows[flow_id], nil end })
+            stub_flows[launched.dataflow_id] = { status = "completed" }
+            local exported, export_err = scoped_runs.run_export(id, launched.run_id)
+            test.is_nil(export_err, tostring(export_err))
+            test.eq(type(exported.data[1].content), "string")
+            test.is_nil(exported.data[1].data_unavailable)
             local rows, err = scoped_runs.run_node_data(id, launched.run_id, "t", {})
             test.is_nil(err, tostring(err))
             local result = type(rows[1].content) == "string" and json.decode(rows[1].content) or rows[1].content

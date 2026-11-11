@@ -3,8 +3,7 @@ export interface RunNodeDataRow {
   node_id: string
   type: string
   content?: unknown
-  data_expired?: boolean
-  retention_days?: number
+  data_unavailable?: boolean
   content_type?: string
   discriminator?: string
   created_at?: string
@@ -29,7 +28,7 @@ export function decodeRunNodeRows(rows: Record<string, unknown>[]): RunNodeDataR
     node_id: String(row.node_id || ''),
     type: String(row.type || row.data_type || ''),
     content: decodeContent(row.content, row.content_type),
-    ...(row.data_expired === true ? { data_expired: true, retention_days: Number(row.retention_days) } : {}),
+    ...(row.data_unavailable === true ? { data_unavailable: true } : {}),
     content_type: row.content_type != null ? String(row.content_type) : undefined,
     discriminator: row.discriminator != null ? String(row.discriminator) : undefined,
     created_at: row.created_at != null ? String(row.created_at) : undefined,

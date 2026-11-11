@@ -5,7 +5,7 @@ import { Z as Ie, f as U } from "./wc-mount-krbIT6pk.js";
 import { Icon as ee } from "@iconify/vue";
 import { _ as Be } from "./WcMount.vue_vue_type_script_setup_true_lang-CNWT59Oh.js";
 import { api as Te } from "@wippy-fe/proxy";
-import { z as Le } from "./http-error-DfC6O1G2.js";
+import { z as Le } from "./http-error-CWW1qxDV.js";
 var Ee = `
     .p-togglebutton {
         display: inline-flex;

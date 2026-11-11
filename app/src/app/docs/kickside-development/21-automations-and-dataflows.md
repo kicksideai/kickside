@@ -113,9 +113,10 @@ window, the engine deletes expired intermediate diagnostics (including node
 inputs and referenced step outputs) and eligible applied commits. Public flow
 inputs and final outputs, flow and node summaries, durable results, agent
 evidence, pending commits and the commit referenced by `last_commit_id` remain;
-active families and recent history remain intact. When a retained run references
-expired step data, the inspector shows “Step data expired after N days” using the
-effective diagnostic window; the separate workflow run-summary retention policy
+active families and recent history remain intact. When a terminal run references
+missing step data, the inspector shows “Step data is no longer available” and,
+when retention is enabled with a positive window, “Step data is kept for N days.”
+The window is informational; the separate workflow run-summary retention policy
 still applies.
 The engine removes at most 1,000 rows per table per hour from `dataflow_data` and
 `dataflow_commits`, with an hour between completed passes, so eligible writes

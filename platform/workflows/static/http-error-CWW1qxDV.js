@@ -1,6 +1,6 @@
 import { g as k, p as M, $ as Y, f as E } from "./wc-mount-krbIT6pk.js";
 import { B as U, d as F, i as O, c as W, h as Z } from "./index-BhiG6P-P.js";
-import { openBlock as p, createElementBlock as g, mergeProps as u, createBlock as C, resolveDynamicComponent as x, createCommentVNode as w, renderSlot as m, createElementVNode as c, toDisplayString as b, resolveComponent as Q, normalizeClass as X, createVNode as v, withCtx as y, Transition as ee, withDirectives as te, vShow as ne, defineComponent as re, computed as R, ref as N, unref as h, Fragment as oe } from "vue";
+import { openBlock as p, createElementBlock as g, mergeProps as u, createBlock as C, resolveDynamicComponent as z, createCommentVNode as _, renderSlot as m, createElementVNode as c, toDisplayString as b, resolveComponent as Q, normalizeClass as X, createVNode as v, withCtx as y, Transition as ee, withDirectives as te, vShow as ne, defineComponent as re, computed as R, ref as N, unref as h, Fragment as oe } from "vue";
 import { Icon as T } from "@iconify/vue";
 function ae(e, t) {
   if (typeof e == "string" && String(t || "").includes("json"))
@@ -17,7 +17,7 @@ function ie(e) {
     node_id: String(t.node_id || ""),
     type: String(t.type || t.data_type || ""),
     content: ae(t.content, t.content_type),
-    ...t.data_expired === !0 ? { data_expired: !0, retention_days: Number(t.retention_days) } : {},
+    ...t.data_unavailable === !0 ? { data_unavailable: !0 } : {},
     content_type: t.content_type != null ? String(t.content_type) : void 0,
     discriminator: t.discriminator != null ? String(t.discriminator) : void 0,
     created_at: t.created_at != null ? String(t.created_at) : void 0
@@ -25,10 +25,10 @@ function ie(e) {
 }
 async function ut(e, t = 20) {
   const n = await k(`/api/v1/workflows/${encodeURIComponent(e)}/runs?limit=${t}`);
-  return (Array.isArray(n.runs) ? n.runs : []).map(z);
+  return (Array.isArray(n.runs) ? n.runs : []).map(H);
 }
 async function ct(e, t) {
-  const n = await k(`/api/v1/workflows/${encodeURIComponent(e)}/runs/${encodeURIComponent(t)}`), r = z(n.run || {}), o = (Array.isArray(n.nodes) ? n.nodes : []).map((i) => ({
+  const n = await k(`/api/v1/workflows/${encodeURIComponent(e)}/runs/${encodeURIComponent(t)}`), r = H(n.run || {}), o = (Array.isArray(n.nodes) ? n.nodes : []).map((i) => ({
     engine_node_id: String(i.engine_node_id || ""),
     parent_engine_node_id: i.parent_engine_node_id != null ? String(i.parent_engine_node_id) : void 0,
     def_node_id: String(i.def_node_id || ""),
@@ -65,7 +65,7 @@ async function gt(e, t, n) {
   const r = await k(`/api/v1/workflows/${encodeURIComponent(e)}/runs/${encodeURIComponent(t)}/nodes/${encodeURIComponent(n)}/data`), o = Array.isArray(r.data) ? r.data : [];
   return ie(o);
 }
-function z(e) {
+function H(e) {
   const t = ue(e), n = e.automation_ref == null ? void 0 : le(e.automation_ref);
   return {
     run_id: String(e.run_id || ""),
@@ -76,6 +76,7 @@ function z(e) {
     error: e.error != null ? String(e.error) : null,
     started_at: e.started_at != null ? String(e.started_at) : null,
     finished_at: e.finished_at != null ? String(e.finished_at) : null,
+    ...e.step_data_retention_days != null ? { step_data_retention_days: Number(e.step_data_retention_days) } : {},
     ...e.output !== void 0 ? { output: e.output } : {},
     dataflow_id: e.dataflow_id != null ? String(e.dataflow_id) : void 0,
     ...e.dataflow_status != null ? { dataflow_status: String(e.dataflow_status) } : {}
@@ -129,21 +130,21 @@ async function yt(e, t, n = {}) {
   if (!o) throw new Error("the server did not return a run id");
   return o;
 }
-function _(e, t) {
+function w(e, t) {
   for (let n = e.length - 1; n >= 0; n--)
     if (e[n].type === t && e[n].content != null) return e[n];
 }
 function pe(e) {
-  const t = _(e, "node.input");
+  const t = w(e, "node.input");
   return t ? t.content : null;
 }
 function fe(e) {
-  const t = _(e, "node.output");
+  const t = w(e, "node.output");
   if (t) return t.content;
-  const n = _(e, "node.result")?.content;
+  const n = w(e, "node.result")?.content;
   if (n && typeof n == "object" && "data_ids" in n && "output" in n)
     return n.output ?? null;
-  const r = _(e, "agent.action");
+  const r = w(e, "agent.action");
   if (r) {
     const a = r.content;
     if (a && typeof a == "object" && "result" in a) {
@@ -152,14 +153,14 @@ function fe(e) {
     }
     return a;
   }
-  const o = _(e, "node.result");
+  const o = w(e, "node.result");
   if (o) {
     const a = o.content;
     return a && typeof a == "object" && "data_ids" in a && "success" in a ? a.output ?? null : a;
   }
   return null;
 }
-const H = /^(failed|failure|error|node failed|step failed)\.?$/i, S = "This step failed.";
+const V = /^(failed|failure|error|node failed|step failed)\.?$/i, S = "This step failed.";
 function A(e) {
   return !!e && typeof e == "object" && !Array.isArray(e);
 }
@@ -192,7 +193,7 @@ function he(e) {
 }
 function D(e) {
   const t = I(e.code), n = I(e.message);
-  return n && !H.test(n) ? { message: n, code: t, generic: !1 } : { message: S, code: t, generic: !0 };
+  return n && !V.test(n) ? { message: n, code: t, generic: !1 } : { message: S, code: t, generic: !0 };
 }
 function be(e) {
   if (e == null) return { message: "", generic: !0 };
@@ -200,9 +201,9 @@ function be(e) {
   const t = String(e).trim();
   if (!t) return { message: "", generic: !0 };
   const n = t.match(/^Node\s+\[[^\]]+\]\s+failed:\s*(.*)$/i), r = (n ? n[1] : t).trim(), o = he(r);
-  return A(o) ? D(o) : !r || H.test(r) ? { message: S, generic: !0 } : { message: r, generic: !1 };
+  return A(o) ? D(o) : !r || V.test(r) ? { message: S, generic: !0 } : { message: r, generic: !1 };
 }
-function V(e) {
+function q(e) {
   const t = be(e);
   return t.generic ? "" : t.message;
 }
@@ -219,7 +220,7 @@ function ve(e) {
   }
   return t;
 }
-function we(e) {
+function _e(e) {
   let t = Number.POSITIVE_INFINITY, n = Number.NEGATIVE_INFINITY, r, o;
   for (const a of e) {
     if (!a.created_at) continue;
@@ -235,7 +236,7 @@ function ht(e) {
   const t = Math.round(e / 1e3), n = Math.floor(t / 60), r = t % 60;
   return `${n}m ${r}s`;
 }
-function _e(e) {
+function we(e) {
   if (typeof e == "string") return e;
   try {
     return JSON.stringify(e, null, 2);
@@ -257,29 +258,29 @@ function Se(e, t = 40) {
 function bt(e, t = {}) {
   let n = ye(e);
   if (!n && t.failed) {
-    const r = V(t.runError);
+    const r = q(t.runError);
     n = r ? { message: r, hasDetail: !0 } : { message: S, hasDetail: !1 };
   }
   return {
-    expiredAfterDays: e.find((r) => r.data_expired === !0)?.retention_days,
+    dataUnavailable: e.some((r) => r.data_unavailable === !0),
     input: pe(e),
     output: fe(e),
     error: n,
     agentActions: ve(e),
-    timing: we(e)
+    timing: _e(e)
   };
 }
-function q(e) {
+function x(e) {
   const t = e.toLowerCase();
   return t === "completed" || t === "complete" || t === "success" || t === "succeeded" ? "ok" : t === "failed" || t === "error" || t === "cancelled" || t === "canceled" || t === "terminated" ? "error" : "pending";
 }
 function vt(e) {
-  return q(e.status) === "pending" && e.dataflow_status === "waiting" ? "waiting" : e.status;
-}
-function wt(e) {
-  return q(e.status) === "error" ? V(e.error) : "";
+  return x(e.status) === "pending" && e.dataflow_status === "waiting" ? "waiting" : e.status;
 }
 function _t(e) {
+  return x(e.status) === "error" ? q(e.error) : "";
+}
+function wt(e) {
   const t = e.trim();
   return t ? t.charAt(0).toUpperCase() + t.slice(1) : "Pending";
 }
@@ -440,19 +441,19 @@ function Pe(e, t, n, r, o, a) {
   return p(), g("span", u({
     class: e.cx("root"),
     "data-p": a.dataP
-  }, e.ptmi("root")), [e.$slots.icon ? (p(), C(x(e.$slots.icon), u({
+  }, e.ptmi("root")), [e.$slots.icon ? (p(), C(z(e.$slots.icon), u({
     key: 0,
     class: e.cx("icon")
   }, e.ptm("icon")), null, 16, ["class"])) : e.icon ? (p(), g("span", u({
     key: 1,
     class: [e.cx("icon"), e.icon]
-  }, e.ptm("icon")), null, 16)) : w("", !0), e.value != null || e.$slots.default ? m(e.$slots, "default", {
+  }, e.ptm("icon")), null, 16)) : _("", !0), e.value != null || e.$slots.default ? m(e.$slots, "default", {
     key: 2
   }, function() {
     return [c("span", u({
       class: e.cx("label")
     }, e.ptm("label")), b(e.value), 17)];
-  }) : w("", !0)], 16, Ee);
+  }) : _("", !0)], 16, Ee);
 }
 Te.render = Pe;
 var K = {
@@ -540,24 +541,24 @@ var J = {
   name: "MinusIcon",
   extends: W
 };
-function xe(e) {
-  return qe(e) || Ve(e) || He(e) || ze();
+function ze(e) {
+  return xe(e) || qe(e) || Ve(e) || He();
 }
-function ze() {
+function He() {
   throw new TypeError(`Invalid attempt to spread non-iterable instance.
 In order to be iterable, non-array objects must have a [Symbol.iterator]() method.`);
 }
-function He(e, t) {
+function Ve(e, t) {
   if (e) {
     if (typeof e == "string") return j(e, t);
     var n = {}.toString.call(e).slice(8, -1);
     return n === "Object" && e.constructor && (n = e.constructor.name), n === "Map" || n === "Set" ? Array.from(e) : n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n) ? j(e, t) : void 0;
   }
 }
-function Ve(e) {
+function qe(e) {
   if (typeof Symbol < "u" && e[Symbol.iterator] != null || e["@@iterator"] != null) return Array.from(e);
 }
-function qe(e) {
+function xe(e) {
   if (Array.isArray(e)) return j(e);
 }
 function j(e, t) {
@@ -572,7 +573,7 @@ function Ke(e, t, n, r, o, a) {
     viewBox: "0 0 14 14",
     fill: "none",
     xmlns: "http://www.w3.org/2000/svg"
-  }, e.pti()), xe(t[0] || (t[0] = [c("path", {
+  }, e.pti()), ze(t[0] || (t[0] = [c("path", {
     d: "M13.2222 7.77778H0.777778C0.571498 7.77778 0.373667 7.69584 0.227806 7.54998C0.0819442 7.40412 0 7.20629 0 7.00001C0 6.79373 0.0819442 6.5959 0.227806 6.45003C0.373667 6.30417 0.571498 6.22223 0.777778 6.22223H13.2222C13.4285 6.22223 13.6263 6.30417 13.7722 6.45003C13.9181 6.5959 14 6.79373 14 7.00001C14 7.20629 13.9181 7.40412 13.7722 7.54998C13.6263 7.69584 13.4285 7.77778 13.2222 7.77778Z",
     fill: "currentColor"
   }, null, -1)])), 16);
@@ -731,7 +732,7 @@ function nt(e, t, n, r, o, a) {
       key: 0,
       id: e.$id + "_header",
       class: e.cx("title")
-    }, e.ptm("title")), b(e.header), 17, et)) : w("", !0)];
+    }, e.ptm("title")), b(e.header), 17, et)) : _("", !0)];
   }), c("div", u({
     class: e.cx("headerActions")
   }, e.ptm("headerActions")), [m(e.$slots, "icons"), e.toggleable ? m(e.$slots, "togglebutton", {
@@ -764,14 +765,14 @@ function nt(e, t, n, r, o, a) {
         return [m(e.$slots, e.$slots.toggleicon ? "toggleicon" : "togglericon", {
           collapsed: o.d_collapsed
         }, function() {
-          return [(p(), C(x(o.d_collapsed ? "PlusIcon" : "MinusIcon"), u({
+          return [(p(), C(z(o.d_collapsed ? "PlusIcon" : "MinusIcon"), u({
             class: d.class
           }, e.ptm("pcToggleButton").icon), null, 16, ["class"]))];
         })];
       }),
       _: 3
     }, 16, ["id", "class", "aria-label", "aria-controls", "aria-expanded", "unstyled", "pt"])];
-  }) : w("", !0)], 16)], 16, Xe), v(ee, u({
+  }) : _("", !0)], 16)], 16, Xe), v(ee, u({
     name: "p-collapsible"
   }, e.ptm("transition")), {
     default: y(function() {
@@ -787,7 +788,7 @@ function nt(e, t, n, r, o, a) {
       }, e.ptm("content")), [m(e.$slots, "default")], 16), e.$slots.footer ? (p(), g("div", u({
         key: 0,
         class: e.cx("footer")
-      }, e.ptm("footer")), [m(e.$slots, "footer")], 16)) : w("", !0)], 16)], 16, tt), [[ne, !o.d_collapsed]])];
+      }, e.ptm("footer")), [m(e.$slots, "footer")], 16)) : _("", !0)], 16)], 16, tt), [[ne, !o.d_collapsed]])];
     }),
     _: 3
   }, 16)], 16, Qe);
@@ -803,7 +804,7 @@ const rt = { class: "wf-payload-title" }, ot = ["source"], at = { class: "wf-run
     maxLines: { default: 40 }
   },
   setup(e) {
-    const t = e, n = R(() => typeof t.value == "string"), r = R(() => _e(t.value)), o = R(() => Se(r.value, t.maxLines)), a = N(!t.open), i = N(!1), d = N(!1);
+    const t = e, n = R(() => typeof t.value == "string"), r = R(() => we(t.value)), o = R(() => Se(r.value, t.maxLines)), a = N(!t.open), i = N(!1), d = N(!1);
     async function s() {
       try {
         await navigator.clipboard.writeText(r.value), d.value = !0, setTimeout(() => {
@@ -869,7 +870,7 @@ const rt = { class: "wf-payload-title" }, ot = ["source"], at = { class: "wf-run
               c("span", null, b(i.value ? "Show less" : `Show ${o.value.hiddenLines} more lines`), 1)
             ]),
             _: 1
-          })) : w("", !0)
+          })) : _("", !0)
         ], 64))
       ]),
       _: 1
@@ -883,12 +884,12 @@ function Et(e) {
 export {
   G as A,
   fe as B,
-  V as C,
+  q as C,
   yt as D,
   Tt as _,
-  q as a,
-  _t as b,
-  wt as c,
+  x as a,
+  wt as b,
+  _t as c,
   K as d,
   Nt as e,
   Oe as f,
