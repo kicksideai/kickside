@@ -1,0 +1,145 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+local test = require("test")
+local contract = require("contract")
+local security = require("security")
+local uuid = require("uuid")
+local fs = require("fs")
+local json = require("json")
+local hash = require("hash")
+local content = require("content")
+local records = require("records")
+local cleanup = require("cleanup")
+local funcs = require("funcs")
+local types = require("types")
+
+local PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jv1kAAAAASUVORK5CYII="
+local function pages(actor_id)
+    return assert(assert(contract.get("kickside.uploads:page_images"))
+        :with_actor(security.new_actor(actor_id, {security_groups = {"app:uploads_test"}}))
+        :with_scope(security.named_scope("wippy.security:process")):open())
+end
+local function code(err, expected)
+    test.not_nil(err); test.eq(err:details().code, expected)
+end
+
+return {run = test.run_cases(function()
+    test.describe("Page image boundaries", function()
+        local owner, upload_id, source, storage, config
+        local function write_config()
+            local bytes = assert(json.encode(config))
+            assert(storage:writefile(upload_id, bytes))
+            local checksum = assert(hash.sha256(bytes))
+            if source then
+                source = assert(content.upsert_artifact({upload_id = upload_id, kind = "file", role = "source",
+                    checksum = checksum, mime_type = "application/x-page-image-test",
+                    locator = {type = "upload.original", storage_id = "app:uploads", storage_path = upload_id}}))
+            end
+            return checksum
+        end
+        test.before_each(function()
+            owner, upload_id, source = uuid.v4(), uuid.v4(), nil
+            storage = assert(fs.get("app:uploads")); config = {image = PNG, total = 257}
+            local checksum = write_config()
+            assert(records.create(upload_id, owner, 100, "application/x-page-image-test", "app:uploads", upload_id,
+                "documents", {}, "completed"))
+            source = assert(content.create_artifact({upload_id = upload_id, kind = "file", role = "source",
+                checksum = checksum, mime_type = "application/x-page-image-test",
+                locator = {type = "upload.original", storage_id = "app:uploads", storage_path = upload_id}}))
+        end)
+        test.after_each(function()
+            assert(cleanup.delete_for_upload(upload_id))
+            assert(storage:remove(upload_id))
+            if storage:exists(upload_id .. ".calls") then assert(storage:remove(upload_id .. ".calls")) end
+        end)
+        test.it("rejects changed source bytes before invoking the renderer", function()
+            assert(storage:writefile(upload_id, assert(json.encode({image = PNG, total = 258}))))
+            local info, err = pages(owner):get_info({upload_id = upload_id})
+            test.is_nil(info ~= nil and "info returned" or nil); code(err, "revision_mismatch")
+            test.is_false(storage:exists(upload_id .. ".calls"))
+        end)
+        test.it("paginates a source count without rendering or deriving count from artifacts", function()
+            local api = pages(owner)
+            local first = assert(api:get_info({upload_id = upload_id}))
+            test.eq(first.page_count, 257); test.eq(#first.pages, 128); test.eq(first.next_cursor, 129)
+            local second = assert(api:get_info({upload_id = upload_id, cursor = first.next_cursor, revision = first.revision}))
+            test.eq(second.pages[1].page, 129); test.eq(second.next_cursor, 257)
+            local last = assert(api:get_info({upload_id = upload_id, cursor = second.next_cursor, revision = first.revision}))
+            test.eq(#last.pages, 1); test.is_nil(last.next_cursor)
+            test.eq(assert(storage:readfile(upload_id .. ".calls")), "count\ncount\ncount\n")
+        end)
+        test.it("denies discovery and reads before probing any source", function()
+            local api = pages(uuid.v4())
+            local info, err = api:get_info({upload_id = upload_id})
+            test.is_nil(info); code(err, "upload_not_found")
+            local result, read_err = api:read_image({upload_id = upload_id, page = 1, revision = "forged"})
+            test.is_nil(result); code(read_err, "upload_not_found")
+            test.is_false(storage:exists(upload_id .. ".calls"))
+        end)
+        test.it("rejects invalid discovery cursors", function()
+            for _, cursor in ipairs({false, 0, 1.5, 2}) do
+                local result, err = pages(owner):get_info({upload_id = upload_id, cursor = cursor})
+                test.is_nil(result ~= nil and "info returned" or nil); code(err, "invalid_page_request")
+            end
+        end)
+        test.it("returns a typed error for malformed renderer envelopes and pages", function()
+            local api = pages(owner)
+            config.invalid_count = true; write_config()
+            local info, count_err = api:get_info({upload_id = upload_id})
+            test.is_nil(info); code(count_err, "page_renderer_response_invalid")
+            config.invalid_count = nil; config.invalid_page = true; write_config()
+            info = assert(api:get_info({upload_id = upload_id}))
+            local result, err = api:read_image({upload_id = upload_id, page = 1, revision = info.revision})
+            test.is_nil(result); code(err, "page_renderer_response_invalid")
+        end)
+        test.it("rejects invalid pages and loosened ceilings before rendering", function()
+            local api = pages(owner)
+            local info = assert(api:get_info({upload_id = upload_id}))
+            for _, page in ipairs({0, -1, 1.5, 258}) do
+                local result, err = api:read_image({upload_id = upload_id, page = page, revision = info.revision})
+                test.is_nil(result); test.not_nil(err)
+            end
+            local result, err = api:read_image({upload_id = upload_id, page = 1, revision = info.revision, max_width = 4097})
+            test.is_nil(result); test.not_nil(err)
+            test.is_nil(assert(storage:readfile(upload_id .. ".calls")):find("render", 1, true))
+        end)
+        test.it("propagates count and render failures and rejects malformed output", function()
+            local api = pages(owner)
+            local info = assert(api:get_info({upload_id = upload_id}))
+            config.count_error = true; write_config()
+            local failed, count_err = api:get_info({upload_id = upload_id})
+            test.is_nil(failed); code(count_err, "page_render_failed")
+            config.count_error = nil; config.render_error = true; write_config()
+            info = assert(api:get_info({upload_id = upload_id}))
+            local image, render_err = api:read_image({upload_id = upload_id, page = 1, revision = info.revision})
+            test.is_nil(image); code(render_err, "page_render_failed")
+            config.render_error = nil; config.extra_page = true; write_config()
+            info = assert(api:get_info({upload_id = upload_id}))
+            local extra, extra_err = api:read_image({upload_id = upload_id, page = 1, revision = info.revision})
+            test.is_nil(extra); code(extra_err, "page_renderer_response_invalid")
+            config.extra_page = nil; config.bad_image = true; write_config()
+            info = assert(api:get_info({upload_id = upload_id}))
+            local bad, bad_err = api:read_image({upload_id = upload_id, page = 1, revision = info.revision})
+            test.is_nil(bad); code(bad_err, "page_image_format_unsupported")
+        end)
+        test.it("rejects a source revision changed during rendering", function()
+            local api = pages(owner)
+            local info = assert(api:get_info({upload_id = upload_id}))
+            config.mutate_source = source.artifact_id; write_config()
+            info = assert(api:get_info({upload_id = upload_id}))
+            local image, err = api:read_image({upload_id = upload_id, page = 1, revision = info.revision})
+            test.is_nil(image); code(err, "revision_mismatch")
+        end)
+        test.it("does not reuse an unbound rendition or an extracted illustration", function()
+            local api = pages(owner)
+            for _, role in ipairs({"part", "rendered-page"}) do
+                assert(content.create_artifact({upload_id = upload_id, kind = "image", role = role,
+                    parent_artifact_id = source.artifact_id, mime_type = "image/png", content = "not a page", storage_id = "app:uploads",
+                    locator = {type = "rasterize.page", page = 1, source_artifact_id = source.artifact_id}}))
+            end
+            local info = assert(api:get_info({upload_id = upload_id}))
+            test.eq(info.pages[1].state, "renderable")
+            local image = assert(api:read_image({upload_id = upload_id, page = 1, revision = info.revision}))
+            test.eq(image.width, 1); test.eq(image.mime_type, "image/png")
+        end)
+    end)
+end)}

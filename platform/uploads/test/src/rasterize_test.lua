@@ -124,7 +124,9 @@ local function scripted_document(config: any): string
 end
 
 local function script_state(path: string): any
-    return assert(json.decode(assert(assert(fs.get(STORAGE_ID)):readfile(path))))
+    local bytes, read_err = assert(fs.get(STORAGE_ID)):readfile(path)
+    assert(bytes, read_err)
+    return assert(json.decode(bytes))
 end
 
 local function save_stage_metadata(upload_id: string, result: any): any

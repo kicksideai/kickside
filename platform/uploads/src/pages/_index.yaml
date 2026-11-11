@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: kickside.uploads.pages
+entries:
+- name: get_info
+  kind: function.lua
+  source: file://service.lua
+  method: get_info
+  modules:
+  - funcs
+  imports: &id001
+    source: kickside.uploads.pages:source
+    image: kickside.uploads.pages:image
+    content: kickside.uploads.persist:artifact_content_repo
+    page_bytes: kickside.uploads.pages:bytes
+    binding_errors: kickside.uploads.binding:binding_errors
+    types: kickside.uploads:types
+- name: read_image
+  kind: function.lua
+  source: file://service.lua
+  method: read_image
+  modules:
+  - funcs
+  imports: *id001
+- name: source
+  kind: library.lua
+  source: file://source.lua
+  imports:
+    query: kickside.uploads.persist:upload_query_repo
+    parts: kickside.uploads.persist:artifact_parts_repo
+    content: kickside.uploads.persist:artifact_content_repo
+    rasterizer: kickside.uploads.rasterize:rasterizer
+    original_read: kickside.uploads:original_read
+    canonical_json: kickside.contract:canonical_json
+    binding_errors: kickside.uploads.binding:binding_errors
+    types: kickside.uploads:types
+- name: image
+  kind: library.lua
+  source: file://image.lua
+  modules:
+  - hash
+  imports:
+    types: kickside.uploads:types
+    binding_errors: kickside.uploads.binding:binding_errors
+- name: bytes
+  kind: library.lua
+  source: file://bytes.lua
+  modules: [hash]
+  imports:
+    resources: kickside.uploads.binding:uploads_resources
+    binding_errors: kickside.uploads.binding:binding_errors
+    types: kickside.uploads:types

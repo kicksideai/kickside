@@ -43,6 +43,7 @@ entries:
     - kickside.uploads.events:*
     - kickside.uploads.images:*
     - kickside.uploads.migrations:*
+    - kickside.uploads.pages:*
     - kickside.uploads.persist:*
     - kickside.uploads.rasterize:*
     - kickside.uploads.security:*

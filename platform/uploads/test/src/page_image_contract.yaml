@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: app
+entries:
+  - name: page_image_contract_test
+    kind: function.lua
+    source: file://page_image_contract_test.lua
+    method: run
+    meta: {type: test, suite: page_images}
+    modules: [contract, security, uuid, fs, hash, funcs]
+    imports:
+      image_validation: kickside.uploads.pages:image
+      test: wippy.test:test
+      records: kickside.uploads.persist:upload_record_repo
+      content: kickside.uploads.persist:artifact_content_repo
+      parts: kickside.uploads.persist:artifact_parts_repo
+      cleanup: kickside.uploads.persist:artifact_cleanup_repo
+      fixtures: app:page_image_fixture
+  - name: page_image_boundaries_test
+    kind: function.lua
+    source: file://page_image_boundaries_test.lua
+    method: run
+    meta: {type: test, suite: page_images}
+    modules: [contract, security, uuid, fs, json, hash, funcs]
+    imports:
+      test: wippy.test:test
+      records: kickside.uploads.persist:upload_record_repo
+      content: kickside.uploads.persist:artifact_content_repo
+      cleanup: kickside.uploads.persist:artifact_cleanup_repo
+      types: kickside.uploads:types
+  - name: page_image_renderer
+    kind: function.lua
+    source: file://page_image_renderer.lua
+    method: run
+    modules: [fs, json, base64, sql]
+  - name: page_image_rasterizer
+    kind: registry.entry
+    meta: {type: convert.rasterizer}
+    input_mime_types: [application/x-page-image-test]
+    processor_func: app:page_image_renderer
+  - name: page_rasterizer_registry
+    kind: library.lua
+    source: file://page_rasterizer_registry.lua
+  - name: page_rasterizer_fixture
+    kind: library.lua
+    source: file://fixtures/page_rasterizer.lua
+    imports:
+      registry: app:page_rasterizer_registry
+      types: kickside.uploads:types
+  - name: page_rasterizer_test
+    kind: function.lua
+    source: file://page_rasterizer_test.lua
+    method: run
+    meta: {type: test, suite: page_images}
+    imports:
+      test: wippy.test:test
+      rasterizer: app:page_rasterizer_fixture
+      registry: app:page_rasterizer_registry
+  - name: page_image_fixture
+    kind: library.lua
+    source: file://page_image_fixture.lua
+  - name: page_image_validation_test
+    kind: function.lua
+    source: file://page_image_validation_test.lua
+    method: run
+    meta: {type: test, suite: page_images}
+    modules: [base64, hash]
+    imports:
+      test: wippy.test:test
+      image: kickside.uploads.pages:image
