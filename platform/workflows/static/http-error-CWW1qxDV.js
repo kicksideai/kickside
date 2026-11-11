@@ -1,6 +1,6 @@
 import { g as k, p as M, $ as Y, f as E } from "./wc-mount-krbIT6pk.js";
 import { B as U, d as F, i as O, c as W, h as Z } from "./index-BhiG6P-P.js";
-import { openBlock as p, createElementBlock as g, mergeProps as u, createBlock as C, resolveDynamicComponent as z, createCommentVNode as w, renderSlot as m, createElementVNode as c, toDisplayString as b, resolveComponent as Q, normalizeClass as X, createVNode as v, withCtx as y, Transition as ee, withDirectives as te, vShow as ne, defineComponent as re, computed as R, ref as N, unref as h, Fragment as oe } from "vue";
+import { openBlock as p, createElementBlock as g, mergeProps as u, createBlock as C, resolveDynamicComponent as z, createCommentVNode as _, renderSlot as m, createElementVNode as c, toDisplayString as b, resolveComponent as Q, normalizeClass as X, createVNode as v, withCtx as y, Transition as ee, withDirectives as te, vShow as ne, defineComponent as re, computed as R, ref as N, unref as h, Fragment as oe } from "vue";
 import { Icon as T } from "@iconify/vue";
 function ae(e, t) {
   if (typeof e == "string" && String(t || "").includes("json"))
@@ -17,6 +17,7 @@ function ie(e) {
     node_id: String(t.node_id || ""),
     type: String(t.type || t.data_type || ""),
     content: ae(t.content, t.content_type),
+    ...t.data_unavailable === !0 ? { data_unavailable: !0 } : {},
     content_type: t.content_type != null ? String(t.content_type) : void 0,
     discriminator: t.discriminator != null ? String(t.discriminator) : void 0,
     created_at: t.created_at != null ? String(t.created_at) : void 0
@@ -75,6 +76,7 @@ function H(e) {
     error: e.error != null ? String(e.error) : null,
     started_at: e.started_at != null ? String(e.started_at) : null,
     finished_at: e.finished_at != null ? String(e.finished_at) : null,
+    ...e.step_data_retention_days != null ? { step_data_retention_days: Number(e.step_data_retention_days) } : {},
     ...e.output !== void 0 ? { output: e.output } : {},
     dataflow_id: e.dataflow_id != null ? String(e.dataflow_id) : void 0,
     ...e.dataflow_status != null ? { dataflow_status: String(e.dataflow_status) } : {}
@@ -128,21 +130,21 @@ async function yt(e, t, n = {}) {
   if (!o) throw new Error("the server did not return a run id");
   return o;
 }
-function _(e, t) {
+function w(e, t) {
   for (let n = e.length - 1; n >= 0; n--)
     if (e[n].type === t && e[n].content != null) return e[n];
 }
 function pe(e) {
-  const t = _(e, "node.input");
+  const t = w(e, "node.input");
   return t ? t.content : null;
 }
 function fe(e) {
-  const t = _(e, "node.output");
+  const t = w(e, "node.output");
   if (t) return t.content;
-  const n = _(e, "node.result")?.content;
+  const n = w(e, "node.result")?.content;
   if (n && typeof n == "object" && "data_ids" in n && "output" in n)
     return n.output ?? null;
-  const r = _(e, "agent.action");
+  const r = w(e, "agent.action");
   if (r) {
     const a = r.content;
     if (a && typeof a == "object" && "result" in a) {
@@ -151,7 +153,7 @@ function fe(e) {
     }
     return a;
   }
-  const o = _(e, "node.result");
+  const o = w(e, "node.result");
   if (o) {
     const a = o.content;
     return a && typeof a == "object" && "data_ids" in a && "success" in a ? a.output ?? null : a;
@@ -218,7 +220,7 @@ function ve(e) {
   }
   return t;
 }
-function we(e) {
+function _e(e) {
   let t = Number.POSITIVE_INFINITY, n = Number.NEGATIVE_INFINITY, r, o;
   for (const a of e) {
     if (!a.created_at) continue;
@@ -234,7 +236,7 @@ function ht(e) {
   const t = Math.round(e / 1e3), n = Math.floor(t / 60), r = t % 60;
   return `${n}m ${r}s`;
 }
-function _e(e) {
+function we(e) {
   if (typeof e == "string") return e;
   try {
     return JSON.stringify(e, null, 2);
@@ -260,11 +262,12 @@ function bt(e, t = {}) {
     n = r ? { message: r, hasDetail: !0 } : { message: S, hasDetail: !1 };
   }
   return {
+    dataUnavailable: e.some((r) => r.data_unavailable === !0),
     input: pe(e),
     output: fe(e),
     error: n,
     agentActions: ve(e),
-    timing: we(e)
+    timing: _e(e)
   };
 }
 function x(e) {
@@ -274,10 +277,10 @@ function x(e) {
 function vt(e) {
   return x(e.status) === "pending" && e.dataflow_status === "waiting" ? "waiting" : e.status;
 }
-function wt(e) {
+function _t(e) {
   return x(e.status) === "error" ? q(e.error) : "";
 }
-function _t(e) {
+function wt(e) {
   const t = e.trim();
   return t ? t.charAt(0).toUpperCase() + t.slice(1) : "Pending";
 }
@@ -444,13 +447,13 @@ function Pe(e, t, n, r, o, a) {
   }, e.ptm("icon")), null, 16, ["class"])) : e.icon ? (p(), g("span", u({
     key: 1,
     class: [e.cx("icon"), e.icon]
-  }, e.ptm("icon")), null, 16)) : w("", !0), e.value != null || e.$slots.default ? m(e.$slots, "default", {
+  }, e.ptm("icon")), null, 16)) : _("", !0), e.value != null || e.$slots.default ? m(e.$slots, "default", {
     key: 2
   }, function() {
     return [c("span", u({
       class: e.cx("label")
     }, e.ptm("label")), b(e.value), 17)];
-  }) : w("", !0)], 16, Ee);
+  }) : _("", !0)], 16, Ee);
 }
 Te.render = Pe;
 var K = {
@@ -729,7 +732,7 @@ function nt(e, t, n, r, o, a) {
       key: 0,
       id: e.$id + "_header",
       class: e.cx("title")
-    }, e.ptm("title")), b(e.header), 17, et)) : w("", !0)];
+    }, e.ptm("title")), b(e.header), 17, et)) : _("", !0)];
   }), c("div", u({
     class: e.cx("headerActions")
   }, e.ptm("headerActions")), [m(e.$slots, "icons"), e.toggleable ? m(e.$slots, "togglebutton", {
@@ -769,7 +772,7 @@ function nt(e, t, n, r, o, a) {
       }),
       _: 3
     }, 16, ["id", "class", "aria-label", "aria-controls", "aria-expanded", "unstyled", "pt"])];
-  }) : w("", !0)], 16)], 16, Xe), v(ee, u({
+  }) : _("", !0)], 16)], 16, Xe), v(ee, u({
     name: "p-collapsible"
   }, e.ptm("transition")), {
     default: y(function() {
@@ -785,7 +788,7 @@ function nt(e, t, n, r, o, a) {
       }, e.ptm("content")), [m(e.$slots, "default")], 16), e.$slots.footer ? (p(), g("div", u({
         key: 0,
         class: e.cx("footer")
-      }, e.ptm("footer")), [m(e.$slots, "footer")], 16)) : w("", !0)], 16)], 16, tt), [[ne, !o.d_collapsed]])];
+      }, e.ptm("footer")), [m(e.$slots, "footer")], 16)) : _("", !0)], 16)], 16, tt), [[ne, !o.d_collapsed]])];
     }),
     _: 3
   }, 16)], 16, Qe);
@@ -801,7 +804,7 @@ const rt = { class: "wf-payload-title" }, ot = ["source"], at = { class: "wf-run
     maxLines: { default: 40 }
   },
   setup(e) {
-    const t = e, n = R(() => typeof t.value == "string"), r = R(() => _e(t.value)), o = R(() => Se(r.value, t.maxLines)), a = N(!t.open), i = N(!1), d = N(!1);
+    const t = e, n = R(() => typeof t.value == "string"), r = R(() => we(t.value)), o = R(() => Se(r.value, t.maxLines)), a = N(!t.open), i = N(!1), d = N(!1);
     async function s() {
       try {
         await navigator.clipboard.writeText(r.value), d.value = !0, setTimeout(() => {
@@ -867,7 +870,7 @@ const rt = { class: "wf-payload-title" }, ot = ["source"], at = { class: "wf-run
               c("span", null, b(i.value ? "Show less" : `Show ${o.value.hiddenLines} more lines`), 1)
             ]),
             _: 1
-          })) : w("", !0)
+          })) : _("", !0)
         ], 64))
       ]),
       _: 1
@@ -885,8 +888,8 @@ export {
   yt as D,
   Tt as _,
   x as a,
-  _t as b,
-  wt as c,
+  wt as b,
+  _t as c,
   K as d,
   Nt as e,
   Oe as f,
