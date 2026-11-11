@@ -1,3 +1,4 @@
+local deletion_progress = require("deletion_progress")
 -- Component lifecycle for workflows. A workflow is a component of class `workflow`
 -- (its component id IS the workflow id); the definition plane lives in the module's
 -- own tables keyed by that id. create/list/delete all route through the component
@@ -310,6 +311,7 @@ function M.list(options: any?): (any?, error?, integer?)
                 id = id,
                 deleting_at = r.deleting_at,
                 deletion_job_id = r.deletion_job_id,
+                deletion_job = r.deletion_job,
                 title = display_title(meta.title),
                 created_at = r.created_at,
                 updated_at = r.updated_at,
@@ -323,6 +325,8 @@ function M.list(options: any?): (any?, error?, integer?)
         end
     end
 
+    local _, progress_err = deletion_progress.enrich(out)
+    if progress_err then return nil, progress_err end
     local located, location_err = M.enrich_locations(out)
     if not located then return nil, errors.wrap(location_err :: error, "workflow location summary failed") end
     local enriched, enrich_err = enrich_rows(out)

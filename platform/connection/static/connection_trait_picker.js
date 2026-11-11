@@ -1,10 +1,10 @@
 import { W as t, u as o } from "./wc-runtime-KO3cNuNo.js";
 import { P as n } from "./primevue-plugin-CaP7wV_M.js";
-import { l as i, s as r } from "./styles-IFmdTPKe.js";
+import { l as i, s as r } from "./styles-BjZmuDGf.js";
 import "@iconify/vue";
 import { define as s } from "@wippy-fe/proxy";
 const p = i(
-  () => import("./ConnectionTraitPicker-CNriqkf3.js"),
+  () => import("./ConnectionTraitPicker-3eGysQg5.js"),
   { loading: "Loading connection picker…", failed: "Could not load the connection picker. Reload the page to try again." },
   o
 ), a = {

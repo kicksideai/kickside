@@ -1,4 +1,7 @@
 @import "../picker/cp-base.css";
+@import "@kickside/ui-kit/component-deletion.css";
+@import "../app/wc-mount.css";
+@import "../app/anchored-panel.css";
 
 /* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
    preflight; without it PrimeVue controls keep UA defaults the theme never

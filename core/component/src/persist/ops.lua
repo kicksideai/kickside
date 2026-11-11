@@ -152,6 +152,7 @@ return {
     validate_delete_tx = delete_ops.validate_delete_tx,
     deletion_ready_tx = delete_ops.deletion_ready_tx,
     component_summary_tx = component_summary_tx,
+    validate_public_meta_changes = meta_ops.validate_public_meta_changes,
     set_public_meta = meta_ops.set_public_meta,
     raise_meta_floor = meta_ops.raise_meta_floor,
     public_meta_tx = meta_ops.public_meta_tx,
@@ -168,6 +169,8 @@ return {
     apply_declaration_tx = declaration_ops.apply_declaration_tx,
     prepare_declaration = declaration_ops.prepare_declaration,
     prepare_creation = declaration_ops.prepare_creation,
+    prepare_rollback_upgrade = declaration_ops.prepare_rollback_upgrade,
+    upgrade_rollback_tx = declaration_ops.upgrade_rollback_tx,
     create_declared_tx = declared_create.create_tx,
     redact_context = context_ops.redact,
 }

@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.3.14](https://github.com/kicksideai/kickside/compare/core-v0.3.13...core-v0.3.14) (2026-11-09)
+
+
+### Bug Fixes
+
+* preserve lifecycle upgrades and user directory snapshots ([#386](https://github.com/kicksideai/kickside/issues/386)) ([0a842c1](https://github.com/kicksideai/kickside/commit/0a842c16e53b4865771cad9be71680d5e189391d))
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+
+## [0.3.13](https://github.com/kicksideai/kickside/compare/core-v0.3.12...core-v0.3.13) (2026-11-07)
+
+
+### Bug Fixes
+
+* **core:** converge the lifecycle boot once the install's migrations are applied ([#352](https://github.com/kicksideai/kickside/issues/352)) ([7652781](https://github.com/kicksideai/kickside/commit/7652781374b81a3be7604acdb08c8cf020a5158f))
+
+## [0.3.12](https://github.com/kicksideai/kickside/compare/core-v0.3.11...core-v0.3.12) (2026-11-07)
+
+
+### Bug Fixes
+
+* carry the component deletion receipt through thread, skill, webhook, workflow and agent deletes ([#341](https://github.com/kicksideai/kickside/issues/341)) ([98e9d03](https://github.com/kicksideai/kickside/commit/98e9d03b522828d63b284dff4174ef7543bef2cb))
+
 ## [0.3.11](https://github.com/kicksideai/kickside/compare/core-v0.3.10...core-v0.3.11) (2026-11-07)
 
 

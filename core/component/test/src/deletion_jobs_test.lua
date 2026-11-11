@@ -75,9 +75,22 @@ local function pool_until(id: string, crash: boolean?)
         end
         error("deletion job does not complete")
     end)
+    -- Cancellation only requests the drain; the next case enqueues its own job
+    -- and needs the pool gone, so wait for the pool's monitored exit.
+    local events = process.events()
     local canceled, cancel_err = process.cancel(pid, "2s")
     test.is_nil(cancel_err, tostring(cancel_err))
     test.is_true(canceled)
+    local exit_deadline = time.after("10s")
+    while true do
+        local selected = channel.select({events:case_receive(), exit_deadline:case_receive()})
+        test.eq(selected.channel, events, "job worker pool does not exit after cancellation")
+        local event = selected.value
+        if event.kind == process.event.EXIT and tostring(event.from) == tostring(pid) then
+            test.is_nil(event.result and event.result.error, tostring(event.result and event.result.error))
+            break
+        end
+    end
     if not ok then error(failure) end
 end
 local function seed(mode: string, owner: string, parent: string?): string
@@ -157,6 +170,20 @@ M.run = test.run_cases(function()
                 test.not_nil(visible.deleting_at)
                 test.eq(visible.deletion_job_id, result.job_id)
                 test.eq(visible.deletion_job.status, "pending")
+                local listing = service(owner):list({filters = {impl_ids = {"app:deletion_jobs_binding"}}})
+                test.is_true(listing.success, tostring(listing.error))
+                local listed: any = nil
+                for _, row in ipairs(listing.components) do
+                    if row.component_id == id then listed = row end
+                end
+                test.not_nil(listed)
+                test.eq(listed.deletion_job_id, result.job_id)
+                test.eq(listed.deletion_job.status, visible.deletion_job.status)
+                test.eq(listed.deletion_job.attempts, visible.deletion_job.attempts)
+                test.eq(listed.deletion_job.last_error, visible.deletion_job.last_error)
+                local hidden = service("unrelated-" .. owner):list({filters = {impl_ids = {"app:deletion_jobs_binding"}}})
+                test.is_true(hidden.success, tostring(hidden.error))
+                test.eq(#hidden.components, 0)
                 test.eq(#jobs(id), 1)
                 test.eq(tonumber(jobs(id)[1].priority), 0)
                 test.eq(#query("SELECT component_id FROM kickside_components WHERE component_id=$1 AND deleting_at IS NOT NULL", {id}), 1)

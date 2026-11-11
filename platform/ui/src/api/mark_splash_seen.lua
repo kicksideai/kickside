@@ -15,7 +15,7 @@ local function handler()
     local id = req:param("id")
     -- POST /{id}/seen marks one splash seen. DELETE clears: with an id it un-sees
     -- that splash (replay one); without an id (/ui/splash/seen) it resets instance
-    -- setup for admins (the Appearance "Show setup again" action).
+    -- setup for admins (the app shell "Workspace setup" action).
     local method = tostring(req:method() or "POST"):upper()
     local ok, err
     if method == "DELETE" then

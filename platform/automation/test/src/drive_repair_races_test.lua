@@ -48,6 +48,26 @@ local function not_complete(db,id) test.eq(#query(db,"SELECT id FROM _migrations
 
 local cases=test.run_cases(function()
     test.describe("stranded-drive repair races and commit boundaries",function()
+        test.it("skips an applied repair without provisioning or waking the dispatcher",function()
+            local db=assert(sql.get(types.db_id()))
+            fixture(db)
+            local id="app:repair-completed:"..uuid.v7()
+            local first=migration(db,id)
+            test.eq(first.status,"complete",tostring(first.error))
+            test.eq(first.applied,1)
+            local stranded=fixture(db)
+            boundary.before=function() error("an applied repair must not provision slots") end
+            boundary.fail_wake=true
+            local ok,repeated=pcall(migration,db,id)
+            boundary.before=nil
+            boundary.fail_wake=false
+            test.eq(#active(stranded),0)
+            db:release()
+            test.is_true(ok,tostring(repeated))
+            test.eq(repeated.status,"complete",tostring(repeated.error))
+            test.eq(repeated.skipped,1)
+            test.eq(repeated.applied,0)
+        end)
         test.it("replays transient SQLite writer contention from a fresh transaction",function()
             local db=assert(sql.get(types.db_id()))
             local owner=fixture(db)

@@ -3,6 +3,7 @@ import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponen
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
 import { lazyControl } from '@widgets/lazy'
 import pickerCss from '@widgets/app/pickerselect.css?inline'
+import wcMountCss from '@widgets/app/wc-mount.css?inline'
 import stylesText from './workflow-embed.css?inline'
 
 interface Props { config?: string; schema?: string; 'source-context'?: string; 'source-schema'?: string; 'return-route'?: string }
@@ -31,7 +32,7 @@ class WorkflowPickerElement extends WippyVueElement<Props, Events> {
     return {
       propsSchema: PROPS_SCHEMA,
       hostCssKeys: ['themeConfigUrl', 'markdownCssUrl', 'primeVueCssUrl'] as const,
-      inlineCss: [pickerCss, stylesText].join('\n'),
+      inlineCss: [pickerCss, wcMountCss, stylesText].join('\n'),
     }
   }
   static get vueConfig() {

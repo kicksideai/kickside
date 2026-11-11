@@ -1,6 +1,6 @@
 import { computed, ref, watch } from 'vue'
 import { api } from '@wippy-fe/proxy'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import { parseSchema, primaryPicker, schemaFormFields, schemaHasProps, type PickerItem } from '@widgets/app/ports'
 import { buildSyncInput, type SinkRow, type SyncInput, type SyncTransform } from './syncInput'
 

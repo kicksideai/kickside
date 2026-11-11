@@ -7,13 +7,13 @@ modules:
     - name: kickside/component
       version: 0.0.0
     - name: kickside/contract
-      version: 0.0.0
+      version: 0.3.3
     - name: kickside/core
       version: 0.0.0
     - name: kickside/execution
       version: 0.0.0
     - name: kickside/jobs
-      version: 0.0.0
+      version: 0.1.74
     - name: kickside/realtime
       version: 0.0.0
     - name: kickside/realtime-dispatch
@@ -25,8 +25,8 @@ modules:
       version: 0.3.26
       hash: cf4848ad3f8ba8d31d944b2f3a7274bc2b7cf2888dd80f0db63b2c71a85f89c1
     - name: wippy/relay
-      version: 0.3.16
-      hash: d09d95cc2ca912c3c0c930150faa5f776cca74387894a69e9b40ca6ae2ba56fa
+      version: 0.3.20
+      hash: 308655a145a2f3554bc4ee0fe17441a02456961883e4946f7f364eed93ab24ae
     - name: wippy/security
       version: 0.4.3
       hash: f636859979e88b23647a78fb9aa8a553799de18750b0fb5fb085cbe21542c86c
@@ -34,8 +34,8 @@ modules:
       version: 0.4.6
       hash: aa0c92b85c0dc2c96f00119a7eaa1ced569a2ac8899514d432aef0c910e73e63
     - name: wippy/test
-      version: 0.4.21
-      hash: 9db8a38143f02e7fad670032cf5d985978130c593706626b5f59763bd8e2fe72
+      version: 0.4.24
+      hash: b118903b3a239b3cd423169c64f17d89b8b920b5fefbf79f94789cf49f9341b5
     - name: wippy/views
-      version: 0.5.12
-      hash: a90c888b6150f1b5fc89f35191a39dce5f644cbdbf069224b22ad524860ce9a0
+      version: 0.5.14
+      hash: bef6c33c26c9b098b3f2b6ddfc2602341b2d16763030051b693cba466bc6b40c

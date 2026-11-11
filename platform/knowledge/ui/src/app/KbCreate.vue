@@ -3,7 +3,7 @@ import { ref, onMounted } from 'vue'
 import { api } from '@wippy-fe/proxy'
 import { useProps, useEvents } from '@wippy-fe/webcomponent-vue'
 import { useParentId } from '@widgets/app/useParentId'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import KbDialog from './KbDialog.vue'
 import type { Engine, EmbeddingModel } from './kbDialogTypes'
 

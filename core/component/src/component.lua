@@ -19,13 +19,13 @@ local context_policy = require("context_policy")
 
 local ACCESS = component_types.ACCESS
 local identity_access = require("identity_access")
+local delete_children = require("delete_children")
 local validate_identity_authorizer_admin = identity_access.validate_identity_authorizer_admin
 local validate_principal_access = identity_access.validate_principal_access
 local get_identity_receipt = identity_access.get_identity_receipt
 local get_component_service = context_policy.get_component_service
 local current_runtime_identity = context_policy.current_runtime_identity
 local open_contract_instance = context_policy.open_contract_instance
-local result_error = context_policy.result_error
 local open = context_policy.open
 local open_by_meta = context_policy.open_by_meta
 local validate_access = context_policy.validate_access
@@ -120,7 +120,7 @@ local function query(filter: component_types.QueryFilter?): (component_types.Com
     if call_err then
         return nil, envelope.call_error(call_err, "query_components")
     end
-    local result_err = result_error(result, "query_components")
+    local result_err = envelope.error_of(result :: component_types.ServiceEnvelope, "query_components")
     if result_err then
         return nil, result_err
     end
@@ -495,6 +495,7 @@ return {
     set_execution_identity = component_command.set_execution_identity,
     apply_declaration = component_command.apply_declaration,
     system_delete = system_delete,
+    delete_children = delete_children.run,
     -- fence(tx, component_id, db_id) -> err?. The existence fence for a consumer's
     -- write to the backing data it keeps for a component. Call it first inside the
     -- transaction that writes: it answers nil while the component exists and no

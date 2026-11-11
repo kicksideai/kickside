@@ -12,6 +12,17 @@ local function define_tests()
     test.describe("list_threads picker item", function()
         local thread_item = list_threads.thread_item
 
+        test.it("carries component deletion progress into picker items", function()
+            local row = {component_id = "selected", component_title = "Selected component", deleting_at = "marked",
+                deletion_job_id = "job", deletion_job = {status = "dead", attempts = 3, last_error = "cleanup refused"}}
+            local item = thread_item(row)
+            test.eq(item.deleting_at, "marked")
+            test.eq(item.deletion_job_id, "job")
+            test.eq(item.deletion_job.status, "dead")
+            test.eq(item.deletion_job.attempts, 3)
+            test.eq(item.deletion_job.last_error, "cleanup refused")
+        end)
+
         test.it("labels a row by its component title", function()
             local item = thread_item({
                 component_id = "61e4bd46",

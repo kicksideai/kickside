@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.7](https://github.com/kicksideai/kickside/compare/settings-v0.3.6...settings-v0.3.7) (2026-11-08)
+
+
+### Bug Fixes
+
+* UI artifacts in buttons, headings, dialogs and tables ([#371](https://github.com/kicksideai/kickside/issues/371)) ([ea55ea8](https://github.com/kicksideai/kickside/commit/ea55ea8a17ee5802cb73a4dbcf39878d7f56cd2e))
+
+## [0.3.6](https://github.com/kicksideai/kickside/compare/settings-v0.3.5...settings-v0.3.6) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
 ## [0.3.5](https://github.com/kicksideai/kickside/compare/settings-v0.3.4...settings-v0.3.5) (2026-11-06)
 
 

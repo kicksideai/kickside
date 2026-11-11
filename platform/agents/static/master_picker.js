@@ -1,19 +1,23 @@
 import { W as t, u as i } from "./wc-runtime-KO3cNuNo.js";
 import { P as o } from "./primevue-plugin-CaP7wV_M.js";
-import { l as r } from "./lazy-Cfv2E3SG.js";
-import { s } from "./styles-BD-XFZ4L.js";
+import { l as a } from "./lazy-Cfv2E3SG.js";
+import { s } from "./styles-DyVDM2ng.js";
 import "@iconify/vue";
-import { define as a } from "@wippy-fe/proxy";
+import { define as r } from "@wippy-fe/proxy";
 const n = {
   type: "object",
   properties: {
+    schema: {
+      type: "object",
+      description: "Capability context schema; controls the available configuration fields."
+    },
     config: {
       type: "object",
       description: "Capability context: { namespaces: string[], trait_ids: string[], inject_trait_catalog: boolean }"
     }
   }
-}, p = r(
-  () => import("./MasterNamespacePicker-CUrceSK3.js"),
+}, p = a(
+  () => import("./MasterNamespacePicker-CbuPfeY2.js"),
   { loading: "Loading capability scope picker…", failed: "Could not load the capability scope picker. Reload the page to try again." },
   i
 );
@@ -29,11 +33,11 @@ class e extends t {
     return { rootComponent: p, plugins: [o] };
   }
 }
-async function C() {
+async function d() {
   return e;
 }
-a(import.meta.url, e);
+r(import.meta.url, e);
 export {
-  C as webComponent
+  d as webComponent
 };
 //# sourceMappingURL=master_picker.js.map

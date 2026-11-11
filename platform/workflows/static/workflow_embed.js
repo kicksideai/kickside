@@ -1,16 +1,16 @@
-import { W as e, u as o } from "./wc-runtime-KO3cNuNo.js";
+import { W as o, u as e } from "./wc-runtime-KO3cNuNo.js";
 import { P as r } from "./primevue-plugin-CaP7wV_M.js";
-import { l as n } from "./lazy-Cfv2E3SG.js";
-import { p as s } from "./pickerselect-CshmdhGQ.js";
-import { s as i } from "./workflow-embed-BX8EY-U_.js";
+import { l as s } from "./lazy-Cfv2E3SG.js";
+import { p as n, w as i } from "./wc-mount-N7h56Ydz.js";
+import { s as p } from "./workflow-embed-BX8EY-U_.js";
 import "@iconify/vue";
-import { define as p } from "@wippy-fe/proxy";
-const l = [s, i].join(`
-`), m = n(
-  () => import("./EmbedWorkflow-Bb3YtGHU.js"),
+import { define as l } from "@wippy-fe/proxy";
+const m = [n, i, p].join(`
+`), a = s(
+  () => import("./EmbedWorkflow-pF6lCwcG.js"),
   { loading: "Loading the Workflow panel…", failed: "Could not load the Workflow panel. Reload the page to try again." },
-  o
-), a = {
+  e
+), f = {
   type: "object",
   properties: {
     "flow-id": { type: "string" },
@@ -19,22 +19,22 @@ const l = [s, i].join(`
     label: { type: "string" }
   }
 };
-class t extends e {
+class t extends o {
   static get wippyConfig() {
     return {
-      propsSchema: a,
+      propsSchema: f,
       hostCssKeys: ["themeConfigUrl", "markdownCssUrl", "primeVueCssUrl"],
-      inlineCss: l
+      inlineCss: m
     };
   }
   static get vueConfig() {
-    return { rootComponent: m, plugins: [r] };
+    return { rootComponent: a, plugins: [r] };
   }
 }
-async function h() {
+async function k() {
   return t;
 }
-p(import.meta.url, t);
+l(import.meta.url, t);
 export {
-  h as webComponent
+  k as webComponent
 };

@@ -152,9 +152,10 @@ local function wake_dispatcher_after_release(committed: Map?): error?
 end
 
 -- round_failure(failure, error_kind, prior_attempts, rp) -> the failure a
--- round records on its drive: the phase it leaves and, unless it parks, the
--- capped jittered retry time.
+-- round records on its drive: the phase it leaves, the error_kind it carries
+-- and, unless it parks, the capped jittered retry time.
 local function round_failure(failure: Map, error_kind: string?, prior_attempts: integer, rp: Map): Map
+    error_kind = outcome.error_kind(failure, error_kind)
     local phase, parks = outcome.failure_phase(failure, error_kind)
     local attempts = prior_attempts + 1
     return { phase = phase, error = failure, error_kind = error_kind, attempts = attempts,
@@ -283,6 +284,7 @@ local function run(deps: Map, input: any): (Map?, error?)
         automation_id = automation_id, drive_key = drive_key, captured = captured,
         source_port = ledger.source_port(d), receipt_port = ledger.receipt_port(d), now = now,
         resolved_expires_at = drive.utc_after(p.ledger_resolved_ms),
+        history_expires_at = drive.utc_after(p.history_ms),
     }
     local attempts = prior_attempts(d)
 
@@ -367,7 +369,7 @@ local function run(deps: Map, input: any): (Map?, error?)
     local items = outcome.merge_items({ automation_id = automation_id, drive_key = drive_key, source_port = round.receipt_port, delivery_revision = d.delivery_revision }, redelivery :: { Map }, page.items :: { Map })
 
     local admitted, admit_err = with_db(function(db: any): (any?, error?)
-        return ledger.admit(db, automation_id, round.source_port, items, d.round_seq)
+        return ledger.admit(db, automation_id, round.source_port, items, d.round_seq, now)
     end)
     if admit_err then return settle(ctx, round, classify(admit_err), nil, attempts, rp) end
     items = (admitted :: Map).items
@@ -398,6 +400,7 @@ local function run(deps: Map, input: any): (Map?, error?)
         local effect_drive: Map = { automation_id=automation_id,automation_revision=d.command_generation,
             drive_key=drive_key,source_kind=d.source_kind,source_ref=action.source_ref,
             source_port=round.receipt_port,ledger_port=round.source_port,delivery_revision=d.delivery_revision,
+            applied_hash=d.applied_hash,
             fence=round.captured,deadline=work_deadline }
         local keys: {string} = {}
         for _,item in ipairs(items) do keys[#keys+1]=item.delivery_key end
@@ -449,7 +452,7 @@ local function run(deps: Map, input: any): (Map?, error?)
     end
     local ledger_outcomes, receipts = outcome.ledger_outcomes(items, answered, dlv)
 
-    local result: Map = { outcomes = ledger_outcomes, receipts = receipts, backpressure = backpressure, acquired = acquiring }
+    local result: Map = { outcomes = ledger_outcomes, receipts = receipts, deliveries = answered.delivered, backpressure = backpressure, acquired = acquiring }
     local continues = false
     local next_due: string? = nil
     if not acquiring then
@@ -509,6 +512,20 @@ local function run(deps: Map, input: any): (Map?, error?)
     end)
     if commit_err then return settle(ctx, round, classify(commit_err), nil, attempts, rp) end
     if not (committed :: Map).committed then return complete(ctx, drive.utc_now()) end
+    if acquiring and not continues and not reconciling and not manual and not result.failure and claim.interval_poll(d) then
+        local due,due_err=claim.next_after_round(d,now,drive.utc_now())
+        if due_err then return nil,due_err end
+        if next_due and (due == nil or next_due > due) then due=next_due end
+        local changed,update_err=with_db(function(db: any): (any?,error?)
+            return drive.update_cas_tx(db,automation_id,drive_key,
+                {round_seq=d.round_seq,round_token=sql.NULL,revision=d.revision,
+                    rewind_generation=d.rewind_generation,command_generation=d.command_generation},
+                {next_run_at=due or sql.NULL})
+        end)
+        if update_err then return nil,update_err end
+        if not changed then return complete(ctx,drive.utc_now()) end
+        next_due=due
+    end
     local wake_err = wake_dispatcher_after_release(committed :: Map)
     if wake_err then return nil, wake_err end
     local notify_err = notify_status(ctx, automation_id)

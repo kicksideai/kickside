@@ -238,6 +238,7 @@ local function define_tests()
         end)
 
         test.it("delete removes the skill", function()
+            if not skill_id then error("saved skill ID is missing") end
             local result, err = exec:call(TOOL, { action = "delete", skill_id = skill_id })
             test.is_nil(err, "delete error: " .. tostring(err))
             test.eq(result.skill_id, skill_id)

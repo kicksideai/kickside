@@ -90,6 +90,9 @@ meta:
   presentation: dialog
 ```
 
+A step that mounts a component and declares no `title` owns its heading: the
+shell renders no step heading and labels the modal with the splash `title`.
+
 Dialog content sizes to its steps within a maximum width and viewport height.
 The native modal dialog traps focus, carries `aria-modal` and a labelled title,
 and leaves the app visible through a light backdrop. Its visible close button

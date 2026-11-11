@@ -1,10 +1,10 @@
 import { W as t, u as o } from "./wc-runtime-CNDpK4lj.js";
 import { l as r } from "./lazy-BTFbj8TG.js";
-import { s as i } from "./styles-DiqgAHsw.js";
+import { s as i } from "./styles-Bly5VSV3.js";
 import "@iconify/vue";
 import { define as n } from "@wippy-fe/proxy";
 const s = r(
-  () => import("./SchemaForm-BOpOPds7.js"),
+  () => import("./SchemaForm-DmHfomQr.js"),
   { loading: "Loading schema form…", failed: "Could not load the schema form. Reload the page to try again." },
   o
 ), m = {

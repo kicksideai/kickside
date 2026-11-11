@@ -4,6 +4,7 @@ local uuid = require("uuid")
 local hash = require("hash")
 local sql = require("sql")
 local errors = require("errors")
+local job_types = require("job_types")
 
 local persisted_json = require("persisted_json")
 local resources = require("uploads_resources")
@@ -232,7 +233,43 @@ function artifact_content_repo.create_blob(mime_type, content, metadata, options
     }
 end
 
-function artifact_content_repo.create_artifact(args)
+-- Lock the owning attempt through the artifact write. A lease check before
+-- inference cannot fence a checkpoint produced after that attempt loses ownership.
+function artifact_content_repo.write_fenced(db, query, ref)
+    local function execute(target)
+        if type(query) == "function" then return query(target) end
+        return query:run_with(target):exec()
+    end
+    if ref == nil then return execute(db) end
+    if type(ref) ~= "table" or type(ref.job_id) ~= "string" or ref.job_id == ""
+        or type(ref.lease_token) ~= "string" or ref.lease_token == ""
+        or type(ref.execution_seq) ~= "number" then
+        return nil, typed(errors.INVALID, "artifact write requires a complete job lease")
+    end
+    local dbtype, type_err = db:type()
+    if type_err then return nil, type_err end
+    local tx, begin_err = db:begin()
+    if begin_err then return nil, begin_err end
+    local current = dbtype == sql.type.POSTGRES and "CURRENT_TIMESTAMP" or "strftime('%Y-%m-%d %H:%M:%f', 'now')"
+    local held, fence_err = sql.builder.update("kickside_job")
+        :set("execution_seq", ref.execution_seq)
+        :where("id = ? AND status = ? AND lease_token = ? AND execution_seq = ?",
+            ref.job_id, "running", ref.lease_token, ref.execution_seq)
+        :where("lease_until IS NOT NULL AND lease_until > " .. current)
+        :where("(last_error IS NULL OR substr(last_error, 1, ?) <> ?)", #job_types.TERMINATION_PENDING_PREFIX, job_types.TERMINATION_PENDING_PREFIX)
+        :run_with(tx):exec()
+    if fence_err or not held or tonumber(held.rows_affected) ~= 1 then
+        tx:rollback()
+        return nil, fence_err or typed(errors.CONFLICT, "artifact write loses job lease")
+    end
+    local result, write_err = execute(tx)
+    if write_err then tx:rollback(); return nil, write_err end
+    local _, commit_err = tx:commit()
+    if commit_err then return nil, commit_err end
+    return result, nil
+end
+
+local function store_artifact(args, replace)
     args = args or {}
     local schema_ok, schema_err = artifact_schema.validate_artifact_args(args)
     if not schema_ok then return nil, schema_err end
@@ -307,9 +344,26 @@ function artifact_content_repo.create_artifact(args)
             updated_at = timestamp,
         })
 
-    local _, insert_err = query:run_with(db):exec()
+    local _, insert_err = artifact_content_repo.write_fenced(db, function(target)
+        if replace then
+            local existing, find_err = sql.builder.select("artifact_id", "created_at")
+                :from("kickside_upload_artifacts")
+                :where("upload_id = ? AND role = ? AND ordinal = ?", args.upload_id, args.role, tonumber(args.ordinal) or 0)
+                :order_by("created_at ASC, artifact_id ASC"):limit(1):run_with(target):query()
+            if find_err then return nil, find_err end
+            if #existing > 0 then
+                artifact_id = existing[1].artifact_id
+                query = sql.builder.update("kickside_upload_artifacts"):set_map({
+                    parent_artifact_id = nullable(args.parent_artifact_id), blob_id = nullable(blob_id),
+                    checksum = nullable(checksum), kind = args.kind, mime_type = mime_type,
+                    label = nullable(args.label), locator = locator_json, metadata = metadata_json, updated_at = timestamp,
+                }):where("upload_id = ? AND artifact_id = ?", args.upload_id, artifact_id)
+            end
+        end
+        return query:run_with(target):exec()
+    end, args.cancel_ref)
     db:release()
-    if insert_err then return nil, "failed to create artifact: " .. insert_err end
+    if insert_err then return nil, "failed to create artifact: " .. tostring(insert_err) end
 
     return {
         artifact_id = artifact_id,
@@ -327,6 +381,19 @@ function artifact_content_repo.create_artifact(args)
         created_at = timestamp,
         updated_at = timestamp,
     }
+end
+
+function artifact_content_repo.create_artifact(args)
+    return store_artifact(args, false)
+end
+
+-- A processing stage owns one artifact per role and ordinal (page/image index).
+-- Re-entering it retains the artifact id and replaces its content and provenance.
+function artifact_content_repo.upsert_artifact(args)
+    if type(args) ~= "table" or type(args.role) ~= "string" or args.role == "" then
+        return nil, "role is required for an idempotent artifact write"
+    end
+    return store_artifact(args, true)
 end
 
 -- Replace an artifact's content: stores a new (dedup-aware) blob and repoints the
@@ -348,6 +415,16 @@ function artifact_content_repo.update_content(upload_id, artifact_id, content, o
         if existing_blob then storage_id = existing_blob.storage_id end
     end
 
+    local updates = {mime_type = mime_type, updated_at = now()}
+    if options.metadata ~= nil then
+        local merged = {}
+        for key, value in pairs(artifact.metadata or {}) do merged[key] = value end
+        for key, value in pairs(options.metadata) do merged[key] = value end
+        local encoded, metadata_err = encode_json(merged)
+        if metadata_err then return nil, metadata_err end
+        updates.metadata = encoded
+    end
+
     local blob, blob_err = artifact_content_repo.create_blob(mime_type, content, options.blob_metadata, { storage_id = storage_id })
     if blob_err then return nil, blob_err end
     if not blob then return nil, "failed to create artifact blob" end
@@ -355,20 +432,15 @@ function artifact_content_repo.update_content(upload_id, artifact_id, content, o
     local db, err = resources.get_db()
     if err then return nil, err end
 
-    local timestamp = now()
-    local _, update_err = sql.builder.update("kickside_upload_artifacts")
-        :set_map({
-            blob_id = blob.blob_id,
-            checksum = blob.checksum,
-            mime_type = mime_type,
-            updated_at = timestamp,
-        })
+    local timestamp = updates.updated_at
+    updates.blob_id, updates.checksum = blob.blob_id, blob.checksum
+    local query = sql.builder.update("kickside_upload_artifacts")
+        :set_map(updates)
         :where("artifact_id = ?", artifact_id)
         :where("upload_id = ?", upload_id)
-        :run_with(db)
-        :exec()
+    local _, update_err = artifact_content_repo.write_fenced(db, query, options.cancel_ref)
     db:release()
-    if update_err then return nil, "failed to update artifact content: " .. update_err end
+    if update_err then return nil, "failed to update artifact content: " .. tostring(update_err) end
     if type(artifact.blob_id) == "string" and artifact.blob_id ~= "" and artifact.blob_id ~= blob.blob_id then
         local cleanup_db, cleanup_db_err = resources.get_db()
         if cleanup_db_err then return nil, cleanup_db_err end

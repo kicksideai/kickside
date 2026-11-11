@@ -162,7 +162,6 @@ function cardWithClasses(m: ModelCard, classList: string[], priority: number): R
     options: m.options ?? {},
     metadata: m.metadata ?? {},
     source: m.source === 'registry' ? 'overlay' : (m.source || 'overlay'),
-    enabled: true,
   }
 }
 

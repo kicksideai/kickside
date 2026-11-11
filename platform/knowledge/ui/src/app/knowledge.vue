@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import ComponentDeletion from '@widgets/app/ComponentDeletion.vue'
-import { useComponentDeletion } from '@widgets/app/useComponentDeletion'
+import ComponentDeletion from '@kickside/ui-kit/ComponentDeletion.vue'
+import { useComponentDeletion } from '@kickside/ui-kit/useComponentDeletion'
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import Button from 'primevue/button'
@@ -11,7 +11,7 @@ import KbDialog from './KbDialog.vue'
 import KnowledgeStats from './KnowledgeStats.vue'
 import AnchoredPanel from '@widgets/app/AnchoredPanel.vue'
 import { useComponentProps, useComponentEvents } from '../constants'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import type { DialogTarget, KbDetail, KnowledgeBase } from './knowledge.types.ts'
 import { useKnowledgeCatalog } from './useKnowledgeCatalog.ts'
 import { useKnowledgeDetail } from './useKnowledgeDetail.ts'
@@ -197,7 +197,7 @@ useHostVisibilityRefresh(async () => {
     error.value = errMsg(e, 'host API unavailable')
   }
 })
-const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (detail.value?.id === id) closeDetail() })
+const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (detail.value?.id === id) closeDetail() }, load)
 </script>
 
 <template>
@@ -311,10 +311,10 @@ const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (de
           <KnowledgeStats :items="detail.stat_items || []" />
           <span
             v-if="detail.auto_summary || detail.auto_description"
+            ref="summaryAnchor"
             class="kx-summary"
           >
             <Button
-              ref="summaryAnchor"
               severity="secondary"
               outlined
               class="kx-summary-btn"
@@ -376,10 +376,6 @@ const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (de
               </div>
             </div>
 
-            <div v-if="detail.auto_summary" class="kx-detail-summary">
-              <div class="kx-detail-summary-lbl">Summary</div>
-              {{ detail.auto_summary }}
-            </div>
           </template>
 
           <div ref="detailHost" class="kx-detail-host"></div>

@@ -3,7 +3,7 @@ import "@iconify/vue";
 import { define as m } from "@wippy-fe/proxy";
 import "pinia";
 import { P as i } from "./primevue-plugin-CaP7wV_M.js";
-import { _ as a, T as s } from "./TaskCreate.vue_vue_type_script_setup_true_lang-DwtklZsw.js";
+import { _ as a, T as s } from "./TaskCreate.vue_vue_type_script_setup_true_lang-VIfIVdRx.js";
 const c = /* @__PURE__ */ t({
   __name: "RecurringTaskCreate",
   setup(r) {

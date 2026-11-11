@@ -144,10 +144,54 @@ return {run = test.run_cases(function()
             }, function(c) c.dialect_error = failure() end)
             test.is_nil(ctx.error)
         end)
-        test.it("refuses to start when the Settings subscription fails", function()
-            local ctx = harness.run({}, function(c) c.subscribe_error = failure() end)
-            test.not_nil(ctx.error)
-            test.eq(ctx.spawned, 0)
+        test.it("retries a failed startup Settings subscription on the owner deadline", function()
+            local ctx = harness.run({
+                function(c)
+                    test.eq(c.subscriptions, 1)
+                    test.eq(c.reads, 0, "Settings is read only after its change subscription")
+                    test.eq(c.spawned, 0)
+                    test.not_nil(c.timer, "a failed subscription must arm an owner retry")
+                    c.subscribe_error = nil
+                    c.now_ns = 1000000000
+                    return {channel = c.timer}
+                end,
+                function(c)
+                    test.eq(c.subscriptions, 2)
+                    test.eq(c.reads, 1)
+                    test.eq(c.spawned, 2)
+                    return {channel = c.events, value = {kind = process.event.CANCEL}}
+                end,
+            }, function(c) c.subscribe_error = failure() end)
+            test.is_nil(ctx.error)
+        end)
+        test.it("keeps upgraded slots running until the Settings change scope becomes available", function()
+            local ctx = harness.run({
+                function(c)
+                    test.eq(c.subscriptions, 1)
+                    test.eq(#c.canceled, 0, "the adopted slots keep running")
+                    test.eq(c.spawned, 0)
+                    test.not_nil(c.timer, "a failed subscription must arm an owner retry")
+                    c.subscribe_error = nil
+                    c.overrides = sqlite_workers(2)
+                    c.now_ns = 1000000000
+                    return {channel = c.timer}
+                end,
+                function(c)
+                    test.eq(c.subscriptions, 2)
+                    test.eq(c.reads, 1)
+                    test.eq(c.spawned, 1, "the resolved policy grows the adopted pool")
+                    c.overrides = sqlite_workers(1)
+                    return harness.settings_change(c, 2)
+                end,
+                function(c)
+                    test.eq(c.subscriptions, 2, "a live subscription is not repeated")
+                    test.eq(c.reads, 2, "a Settings change reaches the subscribed root")
+                    test.eq(#c.canceled, 1, "the pool shrinks to the changed policy")
+                    return {channel = c.events, value = {kind = process.event.CANCEL}}
+                end,
+            }, function(c) c.subscribe_error = failure() end, harness.handover())
+            test.is_nil(ctx.error)
+            test.is_true(ctx.closed)
         end)
     end)
 end)}

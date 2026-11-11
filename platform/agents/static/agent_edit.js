@@ -1,7 +1,7 @@
 import { W as e, u as o } from "./wc-runtime-KO3cNuNo.js";
 import { P as i } from "./primevue-plugin-CaP7wV_M.js";
 import { l as n } from "./lazy-Cfv2E3SG.js";
-import { s as r } from "./styles-BD-XFZ4L.js";
+import { s as r } from "./styles-DyVDM2ng.js";
 import "@iconify/vue";
 import { define as s } from "@wippy-fe/proxy";
 const p = {
@@ -14,7 +14,7 @@ const p = {
     mode: { type: "string" }
   }
 }, m = n(
-  () => import("./AgentEdit-BcWvnDm4.js"),
+  () => import("./AgentEdit-DbW3Doro.js"),
   { loading: "Loading agent editor…", failed: "Could not load the agent editor. Reload the page to try again." },
   o
 );

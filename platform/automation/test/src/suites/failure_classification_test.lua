@@ -192,6 +192,15 @@ local function define_tests()
             test.eq(recorded[1].error.retry_after_ms, 90000)
         end)
 
+        test.it("retains partial delivery receipts when a later slot waits",function()
+            local item={item_key="item",delivery_key="delivery",attempts=0}
+            local recorded,receipts=outcome.ledger_outcomes({item},{delivered={},skipped={},failed={},uncertain={},
+                waiting={{key="delivery",receipts={{map_slot="a",identity_key="record",dest_ref={id="destination"}}}}}},
+                {retry_after_ms=100,max_delay_ms=100})
+            test.eq(#receipts,1)
+            test.is_true(recorded[1].error.sink_effect)
+        end)
+
         test.it("settles the prepared output of an item that failed before any write once it is dead, and keeps a retried one's", function()
             local items = { { item_key = "dead", dedup_key = "dead", delivery_key = "dead-key", attempts = 0 },
                 { item_key = "again", dedup_key = "again", delivery_key = "again-key", attempts = 0 } }

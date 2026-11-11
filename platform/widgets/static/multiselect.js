@@ -1,10 +1,10 @@
 import { W as t, u as s } from "./wc-runtime-CNDpK4lj.js";
 import { l as i } from "./lazy-BTFbj8TG.js";
-import { s as o } from "./styles-DiqgAHsw.js";
+import { s as o } from "./styles-Bly5VSV3.js";
 import "@iconify/vue";
 import { define as r } from "@wippy-fe/proxy";
 const n = i(
-  () => import("./MultiSelect-CqCpK0tR.js"),
+  () => import("./MultiSelect-ByOzZkIm.js"),
   { loading: "Loading multiselect…", failed: "Could not load the multiselect. Reload the page to try again." },
   s
 ), l = {

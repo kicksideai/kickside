@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.1.76](https://github.com/kicksideai/kickside/compare/jobs-v0.1.75...jobs-v0.1.76) (2026-11-10)
+
+
+### Bug Fixes
+
+* reserve round capacity without starving general jobs ([#401](https://github.com/kicksideai/kickside/issues/401)) ([b44ba27](https://github.com/kicksideai/kickside/commit/b44ba272f604a7d33685f7addc28351392a4ea15))
+
+## [0.1.75](https://github.com/kicksideai/kickside/compare/jobs-v0.1.74...jobs-v0.1.75) (2026-11-09)
+
+
+### Bug Fixes
+
+* **jobs:** drain expired retention batches between dispatch turns ([#387](https://github.com/kicksideai/kickside/issues/387)) ([6cf2d65](https://github.com/kicksideai/kickside/commit/6cf2d65b4ae2ec5d597018d38e1da7906831794f))
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+
+## [0.1.74](https://github.com/kicksideai/kickside/compare/jobs-v0.1.73...jobs-v0.1.74) (2026-11-07)
+
+
+### Bug Fixes
+
+* **jobs:** keep the pool running while the Settings change scope is unavailable ([#349](https://github.com/kicksideai/kickside/issues/349)) ([a946d3e](https://github.com/kicksideai/kickside/commit/a946d3e209fa276408f5c2d79364021288481108))
+
 ## [0.1.73](https://github.com/kicksideai/kickside/compare/jobs-v0.1.72...jobs-v0.1.73) (2026-11-07)
 
 

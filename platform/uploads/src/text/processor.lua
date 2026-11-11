@@ -245,8 +245,9 @@ local function process_tabular(params: any, storage: any): any
     metadata.text_preview = shape.preview
 
     local checksum = checksum_for(shape.preview .. "|" .. tostring(params.size or shape.bytes_streamed))
-    local artifact, artifact_err = artifact_content_repo.create_artifact({
+    local artifact, artifact_err = artifact_content_repo.upsert_artifact({
         upload_id = params.upload_id,
+        cancel_ref = params.cancel_ref,
         kind = "table",
         role = "primary",
         mime_type = params.mime_type or "text/csv",
@@ -301,8 +302,9 @@ local function process_text(params: any, storage: any): any
 
     local metadata = content_metadata(params)
     local checksum = checksum_for(content)
-    local artifact, artifact_err = artifact_content_repo.create_artifact({
+    local artifact, artifact_err = artifact_content_repo.upsert_artifact({
         upload_id = params.upload_id,
+        cancel_ref = params.cancel_ref,
         kind = artifact_kind(params.mime_type),
         role = "primary",
         mime_type = params.mime_type or "text/plain",

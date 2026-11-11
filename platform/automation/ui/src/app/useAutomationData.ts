@@ -1,6 +1,7 @@
 import type { Ref } from 'vue'
 import { api } from '@wippy-fe/proxy'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
+import { latestRequest } from '@kickside/ui-kit/latestRequest'
 import type { Automation, AutomationType } from './automation-types'
 
 interface AutomationDataOptions {
@@ -22,19 +23,23 @@ export function useAutomationData({ automations, types, loading, error, parentId
     }
   }
 
+  const beginFetch = latestRequest()
   async function fetchAutomations() {
+    const current = beginFetch()
     loading.value = true
     error.value = ''
     try {
       const { data } = await api.get('/api/v1/automations', { params: { class: 'automation', parent_id: parentId() } })
       if (!data?.success) throw new Error(errMsg(data?.error, 'failed to load automations'))
+      if (!current()) return
       automations.value = data.automations || []
       syncRealtimeSubscriptions()
     } catch (e) {
+      if (!current()) return
       syncRealtimeSubscriptions()
       error.value = errMsg(e, 'failed to load automations')
     } finally {
-      loading.value = false
+      if (current()) loading.value = false
     }
   }
 

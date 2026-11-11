@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.1.75](https://github.com/kicksideai/kickside/compare/models-v0.1.74...models-v0.1.75) (2026-11-09)
+
+
+### Bug Fixes
+
+* **models:** retain eligible ranked class candidates during resolution ([#399](https://github.com/kicksideai/kickside/issues/399)) ([cab10e7](https://github.com/kicksideai/kickside/commit/cab10e7533c0ff556255fcd7623b5845e2aee683))
+
+## [0.1.74](https://github.com/kicksideai/kickside/compare/models-v0.1.73...models-v0.1.74) (2026-11-09)
+
+
+### Bug Fixes
+
+* **models:** preserve enable state when assigning classes ([#393](https://github.com/kicksideai/kickside/issues/393)) ([491847b](https://github.com/kicksideai/kickside/commit/491847ba4e3a184afef858f0d4684d44606d0506))
+
+## [0.1.73](https://github.com/kicksideai/kickside/compare/models-v0.1.72...models-v0.1.73) (2026-11-09)
+
+
+### Bug Fixes
+
+* **ui:** simplify model results and move setup replay ([#380](https://github.com/kicksideai/kickside/issues/380)) ([807df19](https://github.com/kicksideai/kickside/commit/807df195bbef3d6698a47ecaeeed4290b976e471))
+
+## [0.1.72](https://github.com/kicksideai/kickside/compare/models-v0.1.71...models-v0.1.72) (2026-11-08)
+
+
+### Bug Fixes
+
+* UI artifacts in buttons, headings, dialogs and tables ([#371](https://github.com/kicksideai/kickside/issues/371)) ([ea55ea8](https://github.com/kicksideai/kickside/commit/ea55ea8a17ee5802cb73a4dbcf39878d7f56cd2e))
+
 ## [0.1.71](https://github.com/kicksideai/kickside/compare/models-v0.1.70...models-v0.1.71) (2026-10-29)
 
 

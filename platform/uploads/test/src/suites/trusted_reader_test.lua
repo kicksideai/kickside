@@ -6,7 +6,7 @@ local function not_found()
     return nil, errors.new({ kind = errors.NOT_FOUND, message = "not found" })
 end
 
-local function stub(over: any)
+local function stub(over: any?)
     local base = {
         query = { get = function(id)
             if id ~= "up-1" then return not_found() end

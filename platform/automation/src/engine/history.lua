@@ -1,6 +1,7 @@
 local json = require("json")
 local errors = require("errors")
 local provenance = require("round_provenance")
+local history = require("round_history")
 
 type Map = { [string]: any }
 local M = {}
@@ -68,6 +69,12 @@ function M.list(db: any, id: string, opts: any, validate: any): (Map?,error?)
     end
     local params: {any}={id}
     local predicate="automation_id=$1"
+    if kind == "deliveries" then
+        local cutoff,cutoff_err=history.cutoff()
+        if cutoff_err then return nil,cutoff_err end
+        params[#params+1]=cutoff
+        predicate=predicate .. " AND round_at > $" .. tostring(#params)
+    end
     if after then
         local marks: {string}={}
         for index=1,#keys do
@@ -98,7 +105,12 @@ function M.list(db: any, id: string, opts: any, validate: any): (Map?,error?)
             if row.error_json ~= nil then
                 local failure,failure_err=json.decode(row.error_json)
                 if failure_err then return nil,internal("invalid retained delivery error",failure_err) end
-                entry.error=failure
+                local summary=type(failure) == "table" and tonumber(failure.attempts) ~= nil
+                if type(failure) == "table" then
+                    entry.attempts=failure.attempts
+                    for key in pairs(failure) do if key ~= "attempts" then summary=false end end
+                end
+                if not summary or row.state ~= "resolved" then entry.error=failure end
             end
         else
             entry.generation=tonumber(row.generation)

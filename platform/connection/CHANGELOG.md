@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.5.6](https://github.com/kicksideai/kickside/compare/connection-v0.5.5...connection-v0.5.6) (2026-11-09)
+
+
+### Bug Fixes
+
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+
+## [0.5.5](https://github.com/kicksideai/kickside/compare/connection-v0.5.4...connection-v0.5.5) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
 ## [0.5.4](https://github.com/kicksideai/kickside/compare/connection-v0.5.3...connection-v0.5.4) (2026-11-07)
 
 

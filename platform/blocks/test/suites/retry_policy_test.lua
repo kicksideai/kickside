@@ -67,6 +67,7 @@ local function define_tests()
                 test.eq(plan.config.schedule_to_close_timeout, 7000)
                 local invalid, invalid_err = blocks.plan({ block_id = block_id, retry_policy = { maximum_attempts = -1 } })
                 local _, expected = retry.validate({ retry_policy = { maximum_attempts = -1 } }, "func")
+                if not expected then error("Dataflow validation accepts a negative maximum_attempts") end
                 test.is_nil(invalid)
                 test.contains(tostring(invalid_err), expected)
             end
@@ -86,6 +87,7 @@ local function define_tests()
                 { retry_policy = { maximum_interval = "1ms", initial_interval = "1s" } },
                 { start_to_close_timeout = 0 }, { schedule_to_close_timeout = "bad" } }) do
                 local _, expected = retry.validate(config, "func")
+                if not expected then error("Dataflow validation accepts " .. json.encode(config)) end
                 local execution = { kind = "function", function_id = "example:run" }
                 for k, v in pairs(config) do execution[k] = v end
                 test.contains(blocks.validate(declaration(execution)), expected)

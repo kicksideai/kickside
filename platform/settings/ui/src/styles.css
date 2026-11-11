@@ -1,6 +1,7 @@
 @import "@wippy-fe/theme/theme-config.css";
 @import "@kickside/ui-kit/spin.css";
 @import "@kickside/ui-kit/kx-tag.css";
+@import "@widgets/app/wc-mount.css";
 
 /* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
    preflight; without it PrimeVue controls keep UA defaults the theme never
@@ -94,7 +95,7 @@ wippy-loading ~ wippy-loading { display: none; }
 .ks-about-runtime { margin-bottom: 28px; }
 .ks-about-runtime span { color: var(--p-text-muted-color); margin-left: 8px; }
 .ks-about h2 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
-.ks-about-notices { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; font-size: 13px; line-height: 1.6; padding: 18px; border: 1px solid var(--p-content-border-color); border-radius: var(--p-content-border-radius); background: var(--p-content-hover-background); }
+.ks-about-notices { display: block; overflow-wrap: anywhere; padding: 18px; border: 1px solid var(--p-content-border-color); border-radius: var(--p-content-border-radius); background: var(--p-content-hover-background); }
 @media (max-width: 640px) { .ks-about-facts > div { grid-template-columns: 1fr; gap: 4px; } }
 
 /* Titled surface for a generic namespace form, so it reads like the bespoke

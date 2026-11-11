@@ -1,4 +1,4 @@
-import type { ComponentDeletionState } from '@widgets/app/useComponentDeletion'
+import type { ComponentDeletionState } from '@kickside/ui-kit/useComponentDeletion'
 // Pure list-row model for the workflow list table — no API calls, no Vue. Folds a
 // WorkflowSummary (the list read, which already carries last_run) into the fields the
 // dense table renders: a version/draft status chip, a last-run outcome, and relative

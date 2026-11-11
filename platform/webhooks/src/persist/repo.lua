@@ -1,3 +1,4 @@
+local deletion_progress = require("deletion_progress")
 -- Persistence + lifecycle for webhooks. A webhook is a thread-backed component
 -- (class kickside.webhooks) plus a side row holding its hashed secret and declared
 -- input schema. mint reserves the row and creates the caller-owned thread at the same
@@ -360,6 +361,7 @@ function M.list(options: any?): ({ Map }?, error?, string?)
         if visible[row.webhook_id] then
             local item = visible[row.webhook_id]
             row.deleting_at, row.deletion_job_id = item.deleting_at, item.deletion_job_id
+            row.deletion_job = item.deletion_job
             row.label = row.label or (item.meta and item.meta.title)
             row.schema = decode_schema(row.schema_json)
             row.schema_json = nil
@@ -367,6 +369,8 @@ function M.list(options: any?): ({ Map }?, error?, string?)
             out[#out + 1] = row
         end
     end
+    local _, progress_err = deletion_progress.enrich(out)
+    if progress_err then db:release(); return nil, progress_err end
     db:release()
     return out, nil, next_cursor
 end

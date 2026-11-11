@@ -114,8 +114,8 @@ entries:
     path: /ui/splash/{id}/seen
 
   # DELETE /ui/splash/seen (no id) resets instance completion for admins.
-  # Personal splashes keep their per-user completion. This backs the Appearance
-  # "Show setup again" action.
+  # Personal splashes keep their per-user completion. This backs the app shell
+  # "Workspace setup" action.
   - name: reset_splashes.endpoint
     kind: http.endpoint
     meta:

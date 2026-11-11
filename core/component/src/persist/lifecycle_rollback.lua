@@ -1,8 +1,9 @@
 -- The component lifecycle's single writer of the runtime-owned _rollback key
 -- (design v4 §6.3: lifecycle/reaper owns _rollback). The chain is the ordered
 -- list of cleanup steps { target, args } that teardown replays in reverse.
--- Only the privileged create path calls it; generic context writes refuse the
--- key. Runs on the caller's transaction under the component row lock.
+-- The privileged create path writes it, and a verified rollback upgrade
+-- rewrites it; generic context writes refuse the key. Runs on the caller's
+-- transaction under the component row lock.
 
 local context_ops = require("context_ops")
 
@@ -41,6 +42,24 @@ function M.write_tx(tx: any, component_id: string, chain: any): error?
     stored._rollback = steps
     local _, write_err = context_ops.write_context_tx(tx, component_id, stored)
     return write_err
+end
+
+-- upgrade_tx(tx, component_id, upgrade) -> { component_id, changes_made }:
+-- applies upgrade(chain) -> (chain, changed) to the stored rollback chain under
+-- the component row lock and writes the result when it changed. A stored
+-- chain that already holds the upgraded shape is left as it is.
+function M.upgrade_tx(tx: any, component_id: string, upgrade: any): (any?, error?)
+    if type(upgrade) ~= "function" then return nil, invalid("rollback upgrade rule is required") end
+    local stored, read_err = context_ops.lock_and_read_tx(tx, component_id)
+    if read_err or not stored then return nil, read_err end
+    local current, current_err = M.validate(stored._rollback or {})
+    if current_err or not current then return nil, current_err end
+    local upgraded, changed = upgrade(current)
+    if changed ~= true then return { component_id = component_id, changes_made = false }, nil end
+    local steps, invalid_err = M.validate(upgraded)
+    if invalid_err then return nil, invalid_err end
+    stored._rollback = steps
+    return context_ops.write_context_tx(tx, component_id, stored)
 end
 
 return M

@@ -412,7 +412,7 @@ entries:
     type: test
     suite: kickside_agents
     group: Agents / Capabilities
-    comment: Capability-only tool exposure, standalone and inline controls, and catalog rejection for CreateArtifact.
+    comment: Capability tool descriptions, standalone and inline controls, and catalog rejection for CreateArtifact.
   source: file://traits/artifacts_test.lua
   method: run
   modules:
@@ -422,6 +422,8 @@ entries:
   - json
   imports:
     test: wippy.test:test
+    list_tools: kickside.agents.api:list_tools
+    list_traits: kickside.agents.api:list_traits
 - name: agents_title_contract_authority_test
   kind: function.lua
   meta:

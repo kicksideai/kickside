@@ -360,6 +360,7 @@ entries:
     method: get
     modules: [base64]
     imports:
+      deletion_progress: kickside.component:deletion_progress
       component: kickside.component:component
       envelope: kickside.component:envelope
       types: kickside.skills:types
@@ -375,6 +376,7 @@ entries:
     method: list
     modules: [base64]
     imports:
+      deletion_progress: kickside.component:deletion_progress
       component: kickside.component:component
       envelope: kickside.component:envelope
       types: kickside.skills:types
@@ -390,6 +392,7 @@ entries:
     method: list_files
     modules: [base64]
     imports:
+      deletion_progress: kickside.component:deletion_progress
       component: kickside.component:component
       envelope: kickside.component:envelope
       types: kickside.skills:types
@@ -405,6 +408,7 @@ entries:
     method: read_file
     modules: [base64]
     imports:
+      deletion_progress: kickside.component:deletion_progress
       component: kickside.component:component
       envelope: kickside.component:envelope
       types: kickside.skills:types
@@ -420,6 +424,7 @@ entries:
     method: list_versions
     modules: [base64]
     imports:
+      deletion_progress: kickside.component:deletion_progress
       component: kickside.component:component
       envelope: kickside.component:envelope
       types: kickside.skills:types

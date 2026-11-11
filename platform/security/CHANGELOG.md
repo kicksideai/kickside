@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.26](https://github.com/kicksideai/kickside/compare/security-v0.2.25...security-v0.2.26) (2026-11-09)
+
+
+### Bug Fixes
+
+* **security:** present role permissions and grant states clearly ([#381](https://github.com/kicksideai/kickside/issues/381)) ([274bc83](https://github.com/kicksideai/kickside/commit/274bc83fe92592c408eb479357a9c74c0dcef67d))
+
+## [0.2.25](https://github.com/kicksideai/kickside/compare/security-v0.2.24...security-v0.2.25) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
 ## [0.2.24](https://github.com/kicksideai/kickside/compare/security-v0.2.23...security-v0.2.24) (2026-11-07)
 
 

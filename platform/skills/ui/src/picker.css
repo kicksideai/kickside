@@ -1,5 +1,6 @@
 @import "@wippy-fe/theme/theme-config.css";
 @import "@kickside/ui-kit/spin.css";
+@import "@widgets/app/multiselect-field.css";
 
 /* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
    preflight; without it PrimeVue controls keep UA defaults the theme never

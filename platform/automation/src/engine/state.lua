@@ -1,3 +1,4 @@
+local deletion_progress = require("deletion_progress")
 -- Automation state reads: installed and runtime listings, public state,
 -- private state and config.
 
@@ -112,6 +113,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
                 id           = c.component_id,
                 deleting_at = c.deleting_at,
                 deletion_job_id = c.deletion_job_id,
+                deletion_job = c.deletion_job,
                 type         = c.impl_id,
                 title        = meta_t.title or "",
                 owner_id     = meta_t.owner,
@@ -151,6 +153,8 @@ function part.attach(M: any, dependencies: any, P: any): ()
             end
             out[#out + 1] = entry
         end
+        local _, progress_err = deletion_progress.enrich(out)
+        if progress_err then return nil, progress_err end
         -- Each row carries the drive status its status action answers, read for
         -- the whole page at once.
         local ids: { string } = {}

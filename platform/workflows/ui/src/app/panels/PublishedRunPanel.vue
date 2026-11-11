@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import WcMount from '@widgets/app/WcMount.vue'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import SchemaEditor from './SchemaEditor.vue'
 import { getWorkflowVersion } from '../api/versions'
 const props = defineProps<{ workflowId: string; publishedVersion: number }>()

@@ -15,6 +15,9 @@ workspace:
     kickside/channel: ../../channel
     kickside/automation: ../../automation
     kickside/agents: ../../agents
+    kickside/users: ../../users
+    kickside/settings: ../../settings
+    kickside/security: ../../security
     kickside/dm-harness: .
 vars:
   sqlite_path: ":memory:"
@@ -35,3 +38,5 @@ profiles:
       "app:db:options.sslmode": disable
       "app:db:pool.max_open": 16
       "app:db:pool.max_idle": 8
+registry:
+  dispatch_internal_kinds: [registry.entry, ns.requirement, ns.dependency, ns.definition, security.scope]

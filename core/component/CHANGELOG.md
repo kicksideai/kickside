@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.3.14](https://github.com/kicksideai/kickside/compare/component-v0.3.13...component-v0.3.14) (2026-11-11)
+
+
+### Bug Fixes
+
+* tear down knowledge base dependents before deletion ([#425](https://github.com/kicksideai/kickside/issues/425)) ([4e260f0](https://github.com/kicksideai/kickside/commit/4e260f0ce160f34ef099a79f511a4d025fd73c00))
+
+## [0.3.13](https://github.com/kicksideai/kickside/compare/component-v0.3.12...component-v0.3.13) (2026-11-10)
+
+
+### Bug Fixes
+
+* **uploads:** authorize component reference assignments ([#418](https://github.com/kicksideai/kickside/issues/418)) ([08e59ef](https://github.com/kicksideai/kickside/commit/08e59ef254be2cbf91114dba3d2072ac1920aeea))
+
+## [0.3.12](https://github.com/kicksideai/kickside/compare/component-v0.3.11...component-v0.3.12) (2026-11-09)
+
+
+### Bug Fixes
+
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+* **retention:** preserve owner cleanup progress and committed writes ([#389](https://github.com/kicksideai/kickside/issues/389)) ([63f0e85](https://github.com/kicksideai/kickside/commit/63f0e859a1fef74704365e4a8f511f8b159198d4))
+
+## [0.3.11](https://github.com/kicksideai/kickside/compare/component-v0.3.10...component-v0.3.11) (2026-11-08)
+
+
+### Bug Fixes
+
+* **automation:** upgrade stored rollback steps of the retired trigger runtime on module update ([#367](https://github.com/kicksideai/kickside/issues/367)) ([26b9e6b](https://github.com/kicksideai/kickside/commit/26b9e6b3aefc32459cab739d74a44f881e03113f))
+
+## [0.3.10](https://github.com/kicksideai/kickside/compare/component-v0.3.9...component-v0.3.10) (2026-11-07)
+
+
+### Bug Fixes
+
+* keep the typed access refusal of an event round's source pull ([#347](https://github.com/kicksideai/kickside/issues/347)) ([4b7a264](https://github.com/kicksideai/kickside/commit/4b7a2640d6593e7384764785e97aa4d6bdc3e4d7))
+
 ## [0.3.9](https://github.com/kicksideai/kickside/compare/component-v0.3.8...component-v0.3.9) (2026-11-07)
 
 

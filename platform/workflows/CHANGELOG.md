@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.2.12](https://github.com/kicksideai/kickside/compare/workflows-v0.2.11...workflows-v0.2.12) (2026-11-09)
+
+
+### Bug Fixes
+
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+* **workflows:** define migration teardown for module uninstall ([#374](https://github.com/kicksideai/kickside/issues/374)) ([05b0cc3](https://github.com/kicksideai/kickside/commit/05b0cc3c267926f5d2e64edd8678c8bb76dc4d28))
+* **workflows:** simplify run inspection and knowledge summaries ([#378](https://github.com/kicksideai/kickside/issues/378)) ([d9cd391](https://github.com/kicksideai/kickside/commit/d9cd391d7ebf455f2dbde8e9dd4403253c8afb05))
+
+## [0.2.11](https://github.com/kicksideai/kickside/compare/workflows-v0.2.10...workflows-v0.2.11) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
+## [0.2.10](https://github.com/kicksideai/kickside/compare/workflows-v0.2.9...workflows-v0.2.10) (2026-11-07)
+
+
+### Bug Fixes
+
+* carry the component deletion receipt through thread, skill, webhook, workflow and agent deletes ([#341](https://github.com/kicksideai/kickside/issues/341)) ([98e9d03](https://github.com/kicksideai/kickside/commit/98e9d03b522828d63b284dff4174ef7543bef2cb))
+
 ## [0.2.9](https://github.com/kicksideai/kickside/compare/workflows-v0.2.8...workflows-v0.2.9) (2026-11-07)
 
 

@@ -1,4 +1,4 @@
-import type { MetaFieldTypes } from '@widgets/app/componentRealtime'
+import type { MetaFieldTypes } from '@kickside/ui-kit/componentRealtime'
 
 // Declared field types for the inbox component's public meta (see
 // kickside.inbox.persist:projection sync_public_meta). The realtime relay carries

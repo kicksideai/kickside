@@ -38,14 +38,22 @@ function schedule.new(dependencies: any): any
         end
         active_policy = policy
 
-        local _, sweep_err = sweep()
+        local stats, sweep_err = sweep()
         if sweep_err then
             log:error("job_worker retention sweep failed: " .. tostring(sweep_err))
             deadline_ns = now_ns + retry_delay_ms(policy) * 1000000
             return
         end
         retry_count = 0
-        deadline_ns = now_ns + policy.retention_interval_ms * 1000000
+        local full = stats.jobs >= policy.retention_batch or stats.job_runs >= policy.retention_batch
+            or stats.workers >= policy.retention_batch or stats.worker_pulses >= policy.retention_batch
+            or stats.wake_rows >= policy.retention_batch
+            or stats.thread_cleanup_receipts >= policy.retention_batch
+            or stats.thread_cleanup_fences >= policy.retention_batch
+            or stats.thread_cleanup_leftovers > 0
+        -- Each pass yields to the pool's dispatch and message handling before
+        -- another bounded pass. The idle interval starts only after draining.
+        deadline_ns = full and now_ns or now_ns + policy.retention_interval_ms * 1000000
     end
 
     return driver

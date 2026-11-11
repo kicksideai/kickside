@@ -45,6 +45,27 @@ An upload moves through storage, processing, and completion:
 3. When processing settles as `completed` or `error`, Uploads runs every
    completion callback attached to the upload.
 
+`POST /uploads` returns `{ success: true, uuid, component_id }`. When the
+same user uploads bytes that already belong to an existing upload, the response
+returns that upload's `uuid` and includes `deduped: true`. A newly created upload
+omits `deduped`.
+
+Each completed stage records its outcome in private upload metadata under the
+current job lease. Automatic retries of that job skip the completed prefix and
+enter the first incomplete stage. A new processing job, including a user-requested
+retry, starts every stage. Stages that succeed without producing all required
+outputs return `completed = false`; later stages may run, but the completed prefix
+cannot advance past the unfinished stage. An absent `completed` field preserves
+the successful-stage contract. The execution limit applies independently to each attempt.
+
+Stage artifact writes reuse the upload's role and ordinal slots. Conversion
+replaces primary content and its metadata, while automatic retries that skip
+conversion preserve OCR's recorded per-page outcomes. Rendering reuses available
+page images and writes only the missing pages. Artifact selection orders by
+ordinal, creation time and artifact id, including installations with historical
+duplicates. Immutable source artifacts remain addressable across source changes.
+`create_artifact` keeps its existing append semantics for other callers.
+
 Work that depends on a processed file attaches a completion callback instead of
 polling upload status. A callback is an upload token minted by the module that
 owns the follow-up work:

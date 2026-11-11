@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.35](https://github.com/kicksideai/kickside/compare/transfer-v0.1.34...transfer-v0.1.35) (2026-11-09)
+
+
+### Bug Fixes
+
+* rebuild six packages without baked default bindings ([#403](https://github.com/kicksideai/kickside/issues/403)) ([28bdfe1](https://github.com/kicksideai/kickside/commit/28bdfe1020d7c0ef35bc6b383f324a7c86d9042e))
+
 ## 0.1.34 (2026-10-17)
 
 - Refresh packaged module descriptions and documentation.

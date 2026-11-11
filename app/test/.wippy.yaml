@@ -20,6 +20,8 @@ workspace:
     kickside/settings: ../../platform/settings
     kickside/renderers: ../../platform/renderers
     kickside/connection: ../../platform/connection
+    kickside/knowledge: ../../platform/knowledge
+    kickside/models: ../../platform/models
 vars:
   sqlite_path: ':memory:'
   pg_host: localhost

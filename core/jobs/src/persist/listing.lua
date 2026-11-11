@@ -110,7 +110,7 @@ function listing.list_job_runs(db: Executor, thread_ids: string[], filters: tabl
     return read(db, "runs", thread_ids, filters, limit, after)
 end
 
-function listing.get_job_statuses(db: Executor, ids: string[]): (table?, error?)
+local function exact_ids(ids: string[]): (any?, error?)
     if type(ids) ~= "table" then
         return nil, errors.new({ message = "job ids must be an array", kind = errors.INVALID })
     end
@@ -124,6 +124,13 @@ function listing.get_job_statuses(db: Executor, ids: string[]): (table?, error?)
             marks[#marks + 1], values[#values + 1] = "?", id
         end
     end
+    return {marks = marks, values = values}, nil
+end
+
+function listing.get_job_statuses(db: Executor, ids: string[]): (table?, error?)
+    local selected, selection_err = exact_ids(ids)
+    if selection_err then return nil, selection_err end
+    local marks, values = selected.marks, selected.values
     if #values == 0 then return {}, nil end
     local rows, err = sql.builder.select("id", "status"):from("kickside_job")
         :where(sql.builder.expr("id IN (" .. table.concat(marks, ",") .. ")", table.unpack(values)))
@@ -135,19 +142,37 @@ function listing.get_job_statuses(db: Executor, ids: string[]): (table?, error?)
     return statuses, nil
 end
 
-function listing.get_job(db: Executor, id: string): (table?, error?)
-    if type(id) ~= "string" or id == "" then
-        return nil, (errors.new({ message = "job id is required", kind = errors.INVALID }) :: error)
-    end
-    if not uuid.validate(id) then return nil, nil end
+local function read_exact_jobs(db: Executor, ids: string[]): (table?, error?)
+    local selected, selection_err = exact_ids(ids)
+    if selection_err then return nil, selection_err end
+    local marks, values = selected.marks, selected.values
+    if #values == 0 then return {}, nil end
     local rows, err = sql.builder.select(
         "id", "thread_id", "owner_kind", "owner_id", "job_type", "status", "priority", "attempts",
         "max_attempts", "queue_tier", "idempotency_key", "last_error", "wake_enabled", "wake_control_pending", "execution_seq",
         "scheduled_at", "finished_at", "created_at", "updated_at"
     ):from("kickside_job")
-        :where(sql.builder.eq({ id = id })):limit(1):run_with(db):query()
-    local read_err = rows_error(rows, err, "failed to read job", "job.rows")
+        :where(sql.builder.expr("id IN (" .. table.concat(marks, ",") .. ")", table.unpack(values)))
+        :run_with(db):query()
+    local read_err = rows_error(rows, err, "failed to read jobs", "job.rows")
     if read_err then return nil, read_err end
+    return rows, nil
+end
+
+function listing.get_jobs(db: Executor, ids: string[]): (table?, error?)
+    local rows, err = read_exact_jobs(db, ids)
+    if err then return nil, err end
+    local out = {}
+    for _, row in ipairs(rows) do out[row.id] = row end
+    return out, nil
+end
+
+function listing.get_job(db: Executor, id: string): (table?, error?)
+    if type(id) ~= "string" or id == "" then
+        return nil, (errors.new({message = "job id is required", kind = errors.INVALID}) :: error)
+    end
+    local rows, err = read_exact_jobs(db, {id})
+    if err then return nil, err end
     return rows[1], nil
 end
 

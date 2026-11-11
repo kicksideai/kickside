@@ -67,9 +67,9 @@ local function group(first: integer, last: integer)
             for index = first, last do
                 local mode = modes[index]
                 local stages = {"delete"}
-                local transactional = mode ~= "workers" and mode ~= "wake"
+                local transactional = mode ~= "wake"
                 if transactional then stages = {"begin", "candidates", "delete", "commit"} end
-                if mode == "jobs" or mode == "runs" then
+                if mode == "jobs" or mode == "runs" or mode == "workers" then
                     stages[#stages + 1] = "dialect"
                     if dialect == sql.type.POSTGRES then stages[#stages + 1] = "prelock" end
                 elseif mode == "wake" then stages[#stages + 1] = "dialect" end

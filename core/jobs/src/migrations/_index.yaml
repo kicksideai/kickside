@@ -126,3 +126,17 @@ entries:
     imports:
       migration: wippy.migration:migration
     method: migrate
+
+  - name: 25_retention_order
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: Indexes the global expiration order for bounded Jobs retention batches.
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-11-08T00:00:25Z"
+    source: file://25_retention_order.lua
+    imports:
+      migration: wippy.migration:migration
+      run_status: kickside.core.jobs:run_status
+    method: migrate

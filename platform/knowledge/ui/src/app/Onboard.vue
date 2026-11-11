@@ -3,7 +3,7 @@ import { ref, reactive, computed, onUnmounted } from 'vue'
 import { Icon } from '@iconify/vue'
 import { api } from '@wippy-fe/proxy'
 import { useComponentEvents } from '../constants.ts'
-import { subscribeComponentMeta } from '@widgets/app/componentRealtime'
+import { subscribeComponentMeta } from '@kickside/ui-kit/componentRealtime'
 
 // kickside-onboard-knowledge — the workspace organize onboarding step. Drop files,
 // they upload + extract, then one call hands every file reference to the organize

@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.1.62](https://github.com/kicksideai/kickside/compare/widgets-v0.1.61...widgets-v0.1.62) (2026-11-10)
+
+
+### Bug Fixes
+
+* **agents:** collapse capability details and remove standalone tool selection ([#408](https://github.com/kicksideai/kickside/issues/408)) ([8e75d94](https://github.com/kicksideai/kickside/commit/8e75d94c0eb1af17d878e4fb8724042eda08f8a3))
+
+## [0.1.61](https://github.com/kicksideai/kickside/compare/widgets-v0.1.60...widgets-v0.1.61) (2026-11-09)
+
+
+### Bug Fixes
+
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+
+## [0.1.60](https://github.com/kicksideai/kickside/compare/widgets-v0.1.59...widgets-v0.1.60) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
 ## [0.1.59](https://github.com/kicksideai/kickside/compare/widgets-v0.1.58...widgets-v0.1.59) (2026-11-07)
 
 

@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.35](https://github.com/kicksideai/kickside/compare/kickside-v0.2.34...kickside-v0.2.35) (2026-11-09)
+
+
+### Bug Fixes
+
+* **ui:** simplify model results and move setup replay ([#380](https://github.com/kicksideai/kickside/issues/380)) ([807df19](https://github.com/kicksideai/kickside/commit/807df195bbef3d6698a47ecaeeed4290b976e471))
+
+## [0.2.34](https://github.com/kicksideai/kickside/compare/kickside-v0.2.33...kickside-v0.2.34) (2026-11-08)
+
+
+### Bug Fixes
+
+* UI artifacts in buttons, headings, dialogs and tables ([#371](https://github.com/kicksideai/kickside/issues/371)) ([ea55ea8](https://github.com/kicksideai/kickside/commit/ea55ea8a17ee5802cb73a4dbcf39878d7f56cd2e))
+
+## [0.2.33](https://github.com/kicksideai/kickside/compare/kickside-v0.2.32...kickside-v0.2.33) (2026-11-08)
+
+
+### Features
+
+* **ui:** let a title-less component splash step own its heading ([#369](https://github.com/kicksideai/kickside/issues/369)) ([38c9439](https://github.com/kicksideai/kickside/commit/38c9439088a70e3a2e65a6d21ab1cfcc142de099))
+
 ## [0.2.32](https://github.com/kicksideai/kickside/compare/kickside-v0.2.31...kickside-v0.2.32) (2026-11-06)
 
 

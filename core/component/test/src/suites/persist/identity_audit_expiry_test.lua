@@ -68,6 +68,89 @@ end
 
 return test.run_cases(function()
     test.describe("component identity audits bounded by age expiry", function()
+        test.it("drains expired history by continuation while preserving recent rows", function()
+            local handle = db()
+            local id = seed(handle)
+            seed_audits(handle, id, 201, "2000-01-01T00:00:00Z", "2000-01-01T00:00:00Z")
+            handle:release()
+            local passes = 0
+            repeat
+                local result, err = audit_retention.run(100)
+                test.is_nil(err, tostring(err))
+                passes = passes + 1
+                if not result.needs_continue then break end
+                test.is_true(passes < 5)
+            until false
+            local reopened = db()
+            test.eq(audits(reopened, id), 0)
+            seed_audits(reopened, id, 1, "2099-01-01T00:00:00Z", "2099-01-01T00:00:00Z")
+            reopened:release()
+            local result, err = audit_retention.run(100)
+            test.is_nil(err, tostring(err))
+            test.is_nil(result.deadline_ms, "eligibility stays paced by owner events")
+            local retained = db()
+            test.eq(audits(retained, id), 1)
+            retained:release()
+            cleanup(id)
+        end)
+
+        test.it("keeps a continuous published history stream within its age window", function()
+            for _, rate in ipairs({10,100}) do
+                local handle = db()
+                local id = seed(handle)
+                for day = 1,36 do
+                    for vintage = math.max(1,day-31),day-1 do
+                        local _, age_err = handle:execute([[UPDATE kickside_execution_identity_audit
+                            SET created_at=$1 WHERE component_id=$2 AND identity_generation>$3 AND identity_generation<=$4]],
+                            {time.now():utc():add(-(day-vintage)*24*time.HOUR):format_rfc3339(), id,
+                                vintage*1000, vintage*1000+rate})
+                        test.is_nil(age_err, tostring(age_err))
+                    end
+                    local _, seed_err = handle:execute([[WITH RECURSIVE n(x) AS (
+                        SELECT 1 UNION ALL SELECT x+1 FROM n WHERE x<]] .. tostring(rate) .. [[)
+                        INSERT INTO kickside_execution_identity_audit
+                        (component_id,identity_generation,request_id,record_json,created_at,published_at)
+                        SELECT $1,$2+x,CAST($2+x AS TEXT),'{}',$3,$3 FROM n]],
+                        {id,day*1000,time.now():utc():format_rfc3339()})
+                    test.is_nil(seed_err, tostring(seed_err))
+                    local pages = 0
+                    repeat
+                        local result, err = audit_retention.run(100)
+                        test.is_nil(err, tostring(err))
+                        pages = pages + 1
+                        test.is_true(pages < 5)
+                        if not result.needs_continue then break end
+                    until false
+                    test.eq(audits(handle,id), math.min(day,30)*rate,
+                        "retained history stays at arrival rate times the 30-day window")
+                end
+                handle:release()
+                cleanup(id)
+            end
+        end)
+
+        test.it("continues publication independently of history expiry", function()
+            local handle = db()
+            local id = seed(handle)
+            seed_audits(handle,id,201,time.now():utc():format_rfc3339(),nil)
+            local passes = 0
+            repeat
+                local result,err = audit_retention.run(100)
+                test.is_nil(err,tostring(err))
+                test.eq(result.pruned,0)
+                passes = passes + 1
+                if not result.needs_continue then break end
+                test.is_true(passes < 5)
+            until false
+            test.eq(passes,3)
+            local rows = assert(handle:query([[SELECT COUNT(*) AS n FROM kickside_execution_identity_audit
+                WHERE component_id=$1 AND published_at IS NULL]],{id}))
+            test.eq(tonumber(rows[1].n),0)
+            test.eq(audits(handle,id),201)
+            handle:release()
+            cleanup(id)
+        end)
+
         test.it("sets identity past the former per-owner audit count across reopened connections", function()
             local handle = db()
             local id = seed(handle)

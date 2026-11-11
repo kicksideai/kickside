@@ -210,21 +210,26 @@ local function define_tests()
                                     "app:observer_barrier_view_" .. index}, effect = "allow"}}})
                 end
                 test.is_nil(select(2, changes:apply()))
-                -- Let the registry subscription establish current authority.
-                -- The observer receipt then arrives after that event-driven
-                -- pass, just as it does after a governance changeset.
+                -- Live authority reads the source policies before their catalog
+                -- projection commits. Wait for the projector's own catalog entry.
                 local deadline = time.now():add(30 * time.SECOND)
                 local projected = false
                 while time.now():before(deadline) do
-                    local scope = source_scope.resolve("app:declared_members")
-                    if scope and scope:evaluate(security.new_actor("member"), "access",
-                        "app:observer_barrier_endpoint_12000") == "allow" then
-                        projected = true
-                        break
+                    local entries = assert(registry.find({[".kind"] = "registry.entry",
+                        ["meta.type"] = "kickside.security.scope_projection",
+                        ["meta.target"] = "app:declared_members"}))
+                    for _, entry in ipairs(entries) do
+                        for _, policy in ipairs(entry.data.policies or {}) do
+                            if policy == "app:observer_barrier_12000" then projected = true; break end
+                        end
                     end
+                    if projected then break end
                     time.sleep("25ms")
                 end
                 test.is_true(projected, "the registry event did not project the committed policy")
+                local scope = assert(source_scope.resolve("app:declared_members"))
+                test.eq(scope:evaluate(security.new_actor("member"), "access",
+                    "app:observer_barrier_endpoint_12000"), "allow")
                 local version = assert(registry.current_version()):id()
                 local stats, observer_err = funcs.call("kickside.security.binding:registry_observer", {
                     request_id = "observer-barrier", result = {success = true, version = tostring(version)}})

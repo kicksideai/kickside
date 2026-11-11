@@ -39,8 +39,12 @@ local function require_owned_upload(req: any, res: any): (any?, string?)
     end
 
     local upload, err = upload_query_repo.get(upload_id)
-    if err or not upload then
-        json_error(res, http.STATUS.NOT_FOUND, "Upload not found", err)
+    if err and not errors.is(err, errors.NOT_FOUND) then
+        json_error(res, http_errors.classify(err), tostring(err))
+        return nil, "lookup_failed"
+    end
+    if not upload then
+        json_error(res, http.STATUS.NOT_FOUND, "Upload not found")
         return nil, "not_found"
     end
     local component_id = types.component_id_for_owner(upload.actor_id)
@@ -50,7 +54,11 @@ local function require_owned_upload(req: any, res: any): (any?, string?)
     end
     local _, access_err = component.validate_access(component_id, component.ACCESS.READ)
     if access_err then
-        json_error(res, http_errors.classify(access_err), tostring(access_err))
+        if errors.is(access_err, errors.PERMISSION_DENIED) or errors.is(access_err, errors.NOT_FOUND) then
+            json_error(res, http.STATUS.NOT_FOUND, "Upload not found")
+        else
+            json_error(res, http_errors.classify(access_err), tostring(access_err))
+        end
         return nil, "forbidden"
     end
     return upload, nil
@@ -64,8 +72,12 @@ local function require_readable_upload(req: any, res: any, artifact_id: string?)
     end
 
     local upload, err = upload_query_repo.get(upload_id)
-    if err or not upload then
-        json_error(res, http.STATUS.NOT_FOUND, "Upload not found", err)
+    if err and not errors.is(err, errors.NOT_FOUND) then
+        json_error(res, http_errors.classify(err), tostring(err))
+        return nil, "lookup_failed"
+    end
+    if not upload then
+        json_error(res, http.STATUS.NOT_FOUND, "Upload not found")
         return nil, "not_found"
     end
 
@@ -93,7 +105,11 @@ local function require_readable_upload(req: any, res: any, artifact_id: string?)
     end
     local _, access_err = component.validate_access(component_id, component.ACCESS.READ)
     if access_err then
-        json_error(res, http_errors.classify(access_err), tostring(access_err))
+        if errors.is(access_err, errors.PERMISSION_DENIED) or errors.is(access_err, errors.NOT_FOUND) then
+            json_error(res, http.STATUS.NOT_FOUND, "Upload not found")
+        else
+            json_error(res, http_errors.classify(access_err), tostring(access_err))
+        end
         return nil, "forbidden"
     end
     return upload, nil

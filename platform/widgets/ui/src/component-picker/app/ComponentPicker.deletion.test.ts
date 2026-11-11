@@ -16,7 +16,7 @@ for (const unavailable of [false, true]) it(`retains accepted deletion with refr
     if (accepted && unavailable) throw new Error('Read unavailable')
     return ({data: String(url).includes('/components/')
     ? {success: true, deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'pending', attempts: 0}}
-    : {success: true, items: [{id: 'selected', label: 'Selected webhook', ...(accepted ? {deleting_at: 'marked', deletion_job_id: 'job'} : {})}]}}) as never
+    : {success: true, items: [{id: 'selected', label: 'Selected webhook', ...(accepted ? {deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'pending', attempts: 0}} : {})}]}}) as never
   })
   vi.mocked(api.delete).mockImplementation(async () => {accepted = true; return {data: {success: true, deleted: false, in_progress: true, job_id: 'job'}} as never})
   const wrapper = mount(ComponentPicker, {global: {stubs: {AnchoredPanel: {props: ['open'], template: '<div v-if="open"><slot /></div>'}}}})
@@ -72,3 +72,18 @@ it('clears the selection when a reload omits the selected row after its deletion
   expect(wrapper.get('.cp-value').classes()).toContain('cp-ph')
   wrapper.unmount()
 })
+
+for (const job of [null, {status: 'dead', attempts: 3, last_error: 'cleanup refused'}]) {
+  it(`preserves listed ${job?.status ?? 'missing'} progress and retries through the owning endpoint`, async () => {
+    vi.clearAllMocks()
+    const wrapper = await openWithSelected(() => [{id: 'selected', label: 'Selected webhook', deleting_at: 'marked', deletion_job_id: 'job', deletion_job: job}])
+    expect(wrapper.text()).toContain('Deletion failed')
+    if (job) expect(wrapper.text()).toContain(job.last_error)
+    expect(vi.mocked(api.get).mock.calls.some(([url]: unknown[]) => String(url).startsWith('/api/v1/components/'))).toBe(false)
+    vi.mocked(api.delete).mockResolvedValue({data: {success: true, in_progress: true, job_id: 'retry-job'}} as never)
+    await wrapper.get('.component-deletion button').trigger('click')
+    await flushPromises()
+    expect(api.delete).toHaveBeenCalledWith('/api/v1/webhooks/selected')
+    wrapper.unmount()
+  })
+}

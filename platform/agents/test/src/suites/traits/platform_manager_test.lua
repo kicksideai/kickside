@@ -266,6 +266,7 @@ local function define_tests()
             local deleted_id = created.agent.component_id
             local receipt, delete_err = exec:call(TOOL, { action = "delete_agent", component_id = deleted_id })
             test.is_nil(delete_err, tostring(delete_err))
+            test.is_true(receipt.success)
             test.eq(receipt.component_id, deleted_id)
             test.is_false(receipt.deleted)
             test.is_true(receipt.in_progress)

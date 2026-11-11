@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ComponentDeletion from '@widgets/app/ComponentDeletion.vue'
+import ComponentDeletion from '@kickside/ui-kit/ComponentDeletion.vue'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import ProgressSpinner from 'primevue/progressspinner'

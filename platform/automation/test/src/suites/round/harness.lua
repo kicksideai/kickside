@@ -120,8 +120,9 @@ function M.receive_logged(listener: Map, timeout: string?, diagnostic: (() -> st
     return data :: Map
 end
 
--- A probe sharing the round's concurrency key cannot run until that round's
--- claim has completed. Its direct reply is the completion barrier.
+-- The probe shares the round's awaited class, so its later due time follows
+-- the round before it acquires their shared concurrency key. Its direct reply
+-- is the completion barrier.
 function M.await_worker_pass(concurrency_key: string, park_job_id: string?): ()
     local topic = "round.worker.probe." .. uuid.v7()
     local ready = process.listen(topic, { message = true })
@@ -310,14 +311,14 @@ end
 -- automation, the source thread with append(text), and run(), a
 -- round attempt through a runner constructed with explicit dependencies
 -- (env.completions records every slot completion).
-function M.setup(prefix: string): Map
+function M.setup(prefix: string, kind: string?): Map
     local env: Map = { completions = {}, warnings = {}, notifications = {} }
     env.owner = prefix .. "_" .. uuid.v4():sub(1, 8)
     env.actor = security.new_actor(env.owner, { security_groups = { "automation_test" } })
     env.scope = security.named_scope(PROC_SCOPE)
     env.caller = funcs.new():with_actor(env.actor):with_scope(env.scope)
     M.ensure_log()
-    local installed, install_err = env.caller:call(MANAGE_TOOL, { action = "install", type = M.FIXTURE_KIND, input = {} })
+    local installed, install_err = env.caller:call(MANAGE_TOOL, { action = "install", type = kind or M.FIXTURE_KIND, input = {} })
     if install_err or not installed or not installed.success then error("fixture install: " .. tostring(install_err or (installed and installed.error))) end
     env.automation_id = installed.id
     local def = contract.get("kickside.core:threads")
