@@ -160,7 +160,8 @@ entries:
                 "required": [
                   "page_count",
                   "revision",
-                  "pages"
+                  "pages",
+                  "text_bound"
                 ]
               }
             }
