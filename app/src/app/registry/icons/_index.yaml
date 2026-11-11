@@ -1,0 +1,16 @@
+version: "1.0"
+namespace: app.icons
+
+entries:
+  # app.icons:local_source_default
+  - name: local_source_default
+    kind: function.lua
+    meta:
+      comment: Makes this server the default Iconify source once, without replacing a saved choice.
+      type: bootloader
+      order: 60
+      requires:
+        - wippy.migration:migration_bootloader
+    source: file://local_source_default.lua
+    method: run
+    modules: [sql]

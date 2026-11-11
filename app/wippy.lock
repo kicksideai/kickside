@@ -109,6 +109,12 @@ modules:
     - name: wippy/bootloader
       version: 0.3.18
       hash: c7e71b358539b450b49b55e725f60f2dac8218e1c596cf3a473ce71e36b10a9b
+    - name: wippy/cdn
+      version: 0.0.4
+      hash: 9f62219e80af1e7e78cf354727910a7ab895f0c3d633e8dfe02d9cfb444be4a4
+    - name: wippy/cdn-iconify
+      version: 0.0.4
+      hash: 7263b2d77bfc1ce6ee117f7ce2aeb5bd40cca799b8261d9ee5860dc22f143427
     - name: wippy/dataflow
       version: 0.7.33
       hash: 94af0f43e560d0daaa2a47c40f07de2ea20c392d519237ae71c4b8c0ea828094

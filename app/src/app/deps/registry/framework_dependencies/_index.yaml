@@ -12,6 +12,42 @@ entries:
       - name: env_storage
         value: app.env:store
 
+  # app.deps:cdn
+  # Serves icon collections from this server (EE2-2845). Its README verifies SQLite only.
+  - version: ">=0.0.4"
+    name: cdn
+    kind: ns.dependency
+    meta: {}
+    component: wippy/cdn
+    parameters:
+      - name: wippy.cdn:database
+        value: app:db
+      - name: wippy.cdn:data_directory
+        value: app:cdn_data
+      - name: wippy.cdn:process_host
+        value: app:processes
+      - name: wippy.cdn:admin_server
+        value: app:gateway
+      - name: wippy.cdn:management_router
+        value: app:api
+      - name: wippy.cdn:management_security_scope
+        value: app.security:admin
+
+  # app.deps:cdn_iconify
+  # Hybrid mode answers from the stored collections (tabler, mdi, svg-spinners) and fetches any
+  # other icon set server-side from the public Iconify API. Set mode to offline for no outbound
+  # icon requests; then add every other icon set the app uses to the CDN library.
+  - version: ">=0.0.4"
+    name: cdn_iconify
+    kind: ns.dependency
+    meta: {}
+    component: wippy/cdn-iconify
+    parameters:
+      - name: wippy.cdn.iconify:server
+        value: app:gateway
+      - name: wippy.cdn.iconify:mode
+        value: hybrid
+
   # app.deps:migration
   - version: ">=0.3.26"
     name: migration
