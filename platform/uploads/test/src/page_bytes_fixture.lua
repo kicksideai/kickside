@@ -1,9 +1,5 @@
 -- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
-local M: {stage: string, err: error?, diagnostic: string?, closed: boolean} = {stage = "", closed = false}
-
-function M.named(_self, _name: string)
-    return {warn = function(_log, _message: string, fields: {error: string}) M.diagnostic = fields.error end}
-end
+local M: {stage: string, err: error?, closed: boolean} = {stage = "", closed = false}
 
 function M.get_storage(_id: string)
     if M.stage == "acquire" then return nil, M.err end

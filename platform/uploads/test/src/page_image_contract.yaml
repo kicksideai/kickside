@@ -11,7 +11,7 @@ entries:
     modules: [hash]
     imports:
       resources: app:page_bytes_fixture
-      logger: app:page_bytes_fixture
+      logger: app:page_bytes_logger
       binding_errors: kickside.uploads.binding:binding_errors
       types: kickside.uploads:types
   - name: page_bytes_test
@@ -23,6 +23,10 @@ entries:
       test: wippy.test:test
       page_bytes: app:page_bytes_reader_fixture
       fixture: app:page_bytes_fixture
+      logger: app:page_bytes_logger
+  - name: page_bytes_logger
+    kind: library.lua
+    source: file://page_bytes_logger.lua
   - name: page_image_contract_test
     kind: function.lua
     source: file://page_image_contract_test.lua
