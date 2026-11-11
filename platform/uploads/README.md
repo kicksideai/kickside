@@ -139,6 +139,14 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 | [`kickside.uploads:api_router`](src/_index.yaml) | Host supplies the value |
 | [`kickside.uploads.security:user_security_scope`](src/security/_index.yaml) | `kickside.security.groups:members` |
 
+## Page images
+
+The optional [`kickside.uploads:page_images`](src/README.md#page-images) contract
+reads one authorized document page on demand without persisting a rendition.
+Ordinary conversion and OCR rendering add an optional `source_checksum` field to
+new primary-text and rendered-page locators returned by existing artifact APIs;
+processing selection, defaults and settings remain unchanged.
+
 ## Links
 
 - [KickSide](https://kickside.ai)

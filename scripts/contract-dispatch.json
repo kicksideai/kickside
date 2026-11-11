@@ -136,5 +136,16 @@
       ]
     },
     "reason": "Intended usage: a spreadsheet ingest module opens the kickside.data:readable binding its host wires as the reader and reads back what a store holds: list and describe a target, plan and query its rows and per-period profile, and lookup which of a file's keys it already holds."
+  },
+  {
+    "module": "kickside/docscout",
+    "source": "docscout/src/engine/pages.lua",
+    "contracts": {
+      "kickside.uploads:page_images": [
+        "get_info",
+        "read_image"
+      ]
+    },
+    "reason": "Intended usage: document readers discover authorized page counts and availability, bind text selection to the source revision, and read one bounded physical page image through the uploads contract."
   }
 ]

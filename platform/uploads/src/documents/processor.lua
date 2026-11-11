@@ -254,6 +254,7 @@ local function process(params: any): any
         locator = {
             type = "document.markdown",
             source_artifact_id = source_artifact_id,
+            source_checksum = source_checksum,
         },
         metadata = metadata,
     })

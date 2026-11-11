@@ -124,7 +124,9 @@ local function scripted_document(config: any): string
 end
 
 local function script_state(path: string): any
-    return assert(json.decode(assert(assert(fs.get(STORAGE_ID)):readfile(path))))
+    local bytes, read_err = assert(fs.get(STORAGE_ID)):readfile(path)
+    assert(bytes, read_err)
+    return assert(json.decode(bytes))
 end
 
 local function save_stage_metadata(upload_id: string, result: any): any
@@ -144,11 +146,12 @@ local function define_tests()
         end)
 
         test.it("returns nil for mimes no rasterizer handles", function()
-            test.is_nil(rasterizer.find_by_mime("image/png"))
-            test.is_nil(rasterizer.find_by_mime("text/plain"))
-            test.is_nil(rasterizer.find_by_mime("application/zip"))
-            test.is_nil(rasterizer.find_by_mime(""))
-            test.is_nil(rasterizer.find_by_mime(nil))
+            for _, mime in ipairs({"image/png", "text/plain", "application/zip", ""}) do
+                local found, err = rasterizer.find_by_mime(mime)
+                test.is_nil(found); test.is_nil(err, tostring(err))
+            end
+            local found, err = rasterizer.find_by_mime(nil)
+            test.is_nil(found); test.is_nil(err, tostring(err))
         end)
     end)
 

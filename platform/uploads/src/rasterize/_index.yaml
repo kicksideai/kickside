@@ -12,6 +12,8 @@ entries:
       comment: Discovery for convert.rasterizer plugins; resolves the best rasterizer for a source mime.
     source: file://rasterizer.lua
     modules: [registry]
+    imports:
+      types: kickside.uploads:types
 
   - name: page_images
     kind: library.lua

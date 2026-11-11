@@ -1,0 +1,290 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: kickside.uploads
+entries:
+- name: page_images
+  kind: contract.definition
+  meta:
+    comment: Authorized, revision-bound document page discovery and one-page image reads. Non-paged and unsupported
+      files have typed states; reads raise native errors with stable codes.
+  methods:
+  - name: get_info
+    description: Discover at most 128 page states without rendering. A continuation cursor requires the returned
+      revision. not_paged, unsupported and page_mapping_unavailable have no page count. Authorization precedes
+      source discovery. text_bound is true only when the primary text locator proves the source checksum;
+      otherwise text is absent and does not enter the revision.
+    input_schemas:
+    - definition: |
+        {
+          "type": "object",
+          "required": [
+            "upload_id"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "upload_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "cursor": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "revision": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      format: application/schema+json
+    output_schemas:
+    - definition: |
+        {
+          "type": "object",
+          "required": [
+            "state",
+            "limits"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "state": {
+              "enum": [
+                "paged",
+                "not_paged",
+                "unsupported",
+                "page_mapping_unavailable"
+              ]
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "max_bytes",
+                "max_width",
+                "max_height",
+                "max_pages",
+                "formats"
+              ],
+              "properties": {
+                "max_bytes": {
+                  "const": 4194304
+                },
+                "max_width": {
+                  "const": 4096
+                },
+                "max_height": {
+                  "const": 4096
+                },
+                "max_pages": {
+                  "const": 1
+                },
+                "formats": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "image/png",
+                      "image/jpeg"
+                    ]
+                  }
+                }
+              }
+            },
+            "page_count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "revision": {
+              "type": "string",
+              "minLength": 1
+            },
+            "text_bound": { "type": "boolean" },
+            "text": {
+              "type": "object",
+              "required": [
+                "artifact_id",
+                "checksum"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "artifact_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "checksum": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "pages": {
+              "type": "array",
+              "maxItems": 128,
+              "items": {
+                "type": "object",
+                "required": [
+                  "page",
+                  "state"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "page": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "state": {
+                    "enum": [
+                      "available",
+                      "renderable",
+                      "unavailable",
+                      "unsupported"
+                    ]
+                  }
+                }
+              }
+            },
+            "next_cursor": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "state": {
+                    "const": "paged"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "page_count",
+                  "revision",
+                  "pages",
+                  "text_bound"
+                ]
+              }
+            }
+          ]
+        }
+      format: application/schema+json
+  - name: read_image
+    description: Read one physical page as request-scoped bytes. Requires the current revision. Native error
+      codes include not_paged, unsupported, page_mapping_unavailable, revision_mismatch, source_unavailable,
+      invalid_page_request, page_render_failed, page_renderer_response_invalid, page_image_storage_failed,
+      page_image_limit_exceeded and page_image_format_unsupported. No output is persisted; limits may only
+      tighten the published ceilings.
+    input_schemas:
+    - definition: |
+        {
+          "type": "object",
+          "required": [
+            "upload_id",
+            "page",
+            "revision"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "upload_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "page": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "revision": {
+              "type": "string",
+              "minLength": 1
+            },
+            "max_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4194304
+            },
+            "max_width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4096
+            },
+            "max_height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4096
+            }
+          }
+        }
+      format: application/schema+json
+    output_schemas:
+    - definition: |
+        {
+          "type": "object",
+          "required": [
+            "page",
+            "revision",
+            "image_checksum",
+            "mime_type",
+            "width",
+            "height",
+            "size",
+            "bytes"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "page": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "size": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "revision": {
+              "type": "string",
+              "minLength": 1
+            },
+            "image_checksum": {
+              "type": "string",
+              "minLength": 1
+            },
+            "bytes": {
+              "type": "string",
+              "minLength": 1
+            },
+            "mime_type": {
+              "enum": [
+                "image/png",
+                "image/jpeg"
+              ]
+            }
+          }
+        }
+      format: application/schema+json
+- name: page_images_impl
+  kind: contract.binding
+  meta:
+    comment: Upload-authorized document page images.
+  contracts:
+  - contract: kickside.uploads:page_images
+    default: true
+    methods:
+      get_info: kickside.uploads.pages:get_info
+      read_image: kickside.uploads.pages:read_image
+- name: original_read
+  kind: library.lua
+  source: file://original_read.lua
+  modules:
+  - security
+  imports:
+    component: kickside.component:component
+    access_policy: kickside.component:access_policy
+    execution_identity: kickside.execution:execution_identity
+    types: kickside.uploads:types

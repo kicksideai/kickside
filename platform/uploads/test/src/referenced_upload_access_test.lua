@@ -3,6 +3,7 @@ local test = require("test")
 local uuid = require("uuid")
 local security = require("security")
 local funcs = require("funcs")
+local contract = require("contract")
 local fs = require("fs")
 local records = require("records")
 local sql = require("sql")
@@ -41,6 +42,17 @@ return {run = test.run_cases(function()
             local response, err = http_client.get("http://127.0.0.1:" .. port .. "/reference/uploads/" .. (id or upload_id) .. (suffix or "/raw") .. (query or ""),
                 {headers = {Authorization = "Bearer " .. token}})
             test.is_nil(err, tostring(err))
+            if query == nil and id == nil and suffix == nil then
+                local page_api = assert(assert(contract.get("kickside.uploads:page_images"))
+                    :with_actor(security.new_actor(actor, {security_groups = {"app:uploads_test"}}))
+                    :with_scope(security.named_scope("wippy.security:process")):open())
+                local info, page_err = page_api:get_info({upload_id = upload_id})
+                if response.status_code == 200 then
+                    test.is_nil(page_err, tostring(page_err)); test.eq(info.state, "not_paged")
+                else
+                    test.is_nil(info); test.is_true(errors.is(page_err, errors.NOT_FOUND))
+                end
+            end
             return response
         end
         local function legacy_reference(actor, metadata)

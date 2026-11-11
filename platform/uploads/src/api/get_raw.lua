@@ -1,14 +1,11 @@
 local http = require("http")
-local security = require("security")
 local uploads_resources = require("uploads_resources")
 
 local upload_query_repo = require("upload_query_repo")
-local component = require("component")
-local access_policy = require("access_policy")
-local execution_identity = require("execution_identity")
 local upload_tokens = require("upload_tokens")
-local types = require("types")
 local http_errors = require("http_errors")
+local original_read = require("original_read")
+local types = require("types")
 
 -- Stream original bytes after verifying upload access or an authorized reference.
 local function raw_handler()
@@ -46,95 +43,13 @@ local function raw_handler()
         local cap = upload_tokens.unpack_read(token, { upload_id = uuid, artifact_id = false })
         bearer_ok = cap ~= nil
     end
-    -- The upload actor always reads their own bytes. Otherwise the upload may be exposed
-    -- through a shared component (e.g. a workspace file component carrying
-    -- meta.upload_id): honor component READ so a recipient of a shared file can
-    -- actually fetch it, instead of 403-ing on the blob while the component is shared.
     if not bearer_ok then
-        local actor = security.actor()
-        if not actor then
-            res:set_status(http.STATUS.UNAUTHORIZED)
+        local _, access_err = original_read.authorize(upload :: types.UploadReadRef)
+        if access_err then
+            local details = access_err:details() or {}
+            res:set_status(details.code == "authentication_required" and http.STATUS.UNAUTHORIZED or http_errors.classify(access_err))
             res:set_content_type(http.CONTENT.JSON)
-            res:write_json({ success = false, error = "Authentication required" })
-            return
-        end
-        local actor_id = actor:id()
-        if upload.actor_id == actor_id then
-            bearer_ok = true
-        end
-    end
-    local container_id = types.component_id_for_owner(upload.actor_id)
-    if not bearer_ok then
-        if not container_id then
-            res:set_status(http.STATUS.INTERNAL_ERROR)
-            res:set_content_type(http.CONTENT.JSON)
-            res:write_json({ success = false, error = "Upload owner is invalid" })
-            return
-        end
-        local _, container_err = component.validate_access(container_id, component.ACCESS.READ)
-        if not container_err then
-            bearer_ok = true
-        elseif not errors.is(container_err, errors.PERMISSION_DENIED) and not errors.is(container_err, errors.NOT_FOUND) then
-            res:set_status(http_errors.classify(container_err))
-            res:set_content_type(http.CONTENT.JSON)
-            res:write_json({ success = false, error = tostring(container_err) })
-            return
-        end
-    end
-    if not bearer_ok then
-        local references, reference_err = component.query({meta = {upload_id = uuid},
-            access_mask = component.ACCESS.READ, limit = 16, include = {meta = false}})
-        if reference_err then
-            res:set_status(http_errors.classify(reference_err))
-            res:set_content_type(http.CONTENT.JSON)
-            res:write_json({success = false, error = tostring(reference_err)})
-            return
-        end
-        local checked: {[string]: boolean} = {}
-        for _, reference in ipairs(references or {}) do
-            local context, context_err = component.get_private_context(reference.component_id)
-            if context_err then
-                res:set_status(http_errors.classify(context_err))
-                res:set_content_type(http.CONTENT.JSON)
-                res:write_json({success = false, error = tostring(context_err)})
-                return
-            end
-            -- Public metadata cannot establish who authorizes a reference. Core
-            -- captures this principal at creation and rejects generic writes to it.
-            local captured = context and context._execution_identity
-            if captured and captured.principal then
-                local principal, principal_err = execution_identity.check_principal(captured.principal, "reference creator")
-                if principal_err then
-                    res:set_status(http_errors.classify(principal_err))
-                    res:set_content_type(http.CONTENT.JSON)
-                    res:write_json({success = false, error = tostring(principal_err)})
-                    return
-                end
-                local principal_key = execution_identity.actor_key(principal)
-                if not checked[principal_key] then
-                    checked[principal_key] = true
-                    if principal_key == upload.actor_id then
-                        bearer_ok = true
-                        break
-                    end
-                    local masks, masks_err = component.principal_masks_system(principal, {container_id})
-                    if masks_err then
-                        res:set_status(http_errors.classify(masks_err))
-                        res:set_content_type(http.CONTENT.JSON)
-                        res:write_json({success = false, error = tostring(masks_err)})
-                        return
-                    end
-                    if access_policy.has_all((masks or {})[container_id] or 0, component.ACCESS.READ) then
-                        bearer_ok = true
-                        break
-                    end
-                end
-            end
-        end
-        if not bearer_ok then
-            res:set_status(http.STATUS.NOT_FOUND)
-            res:set_content_type(http.CONTENT.JSON)
-            res:write_json({success = false, error = "Upload not found"})
+            res:write_json({success = false, error = tostring(access_err)})
             return
         end
     end

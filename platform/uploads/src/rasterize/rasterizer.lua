@@ -1,4 +1,5 @@
 local registry = require("registry")
+local types = require("types")
 
 -- Discovery for rasterizer plugins. A converter advertises that it can turn a
 -- source mime type into page images by publishing a registry.entry with
@@ -9,24 +10,24 @@ local M = {}
 
 local META_TYPE = "convert.rasterizer"
 
-local function data(entry: any): { [string]: any }
+local function data(entry: types.RasterizerEntry): types.RasterizerSpec
     if type(entry) ~= "table" then return {} end
-    if type(entry.data) == "table" then return entry.data :: { [string]: any } end
-    return entry :: { [string]: any }
+    if type(entry.data) == "table" then return entry.data :: types.RasterizerSpec end
+    return entry :: types.RasterizerSpec
 end
 
-local function meta(entry: any): { [string]: any }
-    if type(entry) == "table" and type(entry.meta) == "table" then return entry.meta :: { [string]: any } end
+local function meta(entry: types.RasterizerEntry): types.RasterizerSpec
+    if type(entry) == "table" and type(entry.meta) == "table" then return entry.meta :: types.RasterizerSpec end
     return {}
 end
 
-local function priority(entry: any): number
+local function priority(entry: types.RasterizerEntry): number
     local d = data(entry)
     local m = meta(entry)
     return tonumber(d.priority or m.priority) or 0
 end
 
-local function mime_matches(entry: any, mime_type: string): boolean
+local function mime_matches(entry: types.RasterizerEntry, mime_type: string): boolean
     local d = data(entry)
     if type(d.input_mime_types) ~= "table" then return false end
     for _, mime in ipairs(d.input_mime_types) do
@@ -39,14 +40,18 @@ end
 
 -- find_by_mime(mime) -> rasterizer | nil. Highest-priority registered rasterizer
 -- whose input_mime_types match the source mime, or nil when none can handle it.
-function M.find_by_mime(mime_type: any): any?
+function M.find_by_mime(mime_type: string?): (types.PageRenderer?, error?)
     if type(mime_type) ~= "string" or mime_type == "" then return nil end
 
     local entries, err = registry.find({ [".kind"] = "registry.entry", ["meta.type"] = META_TYPE })
-    if err or type(entries) ~= "table" then return nil end
+    if err then return nil, err end
+    if type(entries) ~= "table" then
+        return nil, errors.new({kind = errors.INVALID, message = "Invalid rasterizer discovery response",
+            retryable = false, details = {code = "rasterizer_discovery_invalid"}})
+    end
 
-    local matches: { any } = {}
-    for _, entry in ipairs(entries) do
+    local matches: { types.RasterizerEntry } = {}
+    for _, entry in ipairs(entries :: {types.RasterizerEntry}) do
         if mime_matches(entry, mime_type) then matches[#matches + 1] = entry end
     end
     if #matches == 0 then return nil end
