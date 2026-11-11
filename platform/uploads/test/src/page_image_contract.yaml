@@ -2,6 +2,27 @@
 version: '1.0'
 namespace: app
 entries:
+  - name: page_bytes_fixture
+    kind: library.lua
+    source: file://page_bytes_fixture.lua
+  - name: page_bytes_reader_fixture
+    kind: library.lua
+    source: file://fixtures/page_bytes.lua
+    modules: [hash]
+    imports:
+      resources: app:page_bytes_fixture
+      logger: app:page_bytes_fixture
+      binding_errors: kickside.uploads.binding:binding_errors
+      types: kickside.uploads:types
+  - name: page_bytes_test
+    kind: function.lua
+    source: file://page_bytes_test.lua
+    method: run
+    meta: {type: test, suite: page_images}
+    imports:
+      test: wippy.test:test
+      page_bytes: app:page_bytes_reader_fixture
+      fixture: app:page_bytes_fixture
   - name: page_image_contract_test
     kind: function.lua
     source: file://page_image_contract_test.lua
