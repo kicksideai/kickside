@@ -13,7 +13,6 @@ function M.authorize(upload: types.UploadReadRef): (boolean?, error?)
         return nil, errors.new({kind = errors.PERMISSION_DENIED, message = "Authentication required",
             retryable = false, details = {code = "authentication_required"}})
     end
-    if upload.actor_id == actor:id() then return true, nil end
     local container_id = types.component_id_for_owner(upload.actor_id)
     if not container_id then
         return nil, errors.new({kind = errors.INTERNAL, message = "Upload owner is invalid", retryable = false})

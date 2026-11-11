@@ -13,7 +13,7 @@ type PageLimitRequest = { max_bytes: number?, max_width: number?, max_height: nu
 type PageReadRequest = PageLimitRequest & { upload_id: string, page: integer, revision: string }
 type PageText = { artifact_id: string, checksum: string }
 type PageEntry = { page: integer, state: string }
-type PageInfo = { state: string, page_count: integer?, revision: string?, text: PageText?,
+type PageInfo = { state: string, page_count: integer?, revision: string?, text: PageText?, text_bound: boolean?,
     pages: {PageEntry}?, next_cursor: integer?, limits: PageLimits }
 type PageImage = { page: integer, revision: string, image_checksum: string, mime_type: string,
     width: integer, height: integer, size: integer, bytes: string }
@@ -25,7 +25,7 @@ type PageRenderer = { processor_func: string, id: string?, input_mime_types: {st
 type PageRenderRequest = { ref: {storage_id: string, storage_path: string, bytes: string}, count_only: boolean?,
     pages: {integer}?, dpi: integer?, format: string?, quality: integer? }
 type PageRenderResult = { ok: {total: integer, pages: {{page: integer, bytes: string, format: string}}?}?,
-    err: {message: string}? }
+    err: error | string | {message: string, kind: string?, retryable: boolean?, code: string?}? }
 type PageLocation = { storage_id: string, storage_path: string, size: number? }
 
 local M = {}

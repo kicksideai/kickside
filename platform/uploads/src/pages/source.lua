@@ -55,10 +55,12 @@ function M.snapshot(upload_id: string): (types.PageSnapshot?, error?)
         if locator.source_checksum and locator.source_checksum ~= source.checksum then
             return nil, binding_errors.new(errors.INVALID, "Text and page source revisions differ", "revision_mismatch")
         end
-        if not primary.checksum or primary.checksum == "" then
+        if locator.source_checksum and (not primary.checksum or primary.checksum == "") then
             return nil, binding_errors.new(errors.INVALID, "Text revision is unavailable", "revision_mismatch")
         end
-        text = {artifact_id = primary.artifact_id, checksum = primary.checksum}
+        if locator.source_checksum == source.checksum then
+            text = {artifact_id = primary.artifact_id, checksum = primary.checksum}
+        end
     end
     local location, location_err = content.resolve_storage(source)
     if location_err then return nil, binding_errors.from(location_err, errors.NOT_FOUND, "source_unavailable") end

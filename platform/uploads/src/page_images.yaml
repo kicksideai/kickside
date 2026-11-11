@@ -11,7 +11,8 @@ entries:
   - name: get_info
     description: Discover at most 128 page states without rendering. A continuation cursor requires the returned
       revision. not_paged, unsupported and page_mapping_unavailable have no page count. Authorization precedes
-      source discovery.
+      source discovery. text_bound is true only when the primary text locator proves the source checksum;
+      otherwise text is absent and does not enter the revision.
     input_schemas:
     - definition: |
         {
@@ -96,6 +97,7 @@ entries:
               "type": "string",
               "minLength": 1
             },
+            "text_bound": { "type": "boolean" },
             "text": {
               "type": "object",
               "required": [

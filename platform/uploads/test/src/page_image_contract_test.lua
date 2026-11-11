@@ -11,6 +11,7 @@ local content = require("content")
 local parts = require("parts")
 local cleanup = require("cleanup")
 local fixtures = require("fixtures")
+local types = require("types")
 local image_validation = require("image_validation")
 
 local function open(actor)
@@ -36,6 +37,10 @@ return {run = test.run_cases(function()
         end
         test.before_each(function()
             owner, upload_id = uuid.v4(), uuid.v4()
+            local registered = assert(funcs.new():with_actor(security.new_actor(owner, {security_groups = {"app:uploads_test"}}))
+                :with_scope(security.named_scope("wippy.security:process")):call("kickside.component.binding:register_component_func",
+                    {component_id = types.component_id_for_owner(owner), impl_id = types.IMPL, meta = {}}))
+            test.is_true(registered.success, registered.error)
             storage = assert(fs.get("app:uploads"))
             assert(storage:writefile(upload_id, fixtures.pdf))
         end)
@@ -59,6 +64,17 @@ return {run = test.run_cases(function()
             test.eq(image.image_checksum, assert(hash.sha256(image.bytes)))
             test.eq(#assert(parts.list_artifacts(upload_id)), 2)
         end)
+        test.it("keeps corrupt PDF failures permanent through the installed adapter", function()
+            local bytes = "corrupt PDF"
+            assert(storage:writefile(upload_id, bytes))
+            assert(records.create(upload_id, owner, #bytes, "application/pdf", "app:uploads", upload_id, "documents", {}, "completed"))
+            assert(content.create_artifact({upload_id = upload_id, kind = "file", role = "source",
+                checksum = assert(hash.sha256(bytes)), mime_type = "application/pdf",
+                locator = {type = "upload.original", storage_id = "app:uploads", storage_path = upload_id}}))
+            local info, err = open(owner):get_info({upload_id = upload_id})
+            test.is_nil(info); test.eq(err:kind(), errors.INVALID); test.eq(err:retryable(), false)
+            test.eq(err:details().code, "decode_failed")
+        end)
         test.it("reads a relocated source through the uploads storage adapter", function()
             seed("application/pdf")
             local destination = assert(fs.get("app:other_uploads"))
@@ -71,7 +87,8 @@ return {run = test.run_cases(function()
             test.eq(image.mime_type, "image/jpeg")
         end)
         test.it("records the converted source checksum in text provenance", function()
-            seed("application/pdf")
+            assert(records.create(upload_id, owner, #fixtures.pdf, "application/pdf", "app:uploads", upload_id,
+                "documents", {}, "completed"))
             local result, err = funcs.new():with_actor(security.new_actor(owner, {security_groups = {"app:uploads_test"}}))
                 :with_scope(security.named_scope("wippy.security:process")):call("kickside.uploads.documents:processor",
                     {upload_id = upload_id, mime_type = "application/pdf", storage_id = "app:uploads", storage_path = upload_id})
@@ -84,6 +101,17 @@ return {run = test.run_cases(function()
                 end
             end
             test.is_true(found)
+            local api = assert(funcs.new():with_actor(security.new_actor(owner, {security_groups = {"app:uploads_test"}}))
+                :with_scope(security.named_scope("wippy.security:process")):with_context({upload_id = upload_id})
+                :call("app:upload_artifacts_probe", {}))
+            test.eq(api.status, 200)
+            local locator = api.body.primary.locator
+            test.eq(locator.type, "document.markdown")
+            test.not_nil(locator.source_artifact_id)
+            test.eq(locator.source_checksum, assert(hash.sha256(fixtures.pdf)))
+            local keys = 0
+            for _ in pairs(locator) do keys = keys + 1 end
+            test.eq(keys, 3)
         end)
         test.it("reuses a renderer artifact only when its source checksum is recorded", function()
             local primary = seed("application/pdf")

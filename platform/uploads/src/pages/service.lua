@@ -25,10 +25,20 @@ local function render(snapshot: types.PageSnapshot, bytes: string, page: integer
         if type(response.err) == "userdata" then
             return nil, binding_errors.from(response.err, errors.UNAVAILABLE, "page_render_failed")
         end
-        if type(response.err) ~= "table" or type(response.err.message) ~= "string" then
+        local failure = response.err
+        if type(failure) == "string" then
+            return nil, binding_errors.new(errors.UNAVAILABLE, failure, "page_render_failed", true)
+        end
+        if type(failure) ~= "table" or type(failure.message) ~= "string" then
             return nil, binding_errors.new(errors.INVALID, "Page renderer returns an invalid error", "page_renderer_response_invalid")
         end
-        return nil, binding_errors.new(errors.UNAVAILABLE, response.err.message, "page_render_failed", true)
+        if failure.kind == nil and failure.retryable == nil and failure.code == nil then
+            return nil, binding_errors.new(errors.UNAVAILABLE, failure.message, "page_render_failed", true)
+        end
+        if type(failure.kind) ~= "string" or type(failure.retryable) ~= "boolean" or type(failure.code) ~= "string" then
+            return nil, binding_errors.new(errors.INVALID, "Page renderer returns an invalid error", "page_renderer_response_invalid")
+        end
+        return nil, binding_errors.new(failure.kind, failure.message, failure.code, failure.retryable)
     end
     if type(response.ok) ~= "table" then
         return nil, binding_errors.new(errors.INVALID, "Page renderer returns an invalid envelope", "page_renderer_response_invalid")
@@ -76,7 +86,7 @@ function M.get_info(req: types.PageInfoRequest): (types.PageInfo?, error?)
     end
     local current_err = still_current(snapshot)
     if current_err then return nil, current_err end
-    return {state = "paged", page_count = total, revision = snapshot.revision, text = snapshot.text,
+    return {state = "paged", page_count = total, revision = snapshot.revision, text = snapshot.text, text_bound = snapshot.text ~= nil,
         pages = pages, next_cursor = last < total and last + 1 or nil, limits = limits}, nil
 end
 
@@ -97,9 +107,6 @@ function M.read_image(req: types.PageReadRequest): (types.PageImage?, error?)
     local source_bytes, source_err = page_bytes.read(snapshot.location :: types.PageLocation, 134217728,
         "page_source_limit_exceeded", snapshot.source.checksum)
     if source_err then return nil, source_err end
-    local counted, count_err = render(snapshot, source_bytes :: string)
-    if count_err then return nil, count_err end
-    if req.page > counted.ok.total then return nil, invalid("Page is outside the document") end
     local before_render_err = still_current(snapshot)
     if before_render_err then return nil, before_render_err end
     local artifact = source.stored(snapshot, req.page)
@@ -117,7 +124,7 @@ function M.read_image(req: types.PageReadRequest): (types.PageImage?, error?)
         local rendered, render_err = render(snapshot, source_bytes :: string, req.page)
         if render_err then return nil, render_err end
         local pages = rendered.ok.pages
-        if rendered.ok.total ~= counted.ok.total or type(pages) ~= "table" or #pages ~= 1
+        if req.page > rendered.ok.total or type(pages) ~= "table" or #pages ~= 1
             or type(pages[1]) ~= "table" or pages[1].page ~= req.page or type(pages[1].bytes) ~= "string" then
             return nil, binding_errors.new(errors.INVALID, "Page renderer returns an invalid page", "page_renderer_response_invalid")
         end

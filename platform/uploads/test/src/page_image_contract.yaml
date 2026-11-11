@@ -9,6 +9,7 @@ entries:
     meta: {type: test, suite: page_images}
     modules: [contract, security, uuid, fs, hash, funcs]
     imports:
+      types: kickside.uploads:types
       image_validation: kickside.uploads.pages:image
       test: wippy.test:test
       records: kickside.uploads.persist:upload_record_repo
@@ -21,18 +22,19 @@ entries:
     source: file://page_image_boundaries_test.lua
     method: run
     meta: {type: test, suite: page_images}
-    modules: [contract, security, uuid, fs, json, hash, funcs]
+    modules: [contract, security, uuid, fs, json, hash, funcs, process, channel, time, sql]
     imports:
       test: wippy.test:test
       records: kickside.uploads.persist:upload_record_repo
       content: kickside.uploads.persist:artifact_content_repo
       cleanup: kickside.uploads.persist:artifact_cleanup_repo
       types: kickside.uploads:types
+      parts: kickside.uploads.persist:artifact_parts_repo
   - name: page_image_renderer
     kind: function.lua
     source: file://page_image_renderer.lua
     method: run
-    modules: [fs, json, base64, sql]
+    modules: [fs, json, base64, sql, process, channel]
   - name: page_image_rasterizer
     kind: registry.entry
     meta: {type: convert.rasterizer}
@@ -68,3 +70,26 @@ entries:
     imports:
       test: wippy.test:test
       image: kickside.uploads.pages:image
+  - name: page_owner_scope_test
+    kind: function.lua
+    source: file://page_owner_scope_test.lua
+    method: run
+    meta: {type: test, suite: page_images}
+    modules: [security, funcs, contract, uuid, fs]
+    imports:
+      test: wippy.test:test
+      records: kickside.uploads.persist:upload_record_repo
+      types: kickside.uploads:types
+  - name: page_owner_scope_deny
+    kind: security.policy
+    policy:
+      resources:
+        - get_access_context
+        - query
+      actions: contract.call
+      effect: deny
+  - name: page_read_child
+    kind: process.lua
+    source: file://page_read_child.lua
+    method: main
+    modules: [contract, security]

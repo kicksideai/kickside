@@ -40,7 +40,7 @@ end
 
 -- find_by_mime(mime) -> rasterizer | nil. Highest-priority registered rasterizer
 -- whose input_mime_types match the source mime, or nil when none can handle it.
-function M.find_by_mime(mime_type: string): (types.PageRenderer?, error?)
+function M.find_by_mime(mime_type: string?): (types.PageRenderer?, error?)
     if type(mime_type) ~= "string" or mime_type == "" then return nil end
 
     local entries, err = registry.find({ [".kind"] = "registry.entry", ["meta.type"] = META_TYPE })
