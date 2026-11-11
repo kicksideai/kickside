@@ -4,7 +4,7 @@ local types = require("types")
 local binding_errors = require("binding_errors")
 local M = {}
 
-function M.limits(req: types.PageReadRequest?): (types.PageLimits?, error?)
+function M.limits(req: types.PageLimitRequest?): (types.PageLimits?, error?)
     local limits: types.PageLimits = {max_pages = 1, max_bytes = 4194304, max_width = 4096, max_height = 4096,
         formats = {"image/png", "image/jpeg"}}
     for _, key in ipairs({"max_bytes", "max_width", "max_height"}) do

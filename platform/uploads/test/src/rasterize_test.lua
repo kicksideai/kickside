@@ -146,11 +146,12 @@ local function define_tests()
         end)
 
         test.it("returns nil for mimes no rasterizer handles", function()
-            test.is_nil(rasterizer.find_by_mime("image/png"))
-            test.is_nil(rasterizer.find_by_mime("text/plain"))
-            test.is_nil(rasterizer.find_by_mime("application/zip"))
-            test.is_nil(rasterizer.find_by_mime(""))
-            test.is_nil(rasterizer.find_by_mime(nil))
+            for _, mime in ipairs({"image/png", "text/plain", "application/zip", ""}) do
+                local found, err = rasterizer.find_by_mime(mime)
+                test.is_nil(found); test.is_nil(err, tostring(err))
+            end
+            local found, err = rasterizer.find_by_mime(nil)
+            test.is_nil(found); test.is_nil(err, tostring(err))
         end)
     end)
 

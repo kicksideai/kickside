@@ -9,8 +9,8 @@ type PageArtifact = { artifact_id: string, upload_id: string, parent_artifact_id
 type PageLimits = { max_bytes: integer, max_width: integer, max_height: integer, max_pages: integer,
     formats: {string} }
 type PageInfoRequest = { upload_id: string, cursor: integer?, revision: string? }
-type PageReadRequest = { upload_id: string, page: integer, revision: string,
-    max_bytes: integer?, max_width: integer?, max_height: integer? }
+type PageLimitRequest = { max_bytes: number?, max_width: number?, max_height: number? }
+type PageReadRequest = PageLimitRequest & { upload_id: string, page: integer, revision: string }
 type PageText = { artifact_id: string, checksum: string }
 type PageEntry = { page: integer, state: string }
 type PageInfo = { state: string, page_count: integer?, revision: string?, text: PageText?,
