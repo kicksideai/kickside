@@ -7,7 +7,9 @@ entries:
     source: file://implementation_scope_test.lua
     method: run
     modules: [sql, uuid, time, funcs, security]
-    imports: {test: "wippy.test:test"}
+    imports:
+      test: wippy.test:test
+      placement: kickside.component.persist:placement
   - name: implementation_scope_probe
     kind: function.lua
     source: file://implementation_scope_probe.lua
@@ -16,6 +18,7 @@ entries:
     imports:
       component_reader: kickside.component.persist:component_reader
       ops: kickside.component.persist:component_ops
+      component: kickside.component:component
   - name: implementation_scope_runtime
     kind: security.policy
     groups: [app:implementation_scope]
