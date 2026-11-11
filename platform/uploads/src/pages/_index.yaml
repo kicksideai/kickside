@@ -45,7 +45,7 @@ entries:
 - name: bytes
   kind: library.lua
   source: file://bytes.lua
-  modules: [hash]
+  modules: [hash, logger]
   imports:
     resources: kickside.uploads.binding:uploads_resources
     binding_errors: kickside.uploads.binding:binding_errors
