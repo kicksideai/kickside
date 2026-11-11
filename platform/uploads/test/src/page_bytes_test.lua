@@ -23,7 +23,7 @@ return {run = test.run_cases(function()
                     test.eq(err:details().code, spec[3])
                     test.eq(err:message(), "page source could not be read")
                     test.is_nil(err:details().cause); test.is_nil(err:details().path)
-                    test.is_nil(tostring(err):find("/private/source", 1, true))
+                    test.is_nil((tostring(err):find("/private/source", 1, true)))
                     test.eq(logger.diagnostic, tostring(fixture.err))
                     if stage == "read" or stage == "close" then test.is_true(fixture.closed) end
                 end)
