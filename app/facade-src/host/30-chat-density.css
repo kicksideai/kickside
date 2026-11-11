@@ -30,9 +30,11 @@
   --kickside-chat-focus-ring-width: calc(var(--p-focus-ring-width) / 0.8125);
   --kickside-chat-focus-ring-offset: calc(var(--p-focus-ring-offset) / 0.8125);
 }
-/* The zoom draws a 2px ring 1.625px wide, and Chrome draws that as 1px. The
-   zoomed body reads the ring tokens divided above, on the container, because a
-   custom property cannot be set from its own value. */
+/* The outline ring of a control that draws no border. The zoom draws its 2px
+   width 1.625px wide, and Chrome draws that as 1px. The zoomed body reads the
+   ring width and offset divided above, on the container, because a custom
+   property cannot be set from its own value. The halo of a bordered control
+   (`--p-focus-ring-shadow`) is a composite value and stays zoomed. */
 :where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container > :not(.session-selector, .chat-container__header-actions) {
   --p-focus-ring-width: var(--kickside-chat-focus-ring-width);
   --p-focus-ring-offset: var(--kickside-chat-focus-ring-offset);
