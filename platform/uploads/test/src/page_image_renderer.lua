@@ -9,7 +9,7 @@ local channel = require("channel")
 return {run = function(req)
     local storage = assert(fs.get(req.ref.storage_id))
     local config = assert(json.decode(req.ref.bytes))
-    if config.native_error then return {err = config.native_error} end
+    if config.native_error and (not config.error_on_render or not req.count_only) then return {err = config.native_error} end
     if config.string_error then return {err = "Old adapter fails"} end
     if not req.count_only and req.pages[1] > (config.total or 257) then
         return {err = {message = "Page is outside the document", kind = errors.INVALID, retryable = false, code = "out_of_range"}}
