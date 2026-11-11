@@ -34,6 +34,18 @@ Existing versions are accepted only when their whole-file SHA-256 matches the
 prepared artifact. Never replace an existing version or mix preparation commands
 to resume a release.
 
+### Secret scan before commit
+
+Install the hook once per clone with [pre-commit](https://pre-commit.com):
+`pre-commit install`. On each commit gitleaks scans the staged changes and
+refuses a commit that carries a secret (an API key, a token, a password).
+pre-commit builds gitleaks on the first commit, which takes about a minute once.
+
+If gitleaks stops a commit, remove the secret and supply it through the
+environment instead. A value that only looks like a secret, such as a test
+fixture, goes into `.gitleaks.toml` as an exception for that file and that
+value. A secret that already reached a commit is leaked: rotate it.
+
 ## Pull requests
 
 Create a focused branch and submit a GitHub pull request to this repository.
