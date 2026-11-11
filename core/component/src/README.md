@@ -49,3 +49,20 @@ in their transaction after checking component access. The operation locks the
 component before its metadata, keeps the maximum finite nonnegative integer,
 and retains existing row identity and creation time. It reports corrupt stored
 values instead of replacing them. It adds no table, requirement or migration.
+
+## Deleting placement dependents
+
+`component.delete_children(parent_id)` requires DELETE access to the parent and
+preflights DELETE access to every placement descendant before changing any
+component. It deletes descendants children-first through the normal component
+service, including each kind's deletable teardown. It observes existing deletion
+jobs within a 30-second request deadline that starts before traversal and is
+checked before each read and delete. Iterative traversal handles at most 1,000
+descendants per request; larger trees return a conflict asking to delete in parts
+before any deletion. An access refusal, teardown failure or incomplete deletion
+returns a conflict with `deleted_count`. It names a blocker only when the caller
+can read it; hidden access blockers return a generic conflict without an id.
+The parent remains untouched; successfully deleted children stay deleted if
+later cleanup fails. Pending or running jobs retain historical errors without
+stopping the wait; terminal dead or cancelled jobs stop deletion.
+No child is reparented. Callers delete the parent only after this function succeeds.

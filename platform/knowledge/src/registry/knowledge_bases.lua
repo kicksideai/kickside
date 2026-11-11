@@ -359,6 +359,9 @@ function M.delete(args: any): (kb_types.ComponentRef?, error?)
         if not store then return nil, envelope.call_error(store_err, "store_open") end
     end
 
+    local _, children_err = component.delete_children(component_id)
+    if children_err then return nil, children_err end
+
     local result, err = svc:delete({ component_id = component_id })
     if err then return nil, envelope.call_error(err, "delete_component") end
     local result_err = envelope.error_of(result, "delete_component")
