@@ -1,4 +1,6 @@
 local runs_read = require("runs_read")
+local run_time = require("run_time")
+local env = require("env")
 local function attach(M: any, I: any): ()
 local types, store, log = I.types, I.store, I.log
 local json = I.json
@@ -111,6 +113,20 @@ function M.run_node_headers(workflow_id: any, run_id: any): (any?, any?)
     return out, nil
 end
 
+local function expired_window(run: Map): (number?, any?)
+    if not types.RUN_TERMINAL[run.status] then return nil, nil end
+    local value, setting_err = env.get("userspace.dataflow.env:diagnostic_retention_days")
+    if setting_err then return nil, setting_err end
+    local days = tonumber(value)
+    if not days or days < 0 or days > 36500 or days % 1 ~= 0 then
+        return nil, errors.new({ kind = errors.INTERNAL, message = "invalid dataflow diagnostic retention window" })
+    end
+    if days == 0 then return nil, nil end
+    local age = run_time.delta_ms(run.finished_at, I.time.now():utc():format(I.time.RFC3339))
+    if age and age > days * 24 * 60 * 60 * 1000 then return days, nil end
+    return nil, nil
+end
+
 -- run_node_data — data rows for one def_node_id, ordered by data_id ASC (uuid v7,
 -- engine's own tiebreak), paged. The replay/inspection feed (V4.7). The third
 -- value is the offset of the following page, absent on the last page.
@@ -173,10 +189,20 @@ function M.run_node_data(workflow_id: any, run_id: any, def_node_id: any, opts: 
             local values: { any } = {}
             for _, data_id in ipairs(result.content.data_ids) do
                 local output = by_id[data_id]
-                if not output then return nil, errors.new({ kind = errors.INTERNAL, message = "step output reference is unavailable: " .. data_id }) end
+                if not output then
+                    local days, window_err = expired_window(run :: Map)
+                    if window_err then return nil, window_err end
+                    if not days then
+                        return nil, errors.new({ kind = errors.INTERNAL, message = "step output reference is unavailable: " .. data_id })
+                    end
+                    result.row.data_expired = true
+                    result.row.retention_days = days
+                    result.row.content = nil
+                    break
+                end
                 values[#values + 1] = output.content
             end
-            if #values > 0 then
+            if #values > 0 and not result.row.data_expired then
                 result.content.output = #values == 1 and values[1] or values
                 result.row.content = result.content
             end

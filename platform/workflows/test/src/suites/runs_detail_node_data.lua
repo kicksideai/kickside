@@ -340,6 +340,48 @@ local function define_tests()
             test.eq((result.output :: Map).passages, "found")
         end)
 
+        for _, fixture in ipairs({
+            { status = "completed", age = 31, expired = true },
+            { status = "failed", age = 31, expired = true },
+            { status = "completed", age = 1, expired = false },
+            { status = "running", age = 31, expired = false },
+        }) do
+            test.it("classifies missing step references for " .. fixture.status .. " at " .. fixture.age .. " days", function()
+                local id = wid()
+                publishable(id)
+                runs._client_new = function() return stub_client({ created = 0, started = 0 }) end
+                runs._update_public_meta = function(_c, _p) end
+                local launched = select(1, runs.launch(id, { version = 1, input = {} })) :: Map
+                local time = require("time")
+                local stamp = time.now():add(-fixture.age * 24 * time.HOUR):format(time.RFC3339)
+                local db = select(1, store.open_db())
+                local _, update_err = db:execute("UPDATE workflow_runs SET status=$1, finished_at=$2 WHERE run_id=$3",
+                    { fixture.status, stamp, launched.run_id })
+                db:release()
+                test.is_nil(update_err)
+                local node_reader, data_reader = dedup_scaffold.readers({
+                    { node_id = "engine-code", type = "func", status = "completed", metadata = { def_node_id = "code" } },
+                }, {
+                    { data_id = "completion", node_id = "engine-code", type = "node.result", created_at = stamp,
+                        content = { success = true, data_ids = { "missing-output" } } },
+                })
+                local scoped_runs = runs.new({ node_reader = node_reader, data_reader = data_reader })
+                local rows, err = scoped_runs.run_node_data(id, launched.run_id, "code", {})
+                if fixture.expired then
+                    test.is_nil(err, tostring(err))
+                    test.eq(#rows, 1)
+                    test.eq(rows[1].data_expired, true)
+                    test.eq(rows[1].retention_days, 30)
+                    test.is_nil(rows[1].content)
+                    test.eq(rows[1].created_at, stamp)
+                else
+                    test.is_nil(rows)
+                    test.is_true(errors.is(err, errors.INTERNAL))
+                    test.is_true(tostring(err):find("step output reference is unavailable", 1, true) ~= nil)
+                end
+            end)
+        end
+
         test.it("pages a step's data rows with next_offset", function()
             local id = wid()
             publishable(id)

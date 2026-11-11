@@ -104,17 +104,23 @@ owner; it is never repaired by an app-side polling loop.
 
 Kickside enables Dataflow diagnostic retention by default, including after an
 application update and restart. The dependency parameters set
-`userspace.dataflow:retention_enabled` to `true`,
-`userspace.dataflow:retention_interval_seconds` to `60`, and
-`userspace.dataflow:retention_batch_size` to `1000`; the engine's
-`userspace.dataflow:diagnostic_retention_days` default remains 30 days.
-For terminal flow families older than that window, the engine deletes expired
-intermediate diagnostics and applied commits, preserving flow and node summaries,
-inputs, outputs, results, agent evidence, pending commits, and the last applied
-commit; active families and recent history remain intact.
-The engine removes at most 1,000 rows per table per 60-second interval
-(60,000 rows per hour each from `dataflow_data` and `dataflow_commits`), so
-expired history can accumulate when eligible writes exceed that ceiling.
+`userspace.dataflow:retention_enabled` to `true` and
+`userspace.dataflow:retention_batch_size` to `1000`; the engine defaults remain
+30 days for `userspace.dataflow:diagnostic_retention_days` and 3600 seconds for
+`userspace.dataflow:retention_interval_seconds`.
+When every member of a terminal flow family has its last update older than the
+window, the engine deletes expired intermediate diagnostics (including node
+inputs and referenced step outputs) and eligible applied commits. Public flow
+inputs and final outputs, flow and node summaries, durable results, agent
+evidence, pending commits and the commit referenced by `last_commit_id` remain;
+active families and recent history remain intact. When a retained run references
+expired step data, the inspector shows “Step data expired after N days” using the
+effective diagnostic window; the separate workflow run-summary retention policy
+still applies.
+The engine removes at most 1,000 rows per table per hour from `dataflow_data` and
+`dataflow_commits`, with an hour between completed passes, so eligible writes
+above that nominal ceiling outpace cleanup and execution or contention lowers
+actual throughput.
 
 ## Answer a round
 

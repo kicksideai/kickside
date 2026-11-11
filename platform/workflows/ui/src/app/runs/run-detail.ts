@@ -193,6 +193,7 @@ export function truncatePayload(text: string, maxLines = 40): TruncatedPayload {
 
 // ── The fold ────────────────────────────────────────────────────────────────
 export interface NodeInspection {
+  expiredAfterDays?: number
   input: unknown | null
   output: unknown | null
   error: NodeErrorView | null
@@ -214,6 +215,7 @@ export function buildNodeInspection(rows: RunNodeDataRow[], opts: BuildOptions =
     error = reason ? { message: reason, hasDetail: true } : { message: GENERIC_HEADLINE, hasDetail: false }
   }
   return {
+    expiredAfterDays: rows.find(row => row.data_expired === true)?.retention_days,
     input: extractInputSample(rows),
     output: extractOutputSample(rows),
     error,

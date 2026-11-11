@@ -1,13 +1,13 @@
-import { A as $w, b as Tl, c as gt, B as wt, d as yt, z as qn, e as Qr, R as sn, T as Pn, f as to, g as Ml, h as er, i as St, j as Rn, F as Ew, M as Uu, k as Bf, l as Iw, m as xt, Y as Ow, I as Nw, v as Ff, D as Aw, S as Tw, L as Mw, n as Dw, $ as Pw, J as Rw, p as Tn, s as We, o as Wu, q as Vf, u as Hf, r as jf, _ as zw, t as Is, Q as vr, C as Lw, K as gr, V as qu, w as Bw, x as Ku, a as Fw, W as Vw, P as Hw } from "./index-BhiG6P-P.js";
-import { inject as Nt, watch as _e, onBeforeUnmount as rt, openBlock as x, createElementBlock as N, mergeProps as ie, createElementVNode as _, resolveComponent as He, renderSlot as pe, Fragment as ue, renderList as Te, createCommentVNode as K, createVNode as z, resolveDirective as tr, createTextVNode as ce, toDisplayString as G, normalizeClass as Se, createBlock as ne, resolveDynamicComponent as Fe, withCtx as te, Transition as Uf, normalizeProps as Di, createSlots as Fr, withDirectives as un, withModifiers as Ue, defineComponent as be, computed as U, unref as p, ref as Y, nextTick as Ve, normalizeStyle as je, withKeys as tt, createPropsRestProxy as jw, toRef as Ae, onMounted as Ke, getCurrentScope as Wf, effectScope as qf, provide as cn, getCurrentInstance as no, useAttrs as Dl, Teleport as Uw, useSlots as Kf, onUnmounted as Ww, reactive as Pl, onScopeDispose as Vr, onBeforeMount as qw, shallowRef as at, isMemoSame as Kw, toValue as Me, isRef as Rl, toRefs as Gw, customRef as Yw, h as Le, markRaw as it, readonly as Xw, watchEffect as Gf, TransitionGroup as Zw, vShow as Jw, toHandlers as wr, vModelText as Qw, proxyRefs as Yf, createStaticVNode as ey } from "vue";
+import { A as $w, b as Tl, c as gt, B as wt, d as yt, z as qn, e as Qr, R as sn, T as Pn, f as to, g as Ml, h as er, i as St, j as Rn, F as Ew, M as Uu, k as Bf, l as Iw, m as xt, Y as Ow, I as Nw, v as Ff, D as Aw, S as Tw, L as Mw, n as Dw, $ as Pw, J as Rw, p as Tn, s as je, o as Wu, q as Vf, u as Hf, r as jf, _ as zw, t as Is, Q as vr, C as Lw, K as gr, V as qu, w as Bw, x as Ku, a as Fw, W as Vw, P as Hw } from "./index-BhiG6P-P.js";
+import { inject as Nt, watch as _e, onBeforeUnmount as rt, openBlock as x, createElementBlock as N, mergeProps as ie, createElementVNode as _, resolveComponent as He, renderSlot as pe, Fragment as ue, renderList as Te, createCommentVNode as K, createVNode as z, resolveDirective as tr, createTextVNode as ce, toDisplayString as G, normalizeClass as Se, createBlock as ne, resolveDynamicComponent as Fe, withCtx as te, Transition as Uf, normalizeProps as Di, createSlots as Fr, withDirectives as un, withModifiers as We, defineComponent as be, computed as U, unref as p, ref as Y, nextTick as Ve, normalizeStyle as Ue, withKeys as tt, createPropsRestProxy as jw, toRef as Ae, onMounted as Ke, getCurrentScope as Wf, effectScope as qf, provide as cn, getCurrentInstance as no, useAttrs as Dl, Teleport as Uw, useSlots as Kf, onUnmounted as Ww, reactive as Pl, onScopeDispose as Vr, onBeforeMount as qw, shallowRef as at, isMemoSame as Kw, toValue as Me, isRef as Rl, toRefs as Gw, customRef as Yw, h as Le, markRaw as it, readonly as Xw, watchEffect as Gf, TransitionGroup as Zw, vShow as Jw, toHandlers as wr, vModelText as Qw, proxyRefs as Yf, createStaticVNode as ey } from "vue";
 import { on as ei, api as oo, loadByTagName as Pi, define as ty } from "@wippy-fe/proxy";
 import { s as nt, a as Xf } from "./index-CghiLgVY.js";
 import { n as Co, p as ny, a as ti, s as oy, g as Zf, b as Ri, c as Jf, d as zl, e as Ll, f as he, h as qe, i as ry, j as Gu, k as Qf, l as iy, m as ep, o as tp, q as Yu, t as ay, F as Lt, r as zi, u as ni, v as np, w as oi, x as Bl, y as Os, z as Fl, A as Li, B as Vl, C as Xu, D as sy, E as ly, G as Zu, K as et, H as uy, I as cy, _ as dy, J as fy, L as py, M as hy, N as my, O as Ju, P as vy, Q as gy, R as wy, S as yy, T as by, U as xy, V as op, W as ky, X as _y, Y as Cy } from "./wc-mount-krbIT6pk.js";
 import { s as mt } from "./index-BpA9WGJi.js";
 import { Icon as ae } from "@iconify/vue";
 import { x as Yt, s as Xt, p as Sy, P as $y, l as rp, F as Ey, u as Iy, b as Oy, g as ip, a as Ny, r as Ay } from "./versions-d9QvfoPQ.js";
-import { r as dn, a as Hl, b as So, c as jl, s as It, d as Ty, i as My, e as Dy, g as ua, f as Py, h as ca, j as Ry, l as ap, k as sp, p as Qu, n as zy, m as Ly, o as lp, q as bo, t as $o, u as Ul, _ as ao, v as up, w as By, x as Fy, y as Vy, z as cp, A as Hy, B as jy } from "./http-error-Z5dIGHrb.js";
-import { s as Wl, a as ql, _ as Kl, h as Bn, A as ec } from "./SchemaEditor.vue_vue_type_script_setup_true_lang-D2NlDiFL.js";
+import { r as dn, a as Hl, b as So, c as jl, s as It, d as Ty, i as My, e as Dy, g as ua, f as Py, h as ca, j as Ry, l as ap, k as sp, p as Qu, n as zy, m as Ly, o as lp, q as bo, t as $o, u as Ul, _ as ao, v as up, w as By, x as Fy, y as Vy, z as cp, A as Hy, B as jy } from "./http-error-DfC6O1G2.js";
+import { s as Wl, a as ql, _ as Kl, h as Bn, A as ec } from "./SchemaEditor.vue_vue_type_script_setup_true_lang-CYKF9Z9r.js";
 import { _ as Hr } from "./WcMount.vue_vue_type_script_setup_true_lang-CNWT59Oh.js";
 import { e as Uy } from "./errMsg-CxKGcp1F.js";
 function Eo(e) {
@@ -2897,7 +2897,7 @@ function _1(e, t, n, o, r, i) {
                   onMousemove: function(D) {
                     return i.onOptionMouseMove(D, i.getOptionIndex(A, w));
                   },
-                  onClick: t[8] || (t[8] = Ue(function() {
+                  onClick: t[8] || (t[8] = We(function() {
                   }, ["stop"])),
                   "data-p-selected": !e.checkmark && i.isSelected(F),
                   "data-p-focused": r.focusedOptionIndex === i.getOptionIndex(A, w),
@@ -3131,9 +3131,9 @@ const C1 = { class: "kx-head" }, S1 = { class: "kx-head-icon" }, $1 = { class: "
       key: 0,
       class: "component-deletion",
       role: "status",
-      onClick: r[1] || (r[1] = Ue(() => {
+      onClick: r[1] || (r[1] = We(() => {
       }, ["stop"])),
-      onKeydown: r[2] || (r[2] = Ue(() => {
+      onKeydown: r[2] || (r[2] = We(() => {
       }, ["stop"]))
     }, [
       n.value ? (x(), N(ue, { key: 0 }, [
@@ -3146,7 +3146,7 @@ const C1 = { class: "kx-head" }, S1 = { class: "kx-head-icon" }, $1 = { class: "
           severity: "secondary",
           size: "small",
           outlined: "",
-          onClick: r[0] || (r[0] = Ue((i) => o.$emit("retry"), ["stop"]))
+          onClick: r[0] || (r[0] = We((i) => o.$emit("retry"), ["stop"]))
         })
       ], 64)) : (x(), N(ue, { key: 1 }, [
         z(p(mt), {
@@ -3243,19 +3243,19 @@ const D1 = /* @__PURE__ */ be({
       r.value && v.includes(r.value) || n.anchor && v.includes(n.anchor) || o("update:open", !1);
     }
     function h(g) {
-      n.open && g.key === "Escape" && o("update:open", !1);
+      !n.open || g.key !== "Escape" || (g.preventDefault(), g.stopImmediatePropagation(), o("update:open", !1));
     }
     function m() {
       n.open && a();
     }
-    return document.addEventListener("click", f), document.addEventListener("keydown", h), window.addEventListener("resize", m), window.addEventListener("scroll", m, !0), rt(() => {
-      d(), document.removeEventListener("click", f), document.removeEventListener("keydown", h), window.removeEventListener("resize", m), window.removeEventListener("scroll", m, !0);
+    return document.addEventListener("click", f), document.addEventListener("keydown", h, !0), window.addEventListener("resize", m), window.addEventListener("scroll", m, !0), rt(() => {
+      d(), document.removeEventListener("click", f), document.removeEventListener("keydown", h, !0), window.removeEventListener("resize", m), window.removeEventListener("scroll", m, !0);
     }), (g, v) => e.open ? (x(), N("div", {
       key: 0,
       ref_key: "panel",
       ref: r,
       class: "anchored-panel",
-      style: je(i.value)
+      style: Ue(i.value)
     }, [
       pe(g.$slots, "default")
     ], 4)) : K("", !0);
@@ -3456,7 +3456,7 @@ const P1 = {
             onClick: (E) => !b.row.deleting_at && i("open", b.row.id),
             onKeydown: [
               tt((E) => !b.row.deleting_at && i("open", b.row.id), ["enter"]),
-              tt(Ue((E) => !b.row.deleting_at && i("open", b.row.id), ["prevent"]), ["space"])
+              tt(We((E) => !b.row.deleting_at && i("open", b.row.id), ["prevent"]), ["space"])
             ]
           }, [
             _("span", F1, [
@@ -3481,7 +3481,7 @@ const P1 = {
               class: "wf-labels-cell",
               role: "cell",
               "data-label": "Labels",
-              onClick: V[2] || (V[2] = Ue(() => {
+              onClick: V[2] || (V[2] = We(() => {
               }, ["stop"]))
             }, [
               (x(!0), N(ue, null, Te(b.row.labels, (E) => (x(), N("span", {
@@ -3496,7 +3496,7 @@ const P1 = {
                   severity: "secondary",
                   "aria-label": `Remove label ${E}`,
                   disabled: !!b.row.deleting_at || l.value === b.row.id,
-                  onClick: Ue((C) => w(b.row, E, C), ["stop"])
+                  onClick: We((C) => w(b.row, E, C), ["stop"])
                 }, {
                   default: te(() => [
                     z(p(ae), {
@@ -3518,11 +3518,11 @@ const P1 = {
                   type: "text",
                   placeholder: "Add label…",
                   "aria-label": `Add a label to ${b.row.title}`,
-                  onClick: V[1] || (V[1] = Ue(() => {
+                  onClick: V[1] || (V[1] = We(() => {
                   }, ["stop"])),
                   onKeydown: [
-                    tt(Ue((E) => y(b.row), ["stop", "prevent"]), ["enter"]),
-                    tt(Ue(k, ["stop"]), ["escape"])
+                    tt(We((E) => y(b.row), ["stop", "prevent"]), ["enter"]),
+                    tt(We(k, ["stop"]), ["escape"])
                   ]
                 }, null, 8, ["modelValue", "aria-label", "onKeydown"]),
                 z(p(he), {
@@ -3531,7 +3531,7 @@ const P1 = {
                   rounded: "",
                   severity: "secondary",
                   "aria-label": "Done editing labels",
-                  onClick: Ue(k, ["stop"])
+                  onClick: We(k, ["stop"])
                 }, {
                   default: te(() => [
                     z(p(ae), {
@@ -3549,7 +3549,7 @@ const P1 = {
                 "aria-label": `Add a label to ${b.row.title}`,
                 disabled: !!b.row.deleting_at || l.value === b.row.id,
                 loading: l.value === b.row.id,
-                onClick: Ue((E) => g(b.row.id, E), ["stop"])
+                onClick: We((E) => g(b.row.id, E), ["stop"])
               }, {
                 default: te(() => [
                   l.value !== b.row.id ? (x(), ne(p(ae), {
@@ -3628,7 +3628,7 @@ const P1 = {
             _("span", {
               class: "wf-row-actions",
               role: "cell",
-              onClick: V[3] || (V[3] = Ue(() => {
+              onClick: V[3] || (V[3] = We(() => {
               }, ["stop"]))
             }, [
               z(p(he), {
@@ -3639,7 +3639,7 @@ const P1 = {
                 severity: "secondary",
                 "aria-label": `Actions for ${b.row.title}`,
                 "aria-expanded": u.value === b.row.id,
-                onClick: Ue((E) => I(b.row.id, E), ["stop"])
+                onClick: We((E) => I(b.row.id, E), ["stop"])
               }, {
                 default: te(() => [
                   z(p(ae), {
@@ -4607,7 +4607,7 @@ var Op = {
   components: {
     Button: he,
     ProgressBar: $p,
-    Message: We,
+    Message: je,
     FileContent: Ep,
     PlusIcon: Ty,
     UploadIcon: Sp,
@@ -4983,7 +4983,7 @@ const O0 = { class: "kx-modal-head-icon" }, N0 = { class: "kx-modal-body" }, A0 
               "aria-label": "Exported Workflow JSON"
             }, null, 8, ["modelValue"])
           ]),
-          a.value ? (x(), ne(p(We), {
+          a.value ? (x(), ne(p(je), {
             key: 0,
             class: "wf-setup-error",
             severity: "error",
@@ -5183,7 +5183,7 @@ const P0 = { class: "kx-modal-head-icon" }, R0 = { class: "kx-modal-body" }, z0 
         onImport: oe,
         onCreate: J
       }, null, 8, ["total-count", "label-vocab", "q", "label-filter", "group-by"]),
-      s.value ? (x(), ne(p(We), {
+      s.value ? (x(), ne(p(je), {
         key: 0,
         class: "wf-banner",
         severity: "error",
@@ -5194,7 +5194,7 @@ const P0 = { class: "kx-modal-head-icon" }, R0 = { class: "kx-modal-body" }, z0 
         ]),
         _: 1
       })) : K("", !0),
-      m.value ? (x(), ne(p(We), {
+      m.value ? (x(), ne(p(je), {
         key: 1,
         class: "wf-banner",
         severity: "error",
@@ -10512,7 +10512,7 @@ const jC = Yi, UC = ["transform"], WC = ["width", "height", "x", "y", "rx", "ry"
         height: `${t.value.height + 2 * i.labelBgPadding[1]}px`,
         x: -i.labelBgPadding[0],
         y: -i.labelBgPadding[1],
-        style: je(i.labelBgStyle),
+        style: Ue(i.labelBgStyle),
         rx: i.labelBgBorderRadius,
         ry: i.labelBgBorderRadius
       }, null, 12, WC)) : K("", !0),
@@ -11227,7 +11227,7 @@ const mS = {
   setup(e) {
     return (t, n) => (x(), N("div", {
       class: "vue-flow__selection vue-flow__container",
-      style: je({
+      style: Ue({
         width: `${t.userSelectionRect.width}px`,
         height: `${t.userSelectionRect.height}px`,
         transform: `translate(${t.userSelectionRect.x}px, ${t.userSelectionRect.y}px)`
@@ -11277,13 +11277,13 @@ const mS = {
     return (m, g) => !p(a) && u.value.width && u.value.height ? (x(), N("div", {
       key: 0,
       class: Se(["vue-flow__nodesselection vue-flow__container", p(r)]),
-      style: je({ transform: `translate(${p(n).x}px,${p(n).y}px) scale(${p(n).zoom})` })
+      style: Ue({ transform: `translate(${p(n).x}px,${p(n).y}px) scale(${p(n).zoom})` })
     }, [
       _("div", {
         ref_key: "el",
         ref: l,
         class: Se([{ dragging: p(c) }, "vue-flow__nodesselection-rect"]),
-        style: je(d.value),
+        style: Ue(d.value),
         tabIndex: p(i) ? void 0 : -1,
         onContextmenu: f,
         onKeydown: h
@@ -11448,7 +11448,7 @@ const xS = {
     const { viewport: t, fitViewOnInit: n, fitViewOnInitDone: o } = ze(), r = U(() => n.value ? !o.value : !1), i = U(() => `translate(${t.value.x}px,${t.value.y}px) scale(${t.value.zoom})`);
     return (a, s) => (x(), N("div", {
       class: "vue-flow__transformationpane vue-flow__container",
-      style: je({ transform: i.value, opacity: r.value ? 0 : void 0 })
+      style: Ue({ transform: i.value, opacity: r.value ? 0 : void 0 })
     }, [
       pe(a.$slots, "default")
     ], 4));
@@ -12044,7 +12044,7 @@ const Xc = uu, PS = be({
     }, [
       t.type === p(vi).ArrowClosed ? (x(), N("polyline", {
         key: 0,
-        style: je({
+        style: Ue({
           stroke: t.color,
           fill: t.color,
           strokeWidth: t.strokeWidth
@@ -12055,7 +12055,7 @@ const Xc = uu, PS = be({
       }, null, 4)) : K("", !0),
       t.type === p(vi).Arrow ? (x(), N("polyline", {
         key: 1,
-        style: je({
+        style: Ue({
           stroke: t.color,
           strokeWidth: t.strokeWidth
         }),
@@ -12117,7 +12117,7 @@ const Xc = uu, PS = be({
       (x(!0), N(ue, null, Te(p(n), (a) => (x(), N("svg", {
         key: a.id,
         class: "vue-flow__edges vue-flow__container",
-        style: je({ zIndex: p(dC)(a, p(t), p(o)) })
+        style: Ue({ zIndex: p(dC)(a, p(t), p(o)) })
       }, [
         z(p(RS), {
           id: a.id
@@ -12557,7 +12557,7 @@ const o$ = /* @__PURE__ */ _("div", { class: "vue-flow__edge-labels" }, null, -1
     const t = e, { userSelectionActive: n } = ze(), o = U(() => `${t.position}`.split("-"));
     return (r, i) => (x(), N("div", {
       class: Se(["vue-flow__panel", o.value]),
-      style: je({ pointerEvents: p(n) ? "none" : "all" })
+      style: Ue({ pointerEvents: p(n) ? "none" : "all" })
     }, [
       pe(r.$slots, "default")
     ], 6));
@@ -12637,7 +12637,7 @@ const l$ = ["title", "aria-label"], u$ = ["title"], c$ = {
         e.data.issue && "wfn--issue",
         o.value && `wfn--boundary wfn--boundary-${o.value}`
       ]]),
-      style: je(c.value),
+      style: Ue(c.value),
       title: e.data.issue || e.data.ref || e.data.title,
       role: "group",
       "aria-label": `${e.data.kindLabel}: ${e.data.title}${e.data.runStatus !== "idle" ? `, ${e.data.runStatus}` : ""}`
@@ -13706,7 +13706,7 @@ const w3 = {
       ref_key: "resizeControlRef",
       ref: u,
       class: Se(["vue-flow__resize-control", [...m.value, S.variant, p(l)]]),
-      style: je({
+      style: Ue({
         ...g.value,
         scale: k.value
       })
@@ -13770,7 +13770,7 @@ const w3 = {
       (x(), N(ue, null, Te(a, (f) => z(ed, {
         key: f,
         class: Se(u.lineClassName),
-        style: je(u.lineStyle),
+        style: Ue(u.lineStyle),
         "node-id": l.value,
         position: f,
         variant: p(Sn).Line,
@@ -13789,7 +13789,7 @@ const w3 = {
       (x(), N(ue, null, Te(i, (f) => z(ed, {
         key: f,
         class: Se(u.handleClassName),
-        style: je(u.handleStyle),
+        style: Ue(u.handleStyle),
         "node-id": l.value,
         position: f,
         color: u.color,
@@ -13994,7 +13994,7 @@ const N3 = ["title"], am = /* @__PURE__ */ be({
           _("span", {
             class: Se(["wf-edge-completeness-badge", i.value && "is-contract-unavailable"]),
             title: i.value ? "This step’s input fields are unavailable" : `${r.value} required field${r.value === 1 ? "" : "s"} need mapping`,
-            style: je({ transform: `translate(-50%, -50%) translate(${a.value.x}px, ${a.value.y}px)` })
+            style: Ue({ transform: `translate(-50%, -50%) translate(${a.value.x}px, ${a.value.y}px)` })
           }, G(i.value ? "!" : r.value), 15, N3)
         ]),
         _: 1
@@ -20650,7 +20650,7 @@ const b5 = {
     }), r = Ae(() => `pattern-${t}${e.id ? `-${e.id}` : ""}`), i = Ae(() => e.color || e.patternColor || b5[e.variant || Kt.Dots]);
     return (a, s) => (x(), N("svg", {
       class: "vue-flow__background vue-flow__container",
-      style: je({
+      style: Ue({
         height: `${a.height > 100 ? 100 : a.height}%`,
         width: `${a.width > 100 ? 100 : a.width}%`
       })
@@ -23063,7 +23063,7 @@ const vv = Symbol("MiniMapSlots"), A7 = ["id", "x", "y", "rx", "ry", "width", "h
             dimensions: J.dimensions,
             selected: J.selected,
             dragging: J.dragging,
-            style: je(J.style),
+            style: Ue(J.style),
             class: Se(I.value(J)),
             color: y.value(J),
             "border-radius": j.nodeBorderRadius,
@@ -23326,7 +23326,7 @@ const vv = Symbol("MiniMapSlots"), A7 = ["id", "x", "y", "rx", "ry", "width", "h
             ], 8, q7)) : K("", !0)
           ], 64))
         ]))), 128)),
-        e.errors.length ? (x(), ne(p(We), {
+        e.errors.length ? (x(), ne(p(je), {
           key: 1,
           class: "wf-palette-errors",
           severity: "warn",
@@ -24145,7 +24145,7 @@ const AN = {
           "aria-label": "Loading timeline"
         }),
         l[3] || (l[3] = _("span", null, "Loading timeline…", -1))
-      ])) : r.value ? (x(), ne(p(We), {
+      ])) : r.value ? (x(), ne(p(je), {
         key: 1,
         severity: "error",
         closable: !1
@@ -24214,7 +24214,7 @@ const AN = {
   key: 1,
   class: "wf-run-fail-note"
 }, nA = {
-  key: 3,
+  key: 4,
   class: "wf-run-trace"
 }, oA = { class: "wf-run-section-h" }, rA = { class: "wf-panel-hint" }, iA = {
   class: "wf-run-tool-list",
@@ -24223,7 +24223,7 @@ const AN = {
   key: 1,
   class: "wf-run-tool-id"
 }, lA = {
-  key: 4,
+  key: 5,
   class: "wf-panel-hint"
 }, Ef = /* @__PURE__ */ be({
   __name: "RunNodeOutput",
@@ -24408,7 +24408,7 @@ const AN = {
           _: 1
         }, 8, ["disabled", "loading"])
       ]),
-      F.value ? (x(), ne(p(We), {
+      F.value ? (x(), ne(p(je), {
         key: 0,
         severity: "error",
         closable: !1
@@ -24472,7 +24472,7 @@ const AN = {
             "aria-label": "Loading step data"
           }),
           M[11] || (M[11] = _("span", null, "Loading this step’s data…", -1))
-        ])) : a.value ? (x(), ne(p(We), {
+        ])) : a.value ? (x(), ne(p(je), {
           key: 2,
           severity: "error",
           closable: !1
@@ -24499,14 +24499,24 @@ const AN = {
               open: !1
             }, null, 8, ["value"])) : K("", !0) : (x(), N("p", tA, "No further detail was recorded for this failure. Re-run with the same input to try again, or open the step to adjust it."))
           ])) : K("", !0),
-          i.value.input != null ? (x(), ne(ao, {
+          i.value.expiredAfterDays != null ? (x(), ne(p(je), {
             key: 1,
+            severity: "info",
+            closable: !1
+          }, {
+            default: te(() => [
+              ce("Step data expired after " + G(i.value.expiredAfterDays) + " days", 1)
+            ]),
+            _: 1
+          })) : K("", !0),
+          i.value.input != null ? (x(), ne(ao, {
+            key: 2,
             value: i.value.input,
             label: "Input",
             icon: "tabler:login-2"
           }, null, 8, ["value"])) : K("", !0),
           y.value ? (x(), ne(ao, {
-            key: 2,
+            key: 3,
             value: i.value.output,
             label: "Output",
             icon: "tabler:logout-2"
@@ -24547,7 +24557,7 @@ const AN = {
               }, null, 8, ["value"])
             ]))), 128))
           ])) : K("", !0),
-          S.value ? K("", !0) : (x(), N("p", lA, "This step recorded no input or output in this run."))
+          !S.value && i.value.expiredAfterDays == null ? (x(), N("p", lA, "This step recorded no input or output in this run.")) : K("", !0)
         ], 64)) : K("", !0)
       ], 64)) : (x(), N("p", KN, "Click a step on the canvas to see what it received and produced in this run."))
     ]));
@@ -24602,7 +24612,7 @@ const AN = {
             "aria-label": "Loading runs"
           }),
           l[0] || (l[0] = _("span", null, "Loading runs…", -1))
-        ])) : e.error ? (x(), ne(p(We), {
+        ])) : e.error ? (x(), ne(p(je), {
           key: 1,
           severity: "error",
           closable: !1
@@ -24831,7 +24841,7 @@ const SA = {
               "aria-label": "Loading versions"
             }),
             C[1] || (C[1] = _("span", null, "Loading versions…", -1))
-          ])) : i.value ? (x(), ne(p(We), {
+          ])) : i.value ? (x(), ne(p(je), {
             key: 1,
             severity: "error",
             closable: !1
@@ -24890,7 +24900,7 @@ const SA = {
                     "aria-label": `Loading version ${s.value}`
                   }, null, 8, ["aria-label"]),
                   _("span", null, "Loading v" + G(s.value) + "…", 1)
-                ])) : u.value ? (x(), ne(p(We), {
+                ])) : u.value ? (x(), ne(p(je), {
                   key: 1,
                   severity: "error",
                   closable: !1
@@ -24963,7 +24973,7 @@ const SA = {
                       _: 1
                     }, 8, ["disabled", "loading"])
                   ]),
-                  v.value ? (x(), ne(p(We), {
+                  v.value ? (x(), ne(p(je), {
                     key: 2,
                     severity: "error",
                     closable: !1
@@ -24979,7 +24989,7 @@ const SA = {
                       C[9] || (C[9] = _("span", { class: "wf-vers-detail-note" }, "Read-only", -1))
                     ]),
                     p(CA)(f.value) ? (x(), N(ue, { key: 1 }, [
-                      f.value.interface.changes.length ? (x(), ne(p(We), {
+                      f.value.interface.changes.length ? (x(), ne(p(je), {
                         key: 0,
                         class: "wf-vers-compat",
                         severity: "warn",
@@ -25123,7 +25133,7 @@ const SA = {
         _("div", nT, [
           i.value ? (x(), ne(Fe(r.value.tag), ie({ key: 0 }, r.value.attrs, {
             onClose: c[0] || (c[0] = (u) => o("close"))
-          }), null, 16)) : a.value ? (x(), ne(p(We), {
+          }), null, 16)) : a.value ? (x(), ne(p(je), {
             key: 1,
             class: "wf-setup-error",
             severity: "error",
@@ -26447,7 +26457,7 @@ function KT(e, t, n, o, r, i) {
     name: e.$formName,
     role: "spinbutton",
     class: Se([e.cx("pcInputText"), e.inputClass]),
-    style: je(e.inputStyle),
+    style: Ue(e.inputStyle),
     defaultValue: i.formattedValue,
     "aria-valuemin": e.min,
     "aria-valuemax": e.max,
@@ -26971,8 +26981,8 @@ const CM = {
           rows: "2",
           placeholder: "Explain how this step should behave…",
           onKeydown: [
-            tt(Ue(M, ["meta", "prevent"]), ["enter"]),
-            tt(Ue(M, ["ctrl", "prevent"]), ["enter"])
+            tt(We(M, ["meta", "prevent"]), ["enter"]),
+            tt(We(M, ["ctrl", "prevent"]), ["enter"])
           ]
         }, null, 8, ["id", "modelValue", "onKeydown"]),
         z(p(he), {
@@ -26992,7 +27002,7 @@ const CM = {
           _: 1
         }, 8, ["disabled", "loading"])
       ]),
-      a.value ? (x(), ne(p(We), {
+      a.value ? (x(), ne(p(je), {
         key: 0,
         class: "wf-config-assist__error",
         severity: "error",
@@ -27042,7 +27052,7 @@ const CM = {
             _: 1
           })
         ])
-      ])) : d.value ? (x(), ne(p(We), {
+      ])) : d.value ? (x(), ne(p(je), {
         key: 2,
         class: "wf-config-assist__applied",
         severity: "success",
@@ -27714,7 +27724,7 @@ const LM = ["aria-label"], BM = {
             (x(!0), N(ue, null, Te(w.value, (T) => (x(), N("div", {
               key: T.expr,
               class: "fm-pill-row",
-              style: je({ "--fm-depth": `${T.depth * 14}px` })
+              style: Ue({ "--fm-depth": `${T.depth * 14}px` })
             }, [
               T.expandable ? (x(), N("button", {
                 key: 0,
@@ -28464,7 +28474,7 @@ const tP = { class: "wf-panel" }, nP = { class: "wf-panel-hdr-kind" }, oP = { cl
             onValid: i[1] || (i[1] = (a) => n("valid", a))
           }, null, 8, ["schema", "model-value", "reset-key"])
         ])) : (x(), N("p", vP, "This Workflow needs no input.")),
-        e.valid ? K("", !0) : (x(), ne(p(We), {
+        e.valid ? K("", !0) : (x(), ne(p(je), {
           key: 2,
           class: "wf-sim-err",
           severity: "error",
@@ -28475,7 +28485,7 @@ const tP = { class: "wf-panel" }, nP = { class: "wf-panel-hdr-kind" }, oP = { cl
           ])]),
           _: 1
         })),
-        e.errorMessage ? (x(), ne(p(We), {
+        e.errorMessage ? (x(), ne(p(je), {
           key: 3,
           class: "wf-sim-err",
           severity: "error",
@@ -28591,8 +28601,8 @@ const bP = "What should flow here?", Df = "e.g. use the first search result’s 
       class: "wf-intent",
       role: "region",
       "aria-label": "Describe this connection",
-      onKeydown: O[6] || (O[6] = tt(Ue((F) => o("dismiss"), ["stop", "prevent"]), ["esc"])),
-      onPointerdown: O[7] || (O[7] = Ue(() => {
+      onKeydown: O[6] || (O[6] = tt(We((F) => o("dismiss"), ["stop", "prevent"]), ["esc"])),
+      onPointerdown: O[7] || (O[7] = We(() => {
       }, ["stop"]))
     }, [
       z(p(he), {
@@ -28634,7 +28644,7 @@ const bP = "What should flow here?", Df = "e.g. use the first search result’s 
           placeholder: p(Df),
           disabled: i.value === "drafting",
           "aria-label": "What should flow across this connection",
-          onKeydown: tt(Ue(S, ["prevent"]), ["enter"])
+          onKeydown: tt(We(S, ["prevent"]), ["enter"])
         }, null, 8, ["modelValue", "placeholder", "disabled", "onKeydown"]),
         i.value === "drafting" ? (x(), N("p", OP, [
           z(p(mt), {
@@ -28713,7 +28723,7 @@ const bP = "What should flow here?", Df = "e.g. use the first search result’s 
             }),
             O[12] || (O[12] = ce("Failed", -1))
           ], 2),
-          s.value.available ? K("", !0) : (x(), ne(p(We), {
+          s.value.available ? K("", !0) : (x(), ne(p(je), {
             key: 0,
             class: "wf-intent-err",
             severity: "warn",
@@ -28779,7 +28789,7 @@ const bP = "What should flow here?", Df = "e.g. use the first search result’s 
           }),
           O[15] || (O[15] = _("span", null, "Couldn’t draft that", -1))
         ]),
-        z(p(We), {
+        z(p(je), {
           class: "wf-intent-err",
           severity: "error",
           closable: !1
@@ -28797,7 +28807,7 @@ const bP = "What should flow here?", Df = "e.g. use the first search result’s 
           class: "wf-intent-input",
           placeholder: p(Df),
           "aria-label": "What should flow across this connection",
-          onKeydown: tt(Ue(S, ["prevent"]), ["enter"])
+          onKeydown: tt(We(S, ["prevent"]), ["enter"])
         }, null, 8, ["modelValue", "placeholder", "onKeydown"]),
         _("p", qP, G(p($P)), 1),
         _("div", KP, [
@@ -28859,7 +28869,7 @@ const bP = "What should flow here?", Df = "e.g. use the first search result’s 
       ref_key: "overlayEl",
       ref: r,
       class: "wf-automap",
-      onPointerdown: m[7] || (m[7] = Ue(() => {
+      onPointerdown: m[7] || (m[7] = We(() => {
       }, ["stop"]))
     }, [
       i.value === "reveal" ? (x(), ne(p(he), {
@@ -29566,7 +29576,7 @@ const pR = { class: "wf-top" }, hR = { class: "wf-top-count" }, mR = { class: "w
                   _: 1
                 }, 8, ["disabled", "aria-label", "onClick"])
               ]))), 128))
-            ])) : (x(), ne(p(We), {
+            ])) : (x(), ne(p(je), {
               key: 0,
               severity: "info",
               closable: !1
@@ -29618,13 +29628,13 @@ const pR = { class: "wf-top" }, hR = { class: "wf-top-count" }, mR = { class: "w
       _("div", {
         class: "wf-ctx-backdrop",
         onClick: f[0] || (f[0] = (h) => o("close")),
-        onContextmenu: f[1] || (f[1] = Ue((h) => o("close"), ["prevent"]))
+        onContextmenu: f[1] || (f[1] = We((h) => o("close"), ["prevent"]))
       }, null, 32),
       _("div", {
         class: "wf-drop-picker",
         role: "dialog",
         "aria-label": "Add a connected step",
-        style: je({ left: e.x + "px", top: e.y + "px" })
+        style: Ue({ left: e.x + "px", top: e.y + "px" })
       }, [
         _("div", AR, [
           z(p(ae), {
@@ -29797,7 +29807,7 @@ const pR = { class: "wf-top" }, hR = { class: "wf-top-count" }, mR = { class: "w
           class: "wf-ctx-backdrop",
           onClick: u[5] || (u[5] = //@ts-ignore
           (...d) => p(r).closePaneMenu && p(r).closePaneMenu(...d)),
-          onContextmenu: u[6] || (u[6] = Ue(
+          onContextmenu: u[6] || (u[6] = We(
             //@ts-ignore
             (...d) => p(r).closePaneMenu && p(r).closePaneMenu(...d),
             ["prevent"]
@@ -29806,7 +29816,7 @@ const pR = { class: "wf-top" }, hR = { class: "wf-top-count" }, mR = { class: "w
         _("div", {
           class: "wf-ctx",
           role: "menu",
-          style: je({ left: p(r).paneMenu.x + "px", top: p(r).paneMenu.y + "px" })
+          style: Ue({ left: p(r).paneMenu.x + "px", top: p(r).paneMenu.y + "px" })
         }, [
           _("button", {
             class: "wf-ctx-item",
@@ -29847,7 +29857,7 @@ const pR = { class: "wf-top" }, hR = { class: "wf-top-count" }, mR = { class: "w
         ], 4)
       ], 64)) : K("", !0),
       z(p(Vm), { position: "top-center" }),
-      p(r).viewingRun ? (x(), ne(p(We), {
+      p(r).viewingRun ? (x(), ne(p(je), {
         key: 9,
         class: "wf-banner wf-banner--run",
         pt: { content: { class: "wf-run-notice-content" }, text: { class: "wf-run-notice-body" } },
@@ -29874,7 +29884,7 @@ const pR = { class: "wf-top" }, hR = { class: "wf-top-count" }, mR = { class: "w
         ]),
         _: 1
       })) : K("", !0),
-      p(r).error ? (x(), ne(p(We), {
+      p(r).error ? (x(), ne(p(je), {
         key: 10,
         class: "wf-banner wf-banner--error",
         severity: "error",
@@ -29994,7 +30004,7 @@ const pR = { class: "wf-top" }, hR = { class: "wf-top-count" }, mR = { class: "w
           p(r).connectStatus && p(r).connectStatus !== "neutral" && p(r).connectHintPosition ? (x(), N("div", {
             key: 2,
             class: Se(["wf-connect-hint", `is-${p(r).connectStatus}`]),
-            style: je({ left: p(r).connectHintPosition.left + "px", top: p(r).connectHintPosition.top + "px" })
+            style: Ue({ left: p(r).connectHintPosition.left + "px", top: p(r).connectHintPosition.top + "px" })
           }, [
             z(p(ae), {
               icon: p(r).connectStatus === "ok" ? "tabler:plug-connected" : p(r).connectStatus === "warn" ? "tabler:wand" : "tabler:plug-connected-x",
@@ -30005,7 +30015,7 @@ const pR = { class: "wf-top" }, hR = { class: "wf-top-count" }, mR = { class: "w
           (x(!0), N(ue, null, Te(p(r).autoMapAnchored, (d) => (x(), ne(sR, {
             key: d.id,
             entry: d.entry,
-            style: je({ left: d.left + "px", top: d.top + "px", visibility: d.placed ? "visible" : "hidden", "--wf-overlay-max-height": d.maxHeight + "px" }),
+            style: Ue({ left: d.left + "px", top: d.top + "px", visibility: d.placed ? "visible" : "hidden", "--wf-overlay-max-height": d.maxHeight + "px" }),
             onMeasure: (f) => p(r).measureAuto(d.id, f),
             onOpen: p(r).openAutoMapped,
             onDismiss: p(r).dismissAutoMapped
@@ -30015,7 +30025,7 @@ const pR = { class: "wf-top" }, hR = { class: "wf-top-count" }, mR = { class: "w
             "workflow-id": p(o),
             edge: p(r).pendingEdge,
             "available-steps": p(r).availableSteps,
-            style: je({ left: p(r).pendingAnchor.left + "px", top: p(r).pendingAnchor.top + "px", visibility: p(r).pendingOverlaySize ? "visible" : "hidden", "--wf-overlay-max-height": p(r).pendingAnchor.maxHeight + "px" }),
+            style: Ue({ left: p(r).pendingAnchor.left + "px", top: p(r).pendingAnchor.top + "px", visibility: p(r).pendingOverlaySize ? "visible" : "hidden", "--wf-overlay-max-height": p(r).pendingAnchor.maxHeight + "px" }),
             onMeasure: p(r).measurePending,
             onAccept: p(r).acceptPending,
             onSuggestNode: p(r).showSuggestedNode,

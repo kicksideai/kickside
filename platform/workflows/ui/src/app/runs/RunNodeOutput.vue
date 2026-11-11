@@ -204,6 +204,7 @@ async function downloadExport() {
           />
         </div>
 
+        <Message v-if="inspection.expiredAfterDays != null" severity="info" :closable="false">Step data expired after {{ inspection.expiredAfterDays }} days</Message>
         <RunPayload v-if="inspection.input != null" :value="inspection.input" label="Input" icon="tabler:login-2" />
         <RunPayload v-if="showOutput" :value="inspection.output" label="Output" icon="tabler:logout-2" />
 
@@ -225,7 +226,7 @@ async function downloadExport() {
           </div>
         </section>
 
-        <p v-if="!hasData" class="wf-panel-hint">This step recorded no input or output in this run.</p>
+        <p v-if="!hasData && inspection.expiredAfterDays == null" class="wf-panel-hint">This step recorded no input or output in this run.</p>
       </template>
     </template>
   </aside>

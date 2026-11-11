@@ -39,8 +39,6 @@ entries:
         value: app:db
       - name: userspace.dataflow:retention_enabled
         value: true
-      - name: userspace.dataflow:retention_interval_seconds
-        value: "60"
       - name: userspace.dataflow:retention_batch_size
         value: "1000"
 
