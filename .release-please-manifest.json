@@ -34,6 +34,6 @@
   "platform/users": "0.2.19",
   "platform/webhooks": "0.1.44",
   "platform/widgets": "0.1.62",
-  "platform/workflows": "0.2.12",
-  "app": "0.2.35"
+  "platform/workflows": "0.2.13",
+  "app": "0.2.36"
 }
