@@ -3,6 +3,7 @@ local test = require("test")
 local image = require("image")
 local base64 = require("base64")
 local hash = require("hash")
+local registry = require("registry")
 local PNG = assert(base64.decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jv1kAAAAASUVORK5CYII="))
 local function check(bytes, mime, limits, checksum)
     return image.validate(bytes, mime, limits or assert(image.limits()), 1, "revision", checksum)
@@ -12,6 +13,26 @@ local function code(err, expected)
 end
 return {run = test.run_cases(function()
     test.describe("Page image validation", function()
+        test.it("lists page capability resources by exact identity", function()
+            local policy = assert(registry.get("kickside.uploads.security:module_runtime"))
+            local expected = {
+                ["kickside.uploads.pages:get_info"] = true,
+                ["kickside.uploads.pages:read_image"] = true,
+                ["kickside.uploads.pages:source"] = true,
+                ["kickside.uploads.pages:image"] = true,
+                ["kickside.uploads.pages:bytes"] = true,
+            }
+            local count = 0
+            for _, resource in ipairs(policy.data.policy.resources) do
+                if resource:sub(1, #"kickside.uploads.pages:") == "kickside.uploads.pages:" then
+                    test.is_true(expected[resource] == true, resource)
+                    expected[resource] = nil
+                    count = count + 1
+                end
+            end
+            test.eq(count, 5)
+            test.is_nil(next(expected))
+        end)
         test.it("validates headers and encoded bytes at exact byte limits", function()
             local limits = assert(image.limits({max_bytes = #PNG}))
             local result = assert(check(PNG, "image/png", limits, assert(hash.sha256(PNG))))
