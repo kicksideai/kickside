@@ -10,7 +10,7 @@
   "platform/channel": "0.2.9",
   "platform/connection": "0.5.6",
   "platform/dm": "0.1.32",
-  "platform/hub": "0.1.73",
+  "platform/hub": "0.1.74",
   "platform/identity": "0.1.44",
   "platform/inbox": "0.1.74",
   "platform/knowledge": "0.1.83",
@@ -35,5 +35,5 @@
   "platform/webhooks": "0.1.44",
   "platform/widgets": "0.1.62",
   "platform/workflows": "0.2.13",
-  "app": "0.2.36"
+  "app": "0.2.37"
 }
