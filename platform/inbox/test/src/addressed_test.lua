@@ -103,7 +103,30 @@ local function await_notifications(id: string, count: integer): { any }
     return found
 end
 
-return { run = test.run_cases(function()
+local target = test.run_cases(function()
+    test.describe("Inbox committed notification target", function()
+        test.it("uses the committed item recipient before an event argument", function()
+            local owner_id, other_id = "target-owner-" .. uuid.v4(), "target-other-" .. uuid.v4()
+            local owner = frame(owner_id)
+            frame(other_id)
+            local item = upsert(owner, { id = uuid.v4(), item_type = "addressed_review", title = "Review",
+                recipient = { kind = "user", id = owner_id } })
+            test.not_nil(read(owner, item.id))
+            test.eq(#await_notifications(owner_id, 1), 1)
+            local thread_id = addressed.component_id({ kind = "user", id = owner_id })
+            local result, err = owner:call("kickside.inbox.persist:projection_committed", {
+                thread_id = thread_id, range = { to_seq = 1 }, projection = { body = materialized(thread_id) },
+                events = { { body = { id = item.id, recipient = { kind = "user", id = other_id } } } },
+            })
+            test.is_nil(err, tostring(err))
+            test.not_nil(result)
+            test.eq(#await_notifications(owner_id, 2), 2)
+            test.eq(#notifications(other_id), 0)
+        end)
+    end)
+end)
+
+return { target = target, run = test.run_cases(function()
     test.describe("Inbox principal addressing", function()
         test.it("keeps hidden and absent components indistinguishable through Inbox APIs", function()
             local _, owner_service = frame("oracle-owner-" .. uuid.v4())

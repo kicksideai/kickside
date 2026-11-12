@@ -56,6 +56,13 @@ profiles:
       "kickside.users:user_page_deletion_db:username": "${pg_username}"
       "kickside.users:user_page_deletion_db:password": "${pg_password}"
       "kickside.users:user_page_deletion_db:options.sslmode": disable
+      "app:group_paging_migration_db:kind": db.sql.postgres
+      "app:group_paging_migration_db:host": "${pg_host}"
+      "app:group_paging_migration_db:port": "${pg_port}"
+      "app:group_paging_migration_db:database": "${pg_database}_paging"
+      "app:group_paging_migration_db:username": "${pg_username}"
+      "app:group_paging_migration_db:password": "${pg_password}"
+      "app:group_paging_migration_db:options.sslmode": disable
       "app:grant_migration_db:kind": db.sql.postgres
       "app:grant_migration_db:host": "${pg_host}"
       "app:grant_migration_db:port": "${pg_port}"

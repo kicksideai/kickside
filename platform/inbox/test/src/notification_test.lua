@@ -32,7 +32,11 @@ return { run = test.run_cases(function()
                 queued[#queued + 1] = request
                 return { id = "continuation" }
             end }
-            local worker = notifier.new(contracts, jobs)
+            local worker
+            worker = notifier.new(contracts, jobs, { call = function(entry, payload)
+                test.eq(entry, "kickside.inbox.persist:notify_addressed")
+                return worker.run(payload)
+            end })
             local result, err = worker.run({ recipient = { kind = "group", id = "team" }, thread_id = "private-thread", to_seq = 42 })
             test.is_nil(err)
             test.is_true(result.success)

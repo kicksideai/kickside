@@ -609,3 +609,8 @@ entries:
     source: file://resolver_caller_probe.lua
     method: run
     modules: [funcs, security]
+
+  - name: group_paging_migration_db
+    kind: db.sql.sqlite
+    file: ":memory:"
+    foreign_keys: true
