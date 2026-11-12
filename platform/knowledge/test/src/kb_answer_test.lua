@@ -149,6 +149,11 @@ local function define_tests()
                     test.is_nil(value)
                     test.is_true(errors.is(err, errors.UNAVAILABLE), tostring(err))
                     test.contains(tostring(err), "No models found for class: unassigned")
+                    local retrieval = err:details().retrieval
+                    test.eq(retrieval.strategy, "plain")
+                    test.eq(retrieval.analysis.status, "unavailable")
+                    test.eq(retrieval.analysis.reason, "no_models_for_class")
+                    test.eq(retrieval.analysis.model, "class:unassigned")
                 end
             end
         end)
