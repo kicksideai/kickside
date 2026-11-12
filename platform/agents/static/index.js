@@ -1,6 +1,6 @@
 import { W as o, u as s } from "./wc-runtime-KO3cNuNo.js";
 import { a as p } from "./lazy-Cfv2E3SG.js";
-import { s as n } from "./styles-DyVDM2ng.js";
+import { s as n } from "./styles--CrbPkQi.js";
 import "@iconify/vue";
 import { define as r } from "@wippy-fe/proxy";
 const i = { props: { type: "object", properties: {} } }, a = {

@@ -10,10 +10,13 @@
 :host {
   display: inline-block;
   position: relative;
+  width: 14rem;
+  min-width: 0;
+  max-width: 100%;
   vertical-align: top;
 }
-/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
-:host > div:empty, :host > div:has(> [data-lazy-state]) { min-height: 36px; }
+/* Keep the field footprint through empty, loading, failed and loaded states. */
+:host > div { min-height: 36px; }
 
 /* Local stacking workaround REMOVED — the platform overlay portal now promotes the
    overlay into the browser top layer (see @wippy-fe/theme primevue-plugin), so the

@@ -8,8 +8,8 @@
    overrides. */
 @tailwind base;
 
-:host { display: inline-block; vertical-align: top; }
-/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host { display: inline-block; min-width: 44px; vertical-align: top; }
+/* Keep the trigger footprint while the implementation loads or fails. */
 :host > div:empty, :host > div:has(> [data-lazy-state]) { min-height: 32px; }
 *, *::before, *::after { box-sizing: border-box; }
 
