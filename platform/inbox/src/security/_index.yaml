@@ -156,3 +156,11 @@ entries:
       resources: '*'
       actions: [contract.get, contract.open, contract.call, contract.security, funcs.call, funcs.security, registry.get, registry.find, db.get]
       effect: allow
+
+  - name: addressed_notification_call
+    kind: security.policy
+    meta: { private: true, service_only: true }
+    policy:
+      resources: kickside.inbox.persist:notify_addressed
+      actions: [funcs.call, funcs.security]
+      effect: allow

@@ -1,8 +1,11 @@
 -- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+local security = require("security")
 local contract = require("contract")
 local jobs = require("jobs")
+local funcs = require("funcs")
 
-local function new(contract_api: any, jobs_api: any): any
+local function new(contract_api: any, jobs_api: any, funcs_api: any?): any
+    local executor = funcs_api or funcs
     local M = {}
     local TOPIC = "inbox.changed"
     local function open(id: string): (any?, any?)
@@ -12,6 +15,9 @@ local function new(contract_api: any, jobs_api: any): any
     end
 
     function M.run(input: any): (any?, any?)
+        if not security.can("funcs.call", "kickside.inbox.persist:notify_addressed") then
+            return nil, errors.new({ message = "Inbox notification call denied", kind = errors.PERMISSION_DENIED })
+        end
         local recipient = input.recipient
         if recipient.kind == "user" then
             local realtime, err = open("kickside.contract:realtime")
@@ -41,7 +47,10 @@ local function new(contract_api: any, jobs_api: any): any
     end
 
     function M.run_job(input: any): (any?, any?)
-        return M.run(input.payload)
+        if not security.can("funcs.call", "kickside.inbox.persist:notify_addressed_job") then
+            return nil, errors.new({ message = "Inbox notification call denied", kind = errors.PERMISSION_DENIED })
+        end
+        return executor.call("kickside.inbox.persist:notify_addressed", input.payload)
     end
     return M
 end

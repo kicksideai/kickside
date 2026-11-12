@@ -9,6 +9,7 @@ entries:
     modules: [contract, security, uuid, funcs, json, hash]
     imports:
       component: kickside.component:component
+      access_subjects: kickside.component.persist:access_subjects
       inbox_item_types: kickside.inbox:inbox_item_types
       inbox_types: kickside.inbox:inbox_types
       inbox_files: kickside.inbox:inbox_files
@@ -23,6 +24,7 @@ entries:
       policies: [kickside.inbox.security:addressed_identity, kickside.inbox.security:addressed_policy, kickside.inbox.security:addressed_scope, kickside.inbox.security:legacy_read_identity, kickside.inbox.security:legacy_read_policy]
     imports:
       component: kickside.component:component
+      access_subjects: kickside.component.persist:access_subjects
       inbox_item_types: kickside.inbox:inbox_item_types
       inbox_types: kickside.inbox:inbox_types
       inbox_files: kickside.inbox:inbox_files
@@ -37,6 +39,7 @@ entries:
       policies: [kickside.inbox.security:addressed_identity, kickside.inbox.security:addressed_policy, kickside.inbox.security:addressed_scope]
     imports:
       component: kickside.component:component
+      access_subjects: kickside.component.persist:access_subjects
       inbox_item_types: kickside.inbox:inbox_item_types
       inbox_types: kickside.inbox:inbox_types
       inbox_files: kickside.inbox:inbox_files
@@ -51,6 +54,7 @@ entries:
       policies: [kickside.inbox.security:addressed_identity, kickside.inbox.security:addressed_policy, kickside.inbox.security:addressed_scope]
     imports:
       component: kickside.component:component
+      access_subjects: kickside.component.persist:access_subjects
       inbox_item_types: kickside.inbox:inbox_item_types
       inbox_types: kickside.inbox:inbox_types
       inbox_files: kickside.inbox:inbox_files
@@ -98,7 +102,7 @@ entries:
     meta: { type: projection.worker, post_commit_ref: "func://kickside.inbox.persist:projection_committed", comment: "Inbox read-model projection worker — folds item events and trace context into the projection body." }
     source: file://projection.lua
     method: run
-    modules: [json, funcs, logger, registry]
+    modules: [json, funcs, logger, registry, security]
     imports:
       component: kickside.component:component
       object_fields: kickside.inbox.persist:object_fields
@@ -109,7 +113,7 @@ entries:
     meta: { type: projection.worker, comment: Publish Inbox counts and addressed invalidations after the fenced projection commit. }
     source: file://projection.lua
     method: after_commit
-    modules: [json, funcs, logger, registry]
+    modules: [json, funcs, logger, registry, security]
     imports:
       component: kickside.component:component
       inbox_types: kickside.inbox:inbox_types
@@ -136,9 +140,11 @@ entries:
     meta: { private: true }
     source: file://publish_summary.lua
     method: run
+    modules: [funcs, logger, security]
     security:
       policies:
         - kickside.inbox.security:projection_public_meta
+        - kickside.inbox.security:addressed_notification_call
     imports:
       component: kickside.component:component
 
@@ -147,7 +153,7 @@ entries:
     meta: { private: true, comment: Contentless addressed invalidation after a projection commits. }
     source: file://notify_addressed.lua
     method: run
-    modules: [contract]
+    modules: [contract, funcs, security]
     imports:
       jobs: kickside.core.jobs:jobs
     security:
@@ -157,7 +163,7 @@ entries:
     kind: library.lua
     meta: { private: true }
     source: file://notify_addressed.lua
-    modules: [contract]
+    modules: [contract, funcs, security]
     imports:
       jobs: kickside.core.jobs:jobs
 
@@ -166,8 +172,8 @@ entries:
     meta: { private: true, comment: One bounded addressed notification continuation in the existing Jobs service. }
     source: file://notify_addressed.lua
     method: run_job
-    modules: [contract]
+    modules: [contract, funcs, security]
     imports:
       jobs: kickside.core.jobs:jobs
     security:
-      policies: [kickside.inbox.security:addressed_notification]
+      policies: [kickside.inbox.security:addressed_notification, kickside.inbox.security:addressed_notification_call]

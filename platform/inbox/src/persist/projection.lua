@@ -1,3 +1,4 @@
+local security = require("security")
 local funcs = require("funcs")
 local component = require("component")
 local json = require("json")
@@ -195,13 +196,15 @@ end
 -- Core invokes this declaration only after a successful, non-stale apply has
 -- committed and released its DB connection. The fold itself has no side effects.
 function M.after_commit(input: any): (any?, any?)
-    local result, err = funcs.call("kickside.inbox.persist:publish_summary", input)
+    if not security.can("funcs.call", "kickside.inbox.persist:projection_committed") then
+        return nil, errors.new({ message = "Inbox post-commit call denied", kind = errors.PERMISSION_DENIED })
+    end
     local recipient
     for _, event in ipairs(input.events or {}) do
         local body, decode_err = decode_body(event)
         if decode_err then return nil, decode_err end
         local item = input.projection.body.items and input.projection.body.items[body.id]
-        recipient = body.recipient or (item and item.recipient)
+        recipient = (item and item.recipient) or body.recipient
         if recipient then break end
     end
     if not recipient then
@@ -212,15 +215,7 @@ function M.after_commit(input: any): (any?, any?)
             recipient = { kind = "user", id = owner }
         end
     end
-    if recipient then
-        local notification, notify_err = funcs.call("kickside.inbox.persist:notify_addressed", { recipient = recipient,
-            thread_id = input.thread_id, to_seq = input.range.to_seq })
-        if notify_err or not notification or notification.success ~= true then
-            logger:named("inbox.notifications"):warn("Inbox invalidation failed after commit",
-                { error = tostring(notify_err or "realtime notification refused") })
-        end
-    end
-    return result, err
+    return funcs.call("kickside.inbox.persist:publish_summary", input, recipient)
 end
 
 return M

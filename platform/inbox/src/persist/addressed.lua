@@ -6,6 +6,7 @@ local funcs = require("funcs")
 local json = require("json")
 local hash = require("hash")
 local component = require("component")
+local access_subjects = require("access_subjects")
 local item_types = require("inbox_item_types")
 local inbox_types = require("inbox_types")
 local files = require("inbox_files")
@@ -299,6 +300,9 @@ end
 function M.read(input: any?): (any?, any?, any?)
     local actor = security.actor()
     if not actor then return nil, failure("authenticated actor required", errors.PERMISSION_DENIED) end
+    if access_subjects.access_filter(actor:id()) ~= nil then
+        return nil, failure("a confined identity cannot widen a component read", errors.PERMISSION_DENIED)
+    end
     local own = M.component_id({ kind = "user", id = actor:id() })
     local ids = { own }
     local groups = M.group_inboxes()
