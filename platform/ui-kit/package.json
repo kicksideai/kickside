@@ -10,6 +10,7 @@
     "typecheck": "vue-tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
+    "@iconify/vue": "^5.0.5",
     "@vitejs/plugin-vue": "^5.0.0",
     "@vue/test-utils": "^2.4.11",
     "@wippy-fe/proxy": "*",
