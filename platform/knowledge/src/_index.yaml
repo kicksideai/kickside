@@ -19,7 +19,7 @@ entries:
   # discovers installed engines through registry metadata. Adding kb10 here would
   # both make an optional engine mandatory and create a dependency cycle.
   - name: dep.kickside.component
-    version: '*'
+    version: '>=0.3.12'
     kind: ns.dependency
     meta:
       comment: Knowledge bases are component shells and enforce per-component access.
