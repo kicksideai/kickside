@@ -77,7 +77,9 @@ local function handler()
     local result, ask_err = kb_answer.ask(kb_id, { query = body.query, limit = limit })
     if ask_err then
         res:set_status((http_errors.classify(ask_err)))
-        res:write_json({ success = false, error = "ask failed: " .. tostring(ask_err) })
+        local details = type(ask_err) == "userdata" and ask_err:details() or nil
+        res:write_json({ success = false, error = "ask failed: " .. tostring(ask_err),
+            retrieval = details and details.retrieval })
         return
     end
     if not result or not result.success then

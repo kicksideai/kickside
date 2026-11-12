@@ -27,7 +27,8 @@ local function normalize_limit(value: any): (integer?, string?)
 end
 
 -- Returns { query, count, results }: every ranked result is the engine's full
--- item with its kb_id; failures use the typed invocation error return.
+-- item with its kb_id; optional retrieval status is keyed by kb_id.
+-- Failures use the typed invocation error return.
 local function handle(args: any, context: any): (any, error?)
     args = args or {}
     context = context or {}
@@ -74,6 +75,7 @@ local function handle(args: any, context: any): (any, error?)
         end
     end
     local all_results = {}
+    local retrieval: any = nil
     local failures: { string } = {}
 
     -- Query each KB through the control-plane facade so graph KBs are dispatched
@@ -87,6 +89,10 @@ local function handle(args: any, context: any): (any, error?)
             offset = offset,
         })
         if not query_err and result then
+            if result.retrieval then
+                retrieval = retrieval or {}
+                retrieval[kb_id] = result.retrieval
+            end
             for _, item in ipairs(result.items or {}) do
                 table.insert(all_results, kb_render.result_summary(item, kb_id, fields :: { [string]: boolean }))
             end
@@ -107,7 +113,7 @@ local function handle(args: any, context: any): (any, error?)
         return nil, errors.new({ message = "knowledge query failed: " .. table.concat(failures, "; "), kind = errors.INTERNAL })
     end
 
-    return { success = true, query = args.query, count = #all_results, results = all_results, next_cursor = next_cursor }, nil
+    return { success = true, query = args.query, count = #all_results, results = all_results, next_cursor = next_cursor, retrieval = retrieval }, nil
 end
 
 return { handle = handle }
