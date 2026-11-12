@@ -40,11 +40,3 @@ own endpoint lists and direct unpinned Contract dependencies.
 Component permissions, schema mutation, runtime capabilities, static serving,
 administration, public callbacks, and scoped credentials retain their own
 boundaries.
-
-## SPEC: Group member pagination
-
-`group_members.members` supports optional `limit` (1..128) and `cursor`. A limited
-call returns a keyset page of distinct user IDs and an optional `next_cursor`;
-each page uses current membership. Without limit the existing complete-list
-contract is unchanged. Clients must continue using the returned cursor rather
-than an offset or a retained audience snapshot.

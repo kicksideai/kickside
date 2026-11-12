@@ -5,8 +5,6 @@
 -- surfaces or categories exist.
 
 local http = require("http")
-local funcs = require("funcs")
-local time = require("time")
 local contract = require("contract")
 local registry = require("registry")
 local security = require("security")
@@ -44,19 +42,6 @@ local function component_read_port(): any
         if envelope.success == false then return nil, envelope.error or "component query denied" end
         return envelope.components or {}, nil
     end
-end
-
-local function viewer_badge(target: string, timeout: string): (any?, any?)
-    local future, err = funcs.new():with_actor(security.actor()):with_scope(security.scope()):async(target, {})
-    if err then return nil, err end
-    local response = future:response()
-    local deadline = time.after(timeout)
-    local selected = channel.select({ response:case_receive(), deadline:case_receive() })
-    if selected.channel == deadline then
-        future:cancel()
-        return nil, "badge deadline exceeded"
-    end
-    return selected.value:data()
 end
 
 local function nav_provider_port(): (any, any?)
@@ -170,7 +155,7 @@ local function handler()
     -- many users' components of the same impl_id, but badges only their own).
     local actor = security.actor()
     local actor_id = actor and tostring(actor:id()) or nil
-    nav_badges.resolve(result.items :: { any }, component_read_port(), COMPONENT_READ, actor_id, viewer_badge)
+    nav_badges.resolve(result.items :: { any }, component_read_port(), COMPONENT_READ, actor_id)
     res:set_status(http.STATUS.OK)
     res:write_json({
         success = true,

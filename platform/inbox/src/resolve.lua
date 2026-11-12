@@ -90,7 +90,7 @@ local function merge(item: Map, patch: Map): Map
     return out
 end
 
-function M.apply(id: string, action: string, form: Map?, storage_frame: boolean?): (inbox_types.InboxItem?, any?)
+function M.apply(id: string, action: string, form: Map?): (inbox_types.InboxItem?, any?)
     if type(id) ~= "string" or id == "" then
         return nil, (errors.new({ kind = errors.INVALID, message = "item id is required" }) :: error)
     end
@@ -106,12 +106,8 @@ function M.apply(id: string, action: string, form: Map?, storage_frame: boolean?
     local reader_mod = M._reader or reader
     local item, get_err = reader_mod.get(id)
     if get_err then return nil, get_err end
-    if not item or (item.recipient == nil and item.actor_id ~= actor_id) then
+    if not item or item.actor_id ~= actor_id then
         return nil, (errors.new({ kind = errors.NOT_FOUND, message = inbox_types.ERROR.NOT_FOUND }) :: error)
-    end
-    if item.recipient and not storage_frame and not M._reader then
-        local resolved, err = funcs.new():call("kickside.inbox:resolve_addressed", { id = id, action = action, form = form })
-        return resolved :: inbox_types.InboxItem?, err
     end
     if item.status ~= inbox_types.STATUS.PENDING then
         return nil, (errors.new({ kind = errors.CONFLICT, message = inbox_types.ERROR.ALREADY_RESOLVED }) :: error)
@@ -119,7 +115,7 @@ function M.apply(id: string, action: string, form: Map?, storage_frame: boolean?
 
     local events_mod = M._events or event_store
     local resolution_id = inbox_types.resolution_id(item)
-    local prior, lookup_err = events_mod.resolution_event(id, nil, resolution_id, item.recipient, item.store_version)
+    local prior, lookup_err = events_mod.resolution_event(id, nil, resolution_id)
     if lookup_err then return nil, lookup_err end
     if prior then
         return nil, (errors.new({ kind = errors.CONFLICT, message = inbox_types.ERROR.ALREADY_RESOLVED }) :: error)
@@ -148,7 +144,7 @@ function M.apply(id: string, action: string, form: Map?, storage_frame: boolean?
     end
 
     local normalized_form = object_fields.object(form)
-    -- One resolution identity per item visit lets callbacks deduplicate retries.
+    -- One resolution identity per work version lets callbacks deduplicate retries.
     local callback_args: Map = {
         item_id = id,
         item = item,
@@ -157,15 +153,6 @@ function M.apply(id: string, action: string, form: Map?, storage_frame: boolean?
         resolution_id = resolution_id,
     }
 
-    -- Re-read live eligibility immediately before invoking producer callbacks.
-    if item.recipient and not M._reader then
-        local eligible, eligibility_err = reader_mod.get(id)
-        if eligibility_err then return nil, eligibility_err end
-        if not eligible then return nil, errors.new({ kind = errors.NOT_FOUND, message = inbox_types.ERROR.NOT_FOUND }) end
-        if inbox_types.resolution_id(eligible) ~= resolution_id then
-            return nil, errors.new({ kind = errors.CONFLICT, message = "Inbox item version changed" })
-        end
-    end
     local callback_err = run_callback(optional_string((item_type :: Map).on_validate), actor, scope, callback_args, "resolution validation")
     if callback_err then return nil, callback_err end
     callback_err = run_callback(optional_string((item_type :: Map).on_resolve), actor, scope, callback_args, "resolution callback")
@@ -180,10 +167,6 @@ function M.apply(id: string, action: string, form: Map?, storage_frame: boolean?
     })
     if not committed_ok then return nil, write_err end
     return object_fields.item(merge(item :: Map, type(committed) == "table" and committed or {})) :: inbox_types.InboxItem
-end
-
-function M.run(input: { id: string, action: string, form: Map? }): (any?, any?)
-    return M.apply(input.id, input.action, input.form, true)
 end
 
 return M

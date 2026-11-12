@@ -16,7 +16,7 @@ entries:
       comment: Assigned administrators may deliver review cards without recipient execution authority.
     groups: []
     policy:
-      resources: kickside.inbox:item_type.flow_decision
+      resources: 'user:*'
       actions: inbox.assign
       effect: allow
 
@@ -92,75 +92,3 @@ entries:
         - field: meta.impl_id
           operator: eq
           value: kickside.inbox:inbox_binding
-
-  - name: addressed_identity
-    kind: security.policy
-    meta: { private: true, service_only: true }
-    policy:
-      resources: system:kickside.inbox.addressed
-      actions: security.actor.create
-      effect: allow
-
-  - name: addressed_storage
-    kind: security.policy
-    meta: { private: true, service_only: true }
-    policy:
-      resources: '*'
-      actions: [contract.get, contract.open, contract.call, contract.security, funcs.call, funcs.security, registry.get, registry.find, component.runtime_meta.write, threads.output.publish, db.get, component.own.maintenance]
-      effect: allow
-
-  - name: addressed_policy
-    kind: security.policy
-    meta: { private: true, service_only: true }
-    policy:
-      resources: kickside.inbox.security:addressed_storage
-      actions: security.policy.get
-      effect: allow
-
-  - name: addressed_scope
-    kind: security.policy
-    meta: { private: true, service_only: true }
-    policy:
-      resources: '*'
-      actions: security.scope.create
-      effect: allow
-
-  - name: addressed_notification
-    kind: security.policy
-    meta: { private: true, service_only: true }
-    policy:
-      resources: '*'
-      actions: [contract.get, contract.open, contract.call, realtime.notify]
-      effect: allow
-
-  - name: legacy_read_identity
-    kind: security.policy
-    meta: { private: true, service_only: true }
-    policy:
-      resources: '*'
-      actions: security.actor.create
-      effect: allow
-
-  - name: legacy_read_policy
-    kind: security.policy
-    meta: { private: true, service_only: true }
-    policy:
-      resources: kickside.inbox.security:legacy_read
-      actions: security.policy.get
-      effect: allow
-
-  - name: legacy_read
-    kind: security.policy
-    meta: { private: true, service_only: true }
-    policy:
-      resources: '*'
-      actions: [contract.get, contract.open, contract.call, contract.security, funcs.call, funcs.security, registry.get, registry.find, db.get]
-      effect: allow
-
-  - name: addressed_notification_call
-    kind: security.policy
-    meta: { private: true, service_only: true }
-    policy:
-      resources: kickside.inbox.persist:notify_addressed
-      actions: [funcs.call, funcs.security]
-      effect: allow

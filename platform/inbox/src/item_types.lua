@@ -32,8 +32,6 @@ local function execution_descriptor(entry: any): any?
     local m = type((entry :: any).meta) == "table" and (entry :: any).meta or {}
     item.on_validate = type(m.on_validate) == "string" and m.on_validate ~= "" and m.on_validate or nil
     item.on_resolve = type(m.on_resolve) == "string" and m.on_resolve ~= "" and m.on_resolve or nil
-    item.send_permission = type(m.send_permission) == "string" and m.send_permission or nil
-    item.declaration_id = entry.id
     return item
 end
 

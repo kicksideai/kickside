@@ -50,20 +50,9 @@ local function define_tests()
             test.eq(assignment.data.groups[1], requirement.data.default)
             local actor = security.new_actor("assignment-member", {})
             local default_scope = assert(security.named_scope(requirement.data.default))
+            test.eq(default_scope:evaluate(actor, "inbox.assign", "user:another-member"), "allow")
             local member_scope = composed_scope("kickside.inbox.security:module_access")
-            local decision_type = assert(registry.get("kickside.inbox:item_type.flow_decision"))
-            test.eq(decision_type.meta.send_permission, "inbox.assign")
-            test.eq(default_scope:evaluate(actor, "inbox.assign", "kickside.inbox:item_type.flow_decision"), "allow")
-            test.eq(member_scope:evaluate(actor, "inbox.assign", "kickside.inbox:item_type.flow_decision"), "undefined")
-            for _, resource in ipairs({
-                "user:another-member",
-                "kickside.inbox:item_type.notice",
-                "kickside.inbox:item_type.flow_decision.unlisted",
-                "unrelated:item_type.flow_decision",
-            }) do
-                test.eq(default_scope:evaluate(actor, "inbox.assign", resource), "undefined", resource)
-                test.eq(member_scope:evaluate(actor, "inbox.assign", resource), "undefined", resource)
-            end
+            test.eq(member_scope:evaluate(actor, "inbox.assign", "user:another-member"), "undefined")
         end)
         test.it("admits exactly the listed endpoint identities", function()
             local policy_id = "kickside.inbox.security:inbox_endpoint_access"

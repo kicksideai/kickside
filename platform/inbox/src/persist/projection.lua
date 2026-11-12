@@ -1,9 +1,5 @@
-local security = require("security")
 local funcs = require("funcs")
-local component = require("component")
 local json = require("json")
-local logger = require("logger")
-local registry = require("registry")
 local inbox_types = require("inbox_types")
 local object_fields = require("object_fields")
 
@@ -45,8 +41,7 @@ local function apply(items: any, ev: any): any?
         return errors.new({ message = "Inbox item event requires a non-empty id", kind = errors.INTERNAL })
     end
 
-    if etype == EV.CREATED or (etype == EV.VERSION and body.item_type ~= nil
-        and (body.recipient or body.aggregate_key ~= nil) and not items[id]) then
+    if etype == EV.CREATED then
         local md = object_fields.object(body.metadata)
         local encoded, encode_err = json.encode(md)
         if encode_err then return encode_err end
@@ -60,37 +55,27 @@ local function apply(items: any, ev: any): any?
             metadata_json = encoded,
             source_id = body.source_id,
             aggregate_key = body.aggregate_key,
-            status = body.status or inbox_types.STATUS.PENDING,
+            status = inbox_types.STATUS.PENDING,
             priority = body.priority or inbox_types.PRIORITY.NORMAL,
             actor_id = body.actor_id,
-            recipient = body.recipient,
-            sender_id = body.sender_id,
             created_at = body.created_at,
             created_event_id = (ev :: any).id,
-            store_version = body.store_version,
             trace_context = type((ev :: any).trace_context) == "table" and (ev :: any).trace_context or nil,
-            resolved_at = body.resolved_at,
+            resolved_at = nil,
             action = nil,
             resolved_by = nil,
         }
     elseif etype == EV.VERSION then
         local it = items[id]
         if it then
-            it.store_version = body.store_version or it.store_version
             if body.aggregate_key ~= nil and body.aggregate_key == it.aggregate_key and body.source_id == it.source_id then
-                local status = body.status or inbox_types.STATUS.PENDING
-                if status == inbox_types.STATUS.RESOLVED then
-                    if not it.resolved_event_id then
-                        it.status, it.resolved_at = status, body.resolved_at
-                    end
-                    return nil
-                end
-                if it.status ~= inbox_types.STATUS.PENDING then it.version_event_id = (ev :: any).id end
-                it.status, it.resolved_at = status, nil
+                it.status = body.status or inbox_types.STATUS.PENDING
+                it.version_event_id = (ev :: any).id
+                it.resolved_at = it.status == inbox_types.STATUS.RESOLVED and body.resolved_at or nil
                 it.action, it.form, it.resolution_id, it.resolved_by, it.resolved_event_id = nil, nil, nil, nil, nil
+                if it.status == inbox_types.STATUS.RESOLVED then return nil end
             end
             it.item_type = body.item_type or it.item_type
-            it.sender_id = body.sender_id or it.sender_id
             it.title = body.title or it.title
             it.content = body.content
             if body.files ~= nil then it.files = body.files end
@@ -103,11 +88,8 @@ local function apply(items: any, ev: any): any?
         end
     elseif etype == EV.RESOLVED then
         local it = items[id]
-        local source_closed = it and it.aggregate_key ~= nil and it.status == inbox_types.STATUS.RESOLVED
-            and it.resolution_id == nil and it.resolved_event_id == nil
-        if it and (it.status == inbox_types.STATUS.PENDING or source_closed) then
+        if it and it.status == inbox_types.STATUS.PENDING then
             if it.aggregate_key ~= nil and body.resolution_id ~= inbox_types.resolution_id(it) then return nil end
-            it.store_version = body.store_version or it.store_version
             it.status = body.status or inbox_types.STATUS.APPROVED
             it.resolved_at = body.resolved_at
             it.form = type(body.form) == "table" and object_fields.object(body.form) or nil
@@ -119,29 +101,6 @@ local function apply(items: any, ev: any): any?
     elseif etype == EV.DELETED then
         items[id] = nil
     end
-end
-
-local function prune(items: { [string]: any }): any?
-    local binding, binding_err = registry.get("kickside.inbox:inbox_binding")
-    if binding_err then return binding_err end
-    local days = binding.meta.retention.item_days
-    if days == nil then days = 30 end
-    if type(days) ~= "number" or days <= 0 then
-        return errors.new({ message = "Inbox retention.item_days must be positive", kind = errors.INVALID })
-    end
-    local now = os.time()
-    local cutoff = now - days * 86400
-    local removed = 0
-    for id, item in pairs(items) do
-        if item.status ~= inbox_types.STATUS.PENDING then item.resolved_at = item.resolved_at or now end
-        local expired_terminal = item.status ~= inbox_types.STATUS.PENDING and item.resolved_at < cutoff
-        -- Five times Core's default 200-event fold, so reclamation outpaces arrivals.
-        if expired_terminal and removed < 1000 then
-            items[id] = nil
-            removed = removed + 1
-        end
-    end
-    return nil
 end
 
 local function summarize(items: any): any
@@ -185,8 +144,6 @@ function M.run(input: any): (any?, any?)
         local apply_err = apply(body.items, ev)
         if apply_err then return nil, apply_err end
     end
-    local prune_err = prune(body.items)
-    if prune_err then return nil, prune_err end
     body.counts = summarize(body.items)
 
     local range = type(input.range) == "table" and input.range or {}
@@ -196,26 +153,7 @@ end
 -- Core invokes this declaration only after a successful, non-stale apply has
 -- committed and released its DB connection. The fold itself has no side effects.
 function M.after_commit(input: any): (any?, any?)
-    if not security.can("funcs.call", "kickside.inbox.persist:projection_committed") then
-        return nil, errors.new({ message = "Inbox post-commit call denied", kind = errors.PERMISSION_DENIED })
-    end
-    local recipient, item_id
-    for _, event in ipairs(input.events or {}) do
-        local body, decode_err = decode_body(event)
-        if decode_err then return nil, decode_err end
-        local item = input.projection.body.items and input.projection.body.items[body.id]
-        recipient = (item and item.recipient) or body.recipient
-        if recipient then item_id = body.id end
-    end
-    if not recipient then
-        local owner, owner_err = component.component_owner(input.thread_id :: string)
-        if owner_err then
-            logger:named("inbox.notifications"):warn("Inbox owner lookup failed after commit", { error = tostring(owner_err) })
-        elseif owner then
-            recipient = { kind = "user", id = owner }
-        end
-    end
-    return funcs.call("kickside.inbox.persist:publish_summary", input, recipient, item_id)
+    return funcs.call("kickside.inbox.persist:publish_summary", input)
 end
 
 return M

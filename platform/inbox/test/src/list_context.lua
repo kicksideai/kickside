@@ -24,7 +24,6 @@ function M.body(): { [string]: any }
 end
 function M.actor(): any return { id = function(): string return "reviewer" end } end
 function M.component_id_for_owner(_owner: string): string return "inbox-reviewer" end
-function M.component_ids(): { string } return { "inbox-reviewer" } end
 function M.query(): any
     local q: any = {}
     function q:by_id(value: string): any self.id = value; return self end

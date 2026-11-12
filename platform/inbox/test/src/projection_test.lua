@@ -49,60 +49,6 @@ end
 
 local function define_tests()
     test.describe("Inbox Projection Worker", function()
-        test.it("prunes every old terminal status while keeping recent terminals and old pending items", function()
-            local now = os.time()
-            local items: { [string]: any } = { pending = { id = "pending", status = "pending", created_at = 1, priority = "urgent" } }
-            for _, status in ipairs({ "approved", "rejected", "dismissed", "resolved" }) do
-                items[status] = { id = status, status = status, resolved_at = now - 31 * 86400, priority = "high" }
-                items[status .. "-recent"] = { id = status .. "-recent", status = status, resolved_at = now - 29 * 86400 }
-            end
-            local out = fold({ items = items, meta = { kept = true } }, { ev(EV.CREATED, { id = "next" }) }, 1)
-            for _, status in ipairs({ "approved", "rejected", "dismissed", "resolved" }) do
-                test.is_nil(out.body.items[status], "expired " .. status .. " remains materialized")
-                test.not_nil(out.body.items[status .. "-recent"])
-            end
-            test.not_nil(out.body.items.pending)
-            test.eq(out.body.counts.item_count, 6)
-            test.eq(out.body.counts.pending_count, 2)
-            test.eq(out.body.counts.resolved_count, 4)
-            test.eq(out.body.counts.urgent_count, 1)
-            test.eq(out.body.counts.high_count, 0)
-            test.is_true(out.body.meta.kept)
-        end)
-
-        test.it("bounds physical removals to 1000 per fold and drains the remainder on successive events", function()
-            local items: { [string]: any } = {}
-            for i = 1, 2001 do
-                items[tostring(i)] = { id = tostring(i), status = "dismissed", resolved_at = 1 }
-            end
-            local out = fold({ items = items }, { ev(EV.CREATED, { id = "first" }) }, 1)
-            test.eq(out.body.counts.resolved_count, 1001, "cleanup must remove exactly its fixed maximum")
-            test.eq(out.body.counts.pending_count, 1)
-            out = fold(out.body, { ev(EV.CREATED, { id = "second" }) }, 2)
-            test.eq(out.body.counts.resolved_count, 1)
-            out = fold(out.body, { ev(EV.CREATED, { id = "third" }) }, 3)
-            test.eq(out.body.counts.item_count, 3)
-            test.eq(out.body.counts.pending_count, 3)
-            test.eq(out.body.counts.resolved_count, 0)
-        end)
-
-        test.it("uses terminal time after resolution and reopen rather than creation age", function()
-            local now = os.time()
-            local out = fold({}, { ev(EV.CREATED, { id = "ancient", created_at = 1 }) }, 1)
-            out = fold(out.body, { ev(EV.RESOLVED, { id = "ancient", status = "dismissed", resolved_at = now }) }, 2)
-            test.not_nil(out.body.items.ancient)
-            out.body.items.ancient.aggregate_key, out.body.items.ancient.source_id = "visit", "opaque-personal"
-            out.body.items.ancient.resolved_at = 1
-            out = fold(out.body, { ev("kickside.inbox.events:item.version", {
-                id = "ancient", aggregate_key = "visit", source_id = "opaque-personal", status = "pending",
-            }) }, 3)
-            test.eq(out.body.items.ancient.status, "pending")
-            test.is_nil(out.body.items.ancient.resolved_at)
-            out = fold(out.body, { ev(EV.RESOLVED, { id = "ancient", status = "dismissed", resolved_at = now - 31 * 86400,
-                resolution_id = inbox_types.resolution_id(out.body.items.ancient) }) }, 4)
-            test.is_nil(out.body.items.ancient, "newly folded old terminal must expire")
-        end)
-
         test.it("retains generic file references through creation and replacement versions", function()
             local files = { { component_id = "example:content", context = { file_id = "document" }, title = "Review document" } }
             local first = fold({}, { ev(EV.CREATED, { id = "file-item", item_type = "notice", title = "Review", files = files }) }, 1)
@@ -212,10 +158,9 @@ local function define_tests()
 
         test.it("item.resolved flips a pending item's status and resolved_at", function()
             local created = (fold({}, { ev(EV.CREATED, { id = "i1", item_type = "approval" }) }, 1) :: any).body
-            local resolved_at = os.time()
-            local out = fold(created, { ev(EV.RESOLVED, { id = "i1", status = inbox_types.STATUS.APPROVED, resolved_at = resolved_at }) }, 2)
+            local out = fold(created, { ev(EV.RESOLVED, { id = "i1", status = inbox_types.STATUS.APPROVED, resolved_at = "2026-01-01" }) }, 2)
             test.eq((out :: any).body.items.i1.status, inbox_types.STATUS.APPROVED)
-            test.eq((out :: any).body.items.i1.resolved_at, resolved_at)
+            test.eq((out :: any).body.items.i1.resolved_at, "2026-01-01")
             test.eq((out :: any).body.counts.pending_count, 0)
             test.eq((out :: any).body.counts.resolved_count, 1)
         end)
@@ -229,7 +174,7 @@ local function define_tests()
                     action = "approve",
                     resolution_id = "resolve:i1",
                     resolved_by = "reviewer-1",
-                    resolved_at = os.time(),
+                    resolved_at = "2026-01-01",
                 }),
             }, 2)
             test.eq((out :: any).body.items.i1.action, "approve")
@@ -288,13 +233,12 @@ local function define_tests()
         end)
 
         test.it("folds a content version while the original review decision stands", function()
-            local resolved_at = os.time()
             local created = fold({}, { ev(EV.CREATED, {
                 id = "reviewed", title = "Original", content = "Original body", created_at = 100,
             }, { id = "genesis" }) }, 1)
             local resolved = fold(created.body, { ev(EV.RESOLVED, {
                 id = "reviewed", status = inbox_types.STATUS.REJECTED, action = "reject",
-                resolved_at = resolved_at, resolved_by = "reviewer", resolution_id = "resolve:reviewed",
+                resolved_at = 200, resolved_by = "reviewer", resolution_id = "resolve:reviewed",
                 form = { confirmed = false },
             }, { id = "decision" }) }, 2)
             local out = fold(resolved.body, { ev("kickside.inbox.events:item.version", {
@@ -306,7 +250,7 @@ local function define_tests()
             test.eq(item.metadata.source, "new")
             test.eq(item.status, inbox_types.STATUS.REJECTED)
             test.eq(item.action, "reject")
-            test.eq(item.resolved_at, resolved_at)
+            test.eq(item.resolved_at, 200)
             test.eq(item.resolved_by, "reviewer")
             test.eq(item.resolution_id, "resolve:reviewed")
             test.eq(item.resolved_event_id, "decision")
@@ -361,11 +305,10 @@ local function define_tests()
         end)
 
         test.it("re-resolving an already-resolved item is a no-op (status guard)", function()
-            local resolved_at = os.time()
             local b = (fold({}, { ev(EV.CREATED, { id = "i1" }) }, 1) :: any).body
-            b = (fold(b, { ev(EV.RESOLVED, { id = "i1", status = inbox_types.STATUS.APPROVED, resolved_at = resolved_at }) }, 2) :: any).body
-            local out = fold(b, { ev(EV.RESOLVED, { id = "i1", status = inbox_types.STATUS.APPROVED, resolved_at = resolved_at + 1 }) }, 3)
-            test.eq((out :: any).body.items.i1.resolved_at, resolved_at)
+            b = (fold(b, { ev(EV.RESOLVED, { id = "i1", status = inbox_types.STATUS.APPROVED, resolved_at = "t1" }) }, 2) :: any).body
+            local out = fold(b, { ev(EV.RESOLVED, { id = "i1", status = inbox_types.STATUS.APPROVED, resolved_at = "t2" }) }, 3)
+            test.eq((out :: any).body.items.i1.resolved_at, "t1")
         end)
 
         test.it("ignores an unknown event type but still advances last_seq", function()

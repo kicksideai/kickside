@@ -58,27 +58,6 @@ entries:
       order: 900
       render: component
       component_tag: ui-test-surface
-      badge: { source: viewer_function, function_id: kickside.ui:badge_fixture, tone: accent }
-
-  - name: badge_fixture
-    kind: function.lua
-    source: file://badge_fixture.lua
-    method: count
-    modules: [security, time]
-
-  - name: badge_slow_fixture
-    kind: function.lua
-    source: file://badge_fixture.lua
-    method: slow
-    modules: [security, time]
-
-  - name: nav_item.badge_slow
-    kind: registry.entry
-    meta:
-      type: ui.nav_item
-      path: /ui-test-slow-badge
-      title: Slow badge
-      badge: { source: viewer_function, function_id: kickside.ui:badge_slow_fixture }
 
   - name: nav_category.ui_test
     kind: registry.entry
@@ -293,7 +272,7 @@ entries:
   - name: nav_subject
     kind: library.lua
     source: file://nav_subject.lua
-    modules: [registry, logger, funcs, time]
+    modules: [registry, logger]
     imports:
       security: kickside.ui:nav_caller
       http: kickside.ui:nav_http

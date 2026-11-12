@@ -106,7 +106,7 @@ local function build_item(raw: { [string]: any }, id: string, source: string, pr
         render = (raw.render == "component") and "component" or "surface",
         surface = safe_key(raw.surface or raw.route_name, ""),
         component_tag = safe_component_tag(raw.component_tag),
-        badge = ui_types.normalize_badge(raw.badge, source == "declared" and id or provider),
+        badge = ui_types.normalize_badge(raw.badge),
     }
 end
 

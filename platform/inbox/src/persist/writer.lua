@@ -11,10 +11,6 @@ local function events()
     return writer._events or inbox_events
 end
 
-function writer.identity(params: any): (any?, any?)
-    return events().identity(params)
-end
-
 function writer.create(params: any): (any, any?)
     local id, err, outcome = events().create(params)
     if not id then return nil, err end
@@ -22,10 +18,10 @@ function writer.create(params: any): (any, any?)
     return data, nil
 end
 
-function writer.delete(identity: any, idempotency_key: string?): (any, any?)
-    local ok, err = events().delete(identity, idempotency_key)
+function writer.delete(id: string, idempotency_key: string?): (any, any?)
+    local ok, err = events().delete(id, idempotency_key)
     if not ok then return nil, err end
-    local data = { id = type(identity) == "table" and identity.id or identity }
+    local data = { id = id }
     return data, nil
 end
 
@@ -48,7 +44,6 @@ function writer.discard_by_metadata(match: any): (any, string?)
     for id, item in pairs(type(all) == "table" and all or {}) do
         local metadata = type((item :: any).metadata) == "table" and (item :: any).metadata or {}
         local matches = (item :: any).status == inbox_types.STATUS.PENDING
-            and item.recipient == nil
         if matches then
             for key, value in pairs(match) do
                 if metadata[key] ~= value then matches = false; break end
