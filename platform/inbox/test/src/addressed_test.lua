@@ -1548,8 +1548,30 @@ return { target = target, run = test.run_cases(function()
             test.eq(completed.status, "done", "Jobs continuation failed: " .. tostring(completed.last_error))
             test.eq(#await_notifications(prefix .. "129", 1), 1, "continued last member")
             test.eq(#await_notifications(prefix .. "001", 1), 1, "continuation must not repeat the first window")
+            local deleted, delete_err = first:call("app:addressed_probe", { operation = "delete", id = item.id })
+            test.is_nil(delete_err, tostring(delete_err))
+            test.not_nil(deleted)
+            test.is_nil(read(first, item.id), "recipient deletion removes the projection item")
+            test.eq(#await_notifications(prefix .. "129", 2), 2, "recipient deletion reaches the last member")
             for i = 1, 129 do
-                test.not_nil((user_groups.remove_user_from_group(prefix .. string.format("%03d", i), group)))
+                test.eq(#notifications(prefix .. string.format("%03d", i)), 2, "every member receives recipient deletion")
+            end
+            local request = { origin = "addressed-test", identity_key = prefix .. "retraction",
+                idempotency_key = prefix .. "create", config = { item_type = "addressed_review",
+                    recipient = { kind = "group", id = group } }, input = { content = "Retract review" } }
+            local created = assert(sender:call("kickside.inbox.sink:inbox_write", request))
+            test.is_true(created.success)
+            test.not_nil(read(first, created.dest_ref.item_id))
+            test.eq(#await_notifications(prefix .. "129", 3), 3, "sink delivery reaches the last member")
+            request.sink_op, request.idempotency_key, request.input = "delete", prefix .. "delete", {}
+            local retracted = assert(sender:call("kickside.inbox.sink:inbox_write", request))
+            test.is_true(retracted.success)
+            test.is_nil(read(first, created.dest_ref.item_id), "sender retraction removes the projection item")
+            test.eq(#await_notifications(prefix .. "129", 4), 4, "sender retraction reaches the last member")
+            for i = 1, 129 do
+                local id = prefix .. string.format("%03d", i)
+                test.eq(#notifications(id), 4, "every member receives sender retraction")
+                test.not_nil((user_groups.remove_user_from_group(id, group)))
             end
         end)
         test.it("notifies only current group members after the addressed projection commits", function()
