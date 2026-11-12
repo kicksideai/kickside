@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 """Assignment roles expose display metadata in the shared security catalog."""
 import unittest
 from pathlib import Path
