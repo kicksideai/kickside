@@ -5,8 +5,8 @@ defineProps<{ title: string; count?: number }>()
 </script>
 
 <template>
-  <div class="km-railhead">
-    <span class="km-railhead-title">{{ title }}<b v-if="count !== undefined">{{ count }}</b></span>
-    <div class="km-railhead-acts"><slot name="actions" /></div>
+  <div class="kx-railhead">
+    <span class="kx-railhead-title">{{ title }}<b v-if="count !== undefined">{{ count }}</b></span>
+    <div class="kx-railhead-acts"><slot name="actions" /></div>
   </div>
 </template>

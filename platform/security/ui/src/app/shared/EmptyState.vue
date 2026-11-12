@@ -8,10 +8,10 @@ const emit = defineEmits<{ (e: 'cta'): void }>()
 </script>
 
 <template>
-  <div class="km-empty">
-    <Icon :icon="icon" class="km-empty-ico" aria-hidden="true" />
-    <div class="km-empty-title">{{ title }}</div>
-    <p v-if="hint" class="km-empty-hint">{{ hint }}</p>
+  <div class="kx-empty">
+    <div class="kx-empty-ico"><Icon :icon="icon" aria-hidden="true" /></div>
+    <div class="kx-empty-title">{{ title }}</div>
+    <p v-if="hint" class="kx-empty-sub">{{ hint }}</p>
     <Button v-if="cta" :icon="ctaIcon" @click="emit('cta')">{{ cta }}</Button>
   </div>
 </template>

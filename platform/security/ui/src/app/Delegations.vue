@@ -104,19 +104,17 @@ defineExpose({ load: store.load })
 <template>
   <section class="ks-runas" aria-label="Run-as permissions">
     <header class="ks-runas-head">
-      <div>
-        <h2 class="ks-runas-title">Run-as permissions</h2>
-        <p class="ks-runas-lede">
-          Agents, automations and workflows run with the access of the account set in their
-          <b>Run as</b> setting. A permission lets members of a group choose a specific account there,
-          typically a bot account, so the component works with that account's access instead of their own.
-        </p>
-      </div>
+      <span class="ks-runas-count">{{ active.length }} active {{ active.length === 1 ? 'permission' : 'permissions' }}</span>
       <div class="ks-runas-acts">
         <IconButton icon="tabler:refresh" label="Refresh" :disabled="loading || locked" :spin="loading" @click="store.load" />
         <Button v-if="!formOpen" variant="primary" small icon="tabler:plus" :disabled="locked" @click="openForm">New permission</Button>
       </div>
     </header>
+    <p class="ks-runas-lede">
+      Agents, automations and workflows run with the access of the account set in their
+      <b>Run as</b> setting. A permission lets members of a group choose a specific account there,
+      typically a bot account, so the component works with that account's access instead of their own.
+    </p>
 
     <div v-if="error" role="alert"><Notice severity="danger" @dismiss="error = ''">{{ error }}</Notice></div>
     <Notice v-if="confirmation" data-test="delegation-confirmation" severity="success" @dismiss="confirmation = ''">{{ confirmation }}</Notice>
@@ -177,7 +175,7 @@ defineExpose({ load: store.load })
 
     <Spinner v-if="loading && !delegations.length" label="Loading run-as permissions…" />
     <div v-else-if="visibleGrants.length" class="ks-runas-list">
-      <article v-for="grant in visibleGrants" :key="grant.policy_id" class="ks-runas-grant" :class="{ revoked: !grant.active }">
+      <article v-for="grant in visibleGrants" :key="grant.policy_id" class="kx-card ks-runas-grant" :class="{ revoked: !grant.active }">
         <Icon class="ks-runas-grant-icon" icon="tabler:user-shield" aria-hidden="true" />
         <div class="ks-runas-grant-body">
           <div class="ks-runas-grant-line">
@@ -195,10 +193,10 @@ defineExpose({ load: store.load })
         <Button v-else variant="ghost" small icon="tabler:user-off" :disabled="locked" :aria-label="`Revoke run-as permission for ${accountLabel[grant.principal.id] || 'Account unavailable'}`" @click="revoke(grant)">Revoke</Button>
       </article>
     </div>
-    <div v-else-if="!error && !formOpen" class="ks-runas-empty">
-      <Icon icon="tabler:user-shield" aria-hidden="true" />
-      <b>No active run-as permissions</b>
-      <span>Without an active permission, the Run as setting offers only <b>Me</b>.</span>
+    <div v-else-if="!error && !formOpen" class="kx-empty">
+      <div class="kx-empty-ico"><Icon icon="tabler:user-shield" aria-hidden="true" /></div>
+      <div class="kx-empty-title">No active run-as permissions</div>
+      <p class="kx-empty-sub">Without an active permission, the Run as setting offers only <b>Me</b>.</p>
     </div>
   </section>
 </template>
