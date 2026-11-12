@@ -22,7 +22,7 @@ function M.encrypt(plaintext: any): (string?, string?)
     if err then return nil, "encrypt failed: " .. tostring(err) end
     -- base64 so the ciphertext is valid UTF-8 text on both SQLite and Postgres
     -- (PG rejects invalid byte sequences in text columns).
-    return base64.encode(enc)
+    return base64.encode(enc :: string)
 end
 
 function M.decrypt(ciphertext: any): (string?, string?)

@@ -228,7 +228,7 @@ function M.put_code(raw_code: string, args: any): string?
     if key_err or not key then return "OAuth grant key derivation failed" end
     local ciphertext, seal_err = secret_cipher.encrypt(encoded, key, M.code_hash(raw_code))
     if seal_err or not ciphertext then return "OAuth grant encryption failed" end
-    local sealed, base_err = base64.encode(ciphertext)
+    local sealed, base_err = base64.encode(ciphertext :: string)
     if base_err then return tostring(base_err) end
     local envelope, envelope_err = json.encode({ sealed = sealed })
     if envelope_err then return tostring(envelope_err) end

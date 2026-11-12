@@ -26,7 +26,7 @@ end
 function M.seal(plaintext: string, key: string, aad: string?): (string?, error?)
     local ciphertext, err = M.encrypt(plaintext, key, aad)
     if err then return nil, err end
-    return base64.encode(ciphertext)
+    return base64.encode(ciphertext :: string)
 end
 
 function M.open(ciphertext: string, key: string, aad: string?): (string?, error?)

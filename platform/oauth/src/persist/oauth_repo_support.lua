@@ -70,7 +70,7 @@ local function encrypt_oauth_data(oauth_data: oauth_types.SecretPayload, key: st
     end
 
     -- base64 so the ciphertext is valid UTF-8 text on both SQLite and Postgres.
-    return base64.encode(encrypted)
+    return base64.encode(encrypted :: string)
 end
 
 local function decrypt_oauth_data(encrypted_data: string?, key: string): (oauth_types.SecretPayload?, string?)
@@ -95,7 +95,7 @@ local function decrypt_oauth_data(encrypted_data: string?, key: string): (oauth_
     end
 
     -- Then JSON decode
-    local data, err = json.decode(decrypted)
+    local data, err = json.decode(decrypted :: string)
     if err then
         return nil, "Failed to decode decrypted JSON: " .. err
     end
@@ -119,7 +119,7 @@ local function encrypt_access_token(access_token: string?, key: string): (string
     end
 
     -- base64 so the ciphertext is valid UTF-8 text on both SQLite and Postgres.
-    return base64.encode(encrypted)
+    return base64.encode(encrypted :: string)
 end
 
 -- Decrypt just the access token
