@@ -62,23 +62,23 @@
 /* 13% is the tint that reads as "coloured" without competing with the label on
    top of it, matched to `--kx-wash-*` in kx-tokens.css so a decorative badge
    and a severity badge sit at the same weight beside each other. */
-.kx-tone-blue {
+.kx-tone-blue.kx-tone-blue {
   color: var(--kx-tone-blue);
   background-color: color-mix(in srgb, var(--kx-tone-blue) 13%, transparent);
 }
 
-.kx-tone-violet {
+.kx-tone-violet.kx-tone-violet {
   color: var(--kx-tone-violet);
   background-color: color-mix(in srgb, var(--kx-tone-violet) 13%, transparent);
 }
 
-.kx-tone-amber {
+.kx-tone-amber.kx-tone-amber {
   color: var(--kx-tone-amber);
   background-color: color-mix(in srgb, var(--kx-tone-amber) 13%, transparent);
 }
 
 /* The absence of a tone, for a category with nothing to say. */
-.kx-tone-neutral {
+.kx-tone-neutral.kx-tone-neutral {
   color: var(--p-text-muted-color);
   background-color: color-mix(in srgb, var(--p-text-color) 10%, transparent);
 }
