@@ -46,14 +46,6 @@ entries:
     auto_init: true
     mode: "0700"
 
-  # wippy/cdn data volume: manual icon collections under iconify/library/ and rebuildable serving
-  # data. Keep it with the database across restarts.
-  - name: cdn_data
-    kind: fs.directory
-    directory: ./.wippy/cdn/
-    auto_init: true
-    mode: "0700"
-
   - name: tmp
     kind: fs.directory
     directory: ./.wippy/tmp/
