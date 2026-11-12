@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.84](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.83...knowledge-v0.1.84) (2026-11-12)
+
+
+### Bug Fixes
+
+* resolve assignment defaults and imported dependency APIs ([#437](https://github.com/kicksideai/kickside/issues/437)) ([89d16c3](https://github.com/kicksideai/kickside/commit/89d16c3b391318d79e5e194fc4b1062d0149a60c))
+
 ## [0.1.83](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.82...knowledge-v0.1.83) (2026-11-11)
 
 
