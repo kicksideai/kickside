@@ -106,10 +106,10 @@ class PublicHarnessTests(unittest.TestCase):
             checked.append(module)
         self.assertTrue(checked, 'CI must exercise stateful PostgreSQL harnesses')
 
-    def test_automation_upgrade_and_live_harnesses_use_separate_databases(self):
+    def postgres_ci_calls(self, module, harnesses):
         workflow = (ROOT / '.github/workflows/ci.yml').read_text()
         jobs = re.split(r'(?m)^        - module: ', workflow)[1:]
-        job = next(job for job in jobs if job.splitlines()[0] == 'platform/automation'
+        job = next(job for job in jobs if job.splitlines()[0] == module
                    and re.search(r'(?m)^          engine: postgres$', job))
         commands = '\n'.join(line[12:] for line in job.split('          commands: |\n', 1)[1].splitlines()
                              if line.startswith('            '))
@@ -117,8 +117,8 @@ class PublicHarnessTests(unittest.TestCase):
         # PostgreSQL. Record the database selected by each real shell command.
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            for harness in ('test', 'live-test'):
-                (root / 'platform/automation' / harness).mkdir(parents=True)
+            for harness in harnesses:
+                (root / module / harness).mkdir(parents=True)
             tools = root / 'tools'
             tools.mkdir()
             helper = tools / 'record'
@@ -140,6 +140,23 @@ if name == 'jq': print('0.0.0')
                                 'HARNESS_CALLS': str(calls), 'GITHUB_RUN_ID': 'review', 'GITHUB_RUN_ATTEMPT': '1'},
                            check=True, capture_output=True, text=True, timeout=20)
             recorded = [json.loads(line) for line in calls.read_text().splitlines()]
+        return recorded
+
+    def test_users_ci_allocates_every_migration_database(self):
+        recorded = self.postgres_ci_calls('platform/users', ('test',))
+        command = next(call for call in recorded if call['name'] == 'wippy' and call['args'][0] == 'test')
+        database = next(arg.split('=', 1)[1] for arg in command['args'] if arg.startswith('vars.pg_database='))
+        config = (ROOT / 'platform/users/test/.wippy.yaml').read_text()
+        selected = set(re.findall(r'"\$\{pg_database\}([^"]*)"', config))
+        self.assertTrue(selected)
+        expected = {database + suffix for suffix in selected}
+        created = [call['args'][0] for call in recorded if call['name'] == 'createdb']
+        dropped = [call['args'][0] for call in recorded if call['name'] == 'dropdb']
+        self.assertCountEqual(created, expected)
+        self.assertCountEqual(dropped, created)
+
+    def test_automation_upgrade_and_live_harnesses_use_separate_databases(self):
+        recorded = self.postgres_ci_calls('platform/automation', ('test', 'live-test'))
         tests = [call for call in recorded if call['name'] == 'wippy' and call['args'][0] == 'test']
         self.assertEqual(len(tests), 2)
         def selected(call, key):
