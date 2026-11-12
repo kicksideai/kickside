@@ -1,35 +1,14 @@
+# Provisional data target contracts have no consumers yet; revisions are expected.
 version: "1.0"
 namespace: kickside.data
 
 entries:
-  # ─── Creating the target a load needs ────────────────────────────────
-  # loadable refuses to create -- a target exists before a load, or there is no
-  # load -- and this is the other half. It is a separate contract rather than two
-  # more methods on loadable because accepting rows and changing a schema are
-  # different rights: a receiver that takes rows must not have to pretend it can
-  # issue DDL, and a host that binds one for loads has not thereby handed it
-  # schema authority. A receiver that binds both answers loadable.describe with
-  # supports.can_define = true.
-  #
-  # There is no type vocabulary in this contract, and that is the decision it is
-  # built around. A receiver publishes its own through types(), with the options
-  # each type accepts, and the caller -- an agent reading a spreadsheet, a person
-  # filling a form -- chooses from what that receiver actually offers. A closed
-  # list here would be one of two things: the smallest set every store can
-  # express, or a promise some store keeps only by widening it, and a password
-  # silently stored as text is not a password. What a caller may depend on is the
-  # answer instead of the vocabulary: define reports what it did, and
-  # loadable.describe then describes those columns in its own closed coercion
-  # enum, which is what a producer coerces values to.
-  #
-  # Reading an existing target's shape is loadable.describe's job, not a third
-  # method here: a receiver that can define is expected to bind both.
   - name: definable
     kind: contract.definition
     meta:
-      title: Definable Data Sink
-      tags: [data, sink, schema, define, ddl]
-      comment: Create or alter the target a load writes into. The receiver owns and publishes its type vocabulary; the caller picks from it.
+      title: Definable Target
+      tags: [data, schema, define, ddl]
+      comment: Create, alter or drop the target a load writes into. The receiver owns and publishes its type vocabulary; the caller picks from it.
     methods:
       - name: types
         description: |
@@ -43,6 +22,17 @@ entries:
           kickside.data:loadable will never carry it, so a caller designing an import should not
           choose one. It is advisory -- the target's own describe is what states which columns a
           load may write.
+
+          coerces_to is the storage type loadable.describe answers for a column of this type -- one
+          of string, number, integer, boolean, date, datetime, time -- and so what a producer coerces
+          values to. A
+          caller that has profiled a column in those words chooses among the types whose
+          coerces_to is what it found. It is absent exactly when bulk_writable is false: a type no
+          load fills has nothing to coerce to.
+
+          options_schema says what a column of the type may set, and an option's default is what the
+          column gets without it: a caller that leaves a string type's max_length out gets the
+          default, and describe then states the column's options as created.
         input_schemas:
           - format: application/schema+json
             definition: |
@@ -71,9 +61,17 @@ entries:
                         "name": { "type": "string", "minLength": 1, "description": "What define expects in a column's type." },
                         "title": { "type": "string", "minLength": 1, "description": "What a person choosing it reads." },
                         "description": { "type": "string", "description": "What it is for, in terms a caller deciding between two types can act on." },
-                        "options_schema": { "type": "object", "description": "JSON Schema of this type's per-column options. Absent means the type takes none." },
-                        "bulk_writable": { "type": "boolean", "description": "False when no bulk load can fill a column of this type." }
-                      }
+                        "options_schema": { "type": "object", "description": "JSON Schema of this type's per-column options. Absent means the type takes none. An option's default is what a column gets without it: a string type's max_length, for one." },
+                        "bulk_writable": { "type": "boolean", "description": "False when no bulk load can fill a column of this type." },
+                        "coerces_to": {
+                          "type": "string",
+                          "enum": ["string", "number", "integer", "boolean", "date", "datetime", "time"],
+                          "description": "What loadable.describe answers as the type of a column of this type: the storage type a producer coerces a value to. Absent when no bulk load can fill such a column."
+                        }
+                      },
+                      "if": { "properties": { "bulk_writable": { "const": false } }, "required": ["bulk_writable"] },
+                      "then": { "properties": { "coerces_to": false } },
+                      "else": { "required": ["coerces_to"] }
                     }
                   },
                   "error": { "$ref": "#/$defs/DataError" }
@@ -103,7 +101,7 @@ entries:
                         ]
                       },
                       "message": { "type": "string" },
-                      "retriable": { "type": "boolean" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
                       "retry_after_ms": { "type": "integer", "minimum": 0 },
                       "auth_expired": { "type": "boolean" },
                       "scope": {
@@ -114,7 +112,35 @@ entries:
                       "provider_code": { "type": "string" },
                       "details": { "type": "object" }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }
@@ -128,17 +154,56 @@ entries:
 
           dry_run = true answers what it would do and writes nothing. That answer is what a person
           approving a schema change reads, so a define that cannot proceed names every reason at once
-          in details.blockers -- each { code, message, column? } -- rather than the first one it hit.
+          in details.blockers -- each { code, message, column? } -- under one reason,
+          invalid_request/invalid_definition, rather than the code of whichever blocker came first;
+          conflict/code_taken is the one refusal that is a race on the apply, not a blocker.
           Well-known blocker codes: unsupported_type, unsupported_option, invalid_code, code_taken,
-          type_conflict, key_unknown_column, period_conflict, immutable.
+          type_conflict, key_unknown_column, key_nullable, period_conflict, immutable.
+
+          A target is a platform component: the receiver registers one for every target it creates
+          and keeps it for the target's life. Every define that is not a dry run answers its
+          component_id, one that changed nothing included.
+
+          Access: component ACL bits are independent (READ=1, WRITE=2, DELETE=4); effective access
+          is the union of grants on the component and its ancestors. Apply visibility first on
+          every method: without READ an existing target is not_found, even with WRITE or DELETE,
+          before judging its definition. permission_denied is only for a visible target lacking
+          the required permission, with details.target. types is open to whoever may load;
+          define and remove run under the right to define, which a host grants separately from the
+          right to load. On top of it, a define of a target that exists takes read and write access
+          to its component, whether or not it changes anything. A dry run writes nothing: one that
+          would create a target needs the right to define alone, and one about a target that exists
+          takes read access to its component -- it answers what readable.describe would show.
 
           Adding a column to a target that already holds rows is an addition, never a retype: the rows
           already there have nothing to put in a column that did not exist, so such a column is
           optional however insistently it was asked for. A receiver that cannot add one without
           rewriting the rows refuses instead of rewriting them.
 
+          A column the target already holds is matched by name and kept as it is. Its type MAY be
+          omitted -- that is how a caller re-lists a target it read through loadable.describe, which
+          speaks the coercion enum, without guessing this receiver's names -- and when it is given it
+          MUST be the name this receiver holds the column under, type_conflict otherwise. A column
+          the target does not hold needs a type: without one, or with one types() did not answer,
+          the blocker is unsupported_type. The rest of a held column is compared too, not only its
+          type: a period role on a target that has no axis is a change (period_set), the role on
+          another column than the stored axis is period_conflict, new values for an enum or a longer
+          max_length are a change (options_changed), while nullable = false on an optional column, a
+          value removed from an enum or a changed precision, scale or grain is immutable -- the rows
+          already there may violate it. A column named in key MUST be nullable = false; naming an
+          optional column the target already holds is key_nullable.
+
+          description, and a column's label and description, are what a person and an agent read
+          about the target; readable.describe answers them as written. Given, they replace what the
+          receiver holds, an empty string clears them, and left out they stay as they are. They are
+          never a blocker and never touch a row: a define that changes only them alters no column,
+          and they may be given for a column the target holds without its type. A define of a target
+          that exists may leave columns out when it changes only its title or description; creating
+          one always names its columns.
+
           describe, when present, is what loadable.describe answers for the target once this
-          definition is applied: the columns, their storage types and the key. A dry run carries it
+          definition is applied: the columns, their storage types, their options as created and the
+          key. A dry run carries it
           for a target that does not exist yet, so a caller can check rows against it before anything
           is created. A receiver that cannot say leaves it out.
         input_schemas:
@@ -148,10 +213,13 @@ entries:
                 "$schema": "https://json-schema.org/draft/2020-12/schema",
                 "type": "object",
                 "additionalProperties": false,
-                "required": ["columns"],
                 "oneOf": [
-                  { "required": ["target"], "not": { "required": ["code"] } },
-                  { "required": ["code", "title"], "not": { "required": ["target"] } }
+                  {
+                    "required": ["target"],
+                    "not": { "required": ["code"] },
+                    "anyOf": [{ "required": ["columns"] }, { "required": ["description"] }, { "required": ["title"] }]
+                  },
+                  { "required": ["code", "title", "columns"], "not": { "required": ["target"] } }
                 ],
                 "properties": {
                   "target": {
@@ -165,30 +233,33 @@ entries:
                     "description": "Local name for a target that does not exist yet. The receiver decides whether it is usable and answers with the full id."
                   },
                   "title": { "type": "string", "minLength": 1, "description": "What a person calls it. Required when creating." },
+                  "description": { "type": "string", "description": "What the target holds, in terms an agent choosing a target can act on. An empty string clears it; left out, it stays." },
                   "columns": {
                     "type": "array",
                     "minItems": 1,
                     "items": {
                       "type": "object",
                       "additionalProperties": false,
-                      "required": ["name", "type"],
+                      "required": ["name"],
                       "properties": {
                         "name": { "type": "string", "minLength": 1 },
-                        "type": { "type": "string", "minLength": 1, "description": "A name types() answered with." },
+                        "type": { "type": "string", "minLength": 1, "description": "A name types() answered with. Required for a column the target does not hold; a column it holds keeps its type and may be named without one." },
                         "nullable": { "type": "boolean" },
                         "role": {
                           "type": "string",
                           "enum": ["period"],
                           "description": "The same role loadable.describe reports: the axis replace_scope.period_in replaces by. At most one column may carry it."
                         },
-                        "options": { "type": "object", "description": "Values for this type's options_schema." }
+                        "options": { "type": "object", "description": "Values for this type's options_schema." },
+                        "label": { "type": "string", "description": "What a person calls the column. An empty string clears it; left out, it stays." },
+                        "description": { "type": "string", "description": "What the column means, its unit included, in terms an agent choosing a measure can act on. An empty string clears it; left out, it stays." }
                       }
                     }
                   },
                   "key": {
                     "type": "array",
                     "items": { "type": "string", "minLength": 1 },
-                    "description": "Columns naming one row's identity, in loadable's sense: a non-empty key is what makes commit refuse duplicates."
+                    "description": "Columns naming one row's identity, in loadable's sense: a non-empty key is what makes commit refuse duplicates. Its columns are never nullable: a new one is created required, a held optional one is key_nullable."
                   },
                   "dry_run": { "type": "boolean", "description": "Answer what would happen and write nothing." }
                 }
@@ -205,6 +276,7 @@ entries:
                   "target": { "type": "string", "pattern": "^[^\\s:]+:[^\\s:]+$", "description": "The id a load names. For a creation this is the receiver's answer to code." },
                   "created": { "type": "boolean", "description": "True when the target did not exist; false when an existing one was brought up to the columns." },
                   "planned": { "type": "boolean", "description": "True when dry_run answered and nothing was written." },
+                  "component_id": { "type": "string", "minLength": 1, "description": "The platform component the target is. Access to the target is this component's ACL, grants on its ancestors included. Answered by every define that is not a dry run; a dry run leaves it out." },
                   "changes": {
                     "type": "array",
                     "description": "What was done, or would be. Empty means the target already matched.",
@@ -216,7 +288,7 @@ entries:
                         "action": {
                           "type": "string",
                           "minLength": 1,
-                          "description": "The receiver's own word for what it did. Well-known values: target_created, column_added, key_set, period_set."
+                          "description": "The receiver's own word for what it did. Well-known values: target_created, column_added, column_optional (a column asked for as required, added optional to a target that already exists), options_changed, key_set, period_set, label_changed (a column's label set or cleared), description_changed (the description of the target, or of the column the change names, set or cleared), title_changed (the target's title replaced)."
                         },
                         "column": { "type": "string" },
                         "detail": { "type": "string" }
@@ -237,8 +309,9 @@ entries:
                           "required": ["name", "type", "nullable"],
                           "properties": {
                             "name": { "type": "string", "minLength": 1 },
-                            "type": { "type": "string", "enum": ["string", "number", "integer", "boolean", "date"] },
+                            "type": { "type": "string", "enum": ["string", "number", "integer", "boolean", "date", "datetime", "time"] },
                             "format": { "type": "string" },
+                            "options": { "type": "object", "description": "The column's options as the receiver holds them, keyed as its types().options_schema names them, every default filled in: a string type's max_length, an enum's values. A caller that read options_schema knows the names; absent for a column whose type takes none." },
                             "role": { "type": "string", "enum": ["period"] },
                             "nullable": { "type": "boolean" }
                           }
@@ -256,11 +329,19 @@ entries:
                 "allOf": [
                   {
                     "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
-                    "then": { "required": ["target", "created", "changes"], "properties": { "error": false } }
+                    "then": { "required": ["target", "created", "planned", "changes"], "properties": { "error": false } }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": true }, "planned": { "const": false } }, "required": ["success", "planned"] },
+                    "then": { "required": ["component_id"] }
+                  },
+                  {
+                    "if": { "properties": { "planned": { "const": true } }, "required": ["planned"] },
+                    "then": { "properties": { "component_id": false } }
                   },
                   {
                     "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
-                    "then": { "required": ["error"], "properties": { "target": false, "created": false, "changes": false, "describe": false } }
+                    "then": { "required": ["error"], "properties": { "target": false, "created": false, "planned": false, "component_id": false, "changes": false, "describe": false } }
                   }
                 ],
                 "$defs": {
@@ -277,7 +358,7 @@ entries:
                         ]
                       },
                       "message": { "type": "string" },
-                      "retriable": { "type": "boolean" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
                       "retry_after_ms": { "type": "integer", "minimum": 0 },
                       "auth_expired": { "type": "boolean" },
                       "scope": {
@@ -288,7 +369,145 @@ entries:
                       "provider_code": { "type": "string" },
                       "details": { "type": "object" }
                     },
-                    "required": ["code", "message", "retriable", "scope"]
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+
+      - name: remove
+        description: |
+          Drop the target and every row in it. The whole target goes: its rows, what loads recorded
+          about them and the id itself; a later define with the same code makes a new, empty target.
+
+          A target that is already gone is no refusal: retrying a removal, or removing what another
+          caller removed first, succeeds. A target id this receiver does not publish is not_found.
+
+          Access: remove runs under the right to define, as define does. Apply visibility first:
+          an existing target without READ is not_found, even if DELETE is granted. A visible target
+          requires DELETE on its component; without it the answer is permission_denied with
+          details.target. Grants on the component and its ancestors are unioned, as in define.
+          A target something else still depends on -- another target that relates to it,
+          a lock the receiver keeps on it -- is conflict, with details.reason naming why.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["target"],
+                "properties": {
+                  "target": {
+                    "type": "string",
+                    "pattern": "^[^\\s:]+:[^\\s:]+$",
+                    "description": "The target to drop, as a load names it."
+                  }
+                }
+              }
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "success": { "type": "boolean" },
+                  "error": { "$ref": "#/$defs/DataError" }
+                },
+                "required": ["success"],
+                "allOf": [
+                  {
+                    "if": { "properties": { "success": { "const": true } }, "required": ["success"] },
+                    "then": { "properties": { "error": false } }
+                  },
+                  {
+                    "if": { "properties": { "success": { "const": false } }, "required": ["success"] },
+                    "then": { "required": ["error"] }
+                  }
+                ],
+                "$defs": {
+                  "DataError": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "code": {
+                        "type": "string",
+                        "enum": [
+                          "auth_expired", "rate_limited", "invalid_config", "invalid_request", "not_found",
+                          "conflict", "permission_denied", "provider_unavailable", "provider_error",
+                          "cursor_expired", "history_unavailable", "stalled", "unknown"
+                        ]
+                      },
+                      "message": { "type": "string" },
+                      "retriable": { "type": "boolean", "description": "One rule for the family: true only for rate_limited, stalled and provider_unavailable with reason infrastructure; provider_unavailable always carries reason infrastructure or timeout, and everything else is a decision a retry does not change. A failed call itself -- transport, no binding -- counts as infrastructure." },
+                      "retry_after_ms": { "type": "integer", "minimum": 0 },
+                      "auth_expired": { "type": "boolean" },
+                      "scope": {
+                        "type": "string",
+                        "enum": ["item", "flow", "connection", "provider", "capacity", "identity"],
+                        "description": "Classifies blast radius. item-scope with retriable=false is a poison candidate."
+                      },
+                      "provider_code": { "type": "string" },
+                      "details": { "type": "object" }
+                    },
+                    "required": ["code", "message", "retriable", "scope"],
+                    "allOf": [
+                      {
+                        "if": { "properties": { "code": { "const": "provider_unavailable" } }, "required": ["code"] },
+                        "then": {
+                          "required": ["details"],
+                          "properties": {
+                            "details": {
+                              "required": ["reason"],
+                              "properties": { "reason": { "enum": ["infrastructure", "timeout"] } }
+                            }
+                          }
+                        }
+                      },
+                      {
+                        "if": { "properties": { "retriable": { "const": true } }, "required": ["retriable"] },
+                        "then": {
+                          "anyOf": [
+                            { "properties": { "code": { "enum": ["rate_limited", "stalled"] } } },
+                            {
+                              "properties": {
+                                "code": { "const": "provider_unavailable" },
+                                "details": { "properties": { "reason": { "const": "infrastructure" } } }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    ]
                   }
                 }
               }

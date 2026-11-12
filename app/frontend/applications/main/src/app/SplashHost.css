@@ -102,6 +102,7 @@
 .sp-dialog .sp-main { display: block; padding: 0; overflow: visible; }
 .sp-dialog .sp-h { padding-right: 32px; font-size: 24px; }
 .sp-dialog .sp-step-host { margin-top: 16px; }
+.sp-step-host.sp-step-host-lead { margin-top: 0; }
 .sp-close {
   position: absolute; top: 16px; right: 16px; z-index: 1; display: grid; place-items: center;
   width: 32px; height: 32px; padding: 0; border: 0; border-radius: var(--kx-radius-8);

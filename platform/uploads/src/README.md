@@ -45,6 +45,27 @@ An upload moves through storage, processing, and completion:
 3. When processing settles as `completed` or `error`, Uploads runs every
    completion callback attached to the upload.
 
+`POST /uploads` returns `{ success: true, uuid, component_id }`. When the
+same user uploads bytes that already belong to an existing upload, the response
+returns that upload's `uuid` and includes `deduped: true`. A newly created upload
+omits `deduped`.
+
+Each completed stage records its outcome in private upload metadata under the
+current job lease. Automatic retries of that job skip the completed prefix and
+enter the first incomplete stage. A new processing job, including a user-requested
+retry, starts every stage. Stages that succeed without producing all required
+outputs return `completed = false`; later stages may run, but the completed prefix
+cannot advance past the unfinished stage. An absent `completed` field preserves
+the successful-stage contract. The execution limit applies independently to each attempt.
+
+Stage artifact writes reuse the upload's role and ordinal slots. Conversion
+replaces primary content and its metadata, while automatic retries that skip
+conversion preserve OCR's recorded per-page outcomes. Rendering reuses available
+page images and writes only the missing pages. Artifact selection orders by
+ordinal, creation time and artifact id, including installations with historical
+duplicates. Immutable source artifacts remain addressable across source changes.
+`create_artifact` keeps its existing append semantics for other callers.
+
 Work that depends on a processed file attaches a completion callback instead of
 polling upload status. A callback is an upload token minted by the module that
 owns the follow-up work:
@@ -179,3 +200,43 @@ The `ai_upload_svg` smoke scenario verifies the exact original image bytes and m
 Without a completion token, upload records deduplicate identical bytes within one
 owner's standalone uploads or within one parent archive. Separate archives retain separate child records and parent
 provenance. Artifact blobs continue to share identical bytes independently of these records.
+
+
+## Page images
+
+`kickside.uploads:page_images` publishes `get_info({upload_id, cursor?, revision?})`
+and `read_image({upload_id, page, revision, max_bytes?, max_width?, max_height?})`.
+Each call uses the same original-read decision as `/raw`: actor and scope must
+permit the uploads container READ or a protected readable reference. Ordinary
+sessions keep their access; restricted scopes cannot use owner identity to bypass
+this check. Existing holders of the uploads `module_access` policy can call the
+capability, subject to that separate record check. Its page functions and libraries
+use exact resource IDs in the runtime policy.
+
+Discovery returns the source page count, at most 128 availability entries, limits,
+and an opaque revision. `text_bound: true` and `text: {artifact_id, checksum}` appear
+only when the primary text locator proves the current source checksum. Otherwise
+`text_bound: false` omits text, and unproven text does not enter the revision.
+Consumers requiring matching text and images must require `text_bound: true`.
+Non-paged files return `not_paged`; paged formats without a renderer return
+`unsupported`; children without a validated mapping return `page_mapping_unavailable`.
+
+Reads accept one 1-based page and the discovery revision. Delivery ceilings are
+4 MiB, 4096 pixels per side, PNG/JPEG; caller ceilings can only tighten them.
+Source reads are bounded to 128 MiB. Matching proven full-page artifacts can be
+reused; otherwise the installed rasterizer renders on demand. Images remain
+request-scoped: no rendition cache, artifact, job or retention state is written.
+There is no new HTTP endpoint. Cancellation leaves no generated image to clean up.
+
+Ordinary document conversion and OCR rendering add an optional `source_checksum`
+field to new primary-text and rendered-page artifact locators, including locators
+returned by existing artifact APIs. Existing fields, processing selection, defaults
+and settings remain unchanged. Historical locators remain readable; their unproven
+text or rendition identity cannot establish a page-image source binding.
+
+Renderer errors preserve kind, retryability and code. Unclassified older renderer
+errors (a string or a message-only envelope) map to retryable
+`UNAVAILABLE/page_render_failed`. Malformed classified envelopes are rejected.
+An uncached PDF read invokes the adapter once. The current PDF API parses during
+`open()` for page count and again during `render()`; removing those two parses
+requires a converter API change. Uploads adds no separate count call to a read.

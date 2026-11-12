@@ -23,7 +23,7 @@ type FunctionData = {
 type FunctionEntry = { data: FunctionData?, meta: { [string]: any }? }
 
 local EXPECTED: { [string]: { string } } = {
-    ["kickside.knowledge:dep.kickside.component"] = { "kickside/component", "*" },
+    ["kickside.knowledge:dep.kickside.component"] = { "kickside/component", ">=0.3.12" },
     ["kickside.knowledge:dep.kickside.execution"] = { "kickside/execution", "*" },
     ["kickside.knowledge:dep.kickside.contract"] = { "kickside/contract", "*" },
     ["kickside.knowledge:dep.kickside.core"] = { "kickside/core", "*" },
@@ -62,6 +62,12 @@ end
 
 local function define_tests()
     test.describe("kickside.knowledge packaging", function()
+        test.it("supplies host defaults when installed through another module", function()
+            for name, expected in pairs({api_router="app:api", ui_server="app:gateway"}) do
+                local entry, err=registry.get("kickside.knowledge:"..name)
+                test.is_nil(err); test.eq(entry.data.default, expected, name)
+            end
+        end)
         test.it("reads embedding choices from the configured model catalog", function()
             local entry = registry.get("kickside.knowledge.api:list_embedding_models") :: FunctionEntry
             test.eq((entry.data :: FunctionData).imports.models, "kickside.models.catalog:model_catalog")

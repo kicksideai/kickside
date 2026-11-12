@@ -211,6 +211,7 @@ entries:
       - contract
       - funcs
     imports:
+      audit_retention: kickside.component.persist:audit_retention
       deletion_worker: app:deletion_test_worker
       test: wippy.test:test
       component: kickside.component:component

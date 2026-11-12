@@ -34,6 +34,7 @@ interface RunBase {
   // The completed run's Finish payload, present only on a terminal-completed run detail
   // (GET .../runs/{run_id} adds it via runs.output_for_run). Absent — never null — for
   // running and failed runs. This is the embed's read seam for rendering the result.
+  step_data_retention_days?: number
   output?: unknown
   dataflow_id?: string
   // The engine's live status for an active run (the runs list reads it while the run is
@@ -147,6 +148,7 @@ function asRunRow(r: Record<string, unknown>): RunRow {
     error: r.error != null ? String(r.error) : null,
     started_at: r.started_at != null ? String(r.started_at) : null,
     finished_at: r.finished_at != null ? String(r.finished_at) : null,
+    ...(r.step_data_retention_days != null ? { step_data_retention_days: Number(r.step_data_retention_days) } : {}),
     ...(r.output !== undefined ? { output: r.output } : {}),
     dataflow_id: r.dataflow_id != null ? String(r.dataflow_id) : undefined,
     ...(r.dataflow_status != null ? { dataflow_status: String(r.dataflow_status) } : {}),

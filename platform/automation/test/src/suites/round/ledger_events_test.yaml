@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: kickside.automation
+entries:
+  - name: round_ledger_events_test
+    kind: function.lua
+    source: file://ledger_events_test.lua
+    method: run
+    meta: {type: test, suite: kickside_automation_round}
+    modules: [uuid, json]
+    imports:
+      test: wippy.test:test
+      round_harness: kickside.automation:round_harness
+      round_ledger: kickside.automation:round_ledger
+      round_history: kickside.automation:round_history
+      automation_db: kickside.automation:automation_db

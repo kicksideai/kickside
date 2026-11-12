@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.2.17](https://github.com/kicksideai/kickside/compare/agents-v0.2.16...agents-v0.2.17) (2026-11-12)
+
+
+### Bug Fixes
+
+* resolve assignment defaults and imported dependency APIs ([#437](https://github.com/kicksideai/kickside/issues/437)) ([89d16c3](https://github.com/kicksideai/kickside/commit/89d16c3b391318d79e5e194fc4b1062d0149a60c))
+
+## [0.2.16](https://github.com/kicksideai/kickside/compare/agents-v0.2.15...agents-v0.2.16) (2026-11-10)
+
+
+### Bug Fixes
+
+* **agents:** collapse capability details and remove standalone tool selection ([#408](https://github.com/kicksideai/kickside/issues/408)) ([8e75d94](https://github.com/kicksideai/kickside/commit/8e75d94c0eb1af17d878e4fb8724042eda08f8a3))
+
+## [0.2.15](https://github.com/kicksideai/kickside/compare/agents-v0.2.14...agents-v0.2.15) (2026-11-09)
+
+
+### Bug Fixes
+
+* **agents:** show capability details once in the editor ([#383](https://github.com/kicksideai/kickside/issues/383)) ([0d304be](https://github.com/kicksideai/kickside/commit/0d304bebcdc05f7a4e8a2aa91da7078765a218e9))
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+
+## [0.2.14](https://github.com/kicksideai/kickside/compare/agents-v0.2.13...agents-v0.2.14) (2026-11-08)
+
+
+### Bug Fixes
+
+* UI artifacts in buttons, headings, dialogs and tables ([#371](https://github.com/kicksideai/kickside/issues/371)) ([ea55ea8](https://github.com/kicksideai/kickside/commit/ea55ea8a17ee5802cb73a4dbcf39878d7f56cd2e))
+
+## [0.2.13](https://github.com/kicksideai/kickside/compare/agents-v0.2.12...agents-v0.2.13) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
+## [0.2.12](https://github.com/kicksideai/kickside/compare/agents-v0.2.11...agents-v0.2.12) (2026-11-07)
+
+
+### Bug Fixes
+
+* **agents:** carry success on the agent deletion receipt ([#343](https://github.com/kicksideai/kickside/issues/343)) ([d33187a](https://github.com/kicksideai/kickside/commit/d33187ac2ce471efabb19c2ed9f25ee257e5c983))
+
+## [0.2.11](https://github.com/kicksideai/kickside/compare/agents-v0.2.10...agents-v0.2.11) (2026-11-07)
+
+
+### Bug Fixes
+
+* carry the component deletion receipt through thread, skill, webhook, workflow and agent deletes ([#341](https://github.com/kicksideai/kickside/issues/341)) ([98e9d03](https://github.com/kicksideai/kickside/commit/98e9d03b522828d63b284dff4174ef7543bef2cb))
+
 ## [0.2.10](https://github.com/kicksideai/kickside/compare/agents-v0.2.9...agents-v0.2.10) (2026-11-07)
 
 

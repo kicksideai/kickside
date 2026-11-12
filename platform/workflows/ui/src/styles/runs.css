@@ -60,18 +60,14 @@
 .wf-run-ver.is-draft { background: color-mix(in srgb, var(--wf-amber) 16%, transparent); color: color-mix(in srgb, var(--wf-amber) 35%, var(--p-text-color)); }
 .wf-panel-how .wf-run-ver { margin-right: 6px; vertical-align: middle; }
 .wf-run-tabs { margin-top: 14px; }
-.wf-run-tech { margin: 6px 2px 0; }
 .wf-run-select-hint { margin-top: 16px; }
-.wf-run-engine-meta { margin: 5px 2px 0; font-family: var(--wf-mono); font-size: var(--wf-fs-label); color: var(--wf-muted); overflow-wrap: anywhere; }
 .wf-run-timeline { margin-top: 16px; }
 .wf-timeline-list { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
 .wf-timeline-event { padding: 8px; border: 1px solid var(--wf-line-soft); border-radius: var(--wf-radius); background: var(--wf-surface); }
 .wf-timeline-head { display: flex; gap: 6px; align-items: baseline; }
 .wf-timeline-type { font-size: var(--wf-fs-meta); font-weight: 700; color: var(--p-text-color); overflow-wrap: anywhere; }
-.wf-timeline-source { font-size: var(--wf-fs-label); color: var(--wf-muted); text-transform: uppercase; letter-spacing: .04em; }
+.wf-timeline-outcome { margin: 3px 0; font-size: var(--wf-fs-meta); color: var(--p-text-color); }
 .wf-timeline-when { display: block; margin-top: 3px; font-family: var(--wf-mono); font-size: var(--wf-fs-label); color: var(--wf-muted); overflow-wrap: anywhere; }
-.wf-timeline-raw { margin-top: 7px; }
-.wf-timeline-raw pre { max-height: 180px; overflow: auto; margin: 6px 0 0; padding: 7px; border-radius: 8px; background: var(--wf-panel); color: var(--p-text-color); white-space: pre-wrap; overflow-wrap: anywhere; }
 
 /* ── Version history popover ─────────────────────────────────────────────── */
 .wf-vers-pop { width: 320px; max-height: 72vh; }

@@ -1,6 +1,7 @@
 @import "@wippy-fe/theme/theme-config.css";
 @import "@widgets/app/pickerselect.css";
 @import "@kickside/ui-kit/spin.css";
+@import "@widgets/app/anchored-panel.css";
 @tailwind base;
 :host { display: block; }
 /* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */

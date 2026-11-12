@@ -5,9 +5,7 @@ exports[`RunNodeOutput — real failed-agent run > matches the captured drawer s
   <div class="wf-panel-hdr wf-panel-hdr--run"><i class="ic" data-icon="tabler:history" aria-hidden="true"></i><span class="wf-panel-hdr-kind">Viewing run</span></div>
   <p class="wf-panel-how"><span class="p-tag p-component p-tag-danger wf-run-status-tag" data-p="danger" data-pc-name="tag" pc1="" data-pc-section="root"><!----><span class="p-tag-label" data-pc-section="label">Failed</span></span><span class="p-tag p-component p-tag-secondary wf-run-version-tag" data-p="secondary" title="Ran published version 1" data-pc-name="tag" pc2="" data-pc-section="root"><!----><span class="p-tag-label" data-pc-section="label">v1</span></span><span> Run 88444c66 · started 23m ago<span> · finished 23m ago</span>. Read-only — nothing here can be edited.</span></p>
   <div class="wf-run-actions"><button class="p-button p-component p-button-secondary p-button-outlined" data-p="outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" pc3="" data-pc-section="root"><i class="ic" data-icon="tabler:refresh" aria-hidden="true"></i><span>Re-run with same input</span></button><button class="p-button p-component p-button-secondary p-button-outlined" data-p="outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" pc4="" data-pc-section="root"><i class="ic" data-icon="tabler:pencil" aria-hidden="true"></i><span>Back to editing</span></button></div>
-  <div class="wf-run-actions"><button class="p-button p-component p-button-secondary p-button-outlined" data-p="outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" pc5="" data-pc-section="root"><i class="ic" data-icon="tabler:download" aria-hidden="true"></i><span>Download run details</span></button>
-    <!--v-if-->
-  </div>
+  <div class="wf-run-actions"><button class="p-button p-component p-button-secondary p-button-outlined" data-p="outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" pc5="" data-pc-section="root"><i class="ic" data-icon="tabler:download" aria-hidden="true"></i><span>Download run details</span></button></div>
   <!--v-if-->
   <div class="p-tabs p-component wf-run-tabs" data-pc-name="tabs" pc6="" data-pc-section="root">
     <div class="p-tablist" data-p="" aria-label="Run inspector sections" data-pc-name="tablist" pc7="" data-pc-section="root">
@@ -20,13 +18,13 @@ exports[`RunNodeOutput — real failed-agent run > matches the captured drawer s
     </div>
   </div>
   <div class="wf-panel-label">Refund Triage</div>
-  <!--v-if-->
   <p class="wf-run-status"><span class="p-tag p-component p-tag-danger wf-run-status-tag" data-p="danger" data-pc-name="tag" pc11="" data-pc-section="root"><!----><span class="p-tag-label" data-pc-section="label">Failed</span></span><span class="wf-run-timing"><i class="ic" data-icon="tabler:clock" aria-hidden="true"></i>3.6s</span></p><!-- Error first: a directed moment — what happened, then what to do next. -->
   <div class="wf-run-fail">
     <div class="wf-run-fail-h"><i class="ic" data-icon="tabler:alert-triangle" aria-hidden="true"></i><span>This step failed.</span></div>
     <!--v-if-->
     <p class="wf-run-fail-note">No further detail was recorded for this failure. Re-run with the same input to try again, or open the step to adjust it.</p>
   </div>
+  <!--v-if-->
   <div class="p-panel p-component p-panel-toggleable wf-payload" data-p="toggleable" data-pc-name="panel" pc13="" data-pc-section="root">
     <div class="p-panel-header" data-p="toggleable" data-pc-section="header"><span class="wf-payload-title"><i class="ic" data-icon="tabler:login-2" aria-hidden="true"></i><span>Input</span></span>
       <div class="p-panel-header-actions" data-pc-section="headeractions"><button class="p-button p-component p-button-secondary p-button-outlined p-button-sm wf-payload-copy" data-p="small outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" title="Copy to clipboard" pc14="" data-pc-section="root"><i class="ic" data-icon="tabler:copy" aria-hidden="true"></i><span>Copy</span></button><button class="p-button p-component p-button-icon-only p-button-secondary p-button-rounded p-button-text p-panel-toggle-button" data-p="icon-only rounded text" type="button" data-pc-name="pctogglebutton" data-p-disabled="false" data-p-severity="secondary" id="pv_id_13_header" aria-controls="pv_id_13_content" aria-expanded="true" data-pc-extend="button" pc15="" data-pc-section="root"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="p-icon p-button-icon" aria-hidden="true">

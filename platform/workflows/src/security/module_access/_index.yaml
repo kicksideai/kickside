@@ -9,6 +9,7 @@ entries:
     intent: module_access
     includes:
     - kickside.workflows.security:module_runtime
+    - kickside.workflows.security:retention_window
   groups: []
   policy:
     resources:

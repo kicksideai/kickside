@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { api } from '@wippy-fe/proxy'
 import Button from 'primevue/button'
 import { relativeTime } from '@widgets/app/datetime'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import { resolvePrincipals, type Principal, type PrincipalRef } from '../../../../users/ui/src/principals'
 
 interface Subject { kind: string; id: string }
@@ -31,10 +31,32 @@ function clear() {
 function subject(ref?: Subject) {
   return principals.value.find(row => row.type === ref?.kind && row.id === ref?.id)?.label || 'Account unavailable'
 }
-function evidenceLabel(row: Delivery) {
-  return { recorded: 'Recorded admission', absent: 'Identity evidence absent',
-    inferred: 'Identity evidence inferred; unverified', unresolved: 'Identity unresolved' }[row.evidence_status]
+function historicalAccount(row: Delivery, account?: Subject) {
+  const label = subject(account)
+  return row.evidence_status === 'inferred' ? `${label} (unverified)` : label
 }
+function runAccount(row: Delivery) {
+  if (row.evidence_status === 'absent') return 'Account not recorded'
+  if (row.evidence_status === 'unresolved') return 'Account unavailable'
+  return historicalAccount(row, row.evidence?.identity?.principal)
+}
+function outcome(state: string) {
+  const labels: Record<string, string> = {
+    resolved: 'Completed', waiting: 'Waiting to retry', uncertain: 'Needs attention',
+    failed: 'Failed', filtered: 'Skipped', superseded: 'Replaced',
+    succeeded: 'Accepted', pending: 'Updating…',
+  }
+  return labels[state] || 'Outcome unavailable'
+}
+const history = computed(() => [
+  ...deliveries.value.map(row => ({ key: deliveryKey(row), at: row.round_at, state: row.state,
+    account: runAccount(row), role: 'Run by', authorizer: row.evidence?.identity?.authorized_by
+      ? historicalAccount(row, row.evidence.identity.authorized_by) : undefined,
+    error: errorMessage(row.error) })),
+  ...controls.value.map(row => ({ key: `${row.generation}:${row.request_id}`, at: row.created_at, state: row.state,
+    account: row.initiation ? subject({ kind: 'user', id: row.initiation.actor_id }) : 'Account not recorded',
+    role: 'Requested by', authorizer: undefined, error: '' })),
+].sort((a, b) => b.at.localeCompare(a.at) || a.key.localeCompare(b.key)))
 function deliveryKey(row: Delivery) {
   return JSON.stringify([row.drive_key, row.round_token, row.source_port, row.item_key, row.identity_key])
 }
@@ -78,21 +100,21 @@ async function read() {
   } catch (cause) { if (version === sequence) report(cause) }
   finally { if (version === sequence) busy.value = false }
 }
-async function more(kind: 'deliveries' | 'controls') {
-  if (busy.value) return
+async function more() {
+  if (busy.value || (!deliveryCursor.value && !controlCursor.value)) return
   const version = sequence, root = props.root
-  const cursor = kind === 'deliveries' ? deliveryCursor.value : controlCursor.value
-  if (!cursor) return
   busy.value = true; error.value = ''
   try {
-    const next = await page<Delivery | Control>(root, kind, cursor)
-    const deliveryRows = kind === 'deliveries' ? [...deliveries.value, ...next.entries as Delivery[]] : deliveries.value
-    const controlRows = kind === 'controls' ? [...controls.value, ...next.entries as Control[]] : controls.value
+    const [deliveryPage, controlPage] = await Promise.all([
+      deliveryCursor.value ? page<Delivery>(root, 'deliveries', deliveryCursor.value) : null,
+      controlCursor.value ? page<Control>(root, 'controls', controlCursor.value) : null,
+    ])
+    const deliveryRows = [...deliveries.value, ...(deliveryPage?.entries || [])]
+    const controlRows = [...controls.value, ...(controlPage?.entries || [])]
     const accounts = await labels(deliveryRows, controlRows)
     if (version !== sequence) return
     deliveries.value = deliveryRows; controls.value = controlRows; principals.value = accounts
-    if (kind === 'deliveries') deliveryCursor.value = next.next_page_token || ''
-    else controlCursor.value = next.next_page_token || ''
+    deliveryCursor.value = deliveryPage?.next_page_token || ''; controlCursor.value = controlPage?.next_page_token || ''
   } catch (cause) { if (version === sequence) report(cause) }
   finally { if (version === sequence) busy.value = false }
 }
@@ -101,41 +123,26 @@ onBeforeUnmount(() => { sequence += 1 })
 </script>
 
 <template>
-  <section aria-label="Execution history" class="kx-history">
-    <p v-if="busy" role="status" class="kx-dnote">Loading execution history…</p>
+  <section aria-label="History" class="kx-history">
+    <h3 class="kx-dsub-lbl">History</h3>
+    <p v-if="busy" role="status" class="kx-dnote">Loading history…</p>
     <p v-if="error" role="alert" class="kx-dnote kx-dnote-err">{{ error }}</p>
     <template v-else>
-      <div class="kx-history-group">
-        <h3 class="kx-dsub-lbl">Committed deliveries</h3>
-        <p v-if="!busy && !deliveries.length" class="kx-dnote">No retained deliveries.</p>
-        <article v-for="row in deliveries" :key="deliveryKey(row)" class="kx-history-entry">
-          <div class="kx-history-head"><strong class="kx-history-title" :title="row.item_key">{{ row.item_key }}</strong><span class="kx-history-state">{{ row.state }}</span></div>
-          <p class="kx-history-meta">Round starts {{ relativeTime(row.round_at, { future: true }) }}</p>
-          <p class="kx-history-meta">{{ evidenceLabel(row) }}</p>
-          <dl class="kx-history-kv" v-if="row.evidence?.identity">
-            <dt class="kx-dfact-k">Executor</dt><dd class="kx-history-v" :title="row.evidence.identity.principal.id" aria-label="Historical executor">{{ subject(row.evidence.identity.principal) }}</dd>
-            <template v-if="row.evidence.identity.authorized_by">
-              <dt class="kx-dfact-k">Authorized by</dt><dd class="kx-history-v" :title="row.evidence.identity.authorized_by.id" aria-label="Historical authorizer">{{ subject(row.evidence.identity.authorized_by) }}</dd>
-            </template>
-          </dl>
-          <p v-if="errorMessage(row.error)" class="kx-dmsg is-err">{{ errorMessage(row.error) }}</p>
-        </article>
-        <Button v-if="deliveryCursor" label="More deliveries" severity="secondary" :disabled="busy" @click="more('deliveries')" />
-      </div>
-      <div class="kx-history-group">
-        <h3 class="kx-dsub-lbl">Control requests</h3>
-        <p class="kx-dnote">Control requests and delivery admission are independent records.</p>
-        <p v-if="!busy && !controls.length" class="kx-dnote">No retained control requests.</p>
-        <article v-for="row in controls" :key="`${row.generation}:${row.request_id}`" class="kx-history-entry">
-          <div class="kx-history-head"><span class="kx-history-state">{{ row.state }}</span></div>
-          <p class="kx-history-meta">Requested {{ relativeTime(row.created_at, { future: true }) }}</p>
-          <dl class="kx-history-kv" v-if="row.initiation">
-            <dt class="kx-dfact-k">Initiated by</dt><dd class="kx-history-v" :title="row.initiation.actor_id" aria-label="Control initiator">{{ subject({ kind: 'user', id: row.initiation.actor_id }) }}</dd>
-          </dl>
-          <p v-else class="kx-history-meta">Initiator not recorded.</p>
-        </article>
-        <Button v-if="controlCursor" label="More control requests" severity="secondary" :disabled="busy" @click="more('controls')" />
-      </div>
+      <p v-if="!busy && !history.length" class="kx-dnote">No history yet.</p>
+      <article v-for="row in history" :key="row.key" class="kx-history-entry">
+        <div class="kx-history-head">
+          <time class="kx-history-meta" :datetime="row.at">{{ relativeTime(row.at, { future: true }) }}</time>
+          <span class="kx-history-state">{{ outcome(row.state) }}</span>
+        </div>
+        <dl class="kx-history-kv">
+          <dt class="kx-dfact-k">{{ row.role }}</dt><dd class="kx-history-v" :aria-label="row.role">{{ row.account }}</dd>
+          <template v-if="row.authorizer">
+            <dt class="kx-dfact-k">Authorized by</dt><dd class="kx-history-v" aria-label="Authorized by">{{ row.authorizer }}</dd>
+          </template>
+        </dl>
+        <p v-if="row.error" class="kx-dmsg is-err">{{ row.error }}</p>
+      </article>
+      <Button v-if="deliveryCursor || controlCursor" label="More history" severity="secondary" :disabled="busy" @click="more" />
     </template>
   </section>
 </template>

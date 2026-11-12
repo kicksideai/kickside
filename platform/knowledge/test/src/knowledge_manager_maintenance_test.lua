@@ -43,6 +43,8 @@ local function seed_component(component_id: string, owner: string?, kb_type: str
     insert_meta(d, component_id, "class", class)
     insert_meta(d, component_id, "kb_type", kb_type)
     insert_meta(d, component_id, "status", "ready")
+    insert_meta(d, component_id, "title", component_id)
+    insert_meta(d, component_id, "embedding_model", "class:embed")
     d:release()
 end
 
@@ -62,6 +64,92 @@ end
 
 local function define_tests()
     test.describe("Knowledge manager optional maintenance dispatch", function()
+        test.it("upsert applies accepted description changes to the existing component", function()
+            local id = uuid.v7()
+            seed_component(id, "upsert-reader", "wiki", "knowledge_base")
+            local exec = executor("upsert-reader")
+            local result, err = exec:call(TOOL, {
+                action = "upsert_knowledge_base", name = id, description = "Revised reference",
+            })
+            test.is_nil(err, tostring(err))
+            test.is_false(result.created)
+            test.eq(result.kb.meta.comment, "Revised reference")
+            local cleared, clear_err = exec:call(TOOL, {
+                action = "upsert_knowledge_base", name = id, description = "",
+            })
+            test.is_nil(clear_err, tostring(clear_err))
+            test.eq(cleared.kb.meta.comment, "")
+            cleanup(id)
+        end)
+
+        test.it("upsert refuses immutable and unsupported fields before applying changes", function()
+            local id = "3d9ba14d-4cd3-47b7-a63b-25868c2dcaff"
+            seed_component(id, "upsert-owner", "bound", "knowledge_base")
+            local exec = executor("upsert-owner")
+            for field, value in pairs({ kb_type = "document", embedding_model = "different-embedding", enrichment_agent_id = "another-agent" }) do
+                local args = { action = "upsert_knowledge_base", name = id, description = "Must remain unapplied" }
+                args[field] = value
+                local result, err = exec:call(TOOL, args)
+                test.is_nil(result)
+                test.is_true(errors.is(err, errors.INVALID), tostring(err))
+                test.contains(tostring(err), field)
+            end
+            local same, same_err = exec:call(TOOL, { action = "upsert_knowledge_base", name = id,
+                kb_type = "bound", embedding_model = "class:embed" })
+            test.is_nil(same_err, tostring(same_err))
+            test.is_false(same.created)
+            test.is_nil(same.kb.meta.comment)
+            cleanup(id)
+        end)
+
+        test.it("upsert preserves an unchanged engine-owned enrichment agent", function()
+            local id = "3d9ba14d-4cd3-47b7-a63b-25868c2dcaff"
+            seed_component(id, "upsert-agent-owner", "bound", "knowledge_base")
+            local result, err = executor("upsert-agent-owner"):call(TOOL, {
+                action = "upsert_knowledge_base", name = id, enrichment_agent_id = "stored-agent",
+            })
+            test.is_nil(err, tostring(err))
+            test.is_false(result.created)
+            test.eq(result.kb.component_id, id)
+            cleanup(id)
+        end)
+
+        test.it("repeated matching config upserts perform no store writes through the tool", function()
+            local id = "3d9ba14d-4cd3-47b7-a63b-25868c2dcaff"
+            seed_component(id, "upsert-config-owner", "bound", "knowledge_base")
+            local exec = executor("upsert-config-owner")
+            for _ = 1, 2 do
+                local result, err = exec:call(TOOL, {
+                    action = "upsert_knowledge_base", name = id, config = { served_by = "bound" },
+                })
+                test.is_nil(err, tostring(err))
+                test.is_false(result.created)
+                local d = db()
+                local rows, read_err = d:query("SELECT updated_at FROM kickside_components WHERE component_id = $1", { id })
+                d:release()
+                test.is_nil(read_err, tostring(read_err))
+                test.eq(tonumber(rows[1].updated_at), 0, "fixture counts every store update")
+            end
+            cleanup(id)
+        end)
+
+        test.it("repeats root placement with an empty parent id", function()
+            local id = uuid.v7()
+            seed_component(id, "upsert-root-owner", "wiki", "knowledge_base")
+            local exec = executor("upsert-root-owner")
+            for _ = 1, 2 do
+                local result, err = exec:call("kickside.knowledge.registry:kb_upsert", { name = id, parent_id = "" })
+                test.is_nil(err, tostring(err))
+                test.is_false(result.created)
+                test.eq(result.kb.component_id, id)
+            end
+            local refused, err = exec:call("kickside.knowledge.registry:kb_upsert", { name = id, parent_id = uuid.v7() })
+            test.is_nil(refused)
+            test.is_true(errors.is(err, errors.INVALID), tostring(err))
+            test.contains(tostring(err), "parent_id")
+            cleanup(id)
+        end)
+
         test.it("uses the KB engine's bound contract and preserves the KB context", function()
             local owner = "maintenance-owner-" .. uuid.v4()
             local component_id = uuid.v7()

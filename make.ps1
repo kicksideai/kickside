@@ -19,7 +19,7 @@ param(
 # package first: it is not in the repo and not on any npm registry, so without it
 # the build fails on ENOENT for the import. Add a module here when it adopts.
 $UiKitConsumers = @('app-main', 'agents', 'automation', 'channel', 'connection', 'hub', 'inbox', 'knowledge',
-    'mcp', 'models', 'renderers', 'security', 'sessions', 'settings', 'skills', 'transform', 'ui', 'uploads',
+    'mcp', 'models', 'renderers', 'security', 'sessions', 'settings', 'skills', 'sync', 'transform', 'ui', 'uploads',
     'users', 'webhooks', 'widgets', 'workflows')
 
 # These modules typecheck source imported from platform/widgets/ui via the
@@ -210,8 +210,8 @@ function Do-FacadeCssWatch {
 }
 
 # Ensure dependencies for source reached through the @widgets alias exist.
-# This intentionally does not materialize @kickside/ui-kit: typechecking only
-# follows the Vue/TypeScript source graph, not the CSS-only build package.
+# TypeScript resolves that source's bare imports from the widgets package
+# directory; ui-kit sources resolve from the consumer itself.
 function Ensure-WidgetsTypecheckDependencies {
     $widgets = Resolve-Module 'widgets'
     Invoke-In $widgets.dir {
@@ -226,6 +226,7 @@ function Ensure-WidgetsTypecheckDependencies {
 function Do-Typecheck {
     param([Parameter(Mandatory)][string]$Name)
     if ($WidgetSourceConsumers -contains $Name) { Ensure-WidgetsTypecheckDependencies }
+    if ($UiKitConsumers -contains $Name) { Do-UiKit $Name }
     $m = Resolve-Module $Name
     Write-Host "==> typecheck $($m.dir)" -ForegroundColor Cyan
     Invoke-In $m.dir {

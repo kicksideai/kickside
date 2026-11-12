@@ -53,6 +53,7 @@ entries:
     imports:
       uploads_resources: kickside.uploads.binding:uploads_resources
       artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
       doc2md: kickside.convert.doc2md:doc2md
     method: process
     pool:

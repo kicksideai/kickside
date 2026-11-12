@@ -1,8 +1,8 @@
 import { u as P, a as I, W as A } from "./wc-runtime-h8e5VJvv.js";
-import { s as M, P as N } from "./styles-B3XDHBFR.js";
+import { s as M, P as N } from "./styles-Ce32aXEC.js";
 import { computed as v, watch as h, defineComponent as T, ref as c, onMounted as x, openBlock as m, createElementBlock as f, withModifiers as O, toDisplayString as V, createCommentVNode as R, createVNode as j, unref as B } from "vue";
 import { loadByTagName as _, api as F, define as L } from "@wippy-fe/proxy";
-import { u as U, e as k, _ as z } from "./SyncPipeline.vue_vue_type_script_setup_true_lang-CoUNQyHE.js";
+import { u as U, e as k, _ as z } from "./SyncPipeline.vue_vue_type_script_setup_true_lang-wUVvfzFm.js";
 import "@iconify/vue";
 function d(r) {
   if (r == null || r === "") return {};

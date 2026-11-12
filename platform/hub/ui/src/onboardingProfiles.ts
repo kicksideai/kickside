@@ -23,6 +23,7 @@ export interface OnboardingProfile {
   icon: string
   order: number
   required: boolean
+  selected: boolean
   packages: OnboardingProfilePackage[]
 }
 
@@ -120,6 +121,7 @@ export function normalizeOnboardingProfiles(entries: unknown): OnboardingProfile
       icon: text(row.icon, 100) || 'tabler:packages',
       order: Number.isFinite(Number(row.order)) ? Number(row.order) : 500,
       required: row.required === true,
+      selected: row.selected === true,
       packages: normalizePackages(row.packages),
     })
   }
@@ -133,6 +135,7 @@ export function normalizeOnboardingProfiles(entries: unknown): OnboardingProfile
       || compareText(left.description, right.description)
       || compareText(left.icon, right.icon)
       || Number(right.required) - Number(left.required)
+      || Number(right.selected) - Number(left.selected)
       || compareText(
         left.packages.map(pkg => `${pkg.component}\u0000${pkg.title || ''}\u0000${JSON.stringify(pkg.parameters || [])}`).join('\u0001'),
         right.packages.map(pkg => `${pkg.component}\u0000${pkg.title || ''}\u0000${JSON.stringify(pkg.parameters || [])}`).join('\u0001'),

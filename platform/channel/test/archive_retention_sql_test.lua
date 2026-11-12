@@ -1,0 +1,45 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+local test = require("test")
+local sql = require("sql")
+local uuid = require("uuid")
+local retention = require("retention")
+local sessions = require("sessions")
+local fixture = require("receive_fixture")
+return {run = test.run_cases(function()
+    test.describe("archive retention with backing session SQL", function()
+        test.it("commits each archive before deleting the next backing session", function()
+            fixture.truncate()
+            local owner = uuid.v4()
+            local owner_db = assert(sql.get("app:db"))
+            local _, owner_err = owner_db:execute([[INSERT INTO app_users(user_id,email,full_name,password_hash)
+                VALUES ($1,$2,'Archive owner',$3)]], {owner, owner .. "@example.test",uuid.v4()})
+            owner_db:release()
+            test.is_nil(owner_err, tostring(owner_err))
+            local ids = {uuid.v4(), uuid.v4()}
+            for _, id in ipairs(ids) do
+                local created, create_err = sessions.ensure({session_id=id, user_id=owner})
+                test.is_nil(create_err, tostring(create_err))
+                test.not_nil(created)
+                local db = assert(sql.get("app:db"))
+                local _, err = db:execute([[INSERT INTO kickside_channel_session_archives
+                    (old_session_id,new_session_id,provider,external_id,reason,rotated_at)
+                    VALUES ($1,$1,'archive-sql',$1,'rotation','2000-01-01T00:00:00Z')]], {id})
+                db:release()
+                test.is_nil(err, tostring(err))
+            end
+            local removed, err = retention.prune_archives("app:db", "2001-01-01T00:00:00Z", "2001-01-01T00:00:00Z", 2)
+            test.is_nil(err, tostring(err))
+            test.eq(removed, 2)
+            for _, id in ipairs(ids) do
+                local session, get_err = sessions.get({session_id=id})
+                test.is_nil(session)
+                test.eq(get_err, "Session not found")
+            end
+            local db = assert(sql.get("app:db"))
+            local _, delete_err = db:execute("DELETE FROM app_users WHERE user_id=$1", {owner})
+            db:release()
+            test.is_nil(delete_err,tostring(delete_err))
+            fixture.truncate()
+        end)
+    end)
+end)}

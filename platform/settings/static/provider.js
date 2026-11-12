@@ -1,11 +1,11 @@
 import { W as t, a as o } from "./wc-runtime-DjtZy7dL.js";
 import { P as r } from "./primevue-plugin-CaP7wV_M.js";
 import { a as i } from "./lazy-ZWC1tvFC.js";
-import { s } from "./styles-C0mQL9CY.js";
+import { s } from "./styles-D9m6R71p.js";
 import "@iconify/vue";
 import { define as n } from "@wippy-fe/proxy";
 const p = i(
-  () => import("./provider--ubuNP59.js"),
+  () => import("./provider-CIIkcbCs.js"),
   { loading: "Loading provider settings…", failed: "Could not load the provider settings. Reload the page to try again." },
   o
 ), a = { type: "object", properties: { config: { type: "object" } } };

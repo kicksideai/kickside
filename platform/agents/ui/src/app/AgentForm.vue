@@ -7,9 +7,8 @@ import ToggleSwitch from 'primevue/toggleswitch'
 import { loadByTagName } from '@wippy-fe/proxy'
 import WcMount from '@widgets/app/WcMount.vue'
 import AgentNav from './AgentNav.vue'
-import ToolReference from './ToolReference.vue'
+import CapabilityPicker from './CapabilityPicker.vue'
 import IconField from '@widgets/app/IconField.vue'
-import AnchoredPanel from '@widgets/app/AnchoredPanel.vue'
 import { useAgentCapabilities } from './useAgentCapabilities.ts'
 import { useAgentRouting } from './useAgentRouting.ts'
 import { useAgentFormPersistence } from './useAgentFormPersistence.ts'
@@ -88,6 +87,9 @@ function blank(includeCreateDefaults = true): Form {
 const form = ref<Form>(blank())
 
 const isEdit = computed(() => !!props.agentId)
+const directTools = computed(() => form.value.tools.map(id => ({
+  id, title: props.tools.find(tool => tool.id === id)?.title || id,
+})))
 
 // Non-embedded Dialog visibility: bound to `open`; the Dialog's dismiss paths
 // (mask click, Escape, header/programmatic close) flip it false, which we relay as
@@ -159,15 +161,8 @@ const thinkingOn = computed({
   set: (on: boolean) => { form.value.thinking_effort = on ? (form.value.thinking_effort ?? 50) : null },
 })
 
-const capabilities = useAgentCapabilities({ form, traits: () => props.traits, redirectTrait: REDIRECT_TRAIT })
-const {
-  collapsedTraits, isTraitCollapsed, toggleTraitCollapsed, showAdvancedTools,
-  selectableTraits, traitOn, activeTraits, traitMountConfig, onTraitConfig,
-  tintOf, badgesOf, traitQuery, traitMenuOpen, traitAddRoot, traitSearchInput,
-  traitActiveIndex, traitListboxId, addableTraits, activeTraitOptionId,
-  setTraitOptionRef, onTraitQueryInput, onTraitQueryKeydown, addTrait,
-  toggleTrait, onToolsChange,
-} = capabilities
+const { selectableTraits, selectedCapabilities, activeTraits, traitMountConfig, onTraitConfig, onCapabilitiesChange } =
+  useAgentCapabilities({ form, traits: () => props.traits, redirectTrait: REDIRECT_TRAIT })
 
 const routing = useAgentRouting({
   form,
@@ -297,122 +292,28 @@ const navItems = computed(() => [
 
             <!-- Capabilities -->
             <div v-else-if="tab === 'caps'" class="kx-form">
-              <!-- Traits drive the agent. Add from a filtered dropdown; the active
-                   list tints each capability's icon by its strongest effect (tools /
-                   behavior / memory) and badges what it contributes. Configurable
-                   traits expand their settings inline. -->
-              <div class="kx-group">
+              <CapabilityPicker :traits="selectableTraits" :tools="tools" :selected="selectedCapabilities" @change="onCapabilitiesChange">
+                <template #config="{ trait }">
+                  <WcMount v-if="trait.web_component" :tag="trait.web_component" :config="traitMountConfig(trait.id)" :schema="trait.context_schema"
+                    :provider="trait.provider" @change="(config: unknown) => onTraitConfig(trait.id, config)" />
+                </template>
+              </CapabilityPicker>
+
+              <section v-if="form.tools.length" class="kx-group" aria-label="Existing direct tools">
                 <div class="kx-group-head">
-                  <span class="kx-group-title">Capabilities</span>
-                  <span class="kx-group-meta">{{ activeTraits.length }} active</span>
+                  <span class="kx-group-title">Existing direct tools</span>
+                  <span class="kx-group-meta">{{ form.tools.length }}</span>
                 </div>
-
-                <div ref="traitAddRoot" class="kx-tadd">
-                  <input
-                    ref="traitSearchInput"
-                    v-model="traitQuery"
-                    class="kx-input kx-tadd-input"
-                    type="text"
-                    role="combobox"
-                    aria-label="Search capabilities to add"
-                    aria-autocomplete="list"
-                    :aria-expanded="traitMenuOpen"
-                    :aria-controls="traitListboxId"
-                    :aria-activedescendant="traitMenuOpen ? activeTraitOptionId : undefined"
-                    placeholder="Search capabilities to add…"
-                    @focus="traitMenuOpen = true"
-                    @input="onTraitQueryInput"
-                    @keydown="onTraitQueryKeydown"
-                  />
-                  <AnchoredPanel v-model:open="traitMenuOpen" :anchor="traitAddRoot">
-                    <div :id="traitListboxId" class="kx-tadd-menu" role="listbox" aria-label="Available capabilities">
-                      <button
-                        v-for="(t, index) in addableTraits"
-                        :key="t.id"
-                        :id="`agent-capability-option-${index}`"
-                        :ref="el => setTraitOptionRef(el, index)"
-                        type="button"
-                        class="kx-tadd-opt"
-                        :class="index === traitActiveIndex && 'kx-tadd-opt-active'"
-                        tabindex="-1"
-                        role="option"
-                        :aria-selected="false"
-                        @mouseenter="traitActiveIndex = index"
-                        @click="addTrait(t.id)"
-                      >
-                        <span class="kx-trait-ico" :class="`kx-tint-${tintOf(t)}`"><Icon :icon="t.icon || 'tabler:puzzle'" aria-hidden="true" /></span>
-                        <span class="kx-tadd-opt-text">
-                          <span class="kx-trait-name">{{ t.title || t.id }}</span>
-                          <span v-if="t.description" class="kx-trait-desc">{{ t.description }}</span>
-                        </span>
-                        <span class="kx-trait-badges">
-                          <span v-for="b in badgesOf(t)" :key="b.key" class="kx-badge kx-tag-caps" :class="`kx-badge-${b.key}`">{{ b.label }}</span>
-                        </span>
-                      </button>
-                      <div v-if="!addableTraits.length" class="kx-tadd-empty">No matching capabilities.</div>
-                    </div>
-                  </AnchoredPanel>
-                </div>
-
-                <ul v-if="activeTraits.length" class="kx-traits">
-                  <li v-for="t in activeTraits" :key="t.id" class="kx-trait">
-                    <div class="kx-trait-row">
-                      <span class="kx-trait-ico" :class="`kx-tint-${tintOf(t)}`"><Icon :icon="t.icon || 'tabler:puzzle'" aria-hidden="true" /></span>
-                      <span class="kx-trait-text">
-                        <span class="kx-trait-name">{{ t.title || t.id }}</span>
-                        <span v-if="t.description" class="kx-trait-desc">{{ t.description }}</span>
-                      </span>
-                      <span class="kx-trait-badges">
-                        <span v-for="b in badgesOf(t)" :key="b.key" class="kx-badge kx-tag-caps" :class="`kx-badge-${b.key}`">{{ b.label }}</span>
-                      </span>
-                      <span class="kx-trait-actions">
-                        <button
-                          v-if="t.web_component"
-                          type="button"
-                          class="kx-trait-fold"
-                          :aria-expanded="!isTraitCollapsed(t.id)"
-                          :title="isTraitCollapsed(t.id) ? 'Show settings' : 'Hide settings'"
-                          :aria-label="isTraitCollapsed(t.id) ? 'Show settings' : 'Hide settings'"
-                          @click="toggleTraitCollapsed(t.id)"
-                        >
-                          <Icon :icon="isTraitCollapsed(t.id) ? 'tabler:chevron-right' : 'tabler:chevron-down'" aria-hidden="true" />
-                        </button>
-                        <button type="button" class="kx-trait-x" :aria-label="`Remove ${t.title || t.id} capability`" @click="toggleTrait(t.id)"><Icon icon="tabler:x" aria-hidden="true" /></button>
-                      </span>
-                    </div>
-                    <div v-if="t.web_component && !isTraitCollapsed(t.id)" class="kx-trait-cfg">
-                      <WcMount
-                        :tag="t.web_component"
-                        :config="traitMountConfig(t.id)"
-                        :provider="t.provider"
-                        @change="(cfg: any) => onTraitConfig(t.id, cfg)"
-                      />
-                    </div>
+                <ul class="kx-direct-tools">
+                  <li v-for="{ id, title } in directTools" :key="id" :data-tool-id="id">
+                    <span>{{ title }}</span>
+                    <button type="button" class="kx-trait-x" :aria-label="`Remove ${title} tool`"
+                      @click="form.tools = form.tools.filter(toolId => toolId !== id)">
+                      <Icon icon="tabler:x" aria-hidden="true" />
+                    </button>
                   </li>
                 </ul>
-                <p v-else class="kx-sec-foot">No capabilities yet. Add one above to give this agent what it can do.</p>
-              </div>
-
-              <!-- Full declared documentation and capability/tool combinations. -->
-              <div class="kx-group">
-                <button type="button" class="kx-group-toggle" :aria-expanded="showAdvancedTools" @click="showAdvancedTools = !showAdvancedTools">
-                  <Icon :icon="showAdvancedTools ? 'tabler:chevron-down' : 'tabler:chevron-right'" class="kx-adv-caret" aria-hidden="true" />
-                  <span class="kx-group-title">Tools and combinations</span>
-                  <span class="kx-group-meta">{{ form.tools.length }} selected</span>
-                </button>
-                <template v-if="showAdvancedTools">
-                  <p class="kx-sec-foot">Capabilities add the tools they need automatically. Pick individual tools only for fine-grained control.</p>
-                  <ToolReference
-                    :tools="tools"
-                    :traits="traits"
-                    :selectable-ids="selectableTraits.map(trait => trait.id)"
-                    :selected="form.tools"
-                    :active-traits="form.traits"
-                    @change="onToolsChange"
-                    @add-capability="addTrait"
-                  />
-                </template>
-              </div>
+              </section>
             </div>
 
             <!-- Routing — delegates + redirects merged, segmented toggle. -->

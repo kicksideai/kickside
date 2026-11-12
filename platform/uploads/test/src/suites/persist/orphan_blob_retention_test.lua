@@ -2,8 +2,10 @@ local sql = require("sql")
 local uuid = require("uuid")
 local fs = require("fs")
 local funcs = require("funcs")
+local time = require("time")
 local test = require("test")
 local cleanup = require("artifact_cleanup_repo")
+local resources = require("uploads_resources")
 
 local function db(): any
     local opened, err = sql.get("app:db")
@@ -55,9 +57,11 @@ return test.run_cases(function()
                 (artifact_id,upload_id,blob_id,kind,mime_type)
                 VALUES ($1,$2,$3,'derived','text/plain')]], { uuid.v4(), upload, live })
 
-            local first, first_err = cleanup.prune_orphan_blobs("2998-12-31T00:00:00Z", 1)
+            local first, first_err, progress = cleanup.prune_orphan_blobs("2998-12-31T00:00:00Z", 1)
             test.is_nil(first_err, tostring(first_err))
             test.eq(first, 1)
+            test.is_true(progress.needs_continue, "a full blob page continues independently")
+            test.is_nil(progress.next_at, "orphan eligibility does not add a deadline scan")
             local second, second_err = cleanup.prune_orphan_blobs("2998-12-31T00:00:00Z", 1)
             test.is_nil(second_err, tostring(second_err))
             test.eq(second, 1)
@@ -75,6 +79,77 @@ return test.run_cases(function()
             exec("DELETE FROM kickside_upload_artifact_blobs WHERE blob_id=$1 OR blob_id=$2", { live, recent })
             storage:remove(live_path)
             storage:remove(recent_path)
+        end)
+
+        test.it("issues only the existing candidate scan before bounded blob transactions", function()
+            local original = resources.get_db
+            local scans = 0
+            resources.get_db = function()
+                local db, err = original()
+                if not db then return nil,err end
+                return {
+                    query=function(_self,...)
+                        scans = scans + 1
+                        return db:query(...)
+                    end,
+                    type=function(_self) return db:type() end,
+                    begin=function(_self,...) return db:begin(...) end,
+                    release=function(_self) return db:release() end,
+                },nil
+            end
+            local removed, err, progress = cleanup.prune_orphan_blobs("1900-01-01T00:00:00Z",1)
+            resources.get_db = original
+            test.is_nil(err,tostring(err))
+            test.eq(removed,0,"an empty candidate page removes no blobs")
+            test.eq(scans,1,"retained blobs add no cross-table deadline scan")
+            test.is_false(progress.needs_continue)
+        end)
+
+        test.it("bounds a continuous orphan stream by its 30-day window", function()
+            local base = assert(time.parse(time.RFC3339,"2099-01-01T00:00:00Z"))
+            local ids = {}
+            for day = 1,36 do
+                for _ = 1,3 do
+                    local id = blob(base:add(day*24*time.HOUR):format_rfc3339())
+                    ids[#ids+1] = id
+                end
+                local pages = 0
+                repeat
+                    local _,err,progress = cleanup.prune_orphan_blobs(
+                        base:add((day-30)*24*time.HOUR):format_rfc3339(),2)
+                    test.is_nil(err,tostring(err))
+                    pages = pages + 1
+                    test.is_true(pages < 5)
+                    if not progress.needs_continue then break end
+                until false
+                local retained = 0
+                for _,id in ipairs(ids) do retained = retained + count(id) end
+                test.eq(retained,math.min(day,30)*3)
+            end
+            local opened = db()
+            local _,err = cleanup.collect_orphan_blobs(opened,ids)
+            opened:release()
+            test.is_nil(err,tostring(err))
+        end)
+
+        test.it("keeps removed bytes unreferenced after a later storage lookup fails", function()
+            local id,path = blob("2099-01-01T00:00:00Z")
+            local first = "atomic-a-" .. id
+            local last = "atomic-z-" .. id
+            exec("UPDATE kickside_upload_artifact_blobs SET blob_id=$1 WHERE blob_id=$2",{first,id})
+            exec([[INSERT INTO kickside_upload_artifact_blobs
+                (blob_id,checksum,mime_type,size,storage_id,storage_path,created_at,updated_at)
+                VALUES ($1,$1,'text/plain',0,'app:missing_blob_storage','missing','2099-01-02T00:00:00Z','2099-01-02T00:00:00Z')]],{last})
+            local removed,err = cleanup.prune_orphan_blobs("2100-01-01T00:00:00Z",2)
+            local first_rows = count(first)
+            exec("DELETE FROM kickside_upload_artifact_blobs WHERE blob_id=$1 OR blob_id=$2",{first,last})
+            local storage = assert(fs.get("app:uploads"))
+            local bytes = storage:readfile(path)
+            if bytes then test.is_nil(select(2,storage:remove(path))) end
+            test.is_nil(removed)
+            test.not_nil(err)
+            test.eq(first_rows,0,"removed bytes have no surviving deduplication row")
+            test.is_nil(bytes, "the first blob bytes are removed before the second failure")
         end)
 
         test.it("runs orphan collection from the existing uploads retention callback", function()

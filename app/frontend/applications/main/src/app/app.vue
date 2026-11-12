@@ -65,6 +65,23 @@ const {
   loaded, error: navError, loadNav, reloadNav, dismissSplash, advanceSplash,
 } = useSurfaces()
 
+const resettingSetup = ref(false)
+async function replaySetup() {
+  if (resettingSetup.value) return
+  resettingSetup.value = true
+  try {
+    const { data } = await api.delete('/api/v1/ui/splash/seen')
+    if (data?.success !== true) throw new Error(data?.error || 'Could not reopen workspace setup.')
+    await reloadNav()
+  } catch (cause: unknown) {
+    const response = (cause as { response?: { data?: { error?: string } } })?.response
+    host.toast({ severity: 'error', summary: 'Workspace setup',
+      detail: response?.data?.error || (cause instanceof Error ? cause.message : 'Could not reopen workspace setup.') })
+  } finally {
+    resettingSetup.value = false
+  }
+}
+
 const sessionWorkspace = useSessionWorkspace({
   route,
   router,
@@ -384,6 +401,7 @@ onUnmounted(() => {
       :collapsed-cats="collapsedCats"
       :current-user="currentUser"
       :account-items="accountItems"
+      :resetting-setup="resettingSetup"
       @new-chat="newSessionChat"
       @navigate="navigate"
       @toggle-collapsed="toggleCollapsed"
@@ -391,6 +409,7 @@ onUnmounted(() => {
       @toggle-cat="toggleCat"
       @open-profile="openProfile"
       @account-open="openComponentModal"
+      @replay-setup="replaySetup"
       @logout="logout"
     />
     </Teleport>

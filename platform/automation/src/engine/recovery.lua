@@ -241,7 +241,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
             local receipt_count, receipt_err = (dependencies.receipt_retention :: any).prune_orphans_tx(tx,
                 drive.utc_after(-(policy :: Map).receipts_ms), limit)
             if receipt_err then return nil, receipt_err end
-            local _,history_err=(dependencies.round_history :: any).prune_tx(tx,drive.utc_now(),limit)
+            local _,history_err=(dependencies.round_history :: any).prune_tx(tx,drive.utc_after(-(policy :: Map).history_ms),limit)
             if history_err then return nil,history_err end
             return { ledger = ledger_count, orphan_ledger = orphan_ledger_count, ops = op_count,
                 prepared = prepared_count, receipts = receipt_count }, nil
@@ -260,18 +260,19 @@ function part.attach(M: any, dependencies: any, P: any): ()
                 UNION ALL SELECT MIN(COALESCE(repair_next_at,$2)), 0 FROM kickside_automation_drive
                 WHERE (job_id IS NOT NULL AND wake_generation > wake_applied_generation)
                    OR (job_id IS NULL AND pending_command_id IS NULL AND source_kind <> 'none')
-                UNION ALL SELECT MIN(expires_at), 0 FROM kickside_trigger_item_ledger l WHERE state='resolved'
-                  AND NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key)
-                UNION ALL SELECT MIN(expires_at), 0 FROM kickside_automation_delivery_history
-                UNION ALL SELECT MIN(updated_at), CAST($3 AS BIGINT) FROM kickside_trigger_item_ledger l WHERE state IN ('resolved','dead')
-                  AND NOT EXISTS (SELECT 1 FROM kickside_automation_prepared p WHERE p.automation_id=l.owner_id AND p.idempotency_key=l.identity_key)
-                  AND NOT EXISTS (SELECT 1 FROM kickside_automation_drive d WHERE d.automation_id=l.owner_id)
-                  AND NOT EXISTS (SELECT 1 FROM kickside_automation_command c WHERE c.automation_id=l.owner_id AND c.pending_request_id IS NOT NULL)
-                UNION ALL SELECT MIN(CASE WHEN created_at > completed_at THEN created_at ELSE completed_at END), CAST($4 AS BIGINT)
+                UNION ALL SELECT MIN(CASE WHEN created_at > completed_at THEN created_at ELSE completed_at END), CAST($3 AS BIGINT)
                   FROM kickside_automation_op WHERE state IN ('succeeded','failed','superseded')
 ]],
-                { command.OWNER_DELETE_KIND, now, (policy :: Map).ledger_resolved_ms, (policy :: Map).ops_ms })
+                { command.OWNER_DELETE_KIND, now, (policy :: Map).ops_ms })
             if err then return nil, err end
+            local ledger_deadlines,ledger_deadline_err=(dependencies.round_ledger :: any).retention_deadlines(db,limit)
+            if ledger_deadline_err then return nil,ledger_deadline_err end
+            for _,entry in ipairs(ledger_deadlines) do
+                rows[#rows+1]={at=entry.expires_at or entry.updated_at,delay=entry.updated_at and (policy :: Map).ledger_resolved_ms or 0}
+            end
+            local history_at,history_err=(dependencies.round_history :: any).oldest(db)
+            if history_err then return nil,history_err end
+            rows[#rows+1]={at=history_at,delay=(policy :: Map).history_ms}
             local receipt_at, receipt_err = (dependencies.receipt_retention :: any).oldest_eligible(db)
             if receipt_err then return nil, receipt_err end
             rows[#rows + 1] = { at = receipt_at, delay = (policy :: Map).receipts_ms }

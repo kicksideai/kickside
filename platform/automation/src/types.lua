@@ -140,6 +140,7 @@ type ComponentRow = {
     component_id: string,
     deleting_at: string?,
     deletion_job_id: string?,
+    deletion_job: {status: string, attempts: integer, last_error: string?}?,
     impl_id: string,
     parent_id: string?,
     created_at: any?,
@@ -223,6 +224,9 @@ type LoggerInstance = {
 }
 
 type InstalledAutomation = {
+    deleting_at: string?,
+    deletion_job_id: string?,
+    deletion_job: {status: string, attempts: integer, last_error: string?}?,
     owner_id: string?,
     is_owner: boolean,
     id: string,

@@ -67,20 +67,35 @@ function M.apply(component_id: string, changes: any, collaborators: any): (boole
     local update_meta = has_fields(meta_fields)
     local update_config = config_patch ~= nil
 
-    local config_plan: any = nil
-    if update_config then
-        local component_row, component_err = c.get_component(component_id)
+    local component_row: any = nil
+    if update_meta or update_config then
+        local component_err
+        component_row, component_err = c.get_component(component_id)
         if component_err or not component_row then
             return nil, failure("component_preflight", component_err,
                 "knowledge base not found", 404)
         end
+    end
 
+    if update_meta then
+        local current_meta = type(component_row.meta) == "table" and component_row.meta or {}
+        local changed_fields = {}
+        for key, value in pairs(meta_fields) do
+            if not util.same_value(value, current_meta[key]) then changed_fields[key] = value end
+        end
+        meta_fields = changed_fields
+        update_meta = has_fields(meta_fields)
+    end
+
+    local config_plan: any = nil
+    if update_config then
         local plan, plan_err = c.prepare_config(component_id, component_row, config_patch)
         if plan_err or type(plan) ~= "table" then
             return nil, failure("config_preflight", plan_err,
                 "failed to prepare knowledge base config", 500)
         end
         config_plan = plan
+        update_config = not util.same_value(plan.effective_config, plan.desired_config)
     end
 
     if update_config then

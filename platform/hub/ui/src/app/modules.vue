@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { Icon } from '@iconify/vue'
+import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import Select from 'primevue/select'
 import AnchoredPanel from '@widgets/app/AnchoredPanel.vue'
@@ -59,7 +60,7 @@ const anchorEl = ref<HTMLElement | null>(null)
       <div class="km-denied-box">
         <Icon icon="tabler:lock" class="km-denied-icon" aria-hidden="true" />
         <p class="km-denied-title">Admins only</p>
-        <p class="km-denied-sub">You need the <code class="km-mono">app.security:admin</code> scope to manage modules.</p>
+        <p class="km-denied-sub">You need admin access to manage modules.</p>
       </div>
     </div>
 
@@ -74,16 +75,16 @@ const anchorEl = ref<HTMLElement | null>(null)
         <section>
           <div class="km-sec-bar km-sec-bar-toolbar">
             <div class="km-controls">
-              <button class="km-btn km-btn-secondary km-btn-outlined km-btn-sm" :disabled="installedLoading || catalogLoading" @click="refreshAll">
+              <Button size="small" severity="secondary" outlined :disabled="installedLoading || catalogLoading" @click="refreshAll">
                 <Icon :icon="(installedLoading || catalogLoading) ? 'tabler:loader-2' : 'tabler:refresh'" :class="['km-i', (installedLoading || catalogLoading) && 'spin']" aria-hidden="true" /> Refresh
-              </button>
-              <button class="km-btn km-btn-secondary km-btn-outlined km-btn-sm" :disabled="updateScanLoading || updateAllRunning || installedLoading || installedTotal === 0" @click="scanInstalledUpdates">
+              </Button>
+              <Button size="small" severity="secondary" outlined :disabled="updateScanLoading || updateAllRunning || installedLoading || installedTotal === 0" @click="scanInstalledUpdates">
                 <Icon :icon="updateScanLoading ? 'tabler:loader-2' : 'tabler:refresh-dot'" :class="['km-i', updateScanLoading && 'spin']" aria-hidden="true" /> Scan updates
-              </button>
-              <button class="km-btn km-btn-sm" :disabled="updateAllRunning || updateScanLoading || availableUpdates.length === 0" @click="updateAllAvailable">
+              </Button>
+              <Button size="small" :disabled="updateAllRunning || updateScanLoading || availableUpdates.length === 0" @click="updateAllAvailable">
                 <Icon :icon="updateAllRunning ? 'tabler:loader-2' : 'tabler:download'" :class="['km-i', updateAllRunning && 'spin']" aria-hidden="true" /> Update all
                 <span v-if="availableUpdates.length" class="km-btn-count">{{ availableUpdates.length }}</span>
-              </button>
+              </Button>
               <input v-model="browseFilter" class="km-input km-filter" placeholder="Filter…" />
               <Select
                 v-model="sortBy"
@@ -99,16 +100,17 @@ const anchorEl = ref<HTMLElement | null>(null)
               />
               <!-- Manual Hub token: a dropdown to paste/save the registry token. -->
               <div ref="anchorEl" class="km-hub-auth">
-                <button
-                  class="km-btn km-btn-sm"
-                  :class="hubConnected ? 'km-btn-secondary km-btn-outlined' : hubTokenExpired ? 'km-btn-warning km-btn-outlined' : ''"
+                <Button
+                  size="small"
+                  :severity="hubConnected ? 'secondary' : hubTokenExpired ? 'warn' : undefined"
+                  :outlined="hubConnected || hubTokenExpired"
                   :disabled="hubConnecting"
                   @click="showTokenPanel = !showTokenPanel"
                 >
                   <Icon :icon="hubTokenIcon" class="km-i" aria-hidden="true" />
                   {{ hubTokenButtonLabel }}
                   <Icon icon="tabler:chevron-down" class="km-i-sm" aria-hidden="true" />
-                </button>
+                </Button>
                 <AnchoredPanel v-model:open="showTokenPanel" :anchor="anchorEl" align="right" :width="300">
                 <div class="km-hub-auth-panel">
                   <div class="km-hub-auth-title">Wippy Hub token</div>
@@ -120,10 +122,7 @@ const anchorEl = ref<HTMLElement | null>(null)
                       <span>{{ hubTokenExpired ? 'Token expired' : 'Token active' }}<template v-if="hubIdentity"> — <strong>{{ hubIdentity }}</strong></template></span>
                     </div>
                     <div v-if="hubStatus?.registry" class="km-hub-auth-meta">{{ hubStatus.registry }}</div>
-                    <div class="km-hub-auth-meta">
-                      <template v-if="hubStatus?.scope">scope: {{ hubStatus.scope }}</template>
-                      <template v-if="hubExpiry"> · expires {{ hubExpiry }}</template>
-                    </div>
+                    <div v-if="hubExpiry" class="km-hub-auth-meta">Expires {{ hubExpiry }}</div>
                     <div v-if="hubOrgs.length" class="km-hub-auth-orgs">
                       <div class="km-hub-auth-orgs-label">Organizations</div>
                       <div v-for="org in hubOrgs" :key="org.id || org.name" class="km-hub-auth-org">
@@ -148,13 +147,13 @@ const anchorEl = ref<HTMLElement | null>(null)
                     @keyup.enter="saveHubToken"
                   />
                   <div class="km-hub-auth-actions">
-                    <button class="km-btn km-btn-sm" :disabled="hubConnecting" @click="saveHubToken">
+                    <Button size="small" :disabled="hubConnecting" @click="saveHubToken">
                       <Icon :icon="hubConnecting ? 'tabler:loader-2' : 'tabler:device-floppy'" :class="['km-i', hubConnecting && 'spin']" aria-hidden="true" />
                       {{ hubConnecting ? 'Saving…' : hubTokenStored ? 'Replace token' : 'Save token' }}
-                    </button>
-                    <button v-if="hubTokenStored" class="km-btn km-btn-secondary km-btn-outlined km-btn-sm" @click="clearHubToken">
+                    </Button>
+                    <Button v-if="hubTokenStored" size="small" severity="secondary" outlined @click="clearHubToken">
                       <Icon icon="tabler:trash" class="km-i" aria-hidden="true" /> Clear
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 </AnchoredPanel>
@@ -434,7 +433,7 @@ const anchorEl = ref<HTMLElement | null>(null)
               </div>
             </div>
             <div v-if="uninstallPreview.kept_under_uncertainty?.length" class="km-preview-block">
-              <div class="km-preview-title">Kept under uncertainty</div>
+              <div class="km-preview-title">Kept because usage is unclear</div>
               <div v-for="k in uninstallPreview.kept_under_uncertainty" :key="k.name || k.component" class="km-preview-row">
                 <Icon icon="tabler:help" class="km-i-xs km-dim" aria-hidden="true" />
                 <span class="km-mono">{{ k.name || k.component }}</span>
@@ -445,7 +444,7 @@ const anchorEl = ref<HTMLElement | null>(null)
           </div>
 
           <div v-if="uninstallExecution.length" class="km-ledger">
-            <div class="km-panel-title">Execution ledger</div>
+            <div class="km-panel-title">Uninstall steps</div>
             <div v-for="(s, i) in uninstallExecution" :key="`${s.step}-${i}`" class="km-ledger-row" :class="s.status === 'failed' || s.status === 'rollback_failed' ? 'km-ledger-bad' : s.status === 'rolled_back' ? 'km-ledger-warn' : 'km-ledger-ok'">
               <span class="km-ledger-step">{{ i + 1 }}</span>
               <span class="km-grow">{{ executionStepLabel(s) }}</span>
@@ -462,13 +461,13 @@ const anchorEl = ref<HTMLElement | null>(null)
         </div>
 
         <template #footer>
-          <button class="km-btn km-btn-text km-btn-secondary km-btn-sm" :disabled="uninstallRunning" @click="uninstallDialogOpen = false">Cancel</button>
-          <button class="km-btn km-btn-secondary km-btn-outlined km-btn-sm" :disabled="uninstallRunning || uninstallPreviewLoading" @click="previewUninstall">
+          <Button size="small" severity="secondary" text :disabled="uninstallRunning" @click="uninstallDialogOpen = false">Cancel</Button>
+          <Button size="small" severity="secondary" outlined :disabled="uninstallRunning || uninstallPreviewLoading" @click="previewUninstall">
             <Icon :icon="uninstallPreviewLoading ? 'tabler:loader-2' : 'tabler:eye'" :class="['km-i', uninstallPreviewLoading && 'spin']" aria-hidden="true" /> Preview
-          </button>
-          <button class="km-btn km-btn-danger km-btn-sm" :disabled="!!uninstallActionBlockedReason" :title="uninstallActionBlockedReason || undefined" @click="runUninstall">
+          </Button>
+          <Button size="small" severity="danger" :disabled="!!uninstallActionBlockedReason" :title="uninstallActionBlockedReason || undefined" @click="runUninstall">
             <Icon :icon="uninstallRunning ? 'tabler:loader-2' : 'tabler:trash'" :class="['km-i', uninstallRunning && 'spin']" aria-hidden="true" /> Uninstall
-          </button>
+          </Button>
         </template>
     </Dialog>
   </div>

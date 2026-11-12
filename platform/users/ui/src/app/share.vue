@@ -4,7 +4,7 @@ import { Icon } from '@iconify/vue'
 import { api, host } from '@wippy-fe/proxy'
 import Dialog from 'primevue/dialog'
 import { useProps, useEvents } from '@wippy-fe/webcomponent-vue'
-import { errMsg as baseErrMsg } from '@widgets/app/errMsg'
+import { errMsg as baseErrMsg } from '@kickside/ui-kit/errMsg'
 import PrincipalPicker from './PrincipalPicker.vue'
 import { resolvePrincipals, type Principal } from '../principals'
 

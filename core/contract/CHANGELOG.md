@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.5](https://github.com/kicksideai/kickside/compare/contract-v0.3.4...contract-v0.3.5) (2026-11-11)
+
+
+### Bug Fixes
+
+* **contract:** align data target access and schema guarantees ([#424](https://github.com/kicksideai/kickside/issues/424)) ([8b44d17](https://github.com/kicksideai/kickside/commit/8b44d17efda0414089c0cb7fbeff6dfc252d41fc))
+
+## [0.3.4](https://github.com/kicksideai/kickside/compare/contract-v0.3.3...contract-v0.3.4) (2026-11-09)
+
+
+### Bug Fixes
+
+* rebuild six packages without baked default bindings ([#403](https://github.com/kicksideai/kickside/issues/403)) ([28bdfe1](https://github.com/kicksideai/kickside/commit/28bdfe1020d7c0ef35bc6b383f324a7c86d9042e))
+
 ## [0.3.3](https://github.com/kicksideai/kickside/compare/contract-v0.3.2...contract-v0.3.3) (2026-11-05)
 
 

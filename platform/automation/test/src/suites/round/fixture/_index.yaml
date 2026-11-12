@@ -220,6 +220,32 @@ entries:
     operations:
       upsert: {}
 
+  - name: write_idempotent
+    kind: function.lua
+    source: file://fixture.lua
+    method: write_idempotent
+    modules: [sql, json, ctx, process, channel, time, uuid, security]
+    imports:
+      round_write: kickside.automation:round_write
+      automations_lib: kickside.automation:automation
+
+  - name: idempotent_store_binding
+    kind: contract.binding
+    meta: {delivery: exactly_once, input_shape: record}
+    contracts:
+      - contract: kickside.data:writable
+        methods:
+          write: kickside.automation.round.fixture:write_idempotent
+
+  - name: idempotent_store
+    kind: registry.entry
+    meta: {type: kickside.automation.port, title: Idempotent fixture store}
+    binding: kickside.automation.round.fixture:idempotent_store_binding
+    input_schema: '{ "type": "object" }'
+    operations:
+      upsert: {}
+      delete: {}
+
   - name: notify_binding
     kind: contract.binding
     meta:
@@ -337,3 +363,12 @@ entries:
       round_provenance: kickside.automation:round_provenance
       runtime_policy: kickside.automation:runtime_policy
       canonical_json: kickside.contract:canonical_json
+
+  - name: snapshot_sync_kind
+    kind: contract.binding
+    meta: {type: kickside.automation, title: Snapshot Sync Fixture, class: automation}
+    contracts:
+    - contract: kickside.contract:installable
+      methods: {install: 'kickside.automation.round.fixture:install'}
+    - contract: kickside.trigger:round_consumer
+      methods: {deliver: 'kickside.sync:round_deliver'}

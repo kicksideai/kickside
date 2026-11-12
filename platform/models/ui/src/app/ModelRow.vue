@@ -128,6 +128,7 @@ function onProbeAction() {
         :icon="probeIcon"
         :label="probeButtonLabel"
         size="sm"
+        variant="bordered"
         :severity="probeSeverity"
         :active="hasProbeResult && probeDetailsOpen"
         :spin="probing"
@@ -138,17 +139,18 @@ function onProbeAction() {
         :icon="model.enabled === false ? 'tabler:circle-check' : 'tabler:circle-minus'"
         :label="model.enabled === false ? 'Enable model' : 'Disable model'"
         size="sm"
-        :variant="model.enabled === false ? 'bordered' : 'danger'"
+        variant="bordered"
         :disabled="busy"
         @click="emit('toggle-enabled')"
       />
-      <IconButton icon="tabler:adjustments" label="Edit model" size="sm" @click="emit('edit')" />
+      <IconButton icon="tabler:adjustments" label="Edit model" size="sm" variant="bordered" @click="emit('edit')" />
       <IconButton
         v-if="model.source !== 'registry'"
         icon="tabler:trash"
         label="Delete model"
         size="sm"
-        variant="danger"
+        variant="bordered"
+        severity="danger"
         @click="emit('delete')"
       />
     </div>
@@ -160,7 +162,7 @@ function onProbeAction() {
     >
       <div class="km-mrow-probe-head">
         <Icon :icon="probeStatus === 'ok' ? 'tabler:circle-check' : 'tabler:circle-x'" aria-hidden="true" />
-        <span class="km-mrow-probe-msg">{{ rowProbe?.message }}</span>
+        <span class="km-mrow-probe-msg">{{ probeStatus === 'ok' ? 'Model works' : 'Model check failed' }}</span>
         <span v-if="rowProbe?.data && rowProbe.data.elapsed_ms != null" class="km-probe-time">{{ rowProbe.data.elapsed_ms }} ms</span>
         <Button icon="tabler:activity-heartbeat" variant="ghost" small :disabled="probing || busy" @click="emit('probe')">
           Run again
@@ -168,15 +170,6 @@ function onProbeAction() {
       </div>
 
       <div v-if="rowProbe?.data" class="km-mrow-probe-body">
-        <div class="km-probe-grid">
-          <div class="km-probe-kv"><span>Model</span><code>{{ rowProbe.data.model }}</code></div>
-          <div v-if="rowProbe.data.provider_model" class="km-probe-kv"><span>Provider model</span><code>{{ rowProbe.data.provider_model }}</code></div>
-          <div v-if="rowProbe.data.provider_id" class="km-probe-kv"><span>Provider</span><code>{{ rowProbe.data.provider_id }}</code></div>
-          <div v-if="rowProbe.data.provider_profile_id" class="km-probe-kv"><span>Profile</span><code>{{ rowProbe.data.provider_profile_id }}</code></div>
-          <div v-if="rowProbe.data.finish_reason" class="km-probe-kv"><span>Finish</span><code>{{ rowProbe.data.finish_reason }}</code></div>
-          <div v-if="rowProbe.data.max_tokens != null" class="km-probe-kv"><span>Probe budget</span><code>{{ rowProbe.data.max_tokens }} tok</code></div>
-          <div class="km-probe-kv"><span>Reasoning</span><code>{{ rowProbe.data.reasoning ? 'yes' : 'no' }}</code></div>
-        </div>
         <div v-if="probeTokens.length" class="km-probe-tokens">
           <span class="km-probe-tokens-l">Tokens</span>
           <span v-for="tk in probeTokens" :key="tk.label" class="km-probe-tok"><b>{{ tk.value }}</b> {{ tk.label }}</span>

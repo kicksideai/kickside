@@ -8,8 +8,9 @@ entries:
     meta:
       type: test
       suite: kickside_automation_history
-    modules: [json, uuid, sql]
+    modules: [json, uuid, sql, registry, time]
     imports:
+      migration_runner: wippy.migration:runner
       test: wippy.test:test
       round_harness: kickside.automation:round_harness
       round_history: kickside.automation:round_history

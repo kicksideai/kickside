@@ -5,7 +5,7 @@ import { Icon } from '@iconify/vue'
 import Button from 'primevue/button'
 import { api, loadByTagName } from '@wippy-fe/proxy'
 import { typeIcon, formatSize } from '@widgets/app/fileMetadata'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import { isItem } from './item'
 import type { ItemFile } from './item'
 

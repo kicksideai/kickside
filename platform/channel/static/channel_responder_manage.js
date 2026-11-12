@@ -1,5 +1,5 @@
 import { W as l, a as d } from "./wc-runtime-h8e5VJvv.js";
-import { s as p, P as c } from "./styles-CuLZ0Vsa.js";
+import { s as p, P as c } from "./styles-CemDhX8n.js";
 import { Icon as i } from "@iconify/vue";
 import { defineAsyncComponent as m, defineComponent as u, h as n, onMounted as f } from "vue";
 import { define as y } from "@wippy-fe/proxy";
@@ -39,7 +39,7 @@ function v(t, e, o) {
   });
 }
 const M = v(
-  () => import("./ChannelResponderManage-Bxvw2mP1.js"),
+  () => import("./ChannelResponderManage-CdTSTs83.js"),
   { loading: "Loading channel responder settings…", failed: "Could not load the channel responder settings. Reload the page to try again." },
   d
 ), w = {

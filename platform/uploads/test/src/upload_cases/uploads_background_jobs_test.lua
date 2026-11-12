@@ -256,6 +256,13 @@ end
 local function define_tests()
     test.describe("kickside.uploads packaging", function()
         test.before_all(require_integration_schema)
+        test.it("keeps the converter safety net above the default upload budget", function()
+            local converter = entry("kickside.convert.doc2md:converter")
+            local setting = entry("kickside.uploads:setting.process_max_execution_ms")
+            test.eq(tonumber(value(setting, "default")), 600000)
+            test.is_true(tonumber(value(converter, "limits").max_execution_ms) >= tonumber(value(setting, "default")))
+        end)
+
         test.it("does not publish a module-local processing queue", function()
             test.is_nil((registry.get("kickside.uploads:process_consumer")))
             test.is_nil((registry.get("kickside.uploads:process_queue")))
@@ -475,5 +482,75 @@ local function define_tests()
 
     end)
 end
+
+local function define_budget_tests()
+    local process = require("process")
+    local settings_writer = require("settings_writer")
+    local jobs = require("jobs")
+    test.describe("upload conversion budget", function()
+        local worker_pid: string? = nil
+        test.before_all(function()
+            require_integration_schema()
+            local pid, err = process.spawn_monitored("app:single_worker_pool", "app:processes")
+            test.is_nil(err)
+            worker_pid = tostring(pid)
+        end)
+        test.after_all(function()
+            if worker_pid then process.cancel(worker_pid, "5s") end
+            local _, err = settings_writer.clear("kickside.uploads", "process_max_execution_ms", "uploads-test")
+            test.is_nil(err)
+        end)
+        local function convert_upload(budget_ms: integer?): (any, any, number)
+            if budget_ms then
+                local ok, err = settings_writer.set("kickside.uploads", "process_max_execution_ms", budget_ms, "uploads-test")
+                test.is_nil(err)
+                test.is_true(ok)
+            end
+            local user_id = "user-budget-" .. uuid_v4()
+            local started = time.now()
+            local upload, err = upload_as(user_id, "%PDF-1.4\n", "budget.pdf", 9, "application/pdf", nil, {})
+            test.is_nil(err)
+            test.not_nil(upload)
+            local upload_id = tostring(upload.uuid)
+            test.eq(tonumber(upload.processing_max_execution_ms), budget_ms or 600000)
+            local run: any = nil
+            local deadline = time.now():add("120s")
+            while time.now():before(deadline) do
+                local db = assert(sql.get("app:db"))
+                local rows, read_err = db:query([[SELECT r.status,r.error_text FROM kickside_job_run r
+                    JOIN kickside_job j ON j.id=r.job_id WHERE j.id=$1 AND r.finished_at IS NOT NULL]], {upload.processing_job_id})
+                db:release()
+                test.is_nil(read_err)
+                if #rows > 0 then run = rows[1]; break end
+                time.sleep("100ms")
+            end
+            test.not_nil(run, "upload attempt does not finish")
+            local elapsed = time.now():sub(started):milliseconds()
+            local stored, read_err = upload_query_repo.get(upload_id)
+            test.is_nil(read_err)
+            test.not_nil(stored)
+            if budget_ms then
+                local _, cancel_err = jobs.cancel(tostring(upload.processing_job_id))
+                test.is_nil(cancel_err)
+            end
+            return stored, run, elapsed
+        end
+        test.it("completes a 95 second conversion under the default upload setting", function()
+            local upload, run, elapsed = convert_upload(nil)
+            test.eq(run.status, "completed", tostring(run.error_text))
+            test.eq(upload.storage_state, "completed")
+            test.is_true(elapsed > 90000)
+            test.is_true(elapsed < 120000)
+        end)
+        test.it("ends the attempt through the job worker when the setting is below conversion time", function()
+            local upload, run, elapsed = convert_upload(1000)
+            test.eq(run.status, "failed")
+            test.contains(tostring(run.error_text), "job exceeded max_execution_ms")
+            test.is_true(elapsed < 90000)
+            test.is_true(upload.storage_state ~= "completed")
+        end)
+    end)
+end
+
 local run_cases = test.run_cases(define_tests)
-return { run = function(options) return run_cases(options) end }
+return { run = function(options) return run_cases(options) end, run_budget = test.run_cases(define_budget_tests) }

@@ -189,13 +189,13 @@ local function handler()
         return
     end
 
-    -- Return success with upload record
     res:set_status(http.STATUS.OK)
     local component_id = upload_types.component_id_for_owner(actor_id)
     res:write_json({
         success = true,
         uuid = upload.uuid,
         component_id = component_id,
+        deduped = upload.deduped == true or nil,
     })
 end
 

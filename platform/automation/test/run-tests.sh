@@ -8,7 +8,9 @@ output=$(mktemp "${TMPDIR:-$(pwd)}/automation-test.XXXXXX")
 scratch_files=("$output")
 trap 'rm -f -- "${scratch_files[@]}"' EXIT
 database=$(mktemp "${TMPDIR:-$(pwd)}/automation-test.XXXXXXXX.sqlite")
-scratch_files+=("$database" "$database-wal" "$database-shm")
+for file in "$database" "$database.history-upgrade"; do
+  scratch_files+=("$file" "$file-wal" "$file-shm")
+done
 
 if (($#)); then
   printf '%s\n' 'entry filters are not supported by wippy test; running the complete Automation suite' >&2

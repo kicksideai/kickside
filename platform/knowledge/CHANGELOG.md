@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.1.84](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.83...knowledge-v0.1.84) (2026-11-12)
+
+
+### Bug Fixes
+
+* resolve assignment defaults and imported dependency APIs ([#437](https://github.com/kicksideai/kickside/issues/437)) ([89d16c3](https://github.com/kicksideai/kickside/commit/89d16c3b391318d79e5e194fc4b1062d0149a60c))
+
+## [0.1.83](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.82...knowledge-v0.1.83) (2026-11-11)
+
+
+### Bug Fixes
+
+* tear down knowledge base dependents before deletion ([#425](https://github.com/kicksideai/kickside/issues/425)) ([4e260f0](https://github.com/kicksideai/kickside/commit/4e260f0ce160f34ef099a79f511a4d025fd73c00))
+
+## [0.1.82](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.81...knowledge-v0.1.82) (2026-11-10)
+
+
+### Bug Fixes
+
+* **knowledge:** default host bindings for dependency installation ([#410](https://github.com/kicksideai/kickside/issues/410)) ([70ca063](https://github.com/kicksideai/kickside/commit/70ca063beb59d5a77b0ed73d31c4a575549c4e72))
+
+## [0.1.81](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.80...knowledge-v0.1.81) (2026-11-09)
+
+
+### Bug Fixes
+
+* **knowledge:** apply accepted existing-base upsert changes ([#400](https://github.com/kicksideai/kickside/issues/400)) ([ba360d2](https://github.com/kicksideai/kickside/commit/ba360d21d694db3bdc1d5eb4f94f7c207e443f51))
+
+## [0.1.80](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.79...knowledge-v0.1.80) (2026-11-09)
+
+
+### Bug Fixes
+
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+* **workflows:** simplify run inspection and knowledge summaries ([#378](https://github.com/kicksideai/kickside/issues/378)) ([d9cd391](https://github.com/kicksideai/kickside/commit/d9cd391d7ebf455f2dbde8e9dd4403253c8afb05))
+
+## [0.1.79](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.78...knowledge-v0.1.79) (2026-11-08)
+
+
+### Bug Fixes
+
+* UI artifacts in buttons, headings, dialogs and tables ([#371](https://github.com/kicksideai/kickside/issues/371)) ([ea55ea8](https://github.com/kicksideai/kickside/commit/ea55ea8a17ee5802cb73a4dbcf39878d7f56cd2e))
+
+## [0.1.78](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.77...knowledge-v0.1.78) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
 ## [0.1.77](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.76...knowledge-v0.1.77) (2026-11-07)
 
 

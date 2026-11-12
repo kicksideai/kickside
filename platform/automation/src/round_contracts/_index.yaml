@@ -6,6 +6,7 @@ entries:
     meta:
       comment: The drive slot worker (A21) — one round per attempt through the round runner.
       private: true
+      job_class: awaited
     source: file://../round/worker.lua
     method: run
     security:
@@ -95,10 +96,13 @@ entries:
     source: file://../round/ledger.lua
     modules: [json, sql, time]
     imports:
+      runtime_policy: kickside.automation:runtime_policy
       drive: kickside.automation:drive
       row_limit: kickside.automation:row_limit
       delivery_identity: kickside.automation:delivery_identity
       canonical_json: kickside.contract:canonical_json
+      round_history: kickside.automation:round_history
+      failure_classification: kickside.automation:failure_classification
 
   - name: prepared_retention
     kind: library.lua
@@ -152,6 +156,9 @@ entries:
     source: file://../round/history.lua
     modules: [json, sql]
     imports:
+      runtime_policy: kickside.automation:runtime_policy
+      drive: kickside.automation:drive
+      delivery_identity: kickside.automation:delivery_identity
       row_limit: kickside.automation:row_limit
 
   - name: round_acquire

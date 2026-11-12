@@ -7,8 +7,17 @@ entries:
     meta: { type: test, suite: knowledge_registry }
     source: file://knowledge_bases_test.lua
     method: run
+    modules: [funcs, security]
     imports:
       test: wippy.test:test
+      knowledge_bases: kickside.knowledge.registry:knowledge_bases_lib
+
+  - name: knowledge_bases_probe
+    kind: function.lua
+    source: file://knowledge_bases_probe.lua
+    method: delete_with_child
+    modules: [contract, security, sql, time, ctx]
+    imports:
       knowledge_bases: kickside.knowledge.registry:knowledge_bases_lib
 
   - name: composer_catalog_test
@@ -22,3 +31,34 @@ entries:
     imports:
       test: wippy.test:test
       composer_catalog: kickside.knowledge.registry:composer_catalog
+
+  - name: child
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:deletable
+        context_required: [component_id]
+        methods:
+          delete: kickside.knowledge.registry:child_cleanup
+
+  - name: child_cleanup
+    kind: function.lua
+    source: file://knowledge_bases_probe.lua
+    method: cleanup
+    modules: [contract, security, sql, time, ctx]
+    imports:
+      knowledge_bases: kickside.knowledge.registry:knowledge_bases_lib
+
+  - name: deny_child
+    kind: security.policy
+    policy:
+      resources: kickside.knowledge.registry:child
+      actions: registry.get
+      effect: deny
+
+  - name: allowed_child
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:deletable
+        context_required: [component_id]
+        methods:
+          delete: kickside.knowledge.registry:child_cleanup

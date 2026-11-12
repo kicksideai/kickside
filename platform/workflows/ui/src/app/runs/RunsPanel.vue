@@ -49,7 +49,7 @@ function onVisibleChange(visible: boolean) {
       <span>Loading runs…</span>
     </div>
     <Message v-else-if="error" severity="error" :closable="false">{{ error }}</Message>
-    <p v-else-if="!sorted.length" class="wf-sim-note">No runs yet — Simulate, or publish and trigger this Workflow, to see runs here.</p>
+    <p v-else-if="!sorted.length" class="wf-sim-note">No runs yet. Choose “Run with an input”, or publish and trigger this Workflow, to see runs here.</p>
     <div v-else class="wf-runs-list">
       <Button v-for="{ row: r, ver, cause, duration } in sorted" :key="r.run_id" class="wf-runs-row" text severity="secondary" @click="emit('select', r)">
         <Tag class="wf-run-status-tag" :severity="runSeverity(runStatus(r))" :value="runStatusLabel(runStatus(r))" />

@@ -147,6 +147,7 @@ entries:
   method: run
   imports:
     test: wippy.test:test
+    list_traits: kickside.agents.api:list_traits
   modules:
   - sql
   - json

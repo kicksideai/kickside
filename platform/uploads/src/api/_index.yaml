@@ -229,11 +229,11 @@ entries:
       comment: Serve original upload bytes for inline preview.
     source: file://get_raw.lua
     imports:
-      uploads_resources: kickside.uploads.binding:uploads_resources
+      original_read: kickside.uploads:original_read
       types: kickside.uploads:types
+      uploads_resources: kickside.uploads.binding:uploads_resources
       http_errors: kickside.contract:http_errors
       upload_query_repo: kickside.uploads.persist:upload_query_repo
-      component: kickside.component:component
       upload_tokens: kickside.uploads.persist:upload_tokens
     method: raw_handler
     modules:

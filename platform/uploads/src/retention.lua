@@ -28,14 +28,15 @@ function M.run(): any
     end
     local read_model = read_model_module.new({ core_threads = threads })
     local cutoff = time.now():utc():add(-settings.deleted_read_model_ms * time.MILLISECOND):format_rfc3339()
-    local count, prune_err = read_model.prune_deleted(cutoff, settings.batch_deleted_read_model)
+    local count, prune_err, model_progress = read_model.prune_deleted(cutoff, settings.batch_deleted_read_model)
     if prune_err or count == nil then return { success = false, error = prune_err or missing("prune") } end
     local blob_cutoff = time.now():utc():add(-settings.orphan_blob_ms * time.MILLISECOND):format_rfc3339()
-    local blobs, blob_err = artifact_cleanup.prune_orphan_blobs(blob_cutoff, settings.batch_orphan_blob)
+    local blobs, blob_err, blob_progress = artifact_cleanup.prune_orphan_blobs(blob_cutoff, settings.batch_orphan_blob)
     if blob_err or blobs == nil then return { success = false, error = blob_err or missing("blob prune") } end
     local placements, placement_err = processing_hooks.prune(blob_cutoff, settings.batch_orphan_blob)
     if placement_err or placements == nil then return { success = false, error = placement_err or missing("extension prune") } end
-    return { success = true, deleted = count, blobs_deleted = blobs, placements_deleted = placements }
+    return { success = true, deleted = count, blobs_deleted = blobs, placements_deleted = placements,
+        needs_continue = model_progress.needs_continue or blob_progress.needs_continue }
 end
 
 return M

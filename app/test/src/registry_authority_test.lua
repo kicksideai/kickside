@@ -1,0 +1,23 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+local test = require("test")
+local funcs = require("funcs")
+local security = require("security")
+local uuid = require("uuid")
+
+local function define_tests()
+    test.describe("application user registry authority", function()
+        test.it("refuses cluster name claims from an ordinary application user", function()
+            local actor, actor_err = security.new_actor("registry-member")
+            test.is_nil(actor_err)
+            local scope, scope_err = security.named_scope("app.security:user")
+            test.is_nil(scope_err)
+            local executor, executor_err = funcs.new()
+            test.is_nil(executor_err)
+            local bound = executor:with_actor(actor):with_scope(scope)
+            local answer, err = bound:call("app:registry_claim_probe", { name = "kickside.channel.bridge:" .. uuid.v7() })
+            test.is_nil(answer)
+            test.is_true(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
+        end)
+    end)
+end
+return { run = test.run_cases(define_tests) }

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.19](https://github.com/kicksideai/kickside/compare/users-v0.2.18...users-v0.2.19) (2026-11-09)
+
+
+### Bug Fixes
+
+* preserve lifecycle upgrades and user directory snapshots ([#386](https://github.com/kicksideai/kickside/issues/386)) ([0a842c1](https://github.com/kicksideai/kickside/commit/0a842c16e53b4865771cad9be71680d5e189391d))
+
+## [0.2.18](https://github.com/kicksideai/kickside/compare/users-v0.2.17...users-v0.2.18) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
 ## [0.2.17](https://github.com/kicksideai/kickside/compare/users-v0.2.16...users-v0.2.17) (2026-10-31)
 
 

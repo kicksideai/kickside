@@ -16,6 +16,19 @@ entries:
     imports:
       migration: wippy.migration:migration
 
+  - name: 16_prepared_declaration
+    kind: function.lua
+    meta:
+      type: migration
+      comment: Records the applied declaration hash on each prepared output row.
+      depends_on:
+        - ns:wippy.migration
+        - kickside.automation.migrations:10_drive_schema
+    source: file://16_prepared_declaration.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration
+
   - name: 12_delivery_history
     kind: function.lua
     meta:
@@ -98,3 +111,23 @@ entries:
       migration: wippy.migration:migration
       jobs: kickside.core.jobs:jobs
       slot: kickside.automation:slot
+
+  - name: 18_ledger_eligibility
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on: [ns:wippy.migration, kickside.automation.migrations:11_delivery_provenance]
+    source: file://18_ledger_eligibility.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration
+
+  - name: 19_receipt_delivery_identity
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on: [ns:wippy.migration, kickside.automation.migrations:10_drive_schema]
+    source: file://19_receipt_delivery_identity.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration

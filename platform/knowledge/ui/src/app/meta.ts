@@ -1,4 +1,4 @@
-import type { MetaFieldTypes } from '@widgets/app/componentRealtime'
+import type { MetaFieldTypes } from '@kickside/ui-kit/componentRealtime'
 
 // Declared field types for a KB component's public meta count fields (see
 // kickside.knowledge.registry.knowledge_bases). The realtime relay carries every

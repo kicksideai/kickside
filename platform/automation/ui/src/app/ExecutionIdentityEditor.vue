@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { api } from '@wippy-fe/proxy'
 import WcMount from '@widgets/app/WcMount.vue'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import { resolvePrincipals, type PrincipalRef } from '../../../../users/ui/src/principals'
 
 interface Principal { kind: string; id: string }
@@ -86,7 +86,7 @@ onBeforeUnmount(() => { sequence += 1 })
     <p v-if="busy && !stored" role="status">Loading run-as account…</p>
     <template v-if="stored">
       <dl>
-        <dt>Runs as</dt><dd aria-label="Runs as">{{ executorLabel }}</dd>
+        <dt>Saved account</dt><dd aria-label="Saved account">{{ executorLabel }}</dd>
         <template v-if="stored.authorized_by">
           <dt>Authorized by</dt><dd aria-label="Authorized by">{{ authorizerLabel }}</dd>
         </template>
@@ -98,8 +98,8 @@ onBeforeUnmount(() => { sequence += 1 })
     <p v-if="error" role="alert">{{ error }}</p>
     <p v-if="saved" role="status">Run-as account saved</p>
     <div v-if="pending" role="status">
-      Identity change is pending.
-      <button type="button" class="p-button p-button-secondary" @click="read">Check account</button>
+      Updating account…
+      <button type="button" class="p-button p-button-secondary" @click="read">Refresh account</button>
     </div>
   </section>
 </template>

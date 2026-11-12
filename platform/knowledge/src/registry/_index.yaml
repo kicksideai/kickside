@@ -17,6 +17,7 @@ entries:
       stores: kickside.knowledge:stores
       kb_types: kickside.knowledge:types
       envelope: kickside.component:envelope
+      update_kb: kickside.knowledge.api:update_kb
 
   - name: kb_find
     kind: function.lua
@@ -30,6 +31,7 @@ entries:
       stores: kickside.knowledge:stores
       kb_types: kickside.knowledge:types
       envelope: kickside.component:envelope
+      update_kb: kickside.knowledge.api:update_kb
 
   - name: kb_upsert
     kind: function.lua
@@ -43,6 +45,7 @@ entries:
       stores: kickside.knowledge:stores
       kb_types: kickside.knowledge:types
       envelope: kickside.component:envelope
+      update_kb: kickside.knowledge.api:update_kb
 
   - name: kb_update
     kind: function.lua
@@ -56,6 +59,7 @@ entries:
       stores: kickside.knowledge:stores
       kb_types: kickside.knowledge:types
       envelope: kickside.component:envelope
+      update_kb: kickside.knowledge.api:update_kb
 
   - name: kb_delete
     kind: function.lua
@@ -69,6 +73,7 @@ entries:
       stores: kickside.knowledge:stores
       kb_types: kickside.knowledge:types
       envelope: kickside.component:envelope
+      update_kb: kickside.knowledge.api:update_kb
 
   - name: kb_list
     kind: function.lua
@@ -82,6 +87,7 @@ entries:
       stores: kickside.knowledge:stores
       kb_types: kickside.knowledge:types
       envelope: kickside.component:envelope
+      update_kb: kickside.knowledge.api:update_kb
 
   # ─── test-only library view + unit test ──────────────────────────────
   - name: knowledge_bases_lib
@@ -96,6 +102,7 @@ entries:
       stores: kickside.knowledge:stores
       kb_types: kickside.knowledge:types
       envelope: kickside.component:envelope
+      update_kb: kickside.knowledge.api:update_kb
 
   - name: composer_catalog
     kind: library.lua

@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.3.16](https://github.com/kicksideai/kickside/compare/uploads-v0.3.15...uploads-v0.3.16) (2026-11-11)
+
+
+### Features
+
+* **uploads:** publish authorized revision-bound page images ([#429](https://github.com/kicksideai/kickside/issues/429)) ([ebec6f7](https://github.com/kicksideai/kickside/commit/ebec6f77eb79325dca349f2a1c9d44b2786c02cc))
+
+## [0.3.15](https://github.com/kicksideai/kickside/compare/uploads-v0.3.14...uploads-v0.3.15) (2026-11-11)
+
+
+### Bug Fixes
+
+* **uploads:** expose and test HTTP deduplication responses ([#423](https://github.com/kicksideai/kickside/issues/423)) ([1812bc8](https://github.com/kicksideai/kickside/commit/1812bc86714bd3596e7fa8415eee8da5089b775f))
+
+## [0.3.14](https://github.com/kicksideai/kickside/compare/uploads-v0.3.13...uploads-v0.3.14) (2026-11-10)
+
+
+### Bug Fixes
+
+* **uploads:** authorize component reference assignments ([#418](https://github.com/kicksideai/kickside/issues/418)) ([08e59ef](https://github.com/kicksideai/kickside/commit/08e59ef254be2cbf91114dba3d2072ac1920aeea))
+* **uploads:** render sparse marked pages below the source-size threshold ([#409](https://github.com/kicksideai/kickside/issues/409)) ([ab9c255](https://github.com/kicksideai/kickside/commit/ab9c255dd42c54fadcdff41823d6670e6d51794e))
+* **uploads:** report pages the rasterizer could not render ([#411](https://github.com/kicksideai/kickside/issues/411)) ([aca0978](https://github.com/kicksideai/kickside/commit/aca0978c97bd88ea56e449e59f331899e0d64118))
+* **uploads:** resume completed stages across processing attempts ([#417](https://github.com/kicksideai/kickside/issues/417)) ([bff7b59](https://github.com/kicksideai/kickside/commit/bff7b59d42a00923081733f239d41df2c9680c27))
+
+## [0.3.13](https://github.com/kicksideai/kickside/compare/uploads-v0.3.12...uploads-v0.3.13) (2026-11-10)
+
+
+### Bug Fixes
+
+* **uploads:** preserve sparse PDF pages through OCR ([#402](https://github.com/kicksideai/kickside/issues/402)) ([8c98fbe](https://github.com/kicksideai/kickside/commit/8c98fbe1482be90ad7303cf7edc78336975a2e7a))
+
+## [0.3.12](https://github.com/kicksideai/kickside/compare/uploads-v0.3.11...uploads-v0.3.12) (2026-11-09)
+
+
+### Bug Fixes
+
+* **retention:** preserve owner cleanup progress and committed writes ([#389](https://github.com/kicksideai/kickside/issues/389)) ([63f0e85](https://github.com/kicksideai/kickside/commit/63f0e859a1fef74704365e4a8f511f8b159198d4))
+* **uploads,transform:** use plain file labels and code guidance ([#379](https://github.com/kicksideai/kickside/issues/379)) ([d00fad0](https://github.com/kicksideai/kickside/commit/d00fad038decbad7cb0c4f6705e12d48d4fd4591))
+
 ## [0.3.11](https://github.com/kicksideai/kickside/compare/uploads-v0.3.10...uploads-v0.3.11) (2026-11-07)
 
 

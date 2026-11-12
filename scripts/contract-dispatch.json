@@ -56,7 +56,7 @@
         "lookup"
       ]
     },
-    "reason": "The component context engine opens the caller-selected contract on a receiver binding with validated actor, scope and private context. OAuth connections and optional data receivers expose these methods through the same generic component proxy."
+    "reason": "The component context engine opens the caller-selected contract on a receiver binding with validated actor, scope and private context. OAuth connections use this generic proxy. Intended usage for the provisional data contracts is the same proxy when data receivers become available."
   },
   {
     "module": "external meeting module",
@@ -93,5 +93,59 @@
       ]
     },
     "reason": "The external MCP client opens OAuth's actor- and scope-bound runtime reader to obtain only its own non-secret provider configuration before dispatching a remote MCP request."
+  },
+  {
+    "module": "external spreadsheet ingest module",
+    "source": "src/receiver.lua",
+    "contracts": {
+      "kickside.data:loadable": [
+        "list",
+        "describe",
+        "describe_scope",
+        "begin",
+        "append",
+        "commit",
+        "rehearse",
+        "discard"
+      ]
+    },
+    "reason": "Intended usage: a spreadsheet ingest module opens the kickside.data:loadable binding its host wires as the receiver and loads parsed rows through it: list and describe choose a target, describe_scope shows whose slices a replace would touch, and begin, append and commit (or rehearse and discard) run one load."
+  },
+  {
+    "module": "external spreadsheet ingest module",
+    "source": "src/administrator.lua",
+    "contracts": {
+      "kickside.data:definable": [
+        "types",
+        "define",
+        "remove"
+      ]
+    },
+    "reason": "Intended usage: a spreadsheet ingest module creates or changes a target nothing can load into yet: types reads the column types the receiver supports, and define applies the change through the administrator binding its host wires; deleting a data knowledge base removes its targets through the same binding."
+  },
+  {
+    "module": "external spreadsheet ingest module",
+    "source": "src/reader.lua",
+    "contracts": {
+      "kickside.data:readable": [
+        "list",
+        "describe",
+        "plan",
+        "query",
+        "lookup"
+      ]
+    },
+    "reason": "Intended usage: a spreadsheet ingest module opens the kickside.data:readable binding its host wires as the reader and reads back what a store holds: list and describe a target, plan and query its rows and per-period profile, and lookup which of a file's keys it already holds."
+  },
+  {
+    "module": "kickside/docscout",
+    "source": "docscout/src/engine/pages.lua",
+    "contracts": {
+      "kickside.uploads:page_images": [
+        "get_info",
+        "read_image"
+      ]
+    },
+    "reason": "Intended usage: document readers discover authorized page counts and availability, bind text selection to the source revision, and read one bounded physical page image through the uploads contract."
   }
 ]

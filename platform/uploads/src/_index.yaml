@@ -480,3 +480,19 @@ entries:
       path: .security.policies +=
     - entry: kickside.uploads.security:module_access
       path: .meta.includes +=
+
+  - name: upload_reference_key
+    kind: registry.entry
+    meta: {type: kickside.component.owned_meta_key, key: upload_id}
+    validator: kickside.uploads:reference_validator
+
+  - name: reference_validator
+    kind: function.lua
+    source: file://reference_validator.lua
+    method: validate
+    imports:
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      component: kickside.component:component
+      access_policy: kickside.component:access_policy
+      execution_identity: kickside.execution:execution_identity
+      types: kickside.uploads:types

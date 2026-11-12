@@ -1,1 +1,13 @@
-../../../../users/test/env/_index.yaml
+version: "1.0"
+namespace: app.env
+
+# Mirrors the real app's env storage id (app.env:store) so any dep's env knobs
+# resolve their default storage in isolation. Harness-only; excluded from publish.
+
+entries:
+  - name: store
+    kind: env.storage.file
+    meta:
+      type: envstorage
+    file_path: ./.wippy/test.env
+    auto_create: true

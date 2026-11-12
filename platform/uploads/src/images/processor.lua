@@ -59,8 +59,9 @@ local function process(params)
         image_metadata.original_filename = params.metadata.filename
     end
 
-    local artifact, artifact_err = artifact_content_repo.create_artifact({
+    local artifact, artifact_err = artifact_content_repo.upsert_artifact({
         upload_id = params.upload_id,
+        cancel_ref = params.cancel_ref,
         kind = "image",
         role = "primary",
         mime_type = params.mime_type or "application/octet-stream",

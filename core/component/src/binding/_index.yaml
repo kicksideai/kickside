@@ -136,7 +136,7 @@ entries:
     modules:
       - security
     imports:
-      jobs: kickside.core.jobs:jobs
+      deletion_progress: kickside.component:deletion_progress
       envelope: kickside.component:envelope
       component_reader: kickside.component.persist:component_reader
       component_ops: kickside.component.persist:component_ops
@@ -154,6 +154,7 @@ entries:
     modules:
       - security
     imports:
+      deletion_progress: kickside.component:deletion_progress
       envelope: kickside.component:envelope
       component_reader: kickside.component.persist:component_reader
     method: handle
@@ -334,6 +335,7 @@ entries:
     modules:
       - security
     imports:
+      deletion_progress: kickside.component:deletion_progress
       envelope: kickside.component:envelope
       component_reader: kickside.component.persist:component_reader
     method: handle

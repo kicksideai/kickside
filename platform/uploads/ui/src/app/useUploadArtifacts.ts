@@ -5,6 +5,7 @@ import {
   artifactLabel,
   isPrimaryMarkdown,
   isRawRenderable,
+  uploadLabel,
 } from './uploads.format.ts'
 
 const PARTS_PER_PAGE = 30
@@ -50,7 +51,7 @@ export function useUploadArtifacts(error: Ref<string>) {
   }
 
   function previewView(upload: Upload): PreviewSource {
-    return { contentType: upload.mime_type, sourceUrl: upload.raw_url || '', filename: upload.filename || upload.uuid }
+    return { contentType: upload.mime_type, sourceUrl: upload.raw_url || '', filename: uploadLabel(upload) }
   }
 
   function activePreviewSource(upload: Upload): PreviewSource {
@@ -134,7 +135,7 @@ export function useUploadArtifacts(error: Ref<string>) {
       const markdown = primaryMarkdownFor(preview.value.uuid)
       if (markdown) return markdown.label || markdown.artifact_id
     }
-    return preview.value ? (preview.value.filename || preview.value.uuid) : 'download'
+    return preview.value ? uploadLabel(preview.value) : 'download'
   }
 
   // Blob URLs let downloads use the record's filename across storage origins.

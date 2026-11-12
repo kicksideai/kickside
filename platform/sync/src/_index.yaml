@@ -171,6 +171,21 @@ entries:
       round_plan: kickside.sync:round_plan
       transform_gate: kickside.transform:generator
 
+  - name: declaration_upgrade
+    kind: function.lua
+    meta:
+      type: bootloader
+      order: 50
+      requires: [wippy.migration:migration_bootloader]
+      comment: Brings stored Data Sync declarations to the current Trigger Spec v2 through each sync's own reconfigure command.
+    source: file://declaration_upgrade.lua
+    method: run
+    security:
+      policies:
+        - kickside.automation.security:execution_scope
+    imports:
+      automations_lib: kickside.automation:automation
+
   - name: sync_contract
     kind: contract.definition
     meta:

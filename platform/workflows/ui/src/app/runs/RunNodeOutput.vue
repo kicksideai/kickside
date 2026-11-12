@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import Button from 'primevue/button'
 import Message from 'primevue/message'
-import Panel from 'primevue/panel'
 import ProgressSpinner from 'primevue/progressspinner'
 import Tag from 'primevue/tag'
 import Tab from 'primevue/tab'
@@ -10,7 +9,7 @@ import Tabs from 'primevue/tabs'
 import { computed, onMounted, ref, watch } from 'vue'
 import { Icon } from '@iconify/vue'
 import { api, loadByTagName } from '@wippy-fe/proxy'
-import type { RunExecution, RunNodeHeader, RunRow } from '../api/api'
+import type { RunNodeHeader, RunRow } from '../api/api'
 import { exportRun, getRunNodeData } from '../api/api'
 import { buildNodeInspection, formatDuration, type NodeInspection } from './run-detail'
 import { relativeTime, runStatus, runStatusLabel, runStatusTone, runVersionBadge, shortRunId } from './run-history'
@@ -20,7 +19,7 @@ import { humanTitle } from '../domain/labels'
 import RunPayload from './RunPayload.vue'
 import RunTimeline from './RunTimeline.vue'
 import { downloadJson } from '../mapping/portable'
-import { keeperDataflowHref, processIdentity, runExportFilename } from './run-debug'
+import { runExportFilename } from './run-debug'
 
 // The right panel while viewing a past run: replaces the editable NodeConfigPanel
 // entirely, so "viewing history" vs "editing" is a different panel, not a subtler
@@ -33,8 +32,7 @@ const props = defineProps<{
   run: RunRow
   node: WfNode | null
   nodeStatus?: NodeRunStatus
-  nodeHeader?: RunNodeHeader | null
-  execution?: RunExecution | null
+  nodeHeaders?: RunNodeHeader[]
 }>()
 const emit = defineEmits<{ (e: 'close'): void; (e: 'exit-run'): void; (e: 'rerun'): void }>()
 
@@ -120,14 +118,15 @@ const hasData = computed(() => {
   const i = inspection.value
   return !!i && (i.input != null || i.output != null || i.error != null || i.agentActions.length > 0)
 })
+const dataUnavailable = computed(() => inspection.value?.dataUnavailable || (
+  props.run.step_data_retention_days != null && ['completed', 'failed', 'cancelled', 'terminated'].includes(props.run.status)
+  && inspection.value?.input == null && inspection.value?.output == null
+))
 const showOutput = computed(() => inspection.value?.output != null)
 const versionBadge = computed(() => runVersionBadge(props.run.flow_ref?.version ?? 0))
 const section = ref<'overview' | 'timeline'>('overview')
 const exportBusy = ref(false)
 const exportError = ref('')
-const dataflowId = computed(() => props.run.dataflow_id || props.execution?.dataflow_id || '')
-const keeperHref = computed(() => keeperDataflowHref(dataflowId.value))
-const processMeta = computed(() => processIdentity(props.execution))
 
 function runSeverity(status: string): 'success' | 'danger' | 'info' {
   const tone = runStatusTone(status)
@@ -135,11 +134,6 @@ function runSeverity(status: string): 'success' | 'danger' | 'info' {
   if (tone === 'error') return 'danger'
   return 'info'
 }
-const nodeMeta = computed(() => {
-  const header = props.nodeHeader
-  if (!header) return ''
-  return [header.engine_node_id && `engine ${header.engine_node_id}`, header.parent_engine_node_id && `parent ${header.parent_engine_node_id}`].filter(Boolean).join(' · ')
-})
 
 async function downloadExport() {
   if (exportBusy.value) return
@@ -174,7 +168,6 @@ async function downloadExport() {
     </div>
     <div class="wf-run-actions">
       <Button severity="secondary" outlined :disabled="exportBusy" :loading="exportBusy" @click="downloadExport"><Icon v-if="!exportBusy" icon="tabler:download" aria-hidden="true" /><span>Download run details</span></Button>
-      <Button v-if="keeperHref" as="a" severity="secondary" outlined :href="keeperHref" target="_blank" rel="noopener"><Icon icon="tabler:external-link" aria-hidden="true" /><span>View in Keeper</span></Button>
     </div>
     <Message v-if="exportError" severity="error" :closable="false">{{ exportError }}</Message>
     <Tabs v-model:value="section" class="wf-run-tabs">
@@ -184,15 +177,12 @@ async function downloadExport() {
       </TabList>
     </Tabs>
 
-    <RunTimeline v-if="section === 'timeline'" :workflow-id="workflowId" :run-id="run.run_id" />
+    <RunTimeline v-if="section === 'timeline'" :workflow-id="workflowId" :run-id="run.run_id" :node-headers="nodeHeaders" />
     <template v-else-if="!node">
       <p class="wf-panel-hint wf-run-select-hint">Click a step on the canvas to see what it received and produced in this run.</p>
     </template>
     <template v-else>
       <div class="wf-panel-label">{{ stepTitle }}</div>
-      <Panel v-if="nodeMeta || processMeta" header="Technical details" toggleable collapsed class="wf-run-tech">
-        <p class="wf-run-engine-meta"><span v-if="nodeMeta">{{ nodeMeta }}</span><span v-if="nodeMeta && processMeta"> · </span><span v-if="processMeta">process {{ processMeta }}</span></p>
-      </Panel>
       <p v-if="nodeStatus" class="wf-run-status">
         <Tag class="wf-run-status-tag" :severity="runSeverity(nodeStatus)" :value="runStatusLabel(nodeStatus)" />
         <span v-if="timingLabel" class="wf-run-timing"><Icon icon="tabler:clock" aria-hidden="true" />{{ timingLabel }}</span>
@@ -218,6 +208,7 @@ async function downloadExport() {
           />
         </div>
 
+        <Message v-if="dataUnavailable" severity="info" :closable="false">Step data is no longer available<span v-if="run.step_data_retention_days != null">. Step data is kept for {{ run.step_data_retention_days }} days.</span></Message>
         <RunPayload v-if="inspection.input != null" :value="inspection.input" label="Input" icon="tabler:login-2" />
         <RunPayload v-if="showOutput" :value="inspection.output" label="Output" icon="tabler:logout-2" />
 
@@ -239,7 +230,7 @@ async function downloadExport() {
           </div>
         </section>
 
-        <p v-if="!hasData" class="wf-panel-hint">This step recorded no input or output in this run.</p>
+        <p v-if="!hasData && !dataUnavailable" class="wf-panel-hint">This step recorded no input or output in this run.</p>
       </template>
     </template>
   </aside>

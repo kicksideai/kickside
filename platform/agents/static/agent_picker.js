@@ -1,7 +1,7 @@
 import { W as t, u as o } from "./wc-runtime-KO3cNuNo.js";
 import { P as r } from "./primevue-plugin-CaP7wV_M.js";
 import { l as i } from "./lazy-Cfv2E3SG.js";
-import { s as n } from "./styles-BD-XFZ4L.js";
+import { s as n } from "./styles-DyVDM2ng.js";
 import "@iconify/vue";
 import { define as s } from "@wippy-fe/proxy";
 const p = {
@@ -14,7 +14,7 @@ const p = {
     schema: { type: "string", default: "" }
   }
 }, a = i(
-  () => import("./AgentPicker-C_g5fwjI.js"),
+  () => import("./AgentPicker-Bp9dT3eO.js"),
   { loading: "Loading agent picker…", failed: "Could not load the agent picker. Reload the page to try again.", iconOnly: !0 },
   o
 );

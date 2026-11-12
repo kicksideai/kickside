@@ -1,6 +1,6 @@
 import { W as o, u as n } from "./wc-runtime-ClNbKZcC.js";
 import { l as p } from "./lazy-ZWC1tvFC.js";
-import { s as i } from "./styles-C0LQBOAx.js";
+import { s as i } from "./styles-CHMxyTb6.js";
 import "@iconify/vue";
 import { define as s } from "@wippy-fe/proxy";
 const r = { props: { type: "object", properties: { route: { type: "string", default: "", description: "Deep-link sub-path under /knowledge: a kb id, optionally followed by an in-KB node path (kbId/nodeId)." } } } }, a = {
@@ -17,7 +17,7 @@ class e extends o {
   static get vueConfig() {
     return {
       lazyConfig: p(
-        () => import("./lazy-mount-s0eVFvy7.js").then((t) => t.mountConfig),
+        () => import("./lazy-mount-mKVD1SzE.js").then((t) => t.mountConfig),
         "Could not load Knowledge. Reload the page to try again.",
         n
       )

@@ -150,10 +150,7 @@ export function useModelsApi() {
         const message = data.error || data.message || 'model probe failed'
         return { ok: false, message, data: { ...data, error: data.error || data.message || message } }
       }
-      const routed = data?.provider_model && data.provider_model !== data?.model
-        ? ` (${data.provider_model})`
-        : ''
-      return { ok: true, message: data?.message ? `${data.message}${routed}` : `Model probe succeeded${routed}`, data }
+      return { ok: true, message: 'Model works', data }
     } catch (e) {
       const message = messageOf(e, 'model probe failed')
       return { ok: false, message, data: { success: false, model: name, error: message } }

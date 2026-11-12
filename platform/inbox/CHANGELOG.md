@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.1.75](https://github.com/kicksideai/kickside/compare/inbox-v0.1.74...inbox-v0.1.75) (2026-11-12)
+
+
+### Bug Fixes
+
+* resolve assignment defaults and imported dependency APIs ([#437](https://github.com/kicksideai/kickside/issues/437)) ([89d16c3](https://github.com/kicksideai/kickside/commit/89d16c3b391318d79e5e194fc4b1062d0149a60c))
+
+## [0.1.74](https://github.com/kicksideai/kickside/compare/inbox-v0.1.73...inbox-v0.1.74) (2026-11-09)
+
+
+### Bug Fixes
+
+* rebuild six packages without baked default bindings ([#403](https://github.com/kicksideai/kickside/issues/403)) ([28bdfe1](https://github.com/kicksideai/kickside/commit/28bdfe1020d7c0ef35bc6b383f324a7c86d9042e))
+
+## [0.1.73](https://github.com/kicksideai/kickside/compare/inbox-v0.1.72...inbox-v0.1.73) (2026-11-08)
+
+
+### Bug Fixes
+
+* UI artifacts in buttons, headings, dialogs and tables ([#371](https://github.com/kicksideai/kickside/issues/371)) ([ea55ea8](https://github.com/kicksideai/kickside/commit/ea55ea8a17ee5802cb73a4dbcf39878d7f56cd2e))
+
+## [0.1.72](https://github.com/kicksideai/kickside/compare/inbox-v0.1.71...inbox-v0.1.72) (2026-11-08)
+
+
+### Bug Fixes
+
+* **inbox:** remove the New notice test button from the inbox header ([#365](https://github.com/kicksideai/kickside/issues/365)) ([af09fc6](https://github.com/kicksideai/kickside/commit/af09fc6442ab0fbf820e29f4aa7c757500eabd9c))
+
+## [0.1.71](https://github.com/kicksideai/kickside/compare/inbox-v0.1.70...inbox-v0.1.71) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
 ## [0.1.70](https://github.com/kicksideai/kickside/compare/inbox-v0.1.69...inbox-v0.1.70) (2026-11-07)
 
 

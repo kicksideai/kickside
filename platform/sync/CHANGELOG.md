@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.1.96](https://github.com/kicksideai/kickside/compare/sync-v0.1.95...sync-v0.1.96) (2026-11-09)
+
+
+### Bug Fixes
+
+* **automation:** suppress idle delivery history and bound retention ([5560614](https://github.com/kicksideai/kickside/commit/556061470e9ce9e982823a04040a60e00b988996))
+
+## [0.1.95](https://github.com/kicksideai/kickside/compare/sync-v0.1.94...sync-v0.1.95) (2026-11-08)
+
+
+### Bug Fixes
+
+* **sync:** upgrade stored declarations to the current trigger spec on module update ([#361](https://github.com/kicksideai/kickside/issues/361)) ([cd6b101](https://github.com/kicksideai/kickside/commit/cd6b101aa994a3609709c1e293a808cb2d95f0d2))
+
+## [0.1.94](https://github.com/kicksideai/kickside/compare/sync-v0.1.93...sync-v0.1.94) (2026-11-07)
+
+
+### Bug Fixes
+
+* **sync:** decide reconfigure reconcile mode from the installed reconcile drive ([#357](https://github.com/kicksideai/kickside/issues/357)) ([25bcf0b](https://github.com/kicksideai/kickside/commit/25bcf0bebab28942ff368a21a38176e14e32b061))
+
+## [0.1.93](https://github.com/kicksideai/kickside/compare/sync-v0.1.92...sync-v0.1.93) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
 ## [0.1.92](https://github.com/kicksideai/kickside/compare/sync-v0.1.91...sync-v0.1.92) (2026-11-07)
 
 

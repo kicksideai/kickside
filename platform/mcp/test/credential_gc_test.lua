@@ -5,6 +5,7 @@ local security = require("security")
 local funcs = require("funcs")
 local owner_hooks = require("owner_hooks")
 local subjects = require("subjects")
+local credentials = require("mcp_repo")
 
 local function insert(db, id, status, expiry, revoked_at)
     local values = {
@@ -54,18 +55,40 @@ local function define_tests()
             local report, prune_err = owner_hooks.run()
             test.is_nil(prune_err)
             test.eq(#report.failures, 0, "no retention owner fails")
-            test.is_true(report.deleted >= 2)
             db, db_err = sql.get("app:db")
             test.is_nil(db_err)
             if db == nil then error("database unavailable") end
             test.eq(count(db, ids.expired), 0)
             test.eq(count(db, ids.revoked), 0)
+            local retained = assert(db:query([[SELECT COUNT(*) AS n FROM kickside_mcp_credentials
+                WHERE credential_id IN ($1,$2,$3,$4,$5,$6)]],
+                {ids.expired,ids.revoked,ids.live,ids.recent,ids.unexpired,ids.nonexpiring}))
+            test.eq(tonumber(retained[1].n),4,"exactly the two aged fixtures are reclaimed")
             for _, id in ipairs({ ids.live, ids.recent, ids.unexpired, ids.nonexpiring }) do
                 test.eq(count(db, id), 1)
                 local _, cleanup_err = db:execute("DELETE FROM kickside_mcp_credentials WHERE credential_id=$1", { id })
                 test.is_nil(cleanup_err)
             end
             db:release()
+        end)
+
+        test.it("commits revocation without a retention producer dependency", function()
+            local id = "revoke-" .. tostring(time.now():unix_nano())
+            local db = assert(sql.get("app:db"))
+            insert(db, id, "active", nil, nil)
+            db:release()
+            local first, first_err = credentials.revoke(id, "test")
+            local second, second_err = credentials.revoke(id, "test")
+            db = assert(sql.get("app:db"))
+            local rows = assert(db:query("SELECT status FROM kickside_mcp_credentials WHERE credential_id=$1", {id}))
+            local _, cleanup_err = db:execute("DELETE FROM kickside_mcp_credentials WHERE credential_id=$1", {id})
+            db:release()
+            test.is_nil(cleanup_err, tostring(cleanup_err))
+            test.is_nil(first_err, tostring(first_err))
+            test.is_nil(second_err, tostring(second_err))
+            test.is_true(first)
+            test.is_true(second)
+            test.eq(rows[1].status, "revoked")
         end)
 
         test.it("caps active credentials per owner and admits a replacement after revoke", function()
@@ -85,12 +108,12 @@ local function define_tests()
             end
             db:release()
 
-            local function mint()
+            local function mint(expires_at)
                 local actor = security.new_actor(actor_id, { user_id = actor_id, security_groups = {} })
                 local policy = security.policy("app:mcp_suite_policy")
-                local scope = security.new_scope({ policy })
+                local scope = security.new_scope({ policy, security.policy("app:retention_notify_denied") })
                 return funcs.new():with_actor(actor):with_scope(scope):call("app:mint_func",
-                    { whitelist_component_ids = {}, label = "quota", policy = {} })
+                    { whitelist_component_ids = {}, label = "quota", policy = {}, expires_at = expires_at })
             end
             local denied = mint()
             test.is_nil(denied.result)
@@ -104,12 +127,16 @@ local function define_tests()
                 { time.now():unix(), actor_id .. "-1" })
             test.is_nil(revoke_err)
             db:release()
-            local admitted = mint()
+            local admitted = mint(time.now():unix() + 3600)
             test.is_nil(admitted.error)
             test.not_nil(admitted.result)
+            test.not_nil(admitted.result.token, "mint returns the only raw token copy")
             db, db_err = sql.get("app:db")
             test.is_nil(db_err)
             if db == nil then error("database unavailable") end
+            local issued = assert(db:query("SELECT token_hash FROM kickside_mcp_credentials WHERE credential_id=$1",
+                {admitted.result.credential_id}))
+            test.eq(issued[1].token_hash, credentials.token_hash(admitted.result.token))
             local rows, count_err = db:query([[SELECT COUNT(*) AS n FROM kickside_mcp_credentials
                 WHERE actor_id=$1 AND status='active']], { actor_id })
             test.is_nil(count_err)

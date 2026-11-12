@@ -6,7 +6,7 @@ import { useKnowledgeDetail } from './useKnowledgeDetail'
 import type { KbDetail } from './knowledge.types'
 
 vi.mock('@wippy-fe/proxy', () => ({ api: {}, loadByTagName: vi.fn() }))
-vi.mock('@widgets/app/componentRealtime', () => ({ subscribeComponentMeta: vi.fn() }))
+vi.mock('@kickside/ui-kit/componentRealtime', () => ({ subscribeComponentMeta: vi.fn() }))
 
 let wrapper: VueWrapper | undefined
 afterEach(() => {

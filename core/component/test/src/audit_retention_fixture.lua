@@ -3,6 +3,7 @@ function M.reset(stage, source)
     M.stage, M.source = stage, source
     M.opens, M.releases, M.events, M.acks, M.begins, M.deletes, M.commits, M.rollbacks = 0, 0, 0, 0, 0, 0, 0, 0
     M.rollback_source, M.release_source, M.empty = nil, nil, false
+    M.deadline_scans = 0
 end
 function M.result(stage, result)
     if stage == M.stage then return nil, M.source end
@@ -18,8 +19,9 @@ function M.get()
     M.opens = M.opens + 1
     local number = M.opens
     local db: any = {}
-    function db:query()
+    function db:query(statement)
         if number == 1 then return M.result("publication_scan", M.empty and {} or {{component_id = "component", impl_id = "implementation", identity_generation = 1, record_json = "{}"}}) end
+        if string.find(statement, "SELECT a.created_at", 1, true) then M.deadline_scans = M.deadline_scans + 1; return M.result("deadline_scan", {}) end
         return M.result("owner_scan", M.empty and {} or {{component_id = "component"}})
     end
     function db:execute() M.acks = M.acks + 1; return M.result("ack", {rows_affected = 1}) end

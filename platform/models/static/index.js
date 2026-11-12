@@ -1,5 +1,5 @@
 import { W as o, u as s } from "./wc-runtime-ClNbKZcC.js";
-import { s as r, l as i } from "./styles-1kxAcUtN.js";
+import { s as r, l as i } from "./styles-BXel5-_o.js";
 import { E as p } from "./providerTags-C0mtMONl.js";
 import "@iconify/vue";
 import { define as a } from "@wippy-fe/proxy";
@@ -17,7 +17,7 @@ class n extends o {
   static get vueConfig() {
     return {
       lazyConfig: i(
-        () => import("./lazy-mount-Wgd1wGoQ.js").then((t) => t.mountConfig),
+        () => import("./lazy-mount-CyanimwU.js").then((t) => t.mountConfig),
         "Could not load Models. Reload the page to try again.",
         s
       )

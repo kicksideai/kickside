@@ -1,9 +1,9 @@
 import { W as t, u as o } from "./wc-runtime-KO3cNuNo.js";
-import { l as i, s } from "./styles-BRRHt6og.js";
+import { l as i, s } from "./styles-CRyzeb2X.js";
 import "@iconify/vue";
 import { define as a } from "@wippy-fe/proxy";
 const n = i(
-  () => import("./WebhookSourceDetail-DnzEXrUF.js"),
+  () => import("./WebhookSourceDetail-78-Hp5CR.js"),
   { immediate: !0, loading: "Loading webhook details…", failed: "Could not load the webhook details. Reload the page to try again." },
   o
 ), r = {

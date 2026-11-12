@@ -7,7 +7,7 @@ const c = ':root{--p-form-field-padding-x: .75rem;--p-form-field-padding-y: .5re
   parent: { type: "string", default: "" },
   title: { type: "string", default: "Manual task" }
 } }, t = p(
-  () => import("./ManualTaskLauncherElement-C_6fYG1u.js"),
+  () => import("./ManualTaskLauncherElement-DUr8n_mk.js"),
   { loading: "Loading manual task launcher…", failed: "Could not load the manual task launcher. Reload the page to try again." },
   o
 );

@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.1.74](https://github.com/kicksideai/kickside/compare/hub-v0.1.73...hub-v0.1.74) (2026-11-12)
+
+
+### Bug Fixes
+
+* **app:** preselect MCP access during onboarding ([#435](https://github.com/kicksideai/kickside/issues/435)) ([52d7ae3](https://github.com/kicksideai/kickside/commit/52d7ae349886a02571d8d6b86e6077c36b51bf6a))
+
+## [0.1.73](https://github.com/kicksideai/kickside/compare/hub-v0.1.72...hub-v0.1.73) (2026-11-09)
+
+
+### Bug Fixes
+
+* **hub:** use plain language in module management ([#377](https://github.com/kicksideai/kickside/issues/377)) ([5981f6d](https://github.com/kicksideai/kickside/commit/5981f6dbed35d7d0454cbfc950884e3bb47847b5))
+
+## [0.1.72](https://github.com/kicksideai/kickside/compare/hub-v0.1.71...hub-v0.1.72) (2026-11-08)
+
+
+### Bug Fixes
+
+* UI artifacts in buttons, headings, dialogs and tables ([#371](https://github.com/kicksideai/kickside/issues/371)) ([ea55ea8](https://github.com/kicksideai/kickside/commit/ea55ea8a17ee5802cb73a4dbcf39878d7f56cd2e))
+
+## [0.1.71](https://github.com/kicksideai/kickside/compare/hub-v0.1.70...hub-v0.1.71) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
 ## [0.1.70](https://github.com/kicksideai/kickside/compare/hub-v0.1.69...hub-v0.1.70) (2026-10-31)
 
 

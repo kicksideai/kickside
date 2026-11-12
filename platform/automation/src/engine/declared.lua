@@ -348,7 +348,9 @@ function part.attach(M: any, dependencies: any, P: any): ()
     -- run_declaration_command(spec) -> (writer result?, err?). spec = { kind =
     -- "install"|"reconfigure", automation_id, operator_id, subject_id,
     -- operator_identity?, subject_identity?, type_id, schema, declaration,
-    -- main_source?, enabled?, writer, writer_args }. An
+    -- main_source?, enabled?, writer, writer_args, expected_generation? }:
+    -- expected_generation reserves the command only over that baseline
+    -- command generation. An
     -- install with enabled = false creates its source drives paused.
     -- An install creates its source drives and provisions their slots once
     -- the command succeeds; a reconfigure covers every drive
@@ -473,6 +475,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
                 },
                 drive_keys = drive_keys,
                 next_attempt_at = first_recovery,
+                expected_generation = spec.expected_generation,
             }, prepare_tx)
         end)
         if reserve_err or not reserved then return refuse(reserve_err) end

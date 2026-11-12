@@ -1,5 +1,5 @@
 import { W as d, a as l } from "./wc-runtime-h8e5VJvv.js";
-import { s as p, P as c } from "./styles-B3XDHBFR.js";
+import { s as p, P as c } from "./styles-Ce32aXEC.js";
 import { Icon as r } from "@iconify/vue";
 import { defineAsyncComponent as m, defineComponent as u, h as n, onMounted as f } from "vue";
 import { define as y } from "@wippy-fe/proxy";
@@ -39,7 +39,7 @@ function v(t, e, o) {
   });
 }
 const M = v(
-  () => import("./SyncManage-DBMRKFw-.js"),
+  () => import("./SyncManage-BnJBHHpV.js"),
   { loading: "Loading data sync…", failed: "Could not load the data sync. Reload the page to try again." },
   l
 ), S = {

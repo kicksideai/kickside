@@ -1,10 +1,4 @@
--- Bookkeeping rows a round writes per delivered item (Design A, 2026-10-03),
--- counted by row triggers on the automation ledger, receipt and prepared
--- tables: a new destination writes its one receipt, a change to a mapped
--- destination writes nothing, replay-unsafe output adds its prepared insert
--- and settlement, an item that fails once writes its ledger row and its
--- resolution, and a round holding an unresolved item writes only that item's
--- row whatever the port's terminal history. Runs on SQLite and PostgreSQL.
+-- Count exact classified-item, eligibility, receipt and prepared writes per round.
 
 local test = require("test")
 local json = require("json")
@@ -124,7 +118,7 @@ local function define_tests()
             set_drive(automation_id, "replay_safe", "action_json=$1, cursor=NULL, next_run_at=$2", { json.encode({
                 source_ref = PORT, config = { items = items }, schedule = { type = "interval", expression = "1h" } }), PAST })
             local changed = counted(function() round("replay_safe") end)
-            test.eq(shape(changed), "ledger=0/0/0 receipt=0/0/0 prepared=0/0/0", "change to a mapped record")
+            test.eq(shape(changed), "ledger=0/0/0 receipt=0/1/0 prepared=0/0/0", "a new delivery replaces the receipt identity")
         end)
 
         test.it("adds the prepared insert and settlement for replay-unsafe output", function()
@@ -143,6 +137,21 @@ local function define_tests()
             local resolved = counted(function() round("fails_once") end)
             test.eq(shape(failed), "ledger=1/0/0 receipt=0/0/0 prepared=0/0/0", "the failed attempt")
             test.eq(shape(resolved), "ledger=0/1/0 receipt=0/0/0 prepared=0/0/0", "the delivered retry")
+        end)
+
+        test.it("writes no classified-item or eligibility row for an unchanged skip",function()
+            new_drive({automation_id=automation_id,drive_key="unchanged",source_kind="collection",
+                action={source_ref=PORT,config={items={{key="stable",directive="skip"}}},
+                    schedule={type="interval",expression="1h"}}})
+            set_drive(automation_id,"unchanged","next_run_at=$1",{PAST})
+            local initial=counted(function() round("unchanged") end)
+            test.eq(shape(initial),"ledger=0/0/0 receipt=0/0/0 prepared=0/0/0")
+            for scan=1,3 do
+                set_drive(automation_id,"unchanged","cursor=NULL,next_run_at=$1",{PAST})
+                local repeated=counted(function() round("unchanged") end)
+                test.eq(shape(repeated),"ledger=0/0/0 receipt=0/0/0 prepared=0/0/0")
+            end
+            test.eq(tonumber(query("SELECT COUNT(*) AS n FROM kickside_automation_delivery_history WHERE automation_id=$1",{automation_id})[1].n),0)
         end)
 
         test.it("writes only the held item's row in a round over a port with terminal history", function()

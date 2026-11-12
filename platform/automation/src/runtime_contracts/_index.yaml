@@ -7,6 +7,8 @@ entries:
       comment: Automation drive rows — CRUD, fenced updates, command fencing and durable control-wake demand (design v4 §5.1).
     source: file://../drive.lua
     modules: [sql, json, time]
+    imports:
+      canonical_json: kickside.contract:canonical_json
 
   # The automation runtime policy (CONTRACTS §18 configuration model). A host
   # overrides a value through .wippy.yaml "kickside.automation:policy:meta.<path>".
@@ -42,6 +44,7 @@ entries:
         retry_after_ms: 10000
         max_delay_ms: 86400000
       retention:
+        history: 7d
         ledger_resolved: 30d
         ops: 30d
         prepared: 7d

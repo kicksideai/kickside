@@ -7,7 +7,7 @@ import { useEvents, useProps } from '@wippy-fe/webcomponent-vue'
 import { useParentId } from '@widgets/app/useParentId'
 import { useSubmitNonce } from '@widgets/app/useSubmitNonce'
 import WcMount from '@widgets/app/WcMount.vue'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 
 // The canonical channel-responder install form. It composes the two shared
 // pickers -- a channel across every connection, and an agent -- names the

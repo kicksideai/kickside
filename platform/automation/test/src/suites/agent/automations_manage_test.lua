@@ -109,7 +109,7 @@ local function define_tests()
                 local result, err = exec:call(MANAGE_TOOL, args)
                 test.is_nil(result)
                 test.is_true(errors.is(err, errors.INVALID), tostring(err))
-                test.contains(tostring(err), "discard names the uncertain item keys")
+                test.contains(tostring(err), "discard names the dead or uncertain item keys")
             end
             local accepted, accept_err = exec:call(MANAGE_TOOL, { action = "uninstall", id = id })
             test.is_nil(accept_err, tostring(accept_err))

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
-import Button from 'primevue/button'
 import Tab from 'primevue/tab'
 import TabList from 'primevue/tablist'
 import Tabs from 'primevue/tabs'
@@ -11,10 +10,11 @@ import { api } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import InboxItem from './InboxItem.vue'
 import { isItem, isRecord, type Item } from './item'
-import { subscribeComponentMeta } from '@widgets/app/componentRealtime'
+import { subscribeComponentMeta } from '@kickside/ui-kit/componentRealtime'
 import { relativeTime as relativeTimeBase } from '@widgets/app/datetime'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 import { statusLabel, INBOX_META_FIELD_TYPES } from './labels'
+import { previewText } from './preview'
 
 // Inbox host (the container). A Gmail-style master/detail: a filter strip across
 // folders (Pending / Resolved / All), a compact native list, and a detail pane
@@ -62,6 +62,7 @@ const resolutions = new Map<string, Item>()
 let resolvedCountFloor = 0
 
 const selected = computed(() => items.value.find(i => i.id === selectedId.value) || null)
+const previews = computed(() => new Map(items.value.map(item => [item.id, previewText(item.content)])))
 const kindOf = (t: string): Kind | undefined => kinds.value[t]
 const hasOwn = (obj: Record<string, unknown>, key: string): boolean => Object.prototype.hasOwnProperty.call(obj, key)
 const headerCount = computed(() => {
@@ -213,19 +214,6 @@ async function del(id: string) {
   }
 }
 
-async function createTestNotice() {
-  try {
-    await api.post('/api/v1/inbox', {
-      item_type: 'notice',
-      title: 'Test notice ' + new Date().toLocaleTimeString(),
-      content: 'Created to exercise the realtime round-trip.',
-      priority: 'high',
-    })
-  } catch (e) {
-    error.value = errMsg(e, 'Could not create the test notice.')
-  }
-}
-
 function connectRealtime(id: string): boolean {
   if (!id || connectedComponentId === id) return false
   if (componentUnsub) componentUnsub()
@@ -263,9 +251,6 @@ onUnmounted(() => {
           <h1 class="kx-title">Inbox</h1>
           <p class="kx-sub">{{ headerCount }} {{ filter }} · live</p>
         </div>
-        <div class="kx-head-actions">
-          <Button type="button" label="New notice" severity="secondary" outlined @click="createTestNotice" />
-        </div>
       </div>
       <Tabs :value="filter" data-kx-separator="surface" @update:value="filter = String($event)">
         <TabList aria-label="Inbox folders" :pt="{ tabList: { class: 'kx-tabs-list' } }">
@@ -300,7 +285,7 @@ onUnmounted(() => {
               </span>
               <span class="kx-time" :title="absoluteTime(item.created_at)">{{ relativeTime(item.created_at) }}</span>
             </div>
-            <wc-render-markdown v-if="item.content" class="kx-preview" :source="item.content" inert />
+            <span v-if="previews.get(item.id)" class="kx-preview">{{ previews.get(item.id) }}</span>
             <Tag
               v-if="item.status !== 'pending'"
               severity="secondary"

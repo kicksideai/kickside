@@ -111,6 +111,63 @@ function M.run_node_headers(workflow_id: any, run_id: any): (any?, any?)
     return out, nil
 end
 
+function M.hydrate_step_outputs(run: Map, all_rows: any, reader: any): error?
+    local results: { any } = {}
+    local ids: { string } = {}
+    local seen: { [string]: boolean } = {}
+    for _, row in ipairs(all_rows or {}) do
+        if row.type == "node.result" then
+            local content = row.content
+            if type(content) == "string" and tostring(row.content_type):find("json", 1, true) then
+                local decoded, decode_err = json.decode(content)
+                if decode_err then return decode_err end
+                content = decoded
+            end
+            if type(content) == "table" and type(content.data_ids) == "table" then
+                results[#results + 1] = { row = row, content = content }
+                for _, data_id in ipairs(content.data_ids) do
+                    if type(data_id) ~= "string" then return errors.new({ kind = errors.INVALID, message = "invalid step output reference" }) end
+                    if not seen[data_id] then seen[data_id] = true; ids[#ids + 1] = data_id end
+                end
+            end
+        end
+    end
+    if #ids > 0 then
+        local outputs, output_err = reader.with_dataflow(tostring(run.dataflow_id)):with_data(table.unpack(ids)):all()
+        if output_err then return output_err end
+        local by_id: { [string]: any } = {}
+        for _, row in ipairs(outputs or {}) do
+            local content = row.content
+            if type(content) == "string" and tostring(row.content_type):find("json", 1, true) then
+                local decoded, decode_err = json.decode(content)
+                if decode_err then return decode_err end
+                content = decoded
+            end
+            by_id[row.data_id] = { content = content }
+        end
+        for _, result in ipairs(results) do
+            local values: { any } = {}
+            for _, data_id in ipairs(result.content.data_ids) do
+                local output = by_id[data_id]
+                if not output then
+                    if not types.RUN_TERMINAL[run.status] then
+                        return errors.new({ kind = errors.INTERNAL, message = "step output reference is unavailable: " .. data_id })
+                    end
+                    result.row.data_unavailable = true
+                    result.row.content = nil
+                    break
+                end
+                values[#values + 1] = output.content
+            end
+            if #values > 0 and not result.row.data_unavailable then
+                result.content.output = #values == 1 and values[1] or values
+                result.row.content = result.content
+            end
+        end
+    end
+    return nil
+end
+
 -- run_node_data — data rows for one def_node_id, ordered by data_id ASC (uuid v7,
 -- engine's own tiebreak), paged. The replay/inspection feed (V4.7). The third
 -- value is the offset of the following page, absent on the last page.
@@ -136,52 +193,8 @@ function M.run_node_data(workflow_id: any, run_id: any, def_node_id: any, opts: 
     local q = reader.with_dataflow(dataflow_id):with_nodes(table.unpack(engine_ids)):order_by("data_id", "ASC")
     local all_rows, err = q:all()
     if err then return nil, err end
-    local results: { any } = {}
-    local ids: { string } = {}
-    local seen: { [string]: boolean } = {}
-    for _, row in ipairs(all_rows or {}) do
-        if row.type == "node.result" then
-            local content = row.content
-            if type(content) == "string" and tostring(row.content_type):find("json", 1, true) then
-                local decoded, decode_err = json.decode(content)
-                if decode_err then return nil, decode_err end
-                content = decoded
-            end
-            if type(content) == "table" and type(content.data_ids) == "table" then
-                results[#results + 1] = { row = row, content = content }
-                for _, data_id in ipairs(content.data_ids) do
-                    if type(data_id) ~= "string" then return nil, errors.new({ kind = errors.INVALID, message = "invalid step output reference" }) end
-                    if not seen[data_id] then seen[data_id] = true; ids[#ids + 1] = data_id end
-                end
-            end
-        end
-    end
-    if #ids > 0 then
-        local outputs, output_err = reader.with_dataflow(dataflow_id):with_data(table.unpack(ids)):all()
-        if output_err then return nil, output_err end
-        local by_id: { [string]: any } = {}
-        for _, row in ipairs(outputs or {}) do
-            local content = row.content
-            if type(content) == "string" and tostring(row.content_type):find("json", 1, true) then
-                local decoded, decode_err = json.decode(content)
-                if decode_err then return nil, decode_err end
-                content = decoded
-            end
-            by_id[row.data_id] = { content = content }
-        end
-        for _, result in ipairs(results) do
-            local values: { any } = {}
-            for _, data_id in ipairs(result.content.data_ids) do
-                local output = by_id[data_id]
-                if not output then return nil, errors.new({ kind = errors.INTERNAL, message = "step output reference is unavailable: " .. data_id }) end
-                values[#values + 1] = output.content
-            end
-            if #values > 0 then
-                result.content.output = #values == 1 and values[1] or values
-                result.row.content = result.content
-            end
-        end
-    end
+    local hydrate_err = M.hydrate_step_outputs(run :: Map, all_rows, reader)
+    if hydrate_err then return nil, hydrate_err end
     -- The reader has no LIMIT/OFFSET; page the ordered result in memory.
     local out: { any } = {}
     local from = offset + 1
@@ -201,5 +214,6 @@ return {
     run_completed = default.run_completed,
     run_node_headers = default.run_node_headers,
     run_node_data = default.run_node_data,
+    hydrate_step_outputs = default.hydrate_step_outputs,
     attach = attach,
 }

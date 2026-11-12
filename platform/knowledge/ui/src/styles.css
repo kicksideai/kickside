@@ -1,10 +1,12 @@
 @import "@wippy-fe/theme/theme-config.css";
+@import "@kickside/ui-kit/component-deletion.css";
 @import "@kickside/ui-kit/spin.css";
 @import "@kickside/ui-kit/kx-card.css";
 @import "@kickside/ui-kit/kx-head.css";
 @import "@kickside/ui-kit/kx-modal-head.css";
 @import "@kickside/ui-kit/kx-state.css";
 @import "@kickside/ui-kit/kx-tag.css";
+@import "@widgets/app/anchored-panel.css";
 
 /* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
    preflight; without it PrimeVue controls keep UA defaults the theme never
@@ -240,8 +242,10 @@ wippy-loading ~ wippy-loading { display: none; }
   .kx-bar-l { width: 100%; flex-wrap: wrap; }
   .kx-bar-l .kx-title { flex: 1; }
   .kx-bar-l .kx-header-stats { flex-basis: 100%; order: 1; }
-  .kx-2p { grid-template-columns: 1fr; }
-  .kx-2p-l { border-right: none; border-bottom: 1px solid var(--p-content-border-color); }
+  /* Stacked: the identity pane keeps its full height and the configuration
+     pane scrolls in the rest, so the type list is never clipped. */
+  .kx-2p { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
+  .kx-2p-l { overflow: visible; border-right: none; border-bottom: 1px solid var(--p-content-border-color); }
 }
 .kx-dialog > .kx-modal-foot {
   display: flex; justify-content: flex-end; gap: 8px; padding: 14px 18px;
@@ -294,11 +298,6 @@ wippy-loading ~ wippy-loading { display: none; }
 /* Detail view */
 .kx-detail-meta { display: flex; flex-direction: column; gap: 6px; max-width: 900px; }
 .kx-detail-desc { font-size: 12px; line-height: 1.5; color: var(--p-text-muted-color); white-space: normal; }
-.kx-detail-summary {
-  font-size: 13px; line-height: 1.55; color: var(--p-text-color); padding: 12px 14px;
-  border: 1px solid var(--p-content-border-color); border-radius: 14px; background: var(--p-content-background);
-}
-.kx-detail-summary-lbl { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--p-text-muted-color); margin-bottom: 4px; }
 /* Mount point for the KB engine's own detail web component (manage_ui_id).
    Fills the remaining detail height so the engine UI (e.g. the wiki) can run as a
    full-height app frame with its own internal scrolling; the mounted element

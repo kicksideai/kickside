@@ -441,7 +441,7 @@ entries:
     meta: { type: test, suite: retry_upgrade, group: Workflow retry policy }
     source: file://suites/retry_upgrade_test.lua
     method: run
-    modules: [sql, funcs, uuid]
+    modules: [sql, funcs, uuid, registry]
     imports:
       test: wippy.test:test
 

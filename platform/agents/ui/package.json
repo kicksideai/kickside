@@ -53,6 +53,7 @@
   },
   "scripts": {
     "build": "vite build",
+    "test": "vitest run --environment happy-dom",
     "dev": "vite build --watch",
     "watch": "vite build --watch",
     "type-check": "vue-tsc --noEmit"

@@ -1,5 +1,71 @@
 # Changelog
 
+## [0.2.25](https://github.com/kicksideai/kickside/compare/automation-v0.2.24...automation-v0.2.25) (2026-11-12)
+
+
+### Bug Fixes
+
+* resolve assignment defaults and imported dependency APIs ([#437](https://github.com/kicksideai/kickside/issues/437)) ([89d16c3](https://github.com/kicksideai/kickside/commit/89d16c3b391318d79e5e194fc4b1062d0149a60c))
+
+## [0.2.24](https://github.com/kicksideai/kickside/compare/automation-v0.2.23...automation-v0.2.24) (2026-11-10)
+
+
+### Bug Fixes
+
+* reserve round capacity without starving general jobs ([#401](https://github.com/kicksideai/kickside/issues/401)) ([b44ba27](https://github.com/kicksideai/kickside/commit/b44ba272f604a7d33685f7addc28351392a4ea15))
+
+## [0.2.23](https://github.com/kicksideai/kickside/compare/automation-v0.2.22...automation-v0.2.23) (2026-11-09)
+
+
+### Bug Fixes
+
+* **automation:** advance delivery identity when delivery inputs change ([#392](https://github.com/kicksideai/kickside/issues/392)) ([013a3c1](https://github.com/kicksideai/kickside/commit/013a3c19b5cc15e949f65314eff42701728684a7))
+
+## [0.2.22](https://github.com/kicksideai/kickside/compare/automation-v0.2.21...automation-v0.2.22) (2026-11-09)
+
+
+### Bug Fixes
+
+* **automation:** reclaim prepared references when admission settles ([#390](https://github.com/kicksideai/kickside/issues/390)) ([241a29d](https://github.com/kicksideai/kickside/commit/241a29d2cc1e6163adc1be13202b56905ddf9f95))
+
+## [0.2.21](https://github.com/kicksideai/kickside/compare/automation-v0.2.20...automation-v0.2.21) (2026-11-09)
+
+
+### Bug Fixes
+
+* **automation:** simplify task details and history ([#385](https://github.com/kicksideai/kickside/issues/385)) ([6f35496](https://github.com/kicksideai/kickside/commit/6f3549694f6c8524651670d890c0f159dda32cd4))
+* **automation:** suppress idle delivery history and bound retention ([5560614](https://github.com/kicksideai/kickside/commit/556061470e9ce9e982823a04040a60e00b988996))
+* read deletion progress from authorized lists ([#376](https://github.com/kicksideai/kickside/issues/376)) ([302fb90](https://github.com/kicksideai/kickside/commit/302fb90cd777cdf54b3565090b428bfcd8a9f67e))
+
+## [0.2.20](https://github.com/kicksideai/kickside/compare/automation-v0.2.19...automation-v0.2.20) (2026-11-08)
+
+
+### Bug Fixes
+
+* **automation:** upgrade stored rollback steps of the retired trigger runtime on module update ([#367](https://github.com/kicksideai/kickside/issues/367)) ([26b9e6b](https://github.com/kicksideai/kickside/commit/26b9e6b3aefc32459cab739d74a44f881e03113f))
+
+## [0.2.19](https://github.com/kicksideai/kickside/compare/automation-v0.2.18...automation-v0.2.19) (2026-11-08)
+
+
+### Bug Fixes
+
+* **automation:** re-prepare a replayed delivery after its declaration changes ([#362](https://github.com/kicksideai/kickside/issues/362)) ([17ddf5d](https://github.com/kicksideai/kickside/commit/17ddf5df2a034e835c992ad14815b02487e59fe2))
+* **sync:** upgrade stored declarations to the current trigger spec on module update ([#361](https://github.com/kicksideai/kickside/issues/361)) ([cd6b101](https://github.com/kicksideai/kickside/commit/cd6b101aa994a3609709c1e293a808cb2d95f0d2))
+
+## [0.2.18](https://github.com/kicksideai/kickside/compare/automation-v0.2.17...automation-v0.2.18) (2026-11-07)
+
+
+### Bug Fixes
+
+* plain-text inbox previews; clear list errors after deletion; ship shared widget styles ([#346](https://github.com/kicksideai/kickside/issues/346)) ([2e72d66](https://github.com/kicksideai/kickside/commit/2e72d66e4b4c838d2aa792d810014ae9931ccb54))
+
+## [0.2.17](https://github.com/kicksideai/kickside/compare/automation-v0.2.16...automation-v0.2.17) (2026-11-07)
+
+
+### Bug Fixes
+
+* keep the typed access refusal of an event round's source pull ([#347](https://github.com/kicksideai/kickside/issues/347)) ([4b7a264](https://github.com/kicksideai/kickside/commit/4b7a2640d6593e7384764785e97aa4d6bdc3e4d7))
+
 ## [0.2.16](https://github.com/kicksideai/kickside/compare/automation-v0.2.15...automation-v0.2.16) (2026-11-07)
 
 

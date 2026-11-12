@@ -210,6 +210,7 @@ entries:
       meta_ops: kickside.component.persist:meta_ops
       declaration_fence: kickside.component.persist:declaration_fence
       execution_identity: kickside.execution:execution_identity
+      lifecycle_rollback: kickside.component.persist:lifecycle_rollback
 
   - name: declared_create
     kind: library.lua
@@ -257,8 +258,9 @@ entries:
   - name: meta_ops
     kind: library.lua
     source: file://meta_ops.lua
-    modules: [sql, time, uuid, json, registry]
+    modules: [sql, time, uuid, json, registry, funcs, security]
     imports:
+      execution_identity: kickside.execution:execution_identity
       component_types: kickside.component:types
       error_envelope: kickside.contract:error_envelope
 

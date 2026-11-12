@@ -107,7 +107,7 @@ local function define_tests()
             test.is_nil(ledger_row(automation_id, "d-1"))
             test.is_nil(ledger_row(automation_id, "s-1"))
             test.eq((ledger_row(automation_id, "x-1") :: Map).state, "dead")
-            test.is_nil((ledger_row(automation_id, "x-1") :: Map).expires_at, "dead evidence has no automatic expiry")
+            test.not_nil((ledger_row(automation_id, "x-1") :: Map).expires_at, "dead tombstones expire by age")
 
             exec("UPDATE kickside_trigger_item_ledger SET next_attempt_at=$1 WHERE owner_id=$2 AND item_key='r-1'", { PAST, automation_id })
             local _, retry_err = run(automation_id, key)
@@ -118,7 +118,7 @@ local function define_tests()
             test.eq(#query("SELECT item_key FROM kickside_trigger_item_ledger WHERE owner_id=$1"
                 .. " AND state='resolved' AND expires_at IS NULL", { automation_id }), 0)
             test.eq(#query("SELECT item_key FROM kickside_trigger_item_ledger WHERE owner_id=$1"
-                .. " AND state='dead' AND expires_at IS NOT NULL", { automation_id }), 0)
+                .. " AND state='dead' AND expires_at IS NOT NULL", { automation_id }), 1)
             test.eq(read_drive(automation_id, key).unresolved_count, 0)
         end)
 
@@ -173,7 +173,7 @@ local function define_tests()
             redeliver("revision-2")
             test.eq(#query("SELECT id FROM round_fixture_log WHERE drive_key='sink' AND item_key=$1", { identity_key }), 2)
             local unchanged = query("SELECT dest_version, updated_at FROM kickside_automation_receipt WHERE owner_id=$1 AND item_key='w-1'", { automation_id })[1]
-            test.eq(unchanged.updated_at, SENTINEL, "an unchanged destination writes no receipt")
+            test.is_true(unchanged.updated_at ~= SENTINEL, "a new delivered identity updates its receipt evidence")
 
             exec("UPDATE kickside_automation_receipt SET dest_version='stale' WHERE owner_id=$1", { automation_id })
             redeliver("revision-3")

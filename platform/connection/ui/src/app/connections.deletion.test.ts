@@ -12,7 +12,7 @@ it('keeps a deleting connection visible when a later read fails', async () => {
   vi.mocked(api.get).mockImplementation(async (url: string) => {
     if (String(url).startsWith('/api/v1/connections?')) {
       if (fail) throw new Error('Read unavailable')
-      return {data: {success: true, connections: [{component_id: 'selected', name: 'Selected connection', provider: 'generic', deleting_at: 'marked', deletion_job_id: 'job'}]}} as never
+      return {data: {success: true, connections: [{component_id: 'selected', name: 'Selected connection', provider: 'generic', deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'pending', attempts: 0}}]}} as never
     }
     if (String(url).startsWith('/api/v1/components/')) return {data: {success: true, deleting_at: 'marked', deletion_job_id: 'job', deletion_job: {status: 'pending', attempts: 0}}} as never
     return {data: {success: true, providers: []}} as never

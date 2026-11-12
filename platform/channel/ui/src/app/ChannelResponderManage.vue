@@ -6,7 +6,7 @@ import Select from 'primevue/select'
 import { api, loadByTagName } from '@wippy-fe/proxy'
 import { useEvents, useProps } from '@wippy-fe/webcomponent-vue'
 import WcMount from '@widgets/app/WcMount.vue'
-import { errMsg } from '@widgets/app/errMsg'
+import { errMsg } from '@kickside/ui-kit/errMsg'
 
 interface Props { config?: unknown; value?: unknown }
 interface Events {

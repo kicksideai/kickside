@@ -1,6 +1,7 @@
 @import "@wippy-fe/theme/theme-config.css";
 @import "@kickside/ui-kit/kx-tag.css";
 @import "@kickside/ui-kit/kx-tokens.css";
+@import "@widgets/app/wc-mount.css";
 
 /* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
    preflight; without it PrimeVue controls keep UA defaults the theme never
@@ -698,8 +699,7 @@ wippy-loading ~ wippy-loading { display: none; }
 .ks-builder-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .ks-builder-title { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 700; color: var(--p-text-color); }
 .ks-builder-acts { display: flex; gap: 8px; flex-wrap: wrap; }
-.ks-fields { display: grid; grid-template-columns: 220px 1fr 1fr; gap: 12px; }
-.ks-field-err { display: block; margin-top: 4px; font-size: 11px; color: var(--p-danger-500); }
+.ks-fields { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr); gap: 12px; }
 
 .ks-panes { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .ks-pane { display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--p-content-border-color); border-radius: var(--kx-radius-10); background: var(--kx-overlay-subtle); }
@@ -728,22 +728,12 @@ wippy-loading ~ wippy-loading { display: none; }
 .ks-pcard-act.add:hover { background: color-mix(in srgb, var(--p-success-600) 12%, transparent); color: var(--p-success-700); }
 .ks-pcard-act.remove:hover { background: color-mix(in srgb, var(--p-danger-500) 12%, transparent); color: var(--p-danger-700); }
 
-/* ── scopes admin: PolicyCard advanced view + locked + overlay ───────── */
+/* ── scopes admin: locked permissions and role extensions ───────── */
 .ks-pcard { flex-direction: column; align-items: stretch; }
-.ks-pcard-row { display: flex; align-items: flex-start; gap: 8px; }
+.ks-pcard-row { width: 100%; min-width: 0; display: flex; align-items: flex-start; gap: 8px; }
 .ks-pcard.locked { cursor: default; opacity: .9; }
 .ks-pcard.locked:hover { border-color: var(--p-content-border-color); box-shadow: none; }
 .ks-pcard-grip.locked { color: var(--p-text-muted-color); }
-.ks-pcard-act.detail { color: var(--p-text-muted-color); }
-.ks-pcard-act.detail svg { transition: transform .15s; }
-.ks-pcard-act.detail.open svg { transform: rotate(90deg); }
-.ks-pcard-act.detail:hover { background: var(--kx-overlay-hover); color: var(--p-text-color); }
-.ks-pcard-detail { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--p-content-border-color); display: flex; flex-direction: column; gap: 5px; }
-.ks-pcard-kv { display: flex; gap: 8px; font-size: 11px; align-items: flex-start; }
-.ks-pcard-kv > span { flex: none; width: 64px; color: var(--p-text-muted-color); text-transform: uppercase; font-weight: 700; letter-spacing: .03em; font-size: 10px; padding-top: 3px; }
-.ks-pcard-tags { display: flex; flex-wrap: wrap; gap: 4px; }
-.ks-pcard-kv code, .ks-eff-code { min-width: 0; overflow-wrap: anywhere; font-family: ui-monospace, Menlo, monospace; font-size: 10.5px; background: var(--kx-overlay-subtle); padding: 1px 5px; border-radius: 4px; color: var(--p-text-color); }
-.ks-pcard-none { color: var(--p-text-muted-color); font-size: 11px; }
 
 /* ── scopes admin: overlay warning, 3-pane, locked pane, extensions ──── */
 .ks-overlay-warn { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: var(--kx-radius-8); background: color-mix(in srgb, var(--p-warn-500) 12%, transparent); border: 1px solid color-mix(in srgb, var(--p-warn-500) 40%, transparent); color: var(--p-text-color); font-size: 12.5px; line-height: 1.45; }
@@ -774,6 +764,7 @@ wippy-loading ~ wippy-loading { display: none; }
 .ks-runas-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .ks-runas-pending { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; }
 
+.ks-runas-history { align-self: flex-start; width: auto; }
 .ks-runas-list { display: flex; flex-direction: column; gap: 8px; }
 .ks-runas-grant { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1px solid var(--p-content-border-color); border-radius: var(--kx-radius-10); background: var(--p-content-background); }
 .ks-runas-grant-icon { flex: 0 0 auto; font-size: 20px; color: var(--p-primary-color); }

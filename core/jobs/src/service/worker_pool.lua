@@ -203,20 +203,10 @@ function pool.main(handover: any?): (any?, error?)
         return nil, unavailable("job worker pool registry version unavailable", version_err)
     end
     local current_version = version
-    -- Subscribe before the first policy read so a change committed in between
-    -- still arrives. Nil means Settings is not installed.
+    -- The Settings change channel; nil while unsubscribed or when Settings is
+    -- not installed.
     local settings_ch: any = nil
-    if pool_settings then
-        local changes, changes_err = pool_settings.subscribe()
-        if changes_err then
-            pool_names.unregister(cfg.POOL_NAME, process.registry.CONSISTENT)
-            subscription:close()
-            pool_process.unlisten(idle_ch)
-            pool_process.unlisten(wake_ch)
-            return nil, unavailable("job worker pool settings subscription unavailable", changes_err)
-        end
-        settings_ch = changes
-    end
+    local settings_subscribed = false
     local delay_ns = (job_types.LOOP_RESPAWN_DELAY_MS :: number) * 1e6
     logger:info("job_worker pool root pid=" .. pid .. " detecting configured loops")
 
@@ -308,9 +298,9 @@ function pool.main(handover: any?): (any?, error?)
     local refresh_size: (number, table?) -> error?
     local fail_policy: ((error) -> ())? = nil
     -- apply_policy resolves the registry/host policy with the Settings overrides,
-    -- read again when read_settings is set, and resizes to it. A failed read,
-    -- resolution or resize leaves the last good snapshot active and its busy
-    -- slots running.
+    -- read again when read_settings is set, and resizes to it. A failed
+    -- subscription, read, resolution or resize leaves the last good snapshot
+    -- active and its busy slots running.
     local function apply_policy(read_settings: boolean): error?
         -- A failed read follows the existing retry deadline; busy job events
         -- must not turn a Settings outage into a read per event.
@@ -319,6 +309,17 @@ function pool.main(handover: any?): (any?, error?)
         local overrides = owner_overrides
         if pool_settings then
             if read_settings or policy_pending then
+                -- Subscribe before the read so a change committed in between
+                -- still arrives. A live update can upgrade this root before the
+                -- update's Settings change scope starts.
+                if not settings_subscribed then
+                    local changes, changes_err = pool_settings.subscribe()
+                    if changes_err then
+                        policy_pending = true
+                        return unavailable("job worker pool settings subscription unavailable", changes_err)
+                    end
+                    settings_ch, settings_subscribed = changes, true
+                end
                 local current, read_err = pool_settings.overrides()
                 if read_err then policy_pending = true; return read_err end
                 overrides = current :: table

@@ -298,8 +298,10 @@ entries:
     kind: library.lua
     meta: { comment: "Read-only run debug projection: engine linkage, raw export, and paged normalized timeline." }
     source: file://debug.lua
+    modules: [env, registry]
     imports:
       runs_read: kickside.workflows.runs:runs_read
+      runs_completion: kickside.workflows.runs:runs_completion
 
   - name: run_completed
     kind: function.lua

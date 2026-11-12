@@ -11,6 +11,7 @@ local contract = require("contract")
 local component = require("component")
 local teardown = require("teardown")
 local funcs = require("funcs")
+local audit_retention = require("audit_retention")
 
 local DB = "app:db"
 local COMPONENT_SERVICE = "kickside.component:component_service"
@@ -233,6 +234,11 @@ local function define_tests()
                 local marked, step, err = teardown.begin_delete(id, nil, nil)
                 test.is_true(marked, tostring(step) .. ": " .. tostring(err))
             end
+            repeat
+                local audits, audit_err = audit_retention.run(100)
+                test.is_nil(audit_err,tostring(audit_err))
+                if not audits.needs_continue then break end
+            until false
             local ok, failure = pcall(function()
                 local result, err = funcs.new():call("kickside.component:retention", {
                     change = { kind = "lease_released", owner_locator = { kind = "automation", id = ids[51] } } })
