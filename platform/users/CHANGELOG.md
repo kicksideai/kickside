@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.20](https://github.com/kicksideai/kickside/compare/users-v0.2.19...users-v0.2.20) (2026-11-12)
+
+
+### Features
+
+* **inbox:** support private principal-addressed items ([#438](https://github.com/kicksideai/kickside/issues/438)) ([141ec96](https://github.com/kicksideai/kickside/commit/141ec9604b6361502646dda8dec05a0ed0f4e262))
+
 ## [0.2.19](https://github.com/kicksideai/kickside/compare/users-v0.2.18...users-v0.2.19) (2026-11-09)
 
 
