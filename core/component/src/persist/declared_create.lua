@@ -60,19 +60,26 @@ function M.create_tx(tx: any, db: any, token: any): (any?, error?)
         if not allowed then return nil, denied("the operator lacks WRITE on the target parent") end
     end
 
+    local initial_meta = {}
+    for key, value in pairs(input.meta) do initial_meta[key] = value end
+    if receipt.public_meta ~= nil then
+        for key, value in pairs(receipt.public_meta) do initial_meta[key] = value end
+    end
     local _, create_err = placement_ops.create_component(tx, db, {
         type = component_types.COMMAND_TYPES.CREATE_COMPONENT,
         payload = {
             component_id = input.component_id,
             impl_id = input.impl_id,
             private_context = input.context,
-            initial_meta = input.meta,
+            initial_meta = initial_meta,
             actor_id = operator_id,
             parent_id = input.parent_id,
         },
     }, receipt.captured_identity)
     if create_err then return nil, create_err end
 
+    -- Receipt metadata belongs to creation; the declaration writer handles later updates.
+    receipt.public_meta = nil
     local _, declaration_err = declaration_ops.write_declaration_tx(tx, receipt)
     if declaration_err then return nil, declaration_err end
 

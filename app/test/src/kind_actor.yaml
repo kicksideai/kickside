@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: app
+entries:
+  - name: kind_actor_test
+    kind: function.lua
+    meta: {type: test, suite: app_security}
+    source: file://kind_actor_test.lua
+    method: run
+    modules: [contract, funcs, security, sql, uuid, json]
+    imports:
+      test: wippy.test:test
+      component_ops: kickside.component.persist:component_ops
+      execution_identity: kickside.execution:execution_identity
+      scope_projection: kickside.security.service:scope_projection
+  - name: kind_actor_probe
+    kind: function.lua
+    source: file://kind_actor_probe.lua
+    method: run
+    modules: [contract, security]
+  - name: kind_actor_probe_access
+    kind: security.policy
+    groups: [app.security:user]
+    policy:
+      actions: funcs.call
+      resources: app:kind_actor_probe
+      effect: allow
