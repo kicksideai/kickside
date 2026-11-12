@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.39](https://github.com/kicksideai/kickside/compare/kickside-v0.2.38...kickside-v0.2.39) (2026-11-12)
+
+
+### Bug Fixes
+
+* **inbox:** restore personal inbox items ([#447](https://github.com/kicksideai/kickside/issues/447)) ([3b3d732](https://github.com/kicksideai/kickside/commit/3b3d7322a3d05f84798526598517a2557489065c))
+
 ## [0.2.38](https://github.com/kicksideai/kickside/compare/kickside-v0.2.37...kickside-v0.2.38) (2026-11-12)
 
 

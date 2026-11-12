@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.21](https://github.com/kicksideai/kickside/compare/users-v0.2.20...users-v0.2.21) (2026-11-12)
+
+
+### Bug Fixes
+
+* **inbox:** enforce addressed access and committed notifications ([#444](https://github.com/kicksideai/kickside/issues/444)) ([c4d3ba9](https://github.com/kicksideai/kickside/commit/c4d3ba96c758fb8b60304898cdfec4018e37fc12))
+* **inbox:** restore personal inbox items ([#447](https://github.com/kicksideai/kickside/issues/447)) ([3b3d732](https://github.com/kicksideai/kickside/commit/3b3d7322a3d05f84798526598517a2557489065c))
+
 ## [0.2.20](https://github.com/kicksideai/kickside/compare/users-v0.2.19...users-v0.2.20) (2026-11-12)
 
 

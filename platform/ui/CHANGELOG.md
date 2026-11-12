@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.11](https://github.com/kicksideai/kickside/compare/ui-v0.2.10...ui-v0.2.11) (2026-11-12)
+
+
+### Bug Fixes
+
+* **inbox:** restore personal inbox items ([#447](https://github.com/kicksideai/kickside/issues/447)) ([3b3d732](https://github.com/kicksideai/kickside/commit/3b3d7322a3d05f84798526598517a2557489065c))
+
 ## [0.2.10](https://github.com/kicksideai/kickside/compare/ui-v0.2.9...ui-v0.2.10) (2026-11-12)
 
 
