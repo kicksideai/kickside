@@ -13,7 +13,7 @@
     "strict": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "types": ["@wippy-fe/proxy"]
+    "types": ["@wippy-fe/proxy", "node"]
   },
   "include": ["package/**/*.ts", "package/**/*.vue", "test/**/*.ts"]
 }
