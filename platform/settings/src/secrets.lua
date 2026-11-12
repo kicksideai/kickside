@@ -3,7 +3,7 @@
 -- 32 bytes, AES-256) the rest of the platform uses for credentials. The key is
 -- read from the environment and hex-decoded to raw bytes for crypto.encrypt.aes.
 
-local crypto = require("crypto")
+local secret_cipher = require("secret_cipher")
 local base64 = require("base64")
 local env = require("env")
 
@@ -19,20 +19,16 @@ local function key(): (string?, string?)
     if not hex or hex == "" then return nil, M.KEY_MISSING end
     if #hex ~= 64 then return nil, "ENCRYPTION_KEY must be 64 hex characters (32 bytes)" end
 
-    local bytes = ""
-    for i = 1, #hex, 2 do
-        local byte = tonumber(hex:sub(i, i + 1), 16)
-        if not byte then return nil, "ENCRYPTION_KEY contains invalid hex characters" end
-        bytes = bytes .. string.char(byte :: integer)
-    end
-    return bytes
+    local decoded, decode_err = secret_cipher.decode_key(hex)
+    if decode_err then return nil, "ENCRYPTION_KEY contains invalid hex characters" end
+    return decoded
 end
 
 -- encrypt returns the AES ciphertext of a plaintext string, or (nil, error).
 function M.encrypt(plaintext: any): (string?, string?)
     local k, kerr = key()
     if not k then return nil, kerr end
-    local enc, err = crypto.encrypt.aes(tostring(plaintext), k)
+    local enc, err = secret_cipher.encrypt(tostring(plaintext), k)
     if err then return nil, "encrypt failed: " .. tostring(err) end
     -- base64 so the ciphertext is valid UTF-8 text on both SQLite and Postgres.
     return base64.encode(enc)
@@ -45,7 +41,7 @@ function M.decrypt(ciphertext: any): (string?, string?)
     if not k then return nil, kerr end
     local decoded, derr = base64.decode(tostring(ciphertext))
     if derr then return nil, "decrypt failed: invalid base64: " .. tostring(derr) end
-    local dec, err = crypto.decrypt.aes(decoded, k)
+    local dec, err = secret_cipher.decrypt(decoded, k)
     if err then return nil, "decrypt failed: " .. tostring(err) end
     return dec
 end

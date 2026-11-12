@@ -15,8 +15,16 @@ function M.decode_key(hex: string): (string?, error?)
     return table.concat(bytes), nil
 end
 
+function M.encrypt(plaintext: string, key: string, aad: string?): (string?, error?)
+    return crypto.encrypt.aes(plaintext, key, aad)
+end
+
+function M.decrypt(ciphertext: string, key: string, aad: string?): (string?, error?)
+    return crypto.decrypt.aes(ciphertext, key, aad)
+end
+
 function M.seal(plaintext: string, key: string, aad: string?): (string?, error?)
-    local ciphertext, err = crypto.encrypt.aes(plaintext, key, aad)
+    local ciphertext, err = M.encrypt(plaintext, key, aad)
     if err then return nil, err end
     return base64.encode(ciphertext)
 end
@@ -24,7 +32,7 @@ end
 function M.open(ciphertext: string, key: string, aad: string?): (string?, error?)
     local decoded, err = base64.decode(ciphertext)
     if err then return nil, err end
-    return crypto.decrypt.aes(decoded, key, aad)
+    return M.decrypt(decoded, key, aad)
 end
 
 return M
