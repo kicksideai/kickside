@@ -120,6 +120,11 @@ function M.ask(kb_id: any, opts: any): (any, any)
     if q_err then
         return nil, q_err
     end
+    local analysis = result and result.retrieval and result.retrieval.analysis
+    if answer_model and analysis and analysis.status == "unavailable" and analysis.reason == "no_models_for_class" then
+        return nil, errors.new({ kind = errors.UNAVAILABLE,
+            message = "answer generation failed: No models found for class: " .. answer_model:sub(7) })
+    end
     local items = (result and result.items) or {}
 
     local answer: string? = nil
