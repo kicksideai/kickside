@@ -122,23 +122,3 @@ before honoring a component step's `navigate` event.
 make build      # cd ui && npm install && npm run build  -> static/index.js
 make lint       # wippy lint
 ```
-
-
-## SPEC: Viewer-computed navigation badges
-
-A nav declaration may use `badge: {source: viewer_function, function_id: module:count,
-hide_zero: true, tone: accent}`. The exact function must share the declaration’s
-namespace (or the contributing provider’s namespace). It receives `{}` under the
-viewer’s actor and scope and returns one finite non-negative integer. UI bounds
-the invocation to 250 ms and cancels it at the deadline; a failure, timeout or
-invalid result omits that badge. Function execution remains cooperative under the
-runtime’s cancellation contract. A computed badge is a count with the declared
-tone. Existing `component_meta` badges retain their singleton lookup and behavior.
-
-A viewer-function badge may declare `invalidation_topic`. The shell subscribes to
-that topic on the current user's authenticated connection, deduplicates shared
-topics, and reloads navigation through the viewer-authorized endpoint on each
-invalidation. An invalidation during an outstanding fetch schedules a follow-up
-read. Topic payloads never supply badge values. Subscriptions are torn
-down when navigation is replaced. Personal component-meta subscriptions retain
-their existing behavior.

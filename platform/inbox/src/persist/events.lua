@@ -1,4 +1,4 @@
--- Event-sourced storage for personal and principal-addressed Inbox items:
+-- Event-sourced storage for the actor-owned inbox thread:
 -- item.created -> item.version | item.resolved | item.deleted.
 
 local contract = require("contract")
@@ -11,11 +11,8 @@ local inbox_types = require("inbox_types")
 local item_types = require("inbox_item_types")
 local files = require("inbox_files")
 local object_fields = require("object_fields")
-local addressed = require("addressed")
-local access_subjects = require("access_subjects")
 
 local M = {}
-type ResolutionError = string | error
 
 M.THREAD_CLASS = "kickside.inbox"
 M.EXTERNAL_SOURCE = "kickside.inbox"
@@ -72,15 +69,6 @@ function M.current_component_id(): string?
     local owner = actor_id()
     if not owner then return nil end
     return M.component_id_for_owner(owner)
-end
-
-function M.component_ids(): ({ string }?, any?)
-    local ids = addressed.group_inboxes() or {}
-    local own = M.current_component_id()
-    if own then ids[#ids + 1] = own end
-    local owner = actor_id()
-    if owner then ids[#ids + 1] = addressed.component_id({ kind = "user", id = owner }) end
-    return ids, nil
 end
 
 -- Find the owner's inbox thread without creating it (for reads/teardown).
@@ -157,20 +145,13 @@ local function external_event(event_type: string, external_id: string, opener: a
     return type(found) == "table" and found.event or nil, nil
 end
 
-function M.resolution_event(id: string, opener: any?, resolution_id: string?, recipient: any?, store_version: any?): (any?, any?)
+function M.resolution_event(id: string, opener: any?, resolution_id: string?): (any?, any?)
     local owner = actor_id()
     if not owner then return nil, errors.new({ message = "authenticated actor required", kind = errors.PERMISSION_DENIED, retryable = false }) end
-    local thread_id, thread_err
-    if recipient and store_version ~= nil then
-        thread_id = addressed.component_id(recipient :: inbox_types.Recipient)
-    else
-        thread_id, thread_err = find_thread(owner, opener)
-    end
+    local thread_id, thread_err = find_thread(owner, opener)
     if thread_err then return nil, thread_err end
     if not thread_id then return nil, nil end
-    local run, open_err
-    if recipient and store_version ~= nil then run, open_err = addressed.store("kickside.core:threads")
-    else run, open_err = (opener or open_threads)() end
+    local run, open_err = (opener or open_threads)()
     if open_err then return nil, open_err end
     local found, err = run:find_event_by_external({
         thread_id = thread_id, event_type = EV.RESOLVED,
@@ -253,18 +234,7 @@ local function aggregate_identity(source_id: any, key: any): (string?, any?)
     return "aggregate:" .. tostring(#owner) .. ":" .. owner .. ":" .. tostring(#source_id) .. ":" .. source_id .. ":" .. key, nil
 end
 
-function M.identity(params: any): (any?, any?)
-    if params.recipient ~= nil then
-        return addressed.identity(params)
-    end
-    local id, err = params.id, nil
-    if params.aggregate_key ~= nil then id, err = aggregate_identity(params.source_id, params.aggregate_key) end
-    if err then return nil, err end
-    return { id = id, owner_id = actor_id() }, nil
-end
-
 function M.resolve_aggregate(params: any): (string?, any?, string?)
-    if params.recipient ~= nil then return addressed.write(params, true) end
     local id, identity_err = aggregate_identity(params.source_id, params.aggregate_key)
     if identity_err then return nil, identity_err end
     local key = type(params.idempotency_key) == "string" and params.idempotency_key ~= "" and params.idempotency_key or uuid.v4()
@@ -280,7 +250,6 @@ function M.resolve_aggregate(params: any): (string?, any?, string?)
 end
 
 function M.create(params: any, deps: any?): (string?, any?, string?)
-    if params.recipient ~= nil then return addressed.write(params, false) end
     local owner = actor_id()
     if not owner then return nil, errors.new({ message = "authenticated actor required", kind = errors.PERMISSION_DENIED }) end
     local item_type = type(params.item_type) == "string" and params.item_type or ""
@@ -293,11 +262,13 @@ function M.create(params: any, deps: any?): (string?, any?, string?)
     local file_refs, files_err = files.normalize(params.files)
     if files_err then return nil, files_err end
 
-    local identity, identity_err = M.identity(params)
-    if identity_err then return nil, identity_err end
-    local id = identity.id
-    if type(id) ~= "string" or id == "" then id = uuid.v4() end
+    local id = (type(params.id) == "string" and params.id ~= "") and params.id or uuid.v4()
     local aggregate_key = params.aggregate_key
+    if aggregate_key ~= nil then
+        local identity_err
+        id, identity_err = aggregate_identity(params.source_id, aggregate_key)
+        if identity_err then return nil, identity_err end
+    end
     local body: { [string]: any } = {
         id = id, item_type = item_type, title = title, content = params.content, files = file_refs,
         metadata = type(params.metadata) == "table" and params.metadata or {},
@@ -348,7 +319,7 @@ end
 -- Private terminal commit seam used only by inbox_resolve after declaration
 -- validation and callbacks succeed. Keeping this off the writer facade prevents
 -- module callers from bypassing the canonical resolution orchestration.
-function M._commit_resolution(id: string, status: string, meta: any?): (boolean, ResolutionError?, any?)
+function M._commit_resolution(id: string, status: string, meta: any?): (boolean, string?, any?)
     if type(id) ~= "string" or id == "" then return false, "item id is required", nil end
     if type(status) ~= "string" or status == "" then return false, "resolution status is required", nil end
     local action = type(meta) == "table" and type((meta :: any).action) == "string"
@@ -362,13 +333,8 @@ function M._commit_resolution(id: string, status: string, meta: any?): (boolean,
     local item, gerr = M.get(id)
     if gerr then return false, gerr, nil end
     if not item then return false, inbox_types.ERROR.NOT_FOUND, nil end
-    if resolution_id ~= inbox_types.resolution_id(item) then
-        return false, errors.new({ kind = errors.CONFLICT, message = "resolution_id does not match item visit" }), nil
-    end
-    local source_closed = item.aggregate_key ~= nil and item.status == inbox_types.STATUS.RESOLVED and item.resolution_id == nil
-    if item.status ~= inbox_types.STATUS.PENDING and not source_closed then
-        return false, errors.new({ kind = errors.CONFLICT, message = inbox_types.ERROR.ALREADY_RESOLVED }), nil
-    end
+    if resolution_id ~= inbox_types.resolution_id(item) then return false, "resolution_id does not match item version", nil end
+    if item.status ~= inbox_types.STATUS.PENDING then return false, inbox_types.ERROR.ALREADY_RESOLVED, nil end
 
     local trace_context = copy_trace_context((item :: any).trace_context)
     if trace_context and type((item :: any).created_event_id) == "string" then
@@ -391,45 +357,19 @@ function M._commit_resolution(id: string, status: string, meta: any?): (boolean,
     if type(meta) == "table" and type((meta :: any).form) == "table" then
         (body :: any).form = (meta :: any).form
     end
-    local res, err
-    if item.recipient and item.store_version ~= nil then
-        res, err = addressed.emit(item.recipient :: inbox_types.Recipient, EV.RESOLVED, body, resolution_id :: string, trace_context)
-    else
-        res, err = append(EV.RESOLVED, body, resolution_id, trace_context)
-    end
+    local res, err = append(EV.RESOLVED,
+        body,
+        resolution_id,
+        trace_context)
     if err then return false, err, nil end
     -- external-id unique constraint: a duplicate means another resolve already won.
     if type(res) == "table" and tonumber(res.inserted) == 0 then
-        return false, errors.new({ kind = errors.CONFLICT, message = inbox_types.ERROR.ALREADY_RESOLVED }), nil
+        return false, inbox_types.ERROR.ALREADY_RESOLVED, nil
     end
     return true, nil, body
 end
 
-function M.delete(identity: any, idempotency_key: string?): (boolean, any?)
-    if not actor_id() then return false, errors.new({ message = "authenticated actor required", kind = errors.PERMISSION_DENIED }) end
-    if type(identity) == "table" then
-        if identity.params then
-            local ok, err = addressed.delete_identity(identity, idempotency_key)
-            return ok == true, err
-        end
-        if identity.owner_id ~= actor_id() then
-            return false, errors.new({ message = "Inbox identity owner does not match actor", kind = errors.PERMISSION_DENIED })
-        end
-        return M.delete_personal({ id = identity.id, key = idempotency_key })
-    end
-    if type(identity) ~= "string" or identity == "" then return false, errors.new({ message = "item id is required", kind = errors.INVALID }) end
-    local filter, filter_err = access_subjects.access_filter(actor_id())
-    if filter_err then return false, filter_err end
-    if filter == nil then
-        local private, private_err = addressed.delete(identity, idempotency_key)
-        if private_err then return false, private_err end
-        if private then return true, nil end
-    end
-    return M.delete_personal({ id = identity, key = idempotency_key })
-end
-
-function M.delete_personal(input: any): (boolean, any?)
-    local id, idempotency_key = input.id, input.key
+function M.delete(id: string, idempotency_key: string?): (boolean, any?)
     if not actor_id() then return false, errors.new({ message = "authenticated actor required", kind = errors.PERMISSION_DENIED }) end
     if type(id) ~= "string" or id == "" then return false, errors.new({ message = "item id is required", kind = errors.INVALID }) end
     local key = type(idempotency_key) == "string" and idempotency_key or ""
@@ -437,23 +377,11 @@ function M.delete_personal(input: any): (boolean, any?)
         local claimed, claim_err = M.claim_delivery(key, "delete", id, {})
         if not claimed then return false, claim_err end
     end
-    local thread_id, lookup_err = find_thread(actor_id() :: string)
+    local genesis, lookup_err = external_event(EV.CREATED, "item:" .. id)
     if lookup_err then return false, lookup_err end
-    local origin = nil
-    if thread_id then
-        local models, models_err = open_read_models()
-        if models_err then return false, models_err end
-        local result, read_err = models:get({ owner_id = thread_id, kind = PROJECTION_KIND, projection_key = "default" })
-        if read_err then return false, read_err end
-        origin = ((result.body or {}).items or {})[id]
-    end
-    if not origin then
-        origin, lookup_err = external_event(EV.CREATED, "item:" .. id)
-        if lookup_err then return false, lookup_err end
-    end
-    if not origin then return false, errors.new({ message = inbox_types.ERROR.NOT_FOUND, kind = errors.NOT_FOUND }) end
+    if not genesis then return false, errors.new({ message = inbox_types.ERROR.NOT_FOUND, kind = errors.NOT_FOUND }) end
     local external_id = key ~= "" and ("delivery:" .. key) or ("delete:" .. id)
-    local _, err = append(EV.DELETED, { id = id }, external_id, copy_trace_context(origin.trace_context))
+    local _, err = append(EV.DELETED, { id = id }, external_id, copy_trace_context(genesis.trace_context))
     if err then return false, err end
     return true, nil
 end
@@ -471,40 +399,25 @@ function M.reduce(): ({ [string]: any }, any?, any?)
     if not owner then return {}, "authenticated actor required" end
     local thread_id, thread_err = find_thread(owner)
     if thread_err then return {}, thread_err end
-    local items = {}
-    local filter, filter_err = access_subjects.access_filter(owner)
-    if filter_err then return {}, filter_err end
-    if filter == nil then
-        local addressed_items, addressed_err = addressed.items()
-        if addressed_err then return {}, addressed_err end
-        items = addressed_items or {}
-    end
-    if thread_id then
-        local models, models_err = open_read_models()
-        if models_err then return {}, models_err end
-        local result, read_err = models:get({ owner_id = thread_id, kind = PROJECTION_KIND, projection_key = "default" })
-        if read_err then return {}, read_err end
-        for id, item in pairs(((result or {}).body or {}).items or {}) do
-            if item.recipient == nil or (item.recipient.kind == "user" and item.recipient.id == owner) then
-                items[id] = item
-            end
-        end
-    end
-    local live_sources, source_err = addressed.live_sources(items :: { [string]: any })
-    if source_err then return {}, source_err end
-    local counts = nil
+    if not thread_id then return {}, nil end
+
+    local models, models_err = open_read_models()
+    if models_err then return {}, models_err end
+    if not models then return {}, errors.new({ message = "read-model contract did not open", kind = errors.UNAVAILABLE }) end
+    local res, err = models:get({ owner_id = thread_id, kind = PROJECTION_KIND, projection_key = "default" })
+    if err then return {}, err end
+    local body: any = type(res) == "table" and (res :: any).body or {}
+    local items = type(body) == "table" and (body :: any).items or nil
+    local counts = type(body) == "table" and (body :: any).counts or nil
     if type(items) == "table" then
         for id, item in pairs(items) do
             if type(item) == "table" then
                 local access_err
-                if item.aggregate_key ~= nil and item.recipient == nil then
+                if item.aggregate_key ~= nil then
                     local _
                     _, access_err = component.validate_access(item.source_id, 1)
                 end
-                if item.recipient and item.aggregate_key ~= nil and type(item.source_id) == "string"
-                    and item.source_id ~= "" and not live_sources[item.source_id] then
-                    items[id] = nil
-                elseif access_err then
+                if access_err then
                     if not errors.is(access_err, errors.PERMISSION_DENIED) and not errors.is(access_err, errors.NOT_FOUND) then
                         return {}, access_err
                     end
@@ -520,7 +433,8 @@ function M.reduce(): ({ [string]: any }, any?, any?)
         (type(counts) == "table" and counts or nil)
 end
 
--- get returns one eligible item from the viewer's personal and live-group projections.
+-- get returns one current item from the actor's inbox (ownership is implicit:
+-- you only see your own inbox thread).
 function M.get(id: string): (any, any?)
     local items, err = M.reduce()
     if err then return nil, err end

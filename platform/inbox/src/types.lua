@@ -59,7 +59,6 @@ M.ERROR = {
 }
 
 type Metadata = { [string]: any }
-type Recipient = { kind: string, id: string }
 
 type InboxItem = {
     id: string,
@@ -75,8 +74,6 @@ type InboxItem = {
     status: string,
     priority: string,
     actor_id: string?,
-    recipient: Recipient?,
-    sender_id: string?,
     created_at: any,
     created_event_id: string?,
     trace_context: Metadata?,
@@ -100,12 +97,10 @@ type InboxCreateParams = {
     idempotency_key: string?,
     priority: string?,
     actor_id: string?,
-    recipient: Recipient?,
     trace_context: Metadata?,
 }
 
 M.Metadata = Metadata
-M.Recipient = Recipient
 M.InboxItem = InboxItem
 M.InboxCreateParams = InboxCreateParams
 

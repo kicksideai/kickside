@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue'
 import type { Component } from 'vue'
-import { useApi, useWippy } from './useWippy'
+import { useApi } from './useWippy'
 import { subscribeComponentMeta, type ComponentMetaEvent, type MetaFieldTypes } from '@kickside/ui-kit/componentRealtime'
 
 // A live badge bound to a component-meta field, resolved by the backend nav_badges
@@ -8,10 +8,8 @@ import { subscribeComponentMeta, type ComponentMetaEvent, type MetaFieldTypes } 
 // subscription). `value` is the coerced field; `tone` is the current effective tone
 // (base_tone, or active_tone while tone_field is truthy).
 export interface NavBadge {
-  source?: string
-  invalidation_topic?: string
   value?: number
-  component_id?: string
+  component_id: string
   field: string
   field_type: string
   style: string
@@ -188,15 +186,11 @@ type SubscribeFn = (
 export function installBadgeSubscriptions(
   cats: NavCategory[],
   subscribe: SubscribeFn = subscribeComponentMeta,
-  onTopic?: (topic: string, reload: () => void) => (() => void) | void,
-  reload?: () => void,
 ): Array<() => void> {
-  const topics = new Set<string>()
   const groups = new Map<string, { badges: NavBadge[]; fieldTypes: MetaFieldTypes }>()
   for (const cat of cats) {
     for (const it of cat.items) {
       const b = it.badge
-      if (b?.source === 'viewer_function' && b.invalidation_topic) topics.add(b.invalidation_topic)
       if (!b || !b.component_id) continue
       let g = groups.get(b.component_id)
       if (!g) {
@@ -209,12 +203,6 @@ export function installBadgeSubscriptions(
     }
   }
   const unsubs: Array<() => void> = []
-  if (onTopic && reload) {
-    for (const topic of topics) {
-      const off = onTopic(topic, reload)
-      if (off) unsubs.push(off)
-    }
-  }
   for (const [componentId, g] of groups) {
     const off = subscribe(
       componentId,
@@ -233,7 +221,6 @@ const categories = ref<NavCategory[]>([])
 // Live badge subscriptions over the existing socket, torn down and rebuilt on each
 // nav (re)load so a reload never leaks handlers.
 let badgeUnsubs: Array<() => void> = []
-let reloadPending = false
 const layout = ref<NavLayout>('vertical')
 // Admin-configured landing path: where "/" redirects to. Empty = no redirect.
 const home = ref('')
@@ -257,14 +244,9 @@ function loadErrorMessage(): string {
 
 export function useSurfaces() {
   const api = useApi()
-  const instance = useWippy()
 
   async function loadNav(force = false): Promise<void> {
-    if (loading.value) {
-      reloadPending ||= force
-      return
-    }
-    if (loaded.value && !force) return
+    if ((loaded.value && !force) || loading.value) return
     loading.value = true
     const requestSplashRevision = splashRevision
     try {
@@ -279,8 +261,7 @@ export function useSurfaces() {
         }
         error.value = null
         for (const off of badgeUnsubs) off()
-        badgeUnsubs = installBadgeSubscriptions(categories.value, subscribeComponentMeta,
-          (topic, cb) => instance.on(topic, cb), () => { void reloadNav() })
+        badgeUnsubs = installBadgeSubscriptions(categories.value)
       }
     } catch {
       navItems.value = []
@@ -289,10 +270,6 @@ export function useSurfaces() {
     } finally {
       loaded.value = true
       loading.value = false
-      if (reloadPending) {
-        reloadPending = false
-        void loadNav(true)
-      }
     }
   }
 

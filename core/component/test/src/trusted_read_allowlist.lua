@@ -41,20 +41,6 @@ M.METHODS = {
 M.SELF_PATH = "core/component/src/component.lua"
 
 M.ALLOW = {
-    ["platform/inbox/src/persist/addressed.lua"] = {
-        list_system = {
-            count = 1,
-            why = "Inbox's internal read library checks deduplicated source IDs from items read from the viewer's eligible stores; recipient source READ is not required, no metadata or private context is loaded, and no callable existence entry is exposed",
-            entry = "kickside.inbox.persist:addressed",
-        },
-    },
-    ["platform/inbox/src/persist/projection.lua"] = {
-        component_owner = {
-            count = 1,
-            why = "the trusted post-commit projection worker resolves the personal inbox owner for a content-free invalidation; legacy framework-created projections need not run as that user and deletion events carry no recipient",
-            entry = "kickside.inbox.persist:projection_committed",
-        },
-    },
     ["platform/uploads/src/original_read.lua"] = {
         get_private_context = {
             count = 1,

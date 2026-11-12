@@ -5,7 +5,7 @@ local security = require("security")
 local contract = require("contract")
 local inbox_writer = require("inbox_writer")
 local inbox_reader = require("inbox_reader")
-local addressed = require("addressed")
+local component = require("component")
 
 local M = {}
 
@@ -166,19 +166,11 @@ function M.create_decision(args: any): (any?, string?)
     if id == "" then return nil, "params.id is required" end
     local existing, read_err = inbox_reader.get(id)
     if read_err then return nil, "could not inspect existing decision: " .. tostring(read_err) end
-    if type(existing) ~= "table" then
-        existing, read_err = inbox_reader.get(addressed.item_id(ITEM_TYPE, id, { kind = "user", id = actor_id() }))
-        if read_err then return nil, "could not inspect existing decision: " .. tostring(read_err) end
-    end
     if type(existing) == "table" then
         -- Pending and resolved items are both authoritative history. A revived Await
         -- re-arms the same stable correlation and must never append/reopen it.
         return existing, nil
     end
-    local private_id = addressed.item_id(ITEM_TYPE, id, { kind = "user", id = actor_id() })
-    local seen, seen_err = addressed.has_item(private_id)
-    if seen_err then return nil, "could not inspect existing decision: " .. tostring(seen_err) end
-    if seen then return { id = private_id, item_type = ITEM_TYPE, title = params.title }, nil end
     return inbox_writer.create(params)
 end
 
@@ -188,17 +180,40 @@ function M.arm_decision(args: any): (any?, string?)
     if not params then return nil, params_err end
     local assignee = str(((params :: Map).metadata :: Map).assignee)
 
-    if assignee == actor_id() then
-        local assignee_err = require_assignee(assignee)
-        if assignee_err then return nil, assignee_err end
-        return M.create_decision({ params = params })
+    -- Assignment authority is the boundary for a cross-user target. Check it
+    -- before the directory lookup so an untrusted producer cannot use the
+    -- public Block arm as a user-existence oracle.
+    local is_self = assignee == actor_id()
+    if not is_self and security.can("inbox.assign", "user:" .. assignee) ~= true then
+        return nil, "Inbox assignment access denied"
     end
-    params.recipient = { kind = "user", id = assignee }
-    params.metadata = copy_map(params.metadata)
-    params.metadata.assigned_by = actor_id()
-    local id, write_err = addressed.write(params, false)
-    if write_err then return nil, tostring(write_err) end
-    return { id = id, item_type = params.item_type, title = params.title }, nil
+    local assignee_err = require_assignee(assignee)
+    if assignee_err then return nil, assignee_err end
+
+    if is_self then return M.create_decision({ params = params }) end
+    local component_id = component.singleton_component_id(assignee, "kickside.inbox")
+    local definition, get_err = contract.get("kickside.core:threads")
+    if get_err or not definition then return nil, "Inbox threads unavailable: " .. tostring(get_err) end
+    local threads, open_err = definition:with_actor(security.actor()):with_scope(security.scope()):open()
+    if open_err or not threads then return nil, "Inbox threads unavailable: " .. tostring(open_err) end
+    local metadata = copy_map(params.metadata)
+    metadata.assigned_by = actor_id()
+    local _, emit_err = threads:emit({
+        component_id = component_id,
+        type = "kickside.inbox.events:item.created",
+        body = {
+            id = params.id, item_type = params.item_type, title = params.title,
+            content = params.content, files = params.files, metadata = metadata, source_id = params.source_id,
+            priority = params.priority, actor_id = assignee, created_at = os.time(),
+        },
+        trace_context = params.trace_context,
+        external = {
+            external_source = "kickside.inbox", external_id = "item:" .. params.id,
+            external_version = "1",
+        },
+    })
+    if emit_err then return nil, tostring(emit_err) end
+    return { id = params.id, item_type = params.item_type, title = params.title }, nil
 end
 
 return M

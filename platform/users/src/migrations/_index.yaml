@@ -144,14 +144,3 @@ entries:
     imports:
       migration: wippy.migration:migration
     method: migrate
-
-  - name: 15_group_member_paging
-    kind: function.lua
-    meta:
-      type: migration
-      depends_on: [ns:wippy.migration, kickside.users.migrations:01_create_app_user_tables]
-      timestamp: "2026-11-12T00:00:00Z"
-    source: file://15_group_member_paging.lua
-    imports:
-      migration: wippy.migration:migration
-    method: migrate

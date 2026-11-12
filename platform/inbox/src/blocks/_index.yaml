@@ -94,7 +94,7 @@ entries:
       inbox_files: kickside.inbox:inbox_files
       inbox_writer: kickside.inbox.persist:inbox_writer
       inbox_reader: kickside.inbox.persist:inbox_reader
-      addressed: kickside.inbox.persist:addressed
+      component: kickside.component:component
 
   - name: arm_decision
     kind: function.lua
@@ -113,7 +113,7 @@ entries:
       inbox_files: kickside.inbox:inbox_files
       inbox_writer: kickside.inbox.persist:inbox_writer
       inbox_reader: kickside.inbox.persist:inbox_reader
-      addressed: kickside.inbox.persist:addressed
+      component: kickside.component:component
 
   - name: create_decision
     kind: function.lua
@@ -129,7 +129,7 @@ entries:
       inbox_files: kickside.inbox:inbox_files
       inbox_writer: kickside.inbox.persist:inbox_writer
       inbox_reader: kickside.inbox.persist:inbox_reader
-      addressed: kickside.inbox.persist:addressed
+      component: kickside.component:component
 
   - name: preview_decision
     kind: function.lua
@@ -142,14 +142,13 @@ entries:
       inbox_files: kickside.inbox:inbox_files
       inbox_writer: kickside.inbox.persist:inbox_writer
       inbox_reader: kickside.inbox.persist:inbox_reader
-      addressed: kickside.inbox.persist:addressed
+      component: kickside.component:component
 
   - name: item_type.flow_decision
     kind: registry.entry
     meta:
       type: inbox.item_type
       value: flow_decision
-      send_permission: inbox.assign
       title: Flow Decision
       icon: tabler:git-pull-request
       color: indigo

@@ -141,18 +141,11 @@ local function handler()
             file_version = r.files ~= nil and (r.version_event_id or r.created_event_id) or nil,
             metadata = object_fields.object(meta), source_id = r.source_id, status = r.status,
             priority = r.priority, actor_id = r.actor_id,
-            recipient = r.recipient, sender_id = r.sender_id,
             created_at = r.created_at, resolved_at = r.resolved_at,
             action = r.action, form = r.form ~= nil and object_fields.object(r.form) or nil,
         }
     end
 
-    local component_ids, topics_err = inbox_events.component_ids()
-    if topics_err then
-        res:set_status(http.STATUS.INTERNAL_ERROR)
-        res:write_json({ success = false, error = tostring(topics_err) })
-        return
-    end
     res:set_status(http.STATUS.OK)
     res:write_json({
         success = true,
@@ -165,7 +158,6 @@ local function handler()
         high_count = counts.high_count,
         items = items,
         component_id = inbox_events.component_id_for_owner(actor_id),
-        component_ids = component_ids,
     })
 end
 

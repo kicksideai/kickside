@@ -49,11 +49,7 @@ entries:
     - kickside.inbox:*
     - kickside.inbox.api:*
     - kickside.inbox.events:*
-    - kickside.inbox.persist:addressed_write
-    - kickside.inbox.persist:addressed_read
-    - kickside.inbox.persist:addressed_delete
-    - kickside.inbox.persist:personal_delete
-    - kickside.inbox.persist:projection_worker
+    - kickside.inbox.persist:*
     - kickside.inbox.security:*
     - kickside.inbox.sink:*
     - kickside.inbox.traits:*

@@ -194,7 +194,7 @@ M.DEFAULT_ORDER = 500
 -- is resolved by nav_badges (a single access-filtered component.query) after the
 -- pure nav merge; nav.effective only carries the declared, validated spec.
 M.BADGE = {
-    SOURCE = { COMPONENT_META = "component_meta", VIEWER_FUNCTION = "viewer_function" },
+    SOURCE = { COMPONENT_META = "component_meta" },
     STYLE = { COUNT = "count", DOT = "dot" },
     SCOPE = { ACTOR = "actor" },
     CARDINALITY = { SINGLETON = "singleton" },
@@ -220,8 +220,6 @@ M.BADGE_FIELD_TYPES = {
 type Badge = {
     source: string,
     impl_id: string,
-    function_id: string?,
-    invalidation_topic: string?,
     scope: string,
     cardinality: string,
     field: string,
@@ -256,20 +254,10 @@ end
 
 -- normalize_badge validates a declared badge block into a typed spec, or nil when
 -- it is absent or malformed (an invalid badge is simply no badge). Only the
--- component_meta and module-owned viewer_function sources are understood.
-function M.normalize_badge(raw: any, declaration_id: string?): Badge?
+-- component_meta source is understood today; other sources normalize to nil.
+function M.normalize_badge(raw: any): Badge?
     if type(raw) ~= "table" then return nil end
     local b = raw :: { [string]: any }
-    if b.source == M.BADGE.SOURCE.VIEWER_FUNCTION then
-        local target = badge_identifier(b.function_id)
-        local owner = type(declaration_id) == "string" and declaration_id:match("^([^:]+):") or nil
-        if not target or not owner or target:match("^([^:]+):") ~= owner then return nil end
-        local tone = badge_tone(b.tone, "neutral")
-        return { source = M.BADGE.SOURCE.VIEWER_FUNCTION, function_id = target,
-            invalidation_topic = type(b.invalidation_topic) == "string" and b.invalidation_topic ~= "" and b.invalidation_topic or nil, impl_id = "", scope = "actor", cardinality = "singleton",
-            field = "", field_type = "integer", style = "count", hide_zero = b.hide_zero == true,
-            tone = tone, base_tone = tone, active_tone = nil, tone_field = nil, value = nil, component_id = nil }
-    end
     if b.source ~= M.BADGE.SOURCE.COMPONENT_META then return nil end
     if type(b.component) ~= "table" then return nil end
     local c = b.component :: { [string]: any }
