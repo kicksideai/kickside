@@ -94,6 +94,7 @@ local function define_tests()
                 "kickside.users.migrations:12_delegation_epochs",
                 "kickside.users.migrations:13_bot_accounts",
                 "kickside.users.migrations:14_bot_lifecycle_audit",
+                "kickside.users.migrations:15_group_member_paging",
             }) do
                 test.eq(targets[id][".meta.target_db"], true)
             end
@@ -143,7 +144,7 @@ local function define_tests()
 
             local migrations = module_migrations()
             -- Every declared migration binds to the injected database.
-            test.eq(#migrations, 10)
+            test.eq(#migrations, 11)
             for _, migration in ipairs(migrations) do
                 test.eq(trim((migration.meta or {}).target_db), db_id)
             end

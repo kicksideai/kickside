@@ -226,3 +226,54 @@ entries:
     kind: security.policy
     groups: [app:user]
     policy: { resources: 'app:addressed_probe', actions: [funcs.call, registry.get], effect: allow }
+
+  - name: addressed_boundary_test
+    kind: function.lua
+    source: file://addressed_boundary_test.lua
+    method: run
+    meta: { type: test, suite: kickside_inbox }
+    modules: [funcs, security, uuid, sql]
+    imports:
+      component: kickside.component:component
+      test: wippy.test:test
+      test_identity: app:test_identity
+
+  - name: notification_authority_test
+    kind: function.lua
+    source: file://addressed_boundary_test.lua
+    method: notifications
+    meta: { type: test, suite: kickside_inbox }
+    modules: [funcs, security, uuid, sql]
+    imports:
+      component: kickside.component:component
+      test: wippy.test:test
+      test_identity: app:test_identity
+
+  - name: addressed_member_probe
+    kind: security.policy
+    policy:
+      resources: [app:inbox_read_probe, app:addressed_probe]
+      actions: [funcs.call, funcs.security]
+      effect: allow
+
+  - name: addressed_contract_context
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: [contract.security, contract.call]
+      effect: allow
+
+  - name: addressed_notification_target_test
+    kind: function.lua
+    source: file://addressed_test.lua
+    method: target
+    meta: { type: test, suite: kickside_inbox }
+    modules: [funcs, contract, security, uuid, json, sql, time, channel]
+    imports:
+      test: wippy.test:test
+      test_identity: app:test_identity
+      component: kickside.component:component
+      user_groups: kickside.users.persist:user_groups_repo
+      addressed: kickside.inbox.persist:addressed
+      jobs: kickside.core.jobs:jobs
+      retention_prune: kickside.core.retention:prune

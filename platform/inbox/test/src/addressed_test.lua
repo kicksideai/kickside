@@ -103,7 +103,65 @@ local function await_notifications(id: string, count: integer): { any }
     return found
 end
 
-return { run = test.run_cases(function()
+local target = test.run_cases(function()
+    test.describe("Inbox committed notification target", function()
+        test.it("uses the committed item recipient before an event argument", function()
+            local owner_id, other_id = "target-owner-" .. uuid.v4(), "target-other-" .. uuid.v4()
+            local owner = frame(owner_id)
+            frame(other_id)
+            local item = upsert(owner, { id = uuid.v4(), item_type = "addressed_review", title = "Review",
+                recipient = { kind = "user", id = owner_id } })
+            test.not_nil(read(owner, item.id))
+            test.eq(#await_notifications(owner_id, 1), 1)
+            local thread_id = addressed.component_id({ kind = "user", id = owner_id })
+            local committed = { body = { id = item.id, recipient = { kind = "user", id = other_id } } }
+            for index, events in ipairs({ { committed }, {
+                { body = { id = "earlier-item", recipient = { kind = "user", id = other_id } } }, committed,
+            } }) do
+                local result, err = owner:call("kickside.inbox.persist:projection_committed", {
+                    thread_id = thread_id, range = { to_seq = 1 }, projection = { body = materialized(thread_id) },
+                    events = events,
+                })
+                test.is_nil(err, tostring(err))
+                test.not_nil(result)
+                test.eq(#await_notifications(owner_id, index + 1), index + 1, "notification references the final event item")
+                test.eq(#notifications(other_id), 0)
+            end
+        end)
+        test.it("ignores forged and stale Jobs notification references", function()
+            local owner_id, other_id = "job-owner-" .. uuid.v4(), "job-other-" .. uuid.v4()
+            local owner = frame(owner_id)
+            frame(other_id)
+            local item = upsert(owner, { id = uuid.v4(), item_type = "addressed_review", title = "Review",
+                recipient = { kind = "user", id = owner_id } })
+            test.not_nil(read(owner, item.id))
+            test.eq(#await_notifications(owner_id, 1), 1)
+            local thread_id = addressed.component_id({ kind = "user", id = owner_id })
+            for _, payload in ipairs({
+                { recipient = { kind = "user", id = other_id } },
+                { thread_id = thread_id, item_id = item.id, to_seq = 2, recipient = { kind = "user", id = other_id } },
+                { thread_id = thread_id, item_id = uuid.v4(), to_seq = 1, recipient = { kind = "user", id = other_id } },
+            }) do
+                local queued, enqueue_err = jobs.enqueue({ namespace = "kickside.inbox", scope = thread_id,
+                    key = uuid.v4(), owner_locator = { kind = "thread", id = thread_id }, thread_id = thread_id,
+                    job_type = "kickside.inbox.persist:notify_addressed_job", max_attempts = 1,
+                    immutable_payload = payload })
+                test.is_nil(enqueue_err, tostring(enqueue_err))
+                local completed
+                for _ = 1, 100 do
+                    completed = assert(jobs.get_job(queued.id))
+                    if completed.status == "done" or completed.status == "failed" then break end
+                    time.sleep("50ms")
+                end
+                test.eq(completed.status, "done", tostring(completed.last_error))
+                test.eq(#notifications(other_id), 0)
+                test.eq(#notifications(owner_id), 1)
+            end
+        end)
+    end)
+end)
+
+return { target = target, run = test.run_cases(function()
     test.describe("Inbox principal addressing", function()
         test.it("keeps hidden and absent components indistinguishable through Inbox APIs", function()
             local _, owner_service = frame("oracle-owner-" .. uuid.v4())
@@ -1495,8 +1553,30 @@ return { run = test.run_cases(function()
             test.eq(completed.status, "done", "Jobs continuation failed: " .. tostring(completed.last_error))
             test.eq(#await_notifications(prefix .. "129", 1), 1, "continued last member")
             test.eq(#await_notifications(prefix .. "001", 1), 1, "continuation must not repeat the first window")
+            local deleted, delete_err = first:call("app:addressed_probe", { operation = "delete", id = item.id })
+            test.is_nil(delete_err, tostring(delete_err))
+            test.not_nil(deleted)
+            test.is_nil(read(first, item.id), "recipient deletion removes the projection item")
+            test.eq(#await_notifications(prefix .. "129", 2), 2, "recipient deletion reaches the last member")
             for i = 1, 129 do
-                test.not_nil((user_groups.remove_user_from_group(prefix .. string.format("%03d", i), group)))
+                test.eq(#notifications(prefix .. string.format("%03d", i)), 2, "every member receives recipient deletion")
+            end
+            local request = { origin = "addressed-test", identity_key = prefix .. "retraction",
+                idempotency_key = prefix .. "create", config = { item_type = "addressed_review",
+                    recipient = { kind = "group", id = group } }, input = { content = "Retract review" } }
+            local created = assert(sender:call("kickside.inbox.sink:inbox_write", request))
+            test.is_true(created.success)
+            test.not_nil(read(first, created.dest_ref.item_id))
+            test.eq(#await_notifications(prefix .. "129", 3), 3, "sink delivery reaches the last member")
+            request.sink_op, request.idempotency_key, request.input = "delete", prefix .. "delete", {}
+            local retracted = assert(sender:call("kickside.inbox.sink:inbox_write", request))
+            test.is_true(retracted.success)
+            test.is_nil(read(first, created.dest_ref.item_id), "sender retraction removes the projection item")
+            test.eq(#await_notifications(prefix .. "129", 4), 4, "sender retraction reaches the last member")
+            for i = 1, 129 do
+                local id = prefix .. string.format("%03d", i)
+                test.eq(#notifications(id), 4, "every member receives sender retraction")
+                test.not_nil((user_groups.remove_user_from_group(id, group)))
             end
         end)
         test.it("notifies only current group members after the addressed projection commits", function()

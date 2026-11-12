@@ -6,11 +6,13 @@ local funcs = require("funcs")
 local json = require("json")
 local hash = require("hash")
 local component = require("component")
+local access_subjects = require("access_subjects")
 local item_types = require("inbox_item_types")
 local inbox_types = require("inbox_types")
 local files = require("inbox_files")
 
 local M = {}
+local remove
 type Recipient = inbox_types.Recipient
 local STORE_ACTOR = "system:kickside.inbox.addressed"
 
@@ -216,7 +218,7 @@ function M.deliver(input: any): (any?, any?)
             return funcs.new():with_actor(actor):with_scope(security.scope())
                 :call("kickside.inbox.persist:personal_delete", { id = identity.id, key = input.key })
         end
-        local removed, delete_err = M.remove({ id = identity.id, key = input.key }, identity.recipient)
+        local removed, delete_err = remove({ id = identity.id, key = input.key }, identity.recipient)
         if delete_err then return nil, delete_err end
         if not removed then return nil, failure(inbox_types.ERROR.NOT_FOUND, errors.NOT_FOUND) end
         return true, nil
@@ -299,6 +301,9 @@ end
 function M.read(input: any?): (any?, any?, any?)
     local actor = security.actor()
     if not actor then return nil, failure("authenticated actor required", errors.PERMISSION_DENIED) end
+    if access_subjects.access_filter(actor:id()) ~= nil then
+        return nil, failure("a confined identity cannot widen a component read", errors.PERMISSION_DENIED)
+    end
     local own = M.component_id({ kind = "user", id = actor:id() })
     local ids = { own }
     local groups = M.group_inboxes()
@@ -376,7 +381,7 @@ function M.delete(id: string, key: string?): (boolean?, any?)
     return result :: boolean?, err
 end
 
-function M.remove(input: any, recipient: Recipient?): (boolean?, any?)
+remove = function(input: any, recipient: Recipient?): (boolean?, any?)
     local items, read_err, ids
     if recipient then
         local thread_id = M.component_id(recipient)
@@ -429,6 +434,10 @@ function M.remove(input: any, recipient: Recipient?): (boolean?, any?)
         { id = id, recipient = item.recipient, store_version = item.store_version }, external_id :: string, item.trace_context)
     if append_err then return nil, append_err end
     return true, nil
+end
+
+function M.remove(input: any): (boolean?, any?)
+    return remove(input)
 end
 
 -- Called only after a live eligible read, by resolution or deletion.

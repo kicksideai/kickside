@@ -12,6 +12,7 @@ local item_types = require("inbox_item_types")
 local files = require("inbox_files")
 local object_fields = require("object_fields")
 local addressed = require("addressed")
+local access_subjects = require("access_subjects")
 
 local M = {}
 type ResolutionError = string | error
@@ -417,9 +418,13 @@ function M.delete(identity: any, idempotency_key: string?): (boolean, any?)
         return M.delete_personal({ id = identity.id, key = idempotency_key })
     end
     if type(identity) ~= "string" or identity == "" then return false, errors.new({ message = "item id is required", kind = errors.INVALID }) end
-    local private, private_err = addressed.delete(identity, idempotency_key)
-    if private_err then return false, private_err end
-    if private then return true, nil end
+    local filter, filter_err = access_subjects.access_filter(actor_id())
+    if filter_err then return false, filter_err end
+    if filter == nil then
+        local private, private_err = addressed.delete(identity, idempotency_key)
+        if private_err then return false, private_err end
+        if private then return true, nil end
+    end
     return M.delete_personal({ id = identity, key = idempotency_key })
 end
 
@@ -466,9 +471,14 @@ function M.reduce(): ({ [string]: any }, any?, any?)
     if not owner then return {}, "authenticated actor required" end
     local thread_id, thread_err = find_thread(owner)
     if thread_err then return {}, thread_err end
-    local items, addressed_err = addressed.items()
-    if addressed_err then return {}, addressed_err end
-    items = items or {}
+    local items = {}
+    local filter, filter_err = access_subjects.access_filter(owner)
+    if filter_err then return {}, filter_err end
+    if filter == nil then
+        local addressed_items, addressed_err = addressed.items()
+        if addressed_err then return {}, addressed_err end
+        items = addressed_items or {}
+    end
     if thread_id then
         local models, models_err = open_read_models()
         if models_err then return {}, models_err end
