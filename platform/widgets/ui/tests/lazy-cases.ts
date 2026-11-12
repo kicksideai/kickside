@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, onMounted } from 'vue'
-import { WippyVueElement } from '@wippy-fe/webcomponent-vue'
+import { defineComponent, h, onMounted, watch } from 'vue'
+import { useProps, WippyVueElement } from '@wippy-fe/webcomponent-vue'
 import type { Component } from 'vue'
 import type { WippyElementConfig, WippyVueElementConfig } from '@wippy-fe/webcomponent-vue'
 
@@ -37,17 +37,22 @@ function deferred<T>() {
 
 export const message = 'Could not load. Reload the page to try again.'
 
-function fixture(factory: (load: () => Promise<Component>) => WippyVueElementConfig) {
+function fixture(factory: (load: () => Promise<Component>) => WippyVueElementConfig, content?: Component) {
   const pending = deferred<Component>()
   const load = vi.fn(() => pending.promise)
   const mounted = vi.fn()
   const config = factory(load)
-  const root = defineComponent(() => {
+  const root = content ?? defineComponent(() => {
     onMounted(mounted)
     return () => h('button', 'Loaded content')
   })
   class Surface extends WippyVueElement {
-    static get wippyConfig(): WippyElementConfig { return { propsSchema: { properties: {} }, hostCssKeys: [], customCss: false } }
+    static get wippyConfig(): WippyElementConfig {
+      return {
+        propsSchema: { properties: { intent: { type: 'string', default: '' } } },
+        hostCssKeys: [], customCss: false,
+      }
+    }
     static get vueConfig() { return config }
   }
   customElements.define(`lazy-test-${crypto.randomUUID()}`, Surface)
@@ -72,6 +77,31 @@ export function lazyCases(factories: Record<string, (load: () => Promise<Compone
         expect(f.error).not.toHaveBeenCalled()
         await vi.advanceTimersByTimeAsync(30000)
         expect(vi.getTimerCount()).toBe(0)
+      })
+
+      it('applies attributes set before and during loading once after mount and stays reactive', async () => {
+        const applied = vi.fn()
+        const root = defineComponent(() => {
+          const props = useProps<{ intent: string }>()
+          watch(() => props.value.intent, applied, { immediate: true })
+          return () => h('span', props.value.intent)
+        })
+        const f = fixture(factory, root)
+        f.element.setAttribute('intent', 'before-connect')
+        document.body.append(f.element)
+        f.element.setAttribute('intent', 'before-load')
+        await vi.advanceTimersByTimeAsync(0)
+        expect(applied).not.toHaveBeenCalled()
+        f.resolve()
+        await vi.advanceTimersByTimeAsync(0)
+        expect(applied).toHaveBeenCalledOnce()
+        expect(applied.mock.calls[0]![0]).toBe('before-load')
+        expect(f.element.shadowRoot?.textContent).toContain('before-load')
+        f.element.setAttribute('intent', 'after-load')
+        await vi.advanceTimersByTimeAsync(0)
+        expect(applied).toHaveBeenCalledTimes(2)
+        expect(applied.mock.calls[1]![0]).toBe('after-load')
+        expect(f.element.shadowRoot?.textContent).toContain('after-load')
       })
 
       it('renders rejection and emits the declared message and original error', async () => {
