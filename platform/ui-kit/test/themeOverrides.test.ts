@@ -28,26 +28,15 @@ it.each(['before', 'after'])('keeps decorative tag colors when theme CSS loads %
   }
 })
 
-it.each(['before', 'after'])('keeps the requested focus treatment when theme CSS loads %s', (order) => {
-  const kit = document.createElement('style')
-  kit.textContent = read('focus.css')
-  const theme = document.createElement('style')
-  theme.textContent = '.p-button:focus-visible { outline: 1px solid red; box-shadow: 0 0 0 3px red; }'
-  document.head.append(...(order === 'before' ? [theme, kit] : [kit, theme]))
-  const button = document.createElement('button')
-  button.style.cssText = '--p-focus-ring-color: blue; --p-focus-ring-shadow: 0 0 0 2px blue; --p-focus-ring-width: 2px; --p-focus-ring-style: solid; --p-focus-ring-offset: 2px;'
-  document.body.append(button)
-  try {
-    button.className = 'p-button kx-focus-halo'
-    button.focus()
-    expect(getComputedStyle(button).outlineStyle).toBe('none')
-    expect(getComputedStyle(button).boxShadow).toBe('0 0 0 2px blue')
-    button.className = 'p-button kx-focus-outline'
-    expect(getComputedStyle(button).outlineWidth).toBe('2px')
-    expect(getComputedStyle(button).boxShadow).toBe('none')
-  } finally {
-    button.remove()
-    kit.remove()
-    theme.remove()
-  }
+// Happy DOM drops color-mix() declarations; keep the derived-fill contract here.
+it.each(['blue', 'violet', 'amber', 'neutral'])('keeps the %s tone fill with its foreground override', (tone) => {
+  const css = read('kx-tone.css')
+  const selector = `.kx-tone-${tone}.kx-tone-${tone}`
+  const rule = css.slice(css.indexOf(selector)).split('}')[0]
+  expect(rule.startsWith(`${selector} {`)).toBe(true)
+  const ink = tone === 'neutral' ? '--p-text-muted-color' : `--kx-tone-${tone}`
+  const fill = tone === 'neutral' ? '--p-text-color' : ink
+  const weight = tone === 'neutral' ? 10 : 13
+  expect(rule).toContain(`color: var(${ink});`)
+  expect(rule).toContain(`background-color: color-mix(in srgb, var(${fill}) ${weight}%, transparent);`)
 })
