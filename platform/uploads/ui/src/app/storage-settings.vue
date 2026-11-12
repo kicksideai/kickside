@@ -131,6 +131,8 @@ async function resetField(ns: string, key: string) {
 
 // The rasterize format select options.
 const FORMATS = ['jpeg', 'png', 'webp']
+// The rasterize page selection options.
+const PAGE_SELECTIONS = ['sparse', 'all']
 
 onMounted(load)
 </script>
@@ -234,6 +236,13 @@ onMounted(load)
           </div>
 
           <div class="ap-field-grid">
+            <div v-if="has(NS_RAST, 'rasterize_page_selection')" class="ap-fg">
+              <label class="ap-blabel">Pages to OCR</label>
+              <Select class="ap-select"
+                :model-value="draft[id(NS_RAST, 'rasterize_page_selection')]"
+                :options="PAGE_SELECTIONS"
+                @update:model-value="draft[id(NS_RAST, 'rasterize_page_selection')] = $event" />
+            </div>
             <div v-if="has(NS_RAST, 'rasterize_format')" class="ap-fg">
               <label class="ap-blabel">Image format</label>
               <Select class="ap-select"

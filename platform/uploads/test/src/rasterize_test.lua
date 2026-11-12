@@ -380,6 +380,35 @@ local function define_tests()
             end
         end)
 
+        test.it("renders text-layer pages when the page selection is all", function()
+            local text_layer = string.rep("A usable text layer. ", 100)
+            local markdown = "<!-- page 1 -->\n\n" .. text_layer .. "\n\n<!-- page 2 -->\n\n" .. text_layer
+            local upload_id = seed_document("application/pdf", markdown)
+            local settings = assert(assert(contract.get("kickside.settings:settings")):open())
+            test.is_true(settings:set({namespace = "kickside.uploads.rasterize", key = "rasterize_page_selection", value = "all"}).success)
+            local result = run_stage(upload_id, "application/pdf")
+            test.is_true(settings:set({namespace = "kickside.uploads.rasterize", key = "rasterize_page_selection", value = "sparse"}).success)
+            test.is_true(result.success)
+            test.eq(result.metadata.rendered_page_count, FIXTURE_PAGES)
+            test.eq(result.metadata.rasterize_reason, "all_pages")
+            local images = rendered_pages(upload_id)
+            test.eq(#images, FIXTURE_PAGES)
+            for page = 1, FIXTURE_PAGES do test.eq(images[page].metadata.page, page) end
+            test.eq(assert(artifact_parts_repo.read_primary_content(upload_id)).content, markdown)
+        end)
+
+        test.it("leaves text-layer pages unrendered under the default sparse selection", function()
+            local text_layer = string.rep("A usable text layer. ", 100)
+            local markdown = "<!-- page 1 -->\n\n" .. text_layer .. "\n\n<!-- page 2 -->\n\n" .. text_layer
+            local upload_id = seed_document("application/pdf", markdown)
+            local result = run_stage(upload_id, "application/pdf")
+            test.is_true(result.success)
+            test.eq(result.metadata.rasterize_failures, false)
+            test.is_nil(result.metadata.rendered_page_count)
+            test.eq(#rendered_pages(upload_id), 0)
+            test.eq(assert(artifact_parts_repo.read_primary_content(upload_id)).content, markdown)
+        end)
+
         test.it("rasterizes every page of an empty document into rendered-page artifacts (jpeg)", function()
             local upload_id = seed_document("application/pdf", "")
             local result = run_stage(upload_id, "application/pdf")

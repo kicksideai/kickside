@@ -65,6 +65,57 @@ local function define_tests()
             test.eq(page_images.ocr_text_reason(string.rep(" \n", 60000), 20, 800), "empty_text")
         end)
     end)
+
+    test.describe("page_images page selection", function()
+        local RICH = string.rep("A readable paragraph from the text layer. ", 60)
+        local SAMPLES = {
+            {"", 1, nil}, {"Figure 1: a short caption.", 1, nil}, {RICH, 1, nil}, {RICH, 3, nil},
+            {"short", 1, "readable"}, {"", 1, "blank"}, {RICH, 1, "failed"},
+        }
+
+        test.it("selects every page with a text layer under the all selection", function()
+            test.eq(page_images.ocr_text_reason(RICH, 1, 800, nil, page_images.SELECT_ALL), "all_pages")
+            test.eq(page_images.ocr_document_reason(RICH, 1, 800, 1000, page_images.SELECT_ALL), "all_pages")
+            test.eq(page_images.ocr_text_reason("", 1, 800, nil, page_images.SELECT_ALL), "empty_text")
+            test.eq(page_images.ocr_text_reason(RICH, 1, 800, "failed", page_images.SELECT_ALL), "failed_page")
+            test.is_nil(page_images.ocr_text_reason(RICH, 1, 800, "readable", page_images.SELECT_ALL))
+            test.is_nil(page_images.ocr_text_reason("", 1, 800, "blank", page_images.SELECT_ALL))
+        end)
+
+        test.it("replaces the text layer of a selected text page with its OCR text", function()
+            local content = "<!-- page 1 -->\n\n" .. RICH .. "\n\n<!-- page 2 -->\n\n" .. RICH
+            local sections = {}
+            for _, page in ipairs(page_images.text_pages(content)) do
+                if page_images.needs_ocr_text(page.text, 1, 800, page.status, page_images.SELECT_ALL) then
+                    sections[#sections + 1] = {page = page.page, text = "OCR transcript of page " .. page.page}
+                end
+            end
+            test.eq(#sections, 2)
+            test.eq(page_images.replace_pages(content, sections),
+                "<!-- page 1 -->\n\nOCR transcript of page 1\n\n<!-- page 2 -->\n\nOCR transcript of page 2")
+        end)
+
+        test.it("keeps the sparse selection identical to the default", function()
+            for _, sample in ipairs(SAMPLES) do
+                local text, pages, status = sample[1], sample[2], sample[3]
+                test.eq(page_images.ocr_text_reason(text, pages, 800, status, page_images.SELECT_SPARSE),
+                    page_images.ocr_text_reason(text, pages, 800, status))
+                test.eq(page_images.ocr_document_reason(text, pages, 800, 1000000, page_images.SELECT_SPARSE),
+                    page_images.ocr_document_reason(text, pages, 800, 1000000))
+            end
+            test.is_nil(page_images.ocr_text_reason(RICH, 1, 800, nil, page_images.SELECT_SPARSE))
+            local content = "<!-- page 1 -->\n\n" .. RICH .. "\n\n<!-- page 2 -->\n\nFigure 1."
+            local sections = {}
+            for _, page in ipairs(page_images.text_pages(content)) do
+                if page_images.needs_ocr_text(page.text, 1, 800, page.status, page_images.SELECT_SPARSE) then
+                    sections[#sections + 1] = {page = page.page, text = "OCR transcript"}
+                end
+            end
+            test.eq(#sections, 1)
+            test.eq(page_images.replace_pages(content, sections),
+                "<!-- page 1 -->\n\n" .. RICH .. "\n\n<!-- page 2 -->\n\nOCR transcript")
+        end)
+    end)
 end
 
 local run_cases = test.run_cases(define_tests)
