@@ -29,7 +29,7 @@ local function has_policy(entry, policy_id)
 end
 local function define_tests()
     test.describe("Module access composition", function()
-        test.it("resolves the assignment default without an application binding", function()
+        test.it("declares the package resource named by the assignment default", function()
             local requirement, requirement_err = registry.get("kickside.inbox.security:assignment_security_scope")
             test.is_nil(requirement_err)
             test.not_nil(requirement)
