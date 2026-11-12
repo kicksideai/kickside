@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.45](https://github.com/kicksideai/kickside/compare/webhooks-v0.1.44...webhooks-v0.1.45) (2026-11-12)
+
+
+### Bug Fixes
+
+* resolve assignment defaults and imported dependency APIs ([#437](https://github.com/kicksideai/kickside/issues/437)) ([89d16c3](https://github.com/kicksideai/kickside/commit/89d16c3b391318d79e5e194fc4b1062d0149a60c))
+
 ## [0.1.44](https://github.com/kicksideai/kickside/compare/webhooks-v0.1.43...webhooks-v0.1.44) (2026-11-09)
 
 

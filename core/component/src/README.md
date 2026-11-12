@@ -19,6 +19,20 @@ Backed by the `kickside_components`, `kickside_component_meta`, and
 `kickside_component_access` tables. Depends on the `kickside.contract:*` base
 contracts (`component`, `deletable`).
 
+## Authority checks (SPEC)
+
+`validate_identity_authorizer_admin` and `validate_principal_access` check the
+supplied typed principal's effective grants, including supplied live user
+groups. `validate_principal_access` also applies the supplied placement filter.
+Only these two validators omit the calling frame's implementation registry
+visibility when answering the supplied principal's authority. Every other access
+check requires caller implementation visibility alongside component grants and
+the actor's placement filter, including prepared execution-identity writes whose
+supplied subjects and prefixes were captured from the authenticated operator.
+Supplying a subject snapshot does not waive implementation visibility. Trusted
+callers own principal resolution and admission; an authority result grants no
+ambient registry access.
+
 ## Owner metadata floors
 
 A module reserves a public read-model key with a `registry.entry` whose

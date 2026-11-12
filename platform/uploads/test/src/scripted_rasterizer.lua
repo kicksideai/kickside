@@ -4,7 +4,9 @@ local json = require("json")
 
 local function run(req: any): any
     local storage = assert(fs.get(req.ref.storage_id))
-    local document = assert(json.decode(assert(storage:readfile(req.ref.storage_path))))
+    local bytes, read_err = storage:readfile(req.ref.storage_path)
+    assert(bytes, read_err)
+    local document = assert(json.decode(bytes))
     document.calls = document.calls or {}
     document.calls[#document.calls + 1] = req.count_only and "count" or req.pages
     assert(storage:writefile(req.ref.storage_path, assert(json.encode(document))))

@@ -7,7 +7,7 @@ import { a as me, u as be } from "./wc-runtime-KO3cNuNo.js";
 import { on as G } from "@wippy-fe/proxy";
 import { Icon as j } from "@iconify/vue";
 import { E as he, S as ye, l as we, D as ke, h as _e } from "./WorkflowSearchList.vue_vue_type_script_setup_true_lang-1g5-myn1.js";
-import { a as ge, b as Ee, z as Re, _ as K, g as Ce, A as Ie, x as Se, i as We } from "./http-error-4TebKSwQ.js";
+import { a as ge, b as Ee, z as Re, _ as K, g as Ce, A as Ie, x as Se, i as We } from "./http-error-hXuGxpYD.js";
 import { _ as Oe } from "./EmbedWorkflowPicker.vue_vue_type_script_setup_true_lang-B2faQzpq.js";
 const Pe = "Run Workflow";
 function Y(t, r) {
@@ -110,7 +110,7 @@ const xe = { class: "wf-embed" }, Fe = {
 }, st = { class: "wf-embed-actions" }, pt = /* @__PURE__ */ oe({
   __name: "EmbedWorkflow",
   setup(t) {
-    const r = ie(() => import("./SchemaEditor-CiSSGWOl.js")), l = me(), f = be(), i = g(() => Ne(l.value)), u = h(null), I = h(!1), E = h(""), O = h({}), q = h(0), V = h(!0), p = h("ready"), N = h(!1), R = h(""), _ = h(""), y = h(null);
+    const r = ie(() => import("./SchemaEditor-CABGga0t.js")), l = me(), f = be(), i = g(() => Ne(l.value)), u = h(null), I = h(!1), E = h(""), O = h({}), q = h(0), V = h(!0), p = h("ready"), N = h(!1), R = h(""), _ = h(""), y = h(null);
     let $ = null, M = null, x = !1;
     const Q = g(() => u.value ? `/workflows/${u.value.id}` : "");
     function X() {

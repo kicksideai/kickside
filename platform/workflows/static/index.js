@@ -24,7 +24,7 @@ class e extends o {
   static get vueConfig() {
     return {
       lazyConfig: a(
-        () => import("./lazy-mount-DHiAjkmy.js").then((r) => r.mountConfig),
+        () => import("./lazy-mount-Zu7Ii9uL.js").then((r) => r.mountConfig),
         "Could not load the Workflow builder. Reload the page to try again.",
         t
       )

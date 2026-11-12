@@ -59,6 +59,7 @@ end
 local function define_tests()
     test.describe("app composition onboarding profiles", function()
         test.it("owns coherent versionless onboarding bundles", function()
+            local mcp = get("app.composition:onboarding_profile.mcp")
             local knowledge = get("app.composition:onboarding_profile.knowledge")
             local workspace = get("app.composition:onboarding_profile.workspace")
             local automation = get("app.composition:onboarding_profile.automation")
@@ -70,7 +71,7 @@ local function define_tests()
             local channels = get("app.composition:onboarding_profile.channels")
             local developer = get("app.composition:onboarding_profile.developer")
 
-            local profiles = { knowledge, workspace, automation, workflows, research, gtm, google_workspace, connected_apps, channels, developer }
+            local profiles = { mcp, knowledge, workspace, automation, workflows, research, gtm, google_workspace, connected_apps, channels, developer }
             for _, entry in ipairs(profiles) do
                 test.eq(entry.kind, "registry.entry")
                 test.eq(entry.meta.type, PROFILE_TYPE)
@@ -80,6 +81,19 @@ local function define_tests()
             -- a transitive dependency's parameter makes planning look successful,
             -- but leaves the dependency unresolved when the install is linked.
             assert_profiles_own_parameters(profiles)
+
+            test.eq(value(mcp, "profile"), "mcp")
+            test.eq(value(mcp, "selected"), true)
+            test.is_nil(value(mcp, "required"))
+            assert_packages(value(mcp, "packages"), { "kickside/mcp" })
+            assert_parameters(value(mcp, "packages")[1], {
+                { "kickside.mcp:target_db", "app:db" },
+                { "kickside.mcp:api_router", "app:api" },
+                { "kickside.mcp:public_router", "app:api.public" },
+                { "kickside.mcp:ui_server", "app:gateway" },
+                { "kickside.mcp:credential_eligibility", "kickside.users.binding:credential_eligibility" },
+                { "kickside.mcp.security:user_security_scope", "kickside.security.groups:members" },
+            })
 
             test.eq(value(knowledge, "profile"), "knowledge")
             test.eq(value(knowledge, "required"), true)

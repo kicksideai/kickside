@@ -51,7 +51,7 @@ entries:
       comment: Definition plane of the visual Workflow builder — event-sourced graph editing, publishing, runs, realtime, and undo/redo.
 
   - name: dep.kickside.component
-    version: '*'
+    version: '>=0.3.12'
     kind: ns.dependency
     component: kickside/component
 

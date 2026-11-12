@@ -193,6 +193,7 @@ export function truncatePayload(text: string, maxLines = 40): TruncatedPayload {
 
 // ── The fold ────────────────────────────────────────────────────────────────
 export interface NodeInspection {
+  dataUnavailable: boolean
   input: unknown | null
   output: unknown | null
   error: NodeErrorView | null
@@ -214,6 +215,7 @@ export function buildNodeInspection(rows: RunNodeDataRow[], opts: BuildOptions =
     error = reason ? { message: reason, hasDetail: true } : { message: GENERIC_HEADLINE, hasDetail: false }
   }
   return {
+    dataUnavailable: rows.some(row => row.data_unavailable === true),
     input: extractInputSample(rows),
     output: extractOutputSample(rows),
     error,

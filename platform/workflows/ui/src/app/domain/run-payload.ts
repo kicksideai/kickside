@@ -2,7 +2,8 @@ export interface RunNodeDataRow {
   data_id: string
   node_id: string
   type: string
-  content: unknown
+  content?: unknown
+  data_unavailable?: boolean
   content_type?: string
   discriminator?: string
   created_at?: string
@@ -27,6 +28,7 @@ export function decodeRunNodeRows(rows: Record<string, unknown>[]): RunNodeDataR
     node_id: String(row.node_id || ''),
     type: String(row.type || row.data_type || ''),
     content: decodeContent(row.content, row.content_type),
+    ...(row.data_unavailable === true ? { data_unavailable: true } : {}),
     content_type: row.content_type != null ? String(row.content_type) : undefined,
     discriminator: row.discriminator != null ? String(row.discriminator) : undefined,
     created_at: row.created_at != null ? String(row.created_at) : undefined,

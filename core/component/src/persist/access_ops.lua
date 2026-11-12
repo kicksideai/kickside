@@ -111,7 +111,10 @@ end
 -- Check whether the actor's effective access on a component carries the required
 -- bits. Answers (allowed, err): false with no error is an access refusal; an
 -- error is a failed read of the grants or placement, never a refusal.
-local function check_user_access(tx: Executor, user_id: string?, component_id: string?, required_mask: integer?, supplied_subjects: { Subject }?, supplied_prefixes: { string }?, snapshot_given: boolean?): (boolean, error?)
+-- snapshot_given selects supplied subjects/prefixes only. Caller implementation
+-- visibility is required even with a snapshot, unless principal_authority_only
+-- is set by the two exported supplied-principal authority validators.
+local function check_user_access(tx: Executor, user_id: string?, component_id: string?, required_mask: integer?, supplied_subjects: { Subject }?, supplied_prefixes: { string }?, snapshot_given: boolean?, principal_authority_only: boolean?): (boolean, error?)
     if not user_id or not component_id or not required_mask then
         return false, nil
     end
@@ -128,9 +131,11 @@ local function check_user_access(tx: Executor, user_id: string?, component_id: s
         return false, nil
     end
 
-    local permitted, implementation_err = implementation_access.check(tx, component_id)
-    if implementation_err then return false, implementation_err end
-    if not permitted then return false, nil end
+    if not principal_authority_only then
+        local permitted, implementation_err = implementation_access.check(tx, component_id)
+        if implementation_err then return false, implementation_err end
+        if not permitted then return false, nil end
+    end
 
     -- Optional injected narrowing: an acting identity confined to whitelisted subtrees
     -- only passes for components inside them. Mirrors the read path; AND-ed onto the

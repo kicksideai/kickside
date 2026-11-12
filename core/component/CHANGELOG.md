@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.16](https://github.com/kicksideai/kickside/compare/component-v0.3.15...component-v0.3.16) (2026-11-12)
+
+
+### Bug Fixes
+
+* resolve assignment defaults and imported dependency APIs ([#437](https://github.com/kicksideai/kickside/issues/437)) ([89d16c3](https://github.com/kicksideai/kickside/commit/89d16c3b391318d79e5e194fc4b1062d0149a60c))
+
+## [0.3.15](https://github.com/kicksideai/kickside/compare/component-v0.3.14...component-v0.3.15) (2026-11-11)
+
+
+### Bug Fixes
+
+* **component:** separate principal authority from caller visibility ([#432](https://github.com/kicksideai/kickside/issues/432)) ([3eaf008](https://github.com/kicksideai/kickside/commit/3eaf00814af66fd56114f1d495ba5af60b9a9c81))
+
 ## [0.3.14](https://github.com/kicksideai/kickside/compare/component-v0.3.13...component-v0.3.14) (2026-11-11)
 
 
