@@ -47,6 +47,20 @@ local function define_tests()
     -- QueryKB returns { query, count, results }: every ranked result is the
     -- engine's full item with its kb_id; failures use the typed error return.
     test.describe("kickside.knowledge.traits:kb_query_tool (via runtime ctx)", function()
+        test.it("preserves optional retrieval status for each queried base", function()
+            local status = { strategy = "plain", analysis = { status = "unavailable",
+                reason = "no_models_for_class", model = "class:unassigned" } }
+            local out, err = executor({ kb_ids = { "kb-1", "kb-2" }, passages = {}, retrieval = status })
+                :call(PRESENTATION_TOOL, { query = "question" })
+            test.is_nil(err)
+            test.eq(out.retrieval["kb-1"].analysis.reason, "no_models_for_class")
+            test.eq(out.retrieval["kb-2"].analysis.model, "class:unassigned")
+            local plain, plain_err = executor({ kb_ids = { "kb-1" }, passages = {} })
+                :call(PRESENTATION_TOOL, { query = "question" })
+            test.is_nil(plain_err)
+            test.is_nil(plain.retrieval)
+        end)
+
         test.it("returns compact retrieved rows by default", function()
             local content = "PART_NUMBER: 1096657\n" .. string.rep("Catalog description. ", 20)
                 .. "\nFinish: Plain\nMaterial: Steel\nDimensions: 3-1/4 in L x 7/8 in H"

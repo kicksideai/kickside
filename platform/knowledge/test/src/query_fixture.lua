@@ -7,10 +7,10 @@ type Passage = {
     meta: { similarity: number }?,
 }
 type QueryOptions = { query: string, limit: integer? }
-type QueryResult = { items: { Passage }, next_offset: integer? }
+type QueryResult = { items: { Passage }, next_offset: integer?, retrieval: any? }
 
 local function query(_kb_id: string, _opts: QueryOptions): (QueryResult, string?)
-    return { items = ctx.get("passages") :: { Passage }, next_offset = ctx.get("next_offset") }, nil
+    return { items = ctx.get("passages") :: { Passage }, next_offset = ctx.get("next_offset"), retrieval = ctx.get("retrieval") }, nil
 end
 
 return { query = query }
