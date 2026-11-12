@@ -96,6 +96,7 @@ function M.search(args: any, context: any): any
         end
     end
     local rows: { any } = {}
+    local retrieval: any = nil
     local next_cursor: string? = nil
     for index = base, #kb_ids do
         local kb_id = kb_ids[index]
@@ -104,6 +105,10 @@ function M.search(args: any, context: any): any
             return nil, tool_failure(err, "search failed")
         end
         if result.success == false then return result, nil end
+        if result.retrieval then
+            retrieval = retrieval or {}
+            retrieval[kb_id] = result.retrieval
+        end
         local items = (type((result :: { items: any }).items) == "table") and ((result :: { items: any }).items :: {any}) or {}
         for _, raw in ipairs(items) do
             rows[#rows + 1] = kb_render.result_summary(raw, kb_id, fields :: { [string]: boolean })
@@ -118,7 +123,7 @@ function M.search(args: any, context: any): any
             break
         end
     end
-    return { success = true, query = a.query, count = #rows, results = rows, next_cursor = next_cursor }, nil
+    return { success = true, query = a.query, count = #rows, results = rows, next_cursor = next_cursor, retrieval = retrieval }, nil
 end
 
 -- ask: grounded answer over one KB (built-in synthesis or the agentic driver per
