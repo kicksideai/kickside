@@ -66,6 +66,32 @@ entries:
             value: app:processes
       - component: kickside/llm-ocr
 
+  - name: onboarding_profile.mcp
+    kind: registry.entry
+    meta:
+      type: kickside.hub:onboarding_profile
+    profile: mcp
+    title: MCP access
+    description: Connect external MCP clients with scoped credentials and OAuth authorization.
+    icon: tabler:plug-connected
+    order: 15
+    selected: true
+    packages:
+      - component: kickside/mcp
+        parameters:
+          - name: kickside.mcp:target_db
+            value: app:db
+          - name: kickside.mcp:api_router
+            value: app:api
+          - name: kickside.mcp:public_router
+            value: app:api.public
+          - name: kickside.mcp:ui_server
+            value: app:gateway
+          - name: kickside.mcp:credential_eligibility
+            value: kickside.users.binding:credential_eligibility
+          - name: kickside.mcp.security:user_security_scope
+            value: kickside.security.groups:members
+
   - name: onboarding_profile.workspace
     kind: registry.entry
     meta:

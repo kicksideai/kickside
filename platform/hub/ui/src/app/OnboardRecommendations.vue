@@ -105,8 +105,8 @@ function syncProfileQueue() {
 }
 
 function initializeProfileSelection() {
-  const required = profiles.value.filter(profile => profile.required && profileUsable(profile)).map(profile => profile.id)
-  selectedProfileIds.value = new Set(required)
+  const selected = profiles.value.filter(profile => (profile.required || profile.selected) && profileUsable(profile)).map(profile => profile.id)
+  selectedProfileIds.value = new Set(selected)
   syncProfileQueue()
 }
 
