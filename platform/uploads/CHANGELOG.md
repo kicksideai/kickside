@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.16](https://github.com/kicksideai/kickside/compare/uploads-v0.3.15...uploads-v0.3.16) (2026-11-11)
+
+
+### Features
+
+* **uploads:** publish authorized revision-bound page images ([#429](https://github.com/kicksideai/kickside/issues/429)) ([ebec6f7](https://github.com/kicksideai/kickside/commit/ebec6f77eb79325dca349f2a1c9d44b2786c02cc))
+
 ## [0.3.15](https://github.com/kicksideai/kickside/compare/uploads-v0.3.14...uploads-v0.3.15) (2026-11-11)
 
 
