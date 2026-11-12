@@ -152,14 +152,36 @@ function M.text_pages(content: any, outcomes: any?): { any }
     return pages
 end
 
+local function can_replace(text: string, replacement: any): boolean
+    return replacement ~= nil and (trim(replacement) ~= "" or trim(text) == "")
+end
+
+function M.build_markdown(sections: { any }): string
+    local parts = {}
+    for _, section in ipairs(sections) do
+        local body = trim(section.text)
+        parts[#parts + 1] = "<!-- page " .. tostring(section.page) .. " -->" .. (body ~= "" and ("\n\n" .. body) or "")
+    end
+    return table.concat(parts, "\n\n")
+end
+
 function M.replace_pages(content: string, replacements: { any }): string
+    local pages = M.text_pages(content)
+    if #pages == 0 then
+        if #replacements == 0 then return content end
+        -- Unmarked text has no page boundaries, so replacement requires usable text for every page.
+        for _, section in ipairs(replacements) do
+            if not can_replace(content, section.text) and trim(content) ~= "" then return content end
+        end
+        return M.build_markdown(replacements)
+    end
     local by_page = {}
     for _, section in ipairs(replacements) do by_page[section.page] = section.text end
     local parts, offset = {}, 1
-    for _, page in ipairs(M.text_pages(content)) do
+    for _, page in ipairs(pages) do
         parts[#parts + 1] = content:sub(offset, page.start - 1)
         local replacement = by_page[page.page]
-        if replacement ~= nil and (trim(replacement) ~= "" or trim(page.text) == "") then
+        if can_replace(page.text, replacement) then
             parts[#parts + 1] = "<!-- page " .. page.page .. " -->\n\n" .. trim(replacement)
             if page.finish < #content then parts[#parts + 1] = "\n\n" end
         else
@@ -176,7 +198,7 @@ function M.needs_ocr_text(content: any, page_count: any, max_text_per_page: any,
 end
 
 function M.ocr_text_reason(content: any, page_count: any, max_text_per_page: any, status: any?, selection: string?): string?
-    if status == "readable" then return nil end
+    if status == "readable" or (status == "blank" and selection ~= M.SELECT_ALL) then return nil end
     if status == "failed" then return "failed_page" end
     local text = trim(content)
     if status == "blank" and text == "" then return nil end

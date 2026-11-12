@@ -68,10 +68,6 @@ local function define_tests()
 
     test.describe("page_images page selection", function()
         local RICH = string.rep("A readable paragraph from the text layer. ", 60)
-        local SAMPLES = {
-            {"", 1, nil}, {"Figure 1: a short caption.", 1, nil}, {RICH, 1, nil}, {RICH, 3, nil},
-            {"short", 1, "readable"}, {"", 1, "blank"}, {RICH, 1, "failed"},
-        }
 
         test.it("selects every page with a text layer under the all selection", function()
             test.eq(page_images.ocr_text_reason(RICH, 1, 800, nil, page_images.SELECT_ALL), "all_pages")
@@ -108,6 +104,17 @@ local function define_tests()
             end
         end)
 
+        test.it("keeps unmarked text unless every page has usable replacement text", function()
+            local original = "Unmarked document text."
+            for _, missing in ipairs({false, "", " \t\n"}) do
+                local replacements = {{page = 1, text = "First OCR page"}, {page = 2, text = missing or nil}}
+                test.eq(page_images.replace_pages(original, replacements), original)
+            end
+            test.eq(page_images.replace_pages(original, {}), original)
+            test.eq(page_images.replace_pages(original, {{page = 1, text = "First OCR page"}, {page = 2, text = "Second OCR page"}}),
+                "<!-- page 1 -->\n\nFirst OCR page\n\n<!-- page 2 -->\n\nSecond OCR page")
+        end)
+
         test.it("commits blank OCR only for a page without usable text", function()
             local content = "<!-- page 1 -->\n\n \t\n"
             local replaced = page_images.replace_pages(content, {{page = 1, text = " \t\n"}})
@@ -118,14 +125,40 @@ local function define_tests()
             test.is_false(page_images.needs_ocr_text(page.text, 1, 800, page.status, page_images.SELECT_ALL))
         end)
 
-        test.it("keeps the sparse selection identical to the default", function()
-            for _, sample in ipairs(SAMPLES) do
-                local text, pages, status = sample[1], sample[2], sample[3]
-                test.eq(page_images.ocr_text_reason(text, pages, 800, status, page_images.SELECT_SPARSE),
-                    page_images.ocr_text_reason(text, pages, 800, status))
-                test.eq(page_images.ocr_document_reason(text, pages, 800, 1000000, page_images.SELECT_SPARSE),
-                    page_images.ocr_document_reason(text, pages, 800, 1000000))
+        -- Golden results from page_images predicates at 3fff84187005155c49d2c96bb4f0184319668ac5.
+        local GOLDEN = {
+            {nil, nil, nil, nil, {"empty_text", false, false, "failed_page", "empty_text"}, "empty_text"},
+            {42, 0, -1, 0, {"empty_text", false, false, "failed_page", "empty_text"}, "empty_text"},
+            {"", 1, 800, 1000000, {"empty_text", false, false, "failed_page", "empty_text"}, "empty_text"},
+            {" \t\n", 2, 800, 1000000, {"empty_text", false, false, "failed_page", "empty_text"}, "empty_text"},
+            {"caption", 1, 800, 1000000, {"sparse_text_per_page", false, false, "failed_page", "sparse_text_per_page"}, "sparse_text_per_page"},
+            {string.rep("x", 800), 1, 800, 1000, {"sparse_text_per_page", false, false, "failed_page", "sparse_text_per_page"}, "sparse_text_per_page"},
+            {string.rep("x", 801), 1, 800, 1000, {false, false, false, "failed_page", false}, false},
+            {string.rep("x", 2000), 2, 800, 1000, {"text_does_not_cover_pages", false, false, "failed_page", "text_does_not_cover_pages"}, "text_does_not_cover_pages"},
+            {string.rep("x", 3200), 2, 800, 1000000, {false, false, false, "failed_page", false}, "low_text_to_source_ratio"},
+            {string.rep("x", 6400), 2, 800, 1000000, {false, false, false, "failed_page", false}, false},
+            {string.rep("x", 3000), 1, 800, 1000000, {false, false, false, "failed_page", false}, "low_text_to_source_ratio"},
+            {string.rep("x", 3000), 1, 800, 1000, {false, false, false, "failed_page", false}, false},
+            {"caption", "2", "4", 1000, {"sparse_text_per_page", false, false, "failed_page", "sparse_text_per_page"}, "sparse_text_per_page"},
+            {"x", -2, 0, 1000, {"sparse_text_per_page", false, false, "failed_page", "sparse_text_per_page"}, "sparse_text_per_page"},
+        }
+
+        test.it("matches the recorded default predicates with absent and sparse selection", function()
+            for _, sample in ipairs(GOLDEN) do
+                local text, pages, max_text, size = sample[1], sample[2], sample[3], sample[4]
+                for _, selection in ipairs({false, page_images.SELECT_SPARSE}) do
+                    for index, status in ipairs({false, "readable", "blank", "failed", "unknown"}) do
+                        local expected = sample[5][index] or nil
+                        test.eq(page_images.ocr_text_reason(text, pages, max_text, status or nil, selection or nil), expected)
+                        test.eq(page_images.needs_ocr_text(text, pages, max_text, status or nil, selection or nil), expected ~= nil)
+                    end
+                    test.eq(page_images.ocr_document_reason(text, pages, max_text, size, selection or nil), sample[6] or nil)
+                    test.eq(page_images.needs_ocr_document(text, pages, max_text, size, selection or nil), sample[6] ~= false)
+                end
             end
+        end)
+
+        test.it("keeps sparse replacement limited to sparse pages", function()
             test.is_nil(page_images.ocr_text_reason(RICH, 1, 800, nil, page_images.SELECT_SPARSE))
             local content = "<!-- page 1 -->\n\n" .. RICH .. "\n\n<!-- page 2 -->\n\nFigure 1."
             local sections = {}
