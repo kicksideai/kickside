@@ -6,6 +6,27 @@ entries:
     kind: ns.dependency
     component: wippy/test
     version: "*"
+  - name: cache_publication_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_models }
+    source: file://cache_publication_test.lua
+    method: run
+    modules: [sql, process, channel, time]
+    imports:
+      test: wippy.test:test
+      models_repo: kickside.models.persist:repo
+  - name: cache_publication_probe
+    kind: process.lua
+    meta: { type: test_helper }
+    source: file://cache_publication_probe.lua
+    method: run
+    modules: [process, channel, time]
+    imports:
+      models_repo: kickside.models.persist:repo
+      models_cache: kickside.models.service:models_cache
+    security:
+      actor: { id: models-cache-test }
+      policies: [app:user]
   - name: discovery_retains_assignments_test
     kind: function.lua
     meta: { type: test, suite: kickside_models }
