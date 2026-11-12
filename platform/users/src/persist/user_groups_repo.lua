@@ -211,6 +211,23 @@ function user_groups_repo.get_user_groups_batch(user_ids, executor)
     return memberships, read_err
 end
 
+-- Keyset page for the public group-members contract; one lookahead row names
+-- whether the caller needs another page. Distinct membership spans sources.
+function user_groups_repo.get_group_member_page(group_id: string, limit: integer, cursor: string?): (any?, any?)
+    local db, err = get_db()
+    if err then return nil, err end
+    local rows, query_err = db:query(
+        "SELECT DISTINCT ug.user_id FROM app_user_groups ug JOIN app_users u ON u.user_id=ug.user_id"
+        .. " WHERE ug.group_id=$1 AND ug.user_id>$2 ORDER BY ug.user_id ASC LIMIT $3",
+        { group_id, cursor or "", limit + 1 })
+    db:release()
+    if query_err then return nil, query_err end
+    local user_ids: { string } = {}
+    for i = 1, math.min(#rows, limit) do user_ids[#user_ids + 1] = rows[i].user_id end
+    return { group_id = group_id, user_ids = user_ids,
+        next_cursor = #rows > limit and user_ids[#user_ids] or nil }, nil
+end
+
 function user_groups_repo.get_group_users(group_id, opts)
     if not group_id or group_id == "" then
         return nil, consts.ERROR.MISSING_REQUIRED_FIELD .. "group_id"

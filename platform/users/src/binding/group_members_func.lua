@@ -15,10 +15,18 @@ local function trim(value: any): string
     return (value:gsub("^%s*(.-)%s*$", "%1"))
 end
 
-function M.members(args: any): any
+function M.members(args: any): (any?, any?)
     local group_id = type(args) == "table" and trim((args :: any).group_id) or ""
     if group_id == "" then
         return { group_id = "", user_ids = {}, error = "group_id is required" }
+    end
+
+    if args.limit ~= nil then
+        if type(args.limit) ~= "number" or args.limit % 1 ~= 0 or args.limit < 1 or args.limit > 128
+            or (args.cursor ~= nil and type(args.cursor) ~= "string") then
+            return nil, errors.new({ kind = errors.INVALID, message = "group members requires limit 1..128 and a string cursor" })
+        end
+        return user_groups_repo.get_group_member_page(group_id, args.limit :: integer, args.cursor)
     end
 
     local user_ids: { string } = {}

@@ -71,6 +71,7 @@ entries:
           "content": { "type": "string", "description": "Item body. Falls back to the destination's content config when absent." },
           "content_type": { "type": "string", "description": "MIME type of the body, copied onto the item metadata. Any value accepted." },
           "item_type": { "type": "string", "description": "Overrides the configured item type." },
+          "recipient": { "type": "object", "additionalProperties": false, "required": ["kind", "id"], "properties": { "kind": { "type": "string", "enum": ["user", "group"] }, "id": { "type": "string", "minLength": 1 } } },
           "priority": { "type": "string", "enum": ["low", "normal", "high", "urgent"], "description": "Overrides the configured priority." },
           "title": { "type": "string", "description": "Overrides the derived title." },
           "source_id": { "type": "string", "description": "Stable source id; defaults to the record identity. Aggregates require a source component the actor can read." },
@@ -87,6 +88,16 @@ entries:
           { "required": ["source_id", "aggregate_key", "status"], "properties": { "status": { "const": "resolved" } } }
         ] }
     config_schema:
+      recipient:
+        picker: wc-schema-form
+        type: object
+        title: Recipient principal
+        additionalProperties: false
+        required: [kind, id]
+        properties:
+          kind: { type: string, enum: [user, group] }
+          id: { type: string, minLength: 1 }
+        description: Explicit aggregate recipient; requires the item type's exact send permission. Omit to use the ambient actor.
       aggregate_key:
         picker: wc-schema-form
         type: string
@@ -96,7 +107,7 @@ entries:
         picker: wc-schema-form
         type: string
         title: Source component
-        description: Source component ID required for aggregates. The recipient must retain READ access.
+        description: Source component ID required for aggregates. The sender must retain READ access; actor-bound items also check this on reads.
       status:
         picker: wc-schema-form
         type: string

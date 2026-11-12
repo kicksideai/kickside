@@ -9,7 +9,7 @@ entries:
       comment: GET /nav/list — effective navigation contributed by the nav providers plus system controls.
     source: file://list_nav.lua
     method: handler
-    modules: [http, contract, registry, security, logger]
+    modules: [http, contract, registry, security, logger, funcs, time]
     imports:
       nav: kickside.ui:nav
       nav_providers: kickside.ui:nav_providers

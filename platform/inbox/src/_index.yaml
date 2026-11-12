@@ -15,7 +15,7 @@ entries:
     readme: file://README.md
     meta:
       title: KickSide Inbox
-      comment: Central review/approval inbox. Items are immutable events on the owner's inbox component thread; item types are declarative registry entries (meta.type inbox.item_type) that each name a web component to render them, so any module adds an item type (and its own component) without touching the inbox. Public summary counts live in component meta and use canonical component.meta.changed realtime. The inbox component emits thread-stream item.created/resolved/deleted events, while kickside.inbox.sink:inbox_sink is the canonical writable workflow destination for posting items. Flow/HIL correlation rides on trace_context, not inbox-specific workflow fields.
+      comment: Central review/approval inbox. Items are immutable events on the owner's inbox component thread; item types are declarative registry entries (meta.type inbox.item_type) that each name a web component to render them, so any module adds an item type (and its own component) without touching the inbox. Personal summary counts use component.meta.changed; private addressed work sends contentless inbox.changed invalidations. The inbox component emits thread-stream item.created/resolved/deleted events, while kickside.inbox.sink:inbox_sink is the canonical writable workflow destination for posting items. Flow/HIL correlation rides on trace_context, not inbox-specific workflow fields.
 
   - name: dep.kickside.core
     version: '*'
@@ -123,18 +123,20 @@ entries:
       order: 40
       render: component
       component_tag: kickside-inbox
-      # Live actionable count on the nav item: the per-user inbox component
-      # (component_id == its primary thread) carries pending_count in public meta.
-      # No boolean urgency meta key exists on the inbox component, so tone_field is
-      # omitted for v1 (never inferred from the count).
       badge:
-        source: component_meta
-        component: { scope: actor, cardinality: singleton, impl_id: kickside.inbox:inbox_binding }
-        field: pending_count
-        field_type: integer
+        source: viewer_function
+        function_id: kickside.inbox:badge_count
+        invalidation_topic: inbox.changed
         style: count
         hide_zero: true
         tone: accent
+
+  - name: badge_count
+    kind: function.lua
+    source: file://badge_count.lua
+    method: run
+    imports:
+      inbox_reader: kickside.inbox.persist:inbox_reader
 
   # ─── Declarative item types (meta.type inbox.item_type) ──────────────
   # The base reference item type: a plain notice card. Copy this entry + its web
@@ -192,6 +194,21 @@ entries:
       inbox_reader: kickside.inbox.persist:inbox_reader
       inbox_events: kickside.inbox.persist:inbox_events
 
+  - name: resolve_addressed
+    kind: function.lua
+    meta: { comment: "Validates and applies a declared action synchronously, then appends the terminal resolution event after the idempotent callback succeeds." }
+    source: file://resolve.lua
+    method: run
+    security:
+      policies: [kickside.inbox.security:addressed_identity, kickside.inbox.security:addressed_policy, kickside.inbox.security:addressed_scope]
+    modules: [funcs, security]
+    imports:
+      object_fields: kickside.inbox.persist:object_fields
+      inbox_types: kickside.inbox:inbox_types
+      inbox_item_types: kickside.inbox:inbox_item_types
+      inbox_reader: kickside.inbox.persist:inbox_reader
+      inbox_events: kickside.inbox.persist:inbox_events
+
   # The inbox kind binding doubles as its provision declaration: on login the workspace
   # plugin materializes one inbox component+thread per user (id = component_id(user,
   # "kickside.inbox")) with one-week event retention. The declared projection is auto-applied
@@ -220,6 +237,7 @@ entries:
         scope: user
       retention:
         event_days: 7
+        item_days: 30
       projections:
         - kind: "kickside.inbox:items"
           worker_ref: "func://kickside.inbox.persist:projection_worker"
@@ -257,6 +275,11 @@ entries:
   # User deletion is handled by the kickside.core thread/component owner-delete
   # cascade: the owner's inbox thread is a user-owned component and is reaped with
   # the user, so the inbox needs no bespoke user.deleted handler.
+  - name: dep.kickside.jobs
+    kind: ns.dependency
+    component: kickside/jobs
+    version: '*'
+
   - name: dep.kickside.contract
     version: '*'
     kind: ns.dependency

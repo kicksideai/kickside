@@ -125,6 +125,7 @@ entries:
     modules: [contract, security]
     imports:
       component: kickside.component:component
+      addressed: kickside.inbox.persist:addressed
 
   - name: inbox_error_probe
     kind: function.lua
@@ -321,6 +322,7 @@ entries:
       inbox_item_types: kickside.inbox:inbox_item_types
       inbox_files: kickside.inbox:inbox_files
       component: kickside.component:component
+      addressed: kickside.inbox.persist:addressed
   - name: read_model_error_probe
     kind: function.lua
     source: file://read_model_error_probe.lua

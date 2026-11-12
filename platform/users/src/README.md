@@ -86,3 +86,13 @@ Native compatibility projection also retains its post-projection reduction
 fence. It closes the window in which an older native-scope consumer could
 capture the previous grants after the source pre-write fence but before the
 registry update. Authentication generations and token records remain unchanged.
+
+## SPEC: Group member pages
+
+`kickside.contract:group_members.members({group_id, limit, cursor?})` accepts a
+limit of 1..128 and returns at most that many distinct member user IDs ordered
+by user ID. `next_cursor`, when present, continues after the last returned ID
+against current membership. One query reads at most limit+1 rows, including a
+lookahead. Removal from an earlier page cannot shift the next page. Omitting
+limit retains the existing complete-list call. Pages do not promise a membership
+snapshot across concurrent changes.
