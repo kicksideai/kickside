@@ -9,4 +9,4 @@ const e = {
 export {
   e as E
 };
-//# sourceMappingURL=providerTags-C0mtMONl.js.map
+//# sourceMappingURL=provider-tags-C0mtMONl.js.map

@@ -1,6 +1,6 @@
 import { defineComponent as S, computed as b, openBlock as i, createBlock as f, unref as s, withCtx as v, createCommentVNode as k, renderSlot as G, createElementBlock as c, createElementVNode as d, toDisplayString as I, normalizeClass as T, createVNode as r, ref as j, reactive as Y, watch as W, withModifiers as J, Fragment as x, renderList as C, createTextVNode as N } from "vue";
 import { Icon as P } from "@iconify/vue";
-import { E as q } from "./providerTags-C0mtMONl.js";
+import { E as q } from "./provider-tags-C0mtMONl.js";
 import H from "primevue/button";
 import "primevue/select";
 import X from "primevue/toggleswitch";
@@ -530,4 +530,4 @@ export {
   Oe as i,
   ne as s
 };
-//# sourceMappingURL=ProviderProfileEditor.vue_vue_type_script_setup_true_lang-hzoWyiBh.js.map
+//# sourceMappingURL=ProviderProfileEditor.vue_vue_type_script_setup_true_lang-DmAUy6xJ.js.map

@@ -4,7 +4,7 @@ import { a as r, s as i } from "./styles-BXel5-_o.js";
 import "@iconify/vue";
 import { define as n } from "@wippy-fe/proxy";
 const a = r(
-  () => import("./Onboard-CUxWv_Nd.js"),
+  () => import("./Onboard-BQFsFmGf.js"),
   { loading: "Loading model setup…", failed: "Could not load the model setup. Reload the page to try again." },
   o
 );
