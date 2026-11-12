@@ -43,6 +43,32 @@ jobs:
     - uses: kicksideai/.github/actions/legal-check@71d7df6662ffe171c9a626dfd36ab54f1ac3b5f9
       with:
         base: ${{ github.event.pull_request.base.sha }}
+  source-conventions:
+    name: Source conventions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        path: source
+        persist-credentials: false
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      with:
+        repository: kicksideai/kickside-internal
+        ref: main
+        path: kickside-internal
+        token: ${{ secrets.SOURCE_READ_TOKEN }}
+        persist-credentials: false
+        sparse-checkout-cone-mode: false
+        sparse-checkout: |
+          kickside/scripts/check-source-conventions.py
+          kickside/tests/test_source_conventions.py
+    - name: Install checker dependencies
+      run: python3 -m pip install PyYAML
+    - name: Test the checker
+      run: python3 -m unittest discover -s kickside-internal/kickside/tests -p test_source_conventions.py
+    - name: Check pull request source
+      run: python3 kickside-internal/kickside/scripts/check-source-conventions.py --root source
   modules:
     name: ${{ matrix.module }} / ${{ matrix.engine }}
     runs-on: ubuntu-24.04

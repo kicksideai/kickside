@@ -23,6 +23,17 @@ class PublicHarnessTests(unittest.TestCase):
                 with self.subTest(workflow=name, setup=setup):
                     self.assertRegex(setup, r'(?m)^        version: 0\.3\.59a$')
 
+    def test_pull_request_ci_runs_source_conventions(self):
+        workflow = (ROOT / '.github/workflows/ci.yml').read_text()
+        job = re.search(r'^  source-conventions:\n(.*?)(?=^  [a-z][a-z-]*:|\Z)',
+                        workflow, re.MULTILINE | re.DOTALL)
+        self.assertIsNotNone(job, 'pull requests must run the source convention checker')
+        self.assertIn('repository: kicksideai/kickside-internal', job[1])
+        self.assertIn('path: source', job[1])
+        self.assertIn('python3 kickside-internal/kickside/scripts/check-source-conventions.py --root source', job[1])
+        self.assertIn('python3 -m unittest discover -s kickside-internal/kickside/tests -p test_source_conventions.py', job[1])
+        self.assertNotRegex(job[1], r'(?m)^    if:|continue-on-error:')
+
     def test_ci_materializes_ui_kit_from_the_checkout(self):
         workflow = (ROOT / '.github/workflows/ci.yml').read_text()
         step = re.search(r'    - name: Prepare UI Kit build input\n      run: \|\n(.*?)(?=    - name:)',
