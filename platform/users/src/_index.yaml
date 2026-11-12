@@ -178,6 +178,8 @@ entries:
       comment: SQL database resource backing kickside_profile.
       description: SQL database resource backing kickside_profile.
     targets:
+      - entry: kickside.users.migrations:15_group_member_paging
+        path: .meta.target_db
       - entry: kickside.users.migrations:14_bot_lifecycle_audit
         path: .meta.target_db
       - entry: kickside.users.migrations:13_bot_accounts

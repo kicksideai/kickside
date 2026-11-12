@@ -799,3 +799,4 @@ entries:
     modules: [sql, funcs, json, registry]
     imports:
       test: wippy.test:test
+      migration_runner: wippy.migration:runner
