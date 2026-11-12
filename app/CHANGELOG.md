@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.37](https://github.com/kicksideai/kickside/compare/kickside-v0.2.36...kickside-v0.2.37) (2026-11-12)
+
+
+### Bug Fixes
+
+* **app:** preselect MCP access during onboarding ([#435](https://github.com/kicksideai/kickside/issues/435)) ([52d7ae3](https://github.com/kicksideai/kickside/commit/52d7ae349886a02571d8d6b86e6077c36b51bf6a))
+
 ## [0.2.36](https://github.com/kicksideai/kickside/compare/kickside-v0.2.35...kickside-v0.2.36) (2026-11-11)
 
 
