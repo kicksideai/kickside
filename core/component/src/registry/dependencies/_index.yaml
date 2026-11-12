@@ -30,4 +30,4 @@ entries:
   - name: dep.kickside.jobs
     kind: ns.dependency
     component: kickside/jobs
-    version: '*'
+    version: '>=0.1.70'

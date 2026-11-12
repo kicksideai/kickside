@@ -23,7 +23,7 @@ type FunctionData = {
 type FunctionEntry = { data: FunctionData?, meta: { [string]: any }? }
 
 local EXPECTED: { [string]: { string } } = {
-    ["kickside.knowledge:dep.kickside.component"] = { "kickside/component", "*" },
+    ["kickside.knowledge:dep.kickside.component"] = { "kickside/component", ">=0.3.12" },
     ["kickside.knowledge:dep.kickside.execution"] = { "kickside/execution", "*" },
     ["kickside.knowledge:dep.kickside.contract"] = { "kickside/contract", "*" },
     ["kickside.knowledge:dep.kickside.core"] = { "kickside/core", "*" },
