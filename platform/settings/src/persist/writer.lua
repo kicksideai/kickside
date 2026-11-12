@@ -46,7 +46,7 @@ end
 -- key/value/old_value/definition and returns either (ok, err) or a
 -- { valid, error } table. funcs.call returns (result, err) — a non-nil err is a
 -- dispatch failure (missing/erroring func), which rejects the write. A reachable
--- func that reports invalid rejects with its message. Returns (true) when there
+-- func that reports invalid rejects with its message. Returns (true) when
 -- the value is accepted, else (false, message).
 local function run_validate(def: settings_types.Definition, value: settings_types.SettingValue, old_value: settings_types.SettingValue): (boolean, string?)
     if type(def.schema) == "table" and type(def.schema.enum) == "table" then
