@@ -5,7 +5,7 @@
 // The former dark-mode brightened output is a separate derived variable, so the
 // editor only validates, previews, and persists the selected --p-primary color.
 
-export const DEFAULT_TONE_FALLBACK = '#22c55e'
+export const DEFAULT_TONE_FALLBACK = '#d63a22'
 export const PRIMARY_VARIABLE = '--p-primary'
 
 type RGB = { r: number; g: number; b: number }

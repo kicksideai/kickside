@@ -226,6 +226,10 @@ local function define_tests()
             assert_primary_role_contrast(effective_scope(default_vars, default_vars["@dark"]))
             test.eq(default_vars["@light"]["--p-primary"], default_vars["--p-primary"])
             test.eq(default_vars["@light"]["--p-warn-500"], default_vars["--p-warn-500"])
+            for _, role in ipairs({ "--p-primary-color", "--p-primary-hover-color", "--p-primary-active-color" }) do
+                test.eq(default_vars["@dark"][role], default_vars[role])
+            end
+            test.eq(default_vars["@dark"]["--p-primary-600"], "var(--color-for-brightening)")
 
             local original = assert(registry.get("wippy.facade:css_variables"))
             local legacy_variables = {

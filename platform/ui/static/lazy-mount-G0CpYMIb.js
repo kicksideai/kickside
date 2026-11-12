@@ -17,15 +17,15 @@ function at() {
 function xt() {
   return at() && typeof CSS < "u" && typeof CSS.supports == "function" && CSS.supports("anchor-name: --a") && CSS.supports("position-area", "bottom span-right") && CSS.supports("position-try-fallbacks", "flip-block") && CSS.supports("min-width", "min(anchor-size(width), 100vw)") && CSS.supports("max-width", "stretch");
 }
-const Dt = /\bp-(?:select|multiselect|treeselect|cascadeselect)-overlay\b/;
-let At = 0;
+const At = /\bp-(?:select|multiselect|treeselect|cascadeselect)-overlay\b/;
+let Dt = 0;
 const fe = /* @__PURE__ */ new WeakMap();
 function Be(t, o) {
   const r = t.style;
   r.setProperty("position", "fixed", "important"), r.setProperty("inset", "auto", "important"), r.setProperty("margin", "0", "important"), r.setProperty("position-anchor", o), r.setProperty("position-area", "bottom span-right"), r.setProperty("position-try-fallbacks", "flip-block, flip-inline, flip-block flip-inline"), r.setProperty("min-width", "min(anchor-size(width), 100vw)", "important"), r.setProperty("max-width", "stretch", "important");
 }
 function St(t, o) {
-  if (!Dt.test(t.className))
+  if (!At.test(t.className))
     return;
   const r = t.style.cssText;
   Be(t, o), t.getAttribute("popover") !== "manual" && t.setAttribute("popover", "manual");
@@ -58,7 +58,7 @@ function _e(t) {
   const o = t.getBoundingClientRect();
   t.style.top = `${-window.scrollY - o.top}px`, t.style.left = `${-window.scrollX - o.left}px`;
 }
-const me = /* @__PURE__ */ new Set(), De = /* @__PURE__ */ new WeakMap();
+const me = /* @__PURE__ */ new Set(), Ae = /* @__PURE__ */ new WeakMap();
 let Ue = !1, Te = !1;
 function $t() {
   Te = !1;
@@ -66,7 +66,7 @@ function $t() {
     if (!t.isConnected) {
       for (const o of Array.from(t.children))
         o instanceof HTMLElement && xe(o);
-      me.delete(t), De.get(t)?.disconnect();
+      me.delete(t), Ae.get(t)?.disconnect();
       continue;
     }
     t.childElementCount > 0 && _e(t);
@@ -98,19 +98,19 @@ function Mt(t) {
     }
     o.isConnected && o.childElementCount > 0 && _e(o);
   });
-  return u.observe(o, { childList: !0 }), De.set(o, u), me.add(o), Ue || (Ue = !0, window.addEventListener("scroll", ze, { capture: !0, passive: !0 }), window.addEventListener("resize", ze, { passive: !0 })), o;
+  return u.observe(o, { childList: !0 }), Ae.set(o, u), me.add(o), Ue || (Ue = !0, window.addEventListener("scroll", ze, { capture: !0, passive: !0 }), window.addEventListener("resize", ze, { passive: !0 })), o;
 }
 function Fe(t) {
   if (!(!t.hostRoot || t.layer) && (t.layer = Mt(t.hostRoot), xt())) {
     const o = t.$el ? t.$el.parentElement : null;
-    o && (t.anchorName = `--wippy-a-${++At}`, t.anchorTrigger = o, o.style.setProperty("anchor-name", t.anchorName), t.layer.__wippyAnchorName = t.anchorName);
+    o && (t.anchorName = `--wippy-a-${++Dt}`, t.anchorTrigger = o, o.style.setProperty("anchor-name", t.anchorName), t.layer.__wippyAnchorName = t.anchorName);
   }
 }
 function je(t) {
   if (t.anchorTrigger && (t.anchorTrigger.style.removeProperty("anchor-name"), t.anchorTrigger = null), t.anchorName = null, t.layer) {
     for (const o of Array.from(t.layer.children))
       o instanceof HTMLElement && xe(o);
-    me.delete(t.layer), De.get(t.layer)?.disconnect(), t.layer.remove(), t.layer = null;
+    me.delete(t.layer), Ae.get(t.layer)?.disconnect(), t.layer.remove(), t.layer = null;
   }
 }
 let Ge = !1;
@@ -198,7 +198,7 @@ const Rt = {
       class: "wc-iconfield"
     }, null, 512));
   }
-}), Ye = "#22c55e", Ae = "--p-primary";
+}), Ye = "#d63a22", De = "--p-primary";
 function Vt(t) {
   const o = /^rgba?\(([^)]+)\)/i.exec((t || "").trim());
   if (!o) return null;
@@ -224,7 +224,7 @@ function Je(t) {
 function Le(t, o) {
   const r = Se(t);
   if (!r) return "";
-  const u = `${Ae}: ${r};`;
+  const u = `${De}: ${r};`;
   return o === ":host" ? `:host { ${u} }` : [
     `:root { ${u} }`,
     `@media (prefers-color-scheme: dark) { :root:not(.w-theme-light) { ${u} } }`,
@@ -236,7 +236,7 @@ function Le(t, o) {
 }
 function Ht(t, o) {
   if (!t || typeof t != "object") return "";
-  const r = t[Ae];
+  const r = t[De];
   return typeof r == "string" ? Le(r, o) : "";
 }
 const Nt = { r: 255, g: 255, b: 255 }, Bt = { r: 12, g: 14, b: 18 }, Ut = 2, zt = 2;
@@ -256,7 +256,7 @@ function Ft(t, o = typeof document < "u" ? document : void 0) {
   if (!r) return null;
   if (!o || !o.body || !o.defaultView) return Je(r);
   const u = o.createElement("span");
-  u.style.setProperty(Ae, r), u.style.color = "var(--p-primary-color)", u.style.display = "none", o.body.appendChild(u);
+  u.style.setProperty(De, r), u.style.color = "var(--p-primary-color)", u.style.display = "none", o.body.appendChild(u);
   const d = o.defaultView.getComputedStyle(u).color;
   return u.remove(), Je(Vt(d) || r);
 }
@@ -296,33 +296,33 @@ function Gt({ items: t, categories: o, overrides: r, home: u }) {
     const i = r.value[d(l)];
     return !!i && (i.label !== void 0 || i.icon !== void 0);
   }
-  const D = P(() => [...o.value].sort((l, i) => l.order - i.order));
+  const A = P(() => [...o.value].sort((l, i) => l.order - i.order));
   function R(l) {
     return t.value.filter((i) => !i.hidden && (i.category || "") === l).sort((i, p) => i.order - p.order || i.label.localeCompare(p.label));
   }
   const he = P(() => {
     const l = [];
     l.push({ key: "", label: "Ungrouped", real: !1 });
-    for (const p of D.value) l.push({ key: p.key, label: p.label || p.key, real: !0 });
+    for (const p of A.value) l.push({ key: p.key, label: p.label || p.key, real: !0 });
     const i = /* @__PURE__ */ new Set(["", ...o.value.map((p) => p.key)]);
     for (const p of t.value)
       p.category && !i.has(p.category) && (i.add(p.category), l.push({ key: p.category, label: p.category, real: !1 }));
     return l;
-  }), ve = P(() => t.value.filter((l) => l.hidden)), J = (l) => o.value.find((i) => i.key === l), A = C(null), j = C(null), X = C(null), w = (l) => t.value.find((i) => i.id === l);
-  function re(l, i) {
-    A.value = l.id, i.dataTransfer && (i.dataTransfer.effectAllowed = "move", i.dataTransfer.setData("text/plain", l.id));
+  }), ve = P(() => t.value.filter((l) => l.hidden)), J = (l) => o.value.find((i) => i.key === l), D = C(null), j = C(null), X = C(null), w = (l) => t.value.find((i) => i.id === l);
+  function Q(l, i) {
+    D.value = l.id, i.dataTransfer && (i.dataTransfer.effectAllowed = "move", i.dataTransfer.setData("text/plain", l.id));
   }
   function O() {
-    A.value = null, j.value = null, X.value = null;
+    D.value = null, j.value = null, X.value = null;
   }
   function ye(l) {
-    const i = A.value ? w(A.value) : null;
+    const i = D.value ? w(D.value) : null;
     if (!i || i.id === l.id) return O();
     const p = l.category || "", L = R(p).filter((S) => S.id !== i.id), $ = L.indexOf(l);
     L.splice($ < 0 ? L.length : $, 0, i), b(i, p), L.forEach((S, H) => T(S, H * 10)), O();
   }
   function ge(l) {
-    const i = A.value ? w(A.value) : null;
+    const i = D.value ? w(D.value) : null;
     if (!i) return O();
     const p = R(l).filter((L) => L.id !== i.id);
     p.push(i), b(i, l), p.forEach((L, $) => T(L, $ * 10)), O();
@@ -330,32 +330,32 @@ function Gt({ items: t, categories: o, overrides: r, home: u }) {
   function U(l, i) {
     j.value = l, i.dataTransfer && (i.dataTransfer.effectAllowed = "move", i.dataTransfer.setData("text/plain", "cat:" + l));
   }
-  function Q(l) {
+  function Z(l) {
     const i = j.value;
     if (!i || i === l) return O();
-    const p = [...D.value], L = p.findIndex((H) => H.key === i), $ = p.findIndex((H) => H.key === l);
+    const p = [...A.value], L = p.findIndex((H) => H.key === i), $ = p.findIndex((H) => H.key === l);
     if (L < 0 || $ < 0) return O();
     const [S] = p.splice(L, 1);
-    p.splice($, 0, S), p.forEach((H, te) => {
-      const oe = o.value.find((be) => be.key === H.key);
-      oe && (oe.order = te * 10);
+    p.splice($, 0, S), p.forEach((H, oe) => {
+      const ae = o.value.find((be) => be.key === H.key);
+      ae && (ae.order = oe * 10);
     }), O();
   }
   let G = 0;
   function le() {
     G += 1;
-    const l = D.value[D.value.length - 1];
+    const l = A.value[A.value.length - 1];
     o.value.push({ key: "cat_" + Date.now().toString(36) + "_" + G, label: "New category", icon: "tabler:folder", order: (l?.order ?? 0) + 10 });
   }
   function K(l) {
     for (const i of t.value) i.category === l && b(i, "");
     o.value = o.value.filter((i) => i.key !== l);
   }
-  function Z(l, i) {
+  function ee(l, i) {
     const p = J(l);
     p && (p.label = i);
   }
-  function ee(l, i) {
+  function te(l, i) {
     const p = J(l);
     p && (p.icon = (i || "").trim() || void 0);
   }
@@ -374,24 +374,24 @@ function Gt({ items: t, categories: o, overrides: r, home: u }) {
     setLabel: E,
     setIcon: I,
     hasOverride: F,
-    orderedCats: D,
+    orderedCats: A,
     itemsOf: R,
     editorGroups: he,
     hiddenItems: ve,
     catByKey: J,
-    dragItemId: A,
+    dragItemId: D,
     dragCatKey: j,
     overGroup: X,
-    onItemDragStart: re,
+    onItemDragStart: Q,
     endDrag: O,
     onItemDrop: ye,
     onGroupDrop: ge,
     onCatDragStart: U,
-    onCatDrop: Q,
+    onCatDrop: Z,
     addCategory: le,
     removeCategory: K,
-    renameCategory: Z,
-    setCatIcon: ee,
+    renameCategory: ee,
+    setCatIcon: te,
     isHome: z,
     setHome: ie
   };
@@ -443,46 +443,46 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
 }, oo = {
   key: 2,
   class: "ap-grid"
-}, ao = { class: "ap-side" }, no = { class: "ap-card" }, ro = { class: "ap-h" }, lo = { class: "ap-logo" }, io = { class: "ap-logo-prev" }, so = ["src"], uo = { class: "ap-logo-actions" }, co = ["accept", "disabled"], po = { class: "ap-hint" }, fo = { class: "ap-tone" }, mo = {
+}, ao = { class: "ap-side" }, no = { class: "ap-card" }, ro = { class: "ap-h" }, lo = { class: "ap-logo" }, io = { class: "ap-logo-prev" }, so = ["src"], uo = { class: "ap-logo-actions" }, co = ["accept", "disabled"], po = { class: "ap-hint" }, fo = { class: "ap-tone" }, mo = ["placeholder"], ho = {
   key: 0,
   class: "ap-tone-warn",
   role: "alert"
-}, ho = {
+}, vo = {
   class: "ap-theme-modes",
   role: "group",
   "aria-label": "Color scheme"
-}, vo = ["aria-pressed", "onClick"], yo = { class: "ap-card" }, go = { class: "ap-h" }, bo = { class: "ap-layouts" }, ko = { class: "ap-lo-name" }, wo = { class: "ap-lo-name" }, Co = { class: "ap-card ap-legend" }, _o = { class: "ap-h" }, To = { class: "ap-tips" }, Lo = { class: "ap-card ap-structure" }, xo = { class: "ap-h" }, Do = ["onDragover", "onDragleave", "onDrop"], Ao = ["onDrop"], So = ["onDragstart"], Eo = {
+}, yo = ["aria-pressed", "onClick"], go = { class: "ap-card" }, bo = { class: "ap-h" }, ko = { class: "ap-layouts" }, wo = { class: "ap-lo-name" }, Co = { class: "ap-lo-name" }, _o = { class: "ap-card ap-legend" }, To = { class: "ap-h" }, Lo = { class: "ap-tips" }, xo = { class: "ap-card ap-structure" }, Ao = { class: "ap-h" }, Do = ["onDragover", "onDragleave", "onDrop"], So = ["onDrop"], Eo = ["onDragstart"], $o = {
   key: 1,
   class: "ap-grip ap-grip-ghost",
   "aria-hidden": "true"
-}, $o = ["value", "onInput"], Mo = { class: "ap-tile ap-tile-muted" }, Io = { class: "ap-field ap-field-strong ap-field-static" }, Oo = { class: "ap-count" }, Po = ["onClick"], Ro = {
+}, Mo = ["value", "onInput"], Io = { class: "ap-tile ap-tile-muted" }, Oo = { class: "ap-field ap-field-strong ap-field-static" }, Po = { class: "ap-count" }, Ro = ["onClick"], Vo = {
   key: 0,
   class: "ap-drop-hint"
-}, Vo = ["onDrop"], Ho = ["onDragstart"], No = ["value", "onInput"], Bo = { class: "ap-path" }, Uo = {
+}, Ho = ["onDrop"], No = ["onDragstart"], Bo = ["value", "onInput"], Uo = { class: "ap-path" }, zo = {
   key: 0,
   class: "ap-pill kx-tag-sm"
-}, zo = {
+}, Fo = {
   key: 1,
   class: "ap-pill kx-tag-sm ap-pill-home"
-}, Fo = ["aria-label", "title", "onClick"], jo = ["onClick"], Go = {
+}, jo = ["aria-label", "title", "onClick"], Go = ["onClick"], Ko = {
   key: 0,
   class: "ap-hidden"
-}, Ko = {
+}, Wo = {
   key: 0,
   class: "ap-hidden-list"
-}, Wo = { class: "ap-tile" }, qo = { class: "ap-field ap-field-strong ap-field-static" }, Yo = ["onClick"], Jo = /* @__PURE__ */ Ze({
+}, qo = { class: "ap-tile" }, Yo = { class: "ap-field ap-field-strong ap-field-static" }, Jo = ["onClick"], Xo = /* @__PURE__ */ Ze({
   __name: "appearance",
   setup(t) {
     const o = C(!0), r = C(!1), u = C("");
     function d(c, e) {
       return c?.response?.data?.error || c?.message || e;
     }
-    const f = C("vertical"), k = C(ke.getThemeMode?.() ?? "auto"), b = C([]), T = C([]), E = C({}), I = C(!1), F = C(""), D = C(""), R = C(), he = P(() => R.value?.formats.flatMap((c) => [c.mime, ...c.extensions.map((e) => `.${e}`)]).join(",")), ve = P(() => R.value ? `${R.value.formats.map((c) => c.label).join(", ")} · up to ${R.value.max_bytes / 1048576} MB.` : ""), J = Kt({ logoUrl: D, error: u, apiError: d }), { uploadingLogo: A, uploadLogo: j, removeLogo: X } = J, w = C(""), re = C(Ye), O = P({
+    const f = C("vertical"), k = C(ke.getThemeMode?.() ?? "auto"), b = C([]), T = C([]), E = C({}), I = C(!1), F = C(""), A = C(""), R = C(), he = P(() => R.value?.formats.flatMap((c) => [c.mime, ...c.extensions.map((e) => `.${e}`)]).join(",")), ve = P(() => R.value ? `${R.value.formats.map((c) => c.label).join(", ")} · up to ${R.value.max_bytes / 1048576} MB.` : ""), J = Kt({ logoUrl: A, error: u, apiError: d }), { uploadingLogo: D, uploadLogo: j, removeLogo: X } = J, w = C(""), Q = C(Ye), O = P({
       // PrimeVue's <ColorPicker format="hex"> exchanges a BARE rrggbb string, while the stored
       // setting and the hex text field both keep the #-prefixed form — so strip on the way in
       // and re-add on the way out. Falling back to defaultTone keeps the swatch showing the live
       // theme tone while the setting is unset.
-      get: () => (w.value || re.value).trim().replace(/^#/, ""),
+      get: () => (w.value || Q.value).trim().replace(/^#/, ""),
       set: (c) => {
         const e = String(c ?? "").replace(/^#/, "");
         w.value = e ? `#${e}` : "";
@@ -494,16 +494,16 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
     function ge(c) {
       k.value = c, ke.setThemeMode(c);
     }
-    const U = P(() => w.value.trim() ? jt(w.value) : null), Q = P(() => !!w.value.trim() && U.value === null), G = P(() => Q.value || !!U.value && !U.value.ok), le = P(() => Q.value ? "Enter a valid hex color, e.g. #2563eb." : U.value && !U.value.ok ? U.value.reason : ""), K = C(""), Z = C(""), ee = () => JSON.stringify({
+    const U = P(() => w.value.trim() ? jt(w.value) : null), Z = P(() => !!w.value.trim() && U.value === null), G = P(() => Z.value || !!U.value && !U.value.ok), le = P(() => Z.value ? "Enter a valid hex color, e.g. #2563eb." : U.value && !U.value.ok ? U.value.reason : ""), K = C(""), ee = C(""), te = () => JSON.stringify({
       layout: f.value,
       cats: T.value,
       overrides: E.value,
       title: F.value,
-      logo: D.value,
+      logo: A.value,
       home: K.value,
       tone: w.value,
       pos: b.value.map((c) => [c.id, c.category, c.order, !!c.hidden])
-    }), z = P(() => ee() !== Z.value);
+    }), z = P(() => te() !== ee.value);
     async function ie() {
       o.value = !0, u.value = "";
       try {
@@ -511,7 +511,7 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
         if (!c.success) throw new Error(c.error || "failed to load nav");
         R.value = c.logo_upload, b.value = (c.items ?? []).map((s) => ({ ...s })), f.value = c.layout === "horizontal" ? "horizontal" : "vertical";
         const e = c.config ?? {};
-        return T.value = Array.isArray(e.categories) ? e.categories.map((s) => ({ ...s })) : [], E.value = e.overrides && typeof e.overrides == "object" ? structuredClone(e.overrides) : {}, F.value = typeof e.title == "string" ? e.title : "", D.value = typeof e.logo_url == "string" ? e.logo_url : "", w.value = typeof e.primary_color == "string" ? e.primary_color : "", ne = w.value, K.value = typeof c.home == "string" ? c.home : typeof e.home == "string" ? e.home : "", Z.value = ee(), !0;
+        return T.value = Array.isArray(e.categories) ? e.categories.map((s) => ({ ...s })) : [], E.value = e.overrides && typeof e.overrides == "object" ? structuredClone(e.overrides) : {}, F.value = typeof e.title == "string" ? e.title : "", A.value = typeof e.logo_url == "string" ? e.logo_url : "", w.value = typeof e.primary_color == "string" ? e.primary_color : "", re = w.value, K.value = typeof c.home == "string" ? c.home : typeof e.home == "string" ? e.home : "", ee.value = te(), !0;
       } catch (c) {
         return u.value = d(c, "failed to load"), !1;
       } finally {
@@ -525,8 +525,8 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
       hasOverride: $,
       itemsOf: S,
       editorGroups: H,
-      hiddenItems: te,
-      catByKey: oe,
+      hiddenItems: oe,
+      catByKey: ae,
       dragItemId: be,
       overGroup: se,
       onItemDragStart: nt,
@@ -539,10 +539,10 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
       removeCategory: st,
       renameCategory: ut,
       setCatIcon: ct,
-      isHome: ae,
+      isHome: ne,
       setHome: dt
     } = l;
-    let N = null, Me = !1, ne = "", Ie = null;
+    let N = null, Me = !1, re = "", Ie = null;
     async function pt() {
       try {
         const c = await fetch("/app/css-variables.facade.json", { cache: "no-store" });
@@ -551,7 +551,7 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
         if (e && typeof e == "object") {
           Ie = e;
           const s = e["--p-primary"];
-          typeof s == "string" && (re.value = s), !w.value.trim() && ce.value !== !1 && W("");
+          typeof s == "string" && (Q.value = s), !w.value.trim() && ce.value !== !1 && W("");
         }
       } catch {
       }
@@ -565,11 +565,11 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
       }));
     }
     tt(() => {
-      Me = !0, N && clearTimeout(N), W(ne), Pe?.();
+      Me = !0, N && clearTimeout(N), W(re), Pe?.();
     });
     async function ft() {
       if (G.value) return;
-      const c = ee(), e = w.value;
+      const c = te(), e = w.value;
       r.value = !0, u.value = "";
       try {
         const { data: s } = await Ce.put("/api/v1/nav/config", {
@@ -577,12 +577,12 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
           overrides: E.value,
           categories: T.value,
           title: F.value,
-          logo_url: D.value,
+          logo_url: A.value,
           home: K.value,
           primary_color: w.value
         });
         if (!s.success) throw new Error(s.error || "save failed");
-        Z.value = c, ne = e, W(Me || ce.value === !1 ? ne : w.value);
+        ee.value = c, re = e, W(Me || ce.value === !1 ? re : w.value);
       } catch (s) {
         u.value = d(s, "save failed");
       } finally {
@@ -603,11 +603,11 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
     return we(w, (c) => {
       N && clearTimeout(N), N = null, ce.value !== !1 && (N = setTimeout(() => W(c), 90));
     }), we(ce, (c, e) => {
-      e === !0 && c === !1 ? (N && clearTimeout(N), N = null, W(ne)) : e === !1 && c === !0 && z.value && W(w.value);
+      e === !0 && c === !1 ? (N && clearTimeout(N), N = null, W(re)) : e === !1 && c === !0 && z.value && W(w.value);
     }), (c, e) => (h(), g("div", Wt, [
       n("div", qt, [
         n("header", Yt, [
-          G.value ? (h(), g("span", Jt, M(Q.value ? "Invalid color" : "Tone unreadable"), 1)) : z.value ? (h(), g("span", Xt, "Unsaved changes")) : x("", !0),
+          G.value ? (h(), g("span", Jt, M(Z.value ? "Invalid color" : "Tone unreadable"), 1)) : z.value ? (h(), g("span", Xt, "Unsaved changes")) : x("", !0),
           n("button", {
             class: "ap-btn ap-btn-ghost",
             disabled: !z.value || r.value,
@@ -657,9 +657,9 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
               e[19] || (e[19] = n("label", { class: "ap-blabel" }, "Logo", -1)),
               n("div", lo, [
                 n("span", io, [
-                  D.value ? (h(), g("img", {
+                  A.value ? (h(), g("img", {
                     key: 0,
-                    src: D.value,
+                    src: A.value,
                     alt: "Logo preview"
                   }, null, 8, so)) : (h(), de(a(v), {
                     key: 1,
@@ -669,24 +669,24 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
                 ]),
                 n("div", uo, [
                   n("label", {
-                    class: B(["ap-btn ap-btn-ghost", a(A) && "ap-btn-busy"])
+                    class: B(["ap-btn ap-btn-ghost", a(D) && "ap-btn-busy"])
                   }, [
                     y(a(v), {
-                      icon: a(A) ? "tabler:loader-2" : "tabler:upload",
-                      class: B(a(A) && "spin"),
+                      icon: a(D) ? "tabler:loader-2" : "tabler:upload",
+                      class: B(a(D) && "spin"),
                       "aria-hidden": "true"
                     }, null, 8, ["icon", "class"]),
-                    _(" " + M(a(A) ? "Uploading…" : "Upload") + " ", 1),
+                    _(" " + M(a(D) ? "Uploading…" : "Upload") + " ", 1),
                     n("input", {
                       type: "file",
                       accept: he.value,
                       class: "ap-file",
-                      disabled: a(A) || !R.value,
+                      disabled: a(D) || !R.value,
                       onChange: e[1] || (e[1] = //@ts-ignore
                       (...s) => a(j) && a(j)(...s))
                     }, null, 40, co)
                   ], 2),
-                  D.value ? (h(), g("button", {
+                  A.value ? (h(), g("button", {
                     key: 0,
                     class: "ap-btn ap-btn-ghost ap-danger",
                     onClick: e[2] || (e[2] = //@ts-ignore
@@ -715,9 +715,9 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
                   class: "ap-binput ap-tone-hex",
                   type: "text",
                   maxlength: "7",
-                  placeholder: "Default",
+                  placeholder: Q.value,
                   "aria-label": "Base tone hex"
-                }, null, 512), [
+                }, null, 8, mo), [
                   [Ne, w.value]
                 ]),
                 w.value ? (h(), g("button", {
@@ -732,7 +732,7 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
                   e[16] || (e[16] = _(" Reset", -1))
                 ])) : x("", !0)
               ]),
-              le.value ? (h(), g("p", mo, [
+              le.value ? (h(), g("p", ho, [
                 y(a(v), {
                   icon: "tabler:alert-triangle",
                   "aria-hidden": "true"
@@ -741,7 +741,7 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
               ])) : x("", !0),
               e[21] || (e[21] = n("p", { class: "ap-hint" }, "Primary color for buttons, links and accents. Applies across the app instantly.", -1)),
               e[22] || (e[22] = n("label", { class: "ap-blabel" }, "Color scheme", -1)),
-              n("div", ho, [
+              n("div", vo, [
                 (h(), g(q, null, pe([
                   { mode: "auto", label: "Auto", icon: "tabler:device-desktop" },
                   { mode: "light", label: "Light", icon: "tabler:sun" },
@@ -758,12 +758,12 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
                     "aria-hidden": "true"
                   }, null, 8, ["icon"]),
                   _(" " + M(s.label), 1)
-                ], 10, vo)), 64))
+                ], 10, yo)), 64))
               ]),
               e[23] || (e[23] = n("p", { class: "ap-hint" }, "Auto follows your browser or operating system setting. Changes apply immediately.", -1))
             ]),
-            n("section", yo, [
-              n("header", go, [
+            n("section", go, [
+              n("header", bo, [
                 y(a(v), {
                   icon: "tabler:layout-2",
                   "aria-hidden": "true"
@@ -771,7 +771,7 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
                 e[24] || (e[24] = _(" Layout", -1))
               ]),
               e[31] || (e[31] = n("p", { class: "ap-sub" }, "Where navigation sits.", -1)),
-              n("div", bo, [
+              n("div", ko, [
                 n("button", {
                   class: B(["ap-lo", f.value === "vertical" && "ap-lo-on"]),
                   onClick: e[5] || (e[5] = (s) => f.value = "vertical")
@@ -784,7 +784,7 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
                     ]),
                     n("span", { class: "mock-fill" })
                   ], -1)),
-                  n("span", ko, [
+                  n("span", wo, [
                     e[25] || (e[25] = _("Vertical ", -1)),
                     f.value === "vertical" ? (h(), de(a(v), {
                       key: 0,
@@ -806,7 +806,7 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
                     ]),
                     n("span", { class: "mock-fill" })
                   ], -1)),
-                  n("span", wo, [
+                  n("span", Co, [
                     e[28] || (e[28] = _("Horizontal ", -1)),
                     f.value === "horizontal" ? (h(), de(a(v), {
                       key: 0,
@@ -818,15 +818,15 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
                 ], 2)
               ])
             ]),
-            n("section", Co, [
-              n("header", _o, [
+            n("section", _o, [
+              n("header", To, [
                 y(a(v), {
                   icon: "tabler:info-circle",
                   "aria-hidden": "true"
                 }),
                 e[32] || (e[32] = _(" How it works", -1))
               ]),
-              n("ul", To, [
+              n("ul", Lo, [
                 n("li", null, [
                   y(a(v), {
                     icon: "tabler:grip-vertical",
@@ -858,8 +858,8 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
               ])
             ])
           ]),
-          n("section", Lo, [
-            n("header", xo, [
+          n("section", xo, [
+            n("header", Ao, [
               y(a(v), {
                 icon: "tabler:sitemap",
                 "aria-hidden": "true"
@@ -903,30 +903,30 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
                     icon: "tabler:grip-vertical",
                     "aria-hidden": "true"
                   })
-                ], 40, So)) : (h(), g("span", Eo)),
+                ], 40, Eo)) : (h(), g("span", $o)),
                 s.real ? (h(), g(q, { key: 2 }, [
                   y(qe, {
-                    "model-value": a(oe)(s.key)?.icon || "",
+                    "model-value": a(ae)(s.key)?.icon || "",
                     fallback: "tabler:folder",
                     "onUpdate:modelValue": (m) => a(ct)(s.key, m)
                   }, null, 8, ["model-value", "onUpdate:modelValue"]),
                   n("input", {
-                    value: a(oe)(s.key)?.label,
+                    value: a(ae)(s.key)?.label,
                     class: "ap-field ap-field-strong",
                     "aria-label": "Category name",
                     placeholder: "Category name",
                     onInput: (m) => a(ut)(s.key, m.target.value)
-                  }, null, 40, $o)
+                  }, null, 40, Mo)
                 ], 64)) : (h(), g(q, { key: 3 }, [
-                  n("span", Mo, [
+                  n("span", Io, [
                     y(a(v), {
                       icon: "tabler:layout-list",
                       "aria-hidden": "true"
                     })
                   ]),
-                  n("span", Io, M(s.label), 1)
+                  n("span", Oo, M(s.label), 1)
                 ], 64)),
-                n("span", Oo, M(a(S)(s.key).length), 1),
+                n("span", Po, M(a(S)(s.key).length), 1),
                 s.real ? (h(), g("button", {
                   key: 4,
                   class: "ap-icon-btn ap-danger",
@@ -938,9 +938,9 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
                     icon: "tabler:trash",
                     "aria-hidden": "true"
                   })
-                ], 8, Po)) : x("", !0)
-              ], 40, Ao),
-              a(S)(s.key).length === 0 ? (h(), g("div", Ro, "Drag a surface here")) : x("", !0),
+                ], 8, Ro)) : x("", !0)
+              ], 40, So),
+              a(S)(s.key).length === 0 ? (h(), g("div", Vo, "Drag a surface here")) : x("", !0),
               (h(!0), g(q, null, pe(a(S)(s.key), (m) => (h(), g("div", {
                 key: m.id,
                 class: B(["ap-row", a(be) === m.id && "ap-row-dragging"]),
@@ -960,7 +960,7 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
                     icon: "tabler:grip-vertical",
                     "aria-hidden": "true"
                   })
-                ], 40, Ho),
+                ], 40, No),
                 y(qe, {
                   "model-value": m.icon || "",
                   fallback: "tabler:square",
@@ -972,10 +972,10 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
                   "aria-label": "Surface label",
                   placeholder: "Label",
                   onInput: (V) => a(p)(m, V.target.value)
-                }, null, 40, No),
-                n("span", Bo, M(m.path), 1),
-                m.source === "custom" ? (h(), g("span", Uo, "custom")) : x("", !0),
-                a(ae)(m) ? (h(), g("span", zo, [
+                }, null, 40, Bo),
+                n("span", Uo, M(m.path), 1),
+                m.source === "custom" ? (h(), g("span", zo, "custom")) : x("", !0),
+                a(ne)(m) ? (h(), g("span", Fo, [
                   y(a(v), {
                     icon: "tabler:home",
                     "aria-hidden": "true"
@@ -990,16 +990,16 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
                   "aria-hidden": "true"
                 })) : x("", !0),
                 n("button", {
-                  class: B(["ap-icon-btn", a(ae)(m) && "ap-home-on"]),
-                  "aria-label": a(ae)(m) ? "Home page (click to unset)" : "Set as home page",
-                  title: a(ae)(m) ? "Home page — click to unset" : "Set as home page",
+                  class: B(["ap-icon-btn", a(ne)(m) && "ap-home-on"]),
+                  "aria-label": a(ne)(m) ? "Home page (click to unset)" : "Set as home page",
+                  title: a(ne)(m) ? "Home page — click to unset" : "Set as home page",
                   onClick: (V) => a(dt)(m)
                 }, [
                   y(a(v), {
-                    icon: a(ae)(m) ? "tabler:home-filled" : "tabler:home",
+                    icon: a(ne)(m) ? "tabler:home-filled" : "tabler:home",
                     "aria-hidden": "true"
                   }, null, 8, ["icon"])
-                ], 10, Fo),
+                ], 10, jo),
                 n("button", {
                   class: "ap-icon-btn",
                   "aria-label": "Hide",
@@ -1010,10 +1010,10 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
                     icon: "tabler:eye",
                     "aria-hidden": "true"
                   })
-                ], 8, jo)
-              ], 42, Vo))), 128))
+                ], 8, Go)
+              ], 42, Ho))), 128))
             ], 42, Do))), 128)),
-            a(te).length ? (h(), g("div", Go, [
+            a(oe).length ? (h(), g("div", Ko, [
               n("button", {
                 class: "ap-hidden-h",
                 onClick: e[12] || (e[12] = (s) => I.value = !I.value)
@@ -1026,10 +1026,10 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
                   icon: "tabler:eye-off",
                   "aria-hidden": "true"
                 }),
-                _(" Hidden (" + M(a(te).length) + ") ", 1)
+                _(" Hidden (" + M(a(oe).length) + ") ", 1)
               ]),
-              I.value ? (h(), g("div", Ko, [
-                (h(!0), g(q, null, pe(a(te), (s) => (h(), g("div", {
+              I.value ? (h(), g("div", Wo, [
+                (h(!0), g(q, null, pe(a(oe), (s) => (h(), g("div", {
                   key: s.id,
                   class: "ap-row ap-row-off"
                 }, [
@@ -1037,13 +1037,13 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
                     class: "ap-grip ap-grip-ghost",
                     "aria-hidden": "true"
                   }, null, -1)),
-                  n("span", Wo, [
+                  n("span", qo, [
                     y(a(v), {
                       icon: s.icon || "tabler:square",
                       "aria-hidden": "true"
                     }, null, 8, ["icon"])
                   ]),
-                  n("span", qo, M(s.label), 1),
+                  n("span", Yo, M(s.label), 1),
                   n("button", {
                     class: "ap-icon-btn",
                     "aria-label": "Show",
@@ -1054,7 +1054,7 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
                       icon: "tabler:eye-plus",
                       "aria-hidden": "true"
                     })
-                  ], 8, Yo)
+                  ], 8, Jo)
                 ]))), 128))
               ])) : x("", !0)
             ])) : x("", !0)
@@ -1063,11 +1063,11 @@ const Wt = { class: "ap" }, qt = { class: "ap-body" }, Yt = { class: "ap-bar" },
       ])
     ]));
   }
-}), la = {
-  rootComponent: Jo,
+}), ia = {
+  rootComponent: Xo,
   plugins: [Rt]
 };
 export {
-  la as mountConfig
+  ia as mountConfig
 };
-//# sourceMappingURL=lazy-mount-1dDCFqhh.js.map
+//# sourceMappingURL=lazy-mount-G0CpYMIb.js.map

@@ -1,6 +1,6 @@
 import { W as t, u as o } from "./wc-runtime-KO3cNuNo.js";
 import { P as n } from "./primevue-plugin-CaP7wV_M.js";
-import { l as i, s as r } from "./styles-BjZmuDGf.js";
+import { l as i, s as r } from "./styles-LyS_4lzj.js";
 import "@iconify/vue";
 import { define as s } from "@wippy-fe/proxy";
 const p = i(
