@@ -51,7 +51,7 @@ local function handle(args: any, context: any)
     for _, item in ipairs(result.items or {}) do
         rows[#rows + 1] = kb_render.result_summary(item, kb_id :: string, fields :: { [string]: boolean })
     end
-    return { success = true, query = args.query, count = #rows, results = rows, next_cursor = result.next_offset and tostring(result.next_offset) or nil }, nil
+    return { success = true, query = args.query, count = #rows, results = rows, next_cursor = result.next_offset and tostring(result.next_offset) or nil, retrieval = result.retrieval }, nil
 end
 
 return { handle = handle }

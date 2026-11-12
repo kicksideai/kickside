@@ -133,6 +133,31 @@ local function define_tests()
     end)
 
     test.describe("kb_answer query mode", function()
+        test.it("reports an unavailable analysis class even without passages for either answer driver", function()
+            for _, driver in ipairs({ "single", "agentic" }) do
+                for _, passages in ipairs({ {}, items(1) }) do
+                    local previous = kb_answer._kb_search
+                    kb_answer._kb_search = {
+                        config = function() return { analysis_model = "class:unassigned", query_driver = driver }, {} end,
+                        query = function() return { items = passages, retrieval = { strategy = "plain", analysis = {
+                            status = "unavailable", reason = "no_models_for_class", model = "class:unassigned",
+                        } } }, nil end,
+                    }
+                    local ok, value, err = pcall(kb_answer.ask, "kb-id", { query = "question" })
+                    kb_answer._kb_search = previous
+                    if not ok then error(value) end
+                    test.is_nil(value)
+                    test.is_true(errors.is(err, errors.UNAVAILABLE), tostring(err))
+                    test.contains(tostring(err), "No models found for class: unassigned")
+                    local retrieval = err:details().retrieval
+                    test.eq(retrieval.strategy, "plain")
+                    test.eq(retrieval.analysis.status, "unavailable")
+                    test.eq(retrieval.analysis.reason, "no_models_for_class")
+                    test.eq(retrieval.analysis.model, "class:unassigned")
+                end
+            end
+        end)
+
         test.it("keeps summarization independent of the answer model", function()
             test.is_nil(kb_answer._resolve_answer_model({ summary_model = "class:fast" }))
         end)

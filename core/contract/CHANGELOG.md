@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.7](https://github.com/kicksideai/kickside/compare/contract-v0.3.6...contract-v0.3.7) (2026-11-12)
+
+
+### Bug Fixes
+
+* **inbox:** restore personal inbox items ([#447](https://github.com/kicksideai/kickside/issues/447)) ([3b3d732](https://github.com/kicksideai/kickside/commit/3b3d7322a3d05f84798526598517a2557489065c))
+
+## [0.3.6](https://github.com/kicksideai/kickside/compare/contract-v0.3.5...contract-v0.3.6) (2026-11-12)
+
+
+### Features
+
+* **inbox:** support private principal-addressed items ([#438](https://github.com/kicksideai/kickside/issues/438)) ([141ec96](https://github.com/kicksideai/kickside/commit/141ec9604b6361502646dda8dec05a0ed0f4e262))
+
 ## [0.3.5](https://github.com/kicksideai/kickside/compare/contract-v0.3.4...contract-v0.3.5) (2026-11-11)
 
 
