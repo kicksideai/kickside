@@ -114,14 +114,19 @@ local target = test.run_cases(function()
             test.not_nil(read(owner, item.id))
             test.eq(#await_notifications(owner_id, 1), 1)
             local thread_id = addressed.component_id({ kind = "user", id = owner_id })
-            local result, err = owner:call("kickside.inbox.persist:projection_committed", {
-                thread_id = thread_id, range = { to_seq = 1 }, projection = { body = materialized(thread_id) },
-                events = { { body = { id = item.id, recipient = { kind = "user", id = other_id } } } },
-            })
-            test.is_nil(err, tostring(err))
-            test.not_nil(result)
-            test.eq(#await_notifications(owner_id, 2), 2)
-            test.eq(#notifications(other_id), 0)
+            local committed = { body = { id = item.id, recipient = { kind = "user", id = other_id } } }
+            for index, events in ipairs({ { committed }, {
+                { body = { id = "earlier-item", recipient = { kind = "user", id = other_id } } }, committed,
+            } }) do
+                local result, err = owner:call("kickside.inbox.persist:projection_committed", {
+                    thread_id = thread_id, range = { to_seq = 1 }, projection = { body = materialized(thread_id) },
+                    events = events,
+                })
+                test.is_nil(err, tostring(err))
+                test.not_nil(result)
+                test.eq(#await_notifications(owner_id, index + 1), index + 1, "notification references the final event item")
+                test.eq(#notifications(other_id), 0)
+            end
         end)
         test.it("ignores forged and stale Jobs notification references", function()
             local owner_id, other_id = "job-owner-" .. uuid.v4(), "job-other-" .. uuid.v4()
