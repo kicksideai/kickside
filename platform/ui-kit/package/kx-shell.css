@@ -60,7 +60,7 @@
 .kx-railsec-b { padding: 2px 0 8px; }
 
 /* System child navigation spans the surface; the themed tabs keep their own sizing. */
-.p-tabs.kx-system-tabs { margin-bottom: 0; flex: none; min-width: 0; border-bottom: 1px solid var(--p-content-border-color); }
+.kx-system-tabs.p-tabs { margin-bottom: 0; flex: none; min-width: 0; border-bottom: 1px solid var(--p-content-border-color); }
 .kx-system-tabs .p-tablist-tab-list { padding-inline: var(--kickside-system-surface-gutter, 24px); }
 .kx-system-tab-count {
   padding-inline: 6px; border-radius: 999px; font-size: inherit; line-height: inherit;
