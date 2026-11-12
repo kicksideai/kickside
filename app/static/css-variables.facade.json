@@ -1,5 +1,5 @@
 {
-  "--p-primary": "#22c55e",
+  "--p-primary": "#d63a22",
   "--color-for-brightening": "color-mix(in srgb, var(--p-primary) 70%, white)",
   "--p-primary-200": "color-mix(in srgb, var(--p-primary) 25%, white)",
   "--p-primary-300": "color-mix(in srgb, var(--p-primary) 45%, white)",
@@ -278,7 +278,10 @@
   "--p-button-outlined-secondary-active-background": "rgba(0, 0, 0, 0.08)",
 
   "@dark": {
-    "--p-primary": "#22c55e",
+    "--p-primary": "#d63a22",
+    "--p-primary-color": "var(--p-primary-600)",
+    "--p-primary-hover-color": "var(--p-primary-700)",
+    "--p-primary-active-color": "var(--p-primary-800)",
     "--p-primary-50": "color-mix(in srgb, var(--p-primary) 22%, black)",
     "--p-primary-100": "color-mix(in srgb, var(--p-primary) 40%, black)",
     "--p-primary-200": "color-mix(in srgb, var(--p-primary) 55%, black)",
