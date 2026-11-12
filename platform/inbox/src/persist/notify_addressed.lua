@@ -61,28 +61,29 @@ local function new(contract_api: any, jobs_api: any, funcs_api: any?, storage_ap
         end
         local threads, open_err = storage.store("kickside.core:threads")
         if open_err then return nil, open_err end
-        local pair, read_err = threads:get_projection_cursor({ thread_id = reference.thread_id,
-            kind = "kickside.inbox:items", projection_key = "default", cursor_key = "default" })
+        local page, read_err = threads:list_events({ thread_id = reference.thread_id,
+            from_seq = reference.to_seq, to_seq = reference.to_seq, limit = 1 })
         if read_err then
             if errors.is(read_err, errors.NOT_FOUND) or errors.is(read_err, errors.PERMISSION_DENIED) then
                 return { success = true, notified = 0 }, nil
             end
             return nil, read_err
         end
-        if not pair or tonumber(pair.projection.last_event_seq) ~= reference.to_seq then
+        local event = page and page.events and page.events[1]
+        if not event or tonumber(event.seq) ~= reference.to_seq then
             return { success = true, notified = 0 }, nil
         end
-        local body = pair.projection.body
+        local body = event.body
         if type(body) == "string" then
             local decode_err
             body, decode_err = json.decode(body)
             if decode_err then return nil, decode_err end
         end
-        local item = (body.items or {})[reference.item_id]
-        if not item or not item.recipient or storage.component_id(item.recipient) ~= reference.thread_id then
+        if type(body) ~= "table" or body.id ~= reference.item_id or not body.recipient
+            or storage.component_id(body.recipient) ~= reference.thread_id then
             return { success = true, notified = 0 }, nil
         end
-        return executor.call("kickside.inbox.persist:notify_addressed", { recipient = item.recipient,
+        return executor.call("kickside.inbox.persist:notify_addressed", { recipient = body.recipient,
             thread_id = reference.thread_id, item_id = reference.item_id, to_seq = reference.to_seq,
             cursor = reference.cursor })
     end

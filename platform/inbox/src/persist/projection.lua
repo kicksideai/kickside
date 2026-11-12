@@ -205,7 +205,7 @@ function M.after_commit(input: any): (any?, any?)
         if decode_err then return nil, decode_err end
         local item = input.projection.body.items and input.projection.body.items[body.id]
         recipient = (item and item.recipient) or body.recipient
-        if recipient then item_id = body.id; break end
+        if recipient then item_id = body.id end
     end
     if not recipient then
         local owner, owner_err = component.component_owner(input.thread_id :: string)
