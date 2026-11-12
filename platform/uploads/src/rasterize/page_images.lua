@@ -158,8 +158,9 @@ function M.replace_pages(content: string, replacements: { any }): string
     local parts, offset = {}, 1
     for _, page in ipairs(M.text_pages(content)) do
         parts[#parts + 1] = content:sub(offset, page.start - 1)
-        if by_page[page.page] ~= nil then
-            parts[#parts + 1] = "<!-- page " .. page.page .. " -->\n\n" .. trim(by_page[page.page])
+        local replacement = by_page[page.page]
+        if replacement ~= nil and (trim(replacement) ~= "" or trim(page.text) == "") then
+            parts[#parts + 1] = "<!-- page " .. page.page .. " -->\n\n" .. trim(replacement)
             if page.finish < #content then parts[#parts + 1] = "\n\n" end
         else
             parts[#parts + 1] = content:sub(page.start, page.finish)
@@ -175,9 +176,10 @@ function M.needs_ocr_text(content: any, page_count: any, max_text_per_page: any,
 end
 
 function M.ocr_text_reason(content: any, page_count: any, max_text_per_page: any, status: any?, selection: string?): string?
-    if status == "readable" or status == "blank" then return nil end
+    if status == "readable" then return nil end
     if status == "failed" then return "failed_page" end
     local text = trim(content)
+    if status == "blank" and text == "" then return nil end
     if text == "" then return "empty_text" end
     if selection == M.SELECT_ALL then return "all_pages" end
 

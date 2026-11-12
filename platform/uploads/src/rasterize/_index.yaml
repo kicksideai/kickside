@@ -82,7 +82,7 @@ entries:
     title: Pages to OCR
     category: Rasterization
     order: 15
-    description: sparse renders pages with little or no extractable text; all renders every page so OCR text replaces the embedded text layer, for scanned PDFs whose embedded OCR layer is low quality.
+    description: Applies to every upload on this installation. sparse renders pages with little or no extractable text; all OCRs pages that already have text, with more model calls and slower processing. Failed or blank OCR keeps the page's existing text.
     scope: global
     editable: true
     visible: true

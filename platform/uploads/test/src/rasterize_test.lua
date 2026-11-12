@@ -234,18 +234,16 @@ local function define_tests()
         end)
 
         test.it("keeps ambiguous numbered images unavailable after a render failure", function()
-            local upload_id = seed_document("application/pdf", "<!-- page 1 -->")
+            local path = scripted_document({total = 1, fail_all = true, failure = "renderer refuses the document"})
+            local upload_id = seed_document(SCRIPTED_MIME, "<!-- page 1 -->")
             for index = 1, 2 do
                 local _, err = artifact_content_repo.create_artifact({upload_id = upload_id,
                     kind = "image", role = "extracted-image", mime_type = "image/png", ordinal = index,
                     content = string.rep(tostring(index), 60000), storage_id = STORAGE_ID, metadata = {page = 1}})
                 test.is_nil(err)
             end
-            local settings = assert(assert(contract.get("kickside.settings:settings")):open())
-            test.is_true(settings:set({namespace = "kickside.uploads.rasterize", key = "rasterize_format", value = "invalid"}).success)
             local result, err = executor("user-raster"):call(RASTERIZE_STAGE, {upload_id = upload_id,
-                mime_type = "application/pdf", size = FIXTURE_SIZE, storage_id = STORAGE_ID, storage_path = FIXTURE_PATH})
-            test.is_true(settings:set({namespace = "kickside.uploads.rasterize", key = "rasterize_format", value = "jpeg"}).success)
+                mime_type = SCRIPTED_MIME, size = FIXTURE_SIZE, storage_id = STORAGE_ID, storage_path = path})
             test.is_nil(err)
             test.is_true(result.success)
             test.eq(#rendered_pages(upload_id), 0)
@@ -271,11 +269,9 @@ local function define_tests()
         end)
 
         test.it("reports one document failure when the renderer refuses every page", function()
-            local upload_id = seed_document("application/pdf", "")
-            local settings = assert(assert(contract.get("kickside.settings:settings")):open())
-            test.is_true(settings:set({namespace = "kickside.uploads.rasterize", key = "rasterize_format", value = "invalid"}).success)
-            local result = run_stage(upload_id, "application/pdf")
-            test.is_true(settings:set({namespace = "kickside.uploads.rasterize", key = "rasterize_format", value = "jpeg"}).success)
+            local path = scripted_document({total = 2, fail_all = true, failure = "renderer refuses the document"})
+            local upload_id = seed_document(SCRIPTED_MIME, "")
+            local result = run_stage(upload_id, SCRIPTED_MIME, nil, path)
             test.is_true(result.success)
             test.eq(result.metadata.rendered_page_count, 0)
             test.eq(#result.metadata.rasterize_failures, 1)

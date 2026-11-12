@@ -95,6 +95,29 @@ local function define_tests()
                 "<!-- page 1 -->\n\nOCR transcript of page 1\n\n<!-- page 2 -->\n\nOCR transcript of page 2")
         end)
 
+        test.it("keeps existing page text when OCR returns blank or fails", function()
+            for _, body in ipairs({RICH, "A short text layer."}) do
+                local content = "<!-- page 1 -->\n\n" .. body .. "\n\n<!-- page 2 -->\n\nOther page"
+                for _, blank in ipairs({"", " \t\r\n"}) do
+                    test.eq(page_images.replace_pages(content, {{page = 1, text = blank}}), content)
+                end
+                test.eq(page_images.replace_pages(content, {}), content)
+                test.eq(page_images.replace_pages(content, {{page = 1}}), content)
+                test.is_true(page_images.needs_ocr_text(body, 1, 800, "blank", page_images.SELECT_ALL))
+                test.eq(page_images.ocr_text_reason(body, 1, 800, "failed", page_images.SELECT_ALL), "failed_page")
+            end
+        end)
+
+        test.it("commits blank OCR only for a page without usable text", function()
+            local content = "<!-- page 1 -->\n\n \t\n"
+            local replaced = page_images.replace_pages(content, {{page = 1, text = " \t\n"}})
+            test.eq(replaced, "<!-- page 1 -->\n\n")
+            local page = page_images.text_pages(replaced, {{page = 1, status = "blank"}})[1]
+            test.eq(page.status, "blank")
+            test.is_false(page_images.needs_ocr_text(page.text, 1, 800, page.status, page_images.SELECT_SPARSE))
+            test.is_false(page_images.needs_ocr_text(page.text, 1, 800, page.status, page_images.SELECT_ALL))
+        end)
+
         test.it("keeps the sparse selection identical to the default", function()
             for _, sample in ipairs(SAMPLES) do
                 local text, pages, status = sample[1], sample[2], sample[3]
