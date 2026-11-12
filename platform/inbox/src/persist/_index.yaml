@@ -92,6 +92,7 @@ entries:
       inbox_item_types: kickside.inbox:inbox_item_types
       component: kickside.component:component
       addressed: kickside.inbox.persist:addressed
+      access_subjects: kickside.component.persist:access_subjects
 
   # The read-model projection worker: the runner invokes it with each new event
   # batch; it folds item.created/resolved/deleted into the projection body (items
@@ -153,9 +154,10 @@ entries:
     meta: { private: true, comment: Contentless addressed invalidation after a projection commits. }
     source: file://notify_addressed.lua
     method: run
-    modules: [contract, funcs, security]
+    modules: [contract, funcs, security, json]
     imports:
       jobs: kickside.core.jobs:jobs
+      addressed: kickside.inbox.persist:addressed
     security:
       policies: [kickside.inbox.security:addressed_notification]
 
@@ -163,17 +165,19 @@ entries:
     kind: library.lua
     meta: { private: true }
     source: file://notify_addressed.lua
-    modules: [contract, funcs, security]
+    modules: [contract, funcs, security, json]
     imports:
       jobs: kickside.core.jobs:jobs
+      addressed: kickside.inbox.persist:addressed
 
   - name: notify_addressed_job
     kind: function.lua
     meta: { private: true, comment: One bounded addressed notification continuation in the existing Jobs service. }
     source: file://notify_addressed.lua
     method: run_job
-    modules: [contract, funcs, security]
+    modules: [contract, funcs, security, json]
     imports:
       jobs: kickside.core.jobs:jobs
+      addressed: kickside.inbox.persist:addressed
     security:
-      policies: [kickside.inbox.security:addressed_notification, kickside.inbox.security:addressed_notification_call]
+      policies: [kickside.inbox.security:addressed_notification, kickside.inbox.security:addressed_notification_call, kickside.inbox.security:addressed_identity, kickside.inbox.security:addressed_policy, kickside.inbox.security:addressed_scope]

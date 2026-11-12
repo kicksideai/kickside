@@ -3,9 +3,12 @@ local security = require("security")
 local contract = require("contract")
 local jobs = require("jobs")
 local funcs = require("funcs")
+local json = require("json")
+local addressed = require("addressed")
 
-local function new(contract_api: any, jobs_api: any, funcs_api: any?): any
+local function new(contract_api: any, jobs_api: any, funcs_api: any?, storage_api: any?): any
     local executor = funcs_api or funcs
+    local storage = storage_api or addressed
     local M = {}
     local TOPIC = "inbox.changed"
     local function open(id: string): (any?, any?)
@@ -39,7 +42,7 @@ local function new(contract_api: any, jobs_api: any, funcs_api: any?): any
                 key = tostring(input.to_seq) .. ":" .. page.next_cursor,
                 owner_locator = { kind = "thread", id = input.thread_id }, thread_id = input.thread_id,
                 job_type = "kickside.inbox.persist:notify_addressed_job", max_attempts = 1,
-                immutable_payload = { recipient = recipient, thread_id = input.thread_id,
+                immutable_payload = { item_id = input.item_id, thread_id = input.thread_id,
                     to_seq = input.to_seq, cursor = page.next_cursor } })
             if enqueue_err then return nil, enqueue_err end
         end
@@ -50,7 +53,38 @@ local function new(contract_api: any, jobs_api: any, funcs_api: any?): any
         if not security.can("funcs.call", "kickside.inbox.persist:notify_addressed_job") then
             return nil, errors.new({ message = "Inbox notification call denied", kind = errors.PERMISSION_DENIED })
         end
-        return executor.call("kickside.inbox.persist:notify_addressed", input.payload)
+        local reference = type(input) == "table" and input.payload or nil
+        if type(reference) ~= "table" or type(reference.thread_id) ~= "string" or reference.thread_id == ""
+            or type(reference.item_id) ~= "string" or reference.item_id == ""
+            or type(reference.to_seq) ~= "number" or reference.to_seq <= 0 then
+            return { success = true, notified = 0 }, nil
+        end
+        local threads, open_err = storage.store("kickside.core:threads")
+        if open_err then return nil, open_err end
+        local pair, read_err = threads:get_projection_cursor({ thread_id = reference.thread_id,
+            kind = "kickside.inbox:items", projection_key = "default", cursor_key = "default" })
+        if read_err then
+            if errors.is(read_err, errors.NOT_FOUND) or errors.is(read_err, errors.PERMISSION_DENIED) then
+                return { success = true, notified = 0 }, nil
+            end
+            return nil, read_err
+        end
+        if not pair or tonumber(pair.projection.last_event_seq) ~= reference.to_seq then
+            return { success = true, notified = 0 }, nil
+        end
+        local body = pair.projection.body
+        if type(body) == "string" then
+            local decode_err
+            body, decode_err = json.decode(body)
+            if decode_err then return nil, decode_err end
+        end
+        local item = (body.items or {})[reference.item_id]
+        if not item or not item.recipient or storage.component_id(item.recipient) ~= reference.thread_id then
+            return { success = true, notified = 0 }, nil
+        end
+        return executor.call("kickside.inbox.persist:notify_addressed", { recipient = item.recipient,
+            thread_id = reference.thread_id, item_id = reference.item_id, to_seq = reference.to_seq,
+            cursor = reference.cursor })
     end
     return M
 end

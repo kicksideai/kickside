@@ -134,7 +134,7 @@ local target = test.run_cases(function()
             local thread_id = addressed.component_id({ kind = "user", id = owner_id })
             for _, payload in ipairs({
                 { recipient = { kind = "user", id = other_id } },
-                { thread_id = thread_id, item_id = item.id, to_seq = 0, recipient = { kind = "user", id = other_id } },
+                { thread_id = thread_id, item_id = item.id, to_seq = 2, recipient = { kind = "user", id = other_id } },
                 { thread_id = thread_id, item_id = uuid.v4(), to_seq = 1, recipient = { kind = "user", id = other_id } },
             }) do
                 local queued, enqueue_err = jobs.enqueue({ namespace = "kickside.inbox", scope = thread_id,

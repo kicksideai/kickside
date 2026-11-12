@@ -323,6 +323,7 @@ entries:
       inbox_files: kickside.inbox:inbox_files
       component: kickside.component:component
       addressed: kickside.inbox.persist:addressed
+      access_subjects: kickside.component.persist:access_subjects
   - name: read_model_error_probe
     kind: function.lua
     source: file://read_model_error_probe.lua

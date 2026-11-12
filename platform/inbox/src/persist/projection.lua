@@ -199,13 +199,13 @@ function M.after_commit(input: any): (any?, any?)
     if not security.can("funcs.call", "kickside.inbox.persist:projection_committed") then
         return nil, errors.new({ message = "Inbox post-commit call denied", kind = errors.PERMISSION_DENIED })
     end
-    local recipient
+    local recipient, item_id
     for _, event in ipairs(input.events or {}) do
         local body, decode_err = decode_body(event)
         if decode_err then return nil, decode_err end
         local item = input.projection.body.items and input.projection.body.items[body.id]
         recipient = (item and item.recipient) or body.recipient
-        if recipient then break end
+        if recipient then item_id = body.id; break end
     end
     if not recipient then
         local owner, owner_err = component.component_owner(input.thread_id :: string)
@@ -215,7 +215,7 @@ function M.after_commit(input: any): (any?, any?)
             recipient = { kind = "user", id = owner }
         end
     end
-    return funcs.call("kickside.inbox.persist:publish_summary", input, recipient)
+    return funcs.call("kickside.inbox.persist:publish_summary", input, recipient, item_id)
 end
 
 return M

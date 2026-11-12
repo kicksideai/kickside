@@ -24,14 +24,14 @@ local function sync_public_meta(input: any, counts: any): (boolean, any?)
     return false, err or errors.new({ message = "component metadata write returns no result", kind = errors.INTERNAL })
 end
 
-local function run(input: any, recipient: any?): (any?, any?)
+local function run(input: any, recipient: any?, item_id: string?): (any?, any?)
     if not security.can("funcs.call", "kickside.inbox.persist:publish_summary") then
         return nil, errors.new({ message = "Inbox post-commit call denied", kind = errors.PERMISSION_DENIED })
     end
     local ok, err = sync_public_meta(input, input.projection.body.counts)
     if recipient then
         local notification, notify_err = funcs.call("kickside.inbox.persist:notify_addressed", { recipient = recipient,
-            thread_id = input.thread_id, to_seq = input.range.to_seq })
+            thread_id = input.thread_id, item_id = item_id, to_seq = input.range.to_seq })
         if notify_err or not notification or notification.success ~= true then
             logger:named("inbox.notifications"):warn("Inbox invalidation failed after commit",
                 { error = tostring(notify_err or "realtime notification refused") })

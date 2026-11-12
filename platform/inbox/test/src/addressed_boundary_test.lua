@@ -49,10 +49,15 @@ local confinement = test.run_cases(function()
             local hidden, hidden_err = confined:call("app:inbox_read_probe", { id = item.id })
             test.is_nil(hidden)
             test.is_nil(hidden_err)
+            for _, operation in ipairs({ "resolve", "delete" }) do
+                local result, err = confined:call("app:addressed_probe", { operation = operation, id = item.id })
+                test.is_nil(result)
+                test.is_true(errors.is(err, errors.NOT_FOUND), operation .. ": " .. tostring(err))
+            end
             local resolved, resolve_err = confined:call("app:addressed_probe", { operation = "resolve", id = personal.id })
             test.is_nil(resolve_err, tostring(resolve_err))
             test.eq(resolved.status, "dismissed")
-            test.is_true(assert(confined:call("app:addressed_probe", { operation = "delete", id = personal.id })))
+            test.eq(assert(confined:call("app:addressed_probe", { operation = "delete", id = personal.id })).id, personal.id)
             test.eq(assert(ordinary:call("kickside.inbox:badge_count", {})), 1)
             local policies = { assert(security.policy("app:addressed_member_probe")), assert(security.policy("app:addressed_app_db")), assert(security.policy("app:addressed_contract_context")) }
             for _, module in ipairs({ "inbox", "component", "core", "users", "contract" }) do
@@ -89,9 +94,17 @@ local confinement = test.run_cases(function()
                 test.is_nil(err, tostring(err))
                 test.is_false(removed)
             end
+            local confined = funcs.new():with_actor(assert(security.new_actor(member_id, { access_filter = { prefixes = {} } })))
+                :with_scope(assert(security.new_scope(policies)))
+            for _, id in ipairs({ item.id, uuid.v4() }) do
+                local removed, err = confined:call("kickside.inbox.persist:addressed_delete", { id = id },
+                    { kind = "user", id = owner_id })
+                test.is_nil(removed)
+                test.is_true(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
+            end
             assert(owner:call("app:inbox_catchup_probe", {}))
             test.not_nil(assert(owner:call("app:inbox_read_probe", { id = item.id })))
-            test.is_true(assert(owner:call("app:addressed_probe", { operation = "delete", id = item.id })))
+            test.eq(assert(owner:call("app:addressed_probe", { operation = "delete", id = item.id })).id, item.id)
         end)
     end)
 end)
