@@ -1,5 +1,5 @@
 import { a as q, b as H, W as $ } from "./index-D52CRMw6.js";
-import { e as G, P as J } from "./index-CKAvFXRR.js";
+import { a6 as G, a7 as J } from "./index-DKNBUm_C.js";
 import { defineComponent as Q, computed as m, ref as d, onMounted as X, onUnmounted as Z, openBlock as s, createBlock as ee, unref as x, withCtx as te, createElementBlock as l, createVNode as g, createTextVNode as v, toDisplayString as n, createElementVNode as t, normalizeClass as A, Fragment as L, createCommentVNode as w, withDirectives as _, vModelText as z } from "vue";
 import { Icon as k } from "@iconify/vue";
 import { api as N, host as D, define as oe } from "@wippy-fe/proxy";
@@ -23,7 +23,7 @@ const ie = {
 }, ke = { class: "kxp-foot" }, he = { class: "kxp-form" }, ye = { class: "kxp-input-group" }, _e = { class: "kxp-input-group" }, ze = ["value"], Ce = { class: "kxp-input-group" }, Ee = { class: "kxp-input-group" }, je = {
   key: 0,
   class: "kxp-err"
-}, Se = { class: "kxp-foot" }, Pe = ["disabled"], Ue = ["disabled"], Me = /* @__PURE__ */ Q({
+}, Se = { class: "kxp-foot" }, Ue = ["disabled"], Me = ["disabled"], Pe = /* @__PURE__ */ Q({
   __name: "profile",
   setup(I) {
     const R = q(), b = H(), C = m(() => !!(R.value.config || {}).readonly), a = d(null), h = d(!0), f = d(""), u = d(!1), c = d(!1), p = d(""), i = d({ full_name: "", password: "", confirm: "" }), E = m(() => a.value?.full_name?.trim() || a.value?.email || "Your account"), T = m(() => {
@@ -38,7 +38,7 @@ const ie = {
       const o = a.value?.status || "";
       return B[o] ?? o;
     }), S = (o) => re(o, { year: "numeric", month: "long", day: "numeric" });
-    function P(o, e) {
+    function U(o, e) {
       if (o && typeof o == "object") {
         const r = o;
         r.response?.status === 401 && D.handleError?.("auth-expired", r);
@@ -59,7 +59,7 @@ const ie = {
           groups: Array.isArray(o.security?.groups) ? o.security.groups : []
         }, b("load", void 0);
       } catch (o) {
-        f.value = P(o, "could not load profile"), b("error", { message: f.value, error: o });
+        f.value = U(o, "could not load profile"), b("error", { message: f.value, error: o });
       } finally {
         h.value = !1;
       }
@@ -67,7 +67,7 @@ const ie = {
     function K() {
       C.value || !a.value || (i.value = { full_name: a.value.full_name, password: "", confirm: "" }, p.value = "", u.value = !0);
     }
-    function U() {
+    function M() {
       u.value = !1, p.value = "";
     }
     async function W() {
@@ -93,20 +93,20 @@ const ie = {
         if (!r?.success) throw new Error(r?.error || "save failed");
         e.full_name && (a.value.full_name = e.full_name), u.value = !1, b("updated", { full_name: a.value.full_name }), D.toast?.({ severity: "success", summary: "Profile updated", detail: E.value });
       } catch (r) {
-        p.value = P(r, "save failed");
+        p.value = U(r, "save failed");
       } finally {
         c.value = !1;
       }
     }
     const y = d(!0);
-    function M() {
+    function P() {
       b("close", void 0);
     }
     function Y(o) {
-      o || M();
+      o || P();
     }
     function V(o) {
-      o.key === "Escape" && (u.value ? U() : y.value = !1);
+      o.key === "Escape" && (u.value ? M() : y.value = !1);
     }
     return X(() => {
       O(), window.addEventListener("keydown", V);
@@ -207,8 +207,8 @@ const ie = {
               t("button", {
                 class: "kxp-btn kxp-btn-ghost",
                 disabled: c.value,
-                onClick: U
-              }, "Cancel", 8, Pe),
+                onClick: M
+              }, "Cancel", 8, Ue),
               t("button", {
                 class: "kxp-btn kxp-btn-primary",
                 disabled: c.value,
@@ -220,7 +220,7 @@ const ie = {
                   "aria-hidden": "true"
                 }, null, 8, ["icon", "class"]),
                 e[17] || (e[17] = v(" Save changes ", -1))
-              ], 8, Ue)
+              ], 8, Me)
             ])
           ], 64)) : (s(), l(L, { key: 0 }, [
             t("dl", fe, [
@@ -248,7 +248,7 @@ const ie = {
             t("div", ke, [
               t("button", {
                 class: "kxp-btn kxp-btn-ghost",
-                onClick: M
+                onClick: P
               }, "Close"),
               C.value ? w("", !0) : (s(), l("button", {
                 key: 0,
@@ -286,7 +286,7 @@ class Le extends $ {
     };
   }
   static get vueConfig() {
-    return { rootComponent: Me, plugins: [J] };
+    return { rootComponent: Pe, plugins: [J] };
   }
 }
 oe(import.meta.url, Le);

@@ -34,7 +34,7 @@
 .ku-bar {
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px; width: 100%;
-  margin: 0; padding: 16px var(--system-surface-gutter) 10px; flex-wrap: wrap;
+  margin: 0; padding: 12px var(--system-surface-gutter); flex-wrap: wrap;
 }
 .ku-count { font-size: 12.5px; color: var(--p-text-muted-color); }
 
@@ -48,10 +48,6 @@
   padding: 6px var(--system-surface-gutter) 20px;
 }
 .ku-list { border: 1px solid var(--p-content-border-color); border-radius: 14px; overflow-x: auto; }
-.ku-table { width: 100%; border-collapse: collapse; text-align: left; }
-.ku-table th { padding: 12px 16px; font-size: 12px; font-weight: 600; color: var(--p-text-muted-color); }
-.ku-table td { padding: 11px 16px; border-top: 1px solid var(--p-content-border-color); vertical-align: middle; }
-.ku-row:hover { background: color-mix(in srgb, var(--p-text-color) 6%, transparent); }
 .ku-account { display: flex; align-items: center; gap: 14px; }
 .ku-avatar {
   width: 40px; height: 40px; flex: none; border-radius: 10px; display: flex; align-items: center; justify-content: center;

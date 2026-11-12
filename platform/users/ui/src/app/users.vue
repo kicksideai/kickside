@@ -6,6 +6,8 @@ import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import Tag from 'primevue/tag'
 import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
+import DataTable from 'primevue/datatable'
+import Column from 'primevue/column'
 import Tab from 'primevue/tab'
 import TabList from 'primevue/tablist'
 import Tabs from 'primevue/tabs'
@@ -271,12 +273,10 @@ useHostVisibilityRefresh(async () => {
         </div>
       </div>
 
-      <div v-else class="ku-list">
-        <table class="ku-table" :aria-label="accountTab === 'bots' ? 'Bots' : 'All users'">
-          <thead><tr><th scope="col">Account</th><th scope="col">Status</th><th scope="col">Roles</th><th scope="col">Created</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
-          <tbody>
-            <tr v-for="user in users" :key="user.user_id" class="ku-row">
-              <td>
+      <DataTable v-else :value="users" data-key="user_id" class="ku-list" :row-class="() => 'ku-row'"
+        :pt="{ table: { 'aria-label': accountTab === 'bots' ? 'Bots' : 'All users' } }">
+        <Column header="Account">
+          <template #body="{ data: user }">
                 <div class="ku-account">
                   <span class="ku-avatar">{{ initials(user) }}</span>
                   <div class="ku-id">
@@ -285,11 +285,19 @@ useHostVisibilityRefresh(async () => {
                   </div>
                   <Tag v-if="user.bot_account" severity="info" value="Bot" class="ku-badge kx-tag-sm" />
                 </div>
-              </td>
-              <td><Tag :severity="statusSeverity(user.status)" :value="user.status" class="ku-badge kx-tag-sm" /></td>
-              <td><div class="ku-meta"><Tag v-for="g in user.security_groups" :key="g" :severity="groupSeverity(g)" :value="groupLabel(g)" class="ku-badge kx-tag-sm" /></div></td>
-              <td class="ku-date">{{ formatDate(user.created_at, { month: 'short', day: 'numeric', year: 'numeric' }) }}</td>
-              <td>
+          </template>
+        </Column>
+        <Column header="Status">
+          <template #body="{ data: user }"><Tag :severity="statusSeverity(user.status)" :value="user.status" class="ku-badge kx-tag-sm" /></template>
+        </Column>
+        <Column header="Roles">
+          <template #body="{ data: user }"><div class="ku-meta"><Tag v-for="g in user.security_groups" :key="g" :severity="groupSeverity(g)" :value="groupLabel(g)" class="ku-badge kx-tag-sm" /></div></template>
+        </Column>
+        <Column header="Created">
+          <template #body="{ data: user }"><span class="ku-date">{{ formatDate(user.created_at, { month: 'short', day: 'numeric', year: 'numeric' }) }}</span></template>
+        </Column>
+        <Column header="Actions">
+          <template #body="{ data: user }">
                 <div class="ku-actions">
                   <Button type="button" severity="secondary" outlined size="small" :aria-label="`Edit ${user.full_name || user.email}`" @click="openEdit(user)">
                     <template #icon="{ class: iconClass }"><Icon icon="tabler:edit" :class="iconClass" aria-hidden="true" /></template>
@@ -298,11 +306,9 @@ useHostVisibilityRefresh(async () => {
                     <template #icon="{ class: iconClass }"><Icon icon="tabler:trash" :class="iconClass" aria-hidden="true" /></template>
                   </Button>
                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+          </template>
+        </Column>
+      </DataTable>
     </div>
 
     <Dialog v-model:visible="editorOpen" modal class="kx-dialog" :pt="DIALOG_PT" :aria-label="editorTitle">
