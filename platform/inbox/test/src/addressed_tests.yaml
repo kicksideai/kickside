@@ -232,8 +232,9 @@ entries:
     source: file://addressed_boundary_test.lua
     method: run
     meta: { type: test, suite: kickside_inbox }
-    modules: [funcs, security, uuid]
+    modules: [funcs, security, uuid, sql]
     imports:
+      component: kickside.component:component
       test: wippy.test:test
       test_identity: app:test_identity
 
@@ -242,8 +243,9 @@ entries:
     source: file://addressed_boundary_test.lua
     method: notifications
     meta: { type: test, suite: kickside_inbox }
-    modules: [funcs, security, uuid]
+    modules: [funcs, security, uuid, sql]
     imports:
+      component: kickside.component:component
       test: wippy.test:test
       test_identity: app:test_identity
 

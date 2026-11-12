@@ -796,6 +796,6 @@ entries:
     security:
       actor: { id: app:test_runner }
       policies: [app:test_runtime]
-    modules: [sql, funcs, json]
+    modules: [sql, funcs, json, registry]
     imports:
       test: wippy.test:test

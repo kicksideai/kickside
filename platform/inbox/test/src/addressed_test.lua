@@ -123,6 +123,36 @@ local target = test.run_cases(function()
             test.eq(#await_notifications(owner_id, 2), 2)
             test.eq(#notifications(other_id), 0)
         end)
+        test.it("ignores forged and stale Jobs notification references", function()
+            local owner_id, other_id = "job-owner-" .. uuid.v4(), "job-other-" .. uuid.v4()
+            local owner = frame(owner_id)
+            frame(other_id)
+            local item = upsert(owner, { id = uuid.v4(), item_type = "addressed_review", title = "Review",
+                recipient = { kind = "user", id = owner_id } })
+            test.not_nil(read(owner, item.id))
+            test.eq(#await_notifications(owner_id, 1), 1)
+            local thread_id = addressed.component_id({ kind = "user", id = owner_id })
+            for _, payload in ipairs({
+                { recipient = { kind = "user", id = other_id } },
+                { thread_id = thread_id, item_id = item.id, to_seq = 0, recipient = { kind = "user", id = other_id } },
+                { thread_id = thread_id, item_id = uuid.v4(), to_seq = 1, recipient = { kind = "user", id = other_id } },
+            }) do
+                local queued, enqueue_err = jobs.enqueue({ namespace = "kickside.inbox", scope = thread_id,
+                    key = uuid.v4(), owner_locator = { kind = "thread", id = thread_id }, thread_id = thread_id,
+                    job_type = "kickside.inbox.persist:notify_addressed_job", max_attempts = 1,
+                    immutable_payload = payload })
+                test.is_nil(enqueue_err, tostring(enqueue_err))
+                local completed
+                for _ = 1, 100 do
+                    completed = assert(jobs.get_job(queued.id))
+                    if completed.status == "done" or completed.status == "failed" then break end
+                    time.sleep("50ms")
+                end
+                test.eq(completed.status, "done", tostring(completed.last_error))
+                test.eq(#notifications(other_id), 0)
+                test.eq(#notifications(owner_id), 1)
+            end
+        end)
     end)
 end)
 
