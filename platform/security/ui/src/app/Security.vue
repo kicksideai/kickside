@@ -1,11 +1,9 @@
 <script setup lang="ts">
+import SystemTabs from '@kickside/ui-kit/SystemTabs.vue'
 import { computed, nextTick, onUnmounted, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import { host } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
-import Tab from 'primevue/tab'
-import TabList from 'primevue/tablist'
-import Tabs from 'primevue/tabs'
 import type { Policy, Scope, ScopeDraft } from '../types.ts'
 import { Button, EmptyState, FormField, IconButton, Notice, Pill, RailHeader, SearchField, Shell, Spinner, TextInput } from './shared'
 import Delegations from './Delegations.vue'
@@ -205,12 +203,10 @@ function shortId(id: string): string {
 
 <template>
   <div class="ks">
-    <Tabs class="ks-tabs" :value="activeTab" @update:value="selectTab">
-      <TabList :pt="{ tabList: { 'aria-label': 'Security administration' } }">
-        <Tab value="scopes">Roles</Tab>
-        <Tab value="delegations" data-tab="delegations">Run as</Tab>
-      </TabList>
-    </Tabs>
+    <SystemTabs :value="activeTab" label="Security administration" :items="[
+      { value: 'scopes', label: 'Roles' },
+      { value: 'delegations', label: 'Run as' },
+    ]" @update:value="selectTab" />
     <Delegations v-if="delegationsOpened" v-show="activeTab === 'delegations'" ref="delegationPanel" :scopes="scopes" />
     <Notice v-if="error" severity="danger" class="ks-top-notice" @dismiss="error = ''">{{ error }}</Notice>
     <Notice v-else-if="savedMsg" severity="success" class="ks-top-notice" @dismiss="savedMsg = ''">{{ savedMsg }}</Notice>
@@ -370,8 +366,8 @@ function shortId(id: string): string {
         </div>
       </div>
 
+      <div v-else class="kx-system-body">
       <EmptyState
-        v-else
         icon="tabler:shield-lock"
         title="Roles"
         hint="Choose a role to view its permissions, or create one with the permissions your team needs. Assign roles in System → Users."
@@ -379,6 +375,7 @@ function shortId(id: string): string {
         cta-icon="tabler:plus"
         @cta="newScope"
       />
+      </div>
     </Shell>
   </div>
 </template>

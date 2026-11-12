@@ -517,7 +517,6 @@
 
 /* ── scopes admin: rail + builder (Security.vue) ─────────────────────── */
 .ks { height: 100%; min-height: 0; display: flex; flex-direction: column; color: var(--p-text-color); background: var(--p-content-background); }
-.ks-tabs { padding: 0 var(--system-surface-gutter); flex: none; }
 .ks-top-notice { margin: 12px var(--system-surface-gutter); }
 .ks-rail-search { padding: 8px 10px; }
 .ks-rail-list { padding: 0 8px 10px; overflow-y: auto; }
@@ -576,12 +575,12 @@
 .ks-ext-head { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--p-text-color); margin-bottom: 6px; }
 .ks-ext-head svg { color: var(--p-warn-600); }
 
-.ks-runas { flex: 1; min-height: 0; overflow: auto; padding: 16px var(--system-surface-gutter); display: flex; flex-direction: column; gap: 16px; color: var(--p-text-color); }
+.ks-runas { color: var(--p-text-color); }
+.ks-runas-body { padding: 0 var(--system-surface-gutter) 20px; display: flex; flex-direction: column; gap: 16px; }
 .ks-runas > * { width: 100%; }
 .ks-runas-form, .ks-runas-list { max-width: var(--kx-reading-measure); }
-.ks-runas-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .ks-runas-count { color: var(--p-text-muted-color); font-size: 12.5px; }
-.ks-runas-lede { margin: 0; max-width: var(--kx-reading-measure); color: var(--p-text-muted-color); font-size: 13px; line-height: 1.5; }
+.ks-runas-lede { margin: 0 var(--system-surface-gutter) 16px; max-width: var(--kx-reading-measure); color: var(--p-text-muted-color); font-size: 13px; line-height: 1.5; }
 .ks-runas-lede b { color: var(--p-text-color); font-weight: 600; }
 .ks-runas-acts { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; }
 
@@ -610,8 +609,6 @@
 .ks-runas-grant-meta code { font-family: ui-monospace, Menlo, monospace; font-size: 11px; padding: 1px 5px; border-radius: 4px; background: var(--kx-overlay-subtle); }
 .ks-runas-grant-meta b { color: var(--p-text-color); font-weight: 600; }
 @media (max-width: 640px) {
-  .ks-runas { padding: 16px; }
-  .ks-runas-head { flex-direction: column; }
   .ks-runas-grant { flex-wrap: wrap; }
 }
 
@@ -622,3 +619,5 @@
   .ks-pane-body { max-height: 360px; }
   .ks-pane-head { flex-wrap: wrap; }
 }
+
+.ks-builder, .ks-view { grid-row: 1 / -1; }

@@ -7,6 +7,6 @@
 <template>
   <div class="kx-shell">
     <aside class="kx-rail"><slot name="rail" /></aside>
-    <main class="kx-main"><slot /></main>
+    <main class="kx-main kx-system-pane"><slot /></main>
   </div>
 </template>
