@@ -1464,6 +1464,9 @@ jobs:
             database="${databases[0]}_mig"
             createdb "$database"
             databases+=("$database")
+            database="${databases[0]}_paging"
+            createdb "$database"
+            databases+=("$database")
             wippy lint  --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433
             wippy test --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
             sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-test.log > .wippy-test.clean.log
