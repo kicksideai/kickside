@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import EmptyState from '@kickside/ui-kit/EmptyState.vue'
+import SystemTabs from '@kickside/ui-kit/SystemTabs.vue'
 import { computed, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import { api, host } from '@wippy-fe/proxy'
@@ -8,9 +10,6 @@ import Button from 'primevue/button'
 import Dialog from 'primevue/dialog'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
-import Tab from 'primevue/tab'
-import TabList from 'primevue/tablist'
-import Tabs from 'primevue/tabs'
 import { formatDate } from '@widgets/app/datetime'
 
 // Standalone WC: no SPA composables — the authenticated API comes through the
@@ -243,74 +242,71 @@ useHostVisibilityRefresh(async () => {
 
 <template>
   <div class="ku">
-    <Tabs class="ku-tabs" :value="accountTab" @update:value="selectTab($event as 'users' | 'bots')">
-      <TabList :pt="{ tabList: { 'aria-label': 'Account type' } }">
-        <Tab value="users" aria-controls="users-accounts">All users</Tab>
-        <Tab value="bots" aria-controls="users-bots">Bots</Tab>
-      </TabList>
-    </Tabs>
-    <div class="ku-bar">
-      <span class="ku-count">{{ users.length }} {{ accountTab === 'bots' ? 'bot' : 'user' }}{{ users.length !== 1 ? 's' : '' }}</span>
-      <Button type="button" :aria-label="accountTab === 'bots' ? 'Create bot' : 'Create user'" class="ku-btn-primary" :label="accountTab === 'bots' ? 'Create bot' : 'Create user'" @click="openCreate">
-        <template #icon="{ class: iconClass }"><Icon icon="tabler:user-plus" :class="iconClass" aria-hidden="true" /></template>
-      </Button>
-    </div>
-
-    <div v-if="error && !editorOpen" role="alert" class="kx-err">{{ error }}</div>
-    <div v-if="rolesError && !editorOpen" class="kx-err">{{ rolesError }}</div>
-
-    <div class="ku-body" role="tabpanel" :id="accountTab === 'bots' ? 'users-bots' : 'users-accounts'">
-      <div v-if="loading" class="kx-loading"><Icon icon="tabler:loader-2" class="spin" aria-hidden="true" /> Loading…</div>
-
-      <div v-else-if="!users.length" class="ku-empty kx-empty">
-        <div class="kx-empty-ico"><Icon :icon="accountTab === 'bots' ? 'tabler:robot' : 'tabler:users'" aria-hidden="true" /></div>
-        <div class="kx-empty-title">No {{ accountTab === 'bots' ? 'bots' : 'users' }} yet</div>
-        <div class="kx-empty-sub">{{ accountTab === 'bots' ? 'Create a bot account and choose its roles.' : 'Create your first user to grant access to the workspace.' }}</div>
-        <div class="kx-empty-actions">
+    <SystemTabs :value="accountTab" label="Account type" :items="[
+      { value: 'users', label: 'All users', controls: 'users-accounts' },
+      { value: 'bots', label: 'Bots', controls: 'users-bots' },
+    ]" @update:value="selectTab($event as 'users' | 'bots')" />
+    <div class="kx-system-pane">
+      <div class="kx-system-tools">
+        <div class="ku-bar kx-system-toolbar">
+          <span class="ku-count">{{ users.length }} {{ accountTab === 'bots' ? 'bot' : 'user' }}{{ users.length !== 1 ? 's' : '' }}</span>
           <Button type="button" :aria-label="accountTab === 'bots' ? 'Create bot' : 'Create user'" class="ku-btn-primary" :label="accountTab === 'bots' ? 'Create bot' : 'Create user'" @click="openCreate">
             <template #icon="{ class: iconClass }"><Icon icon="tabler:user-plus" :class="iconClass" aria-hidden="true" /></template>
           </Button>
         </div>
+
+        <div v-if="error && !editorOpen" role="alert" class="kx-err">{{ error }}</div>
+        <div v-if="rolesError && !editorOpen" class="kx-err">{{ rolesError }}</div>
+
+      </div>
+      <div class="ku-body kx-system-body" role="tabpanel" :id="accountTab === 'bots' ? 'users-bots' : 'users-accounts'">
+        <div v-if="loading" class="kx-loading"><Icon icon="tabler:loader-2" class="spin" aria-hidden="true" /> Loading…</div>
+
+        <EmptyState v-else-if="!users.length"
+          :icon="accountTab === 'bots' ? 'tabler:robot' : 'tabler:users'"
+          :title="accountTab === 'bots' ? 'No bots yet' : 'No users yet'"
+          :hint="accountTab === 'bots' ? 'Create a bot account and choose its roles.' : 'Create your first user to grant access to the workspace.'"
+          :cta="accountTab === 'bots' ? 'Create bot' : 'Create user'" cta-icon="tabler:user-plus" @cta="openCreate" />
+
+        <DataTable v-else :value="users" data-key="user_id" class="ku-list" :row-class="() => 'ku-row'"
+          :pt="{ table: { 'aria-label': accountTab === 'bots' ? 'Bots' : 'All users' } }">
+          <Column header="Account">
+            <template #body="{ data: user }">
+                  <div class="ku-account">
+                    <span class="ku-avatar">{{ initials(user) }}</span>
+                    <div class="ku-id">
+                      <div class="ku-name">{{ user.full_name || user.email }}</div>
+                      <div class="ku-email">{{ user.email }}</div>
+                    </div>
+                    <Tag v-if="user.bot_account" severity="info" value="Bot" class="ku-badge kx-tag-sm" />
+                  </div>
+            </template>
+          </Column>
+          <Column header="Status">
+            <template #body="{ data: user }"><Tag :severity="statusSeverity(user.status)" :value="user.status" class="ku-badge kx-tag-sm" /></template>
+          </Column>
+          <Column header="Roles">
+            <template #body="{ data: user }"><div class="ku-meta"><Tag v-for="g in user.security_groups" :key="g" :severity="groupSeverity(g)" :value="groupLabel(g)" class="ku-badge kx-tag-sm" /></div></template>
+          </Column>
+          <Column header="Created">
+            <template #body="{ data: user }"><span class="ku-date">{{ formatDate(user.created_at, { month: 'short', day: 'numeric', year: 'numeric' }) }}</span></template>
+          </Column>
+          <Column header="Actions">
+            <template #body="{ data: user }">
+                  <div class="ku-actions">
+                    <Button type="button" severity="secondary" outlined size="small" :aria-label="`Edit ${user.full_name || user.email}`" @click="openEdit(user)">
+                      <template #icon="{ class: iconClass }"><Icon icon="tabler:edit" :class="iconClass" aria-hidden="true" /></template>
+                    </Button>
+                    <Button type="button" severity="danger" outlined size="small" :aria-label="`${user.bot_account ? 'Disable' : 'Delete'} ${user.full_name || user.email}`" @click="askDelete(user)">
+                      <template #icon="{ class: iconClass }"><Icon icon="tabler:trash" :class="iconClass" aria-hidden="true" /></template>
+                    </Button>
+                  </div>
+            </template>
+          </Column>
+        </DataTable>
       </div>
 
-      <DataTable v-else :value="users" data-key="user_id" class="ku-list" :row-class="() => 'ku-row'"
-        :pt="{ table: { 'aria-label': accountTab === 'bots' ? 'Bots' : 'All users' } }">
-        <Column header="Account">
-          <template #body="{ data: user }">
-                <div class="ku-account">
-                  <span class="ku-avatar">{{ initials(user) }}</span>
-                  <div class="ku-id">
-                    <div class="ku-name">{{ user.full_name || user.email }}</div>
-                    <div class="ku-email">{{ user.email }}</div>
-                  </div>
-                  <Tag v-if="user.bot_account" severity="info" value="Bot" class="ku-badge kx-tag-sm" />
-                </div>
-          </template>
-        </Column>
-        <Column header="Status">
-          <template #body="{ data: user }"><Tag :severity="statusSeverity(user.status)" :value="user.status" class="ku-badge kx-tag-sm" /></template>
-        </Column>
-        <Column header="Roles">
-          <template #body="{ data: user }"><div class="ku-meta"><Tag v-for="g in user.security_groups" :key="g" :severity="groupSeverity(g)" :value="groupLabel(g)" class="ku-badge kx-tag-sm" /></div></template>
-        </Column>
-        <Column header="Created">
-          <template #body="{ data: user }"><span class="ku-date">{{ formatDate(user.created_at, { month: 'short', day: 'numeric', year: 'numeric' }) }}</span></template>
-        </Column>
-        <Column header="Actions">
-          <template #body="{ data: user }">
-                <div class="ku-actions">
-                  <Button type="button" severity="secondary" outlined size="small" :aria-label="`Edit ${user.full_name || user.email}`" @click="openEdit(user)">
-                    <template #icon="{ class: iconClass }"><Icon icon="tabler:edit" :class="iconClass" aria-hidden="true" /></template>
-                  </Button>
-                  <Button type="button" severity="danger" outlined size="small" :aria-label="`${user.bot_account ? 'Disable' : 'Delete'} ${user.full_name || user.email}`" @click="askDelete(user)">
-                    <template #icon="{ class: iconClass }"><Icon icon="tabler:trash" :class="iconClass" aria-hidden="true" /></template>
-                  </Button>
-                </div>
-          </template>
-        </Column>
-      </DataTable>
     </div>
-
     <Dialog v-model:visible="editorOpen" modal class="kx-dialog" :pt="DIALOG_PT" :aria-label="editorTitle">
       <template #header>
         <span class="kx-modal-head-icon"><Icon :icon="isBotForm ? 'tabler:robot' : 'tabler:user'" aria-hidden="true" /></span>
