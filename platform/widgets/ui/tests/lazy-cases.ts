@@ -41,13 +41,14 @@ function fixture(factory: (load: () => Promise<Component>) => WippyVueElementCon
   const pending = deferred<Component>()
   const load = vi.fn(() => pending.promise)
   const mounted = vi.fn()
+  const config = factory(load)
   const root = defineComponent(() => {
     onMounted(mounted)
     return () => h('button', 'Loaded content')
   })
   class Surface extends WippyVueElement {
     static get wippyConfig(): WippyElementConfig { return { propsSchema: { properties: {} }, hostCssKeys: [], customCss: false } }
-    static get vueConfig() { return factory(load) }
+    static get vueConfig() { return config }
   }
   customElements.define(`lazy-test-${crypto.randomUUID()}`, Surface)
   const element = new Surface()
@@ -126,16 +127,17 @@ export function lazyCases(factories: Record<string, (load: () => Promise<Compone
         f.resolve()
         await vi.advanceTimersByTimeAsync(0)
         expect(f.mounted).not.toHaveBeenCalled()
+        expect(f.error).not.toHaveBeenCalled()
       })
 
       it('loads on reconnect and mounts once', async () => {
         const f = fixture(factory)
         document.body.append(f.element)
+        expect(f.load).toHaveBeenCalledOnce()
         f.element.remove()
         document.body.append(f.element)
         f.resolve()
         await vi.advanceTimersByTimeAsync(0)
-        expect(f.load).toHaveBeenCalledTimes(2)
         expect(f.mounted).toHaveBeenCalledOnce()
         expect(f.element.shadowRoot?.textContent).toContain('Loaded content')
         expect(f.error).not.toHaveBeenCalled()
