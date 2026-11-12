@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.17](https://github.com/kicksideai/kickside/compare/agents-v0.2.16...agents-v0.2.17) (2026-11-12)
+
+
+### Bug Fixes
+
+* resolve assignment defaults and imported dependency APIs ([#437](https://github.com/kicksideai/kickside/issues/437)) ([89d16c3](https://github.com/kicksideai/kickside/commit/89d16c3b391318d79e5e194fc4b1062d0149a60c))
+
 ## [0.2.16](https://github.com/kicksideai/kickside/compare/agents-v0.2.15...agents-v0.2.16) (2026-11-10)
 
 

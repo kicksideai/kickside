@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.14](https://github.com/kicksideai/kickside/compare/workflows-v0.2.13...workflows-v0.2.14) (2026-11-12)
+
+
+### Bug Fixes
+
+* resolve assignment defaults and imported dependency APIs ([#437](https://github.com/kicksideai/kickside/issues/437)) ([89d16c3](https://github.com/kicksideai/kickside/commit/89d16c3b391318d79e5e194fc4b1062d0149a60c))
+
+## [0.2.13](https://github.com/kicksideai/kickside/compare/workflows-v0.2.12...workflows-v0.2.13) (2026-11-11)
+
+
+### Bug Fixes
+
+* enable hourly dataflow retention and declare unavailable step data ([#428](https://github.com/kicksideai/kickside/issues/428)) ([e3bda38](https://github.com/kicksideai/kickside/commit/e3bda38c315352fdec2b5c71abb629a007ac23a4))
+
 ## [0.2.12](https://github.com/kicksideai/kickside/compare/workflows-v0.2.11...workflows-v0.2.12) (2026-11-09)
 
 

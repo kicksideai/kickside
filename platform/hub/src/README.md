@@ -37,6 +37,10 @@ never version pins; Keeper resolves the current installable versions during
 review. Administrators can instead choose packages manually or ask the
 configured onboarding model to rank the same catalog allowlist.
 
+Profiles with `required: true` stay selected. Optional profiles with
+`selected: true` start selected and can be deselected before installation.
+Omitting `selected` leaves optional profiles unselected.
+
 Discovery uses the filtered registry list endpoint for profile IDs, then reads
 each full registry entry from the single-entry endpoint. This is deliberate: the
 list response is a summary (`id`, `kind`, `meta`) and does not expose entry data.

@@ -62,7 +62,7 @@ local function source_artifact_id(upload_id: string): string?
     return nil
 end
 
-local function store_page(params: any, page: any, fmt: string, source_id: string?, markdown_id: string?): ArtifactError?
+local function store_page(params: any, page: any, fmt: string, source_id: string?, markdown_id: string?, source_checksum: string?): ArtifactError?
     local page_no = tonumber(page.page) or 0
     local mime = format_mime(fmt)
     local name = "page_" .. tostring(page_no) .. "." .. (FORMAT_EXT[fmt] or "jpg")
@@ -88,6 +88,7 @@ local function store_page(params: any, page: any, fmt: string, source_id: string
         },
         locator = {
             type = "rasterize.page",
+            source_checksum = source_checksum,
             page = page_no,
             source_artifact_id = source_id,
             markdown_artifact_id = markdown_id,
@@ -142,13 +143,13 @@ end
 
 -- Probe the first failed batch page by page. If no page renders, report one
 -- document failure and stop; otherwise retain per-page failures and usable pages.
-local function render_pages(params: any, entry: any, ref: any, selected: { integer }, opts: any, source_id: string?, markdown_id: string?): (integer, { any }, string?)
+local function render_pages(params: any, entry: any, ref: any, selected: { integer }, opts: any, source_id: string?, markdown_id: string?, source_checksum: string?): (integer, { any }, string?)
     local rendered = 0
     local failures: { any } = {}
     local diagnosed = false
     local function store_all(pages: { any }): string?
         for _, p in ipairs(pages) do
-            local store_err = store_page(params, p, opts.format :: string, source_id, markdown_id)
+            local store_err = store_page(params, p, opts.format :: string, source_id, markdown_id, source_checksum)
             if store_err ~= nil then return tostring(store_err) end
             rendered = rendered + 1
         end
@@ -282,7 +283,9 @@ local function process(params: any): any
         quality = setting_int("rasterize_quality", 90),
     }
 
-    local rendered, failures, stage_err = render_pages(params, entry, ref, selected, opts, source_id, markdown_id)
+    local rendered, failures, stage_err = render_pages(params, entry, ref, selected, opts, source_id, markdown_id,
+        type(primary.artifact) == "table" and type(primary.artifact.locator) == "table"
+            and primary.artifact.locator.source_checksum or nil)
     if stage_err ~= nil then
         log:error("rasterize stage failed", { upload_id = upload_id, rendered = rendered, total = total, error = stage_err })
         return { success = false, error = "rasterize: " .. stage_err }

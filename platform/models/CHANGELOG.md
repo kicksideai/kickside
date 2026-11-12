@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.76](https://github.com/kicksideai/kickside/compare/models-v0.1.75...models-v0.1.76) (2026-11-12)
+
+
+### Bug Fixes
+
+* **models:** serialize cache reloads through publication ([#440](https://github.com/kicksideai/kickside/issues/440)) ([0ef3045](https://github.com/kicksideai/kickside/commit/0ef304577a2167c3ecaa9aea2f8f723095c0ca93))
+
 ## [0.1.75](https://github.com/kicksideai/kickside/compare/models-v0.1.74...models-v0.1.75) (2026-11-09)
 
 

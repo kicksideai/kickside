@@ -376,10 +376,11 @@ function Ft(o) {
       icon: se(t.icon, 100) || "tabler:packages",
       order: Number.isFinite(Number(t.order)) ? Number(t.order) : 500,
       required: t.required === !0,
+      selected: t.selected === !0,
       packages: Kt(t.packages)
     });
   }
-  l.sort((s, t) => be(s.id, t.id) || s.order - t.order || be(s.title, t.title) || be(s.description, t.description) || be(s.icon, t.icon) || Number(t.required) - Number(s.required) || be(
+  l.sort((s, t) => be(s.id, t.id) || s.order - t.order || be(s.title, t.title) || be(s.description, t.description) || be(s.icon, t.icon) || Number(t.required) - Number(s.required) || Number(t.selected) - Number(s.selected) || be(
     s.packages.map((a) => `${a.component}\0${a.title || ""}\0${JSON.stringify(a.parameters || [])}`).join(""),
     t.packages.map((a) => `${a.component}\0${a.title || ""}\0${JSON.stringify(a.parameters || [])}`).join("")
   ));
@@ -786,11 +787,11 @@ const Vt = { class: "obm" }, Ut = {
       error: f
     }), { searching: Y, recommendationNotice: Z, recommend: ve, matchCatalog: $e } = $, ze = R(() => !K.value && L.value.length === 0), Me = R(() => ke.value.some((U) => U.status === "failed")), We = R(() => K.value ? "Installing packages" : Me.value ? "Some packages need attention" : ie.value ? "Packages installed" : "Selected packages"), He = R(() => Me.value ? "Retry failed" : "Install selected"), xe = R(() => !y.value && !f.value && ze.value && (a.value || E.value.length > 0)), Ne = R(() => ie.value ? Math.round(ye.value / ie.value * 100) : 0), Je = R(() => K.value ? "Installation in progress…" : L.value.length ? "Install selected packages first" : E.value.length ? "Continue with this setup ›" : a.value ? O.value ? "Continue ›" : "Continue without installing ›" : "Choose capability bundles");
     function Ze() {
-      const U = [], c = /* @__PURE__ */ new Set();
-      for (const r of E.value)
-        for (const G of te(r).selected) {
+      const U = [], r = /* @__PURE__ */ new Set();
+      for (const c of E.value)
+        for (const G of te(c).selected) {
           const qe = A(G.component), Ee = qe ? ee(qe).trim() : G.component, Ke = Ee.toLowerCase();
-          !Ee || c.has(Ke) || (c.add(Ke), U.push(Ee));
+          !Ee || r.has(Ke) || (r.add(Ke), U.push(Ee));
         }
       return U;
     }
@@ -798,16 +799,16 @@ const Vt = { class: "obm" }, Ut = {
       L.value = Ze(), k();
     }
     function et() {
-      const U = g.value.filter((c) => c.required && ce(c)).map((c) => c.id);
+      const U = g.value.filter((r) => (r.required || r.selected) && ce(r)).map((r) => r.id);
       h.value = new Set(U), Le();
     }
     function tt(U) {
       if (K.value || !ce(U) || (a.value = !1, U.required)) return;
-      const c = new Set(h.value);
-      c.has(U.id) ? c.delete(U.id) : c.add(U.id), h.value = c, Le();
+      const r = new Set(h.value);
+      r.has(U.id) ? r.delete(U.id) : r.add(U.id), h.value = r, Le();
     }
     function De(U) {
-      K.value || (a.value = !0, m.value = U, Z.value = null, h.value = new Set(g.value.filter((c) => c.required).map((c) => c.id)), Le());
+      K.value || (a.value = !0, m.value = U, Z.value = null, h.value = new Set(g.value.filter((r) => r.required).map((r) => r.id)), Le());
     }
     function Be() {
       K.value || (a.value = !1, Z.value = null, Le());
@@ -817,15 +818,15 @@ const Vt = { class: "obm" }, Ut = {
     }
     function ot() {
       if (!xe.value) return;
-      const U = a.value && O.value === 0, c = E.value.map((r) => r.id);
+      const U = a.value && O.value === 0, r = E.value.map((c) => c.id);
       l("done", {
         status: U ? "skipped" : "completed",
         installed_count: O.value,
-        ...c.length === 1 ? { profile: c[0] } : {},
-        ...c.length ? { profiles: c } : {}
+        ...r.length === 1 ? { profile: r[0] } : {},
+        ...r.length ? { profiles: r } : {}
       });
     }
-    return at(re), it($.abort), (U, c) => (b(), v("div", Vt, [
+    return at(re), it($.abort), (U, r) => (b(), v("div", Vt, [
       e(f) ? (b(), v("div", Ut, [
         I(e(P), {
           icon: "tabler:alert-triangle",
@@ -834,7 +835,7 @@ const Vt = { class: "obm" }, Ut = {
         n("span", null, p(e(f)), 1),
         n("button", {
           type: "button",
-          onClick: c[0] || (c[0] = (r) => e(L).length ? e(_)() : e(re))
+          onClick: r[0] || (r[0] = (c) => e(L).length ? e(_)() : e(re))
         }, p(e(L).length ? "Retry failed" : "Try again"), 1)
       ])) : F("", !0),
       e(O) ? (b(), v("div", Xt, [
@@ -857,7 +858,7 @@ const Vt = { class: "obm" }, Ut = {
           class: "spin",
           "aria-hidden": "true"
         }),
-        c[11] || (c[11] = n("span", null, "Checking available modules…", -1))
+        r[11] || (r[11] = n("span", null, "Checking available modules…", -1))
       ])) : a.value ? (b(), v(fe, { key: 5 }, [
         n("div", Pn, [
           n("button", {
@@ -868,7 +869,7 @@ const Vt = { class: "obm" }, Ut = {
               icon: "tabler:arrow-left",
               "aria-hidden": "true"
             }),
-            c[18] || (c[18] = ue(" Profiles", -1))
+            r[18] || (r[18] = ue(" Profiles", -1))
           ]),
           n("h2", null, p(m.value === "recommend" ? "Recommend packages" : "Browse packages"), 1),
           m.value === "browse" ? (b(), v("span", Mn, p(e(N)) + " available", 1)) : F("", !0)
@@ -878,7 +879,7 @@ const Vt = { class: "obm" }, Ut = {
           class: "obm-prompt",
           "aria-busy": e(Y)
         }, [
-          c[19] || (c[19] = n("label", { for: "obm-need" }, "What should this workspace do?", -1)),
+          r[19] || (r[19] = n("label", { for: "obm-need" }, "What should this workspace do?", -1)),
           n("div", qn, [
             I(e(P), {
               icon: "tabler:sparkles",
@@ -886,11 +887,11 @@ const Vt = { class: "obm" }, Ut = {
             }),
             Fe(n("input", {
               id: "obm-need",
-              "onUpdate:modelValue": c[3] || (c[3] = (r) => s.value = r),
+              "onUpdate:modelValue": r[3] || (r[3] = (c) => s.value = c),
               placeholder: "For example: analyze sales data and create reports",
-              onKeydown: c[4] || (c[4] = lt(rt(
+              onKeydown: r[4] || (r[4] = lt(rt(
                 //@ts-ignore
-                (...r) => e(ve) && e(ve)(...r),
+                (...c) => e(ve) && e(ve)(...c),
                 ["prevent"]
               ), ["enter"]))
             }, null, 544), [
@@ -899,8 +900,8 @@ const Vt = { class: "obm" }, Ut = {
             n("button", {
               type: "button",
               disabled: e(Y) || e(Q).length === 0 || e(K),
-              onClick: c[5] || (c[5] = //@ts-ignore
-              (...r) => e(ve) && e(ve)(...r))
+              onClick: r[5] || (r[5] = //@ts-ignore
+              (...c) => e(ve) && e(ve)(...c))
             }, [
               I(e(P), {
                 icon: e(Y) ? "tabler:loader-2" : "tabler:sparkles",
@@ -910,7 +911,7 @@ const Vt = { class: "obm" }, Ut = {
               ue(" " + p(e(Y) ? "Finding packages…" : "Recommend packages"), 1)
             ], 8, En)
           ]),
-          c[20] || (c[20] = n("span", null, "AI chooses only from installable packages and adds them to your review list. Nothing installs until you confirm.", -1)),
+          r[20] || (r[20] = n("span", null, "AI chooses only from installable packages and adds them to your review list. Nothing installs until you confirm.", -1)),
           e(Z) ? (b(), v("div", {
             key: 0,
             class: he(["obm-recommendation-result", `is-${e(Z).tone}`]),
@@ -921,8 +922,8 @@ const Vt = { class: "obm" }, Ut = {
               key: 0,
               type: "button",
               disabled: e(K),
-              onClick: c[6] || (c[6] = //@ts-ignore
-              (...r) => e($e) && e($e)(...r))
+              onClick: r[6] || (r[6] = //@ts-ignore
+              (...c) => e($e) && e($e)(...c))
             }, "Match catalog instead", 8, Tn)) : F("", !0)
           ], 2)) : F("", !0)
         ], 8, Nn)) : (b(), v("div", Rn, [
@@ -931,7 +932,7 @@ const Vt = { class: "obm" }, Ut = {
             "aria-hidden": "true"
           }),
           Fe(n("input", {
-            "onUpdate:modelValue": c[7] || (c[7] = (r) => t.value = r),
+            "onUpdate:modelValue": r[7] || (r[7] = (c) => t.value = c),
             type: "search",
             placeholder: "Search packages",
             "aria-label": "Search available packages"
@@ -942,7 +943,7 @@ const Vt = { class: "obm" }, Ut = {
             key: 0,
             type: "button",
             "aria-label": "Clear package search",
-            onClick: c[8] || (c[8] = (r) => t.value = "")
+            onClick: r[8] || (r[8] = (c) => t.value = "")
           }, [
             I(e(P), {
               icon: "tabler:x",
@@ -952,84 +953,84 @@ const Vt = { class: "obm" }, Ut = {
         ]))
       ], 64)) : (b(), v("section", Ht, [
         n("div", Jt, [
-          c[12] || (c[12] = n("div", null, [
+          r[12] || (r[12] = n("div", null, [
             n("h2", { id: "obm-profile-title" }, "Choose capabilities"),
             n("p", null, "Your foundation is included. Add any capabilities you need, then review and install everything together.")
           ], -1)),
           e(C) ? (b(), v("span", Zt, p(e(C)) + " selected", 1)) : F("", !0)
         ]),
         e(x).length ? (b(), v("div", en, [
-          c[14] || (c[14] = n("div", { class: "obm-menu-label" }, [
+          r[14] || (r[14] = n("div", { class: "obm-menu-label" }, [
             n("span", null, "Included"),
             n("small", null, "Ready in every workspace")
           ], -1)),
           n("ul", tn, [
-            (b(!0), v(fe, null, ge(e(x), (r) => (b(), v("li", {
-              key: r.id
+            (b(!0), v(fe, null, ge(e(x), (c) => (b(), v("li", {
+              key: c.id
             }, [
               n("div", nn, [
                 n("span", on, [
                   I(e(P), {
-                    icon: r.icon,
+                    icon: c.icon,
                     "aria-hidden": "true"
                   }, null, 8, ["icon"])
                 ]),
                 n("span", sn, [
-                  n("span", an, p(r.title), 1),
-                  n("span", ln, p(r.description), 1),
+                  n("span", an, p(c.title), 1),
+                  n("span", ln, p(c.description), 1),
                   n("span", rn, [
                     I(e(P), {
                       icon: "tabler:packages",
                       "aria-hidden": "true"
                     }),
-                    ue(" " + p(e(V)(r)), 1)
+                    ue(" " + p(e(V)(c)), 1)
                   ]),
-                  e(te)(r).unavailable.length ? (b(), v("span", cn, p(e(te)(r).unavailable.length) + " package" + p(e(te)(r).unavailable.length === 1 ? "" : "s") + " unavailable in this catalog ", 1)) : F("", !0)
+                  e(te)(c).unavailable.length ? (b(), v("span", cn, p(e(te)(c).unavailable.length) + " package" + p(e(te)(c).unavailable.length === 1 ? "" : "s") + " unavailable in this catalog ", 1)) : F("", !0)
                 ]),
-                c[13] || (c[13] = n("span", { class: "obm-profile-state is-included" }, "Included", -1))
+                r[13] || (r[13] = n("span", { class: "obm-profile-state is-included" }, "Included", -1))
               ])
             ]))), 128))
           ])
         ])) : F("", !0),
         e(w).length ? (b(), v("div", un, [
-          c[15] || (c[15] = n("div", { class: "obm-menu-label" }, [
+          r[15] || (r[15] = n("div", { class: "obm-menu-label" }, [
             n("span", null, "Add capabilities"),
             n("small", null, "Choose as many as you need")
           ], -1)),
           n("ul", dn, [
-            (b(!0), v(fe, null, ge(e(w), (r) => (b(), v("li", {
-              key: r.id
+            (b(!0), v(fe, null, ge(e(w), (c) => (b(), v("li", {
+              key: c.id
             }, [
               n("button", {
                 type: "button",
-                class: he(["obm-profile-card", { selected: e(h).has(r.id) }]),
-                disabled: e(K) || !e(ce)(r),
-                "aria-pressed": e(h).has(r.id),
-                onClick: (G) => tt(r)
+                class: he(["obm-profile-card", { selected: e(h).has(c.id) }]),
+                disabled: e(K) || !e(ce)(c),
+                "aria-pressed": e(h).has(c.id),
+                onClick: (G) => tt(c)
               }, [
                 n("span", pn, [
                   I(e(P), {
-                    icon: r.icon,
+                    icon: c.icon,
                     "aria-hidden": "true"
                   }, null, 8, ["icon"])
                 ]),
                 n("span", fn, [
-                  n("span", bn, p(r.title), 1),
-                  n("span", vn, p(r.description), 1),
+                  n("span", bn, p(c.title), 1),
+                  n("span", vn, p(c.description), 1),
                   n("span", gn, [
                     I(e(P), {
                       icon: "tabler:packages",
                       "aria-hidden": "true"
                     }),
-                    ue(" " + p(e(V)(r)), 1)
+                    ue(" " + p(e(V)(c)), 1)
                   ]),
-                  e(te)(r).unavailable.length ? (b(), v("span", hn, p(e(te)(r).unavailable.length) + " package" + p(e(te)(r).unavailable.length === 1 ? "" : "s") + " unavailable in this catalog ", 1)) : F("", !0)
+                  e(te)(c).unavailable.length ? (b(), v("span", hn, p(e(te)(c).unavailable.length) + " package" + p(e(te)(c).unavailable.length === 1 ? "" : "s") + " unavailable in this catalog ", 1)) : F("", !0)
                 ]),
                 n("span", yn, [
                   I(e(P), {
-                    icon: e(h).has(r.id) ? "tabler:circle-check-filled" : "tabler:circle-plus"
+                    icon: e(h).has(c.id) ? "tabler:circle-check-filled" : "tabler:circle-plus"
                   }, null, 8, ["icon"]),
-                  ue(" " + p(e(h).has(r.id) ? "Selected" : "Add"), 1)
+                  ue(" " + p(e(h).has(c.id) ? "Selected" : "Add"), 1)
                 ])
               ], 10, mn)
             ]))), 128))
@@ -1042,7 +1043,7 @@ const Vt = { class: "obm" }, Ut = {
                 type: "button",
                 class: "obm-profile-card custom",
                 disabled: e(K),
-                onClick: c[1] || (c[1] = (r) => De("recommend"))
+                onClick: r[1] || (r[1] = (c) => De("recommend"))
               }, [
                 n("span", Cn, [
                   I(e(P), {
@@ -1050,7 +1051,7 @@ const Vt = { class: "obm" }, Ut = {
                     "aria-hidden": "true"
                   })
                 ]),
-                c[16] || (c[16] = n("span", { class: "obm-profile-copy" }, [
+                r[16] || (r[16] = n("span", { class: "obm-profile-copy" }, [
                   n("span", { class: "obm-profile-title" }, "Recommend packages"),
                   n("span", { class: "obm-profile-description" }, "Describe what you need and let AI prepare a package shortlist for review.")
                 ], -1)),
@@ -1064,7 +1065,7 @@ const Vt = { class: "obm" }, Ut = {
                 type: "button",
                 class: "obm-profile-card custom",
                 disabled: e(K),
-                onClick: c[2] || (c[2] = (r) => De("browse"))
+                onClick: r[2] || (r[2] = (c) => De("browse"))
               }, [
                 n("span", Ln, [
                   I(e(P), {
@@ -1072,7 +1073,7 @@ const Vt = { class: "obm" }, Ut = {
                     "aria-hidden": "true"
                   })
                 ]),
-                c[17] || (c[17] = n("span", { class: "obm-profile-copy" }, [
+                r[17] || (r[17] = n("span", { class: "obm-profile-copy" }, [
                   n("span", { class: "obm-profile-title" }, "Browse packages"),
                   n("span", { class: "obm-profile-description" }, "Search the installable catalog and add packages directly to your review.")
                 ], -1)),
@@ -1085,20 +1086,20 @@ const Vt = { class: "obm" }, Ut = {
         ])
       ])),
       a.value && m.value === "browse" && !e(y) && e(le).length ? (b(), v("div", On, [
-        (b(!0), v(fe, null, ge(e(le), (r) => (b(), v("section", {
-          key: r.id,
+        (b(!0), v(fe, null, ge(e(le), (c) => (b(), v("section", {
+          key: c.id,
           class: "obm-group"
         }, [
           n("div", $n, [
             I(e(P), {
-              icon: r.private ? "tabler:lock" : r.id === "official" ? "tabler:rosette-discount-check" : "tabler:packages",
+              icon: c.private ? "tabler:lock" : c.id === "official" ? "tabler:rosette-discount-check" : "tabler:packages",
               "aria-hidden": "true"
             }, null, 8, ["icon"]),
-            n("h2", null, p(r.title), 1),
-            n("span", null, p(r.modules.length), 1)
+            n("h2", null, p(c.title), 1),
+            n("span", null, p(c.modules.length), 1)
           ]),
           n("ul", zn, [
-            (b(!0), v(fe, null, ge(r.modules, (G) => (b(), v("li", {
+            (b(!0), v(fe, null, ge(c.modules, (G) => (b(), v("li", {
               key: e(ee)(G),
               class: "obm-package-row",
               style: je({ "--module-accent": e(bt)(G) })
@@ -1145,7 +1146,7 @@ const Vt = { class: "obm" }, Ut = {
       e(L).length && !e(K) && !e(ie) ? (b(), v("section", Gn, [
         n("div", Vn, [
           n("div", null, [
-            c[21] || (c[21] = n("h2", { id: "obm-selection-title" }, "Review your setup", -1)),
+            r[21] || (r[21] = n("h2", { id: "obm-selection-title" }, "Review your setup", -1)),
             n("span", null, p(e(L).length) + " package" + p(e(L).length === 1 ? "" : "s") + " ready to install", 1)
           ]),
           I(e(P), {
@@ -1154,24 +1155,24 @@ const Vt = { class: "obm" }, Ut = {
           })
         ]),
         n("ul", Un, [
-          (b(!0), v(fe, null, ge(e(L), (r) => (b(), v("li", { key: r }, [
+          (b(!0), v(fe, null, ge(e(L), (c) => (b(), v("li", { key: c }, [
             I(e(P), {
               icon: "tabler:package",
               "aria-hidden": "true"
             }),
             n("span", null, [
-              n("strong", null, p(e(T)(r)), 1),
-              n("small", null, p(r), 1)
+              n("strong", null, p(e(T)(c)), 1),
+              n("small", null, p(c), 1)
             ])
           ]))), 128))
         ]),
         n("div", Xn, [
-          c[22] || (c[22] = n("span", null, "Nothing installs until you confirm.", -1)),
+          r[22] || (r[22] = n("span", null, "Nothing installs until you confirm.", -1)),
           n("button", {
             type: "button",
             class: "obm-queue-retry",
-            onClick: c[9] || (c[9] = //@ts-ignore
-            (...r) => e(_) && e(_)(...r))
+            onClick: r[9] || (r[9] = //@ts-ignore
+            (...c) => e(_) && e(_)(...c))
           }, [
             I(e(P), {
               icon: "tabler:download",
@@ -1201,29 +1202,29 @@ const Vt = { class: "obm" }, Ut = {
           }, null, 4)
         ], 8, Jn),
         n("ul", Zn, [
-          (b(!0), v(fe, null, ge(e(ke).length ? e(ke) : e(L).map((r) => ({ component: r, label: e(T)(r), status: "pending", message: void 0 })), (r) => (b(), v("li", {
-            key: r.component,
-            class: he(`is-${r.status}`)
+          (b(!0), v(fe, null, ge(e(ke).length ? e(ke) : e(L).map((c) => ({ component: c, label: e(T)(c), status: "pending", message: void 0 })), (c) => (b(), v("li", {
+            key: c.component,
+            class: he(`is-${c.status}`)
           }, [
             I(e(P), {
-              icon: r.status === "installed" ? "tabler:circle-check-filled" : r.status === "installing" ? "tabler:loader-2" : r.status === "failed" ? "tabler:alert-circle" : "tabler:clock",
-              class: he({ spin: r.status === "installing" }),
+              icon: c.status === "installed" ? "tabler:circle-check-filled" : c.status === "installing" ? "tabler:loader-2" : c.status === "failed" ? "tabler:alert-circle" : "tabler:clock",
+              class: he({ spin: c.status === "installing" }),
               "aria-hidden": "true"
             }, null, 8, ["icon", "class"]),
             n("span", null, [
-              n("strong", null, p(r.label), 1),
-              n("small", null, p(r.component), 1),
-              r.message ? (b(), v("small", eo, p(r.message), 1)) : F("", !0)
+              n("strong", null, p(c.label), 1),
+              n("small", null, p(c.component), 1),
+              c.message ? (b(), v("small", eo, p(c.message), 1)) : F("", !0)
             ]),
-            n("em", null, p(r.status), 1)
+            n("em", null, p(c.status), 1)
           ], 2))), 128))
         ]),
         e(L).length && !e(K) ? (b(), v("button", {
           key: 0,
           type: "button",
           class: "obm-queue-retry",
-          onClick: c[10] || (c[10] = //@ts-ignore
-          (...r) => e(_) && e(_)(...r))
+          onClick: r[10] || (r[10] = //@ts-ignore
+          (...c) => e(_) && e(_)(...c))
         }, [
           I(e(P), {
             icon: Me.value ? "tabler:refresh" : "tabler:download",
@@ -1238,7 +1239,7 @@ const Vt = { class: "obm" }, Ut = {
           class: "obm-back",
           onClick: nt
         }, "‹ " + p(a.value ? "Profiles" : "Back"), 1),
-        c[23] || (c[23] = n("span", null, null, -1)),
+        r[23] || (r[23] = n("span", null, null, -1)),
         ze.value ? (b(), v("button", {
           key: 0,
           type: "button",
@@ -1253,4 +1254,4 @@ const Vt = { class: "obm" }, Ut = {
 export {
   ro as default
 };
-//# sourceMappingURL=OnboardRecommendations-IVfpor_r.js.map
+//# sourceMappingURL=OnboardRecommendations-CrTbH_xQ.js.map

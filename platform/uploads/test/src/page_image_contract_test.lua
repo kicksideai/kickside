@@ -1,0 +1,170 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+local test = require("test")
+local contract = require("contract")
+local security = require("security")
+local uuid = require("uuid")
+local fs = require("fs")
+local hash = require("hash")
+local funcs = require("funcs")
+local records = require("records")
+local content = require("content")
+local parts = require("parts")
+local cleanup = require("cleanup")
+local fixtures = require("fixtures")
+local types = require("types")
+local image_validation = require("image_validation")
+
+local function open(actor)
+    local definition, err = contract.get("kickside.uploads:page_images")
+    test.is_nil(err, tostring(err)); test.not_nil(definition)
+    return assert(definition:with_actor(security.new_actor(actor, {security_groups = {"app:uploads_test"}}))
+        :with_scope(security.named_scope("wippy.security:process")):open("kickside.uploads:page_images_impl"))
+end
+
+return {run = test.run_cases(function()
+    test.describe("Published upload page images", function()
+        local owner, upload_id, storage
+        local function seed(mime, metadata)
+            assert(records.create(upload_id, owner, #fixtures.pdf, mime, "app:uploads", upload_id,
+                "documents", metadata or {}, "completed"))
+            local source = assert(content.create_artifact({upload_id = upload_id, kind = "file", role = "source",
+                checksum = assert(hash.sha256(fixtures.pdf)), mime_type = mime,
+                locator = {type = "upload.original", storage_id = "app:uploads", storage_path = upload_id}}))
+            return assert(content.create_artifact({upload_id = upload_id, kind = "markdown", role = "primary",
+                mime_type = "text/markdown", content = "Text layer with adequate page text", storage_id = "app:uploads",
+                parent_artifact_id = source.artifact_id,
+                locator = {type = "document.markdown", source_checksum = assert(hash.sha256(fixtures.pdf))}}))
+        end
+        test.before_each(function()
+            owner, upload_id = uuid.v4(), uuid.v4()
+            local registered = assert(funcs.new():with_actor(security.new_actor(owner, {security_groups = {"app:uploads_test"}}))
+                :with_scope(security.named_scope("wippy.security:process")):call("kickside.component.binding:register_component_func",
+                    {component_id = types.component_id_for_owner(owner), impl_id = types.IMPL, meta = {}}))
+            test.is_true(registered.success, registered.error)
+            storage = assert(fs.get("app:uploads"))
+            assert(storage:writefile(upload_id, fixtures.pdf))
+        end)
+        test.after_each(function()
+            assert(cleanup.delete_for_upload(upload_id))
+            assert(storage:remove(upload_id))
+            local destination = assert(fs.get("app:other_uploads"))
+            if destination:exists(upload_id) then assert(destination:remove(upload_id)) end
+        end)
+        test.it("counts and renders an absent page through the installed PDF renderer without persisting images", function()
+            local primary = seed("application/pdf")
+            local pages = open(owner)
+            local info, err = pages:get_info({upload_id = upload_id})
+            test.is_nil(err, tostring(err)); test.eq(info.page_count, 2)
+            test.eq(info.state, "paged"); test.eq(info.pages[1].state, "renderable")
+            test.eq(info.text.artifact_id, primary.artifact_id)
+            local image, image_err = pages:read_image({upload_id = upload_id, page = 2, revision = info.revision})
+            test.is_nil(image_err, tostring(image_err)); test.eq(image.page, 2)
+            test.eq(image.revision, info.revision); test.eq(image.mime_type, "image/jpeg")
+            test.eq(image.size, #image.bytes); test.is_true(image.width > 0 and image.height > 0)
+            test.eq(image.image_checksum, assert(hash.sha256(image.bytes)))
+            test.eq(#assert(parts.list_artifacts(upload_id)), 2)
+        end)
+        test.it("preserves the installed PDF adapter classification or its documented legacy mapping", function()
+            local bytes = "corrupt PDF"
+            assert(storage:writefile(upload_id, bytes))
+            assert(records.create(upload_id, owner, #bytes, "application/pdf", "app:uploads", upload_id, "documents", {}, "completed"))
+            assert(content.create_artifact({upload_id = upload_id, kind = "file", role = "source",
+                checksum = assert(hash.sha256(bytes)), mime_type = "application/pdf",
+                locator = {type = "upload.original", storage_id = "app:uploads", storage_path = upload_id}}))
+            local info, err = open(owner):get_info({upload_id = upload_id})
+            local adapter = assert(funcs.call("kickside.convert.pdf2image:rasterize", {ref = {bytes = bytes}, count_only = true}))
+            test.not_nil(adapter.err)
+            local classified = adapter.err.kind ~= nil
+            test.is_nil(info); test.eq(err:kind(), adapter.err.kind or errors.UNAVAILABLE)
+            test.eq(err:retryable(), not classified or adapter.err.retryable)
+            test.eq(err:details().code, adapter.err.code or "page_render_failed")
+        end)
+        test.it("reads a relocated source through the uploads storage adapter", function()
+            seed("application/pdf")
+            local destination = assert(fs.get("app:other_uploads"))
+            assert(destination:writefile(upload_id, fixtures.pdf))
+            assert(records.update_storage(upload_id, "app:uploads", "fs://app:other_uploads/" .. upload_id))
+            local api = open(owner)
+            local info, info_err = api:get_info({upload_id = upload_id})
+            test.is_nil(info_err, tostring(info_err))
+            local image = assert(api:read_image({upload_id = upload_id, page = 1, revision = info.revision}))
+            test.eq(image.mime_type, "image/jpeg")
+        end)
+        test.it("records the converted source checksum in text provenance", function()
+            assert(records.create(upload_id, owner, #fixtures.pdf, "application/pdf", "app:uploads", upload_id,
+                "documents", {}, "completed"))
+            local result, err = funcs.new():with_actor(security.new_actor(owner, {security_groups = {"app:uploads_test"}}))
+                :with_scope(security.named_scope("wippy.security:process")):call("kickside.uploads.documents:processor",
+                    {upload_id = upload_id, mime_type = "application/pdf", storage_id = "app:uploads", storage_path = upload_id})
+            test.is_nil(err, tostring(err)); test.not_nil(result)
+            local artifacts = assert(parts.list_artifacts(upload_id))
+            local found = false
+            for _, artifact in ipairs(artifacts) do
+                if artifact.locator.type == "document.markdown" and artifact.locator.source_artifact_id then
+                    test.eq(artifact.locator.source_checksum, assert(hash.sha256(fixtures.pdf))); found = true
+                end
+            end
+            test.is_true(found)
+            local api = assert(funcs.new():with_actor(security.new_actor(owner, {security_groups = {"app:uploads_test"}}))
+                :with_scope(security.named_scope("wippy.security:process")):with_context({upload_id = upload_id})
+                :call("app:upload_artifacts_probe", {}))
+            test.eq(api.status, 200)
+            local locator = api.body.primary.locator
+            test.eq(locator.type, "document.markdown")
+            test.not_nil(locator.source_artifact_id)
+            test.eq(locator.source_checksum, assert(hash.sha256(fixtures.pdf)))
+            local keys = 0
+            for _ in pairs(locator) do keys = keys + 1 end
+            test.eq(keys, 3)
+        end)
+        test.it("reuses a renderer artifact only when its source checksum is recorded", function()
+            local primary = seed("application/pdf")
+            assert(content.update_content(upload_id, primary.artifact_id, "<!-- page 1 -->\n\n<!-- page 2 -->", {storage_id = "app:uploads"}))
+            local result, err = funcs.new():with_actor(security.new_actor(owner, {security_groups = {"app:uploads_test"}}))
+                :with_scope(security.named_scope("wippy.security:process")):call("kickside.uploads.rasterize:stage",
+                    {upload_id = upload_id, mime_type = "application/pdf", storage_id = "app:uploads", storage_path = upload_id, size = #fixtures.pdf})
+            test.is_nil(err, tostring(err)); test.is_true(result.success)
+            local api = open(owner)
+            local info = assert(api:get_info({upload_id = upload_id}))
+            test.eq(info.pages[1].state, "available")
+            local image = assert(api:read_image({upload_id = upload_id, page = 1, revision = info.revision}))
+            test.eq(image.mime_type, "image/jpeg")
+        end)
+        test.it("rejects a changed text revision and limits before returning image bytes", function()
+            test.eq(assert(image_validation.limits({max_bytes = 1})).max_bytes, 1)
+            local primary = seed("application/pdf")
+            local pages = open(owner)
+            local info = assert(pages:get_info({upload_id = upload_id}))
+            local image, err = pages:read_image({upload_id = upload_id, page = 1, revision = info.revision, max_bytes = 1})
+            test.is_nil(image ~= nil and "image returned" or nil); test.eq(err:details().code, "page_image_limit_exceeded")
+            assert(content.update_content(upload_id, primary.artifact_id, "new text", {storage_id = "app:uploads"}))
+            local stale, stale_err = pages:read_image({upload_id = upload_id, page = 1, revision = info.revision})
+            test.is_nil(stale ~= nil and "image returned" or nil); test.eq(stale_err:details().code, "revision_mismatch")
+        end)
+        for _, mime in ipairs({"text/plain", "application/json", "image/png", "application/zip", "audio/mpeg", "application/postscript", "application/msword"}) do
+            test.it("returns a typed paging answer for " .. mime, function()
+                seed(mime)
+                local state = (mime == "application/postscript" or mime == "application/msword") and "unsupported" or "not_paged"
+                local api = open(owner)
+                test.eq(assert(api:get_info({upload_id = upload_id})).state, state)
+                local image, err = api:read_image({upload_id = upload_id, page = 1, revision = "unused"})
+                test.is_nil(image); test.eq(err:details().code, state)
+            end)
+        end
+        test.it("does not infer a child page mapping from parent metadata", function()
+            seed("application/pdf", {parent_upload_id = uuid.v4(), first_page = 1, last_page = 2})
+            local api = open(owner)
+            test.eq(assert(api:get_info({upload_id = upload_id})).state, "page_mapping_unavailable")
+            local image, err = api:read_image({upload_id = upload_id, page = 1, revision = "forged"})
+            test.is_nil(image); test.eq(err:details().code, "page_mapping_unavailable")
+        end)
+        test.it("denies unreadable and missing uploads identically", function()
+            seed("application/pdf")
+            local pages = open(uuid.v4())
+            local info, denied = pages:get_info({upload_id = upload_id})
+            local missing, absent = pages:get_info({upload_id = uuid.v4()})
+            test.is_nil(info); test.is_nil(missing)
+            test.eq(denied:kind(), absent:kind()); test.eq(denied:details().code, absent:details().code)
+        end)
+    end)
+end)}

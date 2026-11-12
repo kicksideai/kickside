@@ -4,7 +4,7 @@ import { a as r, s } from "./styles-DWmFMkWO.js";
 import "@iconify/vue";
 import { define as i } from "@wippy-fe/proxy";
 const m = r(
-  () => import("./OnboardRecommendations-IVfpor_r.js"),
+  () => import("./OnboardRecommendations-CrTbH_xQ.js"),
   { loading: "Loading module recommendations…", failed: "Could not load module recommendations. Reload the page to try again." },
   t
 );

@@ -118,6 +118,10 @@ const hasData = computed(() => {
   const i = inspection.value
   return !!i && (i.input != null || i.output != null || i.error != null || i.agentActions.length > 0)
 })
+const dataUnavailable = computed(() => inspection.value?.dataUnavailable || (
+  props.run.step_data_retention_days != null && ['completed', 'failed', 'cancelled', 'terminated'].includes(props.run.status)
+  && inspection.value?.input == null && inspection.value?.output == null
+))
 const showOutput = computed(() => inspection.value?.output != null)
 const versionBadge = computed(() => runVersionBadge(props.run.flow_ref?.version ?? 0))
 const section = ref<'overview' | 'timeline'>('overview')
@@ -204,6 +208,7 @@ async function downloadExport() {
           />
         </div>
 
+        <Message v-if="dataUnavailable" severity="info" :closable="false">Step data is no longer available<span v-if="run.step_data_retention_days != null">. Step data is kept for {{ run.step_data_retention_days }} days.</span></Message>
         <RunPayload v-if="inspection.input != null" :value="inspection.input" label="Input" icon="tabler:login-2" />
         <RunPayload v-if="showOutput" :value="inspection.output" label="Output" icon="tabler:logout-2" />
 
@@ -225,7 +230,7 @@ async function downloadExport() {
           </div>
         </section>
 
-        <p v-if="!hasData" class="wf-panel-hint">This step recorded no input or output in this run.</p>
+        <p v-if="!hasData && !dataUnavailable" class="wf-panel-hint">This step recorded no input or output in this run.</p>
       </template>
     </template>
   </aside>

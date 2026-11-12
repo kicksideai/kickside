@@ -7,7 +7,7 @@ import { Icon as H } from "@iconify/vue";
 import { _ as ue } from "./WcMount.vue_vue_type_script_setup_true_lang-CNWT59Oh.js";
 import { S as ie } from "./WorkflowSearchList.vue_vue_type_script_setup_true_lang-1g5-myn1.js";
 import { api as ce } from "@wippy-fe/proxy";
-import { x as de } from "./http-error-4TebKSwQ.js";
+import { x as de } from "./http-error-hXuGxpYD.js";
 function T(s) {
   const o = s.trim();
   if (!o) return { value: null, error: "" };

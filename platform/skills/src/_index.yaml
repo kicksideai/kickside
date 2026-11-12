@@ -18,7 +18,7 @@ entries:
       comment: Reusable agent procedures — a skill is a component plus a versioned markdown body, kept as thread events folded by a projection (no table); bundled files live in the skill filesystem. Ships a CRUD/share API and the Skills agent capability (dual-mode Skill tool + pin-by-context build func) that agents discover via the registry. Permission-agnostic; access is enforced upstream by the component service.
 
   - name: dep.kickside.component
-    version: '*'
+    version: '>=0.3.12'
     kind: ns.dependency
     component: kickside/component
 

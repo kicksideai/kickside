@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.74](https://github.com/kicksideai/kickside/compare/hub-v0.1.73...hub-v0.1.74) (2026-11-12)
+
+
+### Bug Fixes
+
+* **app:** preselect MCP access during onboarding ([#435](https://github.com/kicksideai/kickside/issues/435)) ([52d7ae3](https://github.com/kicksideai/kickside/commit/52d7ae349886a02571d8d6b86e6077c36b51bf6a))
+
 ## [0.1.73](https://github.com/kicksideai/kickside/compare/hub-v0.1.72...hub-v0.1.73) (2026-11-09)
 
 

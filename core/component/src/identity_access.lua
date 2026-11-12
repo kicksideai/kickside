@@ -51,7 +51,7 @@ local function validate_identity_authorizer_admin(component_id: string, principa
         return false, (errors.new({ message = "component database unavailable", kind = errors.UNAVAILABLE }) :: error)
     end
     local allowed, access_err = access_ops.check_user_access(db, principal.id, component_id,
-        ACCESS.ADMIN, subjects, nil, true)
+        ACCESS.ADMIN, subjects, nil, true, true)
     local final_err = release_db(db, access_err)
     if final_err then return false, final_err end
     return allowed, nil
@@ -107,7 +107,7 @@ local function validate_principal_access(component_id: string, required_mask: in
             details = { error_kind = "infrastructure" } }) :: error)
     end
     local allowed, access_err = access_ops.check_user_access(db, principal.id, component_id,
-        normalized :: integer, subjects, prefixes, true)
+        normalized :: integer, subjects, prefixes, true, true)
     local final_err = release_db(db, access_err)
     if final_err then return false, final_err end
     return allowed, nil

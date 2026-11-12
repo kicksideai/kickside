@@ -24,6 +24,7 @@ exports[`RunNodeOutput — real failed-agent run > matches the captured drawer s
     <!--v-if-->
     <p class="wf-run-fail-note">No further detail was recorded for this failure. Re-run with the same input to try again, or open the step to adjust it.</p>
   </div>
+  <!--v-if-->
   <div class="p-panel p-component p-panel-toggleable wf-payload" data-p="toggleable" data-pc-name="panel" pc13="" data-pc-section="root">
     <div class="p-panel-header" data-p="toggleable" data-pc-section="header"><span class="wf-payload-title"><i class="ic" data-icon="tabler:login-2" aria-hidden="true"></i><span>Input</span></span>
       <div class="p-panel-header-actions" data-pc-section="headeractions"><button class="p-button p-component p-button-secondary p-button-outlined p-button-sm wf-payload-copy" data-p="small outlined" type="button" data-pc-name="button" data-p-disabled="false" data-p-severity="secondary" title="Copy to clipboard" pc14="" data-pc-section="root"><i class="ic" data-icon="tabler:copy" aria-hidden="true"></i><span>Copy</span></button><button class="p-button p-component p-button-icon-only p-button-secondary p-button-rounded p-button-text p-panel-toggle-button" data-p="icon-only rounded text" type="button" data-pc-name="pctogglebutton" data-p-disabled="false" data-p-severity="secondary" id="pv_id_13_header" aria-controls="pv_id_13_content" aria-expanded="true" data-pc-extend="button" pc15="" data-pc-section="root"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg" class="p-icon p-button-icon" aria-hidden="true">

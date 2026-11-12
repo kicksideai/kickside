@@ -3,6 +3,9 @@
 -- exposes only the fields the workflow inspector can safely correlate, redacting
 -- secret-shaped values before an export or timeline can leave the module.
 local runs_read = require("runs_read")
+local runs_completion = require("runs_completion")
+local env = require("env")
+local registry = require("registry")
 local function attach(M: any, I: any): ()
 type Map = { [string]: any }
 
@@ -85,6 +88,18 @@ function M.debug_detail(workflow_id: any, run_id: any): (Map?, error?)
     local run, rerr, has_engine = I.read_run(workflow_id, run_id)
     if rerr then return nil, rerr end
     if not run then return nil, nil end
+    local service, service_err = registry.get("userspace.dataflow.retention:service")
+    if service_err then return nil, service_err end
+    if not service then return nil, errors.new({ kind = errors.INTERNAL, message = "dataflow retention service configuration is unavailable" }) end
+    if service.data.lifecycle.auto_start then
+        local value, setting_err = env.get("userspace.dataflow.env:diagnostic_retention_days")
+        if setting_err then return nil, setting_err end
+        local days = tonumber(value)
+        if not days or days < 0 or days > 36500 or days % 1 ~= 0 then
+            return nil, errors.new({ kind = errors.INTERNAL, message = "invalid dataflow diagnostic retention window" })
+        end
+        if days > 0 then run.step_data_retention_days = days end
+    end
     local snapshot, serr, input, error_routed = engine_snapshot(run :: Map, has_engine)
     if serr then return nil, serr end
     local execution: Map = {
@@ -128,6 +143,12 @@ function M.run_export(workflow_id: any, run_id: any): (Map?, error?)
     if err or not detail then return detail, err end
     local d = detail :: Map
     local raw = type(d.snapshot) == "table" and (d.snapshot :: Map) or {}
+    local resolved = safe_copy(raw.data or {})
+    local hydrate_err = runs_completion.hydrate_step_outputs(d.run, resolved, I.data_reader())
+    if hydrate_err then return nil, hydrate_err end
+    for i, row in ipairs(resolved) do
+        if row.data_unavailable then raw.data[i].data_unavailable = true; raw.data[i].content = nil end
+    end
     return {
         schema_version = 1,
         kind = "flow_run_export",

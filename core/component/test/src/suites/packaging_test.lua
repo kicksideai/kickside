@@ -99,6 +99,14 @@ local function define_tests()
                     trim(m.id) .. " binds unresolved target_db '" .. target .. "'")
             end
         end)
+
+        test.it("requires the Jobs runtime policy used by the deletion worker", function()
+            local dependency = registry.get("kickside.component:dep.kickside.jobs")
+            test.not_nil(dependency)
+            local data = (dependency :: any).data or dependency
+            test.eq(data.component, "kickside/jobs")
+            test.eq(data.version, ">=0.1.70")
+        end)
     end)
 end
 
