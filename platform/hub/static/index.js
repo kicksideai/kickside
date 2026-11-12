@@ -5328,13 +5328,13 @@ const ai = /* @__PURE__ */ nn({
       i.value && z.includes(i.value) || n.anchor && z.includes(n.anchor) || s("update:open", !1);
     }
     function R(N) {
-      n.open && N.key === "Escape" && s("update:open", !1);
+      !n.open || N.key !== "Escape" || (N.preventDefault(), N.stopImmediatePropagation(), s("update:open", !1));
     }
     function T() {
       n.open && p();
     }
-    return document.addEventListener("click", E), document.addEventListener("keydown", R), window.addEventListener("resize", T), window.addEventListener("scroll", T, !0), Uo(() => {
-      _(), document.removeEventListener("click", E), document.removeEventListener("keydown", R), window.removeEventListener("resize", T), window.removeEventListener("scroll", T, !0);
+    return document.addEventListener("click", E), document.addEventListener("keydown", R, !0), window.addEventListener("resize", T), window.addEventListener("scroll", T, !0), Uo(() => {
+      _(), document.removeEventListener("click", E), document.removeEventListener("keydown", R, !0), window.removeEventListener("resize", T), window.removeEventListener("scroll", T, !0);
     }), (N, z) => e.open ? (a(), u("div", {
       key: 0,
       ref_key: "panel",
