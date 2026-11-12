@@ -2,6 +2,11 @@ version: "1.0"
 namespace: kickside.settings
 
 entries:
+  - name: dep.kickside.contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: '*'
+
   - name: definition
     kind: ns.definition
     readme: file://README.md
