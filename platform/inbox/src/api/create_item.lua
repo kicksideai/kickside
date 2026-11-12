@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- POST /inbox — enqueue an inbox item. Body: { item_type, title, content?,
 -- metadata?, source_id?, priority?, trace_context? }. The acting user is recorded
 -- as actor_id; live UI refresh is emitted on the owner inbox component event topic.
@@ -41,9 +42,15 @@ local function handler()
     local params = ({
         item_type = b.item_type, title = b.title, content = b.content, files = b.files,
         metadata = b.metadata, source_id = b.source_id, priority = b.priority,
+        recipient = b.recipient, aggregate_key = b.aggregate_key, idempotency_key = b.idempotency_key,
         trace_context = b.trace_context,
     }) :: inbox_types.InboxCreateParams
-    local data, err = writer.create(params)
+    local data, err
+    if b.recipient ~= nil and b.status == "resolved" then
+        data, err = writer.resolve_aggregate(params)
+    else
+        data, err = writer.create(params)
+    end
     if err then
         res:set_status(http.STATUS.BAD_REQUEST)
         res:write_json({ success = false, error = tostring(err) })

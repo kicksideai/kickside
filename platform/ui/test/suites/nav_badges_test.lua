@@ -42,6 +42,21 @@ end
 
 local function define_tests()
     test.describe("KickSide Nav Badges", function()
+        test.it("resolves an exact module-owned viewer function with a bounded call", function()
+            local badge = ui_types.normalize_badge({ source = "viewer_function", function_id = "kickside.ui:badge_fixture",
+                style = "count", hide_zero = true, tone = "accent", invalidation_topic = "inbox.changed" }, "kickside.ui:fixture_nav")
+            test.not_nil(badge, "viewer-computed badges are discarded")
+            local items = { { badge = badge } }
+            nav_badges.resolve(items, nil, nil, "viewer", function(target, timeout)
+                test.eq(target, "kickside.ui:badge_fixture")
+                test.eq(timeout, "250ms")
+                return 2, nil
+            end)
+            test.eq(items[1].badge.value, 2)
+            test.eq(items[1].badge.invalidation_topic, "inbox.changed")
+            test.is_nil(ui_types.normalize_badge({ source = "viewer_function", function_id = "other.module:badge" }, "kickside.ui:fixture_nav"))
+        end)
+
         test.it("resolves a value from the actor's component meta, coercing TEXT", function()
             local items: { any } = { badged_item("inbox", "kickside.inbox:inbox_binding", "pending_count", true) }
             local counter = { n = 0 }

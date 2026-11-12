@@ -282,6 +282,27 @@ local function run()
             test.contains(tostring(err), inbox_types.ERROR.NOT_FOUND)
             test.is_nil(observed.write)
         end)
+
+        test.it("runs shared-item callbacks under the resolver with the same version binding", function()
+            local observed: Map = {}
+            local item = pending()
+            item.actor_id = nil
+            item.recipient = { kind = "group", id = "reviewers" }
+            item.aggregate_key, item.version_event_id = "review", "version-2"
+            setup(item, { actions = { "approve" }, on_validate = "review:validate", on_resolve = "review:resolve" }, {}, observed)
+            local result, err = resolve.apply("i1", "approve", { reason = "Reviewed" })
+            reset()
+            test.is_nil(err)
+            test.eq(result.resolved_by, "reviewer-1")
+            test.eq(observed.actor:id(), "reviewer-1")
+            test.eq(observed.scope.name, "review-scope")
+            test.eq(#observed.calls, 2)
+            for _, call in ipairs(observed.calls) do
+                test.eq(call.args.resolution_id, "resolve:i1:version-2")
+                test.eq(call.args.form.reason, "Reviewed")
+            end
+            test.eq(observed.write.meta.resolution_id, "resolve:i1:version-2")
+        end)
     end)
 end
 

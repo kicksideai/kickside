@@ -98,12 +98,21 @@ end
 -- supplies component.query); access_read is the READ access mask; owner_id is the
 -- request actor's id, which scope=actor badges resolve against (their OWN component).
 -- Without a read port there is nothing to resolve against, so declared badges are dropped.
-function M.resolve(items: { any }, query_fn: any, access_read: integer?, owner_id: string?): ()
+function M.resolve(items: { any }, query_fn: any, access_read: integer?, owner_id: string?, viewer_call: any?): ()
     local badged: { any } = {}
     local impl_seen: { [string]: boolean } = {}
     local impl_ids: { string } = {}
     for _, it in ipairs(items) do
         local b = it.badge
+        if type(b) == "table" and b.source == ui_types.BADGE.SOURCE.VIEWER_FUNCTION then
+            local value, err
+            if type(viewer_call) == "function" then value, err = viewer_call(b.function_id, "250ms") end
+            if not err and type(value) == "number" and value >= 0 and value < math.huge and value % 1 == 0 then
+                b.value = value
+            else
+                it.badge = nil
+            end
+        end
         if type(b) == "table" and b.source == COMPONENT_META
             and type(b.impl_id) == "string" and b.impl_id ~= "" then
             badged[#badged + 1] = it

@@ -177,7 +177,9 @@ entries:
       - name: members
         description: |
           List the member user ids of a security group. Returns an empty list for
-          an unknown group. Calling: members(request)
+          an unknown group. Calling: members({group_id, limit?, cursor?}). Supplying limit requests
+          a keyset page of at most 128 distinct user ids; next_cursor continues
+          against current membership. Omitting limit preserves the complete list.
         input_schemas:
           - definition: |
               {
@@ -186,7 +188,9 @@ entries:
                   "group_id": {
                     "type": "string",
                     "description": "Security group identifier to expand"
-                  }
+                  },
+                  "limit": {"type": "integer", "minimum": 1, "maximum": 128},
+                  "cursor": {"type": "string", "description": "Previous page next_cursor"}
                 },
                 "required": ["group_id"]
               }
@@ -206,7 +210,8 @@ entries:
                       "type": "string"
                     },
                     "description": "Member user identifiers"
-                  }
+                  },
+                  "next_cursor": {"type": "string", "description": "Present only when another page remains"}
                 },
                 "required": ["group_id", "user_ids"]
               }

@@ -86,11 +86,11 @@ local function define_tests()
             test.eq(item_projection.worker_ref, "func://kickside.inbox.persist:projection_worker")
         end)
 
-        test.it("has no stale Migration or hard Workflows, Dataflow, or Jobs dependency", function()
+        test.it("uses Jobs for bounded invalidation without a stale Migration, Workflows or Dataflow dependency", function()
             test.is_nil((registry.get("kickside.inbox:dep.wippy.migration")))
             test.is_nil((registry.get("kickside.inbox:dep.kickside.workflows")))
             test.is_nil((registry.get("kickside.inbox:dep.wippy.dataflow")))
-            test.is_nil((registry.get("kickside.inbox:dep.kickside.jobs")))
+            test.not_nil((registry.get("kickside.inbox:dep.kickside.jobs")))
         end)
 
         test.it("keeps terminal resolution behind the canonical resolver", function()
@@ -124,6 +124,8 @@ local function define_tests()
                         pending_match = { status = inbox_types.STATUS.PENDING, metadata = { kind = "gtm_import_batch_review", session_id = "session-1" } },
                         pending_other = { status = inbox_types.STATUS.PENDING, metadata = { kind = "gtm_import_batch_review", session_id = "session-2" } },
                         resolved_match = { status = inbox_types.STATUS.APPROVED, metadata = { kind = "gtm_import_batch_review", session_id = "session-1" } },
+                        shared_match = { status = inbox_types.STATUS.PENDING, recipient = { kind = "group", id = "reviewers" },
+                            metadata = { kind = "gtm_import_batch_review", session_id = "session-1" } },
                     }, nil
                 end,
                 delete = function(id)

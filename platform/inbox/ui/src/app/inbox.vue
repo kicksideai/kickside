@@ -6,7 +6,7 @@ import TabList from 'primevue/tablist'
 import Tabs from 'primevue/tabs'
 import Message from 'primevue/message'
 import Tag from 'primevue/tag'
-import { api } from '@wippy-fe/proxy'
+import { api, on } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import InboxItem from './InboxItem.vue'
 import { isItem, isRecord, type Item } from './item'
@@ -53,8 +53,8 @@ const filter = ref('pending')
 const selectedId = ref('')
 const resolvingId = ref('')
 const resolvingAction = ref('')
-let componentUnsub: (() => void) | null = null
-let connectedComponentId = ''
+let componentUnsubs: (() => void)[] = []
+let connectedComponentIds = ''
 let requestId = 0
 let disposed = false
 // A terminal write receipt remains authoritative until the projection returns it.
@@ -155,7 +155,8 @@ async function load() {
     // The first response discovers the owner's topic; its snapshot predates
     // our subscription. Subscribe, then read the snapshot we actually render
     // so a delivery during discovery cannot fall into a load/subscribe gap.
-    if (typeof data.component_id === 'string' && connectRealtime(data.component_id)) {
+    if (Array.isArray(data.component_ids) && data.component_ids.every((id): id is string => typeof id === 'string')
+      && connectRealtime(data.component_ids)) {
       await load()
       return
     }
@@ -214,31 +215,38 @@ async function del(id: string) {
   }
 }
 
-function connectRealtime(id: string): boolean {
-  if (!id || connectedComponentId === id) return false
-  if (componentUnsub) componentUnsub()
-  componentUnsub = null
-  connectedComponentId = ''
-  componentUnsub = subscribeComponentMeta(id, (event) => {
-    applyMeta(event.meta)
-    void load()
-  }, INBOX_META_FIELD_TYPES)
-  if (!componentUnsub) throw new Error('Could not subscribe to the inbox.')
-  connectedComponentId = id
+function connectRealtime(ids: string[]): boolean {
+  const key = [...ids].sort().join(',')
+  if (connectedComponentIds === key) return false
+  for (const unsubscribe of componentUnsubs) unsubscribe()
+  componentUnsubs = []
+  connectedComponentIds = ''
+  for (const id of ids) {
+    const unsubscribe = subscribeComponentMeta(id, (event) => {
+      if (ids.length === 1) applyMeta(event.meta)
+      void load()
+    }, INBOX_META_FIELD_TYPES)
+    if (!unsubscribe) throw new Error('Could not subscribe to the inbox.')
+    componentUnsubs.push(unsubscribe)
+  }
+  connectedComponentIds = key
   return true
 }
+
+const unsubscribeAddressed = on('inbox.changed', () => { void load() })
 
 useHostVisibilityRefresh(async () => {
   await Promise.all([loadKinds(), load()])
 })
 
 onUnmounted(() => {
+  unsubscribeAddressed?.()
   disposed = true
   ++requestId
   resolutions.clear()
-  if (componentUnsub) componentUnsub()
-  componentUnsub = null
-  connectedComponentId = ''
+  for (const unsubscribe of componentUnsubs) unsubscribe()
+  componentUnsubs = []
+  connectedComponentIds = ''
 })
 </script>
 

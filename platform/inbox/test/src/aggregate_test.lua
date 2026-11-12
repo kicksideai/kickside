@@ -152,7 +152,7 @@ return { run = test.run_cases(function()
             test.is_false(first.resolution_id == second.resolution_id)
         end)
 
-        test.it("keeps refreshed work pending when an older human decision arrives late", function()
+        test.it("records a human decision across a pending sender snapshot", function()
             local result, err = funcs.call("kickside.inbox.persist:projection_worker", {
                 projection = { body = {} }, range = { to_seq = 3 }, events = {
                     { id = "created", type = "kickside.inbox.events:item.created", body = {
@@ -164,9 +164,35 @@ return { run = test.run_cases(function()
                 },
             })
             test.is_nil(err)
-            test.eq(result.body.items.item.status, "pending")
+            test.eq(result.body.items.item.status, "dismissed")
             local decided, decision_err = funcs.call("kickside.inbox.persist:projection_worker", {
                 projection = { body = result.body }, range = { to_seq = 4 }, events = {
+                    { id = "current", type = "kickside.inbox.events:item.resolved", body = {
+                        id = "item", status = "dismissed", resolution_id = "resolve:item:refreshed" } },
+                },
+            })
+            test.is_nil(decision_err)
+            test.eq(decided.body.items.item.status, "dismissed")
+            test.eq(decided.body.items.item.resolution_id, "resolve:item:created")
+        end)
+
+        test.it("keeps a reopened visit pending when a previous visit decision arrives late", function()
+            local result, err = funcs.call("kickside.inbox.persist:projection_worker", {
+                projection = { body = {} }, range = { to_seq = 4 }, events = {
+                    { id = "created", type = "kickside.inbox.events:item.created", body = {
+                        id = "item", item_type = "notice", title = "One", source_id = "source", aggregate_key = "review" } },
+                    { id = "closed", type = "kickside.inbox.events:item.version", body = {
+                        id = "item", source_id = "source", aggregate_key = "review", status = "resolved" } },
+                    { id = "refreshed", type = "kickside.inbox.events:item.version", body = {
+                        id = "item", title = "Three", source_id = "source", aggregate_key = "review", status = "pending" } },
+                    { id = "late", type = "kickside.inbox.events:item.resolved", body = {
+                        id = "item", status = "dismissed", resolution_id = "resolve:item:created" } },
+                },
+            })
+            test.is_nil(err)
+            test.eq(result.body.items.item.status, "pending")
+            local decided, decision_err = funcs.call("kickside.inbox.persist:projection_worker", {
+                projection = { body = result.body }, range = { to_seq = 5 }, events = {
                     { id = "current", type = "kickside.inbox.events:item.resolved", body = {
                         id = "item", status = "dismissed", resolution_id = "resolve:item:refreshed" } },
                 },

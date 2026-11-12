@@ -23,6 +23,24 @@ end
 
 local function define_tests()
     test.describe("nav configuration broadcast", function()
+        test.it("resolves a viewer badge through HTTP and bounds a slow function", function()
+            local token = constrained_admin_token()
+            local response, err = http_client.get(base_url() .. "/api/auth/nav/list", {
+                timeout = 10, headers = { Authorization = "Bearer " .. token } })
+            test.is_nil(err)
+            test.eq(response.status_code, 200)
+            local body = assert(json.decode(response.body))
+            local fast, slow
+            for _, item in ipairs(body.items) do
+                if item.path == "/ui-test-surface" then fast = item end
+                if item.path == "/ui-test-slow-badge" then slow = item end
+            end
+            test.not_nil(fast)
+            test.eq(fast.badge.value, 7)
+            test.not_nil(slow)
+            test.is_nil(slow.badge)
+        end)
+
         test.it("broadcasts nav.changed from an administrator without realtime or process messaging authority", function()
             local db = assert(sql.get("app:db"))
             assert(db:execute("CREATE TABLE IF NOT EXISTS ui_nav_broadcasts (topic TEXT NOT NULL, authorized TEXT NOT NULL)"))
