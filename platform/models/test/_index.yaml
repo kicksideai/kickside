@@ -313,3 +313,14 @@ entries:
       model_catalog: kickside.models.catalog:model_catalog
       registry_models: wippy.llm.discovery:models
       models_repo: kickside.models.persist:repo
+
+  - name: secret_key_policy_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_models }
+    source: file://secret_key_policy_test.lua
+    method: run
+    modules: [json, sql]
+    imports:
+      test: wippy.test:test
+      catalog_policy: kickside.models.catalog:policy
+      models_repo: kickside.models.persist:repo
