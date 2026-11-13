@@ -167,3 +167,15 @@ entries:
       threads_writer: kickside.core.threads.persist:writer
       retention_pin: kickside.core.retention:pin
     method: migrate
+
+  - name: 13_projection_declaration_digest
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-11-13T00:00:13Z"
+    source: file://13_projection_declaration_digest.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

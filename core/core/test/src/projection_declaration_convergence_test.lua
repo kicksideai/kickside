@@ -9,6 +9,7 @@ local process = require("process")
 local channel = require("channel")
 local provision = require("provision")
 local prune = require("prune")
+local register = require("proj_register")
 
 local KIND = "test.declaration.refresh"
 local IMPL = "app:projection_declaration_refresh_kind"
@@ -34,7 +35,7 @@ end
 
 local function state(id: string): table
     local db = assert(sql.get("app:db"))
-    local rows = assert(db:query([[SELECT p.id,p.body,p.updated_at,c.generation,c.last_seq,c.job_id
+    local rows = assert(db:query([[SELECT p.id,p.body,p.declaration_digest,p.updated_at,c.generation,c.last_seq,c.job_id
         FROM kickside_projection p JOIN kickside_projection_cursor c ON c.projection_id=p.id
         WHERE p.thread_id=$1 AND p.kind=$2]], {id, KIND}))
     assert(db:release())
@@ -78,6 +79,85 @@ end
 return {run = test.run_cases(function()
     test.describe("declared projection boot convergence", function()
         test.after_each(stop_pool)
+        test.it("hashes declarations independent of key order and fold state", function()
+            local first = assert(register.declaration_digest({meta = {worker_ref = "func://app:test_count_worker", worker_input_mode = "prefetch_events"},
+                worker_config = {alpha = 1, nested = {left = 2, right = 3}}}))
+            local second = assert(register.declaration_digest({stats = {count = 100},
+                worker_config = {nested = {right = 3, left = 2}, alpha = 1},
+                meta = {worker_input_mode = "prefetch_events", worker_ref = "func://app:test_count_worker"}}))
+            test.eq(first, second)
+            test.is_false(first == assert(register.declaration_digest({meta = {worker_ref = "func://app:test_count_worker"}})))
+        end)
+        test.it("fills a missing digest without refreshing an unchanged declaration", function()
+            local threads, actor, scope, id = setup()
+            local before = state(id)
+            local db = assert(sql.get("app:db"))
+            assert(db:execute("UPDATE kickside_projection SET declaration_digest=NULL WHERE id=$1", {before.id}))
+            assert(db:release())
+            converge(scope)
+            local after = state(id)
+            test.eq(after.declaration_digest, before.declaration_digest)
+            test.eq(after.generation, before.generation)
+            test.eq(after.last_seq, before.last_seq)
+            test.eq(assert(json.encode(after.body)), assert(json.encode(before.body)))
+            test.eq(converge(scope).checked, 0)
+        end)
+        for _, changed_again in ipairs({false, true}) do
+        test.it("rebuilds old input without emitting its outputs again/" .. tostring(changed_again), function()
+            local threads, actor, scope, id = setup(true)
+            assert(threads:register_projection({thread_id = id, kind = KIND,
+                worker_ref = "func://app:test_emitting_worker", worker_input_mode = "prefetch_events",
+                events = {input = {{type = "app:threads_keep"}}, output = {{type = "app:threads_note"}}}}))
+            for _, event_type in ipairs({"app:threads_keep", "app:threads_skip", "app:threads_keep"}) do
+                assert(threads:append_event({thread_id = id, event = {type = event_type, role = "user", body = {}}}))
+            end
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
+            stop_pool()
+            test.eq(tonumber(state(id).body.count), 2, "old filter consumes two inputs")
+            local function outputs(): table
+                local db = assert(sql.get("app:db"))
+                local rows = assert(db:query("SELECT body FROM kickside_event WHERE thread_id=$1 AND type='app:threads_note' ORDER BY seq", {id}))
+                assert(db:release())
+                local counts = {}
+                for _, row in ipairs(rows) do
+                    local n = tostring(assert(json.decode(row.body)).n)
+                    counts[n] = (counts[n] or 0) + 1
+                end
+                return counts
+            end
+            test.eq(outputs()["1"], 1)
+            test.eq(outputs()["3"], 1)
+            local db = assert(sql.get("app:db"))
+            assert(db:execute("UPDATE kickside_components SET impl_id=$1 WHERE component_id=$2",
+                {"app:projection_declaration_emitting_kind", id}))
+            assert(db:release())
+            converge(scope)
+            if changed_again then
+                assert(threads:register_projection({thread_id = id, kind = KIND, ensure = true,
+                    worker_ref = "func://app:test_emitting_worker", worker_input_mode = "prefetch_events",
+                    worker_config = {revision = 2},
+                    events = {input = {{type = "app:threads_keep"}, {type = "app:threads_skip"}},
+                        output = {{type = "app:threads_note"}}}}))
+            end
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
+            stop_pool()
+            test.eq(tonumber(state(id).body.count), 3, "rebuilt fold includes the skipped input")
+            test.eq(outputs()["1"], 1)
+            test.eq(outputs()["2"], 1)
+            test.eq(outputs()["3"], 1)
+            test.is_nil(state(id).body.declaration_status.replay)
+            assert(threads:append_event({thread_id = id, event = {type = "app:threads_skip", role = "user", body = {}}}))
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
+            stop_pool()
+            test.eq(tonumber(state(id).body.count), 4)
+            test.eq(outputs()["1"], 1)
+            test.eq(outputs()["2"], 1)
+            test.eq(outputs()["3"], 1)
+        end)
+        end
         test.it("refreshes an earlier declaration and folds retained newly accepted events", function()
             local threads, actor, scope, id = setup(true)
             assert(threads:register_projection({thread_id = id, kind = KIND,

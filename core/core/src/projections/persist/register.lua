@@ -9,6 +9,7 @@
 
 local sql = require("sql")
 local json = require("json")
+local canonical_json = require("canonical_json")
 local uuid = require("uuid")
 local clock = require("clock")
 local types = require("types")
@@ -149,6 +150,10 @@ end
 
 function writer.declaration_matches(stored: table, declared: table): boolean
     return same_declaration(apply_declaration_fields({}, stored), apply_declaration_fields({}, declared))
+end
+
+function writer.declaration_digest(body: table): (string?, error?)
+    return canonical_json.hash(apply_declaration_fields({}, body))
 end
 
 local function bounded(value: any, name: string, min_value: integer,
@@ -314,6 +319,8 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
         actor_context_col = (id_row :: any).actor_context :: string?
     end
 
+    local digest, digest_err = writer.declaration_digest(body)
+    if digest_err then return nil, digest_err end
     body.declaration_status = {revision = 1, start_seq = start_seq, from_seq = start_seq + 1}
     local body_json, body_encode_err = json.encode(body)
     if body_encode_err then return nil, errors.wrap(body_encode_err, "failed to encode projection body") end
@@ -324,7 +331,7 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
     local projection_id: string
     local created_projection = false
     local declaration_changed = false
-    local projection_rows, projection_query_err = sql.builder.select("id", "body")
+    local projection_rows, projection_query_err = sql.builder.select("id", "body", "declaration_digest")
         :from("kickside_projection")
         :where(sql.builder.eq({ thread_id = thread_id, kind = kind, projection_key = projection_key }))
         :limit(1)
@@ -365,6 +372,19 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
                 from_seq = (refresh_from or start_seq) + 1,
                 reason = refresh_from and "history pruned" or nil}
         end
+        if declaration_changed and reset then
+            local cursors, read_err = sql.builder.select("id", "last_seq")
+                :from("kickside_projection_cursor"):where(sql.builder.eq({projection_id = projection_id}))
+                :run_with(tx):query()
+            if read_err then return nil, errors.wrap(read_err, "failed to load replay boundaries") end
+            if type(cursors) ~= "table" then return nil, response_error("replay.cursors") end
+            local replay = {}
+            for _, cursor in ipairs(cursors) do
+                replay[tostring(cursor.id)] = {through_seq = tonumber(cursor.last_seq),
+                    events = merged.events, previous = prior and prior.replay and prior.replay[tostring(cursor.id)] or nil}
+            end
+            status.replay = replay
+        end
         local body_to_write: string
         if reset then
             body.declaration_status = status
@@ -385,6 +405,7 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
         if params.ensure ~= true or declaration_changed or reset then
             local projection_update = sql.builder.update("kickside_projection")
                 :set("body", body_to_write)
+                :set("declaration_digest", digest)
                 :set("updated_at", now)
             if params.ensure ~= true then
                 projection_update = projection_update:set("actor_id", actor_id_col):set("actor_context", actor_context_col)
@@ -403,6 +424,13 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
             local _, proof_err = sql_boundary.exact_row_count(updated, update_err,
                 "failed to update projection", "projection.update", 1, response_error)
             if proof_err then return nil, proof_err end
+        elseif projection_rows[1].declaration_digest ~= digest then
+            local updated, update_err = sql.builder.update("kickside_projection")
+                :set("declaration_digest", digest):where(sql.builder.eq({id = projection_id}))
+                :run_with(tx):exec()
+            local _, proof_err = sql_boundary.exact_row_count(updated, update_err,
+                "failed to store declaration digest", "projection.digest", 1, response_error)
+            if proof_err then return nil, proof_err end
         end
     else
         projection_id = uuid.v7()
@@ -414,6 +442,7 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
                 kind = kind,
                 projection_key = projection_key,
                 body = body_json,
+                declaration_digest = digest,
                 state = core_types.PROJECTION_STATE.PENDING,
                 last_event_seq = start_seq,
                 actor_id = actor_id_col,

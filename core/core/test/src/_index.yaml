@@ -1251,6 +1251,7 @@ entries:
     source: file://src_link/projections/persist/register.lua
     modules: [sql, json]
     imports:
+      canonical_json: kickside.contract:canonical_json
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       committed_error: kickside.contract:committed_error
       uuid: app:projection_uuid_fixture
@@ -2727,7 +2728,6 @@ entries:
       core_db: kickside.core:db
       proj_types: kickside.core.projections:types
       proj_register: kickside.core.projections.persist:register
-      persisted_json: kickside.contract:persisted_json
       component_envelope: kickside.component:envelope
       error_envelope: kickside.contract:error_envelope
 
@@ -2765,6 +2765,8 @@ entries:
     kind: library.lua
     source: file://projection_register_native_fixture.lua
     modules: [sql, json]
+    imports:
+      canonical_json: kickside.contract:canonical_json
 
   - name: projection_register_native_sql_adapter
     kind: library.lua
@@ -2784,6 +2786,7 @@ entries:
     source: file://projection_register_native_source.lua
     modules: [uuid]
     imports:
+      canonical_json: kickside.contract:canonical_json
       sql: app:projection_register_native_sql_adapter
       json: app:projection_register_native_json_adapter
       clock: kickside.core.jobs:clock
@@ -4363,6 +4366,7 @@ entries:
       test: wippy.test:test
       provision: kickside.core.threads:provision
       prune: kickside.core.retention:prune
+      proj_register: kickside.core.projections.persist:register
 
   - name: projection_declaration_manual_kind
     kind: contract.binding
@@ -4373,6 +4377,40 @@ entries:
         input:
           - {type: app:threads_keep}
           - {type: app:threads_skip}
+        output:
+          - {type: app:threads_note}
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  - name: test_emitting_worker
+    kind: function.lua
+    meta: {type: projection.worker}
+    source: file://test_emitting_worker.lua
+    method: run
+
+  - name: projection_declaration_emitting_kind
+    kind: contract.binding
+    meta:
+      class: [test.declaration.refresh]
+      thread: {class: test.declaration.refresh}
+      projections:
+        - kind: test.declaration.refresh
+          worker_ref: func://app:test_emitting_worker
+          input_mode: prefetch_events
+          events:
+            input:
+              - {type: app:threads_keep}
+              - {type: app:threads_skip}
+            output:
+              - {type: app:threads_note}
+      events:
+        input:
+          - {type: app:threads_keep}
+          - {type: app:threads_skip}
+        output:
+          - {type: app:threads_note}
     contracts:
       - contract: kickside.contract:component
         methods:

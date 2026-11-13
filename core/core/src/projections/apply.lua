@@ -194,6 +194,22 @@ local function advance_tx(db: sql.DB, job: table, snapshot: table, prefetched_la
     end
     local folded, fold_err = next_body(body, output)
     if fold_err then return abort(fold_err) end
+    local status = folded.declaration_status
+    local replay = status and status.replay and status.replay[snapshot.id] or nil
+    if replay then
+        local boundary = 0
+        local prior_replay = replay
+        while prior_replay do
+            local through = tonumber(prior_replay.through_seq)
+            if through == nil then return abort(response_error("replay.through_seq")) end
+            boundary = math.max(boundary, through)
+            prior_replay = prior_replay.previous
+        end
+        if last >= boundary then
+            status.replay[snapshot.id] = nil
+            if next(status.replay) == nil then status.replay = nil end
+        end
+    end
     local encoded, encode_err = json.encode(folded)
     if encode_err then return abort(errors.wrap(encode_err, "projection worker body is not JSON")) end
     if type(encoded) ~= "string" then return abort(response_error("body_json")) end

@@ -41,7 +41,7 @@ local function define_startup_tests()
                     .. "    local selected = channel.select({release:case_receive(), time.after('10s'):case_receive()})\n"
                     .. "    assert(selected.channel == release, 'initial convergence barrier is not released')\n"
                     .. "    process.unlisten(release)\n"
-                local blocked, count = source:gsub("    local converged, converge_err = provision.converge%(actor, scope%)", function(line)
+                local blocked, count = source:gsub("    local converged, converge_err = provision.converge%(actor, scope, continuation%)", function(line)
                     return barrier .. line
                 end, 1)
                 test.eq(count, 1, "the barrier holds the first convergence open")

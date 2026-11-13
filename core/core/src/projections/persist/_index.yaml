@@ -58,6 +58,7 @@ entries:
       persisted_json: kickside.contract:persisted_json
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       committed_error: kickside.contract:committed_error
+      canonical_json: kickside.contract:canonical_json
 
   - name: writer
     kind: library.lua
