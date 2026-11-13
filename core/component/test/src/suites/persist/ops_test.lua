@@ -66,7 +66,7 @@ end
 
 local function grant(d, id, mask)
     local _, err = sql.builder.insert("kickside_component_access"):set_map({
-        access_id = uuid.v7(), subject_id = "system:automation", subject_type = "user",
+        access_id = uuid.v7(), subject_id = "system:kickside.automation.declaration", subject_type = "user",
         component_id = id, source_component_id = id, access_mask = mask,
         inherited = 0,
     }):run_with(d):exec()
@@ -120,7 +120,7 @@ local run_cases = test.run_cases(function()
                     local result, err = placement_ops.create_component(tx, d,
                         { type = ops.COMMAND_TYPES.CREATE_COMPONENT, payload = {
                             component_id = id, impl_id = "kickside.test:security",
-                            actor_id = "system:automation", private_context = private,
+                            actor_id = "system:kickside.automation.declaration", private_context = private,
                         } })
                     tx:rollback()
                     return result, err
@@ -128,7 +128,7 @@ local run_cases = test.run_cases(function()
                 { name = "persist dispatch", invoke = function(id, private)
                     return dispatch(d, ops.COMMAND_TYPES.CREATE_COMPONENT, {
                         component_id = id, impl_id = "kickside.test:security",
-                        actor_id = "system:automation", private_context = private,
+                        actor_id = "system:kickside.automation.declaration", private_context = private,
                     })
                 end },
                 { name = "registration contract", invoke = function(id, private)

@@ -289,7 +289,7 @@ end
 
 -- List a component's stored grants at system level (no access gate), for trusted
 -- callers that resolve ownership outside a request actor -- e.g. a teardown handler
--- deciding whether a deleted user was a component's sole owner. Excludes system:*
+-- deciding whether a deleted user was a component's sole owner. Excludes declared framework
 -- infrastructure grants. Returns the grant rows { subject_id, subject_type, access_mask }.
 local function list_grants_system(component_id: string): ({ any }?, error?)
     local grants, err = ops.list_access(component_id)

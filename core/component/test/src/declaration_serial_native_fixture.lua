@@ -12,6 +12,6 @@ function M.verify(input)
         declaration_hash = input.declaration_hash, generation = input.generation, operator_id = "user-1", execution_subject_id = "user-1",
         declaration = {setting = true}, affected_drive_keys = {"drive"}}, nil
 end
-function M.actor() return {id = function() return "system:automation" end} end
+function M.actor() return {id = function() return "system:kickside.automation.declaration" end} end
 function M.can(...) return true end
 return M

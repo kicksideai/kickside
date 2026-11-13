@@ -26,6 +26,7 @@ entries:
     source: file://execution_identity_test.lua
     method: run
     modules:
+      - registry
       - funcs
       - security
       - json
@@ -135,3 +136,46 @@ entries:
       identity: app:encoder_native_identity
       production: kickside.execution:execution_identity
       fixture: app:encoder_native_fixture
+
+  - name: declared_test_actor
+    kind: registry.entry
+    meta: {type: kickside.execution.maintenance_actor, actor_id: 'system:execution-test.declared'}
+
+  - name: ordinary_actor
+    kind: function.lua
+    source: file://maintenance_probe.lua
+    method: run
+    modules: [registry, security]
+    imports: {identity: kickside.execution:execution_identity}
+    security:
+      actor: {id: 'system:execution-test.ordinary'}
+
+  - name: maintenance_probe
+    kind: function.lua
+    source: file://maintenance_probe.lua
+    method: run
+    modules: [registry, security]
+    imports: {identity: 'kickside.execution:execution_identity'}
+
+  - name: maintenance_probe_only
+    kind: security.policy
+    policy:
+      resources: ['app:maintenance_probe', 'kickside.execution:*']
+      actions: [funcs.call, funcs.security]
+      effect: allow
+
+  - name: maintenance_inventory_test
+    kind: function.lua
+    meta: {type: test, suite: execution_maintenance_inventory}
+    source: file://maintenance_inventory_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      inventory: kickside.execution:maintenance_inventory
+
+  - name: maintenance_registry_deny
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: [registry.get, registry.find]
+      effect: deny
