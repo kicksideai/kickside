@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local consts = require("ret_consts")
 
 return require("migration").define(function()

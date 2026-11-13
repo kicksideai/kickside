@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local registry = require("registry")
 local M = {calls=0,refuse_at=0}
 function M.reset(refuse_at: integer)
