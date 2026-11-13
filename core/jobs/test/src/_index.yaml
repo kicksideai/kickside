@@ -3123,6 +3123,7 @@ entries:
     kind: library.lua
     source: file://run_history_native_source.lua
     modules:
+    - logger
     - time
     - uuid
     imports:
@@ -3238,6 +3239,7 @@ entries:
     kind: library.lua
     source: file://transition_native_source.lua
     modules:
+    - logger
     - time
     - uuid
     imports:
@@ -4260,6 +4262,7 @@ entries:
       - channel
       - process
     imports:
+      jobs: kickside.core.jobs:jobs
       job_types: kickside.core.jobs:types
 
   - name: job_dead_missing_proc
@@ -4275,6 +4278,7 @@ entries:
       - channel
       - process
     imports:
+      jobs: kickside.core.jobs:jobs
       job_types: kickside.core.jobs:types
 
   - name: job_dead_nonfunction_proc
@@ -4290,6 +4294,7 @@ entries:
       - channel
       - process
     imports:
+      jobs: kickside.core.jobs:jobs
       job_types: kickside.core.jobs:types
 
   - name: job_dead_capacity_proc
@@ -4305,6 +4310,7 @@ entries:
       - channel
       - process
     imports:
+      jobs: kickside.core.jobs:jobs
       job_types: kickside.core.jobs:types
 
 
