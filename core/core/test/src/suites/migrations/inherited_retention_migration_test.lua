@@ -9,6 +9,7 @@ local sweeper = require("sweeper")
 local repo = require("retention_repo")
 local migration_under_test = require("migration_under_test")
 local registry_fixture = require("registry_fixture")
+local timed_repo = require("timed_repo")
 
 return test.run_cases(function()
     test.describe("Inherited retention upgrade", function()
@@ -25,7 +26,7 @@ return test.run_cases(function()
                 scratch.exec("INSERT INTO kickside_thread(id,component_id,thread_class) VALUES($1,$2,'test')", {id,id})
                 scratch.exec([[INSERT INTO kickside_retention_policy
                     (id,thread_id,event_hot_retention_days,created_at,updated_at)
-                    VALUES($1,$1,$2,'2026-01-01 00:00:00',$3)]], {id,days,updated or "2026-01-01 00:00:00"})
+                    VALUES($1,$1,$2,'2026-01-01 00:00:00.100000',$3)]], {id,days,updated or "2026-01-01 00:00:00.100000"})
                 return id
             end
             local implicit = seed("kickside.core.retention.pin_tests:inherited_retention_decl",90)
@@ -34,7 +35,13 @@ return test.run_cases(function()
             local api_db = assert(sql.get("app:migration_db"))
             test.is_nil(select(2,repo.upsert(api_db,api,{event_hot_retention_days=90})))
             api_db:release()
-            local same_second = seed("kickside.core.retention.pin_tests:inherited_retention_decl",90,"2026-01-01 00:00:00.500000")
+            local same_second = seed("kickside.core.retention.pin_tests:inherited_retention_decl",90)
+            local timed_db = assert(sql.get("app:migration_db"))
+            test.is_nil(select(2,timed_repo.upsert(timed_db,same_second,{event_hot_retention_days=90})))
+            timed_db:release()
+            local written = scratch.query([[SELECT CASE WHEN created_at < updated_at THEN 1 ELSE 0 END AS advanced
+                FROM kickside_retention_policy WHERE thread_id=$1]], {same_second})
+            test.eq(tonumber(written[1].advanced),1)
             local descriptor = seed("kickside.core.retention.pin_tests:inherited_retention_binding",90)
             local custom = seed("kickside.core.retention.pin_tests:inherited_retention_decl",7)
             local disabled = seed("kickside.core.retention.pin_tests:inherited_retention_decl",90)
@@ -50,19 +57,19 @@ return test.run_cases(function()
             test.is_true(tostring(refused.error):find("declaration lookup refuses",1,true)~=nil)
             local committed = tonumber(scratch.query([[SELECT COUNT(*) AS n FROM kickside_retention_policy
                 WHERE event_hot_retention_days IS NULL]])[1].n)
-            test.is_true(committed>0 and committed<263)
+            test.is_true(committed>0 and committed<262)
             registry_fixture.reset(0)
             local result, err = funcs.call("kickside.core.migrations:14_inherited_retention", {
                 database_id="app:migration_db",id="kickside.core.migrations:14_inherited_retention"})
             test.is_nil(err)
             test.eq(result.status,"complete",tostring(result.error or (result.migrations and result.migrations[1].error)))
-            test.eq(result.retention.converted+committed,263)
+            test.eq(result.retention.converted+committed,262)
             test.eq(tonumber(scratch.query([[SELECT COUNT(*) AS n FROM kickside_retention_policy
-                WHERE event_hot_retention_days IS NULL]])[1].n),263)
+                WHERE event_hot_retention_days IS NULL]])[1].n),262)
             for _, old in ipairs(before) do
                 local row = scratch.query("SELECT * FROM kickside_retention_policy WHERE id=$1", {old.id})[1]
                 for key,value in pairs(old) do
-                    if key == "event_hot_retention_days" and (tostring(old.id)==implicit or tostring(old.id)==disabled or tostring(old.id)==same_second) then
+                    if key == "event_hot_retention_days" and (tostring(old.id)==implicit or tostring(old.id)==disabled) then
                         test.is_nil(row[key])
                     else test.eq(row[key],value,key) end
                 end

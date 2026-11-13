@@ -4326,3 +4326,18 @@ entries:
       claim: kickside.core.jobs.persist:claim
       lifecycle: kickside.core.jobs.persist:lifecycle
       completion: kickside.core.jobs.service:worker_completion
+
+  - name: retention_migration_timed_source
+    kind: library.lua
+    source: file://retention_persist_native_source.lua
+    modules: [sql, uuid]
+    imports:
+      clock: app:retention_migration_clock
+      ret_consts: kickside.core.retention:consts
+      retention_policy: kickside.core:policy_config
+      retention_notifier: kickside.core.retention:notifier
+
+  - name: retention_migration_clock
+    kind: library.lua
+    source: file://retention_migration_clock.lua
+    modules: [sql]
