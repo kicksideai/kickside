@@ -21,7 +21,7 @@ entries:
     source: file://../../placement_rules_test.lua
     method: run
     security:
-      actor: { id: "system:automation" }
+      actor: { id: "system:kickside.automation.declaration" }
       policies: [app:test_scope_policy]
     modules: [sql, uuid, contract, security, channel, time, json]
     imports:

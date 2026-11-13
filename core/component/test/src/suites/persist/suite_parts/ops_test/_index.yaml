@@ -12,7 +12,7 @@ entries:
     source: file://../../ops_test_set_execution_identity_fence.lua
     method: run
     security:
-      actor: { id: "system:automation" }
+      actor: { id: "system:kickside.automation.declaration" }
       policies: [app:test_scope_policy]
     modules: [sql, json, uuid, time, contract, funcs, security]
     imports:

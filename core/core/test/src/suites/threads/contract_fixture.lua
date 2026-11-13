@@ -51,11 +51,11 @@ function M.new()
             return scope
         end
 
-        local function run_as(user_id, target, args)
+        local function run_as(user_id, target, args, caller_scope)
             local actor = security.new_actor(user_id, { security_groups = {} })
             local svc, cerr = contract.get(THREADS)
             if cerr or not svc then error("threads contract unavailable: " .. tostring(cerr)) end
-            local inst, oerr = svc:with_actor(actor):with_scope(test_scope()):open()
+            local inst, oerr = svc:with_actor(actor):with_scope(caller_scope or test_scope()):open()
             if oerr or not inst then error("open threads contract failed: " .. tostring(oerr)) end
             return inst[target](inst, args)
         end
