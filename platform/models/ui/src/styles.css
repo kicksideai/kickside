@@ -2,6 +2,8 @@
 @import "@kickside/ui-kit/spin.css";
 @import "@kickside/ui-kit/kx-tag.css";
 @import "@kickside/ui-kit/kx-tokens.css";
+@import "@kickside/ui-kit/kx-shell.css";
+@import "@kickside/ui-kit/kx-state.css";
 
 /* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
    preflight; without it PrimeVue controls keep UA defaults the theme never
@@ -17,7 +19,6 @@
   height: 100%;
   min-height: 0;
 
-  --km-rail-w: 296px;
   --system-surface-gutter: var(--kickside-system-surface-gutter, 24px);
 
   /* Alias, not a copy. This drifted to 22% while the canon moved to 18%. */
@@ -45,77 +46,6 @@ wippy-loading ~ wippy-loading { display: none; }
   width: calc(100% - (var(--system-surface-gutter) * 2));
   margin: 12px 0 0 var(--system-surface-gutter);
 }
-
-/* ── Shell ─────────────────────────────────────────────────────────────── */
-.km-shell {
-  flex: 1;
-  min-height: 0;
-  width: 100%;
-  margin: 0;
-  display: grid;
-  grid-template-columns: var(--km-rail-w) minmax(0, 1fr);
-  border-left: 1px solid var(--p-content-border-color);
-  border-right: 1px solid var(--p-content-border-color);
-}
-
-.km-rail {
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--p-content-border-color);
-}
-
-.km-rail-body {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  padding: 6px;
-}
-
-.km-main {
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* ── RailHeader ────────────────────────────────────────────────────────── */
-.km-railhead {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 48px;
-  padding: 0 8px 0 14px;
-  border-bottom: 1px solid var(--p-content-border-color);
-}
-
-.km-railhead-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 12px;
-  font-weight: 760;
-  letter-spacing: .03em;
-  text-transform: uppercase;
-  color: var(--p-text-muted-color);
-}
-
-.km-railhead-title b {
-  min-width: 18px;
-  padding: 1px 6px;
-  border-radius: 999px;
-  background: var(--kx-overlay-subtle);
-  color: var(--p-text-color);
-  font-size: 11px;
-  font-weight: 700;
-  text-align: center;
-}
-
-.km-railhead-acts { display: inline-flex; align-items: center; gap: 2px; }
 
 /* Button chrome is provided by PrimeVue's Button. Only container-specific
    positioning hooks remain below. */
@@ -262,21 +192,6 @@ wippy-loading ~ wippy-loading { display: none; }
   color: var(--p-text-muted-color);
   font-size: 13px;
 }
-
-.km-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 48px 24px;
-  text-align: center;
-}
-
-.km-empty-ico { width: 30px; height: 30px; color: var(--p-text-muted-color); }
-.km-empty-title { font-size: 14px; font-weight: 720; }
-.km-empty-hint { margin: 0; max-width: 340px; color: var(--p-text-muted-color); font-size: 12.5px; line-height: 1.45; }
-.km-empty .p-button { margin-top: 4px; }
 
 /* ── Avatar ────────────────────────────────────────────────────────────── */
 .km-avatar {
@@ -485,10 +400,6 @@ wippy-loading ~ wippy-loading { display: none; }
 
 /* ── Model pool ────────────────────────────────────────────────────────── */
 .km-pool {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
   /* Single source of truth for the table grid so the header and every row align.
      The actions column is fixed-width so rows with fewer actions never shift the
      other columns. */
@@ -524,7 +435,7 @@ wippy-loading ~ wippy-loading { display: none; }
   align-items: center;
 }
 
-.km-pool-body { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+
 
 .km-pool-table { flex: 1; min-height: 0; overflow: auto; }
 
@@ -953,30 +864,8 @@ wippy-loading ~ wippy-loading { display: none; }
   word-break: break-word;
 }
 
-/* ── Main view tabs (Models / Classes) ─────────────────────────────────── */
-/* Geometry and the active accent come from the shared tab rule; this only
-   places the row in the column and keeps its gutter. */
-.km-tabs {
-  flex: 0 0 auto;
-  padding: 0 12px;
-  border-bottom: 1px solid var(--p-content-border-color);
-}
-
-.km-tabs .p-tab b {
-  min-width: 18px;
-  padding: 0 6px;
-  border-radius: 999px;
-  background: var(--kx-overlay-subtle);
-  color: var(--p-text-muted-color);
-  font-size: 11px;
-  font-weight: 700;
-  text-align: center;
-}
-
-.km-tabs .p-tab[aria-selected='true'] b { background: color-mix(in srgb, var(--p-primary-color) 14%, transparent); color: var(--p-primary-color); }
-
 /* ── Model classes view ────────────────────────────────────────────────── */
-.km-classes { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
 .km-classes-list { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; }
 
 .km-class {
@@ -1058,8 +947,6 @@ wippy-loading ~ wippy-loading { display: none; }
 }
 
 @media (max-width: 860px) {
-  .km-shell { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); }
-  .km-rail { border-right: 0; border-bottom: 1px solid var(--p-content-border-color); max-height: 40vh; }
   .km-pool-cols { display: none; }
   .km-mrow { grid-template-columns: 34px minmax(0, 1fr); gap: 6px 10px; align-items: center; }
   .km-mrow .km-avatar { grid-column: 1; grid-row: 1; }

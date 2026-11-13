@@ -67,8 +67,8 @@ watch(() => props.selectedProfileId, (id) => { f.state.profile = id || 'all' }, 
 </script>
 
 <template>
-  <div class="km-pool">
-    <header class="km-pool-head">
+  <div class="km-pool kx-system-pane">
+    <header class="km-pool-head kx-system-tools">
       <div class="km-pool-head-top">
         <div class="km-pool-title">
           <span>Model pool</span>
@@ -96,7 +96,7 @@ watch(() => props.selectedProfileId, (id) => { f.state.profile = id || 'all' }, 
       </div>
     </header>
 
-    <div v-if="!models.length" class="km-pool-body">
+    <div v-if="!models.length" class="km-pool-body kx-system-body">
       <EmptyState
         icon="tabler:cpu"
         title="No models yet"
@@ -107,11 +107,11 @@ watch(() => props.selectedProfileId, (id) => { f.state.profile = id || 'all' }, 
       />
     </div>
 
-    <div v-else-if="!f.filtered.value.length" class="km-pool-body">
+    <div v-else-if="!f.filtered.value.length" class="km-pool-body kx-system-body">
       <EmptyState icon="tabler:search-off" title="No models match" hint="Adjust the search or filters." />
     </div>
 
-    <div v-else class="km-pool-table">
+    <div v-else class="km-pool-table kx-system-body">
       <div class="km-pool-cols">
         <span></span>
         <span>Model</span>

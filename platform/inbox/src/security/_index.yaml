@@ -8,6 +8,9 @@ namespace: kickside.inbox.security
 entries:
   - name: assigner
     kind: security.scope
+    meta:
+      title: Inbox assigners
+      comment: Assign Inbox reviews to another user.
     policies: []
 
   - name: assignment_access

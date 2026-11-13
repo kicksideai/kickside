@@ -58,3 +58,24 @@
 .kx-railsec-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .kx-railsec-h .count { margin-left: auto; color: var(--p-text-muted-color); font-variant-numeric: tabular-nums; }
 .kx-railsec-b { padding: 2px 0 8px; }
+
+/* System child navigation spans the surface; the themed tabs keep their own sizing. */
+.kx-system-tabs.p-tabs { margin-bottom: 0; flex: none; min-width: 0; border-bottom: 1px solid var(--p-content-border-color); }
+.kx-system-tabs .p-tablist-tab-list { padding-inline: var(--kickside-system-surface-gutter, 24px); }
+.kx-system-tab-count {
+  padding-inline: 6px; border-radius: 999px; font-size: inherit; line-height: inherit;
+  background: color-mix(in srgb, currentColor 10%, transparent); font-variant-numeric: tabular-nums;
+}
+.kx-system-toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 58px; padding: 12px var(--kickside-system-surface-gutter, 24px);
+  color: var(--p-text-muted-color); font-size: 12.5px;
+}
+.kx-system-pane {
+  flex: 1; min-height: 0; display: grid;
+  grid-template-rows: auto minmax(0, 1fr); overflow: auto;
+}
+.kx-system-tools { grid-row: 1; min-width: 0; }
+.kx-system-body { grid-row: 2; min-width: 0; min-height: 0; overflow: auto; }
+/* Reserve the same tools area for empty panes, including multi-row filters. */
+.kx-system-pane:has(> .kx-system-body > .kx-empty) { grid-template-rows: minmax(120px, auto) minmax(0, 1fr); }
