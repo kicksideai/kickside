@@ -49,9 +49,12 @@ parent continuation pointer. Reordering without a path change does not move
 descendants. Object access still applies. Import shares registration's creation check. Owning modules grant
 these exact actions/resources only to their admission function entries through
 `security.policies`; member scopes receive no kind mutation grants from Component.
-The mode is read through Component's own declaration scope; caller registry
-visibility does not select it. Admission then evaluates the exact kind grant in
-the requesting frame. A missing kind declaration refuses mutation with
+The mode is read through Component's own declaration scope; its mutation,
+deletion worker and retention entries hold an exact `funcs.call` grant on the private
+`kickside.component:kind_declaration` reader. Admission does not depend on member
+policies, and these attached grants do not let callers invoke the reader from
+their own code. Caller registry visibility does not select the mode. Admission
+then evaluates the exact kind grant in the requesting frame. A missing kind declaration refuses mutation with
 `component_kind_unknown`; an absent mode on an existing entry remains open.
 An invalid mode refuses mutation. Module-owned metadata floors, execution identity,
 sharing, and internal declaration commands retain their separate authority.
