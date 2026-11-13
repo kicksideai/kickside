@@ -55,21 +55,6 @@ local function event_types(body: table): { string }?
     return #out > 0 and out or nil
 end
 
--- A declaration rebuild folds previously consumed input without publishing its
--- outputs again. Earlier rebuild boundaries survive a declaration change in flight.
-local function consumed(replay: table?, event: table): boolean
-    if not replay then return false end
-    if tonumber(event.seq) > tonumber(replay.through_seq) then
-        return consumed(replay.previous, event)
-    end
-    local types = event_types({events = replay.events})
-    if not types then return true end
-    for _, event_type in ipairs(types) do
-        if event.type == event_type then return true end
-    end
-    return consumed(replay.previous, event)
-end
-
 local function snapshot(db: sql.DB, cursor_id: string, job_id: string): (table?, error?)
     local rows, err = db:query([[SELECT c.id,c.projection_id,c.thread_id,c.cursor_key,c.last_seq,
         c.generation,c.status,c.job_id,c.debounce_idle_ms,c.debounce_max_ms,
@@ -209,7 +194,6 @@ function M.run(input: any): (table?, error?)
     local committed_input: table? = nil
     local output: table? = {}
     local seen_last = last
-    local fold_only = false
     if current.status == "active" and head > last then
         local body = current.body :: table
         local meta = type(body.meta) == "table" and body.meta or {}
@@ -234,23 +218,6 @@ function M.run(input: any): (table?, error?)
         local batch = events :: table[]
         seen_last = target
         if not types and #batch > 0 then seen_last = tonumber(batch[#batch].seq) or last end
-        local status = type(body.declaration_status) == "table" and body.declaration_status or nil
-        local replay = status and status.replay and status.replay[cursor_id] or nil
-        if replay and #batch > 0 then
-            fold_only = consumed(replay, batch[1])
-            for index = 2, #batch do
-                if consumed(replay, batch[index]) ~= fold_only then
-                    local next_seq = tonumber(batch[index].seq)
-                    if next_seq == nil then return nil, release(db, response_error("event.seq")) end
-                    seen_last = next_seq - 1
-                    target = seen_last
-                    local prefix = {}
-                    for before = 1, index - 1 do prefix[#prefix + 1] = batch[before] end
-                    batch = prefix
-                    break
-                end
-            end
-        end
         local mode = meta.worker_input_mode == "prefetch_events" and "prefetch_events" or "cursor_only"
         local work_input = {
             thread_id = current.thread_id,
@@ -269,27 +236,64 @@ function M.run(input: any): (table?, error?)
             -- before invoking either a function or a monitored process.
             local release_err = release(db, nil)
             if release_err then return nil, release_err end
-            if binding.worker_runtime == "proc" then
-                local host, host_err = apply.process_host()
-                if host_err then return nil, host_err end
-                if type(host) ~= "string" or host == "" then return nil, response_error("process_host") end
-                output, row_err = worker.run_proc_supervised(binding, work_input, {
-                    proc_host = host,
-                })
-            else
-                output, row_err = worker.run(binding, work_input)
+            local folded_body = body
+            local writes: table[] = {}
+            local folded_last = last
+            for index, event in ipairs(batch) do
+                local to_seq = seen_last
+                if index < #batch then
+                    local next_seq = tonumber(batch[index + 1].seq)
+                    if next_seq == nil then return nil, response_error("event.seq") end
+                    to_seq = next_seq - 1
+                end
+                local event_input = {
+                    thread_id = current.thread_id, trace_context = trace_context.common({event}), worker_input_mode = mode,
+                    cursor = {id = cursor_id, cursor_key = current.cursor_key, last_seq = folded_last,
+                        target_seq = to_seq, batch_size = 1, generation = tonumber(current.generation)},
+                    projection = {id = current.projection_id, kind = current.kind, body = folded_body},
+                    range = {from_seq = folded_last + 1, to_seq = to_seq, target_seq = to_seq, processed_count = 1},
+                    events = mode == "prefetch_events" and {event} or nil,
+                }
+                if binding.worker_runtime == "proc" then
+                    local host, host_err = apply.process_host()
+                    if host_err then return nil, host_err end
+                    if type(host) ~= "string" or host == "" then return nil, response_error("process_host") end
+                    output, row_err = worker.run_proc_supervised(binding, event_input, {
+                        proc_host = host,
+                    })
+                else
+                    output, row_err = worker.run(binding, event_input)
+                end
+                if row_err then
+                    -- Only the worker's own failure is the projection's outcome;
+                    -- binding and identity failures stay with Jobs.
+                    local details = (row_err :: error):details()
+                    if type(details) ~= "table" or details.reason ~= worker.WORKER_FAILED then return nil, row_err end
+                    local deterministic = job_types.is_deterministic_kind((row_err :: error):kind())
+                    local failed, fail_err = apply.fail(db_id, job, current, row_err :: error, deterministic)
+                    if fail_err then return nil, fail_err end
+                    if failed then return failed, nil end
+                    return nil, row_err
+                end
+                if type(output) ~= "table" then return nil, response_error("worker.output") end
+                local prepared, prepare_err = apply.append_writes(output, tostring(current.thread_id), body,
+                    tostring(current.projection_id), event.id)
+                if prepare_err then return nil, prepare_err end
+                if type(prepared) ~= "table" then return nil, response_error("append_writes") end
+                for _, write in ipairs(prepared) do writes[#writes + 1] = write end
+                local updated_body, body_err = apply.next_body(folded_body, output)
+                if body_err then return nil, body_err end
+                if type(updated_body) ~= "table" then return nil, response_error("worker.body") end
+                folded_body = updated_body
+                local reported = output.last_seq == nil and to_seq or tonumber(output.last_seq)
+                if reported == nil or reported < folded_last or reported > to_seq then
+                    return nil, errors.new({message = "projection worker last_seq is outside the loaded range", kind = errors.INVALID})
+                end
+                folded_last = reported
+                if reported < to_seq then break end
             end
-            if row_err then
-                -- Only the worker's own failure is the projection's outcome;
-                -- binding and identity failures stay with Jobs.
-                local details = (row_err :: error):details()
-                if type(details) ~= "table" or details.reason ~= worker.WORKER_FAILED then return nil, row_err end
-                local deterministic = job_types.is_deterministic_kind((row_err :: error):kind())
-                local failed, fail_err = apply.fail(db_id, job, current, row_err :: error, deterministic)
-                if fail_err then return nil, fail_err end
-                if failed then return failed, nil end
-                return nil, row_err
-            end
+            output = {body = folded_body, append_events = #writes > 0 and writes or nil,
+                last_seq = folded_last, last_error = output.last_error}
             db = nil
         end
     end
@@ -298,14 +302,13 @@ function M.run(input: any): (table?, error?)
         if release_err then return nil, release_err end
     end
     if type(output) ~= "table" then return nil, response_error("worker.output") end
-    if fold_only then output.append_events = nil end
     local result, apply_err = apply.advance(db_id, job, current, seen_last, output)
     if apply_err then return nil, apply_err end
     if type(result) ~= "table" then return nil, response_error("advance") end
     -- Match apply's cursor/retention notifications: successful durable commit
     -- first. Release the pool handle before a callback may use the same DB,
     -- especially SQLite's single connection. Stale and empty folds never notify.
-    if not fold_only and not result.stale and post_commit and committed_input
+    if not result.stale and post_commit and committed_input
         and tonumber(result.last_seq) and tonumber(result.last_seq) > last then
         committed_input.projection.body = output.body or current.body
         committed_input.range.to_seq = result.last_seq

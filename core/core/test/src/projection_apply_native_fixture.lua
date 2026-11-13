@@ -6,7 +6,7 @@ function M.reset(stage: string, source: any, mode: string)
     M.rollbacks, M.releases, M.commits, M.executions, M.encodes = 0, 0, 0, 0, 0
     M.appends, M.deferred, M.wakes, M.completing = 0, 0, 0, nil
     M.published_after, M.wake_keys, M.cached_appends = 0, {}, 0
-    M.encoded_body = nil
+    M.encoded_body, M.appended_events = nil, nil
     M.thread_locked, M.cursor_before_thread = false, false
 end
 function M.outcome(stage: string, value: any): (any, error?)
@@ -32,6 +32,7 @@ function M.run_as(...: any): (any, error?)
 end
 function M.append_system_tx(_tx: any, _dbtype: any, thread_id: any, _events: any, _completion_id: any, opts: any): (any, error?)
     M.appends = M.appends + 1
+    M.appended_events = _events
     if opts and opts.defer_wake == true then M.deferred = M.deferred + 1 end
     if opts and type(opts.locked_threads) == "table" then M.cached_appends = M.cached_appends + 1 end
     return M.outcome("append", {max_seq = 1, inserted = 1, thread_id = thread_id})

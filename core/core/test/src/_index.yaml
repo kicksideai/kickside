@@ -3381,6 +3381,7 @@ entries:
   - name: projection_apply_native_source
     kind: library.lua
     source: file://projection_apply_native_source.lua
+    modules: [uuid]
     imports:
       error_envelope: kickside.contract:error_envelope
       sql: app:projection_apply_native_sql_adapter
@@ -4389,6 +4390,9 @@ entries:
     meta: {type: projection.worker}
     source: file://test_emitting_worker.lua
     method: run
+    modules: [sql, uuid]
+    imports:
+      writer: kickside.core.threads.persist:writer
 
   - name: projection_declaration_emitting_kind
     kind: contract.binding

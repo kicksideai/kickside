@@ -83,6 +83,8 @@ entries:
       - sql
       - uuid
       - json
+      - channel
+      - time
     imports:
       test: wippy.test:test
       append: kickside.core.threads.persist:append

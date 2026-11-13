@@ -23,8 +23,11 @@ local function call(mode: string): (any, error?)
     local job = {id = "job", lease_token = "token", execution_seq = 1}
     if mode == "fail" then return apply.fail("app:db", job, snapshot, worker_failure, true) end
     snapshot.actor_id, snapshot.execution_identity_json = "actor", "identity"
-    return apply.advance("app:db", job, snapshot, 1,
-        {append_events = {{thread_id = "other", event = {type = "example", body = {value = 1}}}}})
+    local writes, err = apply.append_writes(
+        {append_events = {{thread_id = "other", event = {type = "example", body = {value = 1}}}}},
+        "thread", snapshot.body, "projection", "input")
+    if err then return nil, err end
+    return apply.advance("app:db", job, snapshot, 1, {append_events = writes})
 end
 local function native(first: integer, last: integer)
     for index = first, last do
@@ -54,6 +57,35 @@ local function native(first: integer, last: integer)
     end
 end
 local function outcomes()
+    test.it("identifies outputs by input and ordinal while preserving supplied identities", function()
+        local function emit(input_id: string, generation: number): table
+            fixture.reset("", nil, "advance")
+            local writes = assert(apply.append_writes({append_events = {{thread_id = "other", events = {
+                {type = "example", body_json = "{}"}, {type = "example", body_json = "{}"},
+                {type = "example", id = "supplied-id", body_json = "{}"},
+                {type = "example", external = {external_source = "worker", external_id = "supplied-external"}, body_json = "{}"},
+            }}}}, "thread", {}, "projection", input_id))
+            local value, err = apply.advance("app:db", {id = "job", lease_token = "token", execution_seq = 1},
+                {id = "cursor", thread_id = "thread", projection_id = "projection",
+                    generation = 1, last_seq = 0, body = {revision = generation}}, 1, {append_events = writes})
+            test.is_nil(err)
+            test.not_nil(value)
+            return fixture.appended_events
+        end
+        local first = emit("input", 1)
+        local replay = emit("input", 2)
+        local later = emit("later-input", 2)
+        test.not_nil(first[1].id)
+        test.not_nil(first[2].id)
+        test.is_false(first[1].id == first[2].id)
+        test.eq(first[1].id, replay[1].id)
+        test.eq(first[2].id, replay[2].id)
+        test.is_false(first[1].id == later[1].id)
+        test.eq(replay[3].id, "supplied-id")
+        test.is_nil(replay[4].id)
+        test.eq(replay[4].external.external_source, "worker")
+        test.eq(replay[4].external.external_id, "supplied-external")
+    end)
     for _, mode in ipairs({"body", "patch"}) do
         test.it("keeps declaration status when the worker returns a " .. mode, function()
             fixture.reset("", nil, "advance")
@@ -72,10 +104,12 @@ local function outcomes()
     end
     test.it("defers output demand until all appends and prelocks the completing job", function()
         fixture.reset("", nil, "advance")
+        local writes = assert(apply.append_writes(
+            {append_events = {{thread_id = "other", events = {{type = "example", body_json = "{}"}}},
+                {thread_id = "another", events = {{type = "example", body_json = "{}"}}}}}, "thread", {}, "projection", "input"))
         local value, err = apply.advance("app:db", {id = "job", lease_token = "token", execution_seq = 1},
             {id = "cursor", thread_id = "thread", projection_id = "projection", generation = 1, last_seq = 0, body = {}}, 1,
-            {append_events = {{thread_id = "other", events = {{type = "example", body_json = "{}"}}},
-                {thread_id = "another", events = {{type = "example", body_json = "{}"}}}}})
+            {append_events = writes})
         test.is_nil(err)
         test.not_nil(value)
         test.eq(fixture.appends, 2)

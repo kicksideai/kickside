@@ -263,6 +263,7 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
     end
     local reset = params.reset == true
     local refresh_from: number? = nil
+    local refresh_reason: string? = nil
 
     local now = now_string(dbtype)
     local lock = dbtype == sql.type.SQLITE and "" or "FOR UPDATE"
@@ -347,22 +348,22 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
         if decode_err then return nil, errors.wrap(decode_err, "failed to decode existing projection body") end
         declaration_changed = not writer.declaration_matches(merged :: table, body :: table)
         local prior = type(merged.declaration_status) == "table" and merged.declaration_status or nil
-        -- Older bodies have no recorded start. Zero is the only safe rebuild
-        -- boundary: any pruned prefix then requires a visible forward refresh.
-        local own_start, revision = 0, 1
+        local own_start: number? = nil
+        local revision = 1
         if prior then
             own_start, revision = tonumber(prior.start_seq), tonumber(prior.revision)
-            if own_start == nil or own_start < 0 or own_start ~= math.floor(own_start)
-                or own_start > event_count or revision == nil or revision < 1 or revision ~= math.floor(revision) then
+            if (own_start ~= nil and (own_start < 0 or own_start ~= math.floor(own_start)
+                or own_start > event_count)) or revision == nil or revision < 1 or revision ~= math.floor(revision) then
                 return fail("projection declaration status is invalid", errors.INTERNAL)
             end
         end
         if declaration_changed and not reset then
-            if pruned_seq <= own_start then
+            if own_start ~= nil and pruned_seq <= own_start then
                 reset = true
                 start_seq = own_start
             else
                 refresh_from = event_count
+                refresh_reason = own_start == nil and "history start unknown" or "history pruned"
             end
         end
         local status = prior
@@ -370,20 +371,7 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
             status = {revision = revision + (declaration_changed and 1 or 0),
                 start_seq = reset and start_seq or own_start,
                 from_seq = (refresh_from or start_seq) + 1,
-                reason = refresh_from and "history pruned" or nil}
-        end
-        if declaration_changed and reset then
-            local cursors, read_err = sql.builder.select("id", "last_seq")
-                :from("kickside_projection_cursor"):where(sql.builder.eq({projection_id = projection_id}))
-                :run_with(tx):query()
-            if read_err then return nil, errors.wrap(read_err, "failed to load replay boundaries") end
-            if type(cursors) ~= "table" then return nil, response_error("replay.cursors") end
-            local replay = {}
-            for _, cursor in ipairs(cursors) do
-                replay[tostring(cursor.id)] = {through_seq = tonumber(cursor.last_seq),
-                    events = merged.events, previous = prior and prior.replay and prior.replay[tostring(cursor.id)] or nil}
-            end
-            status.replay = replay
+                reason = refresh_reason}
         end
         local body_to_write: string
         if reset then

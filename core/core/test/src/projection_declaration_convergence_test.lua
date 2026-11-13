@@ -39,7 +39,7 @@ local function state(id: string): table
         FROM kickside_projection p JOIN kickside_projection_cursor c ON c.projection_id=p.id
         WHERE p.thread_id=$1 AND p.kind=$2]], {id, KIND}))
     assert(db:release())
-    local row = rows[1]
+    local row: any = rows[1]
     row.body = assert(json.decode(row.body))
     return row
 end
@@ -55,13 +55,13 @@ local function setup(plain: boolean?): (any, any, any, string)
 end
 
 local function declare(id: string, previous_shape: boolean?)
-    local prior = previous_shape and state(id).body or nil
+    local prior: any = previous_shape and state(id).body or nil
     local db = assert(sql.get("app:db"))
     assert(db:execute("UPDATE kickside_components SET impl_id=$1 WHERE component_id=$2", {IMPL, id}))
     assert(db:execute("UPDATE kickside_thread SET thread_class=$1 WHERE id=$2", {"test.declaration.refresh", id}))
     assert(db:execute("UPDATE kickside_component_meta SET value=$1 WHERE component_id=$2 AND key='thread_class'", {"test.declaration.refresh", id}))
     if previous_shape then
-        local body = prior
+        local body: any = prior
         body.declaration_status = nil
         assert(db:execute("UPDATE kickside_projection SET body=$1 WHERE thread_id=$2 AND kind=$3", {assert(json.encode(body)), id, KIND}))
     end
@@ -148,6 +148,23 @@ return {run = test.run_cases(function()
             test.eq(outputs()["2"], 1)
             test.eq(outputs()["3"], 1)
             test.is_nil(state(id).body.declaration_status.replay)
+            assert(threads:register_projection({thread_id = id, kind = KIND, ensure = true,
+                worker_ref = "func://app:test_emitting_worker", worker_input_mode = "prefetch_events",
+                events = {input = {{type = "app:threads_skip"}}, output = {{type = "app:threads_note"}}}}))
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
+            stop_pool()
+            assert(threads:register_projection({thread_id = id, kind = KIND, ensure = true,
+                worker_ref = "func://app:test_emitting_worker", worker_input_mode = "prefetch_events",
+                events = {input = {{type = "app:threads_keep"}, {type = "app:threads_skip"}},
+                    output = {{type = "app:threads_note"}}}}))
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
+            stop_pool()
+            test.eq(tonumber(state(id).body.count), 3)
+            test.eq(outputs()["1"], 1, "completed declaration changes preserve output identities")
+            test.eq(outputs()["2"], 1)
+            test.eq(outputs()["3"], 1)
             assert(threads:append_event({thread_id = id, event = {type = "app:threads_skip", role = "user", body = {}}}))
             start_pool()
             assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
@@ -156,6 +173,53 @@ return {run = test.run_cases(function()
             test.eq(outputs()["1"], 1)
             test.eq(outputs()["2"], 1)
             test.eq(outputs()["3"], 1)
+        end)
+        end
+        for _, explicit in ipairs({false, true}) do
+        test.it("rebuilds with concurrent input and preserves explicit output identities/" .. tostring(explicit), function()
+            local threads, actor, scope, id = setup(true)
+            assert(threads:register_projection({thread_id = id, kind = KIND,
+                worker_ref = "func://app:test_emitting_worker", worker_input_mode = "prefetch_events",
+                worker_config = {explicit_identity = explicit},
+                events = {input = {{type = "app:threads_keep"}}, output = {{type = "app:threads_note"}}}}))
+            assert(threads:append_event({thread_id = id, event = {type = "app:threads_keep", role = "user", body = {}}}))
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
+            stop_pool()
+            local before = state(id)
+            local db = assert(sql.get("app:db"))
+            local original = assert(db:query("SELECT id FROM kickside_event WHERE thread_id=$1 AND type='app:threads_note'", {id}))[1].id
+            assert(db:release())
+            assert(threads:register_projection({thread_id = id, kind = KIND, ensure = true,
+                worker_ref = "func://app:test_emitting_worker", worker_input_mode = "prefetch_events",
+                worker_config = {explicit_identity = explicit, concurrent_input_id = uuid.v4()},
+                events = {input = {{type = "app:threads_keep"}, {type = "app:threads_skip"}},
+                    output = {{type = "app:threads_note"}}}}))
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
+            stop_pool()
+            db = assert(sql.get("app:db"))
+            assert(db:release())
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
+            stop_pool()
+            db = assert(sql.get("app:db"))
+            local counts = assert(db:query([[SELECT type,COUNT(*) AS n FROM kickside_event
+                WHERE thread_id=$1 GROUP BY type]], {id}))
+            local originals = assert(db:query("SELECT id FROM kickside_event WHERE id=$1", {original}))
+            assert(db:release())
+            local by_type: any = {}
+            for _, row in ipairs(counts) do by_type[row.type] = tonumber(row.n) end
+            test.eq(by_type["app:threads_note"], 2, "in-flight input emits once without duplicating old output")
+            test.eq(by_type["app:threads_skip"], 1)
+            test.eq(#originals, 1, "the original output identity remains")
+            test.eq(tonumber(state(id).body.count), 2)
+            if explicit then
+                local db = assert(sql.get("app:db"))
+                local input_id = assert(db:query("SELECT id FROM kickside_event WHERE thread_id=$1 AND seq=1", {id}))[1].id
+                assert(db:release())
+                test.eq(original, assert(uuid.v5(before.id, input_id)), "explicit identity is unchanged")
+            end
         end)
         end
         test.it("refreshes an earlier declaration and folds retained newly accepted events", function()
@@ -176,7 +240,7 @@ return {run = test.run_cases(function()
             local before = state(id)
             test.eq(tonumber(before.last_seq), 3)
             test.eq(tonumber(before.body.stats.count), 2)
-            declare(id, true)
+            declare(id)
             local summary = converge(scope)
             test.is_true(summary.healed >= 1)
             local refreshed = state(id)
@@ -243,7 +307,7 @@ return {run = test.run_cases(function()
             assert(db:release())
             test.eq(pruned.deleted, 1)
             assert(threads:append_event({thread_id = id, event = {type = "app:threads_skip", role = "user", body = {}}}))
-            declare(id, true)
+            declare(id)
             converge(scope)
             local refreshed = state(id)
             test.eq(#refreshed.body.events.input, 2)
@@ -266,6 +330,33 @@ return {run = test.run_cases(function()
             test.eq(converge(scope).healed, 0)
             test.eq(state(id).generation, stable.generation)
             test.eq(state(id).body.declaration_status.revision, 2)
+        end)
+        test.it("refreshes a legacy projection with an unknown start forward only", function()
+            local threads, actor, scope, id = setup(true)
+            for _ = 1, 3 do
+                assert(threads:append_event({thread_id = id, event = {type = "app:threads_keep", role = "user", body = {}}}))
+            end
+            assert(threads:register_projection({thread_id = id, kind = KIND, start_seq = 2,
+                worker_ref = "func://app:test_count_worker", worker_input_mode = "prefetch_events",
+                events = {input = {{type = "app:threads_keep", via = "thread"}}, output = {}}}))
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 5}))
+            stop_pool()
+            test.eq(tonumber(state(id).body.stats.count), 1)
+            declare(id, true)
+            converge(scope)
+            local refreshed = state(id)
+            test.eq(tonumber(refreshed.last_seq), 3)
+            test.eq(tonumber(refreshed.body.stats.count), 1)
+            test.eq(refreshed.body.declaration_status.reason, "history start unknown")
+            test.eq(refreshed.body.declaration_status.from_seq, 4)
+            test.is_nil(refreshed.body.declaration_status.start_seq)
+            assert(threads:append_event({thread_id = id, event = {type = "app:threads_skip", role = "user", body = {}}}))
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 5}))
+            stop_pool()
+            test.eq(tonumber(state(id).body.stats.count), 2)
+            test.eq(converge(scope).healed, 0)
         end)
         test.it("rebuilds from a projection's own start when earlier thread history is pruned", function()
             local threads, actor, scope, id = setup(true)

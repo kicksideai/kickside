@@ -3,6 +3,7 @@
 -- in this same transaction. A stale generation or head cannot publish a fold.
 local sql = require("sql")
 local json = require("json")
+local uuid = require("uuid")
 local clock = require("clock")
 local registry = require("registry")
 local threads_writer = require("threads_writer")
@@ -75,10 +76,11 @@ local function dense_array(value: any): boolean
     return count == #value
 end
 
-local function append_writes(output: table, source_id: string, body: table): (table[]?, error?)
+local function append_writes(output: table, source_id: string, body: table, projection_id: string, input_event_id: string?): (table[]?, error?)
     if output.append_events == nil then return {}, nil end
     if not dense_array(output.append_events) then return nil, invalid("append_events must be a dense array") end
     local writes: table[] = {}
+    local output_index = 0
     local types = input_type_set(body)
     for i, write in ipairs(output.append_events) do
         if type(write) ~= "table" or type(write.thread_id) ~= "string" or write.thread_id == "" then
@@ -96,6 +98,24 @@ local function append_writes(output: table, source_id: string, body: table): (ta
             end
             local copy: table = {}
             for key, value in pairs(event) do copy[key] = value end
+            if copy.id ~= nil and type(copy.id) ~= "string" then
+                return nil, invalid("append event id must be a string")
+            end
+            output_index = output_index + 1
+            local external = type(copy.external) == "table" and copy.external or nil
+            local identified = type(copy.id) == "string" and copy.id:find("%S") ~= nil
+                or (external and type(external.external_source) == "string" and external.external_source:find("%S") ~= nil
+                    and type(external.external_id) == "string" and external.external_id:find("%S") ~= nil)
+            if not identified then
+                if type(input_event_id) ~= "string" or input_event_id == "" then
+                    return nil, response_error("append.input_event_id")
+                end
+                local id, id_err = uuid.v5("6ba7b811-9dad-11d1-80b4-00c04fd430c8",
+                    table.concat({"kickside.projection.output", projection_id, input_event_id, tostring(output_index)}, "\0"))
+                if id_err then return nil, errors.wrap(id_err, "projection output identity failed") end
+                if type(id) ~= "string" or id == "" then return nil, response_error("append.id") end
+                copy.id = id
+            end
             if copy.body_json ~= nil and type(copy.body_json) ~= "string" then
                 return nil, invalid("append event body_json must be JSON")
             end
@@ -113,6 +133,8 @@ local function append_writes(output: table, source_id: string, body: table): (ta
     return writes, nil
 end
 
+M.append_writes = append_writes
+
 local function next_body(before: table, output: table): (table?, error?)
     local status = before.declaration_status
     local result: table = before
@@ -129,6 +151,8 @@ local function next_body(before: table, output: table): (table?, error?)
     result.declaration_status = status
     return result, nil
 end
+
+M.next_body = next_body
 
 local function completion(tx: sql.Transaction, job: table, opts: table): (table?, error?)
     local done, err = jobs.complete_tx(tx, tostring(job.id), {
@@ -194,22 +218,6 @@ local function advance_tx(db: sql.DB, job: table, snapshot: table, prefetched_la
     end
     local folded, fold_err = next_body(body, output)
     if fold_err then return abort(fold_err) end
-    local status = folded.declaration_status
-    local replay = status and status.replay and status.replay[snapshot.id] or nil
-    if replay then
-        local boundary = 0
-        local prior_replay = replay
-        while prior_replay do
-            local through = tonumber(prior_replay.through_seq)
-            if through == nil then return abort(response_error("replay.through_seq")) end
-            boundary = math.max(boundary, through)
-            prior_replay = prior_replay.previous
-        end
-        if last >= boundary then
-            status.replay[snapshot.id] = nil
-            if next(status.replay) == nil then status.replay = nil end
-        end
-    end
     local encoded, encode_err = json.encode(folded)
     if encode_err then return abort(errors.wrap(encode_err, "projection worker body is not JSON")) end
     if type(encoded) ~= "string" then return abort(response_error("body_json")) end
@@ -336,7 +344,7 @@ end
 -- Resolve returned writes live before taking an apply connection. Actor-bound
 -- authorization re-enters Component and Threads, including SQLite's single pool.
 function M.advance(db_id: string, job: table, snapshot: table, prefetched_last: number, output: table): (table?, error?)
-    local writes, write_err = append_writes(output, tostring(snapshot.thread_id), snapshot.body)
+    local writes, write_err = append_writes(output, tostring(snapshot.thread_id), snapshot.body, tostring(snapshot.projection_id), nil)
     if write_err then return nil, write_err end
     if #writes > 0 and (snapshot.actor_id ~= nil or snapshot.execution_identity_json ~= nil) then
         local identity, identity_err = execution_identity.from_row(snapshot.actor_id, snapshot.execution_identity_json)
