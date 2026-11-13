@@ -3114,6 +3114,7 @@ entries:
     kind: library.lua
     source: file://run_history_native_source.lua
     modules:
+    - logger
     - time
     - uuid
     imports:
@@ -3229,6 +3230,7 @@ entries:
     kind: library.lua
     source: file://transition_native_source.lua
     modules:
+    - logger
     - time
     - uuid
     imports:
