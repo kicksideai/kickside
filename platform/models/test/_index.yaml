@@ -264,7 +264,7 @@ entries:
     kind: function.lua
     meta: { type: test, suite: kickside_models }
     source: file://models_secret_decode_test.lua
-    modules: [sql, funcs]
+    modules: [sql, funcs, json]
     method: run
     imports:
       test: wippy.test:test

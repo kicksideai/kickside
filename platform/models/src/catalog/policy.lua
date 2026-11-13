@@ -355,7 +355,7 @@ local function provider_context(profile: any): any
     for k, v in pairs(config) do
         ctx[k] = v
     end
-    for key, _ in pairs(SECRET_KEYS) do
+    for key, _ in pairs(secret) do
         if secret_value(secret[key]) ~= nil then
             ctx[key] = secret[key]
         end
