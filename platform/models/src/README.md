@@ -11,7 +11,7 @@ This module has two layers:
 Registry is only for shipped adapters/defaults, provider editor web components,
 and safe presets. User-added endpoints, credentials, discovered models, and
 class/capability edits are stored in the database and served through the same
-model APIs; discovery refreshes inferred capabilities with explicit administrator additions/removals applied, `PUT /models/cards` accepts `reset_capabilities: ["vision"]` to return selected capabilities to discovery ownership, and legacy cards initially retain only stored-versus-inferred differences as overrides.
+model APIs; discovery refreshes inferred capabilities with explicit administrator additions/removals applied, `PUT /models/cards` accepts `reset_capabilities: ["vision"]` to return selected capabilities to discovery ownership, and legacy cards initially retain every stored capability as a positive override and every inferred-only capability as a negative override until explicitly reset.
 
 The shipped class vocabulary is intentionally small: `fast`, `nano`,
 `balanced`, `premium`, and `embed`. Discovered provider models do not

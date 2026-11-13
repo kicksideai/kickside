@@ -44,9 +44,9 @@ local function capability_ownership(input: any, base: any?, inferred: any?): (an
     if inferred ~= nil then
         if ownership == nil then ownership = { overrides = {} } end
         if ownership.inferred == nil and base ~= nil then
-            -- Legacy differences preserve both possible administrator additions and removals.
+            -- Every stored legacy capability may be an administrator addition.
             for _, capability in ipairs(previous) do
-                if not policy.table_has(inferred, capability) then ownership.overrides[capability] = true end
+                ownership.overrides[capability] = true
             end
             for _, capability in ipairs(inferred) do
                 if not policy.table_has(previous, capability) then ownership.overrides[capability] = false end
