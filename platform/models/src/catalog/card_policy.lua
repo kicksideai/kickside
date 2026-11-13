@@ -15,6 +15,71 @@ local function normalize_card_options(options: any): any
     return options
 end
 
+local function effective_capabilities(inferred: any, overrides: any): { string }
+    local out: { string } = {}
+    for _, capability in ipairs(inferred) do
+        if overrides[capability] ~= false then table.insert(out, capability) end
+    end
+    local additions: { string } = {}
+    for capability, enabled in pairs(overrides) do
+        if enabled == true and not policy.table_has(out, capability) then
+            table.insert(additions, capability)
+        end
+    end
+    table.sort(additions)
+    for _, capability in ipairs(additions) do table.insert(out, capability) end
+    return out
+end
+
+local function capability_ownership(input: any, base: any?, inferred: any?): (any?, any?, string?)
+    local previous = base and base.capabilities or {}
+    local saved = base and base.capability_ownership
+    local ownership: any = nil
+    if saved ~= nil then
+        ownership = { inferred = saved.inferred, overrides = {} }
+        for capability, enabled in pairs(saved.overrides or {}) do
+            ownership.overrides[capability] = enabled
+        end
+    end
+    if inferred ~= nil then
+        if ownership == nil then ownership = { overrides = {} } end
+        if ownership.inferred == nil and base ~= nil then
+            -- Legacy differences preserve both possible administrator additions and removals.
+            for _, capability in ipairs(previous) do
+                if not policy.table_has(inferred, capability) then ownership.overrides[capability] = true end
+            end
+            for _, capability in ipairs(inferred) do
+                if not policy.table_has(previous, capability) then ownership.overrides[capability] = false end
+            end
+        end
+        ownership.inferred = inferred
+        return effective_capabilities(inferred, ownership.overrides), ownership
+    end
+
+    local capabilities = policy.explicit_list(input.capabilities, base and previous or { "generate" })
+    if input.capabilities ~= nil then
+        if ownership == nil then
+            ownership = { overrides = {} }
+            if base == nil then ownership.inferred = {} end
+        end
+        for _, capability in ipairs(previous) do
+            if not policy.table_has(capabilities, capability) then ownership.overrides[capability] = false end
+        end
+        for _, capability in ipairs(capabilities) do
+            if not policy.table_has(previous, capability) then ownership.overrides[capability] = true end
+        end
+    end
+    if input.reset_capabilities ~= nil then
+        if type(input.reset_capabilities) ~= "table" then return nil, nil, "reset_capabilities must be a list" end
+        if ownership == nil or ownership.inferred == nil then return nil, nil, "discover capabilities before resetting overrides" end
+        for _, capability in ipairs(input.reset_capabilities) do ownership.overrides[capability] = nil end
+    end
+    if ownership ~= nil and ownership.inferred ~= nil then
+        capabilities = effective_capabilities(ownership.inferred, ownership.overrides)
+    end
+    return capabilities, ownership
+end
+
 local function build_card(row: any, profile: any?): (any?, any?)
     local capabilities, capabilities_err = policy.decode_json(row.capabilities_json, {})
     if capabilities_err then return nil, capabilities_err end
@@ -26,6 +91,12 @@ local function build_card(row: any, profile: any?): (any?, any?)
     if pricing_err then return nil, pricing_err end
     local metadata, metadata_err = policy.decode_json(row.metadata_json, {})
     if metadata_err then return nil, metadata_err end
+    local ownership = nil
+    if row.capability_ownership_json ~= nil then
+        local ownership_err
+        ownership, ownership_err = policy.decode_json(row.capability_ownership_json, {})
+        if ownership_err then return nil, ownership_err end
+    end
     local open_context = profile and not profile.error and policy.provider_context(profile) or nil
 
     return {
@@ -34,6 +105,7 @@ local function build_card(row: any, profile: any?): (any?, any?)
         title = row.title ~= "" and row.title or row.name,
         description = row.description or "",
         capabilities = policy.normalize_list(capabilities, {}),
+        capability_ownership = ownership,
         class = policy.normalize_list(classes, {}),
         priority = tonumber(row.priority) or 0,
         max_tokens = tonumber(row.max_tokens) or 0,
@@ -64,6 +136,7 @@ local function public_card(card: any): any
         title = card.title or card.name,
         description = card.description or "",
         capabilities = card.capabilities or {},
+        capability_ownership = card.capability_ownership,
         class = card.class or {},
         priority = card.priority or 0,
         max_tokens = card.max_tokens or 0,
@@ -90,7 +163,7 @@ local function card_options(input: any, base: any?): any
     return {}
 end
 
-local function clean_card_input(input: any, base: any?): (any?, string?)
+local function clean_card_input(input: any, base: any?, inferred: any?): (any?, string?)
     if type(input) ~= "table" then return nil, "model body must be an object" end
     local name = input.name or (base and base.name)
     if type(name) ~= "string" or name == "" then return nil, "name is required" end
@@ -118,6 +191,8 @@ local function clean_card_input(input: any, base: any?): (any?, string?)
         enabled = true
     end
 
+    local capabilities, ownership, ownership_err = capability_ownership(input, base, inferred)
+    if ownership_err then return nil, ownership_err end
     local card = {
         name = name,
         title = input.title or (base and base.title) or name,
@@ -125,7 +200,8 @@ local function clean_card_input(input: any, base: any?): (any?, string?)
         provider_id = provider_id,
         provider_profile_id = input.provider_profile_id or (base and base.provider_profile_id),
         provider_model = provider_model,
-        capabilities = policy.explicit_list(input.capabilities, base and base.capabilities or { "generate" }),
+        capabilities = capabilities,
+        capability_ownership = ownership,
         classes = policy.explicit_list(input.class or input.classes, base and base.class or {}),
         priority = tonumber(input.priority or (base and base.priority) or 10) or 10,
         max_tokens = tonumber(input.max_tokens or (base and base.max_tokens) or 0) or 0,

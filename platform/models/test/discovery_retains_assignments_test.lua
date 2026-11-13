@@ -1,4 +1,16 @@
 local test = require("test")
+local sql = require("sql")
+local json = require("json")
+local funcs = require("funcs")
+local fake_http = require("fake_http")
+local save_handler = require("save_handler")
+
+local function save(input)
+    fake_http.prepare(json.encode(input))
+    save_handler.handler()
+    test.eq(fake_http.status(), 200, json.encode(fake_http.payload()))
+    return fake_http.payload().model
+end
 local repo = require("models_repo")
 local discovery = require("model_discovery")
 local reference_registry = require("reference_registry")
@@ -103,7 +115,7 @@ local function define_tests()
             test.is_nil(delete_err)
             if not ok then error(err, 0) end
         end)
-        test.it("keeps stored capabilities on rediscovery and infers them only for new cards", function()
+        test.it("keeps administrator additions on rediscovery and infers new cards", function()
             local profile, perr = repo.create_profile({
                 name = "Capability retention",
                 provider_id = "wippy.llm.openai_compat:provider",
@@ -140,6 +152,116 @@ local function define_tests()
             local _, delete_err = repo.delete_profile(profile.id)
             test.is_nil(delete_err)
             if not ok then error(err, 0) end
+        end)
+
+        local function capability_case(check)
+            local profile, profile_err = repo.create_profile({
+                name = "Capability ownership", provider_id = "wippy.llm.openai_compat:provider",
+                config = { base_url = "https://example.invalid/v1" },
+            })
+            test.is_nil(profile_err)
+            local original_adapter = discovery.adapter_for
+            local inferred = { "generate" }
+            discovery.adapter_for = function() return {
+                fetch = function() return { { id = "mutable-model", context_length = 8192,
+                    max_output_tokens = 1024, pricing = { prompt = "0" } } }, nil end,
+                capabilities = function() return inferred end,
+            } end
+            local function discover(capabilities)
+                inferred = capabilities
+                local result, err = discovery.discover(profile.id)
+                test.is_nil(err)
+                return result.models[1]
+            end
+            local ok, err = pcall(function() check(discover) end)
+            discovery.adapter_for = original_adapter
+            local _, delete_err = repo.delete_profile(profile.id)
+            test.is_nil(delete_err)
+            if not ok then error(err, 0) end
+        end
+
+        test.it("refreshes discovery-owned additions, removals and reused identities", function()
+            capability_case(function(discover)
+                local card = discover({ "generate" })
+                local name = card.name
+                card = discover({ "generate", "vision" })
+                test.eq(table.concat(card.capabilities, ","), "generate,vision")
+                card = discover({ "generate" })
+                test.eq(table.concat(card.capabilities, ","), "generate")
+                card = discover({ "embed" })
+                test.eq(card.name, name)
+                test.eq(table.concat(card.capabilities, ","), "embed")
+            end)
+        end)
+
+        test.it("keeps explicit additions and removals until each override resets", function()
+            capability_case(function(discover)
+                local card = discover({ "generate", "vision" })
+                local saved = save({ name = card.name,
+                    capabilities = { "generate", "structured_output" } })
+                card = discover({ "generate", "vision", "tool_use" })
+                test.eq(table.concat(card.capabilities, ","), "generate,tool_use,structured_output")
+                -- Matching upstream values do not erase administrator ownership.
+                discover({ "generate", "structured_output" })
+                card = discover({ "generate", "vision" })
+                test.eq(table.concat(card.capabilities, ","), "generate,structured_output")
+                saved = save({ name = card.name, reset_capabilities = { "vision" } })
+                test.eq(table.concat(saved.capabilities, ","), "generate,vision,structured_output")
+                saved = save({ name = card.name, reset_capabilities = { "structured_output" } })
+                test.eq(table.concat(saved.capabilities, ","), "generate,vision")
+                card = discover({ "generate", "structured_output" })
+                test.eq(table.concat(card.capabilities, ","), "generate,structured_output")
+            end)
+        end)
+
+        test.it("adds ownership storage to the published schema and replays without changing rows", function()
+            local db, db_err = sql.get("app:ownership_upgrade_db")
+            test.is_nil(db_err)
+            local function migrate(entry, id)
+                local result, err = funcs.call("kickside.models.migrations:" .. entry, {
+                    database_id = "app:ownership_upgrade_db", id = id, direction = "up", force = true,
+                })
+                test.is_nil(err)
+                test.eq(result.failed, 0, json.encode(result))
+            end
+            local ok, err = pcall(function()
+                migrate("01_models_schema", "ownership-schema")
+                local _, insert_err = db:execute([[INSERT INTO kickside_model_cards
+                    (name, title, provider_id, provider_model, capabilities_json, created_at, updated_at)
+                    VALUES ('legacy-card', 'Legacy card', 'wippy.llm.openai_compat:provider',
+                        'legacy-model', '["generate","vision"]', 1, 2)]])
+                test.is_nil(insert_err)
+                local before, read_err = db:query("SELECT * FROM kickside_model_cards")
+                test.is_nil(read_err)
+                migrate("03_capability_ownership", "ownership-upgrade")
+                migrate("03_capability_ownership", "ownership-replay")
+                local after, after_err = db:query("SELECT * FROM kickside_model_cards")
+                test.is_nil(after_err)
+                test.eq(#after, 1)
+                for key, value in pairs(before[1]) do test.eq(after[1][key], value, key) end
+                test.is_nil(after[1].capability_ownership_json)
+            end)
+            db:release()
+            if not ok then error(err, 0) end
+        end)
+
+        test.it("adopts legacy differences once and refreshes the shared capabilities", function()
+            capability_case(function(discover)
+                local card = discover({ "generate", "vision" })
+                local db, db_err = sql.get("app:db")
+                test.is_nil(db_err)
+                local _, write_err = db:execute([[UPDATE kickside_model_cards
+                    SET capability_ownership_json = NULL, capabilities_json = '["generate","structured_output"]'
+                    WHERE name = $1]], { card.name })
+                db:release()
+                test.is_nil(write_err)
+                local _, reload_err = repo.reload()
+                test.is_nil(reload_err)
+                card = discover({ "generate", "vision" })
+                test.eq(table.concat(card.capabilities, ","), "generate,structured_output")
+                card = discover({ "vision", "tool_use" })
+                test.eq(table.concat(card.capabilities, ","), "tool_use,structured_output")
+            end)
         end)
 
         test.it("retains administrator classes and enabled state while refreshing provider metadata", function()

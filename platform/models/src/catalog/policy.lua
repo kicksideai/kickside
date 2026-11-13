@@ -397,6 +397,7 @@ local function clean_profile_input(input: any, existing: any?): (any?, string?)
 end
 
 
+M.table_has = table_has
 M.decode_json = decode_json
 M.normalize_list = normalize_list
 M.explicit_list = explicit_list
