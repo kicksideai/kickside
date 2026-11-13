@@ -101,6 +101,29 @@ function upload_query_repo.get(uuid)
     return parse_upload_row(upload)
 end
 
+-- The upload of an account whose acknowledged processing intent names job_id,
+-- or nil when none does.
+function upload_query_repo.find_by_processing_job(actor_id: string, job_id: string): (any?, any?)
+    if not actor_id or actor_id == "" or not job_id or job_id == "" then
+        return nil, errors.new({kind = errors.INVALID, message = "Actor ID and job ID are required",
+            retryable = false, details = {code = "upload_processing_job_required"}})
+    end
+    local db, err = resources.get_db()
+    if err then return nil, err end
+    local rows, query_err = select_upload_columns()
+        :from("kickside_uploads")
+        :where("actor_id = ? AND processing_job_id = ? AND processing_intent_state = ?",
+            actor_id, job_id, "acknowledged")
+        :limit(1)
+        :run_with(db):query()
+    db:release()
+    if query_err then
+        return nil, binding_errors.from(query_err, errors.UNAVAILABLE, "upload_lookup_failed", "Failed to get upload")
+    end
+    if #rows == 0 then return nil, nil end
+    return parse_upload_row(rows[1])
+end
+
 -- Intent is committed on the upload record before enqueue. The jobs enqueue
 -- response decides whether an active job already exists.
 function upload_query_repo.list_processing_enqueue_intents(limit)

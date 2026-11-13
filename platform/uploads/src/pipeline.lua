@@ -302,7 +302,9 @@ local function callback_idempotency_key(upload: any, token: string, success: any
     return CALLBACK_JOB_TYPE .. ":" .. tostring(upload.uuid or "") .. ":" .. tostring(digest or "")
 end
 
-local function enqueue_upload_token_once(upload, token: string, success, error_msg): (boolean, CallbackError?)
+-- tx/dbtype enqueue the callback inside the caller's transaction; the caller
+-- nudges the workers after it commits.
+local function enqueue_upload_token_once(upload, token: string, success, error_msg, tx: any?, dbtype: string?): (boolean, CallbackError?)
     local payload, err = upload_tokens.unpack(token)
     if err then
         log:warn("upload token unpack failed", { upload_id = upload.uuid, error = err })
@@ -347,7 +349,7 @@ local function enqueue_upload_token_once(upload, token: string, success, error_m
         success = success == true,
         error = error_msg,
     }
-    local _, enqueue_err = jobs.enqueue({
+    local params = {
         namespace = "thread", scope = component_id,
         owner_locator = { kind = "user", id = owner_actor_id :: string },
         key = callback_idempotency_key(upload, token, success),
@@ -359,7 +361,15 @@ local function enqueue_upload_token_once(upload, token: string, success, error_m
         concurrency_key = "uploads:callback:" .. component_id,
         immutable_payload = job_payload,
         trace_context = payload.trace_context,
-    })
+    }
+    local enqueue_err: any = nil
+    if tx ~= nil then
+        local _, tx_err = jobs.enqueue_tx(tx, dbtype :: string, params)
+        enqueue_err = tx_err
+    else
+        local _, direct_err = jobs.enqueue(params)
+        enqueue_err = direct_err
+    end
     if enqueue_err then
         if type(enqueue_err) == "userdata" then return false, enqueue_err end
         return false, errors.new({ message = "upload callback enqueue failed: " .. tostring(enqueue_err),
@@ -369,12 +379,12 @@ local function enqueue_upload_token_once(upload, token: string, success, error_m
 end
 
 -- Schedule upload completion token callback(s) as durable core jobs.
-function pipeline_lib.invoke_upload_token(upload, success, error_msg)
+function pipeline_lib.invoke_upload_token(upload, success, error_msg, tx: any?, dbtype: string?)
     if not upload or not upload.metadata then return true, nil end
 
     local first_err = nil
     for _, token in ipairs(callback_tokens(upload.metadata)) do
-        local ok, err = enqueue_upload_token_once(upload, token, success, error_msg)
+        local ok, err = enqueue_upload_token_once(upload, token, success, error_msg, tx, dbtype)
         if not ok then
             first_err = first_err or err or errors.new({ message = "failed to enqueue upload callback",
                 kind = errors.INTERNAL, retryable = true, details = { error_kind = "infrastructure" } })
