@@ -18,7 +18,7 @@ return {run = test.run_cases(function()
             local value, err = caller.unpack("mxC4R2MuYroEBelwotgAJxaDGkUF3SzAmbh+OO9MF2pPkipTyx1v/fuCGrGonpFu4I13g0kXlalm1TG43uv872gI+Sra8rwoZL+SbdUhOH6LLSNMtgl7yXS7ymyprbHaLv/rgZfhmjhOdghTkgiZ3TIfFJlC0KOrMgp5fJuOC8/vZwFRgm6cqj08WCfJ65s+1tsy+rAVAiIN0Zy14TM19A==")
             local packed, pack_err = caller.pack({upload_id="upload-fixture", function_id="example:complete",
                 actor_id="fixture-actor", actor_context={}})
-            local decoded, decode_err = base64.decode(packed)
+            local decoded, decode_err = base64.decode(packed :: string)
             local plain, decrypt_err = crypto.decrypt.aes(decoded, string.rep(string.char(171), 32))
             local payload, json_err = json.decode(plain)
             local _, restore_err = env.set("ENCRYPTION_KEY", previous)
