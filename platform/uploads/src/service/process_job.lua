@@ -122,7 +122,15 @@ local function settle(job: any, upload: any, outcome: table, dead_job_id: string
     if not settled then return abort(nil) end
     local callback_ok, callback_err = pipeline_lib.invoke_upload_token(upload, success,
         outcome.error_text, tx, dbtype)
-    if not callback_ok then return abort(callback_err) end
+    if not callback_ok then
+        if success or type(callback_err) ~= "userdata" or callback_err:retryable() then
+            return abort(callback_err)
+        end
+        local body = assert(json.decode(body_json))
+        body.callback_error = tostring(callback_err)
+        event.body_json, encode_err = json.encode(body)
+        if encode_err then return abort(encode_err) end
+    end
     local thread_id = tostring(job.thread_id or "")
     local completing: string? = nil
     if dead_job_id == nil then completing = tostring(job.id) end
@@ -255,6 +263,18 @@ local function dead(input: any): (any, any?)
     return { upload_id = upload.uuid, job_id = job_id, settled = settled }, nil
 end
 
+local function repair_dead(limit: integer): (integer?, any?, boolean?)
+    local ids, list_err = upload_query_repo.list_dead_processing_jobs(limit)
+    if list_err then return nil, list_err end
+    local repaired = 0
+    for _, id in ipairs(ids) do
+        local result, settle_err = dead({payload = {job_id = id}})
+        if settle_err then return nil, settle_err end
+        if result.settled then repaired = repaired + 1 end
+    end
+    return repaired, nil, #ids == limit
+end
+
 -- proc:// entry point. The monitored process transports one status value, with
 -- native failures serialized into error_native.
 local function main(input: any): table
@@ -267,4 +287,4 @@ local function main(input: any): table
     return {ok = true, output = result}
 end
 
-return { run = run, main = main, dead = dead, terminal_failure = terminal_failure }
+return { run = run, main = main, dead = dead, repair_dead = repair_dead, terminal_failure = terminal_failure }

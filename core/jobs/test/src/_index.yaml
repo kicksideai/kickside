@@ -4246,3 +4246,73 @@ entries:
     kind: db.sql.sqlite
     foreign_keys: true
     file: ":memory:"
+  - name: job_dead_self_proc
+    kind: process.lua
+    meta:
+      type: test_helper
+      comment: Test-only proc:// worker whose dead jobs reach app:job_dead_recorder.
+      job_dead: app:job_dead_self_handler
+    source: file://job_sleep_proc.lua
+    method: run
+    modules:
+      - time
+      - channel
+      - process
+    imports:
+      job_types: kickside.core.jobs:types
+
+  - name: job_dead_missing_proc
+    kind: process.lua
+    meta:
+      type: test_helper
+      comment: Test-only proc:// worker whose dead jobs reach app:job_dead_recorder.
+      job_dead: app:missing_dead_handler
+    source: file://job_sleep_proc.lua
+    method: run
+    modules:
+      - time
+      - channel
+      - process
+    imports:
+      job_types: kickside.core.jobs:types
+
+  - name: job_dead_nonfunction_proc
+    kind: process.lua
+    meta:
+      type: test_helper
+      comment: Test-only proc:// worker whose dead jobs reach app:job_dead_recorder.
+      job_dead: app:job_sleep_proc
+    source: file://job_sleep_proc.lua
+    method: run
+    modules:
+      - time
+      - channel
+      - process
+    imports:
+      job_types: kickside.core.jobs:types
+
+  - name: job_dead_capacity_proc
+    kind: process.lua
+    meta:
+      type: test_helper
+      comment: Test-only proc:// worker whose dead jobs reach app:job_dead_recorder.
+      job_dead: app:capacity_worker_a
+    source: file://job_sleep_proc.lua
+    method: run
+    modules:
+      - time
+      - channel
+      - process
+    imports:
+      job_types: kickside.core.jobs:types
+
+
+  - name: job_dead_self_handler
+    kind: function.lua
+    meta:
+      job_dead: app:job_dead_self_handler
+    source: file://job_dead_recorder.lua
+    method: fail
+    modules: [process]
+    imports:
+      jobs: kickside.core.jobs:jobs

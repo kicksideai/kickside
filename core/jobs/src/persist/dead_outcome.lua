@@ -4,6 +4,7 @@
 -- least once through the ordinary claim, lease and retry machinery.
 local registry = require("registry")
 local job_types = require("job_types")
+local capacity = require("capacity")
 
 local M = {}
 
@@ -28,7 +29,26 @@ function M.handler(worker_ref: any): (string?, error?)
         return nil, (errors.new({ message = M.META .. " of " .. reference.target_id .. " must name a function",
             kind = errors.INVALID, retryable = false }) :: error)
     end
+    local target, target_err = registry.get(declared)
+    local kind = type(target) == "table" and (target.kind or (target.data and target.data.kind)) or nil
+    if target_err and not errors.is(target_err, errors.NOT_FOUND) then
+        return nil, errors.wrap(target_err, M.META .. " target lookup failed")
+    end
+    if kind ~= "function.lua" then
+        return nil, errors.new({message = M.META .. " must name an existing function: " .. declared,
+            kind = errors.INVALID, retryable = false})
+    end
+    local _, admission_err = capacity.admit(declared, nil)
+    if admission_err then
+        return nil, errors.new({message = M.META .. " target cannot admit an outcome: " .. tostring(admission_err),
+            kind = errors.INVALID, retryable = false})
+    end
     return declared :: string, nil
+end
+
+function M.is_outcome(row: table): boolean
+    local prefix = tostring(#M.NAMESPACE) .. ":" .. M.NAMESPACE
+    return type(row.job_identity) == "string" and row.job_identity:sub(1, #prefix) == prefix
 end
 
 -- Enqueue parameters of the outcome of dead job `row` for `handler`. The payload

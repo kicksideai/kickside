@@ -634,6 +634,57 @@ local function define_tests()
 			test.eq(bytes, (storage:readfile(path)))
 		end)
 
+		test.it("settles terminal failure when its callback token is unreadable", function()
+            local id, owner = uuid_v4(), "callback-failure-" .. uuid_v4()
+            ensure_uploads_component(owner)
+            local metadata = metadata_with_identity(owner, "failed.bin", {
+                __upload_token = "unreadable-token",
+                stage_metadata = {ocr_error = "storage_pointer_missing"},
+            })
+            local upload = assert(upload_record_repo.create(id, owner, 1, "application/octet-stream",
+                "app:uploads", id, "app:types.failing", metadata, "uploaded", nil, nil, true, 600000))
+            local queued = assert(process_worker.enqueue_upload_job(upload, true))
+            local db = assert(sql.get("app:db"))
+            local leased = admit_job(db, queued.job_id, 5)
+            local input = assert(worker_dispatch.build_worker_input(leased))
+            local _, run_err = process_job.run(input)
+            test.is_nil(run_err, tostring(run_err))
+            test.eq(assert(upload_query_repo.get(id)).storage_state, "failed")
+            local events = assert(db:query("SELECT body FROM kickside_event WHERE external_id=$1 AND type=$2",
+                {id, uploads_events.TYPE.FAILED}))
+            test.eq(#events, 1)
+            test.not_nil(json.decode(events[1].body).callback_error, "undeliverable callback is recorded")
+            db:release()
+        end)
+
+        for _, intent in ipairs({true, false}) do
+            test.it("maintenance settles an already-dead processing job with intent=" .. tostring(intent), function()
+                local id, owner = uuid_v4(), "older-upload-" .. uuid_v4()
+                ensure_uploads_component(owner)
+                local upload = assert(upload_record_repo.create(id, owner, 1, "application/octet-stream",
+                    "app:uploads", id, "app:types.failing", upload_metadata(owner, "earlier.bin"),
+                    "uploaded", nil, nil, intent, 600000))
+                local queued = assert(process_worker.enqueue_upload_job(upload, true))
+                local db = assert(sql.get("app:db"))
+                -- Published rows contain no outcome job. Older intent-less rows also lack a job pointer.
+                assert(db:execute("UPDATE kickside_job SET status='dead',last_error='execution ended',finished_at=$1 WHERE id=$2",
+                    {jobs_lifecycle.now_string(tostring(db:type())), queued.job_id}))
+                db:release()
+                local result, err = funcs.call("kickside.uploads:retention")
+                test.is_nil(err, tostring(err))
+                test.is_true(result.success, tostring(result.error))
+                test.eq(assert(upload_query_repo.get(id)).storage_state, "failed")
+                local again, again_err = funcs.call("kickside.uploads:retention")
+                test.is_nil(again_err)
+                test.is_true(again.success, tostring(again.error))
+                local verify = assert(sql.get("app:db"))
+                local events = assert(verify:query("SELECT id FROM kickside_event WHERE external_id=$1 AND type=$2",
+                    {id, uploads_events.TYPE.FAILED}))
+                test.eq(#events, 1)
+                verify:release()
+            end)
+        end
+
 		test.it("settles an upload whose processing job dies without its handler", function()
 			local storage = fs.get("app:uploads")
 			local upload_id = "dead-job-" .. uuid_v4()
@@ -656,7 +707,7 @@ local function define_tests()
 			test.eq(assert(db:query("SELECT status FROM kickside_job WHERE id=$1", { job.id }))[1].status, "dead")
 
 			local outcomes = assert(db:query(
-				"SELECT id FROM kickside_job WHERE worker_ref=$1 AND payload LIKE $2",
+				"SELECT id FROM kickside_job WHERE worker_ref=$1 AND CAST(payload AS TEXT) LIKE $2",
 				{ "kickside.uploads.service:process_dead", "%" .. job.id .. "%" }))
 			test.eq(#outcomes, 1)
 			local outcome = admit_job(db, outcomes[1].id, 1)

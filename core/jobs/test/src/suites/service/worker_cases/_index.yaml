@@ -316,4 +316,5 @@ entries:
     worker: kickside.core.jobs.service:loop
     worker_dispatch: kickside.core.jobs.service:worker_dispatch
     worker_child: kickside.core.jobs.service:worker_child
+    lifecycle_enqueue: kickside.core.jobs.persist:lifecycle_enqueue
     job_fixture: app:job_fixture

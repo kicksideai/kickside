@@ -14,6 +14,7 @@ entries:
       comment: Claimed-job transitions, run history, cancellation, and enqueue API.
     source: file://lifecycle_transition.lua
     modules:
+      - logger
       - sql
       - time
       - uuid
@@ -38,6 +39,7 @@ entries:
     source: file://dead_outcome.lua
     modules: [registry]
     imports:
+      capacity: kickside.core.jobs:capacity
       job_types: kickside.core.jobs:types
 
   - name: lifecycle_cancel
