@@ -64,6 +64,7 @@ entries:
     source: file://delete_component_func.lua
     security:
       policies:
+        - kickside.component:kind_declaration_call
         - kickside.component:deletion_jobs_policy
         - kickside.component:deletion_worker_lookup
     modules:
@@ -203,6 +204,8 @@ entries:
   # kickside.component.binding:register_component_func
   - name: register_component_func
     kind: function.lua
+    security:
+      policies: [kickside.component:kind_declaration_call]
     meta:
       comment: Register a new component implementation
       tags:
@@ -247,6 +250,8 @@ entries:
   # kickside.component.binding:import_component_func
   - name: import_component_func
     kind: function.lua
+    security:
+      policies: [kickside.component:kind_declaration_call]
     meta:
       comment: import_component — reconstruct a shell from a portable envelope, owned by the actor (register + rollback owned upstream)
       tags:
@@ -266,6 +271,8 @@ entries:
   # kickside.component.binding:update_component_func
   - name: update_component_func
     kind: function.lua
+    security:
+      policies: [kickside.component:kind_declaration_call]
     meta:
       comment: Update component private context
       tags:
@@ -290,6 +297,8 @@ entries:
   # kickside.component.binding:set_meta_component_func
   - name: set_meta_component_func
     kind: function.lua
+    security:
+      policies: [kickside.component:kind_declaration_call]
     meta:
       comment: Set/delete public component metadata
       tags:
@@ -304,6 +313,8 @@ entries:
   # kickside.component.binding:set_placement_func
   - name: set_placement_func
     kind: function.lua
+    security:
+      policies: [kickside.component:kind_declaration_call]
     meta:
       comment: Re-parent and/or reorder a component within the hierarchy
       tags:
