@@ -184,7 +184,7 @@ local function check_last_admin(tx: Executor, component_id: string, subject: Sub
     local admin_count, target_is_admin = 0, false
     for _, g in ipairs((rows or {}) :: { any }) do
         local sid = (g :: any).subject_id
-        if type(sid) == "string" and string.sub(sid, 1, 7) ~= "system:" then
+        if type(sid) == "string" and not execution_identity.is_maintenance_key(sid) then
             admin_count = admin_count + 1
             if sid == subject.subject_id and (g :: any).subject_type == subject.subject_type then
                 target_is_admin = true
@@ -240,10 +240,10 @@ end
 local function grant_rows(rows: { any }?): ({ any }?, error?)
     local out = {}
     for _, r in ipairs(rows or {}) do
-        -- System actors (system:*) are infrastructure grants, never user/group
-        -- shares; they are left out of every enumerated grant set.
+        -- Declared framework actors are infrastructure grants; they are left out
+        -- of enumerated shares using the same classification as authorization.
         local sid = r.subject_id
-        if type(sid) ~= "string" or string.sub(sid, 1, 7) ~= "system:" then
+        if not execution_identity.is_maintenance_key(sid) then
             -- subject_type is NOT NULL in DDL: a row without one is corrupt,
             -- and inventing "user" for it would fabricate a grant subject.
             if type(r.subject_type) ~= "string" or r.subject_type == "" then

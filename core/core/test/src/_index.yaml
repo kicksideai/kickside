@@ -215,7 +215,7 @@ entries:
     method: publish
     modules: [security, contract]
     security:
-      actor: { id: "system:test-output-publisher" }
+      actor: { id: "system:lifecycle" }
 
   - name: lifecycle_wiring_test
     kind: function.lua

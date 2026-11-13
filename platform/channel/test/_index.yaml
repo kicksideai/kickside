@@ -867,3 +867,30 @@ entries:
       - {name: ui_server, value: 'app:gateway'}
       - {name: target_db, value: 'app:db'}
       - {name: process_host, value: 'app:processes'}
+
+  - name: maintenance_ingress_probe
+    kind: function.lua
+    source: file://maintenance_ingress_probe.lua
+    method: run
+    meta: {type: test_helper}
+    imports:
+      receive: app:receive
+      dm: app:real_dm
+      fixture: app:receive_fixture
+      state: app:test_state
+
+  - name: maintenance_ingress_capability
+    kind: security.policy
+    policy:
+      resources: [kickside.channel:receive, kickside.dm:receive]
+      actions: [channel.receive.inject]
+      effect: allow
+
+  - name: maintenance_ingress_test
+    kind: function.lua
+    source: file://maintenance_ingress_test.lua
+    method: run
+    modules: [security, funcs, registry]
+    meta: {type: test, suite: channel_maintenance_ingress}
+    imports:
+      test: wippy.test:test

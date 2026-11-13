@@ -38,3 +38,34 @@ retain the existing execution-root and trusted deferred-owner admission.
 
 Ordinary session requests keep their login-minted policies and group snapshots.
 Declared-principal authorization does not rebuild session policies per request.
+
+## SPEC: Framework maintenance actors
+
+`execution_identity.is_maintenance_key` is the single exact membership classifier
+for both current actors and persisted owner/grant keys. Each owning module adds
+one `registry.entry` per framework actor with
+`meta.type: kickside.execution.maintenance_actor` and the exact `meta.actor_id`.
+Only administrator-installed registry declarations contribute; ordinary actor
+creation declarations, actor metadata, and component-instance metadata do not.
+The actor ID must use the `system:` namespace and contain only letters, digits,
+underscores, dots or hyphens after the colon. Membership compares raw IDs without
+trimming or other normalization; the prefix alone grants nothing.
+
+Execution's trusted reader explicitly binds its own registry-read scope,
+independently of the caller's registry visibility, including explicit denials. It caches the validated exact set per registry
+version, replacing it after install, update or uninstall; removed declarations
+also cease recognizing persisted owner/grant keys. Only the owner-scope read populates the cache; a direct visibility-restricted
+read cannot contaminate it. Read or declaration failures remain visible errors,
+never an empty-set cache. Execution carries no inventory
+of other modules' actors. Hosts reserve declared actor creation to trusted
+framework code; declarations grant no actor-minting, delegation, registry, or
+other native capability. Separate capability checks remain required.
+
+Existing owners, grants and thread owners whose declarations remain installed
+keep their classification without migration. Unlisted keys (including `system:knowledge.injection`) receive ordinary
+caller checks, remain visible in grant enumeration and count in last-admin checks.
+They still cannot encode a selectable v2 principal, whose ID cannot contain colons.
+Remove obsolete injection grants through authorized sharing operations; recover
+legacy work only by verifying its owner and refreshing its protected identity
+through supported identity/convergence operations. Quarantine unverifiable stored
+execution rows; never clear their identity to obtain framework execution.

@@ -2,6 +2,7 @@ local test = require("test")
 local execution_identity_module = require("execution_identity")
 local funcs = require("funcs")
 local security = require("security")
+local registry = require("registry")
 local native_capture_probe = require("native_capture_probe")
 local execution_identity = execution_identity_module
 local dependencies: { [string]: any } = {}
@@ -111,6 +112,69 @@ local function define_tests()
             test.is_true(type(execution_identity.utc_now()) == "string" and execution_identity.utc_now() ~= "")
         end)
 
+        test.it("recognizes only the declared framework actor inventory", function()
+            local actors = {"system:lifecycle", "system:channel-hub", "system:kickside.automation.declaration", "system:kickside.automation.identity_writer", "system:kickside.automation.round", "system:kickside.channel.retention", "system:kickside.component.retention", "system:kickside.jobs", "system:kickside.mcp.retention", "system:kickside.oauth.refresh", "system:kickside.uploads.callback", "system:kickside.uploads.process", "system:kickside.uploads.retention", "system:kickside.workflows.maintenance"}
+            for _, id in ipairs(actors) do
+                test.is_true(execution_identity.is_maintenance_key(id), id)
+                for _, unknown in ipairs({id .. ".extra", id .. ":extra", " " .. id, id .. " "}) do
+                    test.is_false(execution_identity.is_maintenance_key(unknown), unknown)
+                end
+            end
+            for _, id in ipairs({"system:knowledge.injection", "system:unlisted", "system:", "SYSTEM:lifecycle", "user", "principal:service:sync"}) do
+                test.is_false(execution_identity.is_maintenance_key(id), id)
+            end
+            test.is_false(execution_identity.is_maintenance_key(nil))
+            test.is_false(execution_identity.is_maintenance_key({}))
+        end)
+
+        test.it("recognizes a module-owned maintenance declaration without a core inventory edit", function()
+            test.is_true(execution_identity.is_maintenance_key("system:execution-test.declared"))
+            test.is_false(execution_identity.is_maintenance_key("system:execution-test.ordinary"))
+        end)
+
+        test.it("reads declarations independently of the caller registry visibility and metadata", function()
+            local scope = assert(security.new_scope({assert(security.policy("app:maintenance_probe_only")),
+                assert(security.policy("app:maintenance_registry_deny"))}))
+            for _, key in ipairs({"system:execution-test.declared", "system:execution-test.ordinary", "system:unlisted"}) do
+                local result, err = funcs.new():with_actor(assert(security.new_actor("caller",
+                    {type = "kickside.execution.maintenance_actor", actor_id = key, system = true})))
+                    :with_scope(scope):call("app:maintenance_probe", key)
+                test.is_nil(err, tostring(err))
+                test.eq(result.visible, 0)
+                test.eq(result.visible_after, 0)
+                test.eq(result.actor, "caller")
+                test.eq(result.maintenance, key == "system:execution-test.declared")
+            end
+        end)
+
+        test.it("refreshes native membership after uninstall and reinstall with no caller registry visibility", function()
+            local entry = assert(registry.get("app:declared_test_actor"))
+            local scope = assert(security.new_scope({assert(security.policy("app:maintenance_probe_only")),
+                assert(security.policy("app:maintenance_registry_deny"))}))
+            local function classified()
+                local result, err = funcs.new():with_actor(assert(security.new_actor("caller", {})))
+                    :with_scope(scope):call("app:maintenance_probe", "system:execution-test.declared")
+                test.is_nil(err, tostring(err))
+                test.eq(result.visible, 0)
+                test.eq(result.visible_after, 0)
+                return result.maintenance
+            end
+            test.is_true(classified(), "initial declaration with explicit registry denial")
+            local removal = assert(registry.snapshot()):changes()
+            removal:delete(entry.id)
+            assert(removal:apply())
+            local ok, failure = pcall(function() test.is_false(classified(), "removed declaration") end)
+            local restore = assert(registry.snapshot()):changes()
+            restore:create({id = entry.id, kind = entry.kind, meta = entry.meta, data = entry.data})
+            assert(restore:apply())
+            test.is_true(ok, tostring(failure))
+            local direct, direct_err = funcs.new():with_actor(assert(security.new_actor("caller", {})))
+                :with_scope(scope):call("kickside.execution:read_maintenance_actor", "system:execution-test.declared")
+            test.is_nil(direct_err, tostring(direct_err))
+            test.is_nil((next(direct)))
+            test.is_true(classified(), "reinstalled declaration after a direct visibility-restricted read")
+        end)
+
         test.it("reads every reserved actor key back into its principal", function()
             local cases = {
                 { key = "u1", kind = "user", id = "u1" },
@@ -130,7 +194,7 @@ local function define_tests()
                 test.not_nil(err)
                 test.eq((err :: any):kind(), errors.INVALID)
             end
-            test.is_true(execution_identity.is_maintenance_key("system:automation"))
+            test.is_false(execution_identity.is_maintenance_key("system:automation"))
             test.is_false(execution_identity.is_maintenance_key("u1"))
             test.is_false(execution_identity.is_maintenance_key("principal:service:sync"))
         end)

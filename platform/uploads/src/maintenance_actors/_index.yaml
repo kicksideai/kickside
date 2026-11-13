@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: kickside.uploads.maintenance_actors
+
+entries:
+  - name: kickside_uploads_callback
+    kind: registry.entry
+    meta:
+      type: kickside.execution.maintenance_actor
+      actor_id: system:kickside.uploads.callback
+  - name: kickside_uploads_process
+    kind: registry.entry
+    meta:
+      type: kickside.execution.maintenance_actor
+      actor_id: system:kickside.uploads.process
+  - name: kickside_uploads_retention
+    kind: registry.entry
+    meta:
+      type: kickside.execution.maintenance_actor
+      actor_id: system:kickside.uploads.retention
