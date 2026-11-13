@@ -90,11 +90,11 @@ function repo.find_by_thread(db_or_tx: Executor, thread_id: string): (Policy?, e
     if type(enabled) == "number" then
         enabled = enabled ~= 0
     end
-    return {
-        event_hot_retention_days = math.floor(tonumber(row.event_hot_retention_days) or consts.DEFAULTS.event_hot_retention_days),
-        archive_mode = tostring(row.archive_mode or consts.DEFAULTS.archive_mode),
+    return repo.normalize({
+        event_hot_retention_days = row.event_hot_retention_days,
+        archive_mode = row.archive_mode,
         enabled = enabled == true,
-    }, nil
+    })
 end
 
 -- upsert validates the input, then writes the thread's policy in one statement:
@@ -104,7 +104,7 @@ end
 -- thread (e.g. provision.materialize's own call racing the create path's) both
 -- see "no row" and both insert, and the loser hits the unique constraint. The
 -- database resolves the race atomically instead. Returns the normalized policy
--- that was persisted.
+-- that was persisted. A NULL window inherits the resolved Core policy.
 function repo.upsert(db: sql.DB, thread_id: string, input: table?): (Policy?, error?)
     if type(thread_id) ~= "string" or thread_id == "" then
         return nil, (errors.new({ message = "thread_id is required", kind = errors.INVALID }) :: error)
@@ -124,6 +124,11 @@ function repo.upsert(db: sql.DB, thread_id: string, input: table?): (Policy?, er
     local now = now_string(dbtype)
     local enabled_value: any = dbtype == sql.type.SQLITE and (p.enabled and 1 or 0) or p.enabled
 
+    local stored_window: any = sql.NULL
+    if type(input) == "table" and input.event_hot_retention_days ~= nil then
+        stored_window = p.event_hot_retention_days
+    end
+
     local result, upsert_err = db:execute(
         "INSERT INTO " .. consts.POLICY_TABLE
         .. " (id,thread_id,event_hot_retention_days,archive_mode,enabled,created_at,updated_at)"
@@ -134,7 +139,7 @@ function repo.upsert(db: sql.DB, thread_id: string, input: table?): (Policy?, er
         .. " enabled=excluded.enabled,"
         .. " updated_at=excluded.updated_at",
         {
-            uuid.v7(), thread_id, p.event_hot_retention_days, p.archive_mode,
+            uuid.v7(), thread_id, stored_window, p.archive_mode,
             enabled_value, now, now,
         }
     )

@@ -7,6 +7,8 @@ return require("migration").define(function()
                 local _, err = db:execute("ALTER TABLE kickside_retention_policy ALTER COLUMN event_hot_retention_days SET DEFAULT "
                     .. tostring(consts.DEFAULTS.event_hot_retention_days))
                 if err then error(err) end
+                local _, nullable_err = db:execute("ALTER TABLE kickside_retention_policy ALTER COLUMN event_hot_retention_days DROP NOT NULL")
+                if nullable_err then error(nullable_err) end
             end)
         end)
         database("sqlite", function()
@@ -17,7 +19,7 @@ return require("migration").define(function()
                     [[CREATE TABLE kickside_retention_policy_updated (
                         id TEXT PRIMARY KEY,
                         thread_id TEXT NOT NULL REFERENCES kickside_thread(id) ON DELETE CASCADE,
-                        event_hot_retention_days INTEGER NOT NULL DEFAULT ]] .. tostring(consts.DEFAULTS.event_hot_retention_days) .. [[,
+                        event_hot_retention_days INTEGER DEFAULT ]] .. tostring(consts.DEFAULTS.event_hot_retention_days) .. [[,
                         archive_mode TEXT NOT NULL DEFAULT 'tombstone_only' CHECK (archive_mode IN ('tombstone_only','hard_delete')),
                         enabled INTEGER NOT NULL DEFAULT 1,
                         created_at TEXT NOT NULL DEFAULT (datetime('now')),

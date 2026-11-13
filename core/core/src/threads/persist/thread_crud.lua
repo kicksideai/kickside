@@ -337,16 +337,14 @@ local function complete_thread(db: DB, thread_id: string, params: table, actor_i
     params = type(params) == "table" and params or {}
     local declaration_impl_id: string? = normalize.trim(params.impl_id) ~= "" and (params.impl_id :: string) or nil
 
-    local retention_input: { [string]: any } = {}
     if declaration_impl_id then
         local declared = autoinit.retention_for_impl(declaration_impl_id :: string)
         if declared and type(declared.event_days) == "number" then
-            retention_input.event_hot_retention_days = declared.event_days
+            local _, retention_err = retention_repo.upsert(db, thread_id, {
+                event_hot_retention_days = declared.event_days,
+            })
+            if retention_err then return nil, retention_err end
         end
-    end
-    local _, retention_err = retention_repo.upsert(db, thread_id, retention_input)
-    if retention_err then
-        return nil, retention_err
     end
 
     local rows, rows_err = db:query("SELECT * FROM kickside_thread WHERE id = $1", { thread_id })
