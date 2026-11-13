@@ -103,6 +103,7 @@ entries:
     modules: [process, channel]
     imports:
       settings_changes: kickside.settings:settings_changes
+      settings_writer: kickside.settings.persist:settings_writer
 
   - name: keeper_peer
     kind: process.lua
