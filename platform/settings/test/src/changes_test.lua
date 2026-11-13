@@ -58,6 +58,8 @@ local function define_tests()
             local ready = process.listen("listener.ready")
             listener = assert(process.spawn_monitored("app:change_listener", "app:processes", process.pid()))
             test.not_nil(receive(ready, "5s"), "change listener joins the subscribers")
+            -- A preceding suite can leave a committed notification in flight.
+            process.send(listener, changes.TOPIC, { revision = assert(writer.stored_revision()) })
         end)
 
         test.after_all(function()

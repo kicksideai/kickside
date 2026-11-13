@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.2.22](https://github.com/kicksideai/kickside/compare/users-v0.2.21...users-v0.2.22) (2026-11-13)
+
+
+### Bug Fixes
+
+* align System settings navigation and administration panes ([#449](https://github.com/kicksideai/kickside/issues/449)) ([f113972](https://github.com/kicksideai/kickside/commit/f113972709e065c17ecc112b61cc4bd141b75a87))
+
+## [0.2.21](https://github.com/kicksideai/kickside/compare/users-v0.2.20...users-v0.2.21) (2026-11-12)
+
+
+### Bug Fixes
+
+* **inbox:** enforce addressed access and committed notifications ([#444](https://github.com/kicksideai/kickside/issues/444)) ([c4d3ba9](https://github.com/kicksideai/kickside/commit/c4d3ba96c758fb8b60304898cdfec4018e37fc12))
+* **inbox:** restore personal inbox items ([#447](https://github.com/kicksideai/kickside/issues/447)) ([3b3d732](https://github.com/kicksideai/kickside/commit/3b3d7322a3d05f84798526598517a2557489065c))
+
+## [0.2.20](https://github.com/kicksideai/kickside/compare/users-v0.2.19...users-v0.2.20) (2026-11-12)
+
+
+### Features
+
+* **inbox:** support private principal-addressed items ([#438](https://github.com/kicksideai/kickside/issues/438)) ([141ec96](https://github.com/kicksideai/kickside/commit/141ec9604b6361502646dda8dec05a0ed0f4e262))
+
 ## [0.2.19](https://github.com/kicksideai/kickside/compare/users-v0.2.18...users-v0.2.19) (2026-11-09)
 
 

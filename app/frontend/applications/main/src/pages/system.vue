@@ -199,11 +199,11 @@ onUnmounted(() => {
   <div class="system-page">
     <div class="system-chrome">
       <div class="system-chrome-inner">
-      <div class="page-head system-head">
-        <div class="page-head-icon"><Icon icon="tabler:settings" aria-hidden="true" /></div>
-        <div class="page-head-text">
-          <h1 class="page-title">System</h1>
-          <p class="page-sub">Users, modules, and configuration.</p>
+      <div class="kx-head system-head">
+        <div class="kx-head-icon"><Icon icon="tabler:settings" aria-hidden="true" /></div>
+        <div class="kx-head-text">
+          <h1 class="kx-title">System</h1>
+          <p class="kx-head-sub">Users, modules, and configuration.</p>
         </div>
         <div v-if="headerLinks.length" class="system-head-links">
           <a
@@ -272,7 +272,10 @@ onUnmounted(() => {
 
 .system-head {
   padding: 0 0 12px;
+  flex-wrap: nowrap;
 }
+
+.system-head .kx-title { line-height: 1.25; }
 
 .system-head-links {
   margin-left: auto;

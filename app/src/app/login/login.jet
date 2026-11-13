@@ -63,7 +63,7 @@
       integrity="sha384-fz89ldHB4I+aXvbsWrdcmFwR/hSZ1NZSrig4NTQAVkJkTY+yPacdRw7E/1wNCKQ1"
       crossorigin="anonymous"
     />
-    <!-- Facade theme, same as the app: real --p-* tokens (green primary, dark-mode
+    <!-- Facade theme, same as the app: real --p-* tokens (primary, dark-mode
          aware) from css_variables + PrimeVue .p-* chrome. Keeps sign-in on the app
          theme instead of a hand-picked accent. -->
     <link rel="stylesheet" href="/api/public/facade/variables.css" />

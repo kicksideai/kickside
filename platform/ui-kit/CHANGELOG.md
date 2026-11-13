@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.7.2](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.1...ui-kit-v1.7.2) (2026-11-13)
+
+
+### Bug Fixes
+
+* align System settings navigation and administration panes ([#449](https://github.com/kicksideai/kickside/issues/449)) ([f113972](https://github.com/kicksideai/kickside/commit/f113972709e065c17ecc112b61cc4bd141b75a87))
+* **ui-kit:** preserve component styles across theme load order ([#448](https://github.com/kicksideai/kickside/issues/448)) ([fb9447e](https://github.com/kicksideai/kickside/commit/fb9447e3f4e9c1bfc6875f91ee6761c7c42ff044))
+
 ## [1.7.1](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.0...ui-kit-v1.7.1) (2026-11-09)
 
 

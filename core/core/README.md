@@ -87,6 +87,18 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 - [Wippy documentation](https://wippy.ai)
 - [Wippy Hub](https://hub.wippy.ai/kickside/core)
 
+## SPEC: Thread declaration completion
+
+Explicit completion of an existing thread (including a pending natural key)
+requires component WRITE or framework maintenance authority before retention,
+projection/cursor registration, Jobs creation, or public-marker mutation.
+A READ-only refusal leaves all of that state unchanged. Caller-supplied arguments
+cannot grant trusted audit authority. Output-authorized emits
+and trusted audit writes retain their existing internal completion authority.
+Known: a permission change during a request is not coordinated with completion;
+normal authorization applies at each checked boundary.
+
+
 ## License
 
 [KickSide Community License 1.0](LICENSE). Vendored dependencies retain their own licenses.

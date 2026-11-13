@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.85](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.84...knowledge-v0.1.85) (2026-11-12)
+
+
+### Bug Fixes
+
+* **knowledge:** preserve analysis availability in answers and tools ([#446](https://github.com/kicksideai/kickside/issues/446)) ([d029efb](https://github.com/kicksideai/kickside/commit/d029efb21a77a938328b715dbac47c1fe8b90837))
+
 ## [0.1.84](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.83...knowledge-v0.1.84) (2026-11-12)
 
 

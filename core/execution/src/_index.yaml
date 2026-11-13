@@ -61,3 +61,47 @@ entries:
   - name: identity_failure
     kind: library.lua
     source: file://identity_failure.lua
+
+  - name: maintenance_inventory
+    kind: library.lua
+    meta: {private: true}
+    source: file://maintenance_inventory.lua
+    modules: [registry, security, funcs]
+
+  - name: maintenance_actor
+    kind: function.lua
+    meta:
+      comment: Trusted exact maintenance membership; returns no registry metadata or caller authority.
+    source: file://maintenance_reader.lua
+    method: contains
+    imports: {maintenance_inventory: kickside.execution:maintenance_inventory}
+    security:
+      actor: {id: 'kickside.execution:maintenance_reader'}
+      policies: ['kickside.execution:maintenance_reader_access']
+
+  - name: read_maintenance_actor
+    kind: function.lua
+    meta: {private: true}
+    source: file://maintenance_reader.lua
+    method: read
+    imports: {maintenance_inventory: 'kickside.execution:maintenance_inventory'}
+
+  - name: maintenance_reader_access
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: [security.policy.get, security.scope.create, funcs.security, funcs.call]
+      resources:
+        - kickside.execution:maintenance_declarations_read
+        - kickside.execution:read_maintenance_actor
+        - custom
+        - security
+      effect: allow
+
+  - name: maintenance_declarations_read
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      actions: [registry.get, registry.find]
+      resources: '*'
+      effect: allow

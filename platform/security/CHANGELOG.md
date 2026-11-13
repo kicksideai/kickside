@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.27](https://github.com/kicksideai/kickside/compare/security-v0.2.26...security-v0.2.27) (2026-11-13)
+
+
+### Bug Fixes
+
+* align System settings navigation and administration panes ([#449](https://github.com/kicksideai/kickside/issues/449)) ([f113972](https://github.com/kicksideai/kickside/commit/f113972709e065c17ecc112b61cc4bd141b75a87))
+
 ## [0.2.26](https://github.com/kicksideai/kickside/compare/security-v0.2.25...security-v0.2.26) (2026-11-09)
 
 

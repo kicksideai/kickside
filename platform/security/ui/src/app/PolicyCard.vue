@@ -19,7 +19,7 @@ function onDragStart(e: DragEvent) {
 
 <template>
   <div
-    class="ks-pcard"
+    class="kx-card ks-pcard"
     :class="mode"
     :draggable="mode !== 'locked'"
     @dragstart="onDragStart"

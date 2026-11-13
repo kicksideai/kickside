@@ -9,6 +9,7 @@ local placement = require("placement")
 local component_types = require("component_types")
 local context_policy = require("context_policy")
 local placement_rules = require("placement_rules")
+local kind_authority = require("kind_authority")
 type Executor = sql.DB | sql.Transaction
 
 -- Encode a private-context value to its stored JSON string.
@@ -57,6 +58,9 @@ local function create_component(tx: Executor, db: Executor, command: component_t
             }) :: error)
         end
     end
+
+    local kind_err = kind_authority.check(payload.impl_id :: string, "create")
+    if kind_err then return nil, kind_err end
 
     local component_id = (payload.component_id or uuid.v7()) :: string
     if payload.component_id ~= nil and not uuid.validate(component_id) then
@@ -283,6 +287,9 @@ local function set_placement(tx: Executor, db: Executor, command: component_type
         return nil, (errors.new({ message = "component not found", kind = errors.NOT_FOUND }) :: error)
     end
 
+    local kind_err = kind_authority.check(node.impl_id :: string, "update")
+    if kind_err then return nil, kind_err end
+
     -- Determine the target parent.
     local new_parent_id = node.parent_id
     if payload.has_parent_arg then
@@ -344,6 +351,16 @@ local function set_placement(tx: Executor, db: Executor, command: component_type
     -- Re-materialize the node's path, then rewrite every descendant relative to it.
     local old_path = node.path
     local new_path = placement.build_path(db, component_id, new_parent_path)
+    local descendants = {}
+    if new_path ~= old_path then
+        local derr
+        descendants, derr = placement.descendants(tx, component_id)
+        if derr then return nil, derr end
+        for _, descendant in ipairs(descendants or {}) do
+            local admission_err = kind_authority.check(descendant.impl_id :: string, "update")
+            if admission_err then return nil, admission_err end
+        end
+    end
     local now_ts = time.now():utc():format_rfc3339()
 
     local _, uerr = sql.builder.update(component_types.TABLES.COMPONENTS)
@@ -355,11 +372,6 @@ local function set_placement(tx: Executor, db: Executor, command: component_type
         :run_with(tx):exec()
     if uerr then
         return nil, errors.wrap(uerr, "failed to update placement")
-    end
-
-    local descendants, derr = placement.descendants(tx, component_id)
-    if derr then
-        return nil, derr
     end
 
     for _, d in ipairs(descendants or {}) do

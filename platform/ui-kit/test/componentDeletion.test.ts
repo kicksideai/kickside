@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 import { afterEach, expect, it, vi } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+const readCss = (name: string) => readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../package', name), 'utf8')
 import { mount, flushPromises } from '@vue/test-utils'
 import { defineComponent, ref } from 'vue'
 import { api, host, on } from '@wippy-fe/proxy'
@@ -318,4 +322,27 @@ it('keeps list progress for the same attempt when its deleting event arrives', a
   receive({event: 'component.deleting', component_id: 'selected', deletion_job_id: 'job'})
   await flushPromises()
   expect(rows.value[0].deletion_job?.status).toBe('dead')
+})
+
+
+it.each(['before', 'after'])('keeps the deletion spinner compact when theme CSS loads %s', (order) => {
+  const kit = document.createElement('style')
+  kit.textContent = readCss('component-deletion.css')
+  const theme = document.createElement('style')
+  theme.textContent = '.p-progressspinner { width: 100px; height: 100px; margin: 0 auto; }'
+  document.head.append(...(order === 'before' ? [theme, kit] : [kit, theme]))
+  const wrapper = mount(ComponentDeletion, {
+    attachTo: document.body,
+    props: {state: {deleting_at: 'marked', deletion_job: {status: 'running', attempts: 1}}},
+  })
+  mounted.push(wrapper)
+  try {
+    const spinner = wrapper.get('[role="progressbar"]').element
+    expect(getComputedStyle(spinner).width).toBe('16px')
+    expect(getComputedStyle(spinner).height).toBe('16px')
+    expect(getComputedStyle(spinner).margin).toBe('0px')
+  } finally {
+    kit.remove()
+    theme.remove()
+  }
 })

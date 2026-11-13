@@ -103,6 +103,7 @@ entries:
     modules: [process, channel]
     imports:
       settings_changes: kickside.settings:settings_changes
+      settings_writer: kickside.settings.persist:settings_writer
 
   - name: keeper_peer
     kind: process.lua
@@ -432,3 +433,25 @@ entries:
     control:
       tag: wc-model-picker
       props: { capability: vision }
+
+  - name: setting_mode
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+    namespace: kickside.settings.test
+    key: mode
+    value_type: string
+    default: sparse
+    schema:
+      enum: [sparse, all]
+
+  - name: setting_profile
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+    namespace: kickside.settings.test
+    key: profile
+    value_type: json
+    default: {enabled: true}
+    schema:
+      enum: [{enabled: true}, {enabled: false, labels: [chosen]}]

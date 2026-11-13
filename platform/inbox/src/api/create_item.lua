@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- POST /inbox — enqueue an inbox item. Body: { item_type, title, content?,
 -- metadata?, source_id?, priority?, trace_context? }. The acting user is recorded
 -- as actor_id; live UI refresh is emitted on the owner inbox component event topic.

@@ -267,7 +267,7 @@ select.kx-input { appearance: none; padding-right: 28px; cursor: pointer; }
 /* Layout wrapper the shared MultiSelectField emits around <wc-multiselect>. */
 .kx-msfield { display: block; width: 100%; min-height: 38px; }
 /* Icon-picker wrapper the shared IconField emits around <wc-icon-picker>. */
-.wc-iconfield { display: inline-block; min-height: 32px; vertical-align: top; }
+.wc-iconfield { display: inline-block; min-height: 32px; min-width: 44px; vertical-align: top; }
 
 /* Reusable search box (mirrors the KB dialog catalog search). */
 .kx-cat-search {

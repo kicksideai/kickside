@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.2.12](https://github.com/kicksideai/kickside/compare/ui-v0.2.11...ui-v0.2.12) (2026-11-13)
+
+
+### Bug Fixes
+
+* **ui:** use the website accent by default ([#451](https://github.com/kicksideai/kickside/issues/451)) ([3fff841](https://github.com/kicksideai/kickside/commit/3fff84187005155c49d2c96bb4f0184319668ac5))
+
+## [0.2.11](https://github.com/kicksideai/kickside/compare/ui-v0.2.10...ui-v0.2.11) (2026-11-12)
+
+
+### Bug Fixes
+
+* **inbox:** restore personal inbox items ([#447](https://github.com/kicksideai/kickside/issues/447)) ([3b3d732](https://github.com/kicksideai/kickside/commit/3b3d7322a3d05f84798526598517a2557489065c))
+
+## [0.2.10](https://github.com/kicksideai/kickside/compare/ui-v0.2.9...ui-v0.2.10) (2026-11-12)
+
+
+### Features
+
+* **inbox:** support private principal-addressed items ([#438](https://github.com/kicksideai/kickside/issues/438)) ([141ec96](https://github.com/kicksideai/kickside/commit/141ec9604b6361502646dda8dec05a0ed0f4e262))
+
 ## [0.2.9](https://github.com/kicksideai/kickside/compare/ui-v0.2.8...ui-v0.2.9) (2026-11-09)
 
 

@@ -6,6 +6,7 @@
 -- projection is removed via its rollback. Runs on SQLite and PostgreSQL.
 
 local test = require("test")
+local security = require("security")
 local json = require("json")
 local uuid = require("uuid")
 local sql = require("sql")
@@ -55,6 +56,21 @@ local function define_tests()
         local delete_thread_only = context.delete_thread_only
         local thread_ids = context.thread_ids
         local index_of = context.index_of
+
+        for _, actor_id in ipairs({"system:knowledge.injection", "system:unlisted"}) do
+            test.it("refuses cross-component publication from " .. actor_id, function()
+                local created = as_owner(CREATE, {thread_class = "exact_actor_" .. suffix,
+                    impl_id = "app:threads_test_event_kind"})
+                local result, err = run_as(actor_id, APPEND_EVENTS, {thread_id = created.thread_id,
+                    events = {{type = "app:threads_knowledge_created", role = "system", body = {},
+                        external = {external_source = "test", external_id = uuid.v4()}}}},
+                    assert(security.new_scope({assert(security.policy("app:threads_test_user_append_scope"))})))
+                test.is_nil(result)
+                test.is_true(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
+                local events, read_err = as_owner(LIST_EVENTS, {thread_id = created.thread_id})
+                test.is_nil(read_err); test.eq(#events.events, 0)
+            end)
+        end
 
         test.it("carries subject expectations, append versions and subject reads through the binding", function()
             local created, create_err = as_owner(CREATE, { title = "Subject contracts", impl_id = "app:threads_test_event_kind" })

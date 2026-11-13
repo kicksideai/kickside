@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: kickside.channel.responder
+entries:
+  - name: channel_responder
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}

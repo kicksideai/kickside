@@ -3,5 +3,5 @@ import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
-  test: { environment: 'happy-dom', include: ['src/app/WcMount.select.test.ts', 'src/app/sharedStyles.test.ts', 'src/model-picker/app/model-picker-capability.test.ts'] },
+  test: { server: { deps: { inline: [/@wippy-fe\/webcomponent-/] } }, environment: 'happy-dom', include: ['tests/lazy.test.ts', 'tests/template-lazy.test.ts', 'src/app/WcMount.select.test.ts', 'src/app/sharedStyles.test.ts', 'src/model-picker/app/model-picker-capability.test.ts'] },
 })

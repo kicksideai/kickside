@@ -2,6 +2,53 @@ version: "1.0"
 namespace: kickside.component
 
 entries:
+  - name: kind_authority
+    kind: library.lua
+    source: file://kind_authority.lua
+    modules: [security]
+    imports:
+      autoinit: kickside.component:autoinit
+
+  - name: read_kind
+    kind: function.lua
+    meta: {private: true}
+    source: file://autoinit.lua
+    method: read_kind
+    modules: [registry, crypto, funcs, security]
+
+  - name: kind_read
+    kind: security.policy
+    meta: {private: true}
+    policy:
+      actions: registry.get
+      resources: '*'
+      effect: allow
+
+  - name: kind_read_call
+    kind: security.policy
+    meta: {private: true}
+    policy:
+      actions: funcs.call
+      resources: kickside.component:read_kind
+      effect: allow
+
+  - name: kind_declaration
+    kind: function.lua
+    meta: {private: true}
+    source: file://autoinit.lua
+    method: kind_declaration
+    modules: [registry, crypto, funcs, security]
+    security:
+      policies: [kickside.component:kind_read_access]
+
+  - name: kind_read_access
+    kind: security.policy
+    meta: {private: true}
+    policy:
+      actions: [security.policy.get, security.scope.create, funcs.security, funcs.call]
+      resources: [kickside.component:kind_read, kickside.component:kind_read_call, kickside.component:read_kind, custom, security]
+      effect: allow
+
   - name: delete_children
     kind: library.lua
     source: file://delete_children.lua
@@ -322,6 +369,8 @@ entries:
     modules:
       - registry
       - crypto
+      - funcs
+      - security
 
   - name: component_lifecycle
     kind: library.lua

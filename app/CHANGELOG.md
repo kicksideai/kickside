@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.2.41](https://github.com/kicksideai/kickside/compare/kickside-v0.2.40...kickside-v0.2.41) (2026-11-13)
+
+
+### Bug Fixes
+
+* **app:** remove member creation of a system actor ([#455](https://github.com/kicksideai/kickside/issues/455)) ([77e3191](https://github.com/kicksideai/kickside/commit/77e3191adaae061c56463fb9e1290a879cb94a34))
+
+## [0.2.40](https://github.com/kicksideai/kickside/compare/kickside-v0.2.39...kickside-v0.2.40) (2026-11-13)
+
+
+### Bug Fixes
+
+* align System settings navigation and administration panes ([#449](https://github.com/kicksideai/kickside/issues/449)) ([f113972](https://github.com/kicksideai/kickside/commit/f113972709e065c17ecc112b61cc4bd141b75a87))
+* **ui:** use the website accent by default ([#451](https://github.com/kicksideai/kickside/issues/451)) ([3fff841](https://github.com/kicksideai/kickside/commit/3fff84187005155c49d2c96bb4f0184319668ac5))
+
+## [0.2.39](https://github.com/kicksideai/kickside/compare/kickside-v0.2.38...kickside-v0.2.39) (2026-11-12)
+
+
+### Bug Fixes
+
+* **inbox:** restore personal inbox items ([#447](https://github.com/kicksideai/kickside/issues/447)) ([3b3d732](https://github.com/kicksideai/kickside/commit/3b3d7322a3d05f84798526598517a2557489065c))
+
+## [0.2.38](https://github.com/kicksideai/kickside/compare/kickside-v0.2.37...kickside-v0.2.38) (2026-11-12)
+
+
+### Features
+
+* **inbox:** support private principal-addressed items ([#438](https://github.com/kicksideai/kickside/issues/438)) ([141ec96](https://github.com/kicksideai/kickside/commit/141ec9604b6361502646dda8dec05a0ed0f4e262))
+
 ## [0.2.37](https://github.com/kicksideai/kickside/compare/kickside-v0.2.36...kickside-v0.2.37) (2026-11-12)
 
 

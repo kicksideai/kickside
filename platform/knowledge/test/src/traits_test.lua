@@ -47,6 +47,63 @@ local function define_tests()
     -- QueryKB returns { query, count, results }: every ranked result is the
     -- engine's full item with its kb_id; failures use the typed error return.
     test.describe("kickside.knowledge.traits:kb_query_tool (via runtime ctx)", function()
+        test.it("preserves optional retrieval status for each queried base", function()
+            local status = { strategy = "plain", analysis = { status = "unavailable",
+                reason = "no_models_for_class", model = "class:unassigned" } }
+            local out, err = executor({ kb_ids = { "kb-1", "kb-2" }, passages = {}, retrieval = status })
+                :call(PRESENTATION_TOOL, { query = "question" })
+            test.is_nil(err)
+            test.eq(out.retrieval["kb-1"].analysis.reason, "no_models_for_class")
+            test.eq(out.retrieval["kb-2"].analysis.model, "class:unassigned")
+            local plain, plain_err = executor({ kb_ids = { "kb-1" }, passages = {} })
+                :call(PRESENTATION_TOOL, { query = "question" })
+            test.is_nil(plain_err)
+            test.is_nil(plain.retrieval)
+        end)
+
+        test.it("SearchKB preserves each base's status including empty retrieval and continuations", function()
+            local status = { strategy = "plain", analysis = { status = "unavailable",
+                reason = "no_models_for_class", model = "class:unassigned" } }
+            for _, passages in ipairs({ {}, { { id = "passage", content = "match" } } }) do
+                local out, err = executor({ kb_ids = { "kb-1", "kb-2" }, passages = passages, retrieval = status })
+                    :call("test.kb:search_presentation", { query = "question" })
+                test.is_nil(err)
+                test.is_true(out.success)
+                test.eq(out.count, #passages * 2)
+                test.eq(out.retrieval["kb-1"].analysis.reason, "no_models_for_class")
+                test.eq(out.retrieval["kb-2"].analysis.model, "class:unassigned")
+            end
+            local page, page_err = executor({ kb_ids = { "kb-1", "kb-2" }, passages = {}, retrieval = status, next_offset = 1 })
+                :call("test.kb:search_presentation", { query = "question", limit = 1 })
+            test.is_nil(page_err)
+            test.eq(page.next_cursor, "1:1")
+            test.not_nil(page.retrieval["kb-1"])
+            test.is_nil(page.retrieval["kb-2"])
+            local plain, plain_err = executor({ kb_ids = { "kb-1" }, passages = {} })
+                :call("test.kb:search_presentation", { query = "question" })
+            test.is_nil(plain_err)
+            test.is_nil(plain.retrieval)
+        end)
+
+        test.it("RetrieveKB preserves optional retrieval status with empty and populated results", function()
+            local status = { strategy = "plain", analysis = { status = "unavailable",
+                reason = "no_models_for_class", model = "class:unassigned" } }
+            for _, passages in ipairs({ {}, { { id = "passage", content = "match" } } }) do
+                local out, err = executor({ kb_id = "kb-1", passages = passages, retrieval = status, next_offset = 1 })
+                    :call("test.kb:retrieve_presentation", { query = "question" })
+                test.is_nil(err)
+                test.is_true(out.success)
+                test.eq(out.count, #passages)
+                test.eq(out.next_cursor, "1")
+                test.eq(out.retrieval.analysis.reason, "no_models_for_class")
+                test.eq(out.retrieval.analysis.model, "class:unassigned")
+            end
+            local plain, plain_err = executor({ kb_id = "kb-1", passages = {} })
+                :call("test.kb:retrieve_presentation", { query = "question" })
+            test.is_nil(plain_err)
+            test.is_nil(plain.retrieval)
+        end)
+
         test.it("returns compact retrieved rows by default", function()
             local content = "PART_NUMBER: 1096657\n" .. string.rep("Catalog description. ", 20)
                 .. "\nFinish: Plain\nMaterial: Steel\nDimensions: 3-1/4 in L x 7/8 in H"

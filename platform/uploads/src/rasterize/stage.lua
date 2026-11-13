@@ -7,8 +7,9 @@ local artifact_parts_repo = require("artifact_parts_repo")
 local rasterizer = require("rasterizer")
 local page_images = require("page_images")
 
--- Render sparse pages for OCR, retaining usable text pages. A complete set of
--- extracted page images serves as the existing no-render path for image PDFs.
+-- Render the pages the page selection picks for OCR: sparse pages by default,
+-- or every page. A complete set of extracted page images serves as the existing
+-- no-render path for image PDFs.
 
 local SETTINGS_CONTRACT = "kickside.settings:settings"
 local SETTINGS_NS = "kickside.uploads.rasterize"
@@ -206,6 +207,7 @@ local function process(params: any): any
     if not setting_bool("rasterize_empty_enabled", true) then return { success = true } end
 
     local max_text = setting_int("rasterize_max_text_bytes", page_images.DEFAULT_MAX_TEXT_BYTES_PER_PAGE)
+    local selection = setting_str("rasterize_page_selection", page_images.SELECT_SPARSE)
     local primary, primary_err = artifact_parts_repo.read_primary_content(upload_id)
     if primary_err or type(primary) ~= "table" then return { success = true, completed = false } end
 
@@ -229,7 +231,7 @@ local function process(params: any): any
     local ocr_reason
     if #text_pages > 0 then
         for _, page in ipairs(text_pages) do
-            local reason = page_images.ocr_text_reason(page.text, 1, max_text, page.status)
+            local reason = page_images.ocr_text_reason(page.text, 1, max_text, page.status, selection)
             if reason then
                 selected[#selected + 1] = page.page
                 ocr_reason = ocr_reason or reason
@@ -238,7 +240,7 @@ local function process(params: any): any
     else
         local min_source = setting_int("rasterize_min_source_bytes", 4096)
         if (tonumber(params.size) or 0) < min_source then return { success = true } end
-        ocr_reason = page_images.ocr_document_reason(primary.content, total, max_text, params.size)
+        ocr_reason = page_images.ocr_document_reason(primary.content, total, max_text, params.size, selection)
         if ocr_reason then for page = 1, total do selected[#selected + 1] = page end end
     end
     if #selected == 0 then return { success = true, metadata = { rasterize_failures = false } } end

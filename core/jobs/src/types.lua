@@ -15,6 +15,9 @@ type Job = {
     concurrency_key: string?,
     payload: string,
     status: string,
+    -- Read surfaces expose reusable slots and schedule eligibility separately.
+    slot: boolean?,
+    due: boolean?,
     priority: integer,
     attempts: integer,
     -- Attempt bound of a one-shot job; a slot is not bounded by it.

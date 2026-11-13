@@ -1,4 +1,5 @@
 @import "@kickside/ui-kit/kx-tokens.css";
+@import "@kickside/ui-kit/kx-head.css";
 
 *, p, span, div, li, td, th, label, input, button, textarea, select,
 h1, h2, h3, h4, h5, h6 {
