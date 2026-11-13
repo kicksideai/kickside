@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.18](https://github.com/kicksideai/kickside/compare/component-v0.3.17...component-v0.3.18) (2026-11-13)
+
+
+### Bug Fixes
+
+* **component:** read kind declarations under component authority ([#467](https://github.com/kicksideai/kickside/issues/467)) ([33afe0b](https://github.com/kicksideai/kickside/commit/33afe0baeb4be79b7a7956f7130ac75b262c8b79))
+
 ## [0.3.17](https://github.com/kicksideai/kickside/compare/component-v0.3.16...component-v0.3.17) (2026-11-13)
 
 
