@@ -123,6 +123,64 @@ return {run = test.run_cases(function()
             test.eq(value.secret_fields[1].path[1], "api_key")
             test.is_nil((assert(json.encode(value)):find(SENTINEL, 1, true)))
         end)
+        test.it("keeps metadata reads, queries and exports secret-free before and after conversion", function()
+            local db = assert(sql.get("app:db"))
+            test.is_nil(select(2, db:execute([[INSERT INTO kickside_component_meta
+                (meta_id,component_id,key,value) VALUES ($1,$2,'privacy_fixture',$3)]], {uuid.v7(), id, id})))
+            local call, scope, actor = client("secret-owner", true)
+            local policies = scope:policies()
+            policies[#policies + 1] = assert(security.policy("app:secret_surface_listing"))
+            local query_call = assert(funcs.new()):with_actor(actor):with_scope(assert(security.new_scope(policies)))
+            for _, encrypted in ipairs({false, true}) do
+                if encrypted then
+                    local sealed, seal_err = funcs.call("kickside.component.system:seal_secrets", id,
+                        {api_key = SENTINEL}, {{path = {"api_key"}, type = "string"}})
+                    test.is_nil(seal_err)
+                    test.is_nil(select(2, db:execute([[UPDATE kickside_components
+                        SET private_context=$1,encrypted_secrets=$2 WHERE component_id=$3]],
+                        {assert(json.encode({api_key = {set = true}, cursor = 7})), sealed, id})))
+                end
+                local by_meta, meta_err = call:call("kickside.component.binding:get_access_context_by_meta_func",
+                    {meta = {privacy_fixture = id}, include_context = true})
+                test.is_nil(meta_err)
+                test.is_true(by_meta.success, assert(json.encode(by_meta)))
+                test.eq(by_meta.context.api_key.set, true)
+                local queried, query_err = query_call:call("kickside.component.binding:query_components_func",
+                    {component_ids = {id}, include = {private_context = true, meta = false}})
+                test.is_nil(query_err)
+                test.is_true(queried.success, assert(json.encode(queried)))
+                test.eq(#queried.components, 1)
+                test.eq(queried.components[1].private_context.api_key.set, true)
+                local exported, export_err = call:call("kickside.component.binding:export_component_func", {component_id = id})
+                test.is_nil(export_err)
+                test.is_true(exported.success, assert(json.encode(exported)))
+                local shell, decode_err = json.decode(exported.shell)
+                test.is_nil(decode_err)
+                test.eq(shell.context.cursor, 7)
+                test.is_nil(shell.context.api_key)
+                local imported, import_err = call:call("kickside.component.binding:import_component_func",
+                    {shell = exported.shell, slot_values = {api_key = SENTINEL .. "-import"}})
+                test.is_nil(import_err)
+                test.is_true(imported.success, assert(json.encode(imported)))
+                local rows, stored_err = db:query([[SELECT private_context,encrypted_secrets
+                    FROM kickside_components WHERE component_id=$1]], {imported.component_id})
+                test.is_nil(stored_err)
+                test.not_nil(rows[1].encrypted_secrets)
+                test.is_nil((assert(json.encode(rows)):find(SENTINEL, 1, true)))
+                local restored, restored_err = call:call("kickside.component.binding:get_secrets_func",
+                    {component_id = imported.component_id})
+                test.is_nil(restored_err)
+                test.is_true(restored.success, assert(json.encode(restored)))
+                test.eq(restored.secrets.api_key, SENTINEL .. "-import")
+                test.is_nil(select(2, db:execute("DELETE FROM kickside_components WHERE component_id=$1", {imported.component_id})))
+                for _, value in ipairs({by_meta, queried, exported, imported}) do
+                    local encoded = assert(json.encode(value))
+                    test.is_nil((encoded:find(SENTINEL, 1, true)))
+                    test.is_nil((encoded:find("kickside.component.secrets:v1:", 1, true)))
+                end
+            end
+            test.is_nil(select(2, db:release()))
+        end)
         test.it("requires both component access and the exact owning-kind capability", function()
             for _, request in ipairs({{actor = "secret-owner", trusted = false},
                 {actor = "unrelated-execution", trusted = true}}) do

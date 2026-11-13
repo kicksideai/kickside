@@ -63,13 +63,21 @@ entries:
     policy:
       actions: [funcs.call, registry.get, db.get]
       resources: [kickside.component.binding:get_secrets_func, kickside.component.binding:get_access_context_func,
-        kickside.component:db_config, 'app:db', 'app:secret_kind']
+        kickside.component.binding:get_access_context_by_meta_func, kickside.component.binding:query_components_func,
+        kickside.component.binding:export_component_func, kickside.component.binding:import_component_func,
+        kickside.component:db_config, kickside.component:policy, 'app:db', 'app:secret_kind']
       effect: allow
   - name: secret_system_caller
     kind: security.policy
     policy:
       actions: [funcs.call, registry.get, db.get]
       resources: [kickside.component.system:read_private_context, kickside.component:retention, kickside.component:db_config, "app:db"]
+      effect: allow
+  - name: secret_surface_listing
+    kind: security.policy
+    policy:
+      actions: list_all
+      resources: ['kickside.component:components']
       effect: allow
   - name: secret_own_kind
     kind: security.policy
@@ -123,6 +131,8 @@ entries:
     kind: contract.binding
     meta:
       secret_fields: [{path: [api_key], type: string}]
+      portable_schema: {context: true}
+      credential_schema: {fields: [{key: api_key, type: password}]}
     contracts:
       - contract: kickside.contract:component
         methods:
