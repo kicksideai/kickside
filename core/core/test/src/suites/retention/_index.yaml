@@ -248,3 +248,14 @@ entries:
     modules: [funcs, security, process, channel, time, uuid]
     imports:
       test: wippy.test:test
+
+  - name: default_backlog_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_core}
+    source: file://default_backlog_test.lua
+    method: run
+    modules: [sql, time]
+    imports:
+      test: wippy.test:test
+      prune_scaffold: app:prune_scaffold
+      sweeper: kickside.core.retention:sweeper

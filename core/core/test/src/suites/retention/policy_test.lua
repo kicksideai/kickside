@@ -51,7 +51,7 @@ local function define_tests()
             if not ok then error(failure) end
             local restored, restore_policy_err = policy.policy()
             test.is_nil(restore_policy_err)
-            test.eq(restored.events_ms, 90 * 86400000)
+            test.eq(restored.events_ms, 30 * 86400000)
         end)
 
         test.it("resolves event and receipt retention windows and the row size limit", function()
@@ -67,7 +67,7 @@ local function define_tests()
         test.it("reads only age windows and the row size limit from the registered policy", function()
             local resolved, err = policy.policy()
             test.is_nil(err)
-            test.eq(resolved.events_ms, 90 * 86400000)
+            test.eq(resolved.events_ms, 30 * 86400000)
             test.eq(resolved.receipts_orphan_ms, 30 * 86400000)
             test.eq(resolved.max_row_bytes, 4194304)
             for key in pairs(resolved) do
