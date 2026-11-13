@@ -51,8 +51,8 @@ these exact actions/resources only to their admission function entries through
 `security.policies`; member scopes receive no kind mutation grants from Component.
 The mode is read through Component's own declaration scope; caller registry
 visibility does not select it. Admission then evaluates the exact kind grant in
-the requesting frame. A missing kind declaration refuses mutation with
-`component_kind_unknown`; an absent mode on an existing entry remains open.
+the requesting frame. A missing kind declaration and an absent mode remain open.
+Tree operations resolve admission once per distinct kind in the requesting frame.
 An invalid mode refuses mutation. Module-owned metadata floors, execution identity,
 sharing, and internal declaration commands retain their separate authority.
 `closed` governs create, context, public metadata and placement, not deletion.
