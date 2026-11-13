@@ -16,6 +16,15 @@ test('chrome sheets ship as package exports and files', () => {
   }
 })
 
+test('shared navigation and empty states ship as package components', () => {
+  const pkg = JSON.parse(read('package.json'))
+  for (const component of ['SystemTabs.vue', 'EmptyState.vue']) {
+    assert.equal(pkg.exports[`./${component}`], `./${component}`)
+    assert.ok(pkg.files.includes(component))
+    assert.ok(read(component).length > 0)
+  }
+})
+
 test('chrome colors and focus use the theme contract', () => {
   for (const sheet of sheets) {
     const css = read(sheet).replace(/\/\*[\s\S]*?\*\//g, '')

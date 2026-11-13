@@ -1,11 +1,9 @@
 <script setup lang="ts">
+import SystemTabs from '@kickside/ui-kit/SystemTabs.vue'
 import { computed, ref, watch } from 'vue'
 import { host } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import type { ModelCard, ModelProbeState, Preset, Profile, TestState } from '../types.ts'
-import Tab from 'primevue/tab'
-import TabList from 'primevue/tablist'
-import Tabs from 'primevue/tabs'
 import { Drawer, IconButton, Notice, RailHeader, Shell, Spinner } from './shared'
 import ProviderList from './ProviderList.vue'
 import ModelPool from './ModelPool.vue'
@@ -225,6 +223,10 @@ useHostVisibilityRefresh(async () => {
 
 <template>
   <div class="km">
+    <SystemTabs :value="view" label="Model sections" :items="[
+      { value: 'models', label: 'Models', count: models.length },
+      { value: 'classes', label: 'Classes', count: classes.length },
+    ]" @update:value="view = $event as typeof view" />
     <Notice v-if="error" severity="danger" class="km-top-notice" @dismiss="error = ''">{{ error }}</Notice>
 
     <Spinner v-if="loading && !models.length && !profiles.length" label="Loading models…" />
@@ -237,7 +239,7 @@ useHostVisibilityRefresh(async () => {
             <IconButton icon="tabler:refresh" label="Refresh" :disabled="loading" :spin="loading" @click="store.load" />
           </template>
         </RailHeader>
-        <div class="km-rail-body">
+        <div class="kx-rail-body">
           <ProviderList
             :profiles="profiles"
             :adapters="adapters"
@@ -253,13 +255,6 @@ useHostVisibilityRefresh(async () => {
           />
         </div>
       </template>
-
-      <Tabs class="km-tabs" data-kx-separator="surface" :value="view" @update:value="view = String($event) as typeof view">
-        <TabList aria-label="Model sections">
-          <Tab value="models">Models<b>{{ models.length }}</b></Tab>
-          <Tab value="classes">Classes<b>{{ classes.length }}</b></Tab>
-        </TabList>
-      </Tabs>
 
       <ModelPool
         v-if="view === 'models'"
