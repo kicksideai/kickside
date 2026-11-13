@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+organization: kickside
+module: component-key-errors-harness
+type: application
+directories:
+  modules: .wippy
+  src: .

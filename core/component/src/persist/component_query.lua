@@ -23,6 +23,7 @@ type ReaderState = {
     _path_prefix: string?,
     _include_meta: boolean,
     _include_private_context: boolean,
+    _include_secrets: boolean?,
     _include_access_level: boolean,
     _include_placement: boolean,
     _limit: integer?,
@@ -209,6 +210,7 @@ function M.select(state: ReaderState): (any?, error?)
 
     if state._include_private_context then
         table.insert(select_fields, "c.private_context")
+        table.insert(select_fields, "c.encrypted_secrets")
         table.insert(select_fields, "c.context_revision")
     end
     if state._include_placement then

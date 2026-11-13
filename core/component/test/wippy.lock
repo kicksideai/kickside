@@ -9,7 +9,7 @@ modules:
     - name: kickside/execution
       version: 0.0.0
     - name: kickside/jobs
-      version: 0.0.0
+      version: 0.1.76
     - name: kickside/realtime-dispatch
       version: 0.0.0
     - name: wippy/bootloader

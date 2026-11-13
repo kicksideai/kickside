@@ -6,11 +6,13 @@ local access_policy = require("access_policy")
 local envelope = require("envelope")
 local error_envelope = require("error_envelope")
 local contract = require("contract")
+local funcs = require("funcs")
 local read_port = require("read_port")
 local execution_identity = require("execution_identity")
+local secret_fields = require("secret_fields")
 
 local M = {}
-local OWNED = { _portable_input = true, _execution_identity = true, _rollback = true }
+local OWNED = component_types.RUNTIME_CONTEXT_KEYS
 
 local function framework_system_actor(): boolean
     local actor = security.actor()
@@ -30,6 +32,8 @@ local function domain_failure(err: any): any
     end
     return result
 end
+
+M.domain_failure = domain_failure
 
 local function denied(message: string): any
     local result = envelope.fail(message, errors.PERMISSION_DENIED)
@@ -125,7 +129,10 @@ local function response(component: any, include_context: boolean): any
         deletion_job_id = component.deletion_job_id,
         success = true,
     }
-    if include_context then out.context_revision = component.context_revision end
+    if include_context then
+        out.context_revision = component.context_revision
+        out.secret_fields = component.secret_fields
+    end
     return out
 end
 
@@ -146,6 +153,11 @@ function M.get_access_context(request: any): any
     local component, read_err = reader:one()
     if read_err then return domain_failure(read_err) end
     if not component then return denied("Component not found or access denied") end
+    if include_context then
+        local masked, paths, mask_err = secret_fields.external(component.impl_id, component.private_context or {}, component.secret_fields)
+        if mask_err then return domain_failure(mask_err) end
+        component.private_context, component.secret_fields = masked, paths
+    end
     return response(component, include_context == true)
 end
 
@@ -177,7 +189,13 @@ function M.get_access_context_by_meta(request: any): any
     if #components > 1 then
         return invalid("Multiple components found matching the specified metadata. Use get_access_context with a specific component_id instead")
     end
-    return response(components[1], include_context == true)
+    local component = components[1]
+    if include_context then
+        local masked, paths, mask_err = secret_fields.external(component.impl_id, component.private_context or {}, component.secret_fields)
+        if mask_err then return domain_failure(mask_err) end
+        component.private_context, component.secret_fields = masked, paths
+    end
+    return response(component, include_context == true)
 end
 
 function M.query_components(filter: component_types.QueryFilter?): any
@@ -198,6 +216,9 @@ function M.query_components(filter: component_types.QueryFilter?): any
         and filter.scope ~= component_types.SCOPES.ALL
     for _, component in ipairs(components or {}) do
         if include.private_context == true then
+            local masked, paths, mask_err = secret_fields.external(component.impl_id, component.private_context or {}, component.secret_fields)
+            if mask_err then return domain_failure(mask_err) end
+            component.private_context, component.secret_fields = masked, paths
             local mask = (target_is_current and (tonumber(component.access_level) or 0) or 0) :: integer
             if not system_actor then
                 component.private_context = M.redact(component.private_context, mask)
@@ -321,6 +342,27 @@ local function resolve_access_context(component_id: string, required_access: int
         return nil, access_mask_err
     end
 
+    local runtime_read, permission_err = false, nil
+    if include_context == true then
+        runtime_read, permission_err = security.can("funcs.call", "kickside.component.system:read_runtime_context")
+    end
+    if permission_err then return nil, permission_err end
+    if include_context == true and runtime_read == true then
+        local admitted, admission_err = security.can("contract.call", "get_access_context")
+        if admission_err then return nil, admission_err end
+        if admitted ~= true then
+            return nil, errors.new({kind = errors.PERMISSION_DENIED, message = "component context read denied",
+                details = {error_kind = "access"}})
+        end
+        local result, runtime_err = funcs.call("kickside.component.system:read_runtime_context", {
+            component_id = component_id, access_mask = access_mask})
+        if runtime_err then return nil, runtime_err end
+        local result_err = envelope.error_of(result, "read_runtime_context")
+        if result_err then return nil, result_err end
+        result.context = M.redact_for_actor(result.context, result.access_level or 0)
+        return result, nil
+    end
+
     local access_result, access_err = service:get_access_context({
         component_id = component_id,
         access_mask = access_mask,
@@ -423,6 +465,27 @@ local function resolve_access_context_by_meta(meta_filters: component_types.Meta
         return nil, service_err
     end
 
+    local runtime_read, permission_err = false, nil
+    if include_context == true then
+        runtime_read, permission_err = security.can("funcs.call", "kickside.component.system:read_runtime_context")
+    end
+    if permission_err then return nil, permission_err end
+    if include_context == true and runtime_read == true then
+        local admitted, admission_err = security.can("contract.call", "get_access_context_by_meta")
+        if admission_err then return nil, admission_err end
+        if admitted ~= true then
+            return nil, errors.new({kind = errors.PERMISSION_DENIED, message = "component context read denied",
+                details = {error_kind = "access"}})
+        end
+        local result, runtime_err = funcs.call("kickside.component.system:read_runtime_context", {
+            meta = meta_filters, access_mask = access_mask})
+        if runtime_err then return nil, runtime_err end
+        local result_err = envelope.error_of(result, "read_runtime_context")
+        if result_err then return nil, result_err end
+        result.context = M.redact_for_actor(result.context, result.access_level or 0)
+        return result, nil
+    end
+
     local access_result, access_err = service:get_access_context_by_meta({
         meta = meta_filters,
         access_mask = access_mask,
@@ -484,6 +547,7 @@ local function get_context_by_meta(meta_filters: component_types.MetadataMap, re
     return (access_result.context or {}) :: component_types.JsonMap, nil
 end
 
+M.validate_meta_filters = validate_meta_filters
 M.get_component_service = get_component_service
 M.current_runtime_identity = current_runtime_identity
 M.open_contract_instance = open_contract_instance

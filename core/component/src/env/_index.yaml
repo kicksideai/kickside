@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: kickside.component.env
+entries:
+  - name: storage
+    kind: env.storage.os
+  - name: encryption_key
+    kind: env.variable
+    meta: {private: true}
+    storage: kickside.component.env:storage
+    default: ENCRYPTION_KEY

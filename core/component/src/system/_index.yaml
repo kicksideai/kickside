@@ -2,6 +2,43 @@
 version: '1.0'
 namespace: kickside.component.system
 entries:
+  - name: list_runtime_context
+    kind: function.lua
+    meta: {private: true}
+    source: file://../system_query.lua
+    method: runtime
+    imports:
+      secrets_document: kickside.component:secrets_document
+      component_reader: kickside.component.persist:component_reader
+      component_types: kickside.component:types
+    security:
+      policies: [kickside.component:kind_read_call, kickside.component:secrets_codec_access]
+  - name: seal_secrets
+    kind: function.lua
+    meta: {private: true}
+    source: file://../secrets_cipher.lua
+    method: encode
+    modules: [env, json, uuid]
+    imports:
+      secrets_document: kickside.component:secrets_document
+      secret_cipher: kickside.contract:secret_cipher
+      component_types: kickside.component:types
+      persisted_json: kickside.contract:persisted_json
+    security:
+      policies: [kickside.component:secrets_key_access]
+  - name: open_secrets
+    kind: function.lua
+    meta: {private: true}
+    source: file://../secrets_cipher.lua
+    method: decode
+    modules: [env, json, uuid]
+    imports:
+      secrets_document: kickside.component:secrets_document
+      secret_cipher: kickside.contract:secret_cipher
+      component_types: kickside.component:types
+      persisted_json: kickside.contract:persisted_json
+    security:
+      policies: [kickside.component:secrets_key_access]
   - name: exists
     kind: function.lua
     meta:
@@ -48,3 +85,37 @@ entries:
       actions: db.get
       resources: []
       effect: allow
+
+  - name: read_runtime_context
+    kind: function.lua
+    meta: {private: true}
+    source: file://../secrets_read.lua
+    method: runtime
+    modules: [security]
+    imports:
+      secrets_document: kickside.component:secrets_document
+      component_reader: kickside.component.persist:component_reader
+      component_types: kickside.component:types
+      envelope: kickside.component:envelope
+      access_policy: kickside.component:access_policy
+      context_policy: kickside.component:context_policy
+      secret_fields: kickside.component:secret_fields
+    security:
+      policies: [kickside.component:kind_read_call, kickside.component:secrets_codec_access]
+
+  - name: read_private_context
+    kind: function.lua
+    meta: {private: true}
+    source: file://../secrets_read.lua
+    method: private
+    modules: [security]
+    imports:
+      secrets_document: kickside.component:secrets_document
+      component_reader: kickside.component.persist:component_reader
+      component_types: kickside.component:types
+      envelope: kickside.component:envelope
+      access_policy: kickside.component:access_policy
+      context_policy: kickside.component:context_policy
+      secret_fields: kickside.component:secret_fields
+    security:
+      policies: [kickside.component:kind_read_call, kickside.component:secrets_codec_access]

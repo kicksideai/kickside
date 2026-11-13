@@ -1,5 +1,6 @@
 version: "1.0"
 override:
+  "kickside.component:encryption_key:default": app:secret_test_key
   "kickside.core.jobs.service:worker.service:lifecycle.auto_start": false
   "kickside.realtime.dispatch:binding:contracts":
     - contract: kickside.contract:realtime_batch

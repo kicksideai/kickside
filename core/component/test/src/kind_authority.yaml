@@ -104,3 +104,25 @@ entries:
     modules: [security]
     imports:
       authority: kickside.component:kind_authority
+  - name: kind_lookup_fixture
+    kind: library.lua
+    source: file://kind_lookup_fixture.lua
+  - name: kind_lookup_authority
+    kind: library.lua
+    source: file://kind_lookup_source.lua
+    imports:
+      autoinit: app:kind_lookup_fixture
+      security: app:kind_lookup_security
+  - name: kind_lookup_native_test
+    kind: function.lua
+    meta: {type: test, suite: component_kind_lookup}
+    source: file://kind_lookup_native_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      authority: app:kind_lookup_authority
+      fixture: app:kind_lookup_fixture
+  - name: kind_lookup_security
+    kind: library.lua
+    source: file://kind_lookup_security.lua
+    imports: {fixture: app:kind_lookup_fixture}

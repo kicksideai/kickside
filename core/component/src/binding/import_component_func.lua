@@ -62,7 +62,7 @@ local function handle(req)
     end
     local credential_schema = impl_meta.credential_schema
 
-    local ctx, cerr = base.resolve_context(portable_schema, credential_schema, parsed, req.slot_values, req.id_map)
+    local ctx, cerr = base.resolve_context(portable_schema, credential_schema, parsed, req.slot_values, req.id_map, impl_meta.secret_fields)
     if not ctx then
         return envelope.from_error(cerr, "resolve")
     end

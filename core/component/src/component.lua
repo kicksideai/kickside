@@ -4,9 +4,11 @@
 -- errors are structured via the global errors module and never raised.
 
 local contract = require("contract")
+local funcs = require("funcs")
 local security = require("security")
 local sql = require("sql")
 local component_reader = require("component_reader")
+local system_query = require("system_query")
 local component_types = require("component_types")
 local access_policy = require("access_policy")
 local ops = require("component_ops")
@@ -61,6 +63,11 @@ end
 -- Get a component's private context by ID without actor validation. Reads
 -- directly from the database, suitable for system-level / background workers.
 local function get_private_context(component_id: string): (component_types.JsonMap?, error?)
+    local allowed, permission_err = security.can("funcs.call", "kickside.component.system:read_private_context")
+    if permission_err then return nil, permission_err end
+    if allowed == true then
+        return funcs.call("kickside.component.system:read_private_context", {component_id = component_id})
+    end
     if not component_id or component_id == "" then
         return nil, (errors.new({ message = "component ID is required", kind = errors.INVALID }) :: error)
     end
@@ -89,10 +96,17 @@ local function open_private(component_id: string, target_contract_id: string?): 
         return nil, (errors.new({ message = "component ID is required", kind = errors.INVALID }) :: error)
     end
 
-    local result, read_err = component_reader.new()
-        :with_components(component_id)
-        :include_options({ private_context = true, meta = false })
-        :one()
+    local allowed, permission_err = security.can("funcs.call", "kickside.component.system:list_runtime_context")
+    if permission_err then return nil, permission_err end
+    local results, read_err
+    if allowed == true then
+        results, read_err = funcs.call("kickside.component.system:list_runtime_context", {
+            component_ids = {component_id}, include = {private_context = true, meta = false}, limit = 1})
+    else
+        results, read_err = system_query.masked({component_ids = {component_id},
+            include = {private_context = true, meta = false}, limit = 1})
+    end
+    local result = results and results[1]
     if read_err then
         return nil, read_err
     end
@@ -155,42 +169,12 @@ end
 -- accepts impl_ids, component_ids, meta, parent_id, path_prefix, include
 -- (meta / private_context), limit, offset, and order_by ({field,direction}).
 local function list_system(filter: component_types.QueryFilter?): (component_types.ComponentRow[]?, error?)
-    local f: component_types.QueryFilter = filter or {}
-    local reader: any = component_reader.new()
-
-    if type(f.component_ids) == "table" and #f.component_ids > 0 then
-        reader = reader:with_components(f.component_ids)
+    if filter and filter.include and filter.include.private_context == true then
+        local allowed, permission_err = security.can("funcs.call", "kickside.component.system:list_runtime_context")
+        if permission_err then return nil, permission_err end
+        if allowed == true then return funcs.call("kickside.component.system:list_runtime_context", filter) end
     end
-    if type(f.impl_ids) == "table" and #f.impl_ids > 0 then
-        reader = reader:with_impl_ids(f.impl_ids)
-    end
-    if f.match_ids ~= nil then
-        local selected, match_err = reader:with_id_match(f.match_ids)
-        if match_err then return nil, match_err end
-        reader = selected
-    end
-    if type(f.meta) == "table" then
-        reader = reader:with_meta(f.meta)
-    end
-    if f.parent_id ~= nil then
-        reader = reader:with_parent(f.parent_id :: string)
-    end
-    if type(f.path_prefix) == "string" and f.path_prefix ~= "" then
-        reader = reader:with_path_prefix(f.path_prefix)
-    end
-    if type(f.include) == "table" then
-        local inc: any = f.include
-        reader = reader:include_options({ meta = inc.meta, private_context = inc.private_context })
-    end
-    if type(f.order_by) == "table" and type(f.order_by.field) == "string" then
-        reader = reader:order_by(f.order_by.field, f.order_by.direction)
-    end
-    if type(f.limit) == "number" and f.limit > 0 then
-        reader = reader:limit(f.limit, type(f.offset) == "number" and f.offset or 0)
-    end
-
-    local rows, err = reader:all()
-    return rows :: component_types.ComponentRow[]?, err
+    return system_query.masked(filter)
 end
 
 -- resolve_path_prefixes: a system read (no actor, no access filter) returning the
@@ -471,6 +455,10 @@ return {
     validate_identity_authorizer_admin = validate_identity_authorizer_admin,
     validate_principal_access = validate_principal_access,
     get_service = get_component_service,
+    get_secrets = function(request: component_types.SecretsRequest): (component_types.SecretsResult?, error?)
+        return funcs.call("kickside.component.binding:get_secrets_func", request)
+    end,
+    get_context_snapshot = resolve_access_context,
     get_context = get_context,
     get_context_by_meta = get_context_by_meta,
     get_private_context = get_private_context,

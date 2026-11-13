@@ -8,6 +8,7 @@ import { api, loadByTagName } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
 import { apiError } from '../constants'
 import ConnectionPicker from './ConnectionPicker.vue'
+import SecretsEditor from './SecretsEditor.vue'
 import { subscribeComponentMeta, type ComponentMetaEvent } from '@kickside/ui-kit/componentRealtime'
 import { latestRequest } from '@kickside/ui-kit/latestRequest'
 import { CONNECTION_META_FIELD_TYPES } from '../status'
@@ -29,6 +30,7 @@ const loadingMore = ref(false)
 const error = ref('')
 const loadError = ref('')
 const confirmId = ref('')
+const credentialConnection = ref<Connection | null>(null)
 const search = ref('')
 const presentation = useConnectionPresentation({ providers, connections, search, confirmId })
 const {
@@ -247,6 +249,10 @@ async function mountShare() {
 function reconnect(c: Connection) {
   if (!c.provider) return
   const provider = providers.value.find(p => providerKey(p) === c.provider)
+  if (provider?.credential_schema && !c.oauth && !provider.create_ui_id) {
+    credentialConnection.value = c
+    return
+  }
   openPicker(c.provider, c.oauth || provider?.create_ui_id
     ? { componentId: c.component_id, name: c.name }
     : undefined)
@@ -327,6 +333,10 @@ const {acceptDeletion} = useComponentDeletion(connections, row => row.component_
                   <button class="lc-add" :title="`Share ${c.name || c.provider}`" :aria-label="`Share ${c.name || c.provider}`" @click="openShare(c)" :disabled="!!c.deleting_at">
                     <Icon icon="tabler:share" />
                   </button>
+                  <button v-if="!c.oauth" class="lc-add" :aria-label="`Credentials ${c.name || c.provider}`"
+                    :title="`Credentials ${c.name || c.provider}`" :disabled="!!c.deleting_at" @click="credentialConnection = c">
+                    <Icon icon="tabler:key" aria-hidden="true" />
+                  </button>
                   <button class="lc-add" :title="`Reconnect ${c.name || c.provider}`" :aria-label="`Reconnect ${c.name || c.provider}`" @click="reconnect(c)" :disabled="!!c.deleting_at">
                     <Icon icon="tabler:refresh" />
                   </button>
@@ -398,6 +408,9 @@ const {acceptDeletion} = useComponentDeletion(connections, row => row.component_
         </section>
       </template>
     </div>
+
+    <SecretsEditor v-if="credentialConnection" :connection="credentialConnection"
+      @close="credentialConnection = null" @saved="load" />
 
     <ConnectionPicker
       v-if="pickerOpen"

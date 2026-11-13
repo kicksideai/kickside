@@ -11,6 +11,14 @@ entries:
         - kickside
         - contracts
     methods:
+      - name: get_secrets
+        description: Server-side read for trusted executions of the owning kind. Requires component READ access and component.secrets.read on the exact binding. No HTTP, UI, tool or export exposes this method.
+        input_schemas:
+          - format: application/schema+json
+            definition: '{"type":"object","properties":{"component_id":{"type":"string"},"access_mask":{"type":"integer","minimum":1,"maximum":15}},"required":["component_id"],"additionalProperties":false}'
+        output_schemas:
+          - format: application/schema+json
+            definition: '{"type":"object","properties":{"success":{"type":"boolean"},"component_id":{"type":"string"},"secrets":{"type":"object"},"context_revision":{"type":"integer"},"error":{},"kind":{"type":"string"},"retryable":{"type":"boolean"},"details":{"type":"object"}},"required":["success"]}'
       - name: register
         description: "Register a new component with implementation ID, private context, and metadata.\nCreates a component owned by the current actor with full access. Optional\nparent_id/position place it in the hierarchy (root + end-of-siblings when omitted).\nCalling: register_component(request_dto)\n"
         input_schemas:

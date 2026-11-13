@@ -5,6 +5,9 @@
 -- module and never raised, so callers stay in control of flow.
 
 local sql = require("sql")
+local security = require("security")
+local secret_fields = require("secret_fields")
+local secrets_document = require("secrets_document")
 local persisted_json = require("persisted_json")
 local uuid = require("uuid")
 local component_query = require("component_query")
@@ -27,6 +30,8 @@ type ComponentResult = {
     deletion_job_id: string?,
     deletion_job: {status: string, attempts: integer, last_error: string?}?,
     private_context: { [string]: any }?,
+    secret_fields: {component_types.SecretField}?,
+    encrypted_secrets: string?,
     context_revision: integer?,
     meta: { [string]: string }?,
     access_level: integer?,
@@ -37,6 +42,7 @@ type ComponentResult = {
 
 -- Which extra columns/joins to populate.
 type IncludeOptions = {
+    secrets: boolean?,
     meta: boolean?,
     private_context: boolean?,
     access_level: boolean?,
@@ -104,6 +110,7 @@ function component_reader.new(): Reader
         _path_prefix = nil,
         _include_meta = true,
         _include_private_context = false,
+        _include_secrets = false,
         _include_access_level = false,
         _include_placement = false,
         _limit = nil,
@@ -215,6 +222,7 @@ function methods.include_options(self: Reader, options: IncludeOptions): Reader
 
     local new_instance = self:_copy()
     if options.meta ~= nil then new_instance._include_meta = options.meta end
+    if options.secrets ~= nil then new_instance._include_secrets = options.secrets end
     if options.private_context ~= nil then new_instance._include_private_context = options.private_context end
     if options.access_level ~= nil then new_instance._include_access_level = options.access_level end
     if options.placement ~= nil then new_instance._include_placement = options.placement end
@@ -294,6 +302,25 @@ function methods._finalize_row(self: Reader, component: ComponentResult): error?
     if self._include_private_context then
         local context, context_err = persisted_json.decode_table(component.private_context, "component.private_context", true)
         if context_err then return context_err end
+        local declarations, declaration_err = secrets_document.paths(component.encrypted_secrets)
+        if declaration_err then return declaration_err end
+        declarations = declarations :: {component_types.SecretField}
+        component.secret_fields = declarations
+        local include_secrets = false
+        if #declarations > 0 and self._include_secrets then
+            local allowed, permission_err = security.can("component.secrets.read", component.impl_id)
+            if permission_err then return permission_err end
+            include_secrets = allowed == true
+        end
+        if #declarations > 0 and include_secrets then
+            local secrets, decrypt_err = secrets_document.decode(component.component_id, component.encrypted_secrets)
+            if decrypt_err then return decrypt_err end
+            context, context_err = secret_fields.merge(declarations, context or {}, secrets :: component_types.JsonMap)
+        elseif #declarations > 0 then
+            context, context_err = secret_fields.mask(declarations, context or {})
+        end
+        if context_err then return context_err end
+        component.encrypted_secrets = nil
         component.private_context = context :: { [string]: any }?
         component.context_revision = tonumber(component.context_revision) :: integer
     end

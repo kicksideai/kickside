@@ -33,6 +33,7 @@ entries:
     - kickside.connection.api:delete_connection.endpoint
     - kickside.connection.api:discover_providers.endpoint
     - kickside.connection.api:discover_resources.endpoint
+    - kickside.connection.api:get_connection.endpoint
     - kickside.connection.api:list_connections.endpoint
     - kickside.connection.api:provider_badges.endpoint
     - kickside.connection.api:update_connection.endpoint

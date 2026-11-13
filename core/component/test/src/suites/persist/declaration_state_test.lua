@@ -17,13 +17,13 @@ local function db(): sql.DB
     return opened :: sql.DB
 end
 
-local function seed(opened: sql.DB, state: Map): string
+local function seed(opened: sql.DB, state: Map, impl_id: string?): string
     local id = uuid.v7()
     local now = time.now():format(time.RFC3339)
     local encoded, encode_err = json.encode(state)
     if encode_err then error(tostring(encode_err)) end
     local _, insert_err = sql.builder.insert("kickside_components"):set_map({
-        component_id = id, impl_id = "kickside.test:security", private_context = encoded,
+        component_id = id, impl_id = impl_id or "kickside.test:security", private_context = encoded,
         position = "n", created_at = now, updated_at = now,
     }):run_with(opened):exec()
     if insert_err then error(tostring(insert_err)) end
@@ -129,6 +129,54 @@ local run_cases = test.run_cases(function()
             for _, row in ipairs(rows or {}) do meta[row.key] = row.value end
             test.eq(meta.hunts_per_day, "6")
             test.eq(meta.schedule_expression, "4h")
+            d:release()
+        end)
+
+        test.it("partitions declared credentials written by a declaration", function()
+            local d = db()
+            local id = seed(d, {cursor = 7}, "app:secret_kind")
+            local input = {component_id = id, automation_id = "automation-secret-state", generation = 1,
+                command_id = "secret-state", declaration_hash = "secret-state-hash",
+                declaration = {enabled = true}, state = {api_key = "declaration-secret-sentinel", cursor = 8}}
+            local written, write_err = apply_declaration(d, input)
+            test.is_nil(write_err, tostring(write_err))
+            test.eq(written.generation, 1)
+            local rows, row_err = d:query("SELECT private_context,encrypted_secrets FROM kickside_components WHERE component_id=$1", {id})
+            test.is_nil(row_err, tostring(row_err))
+            test.not_nil(rows[1].encrypted_secrets)
+            local raw = tostring(rows[1].private_context)
+            local found = raw:find("declaration-secret-sentinel", 1, true)
+            test.is_nil(found)
+            local visible = assert(json.decode(raw))
+            test.eq(visible.api_key.set, true)
+            test.eq(visible.cursor, 8)
+            d:release()
+        end)
+
+        test.it("does not replace a declared secret when its encrypted document cannot authenticate", function()
+            local d = db()
+            local id = uuid.v7()
+            local encrypted = assert(funcs.call("kickside.component.system:seal_secrets", uuid.v7(), {api_key = "prior-secret"}, {{path = {"api_key"}, type = "string"}}))
+            local raw = assert(json.encode({api_key = {set = true}, cursor = 7}))
+            local now = time.now():format(time.RFC3339)
+            local _, insert_err = sql.builder.insert("kickside_components"):set_map({
+                component_id = id, impl_id = "app:secret_kind", private_context = raw, encrypted_secrets = encrypted,
+                position = "n", created_at = now, updated_at = now,
+            }):run_with(d):exec()
+            test.is_nil(insert_err, tostring(insert_err))
+            local input = {component_id = id, automation_id = "automation-secret-cipher", generation = 1,
+                command_id = "secret-cipher", declaration_hash = "secret-cipher-hash",
+                declaration = {enabled = true}, state = {api_key = "replacement-secret", cursor = 8}}
+            local _, write_err = apply_declaration(d, input)
+            test.not_nil(write_err)
+            test.is_true(errors.is(write_err, errors.INVALID) or errors.is(write_err, errors.INTERNAL))
+            local rows, row_err = d:query("SELECT private_context,encrypted_secrets FROM kickside_components WHERE component_id=$1", {id})
+            test.is_nil(row_err, tostring(row_err))
+            test.eq(assert(json.decode(tostring(rows[1].private_context))).api_key.set, true)
+            test.eq(assert(json.decode(tostring(rows[1].private_context))).cursor, 7)
+            test.eq(rows[1].encrypted_secrets, encrypted)
+            local found = tostring(rows[1].private_context):find("replacement-secret", 1, true)
+            test.is_nil(found)
             d:release()
         end)
 

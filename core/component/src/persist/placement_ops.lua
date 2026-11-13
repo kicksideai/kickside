@@ -4,6 +4,7 @@ local security = require("security")
 local time = require("time")
 local uuid = require("uuid")
 local json = require("json")
+local secrets_document = require("secrets_document")
 local meta_ops = require("meta_ops")
 local placement = require("placement")
 local component_types = require("component_types")
@@ -105,7 +106,9 @@ local function create_component(tx: Executor, db: Executor, command: component_t
             initial_identity.credential_id, initial_identity.link_id)
         context._execution_identity = initial_identity
     end
-    local private_context, enc_err = encode_context(context)
+    local visible, secret_write, prepare_err = secrets_document.prepare(component_id, payload.impl_id, context)
+    if prepare_err then return nil, prepare_err end
+    local private_context, enc_err = encode_context(visible)
     if enc_err then
         return nil, enc_err
     end
@@ -158,6 +161,7 @@ local function create_component(tx: Executor, db: Executor, command: component_t
         created_at = now_ts,
         updated_at = now_ts,
     }
+    if secret_write then component_row.encrypted_secrets = secret_write.encrypted end
     if initial_hash ~= nil then component_row.identity_hash = initial_hash end
     local inserted, err = sql.builder.insert(component_types.TABLES.COMPONENTS)
         :set_map(component_row)
@@ -287,7 +291,8 @@ local function set_placement(tx: Executor, db: Executor, command: component_type
         return nil, (errors.new({ message = "component not found", kind = errors.NOT_FOUND }) :: error)
     end
 
-    local kind_err = kind_authority.check(node.impl_id :: string, "update")
+    local check_kind = kind_authority.checker("update")
+    local kind_err = check_kind(node.impl_id :: string)
     if kind_err then return nil, kind_err end
 
     -- Determine the target parent.
@@ -357,7 +362,7 @@ local function set_placement(tx: Executor, db: Executor, command: component_type
         descendants, derr = placement.descendants(tx, component_id)
         if derr then return nil, derr end
         for _, descendant in ipairs(descendants or {}) do
-            local admission_err = kind_authority.check(descendant.impl_id :: string, "update")
+            local admission_err = check_kind(descendant.impl_id :: string)
             if admission_err then return nil, admission_err end
         end
     end

@@ -32,6 +32,8 @@ M.OWNER_META_KEY = "owner"
 -- component's impl_id. A dispatcher of work that has not bound its owner's
 -- execution identity denies it, so that work cannot leave a component no
 -- principal manages.
+M.RUNTIME_CONTEXT_KEYS = {_portable_input = true, _execution_identity = true, _rollback = true}
+
 M.MAINTENANCE_OWN_ACTION = "component.own.maintenance"
 
 -- An instance operator adopts a component no principal holds access to: the
@@ -149,6 +151,19 @@ M.LEXORANK = {
 
 M.PATH_SEPARATOR = "/"
 
+type CredentialField = {key: string, type: string?}
+type CredentialSchema = {fields: {CredentialField}?}
+type SecretField = {path: {string}, type: "string"}
+type SecretKind = {id: string, meta: {secret_fields: {SecretField}, credential_schema: CredentialSchema?}}
+type SecretDeclarations = {kinds: {SecretKind}, version: string}
+type SecretChange = {path: {string}, value: string?, clear: boolean?}
+type SecretPresence = {set: boolean}
+type SecretWrite = {encrypted: string?}
+type SecretsRequest = {component_id: string, access_mask: integer?}
+type SecretsResult = {success: boolean?, component_id: string?, secrets: JsonMap?, context_revision: integer?,
+    error: string?, kind: string?, retryable: boolean?, details: JsonMap?}
+type SecretRow = {component_id: string, impl_id: string, encrypted_secrets: string?}
+
 type JsonMap = { [string]: any }
 type MetadataMap = { [string]: string }
 
@@ -172,6 +187,7 @@ type ComponentRow = {
     deletion_job_id: string?,
     deletion_job: {status: string, attempts: integer, last_error: string?}?,
     private_context: JsonMap?,
+    secret_fields: {SecretField}?,
     context_revision: integer?,
     meta: MetadataMap?,
     access_level: integer?,
@@ -181,6 +197,7 @@ type ComponentRow = {
 }
 
 type AccessContextResult = {
+    secret_fields: {SecretField}?,
     deleting_at: string?,
     deletion_job_id: string?,
     deletion_job: {status: string, attempts: integer, last_error: string?}?,
