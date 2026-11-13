@@ -9,11 +9,8 @@ local function migrate(options)
             for _, dialect in ipairs({"postgres","sqlite"}) do
                 database(dialect, function()
                     up(function(tx, checkpoint)
-                        local same_second = dialect == "postgres"
-                            and "date_trunc('second',p.updated_at)=date_trunc('second',p.created_at)"
-                            or "strftime('%Y-%m-%d %H:%M:%S',p.updated_at)=strftime('%Y-%m-%d %H:%M:%S',p.created_at)"
                         local rows, read_err = tx:query([[SELECT p.thread_id,c.impl_id,
-                            CASE WHEN p.event_hot_retention_days=90 AND ]] .. same_second .. [[ THEN 1 ELSE 0 END AS frozen
+                            CASE WHEN p.event_hot_retention_days=90 AND p.updated_at=p.created_at THEN 1 ELSE 0 END AS frozen
                             FROM kickside_retention_policy p
                             LEFT JOIN kickside_components c ON c.component_id=p.thread_id
                             ]] .. (checkpoint and "WHERE p.thread_id>$1 " or "")
