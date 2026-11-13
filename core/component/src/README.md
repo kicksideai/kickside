@@ -49,10 +49,12 @@ parent continuation pointer. Reordering without a path change does not move
 descendants. Object access still applies. Import shares registration's creation check. Owning modules grant
 these exact actions/resources only to their admission function entries through
 `security.policies`; member scopes receive no kind mutation grants from Component.
-The mode is read through Component's own declaration scope; caller registry
-visibility does not select it. Admission then evaluates the exact kind grant in
-the requesting frame. A missing kind declaration and an absent mode remain open.
-Tree operations resolve admission once per distinct kind in the requesting frame.
+The mode is read through Component's own declaration scope; mutation, deletion
+worker and retention entries hold an exact grant on the private declaration
+reader. Attached grants do not let callers invoke that reader in their own code.
+Caller registry visibility does not select admission. A missing kind declaration
+and an absent mode remain open. Tree operations resolve admission once per distinct
+kind in the requesting frame.
 An invalid mode refuses mutation. Module-owned metadata floors, execution identity,
 sharing, and internal declaration commands retain their separate authority.
 `closed` governs create, context, public metadata and placement, not deletion.

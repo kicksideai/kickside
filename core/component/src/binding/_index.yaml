@@ -9,7 +9,7 @@ entries:
     method: secrets
     modules: [security]
     security:
-      policies: [kickside.component:kind_read_call, kickside.component:secrets_codec_access]
+      policies: [kickside.component:kind_declaration_call, kickside.component:secrets_codec_access]
     imports:
       secrets_document: kickside.component:secrets_document
       component_reader: kickside.component.persist:component_reader
@@ -81,6 +81,7 @@ entries:
     source: file://delete_component_func.lua
     security:
       policies:
+        - kickside.component:kind_declaration_call
         - kickside.component:deletion_jobs_policy
         - kickside.component:deletion_worker_lookup
     modules:
@@ -97,7 +98,7 @@ entries:
   - name: get_access_context_by_meta_func
     kind: function.lua
     security:
-      policies: [kickside.component:kind_read_call]
+      policies: [kickside.component:kind_declaration_call]
     meta:
       comment: Get component access context by metadata filters
       tags:
@@ -125,7 +126,7 @@ entries:
   - name: get_access_context_func
     kind: function.lua
     security:
-      policies: [kickside.component:kind_read_call]
+      policies: [kickside.component:kind_declaration_call]
     meta:
       comment: Get component access context for execution
       tags:
@@ -188,7 +189,7 @@ entries:
   - name: query_components_func
     kind: function.lua
     security:
-      policies: [kickside.component:kind_read_call]
+      policies: [kickside.component:kind_declaration_call]
     meta:
       comment: Access-filtered component read-port (query)
       tags:
@@ -233,7 +234,7 @@ entries:
   - name: register_component_func
     kind: function.lua
     security:
-      policies: [kickside.component:kind_read_call, kickside.component:secrets_codec_access]
+      policies: [kickside.component:kind_declaration_call, kickside.component:secrets_codec_access]
     meta:
       comment: Register a new component implementation
       tags:
@@ -258,7 +259,7 @@ entries:
   - name: export_component_func
     kind: function.lua
     security:
-      policies: [kickside.component:kind_read_call]
+      policies: [kickside.component:kind_declaration_call]
     meta:
       comment: export_component — build the portable shell envelope (ADMIN-gated, secret-free, data-free)
       tags:
@@ -282,7 +283,7 @@ entries:
   - name: import_component_func
     kind: function.lua
     security:
-      policies: [kickside.component:kind_read_call, kickside.component:secrets_codec_access]
+      policies: [kickside.component:kind_declaration_call, kickside.component:secrets_codec_access]
     meta:
       comment: import_component — reconstruct a shell from a portable envelope, owned by the actor (register + rollback owned upstream)
       tags:
@@ -303,7 +304,7 @@ entries:
   - name: update_component_func
     kind: function.lua
     security:
-      policies: [kickside.component:kind_read_call, kickside.component:secrets_codec_access]
+      policies: [kickside.component:kind_declaration_call, kickside.component:secrets_codec_access]
     meta:
       comment: Update component private context
       tags:
@@ -329,7 +330,7 @@ entries:
   - name: set_meta_component_func
     kind: function.lua
     security:
-      policies: [kickside.component:kind_read_call]
+      policies: [kickside.component:kind_declaration_call]
     meta:
       comment: Set/delete public component metadata
       tags:
@@ -345,7 +346,7 @@ entries:
   - name: set_placement_func
     kind: function.lua
     security:
-      policies: [kickside.component:kind_read_call]
+      policies: [kickside.component:kind_declaration_call]
     meta:
       comment: Re-parent and/or reorder a component within the hierarchy
       tags:

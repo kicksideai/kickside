@@ -12,7 +12,7 @@ entries:
       component_reader: kickside.component.persist:component_reader
       component_types: kickside.component:types
     security:
-      policies: [kickside.component:kind_read_call, kickside.component:secrets_codec_access]
+      policies: [kickside.component:kind_declaration_call, kickside.component:secrets_codec_access]
   - name: seal_secrets
     kind: function.lua
     meta: {private: true}
@@ -101,7 +101,7 @@ entries:
       context_policy: kickside.component:context_policy
       secret_fields: kickside.component:secret_fields
     security:
-      policies: [kickside.component:kind_read_call, kickside.component:secrets_codec_access]
+      policies: [kickside.component:kind_declaration_call, kickside.component:secrets_codec_access]
 
   - name: read_private_context
     kind: function.lua
@@ -118,4 +118,4 @@ entries:
       context_policy: kickside.component:context_policy
       secret_fields: kickside.component:secret_fields
     security:
-      policies: [kickside.component:kind_read_call, kickside.component:secrets_codec_access]
+      policies: [kickside.component:kind_declaration_call, kickside.component:secrets_codec_access]
