@@ -180,3 +180,16 @@ entries:
       migration: wippy.migration:migration
       ret_consts: kickside.core.retention:consts
     method: migrate
+
+  - name: 14_inherited_retention
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-11-13T00:00:14Z"
+    source: file://14_inherited_retention.lua
+    modules: [registry]
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

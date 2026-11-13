@@ -6,6 +6,8 @@ local time = require("time")
 local scratch = require("migration_scratch")
 local sweeper = require("sweeper")
 local repo = require("retention_repo")
+local migration_under_test = require("migration_under_test")
+local registry_fixture = require("registry_fixture")
 
 return test.run_cases(function()
     test.describe("Inherited retention upgrade", function()
@@ -25,26 +27,41 @@ return test.run_cases(function()
                     VALUES($1,$1,$2,'2026-01-01 00:00:00',$3)]], {id,days,updated or "2026-01-01 00:00:00"})
                 return id
             end
-            local implicit = seed("kickside.core.retention:inherited_retention_decl",90)
+            local implicit = seed("kickside.core.retention.pin_tests:inherited_retention_decl",90)
             local declared = seed("app:provision_test_decl",90)
-            local api = seed("kickside.core.retention:inherited_retention_decl",90,"2026-01-01 00:00:01")
-            local custom = seed("kickside.core.retention:inherited_retention_decl",7)
-            local disabled = seed("kickside.core.retention:inherited_retention_decl",90)
+            local api = seed("kickside.core.retention.pin_tests:inherited_retention_decl",90)
+            local api_db = assert(sql.get("app:migration_db"))
+            test.is_nil(select(2,repo.upsert(api_db,api,{event_hot_retention_days=90})))
+            api_db:release()
+            local same_second = seed("kickside.core.retention.pin_tests:inherited_retention_decl",90,"2026-01-01 00:00:00.500000")
+            local descriptor = seed("kickside.core.retention.pin_tests:inherited_retention_binding",90)
+            local custom = seed("kickside.core.retention.pin_tests:inherited_retention_decl",7)
+            local disabled = seed("kickside.core.retention.pin_tests:inherited_retention_decl",90)
             scratch.exec("UPDATE kickside_retention_policy SET archive_mode='hard_delete',enabled="
                 .. (scratch.postgres() and "false" or "0") .. " WHERE thread_id=$1", {disabled})
             local before = scratch.query("SELECT * FROM kickside_retention_policy ORDER BY id")
-            for _=1,260 do seed("kickside.core.retention:inherited_retention_decl",90) end
+            for _=1,260 do seed("kickside.core.retention.pin_tests:inherited_retention_decl",90) end
             scratch.migrate("kickside.core.migrations:13_retention_default")
+            registry_fixture.reset(257)
+            local refused = migration_under_test.migrate({database_id="app:migration_db",
+                id="kickside.core.migrations:14_inherited_retention"})
+            test.eq(refused.status,"error")
+            test.is_true(tostring(refused.error):find("declaration lookup refuses",1,true)~=nil)
+            local committed = tonumber(scratch.query([[SELECT COUNT(*) AS n FROM kickside_retention_policy
+                WHERE event_hot_retention_days IS NULL]])[1].n)
+            test.is_true(committed>0 and committed<263)
+            registry_fixture.reset(0)
             local result, err = funcs.call("kickside.core.migrations:14_inherited_retention", {
                 database_id="app:migration_db",id="kickside.core.migrations:14_inherited_retention"})
             test.is_nil(err)
             test.eq(result.status,"complete",tostring(result.error or (result.migrations and result.migrations[1].error)))
-            test.eq(result.retention.converted,262)
-            test.eq(result.retention.preserved,3)
+            test.eq(result.retention.converted+committed,263)
+            test.eq(tonumber(scratch.query([[SELECT COUNT(*) AS n FROM kickside_retention_policy
+                WHERE event_hot_retention_days IS NULL]])[1].n),263)
             for _, old in ipairs(before) do
                 local row = scratch.query("SELECT * FROM kickside_retention_policy WHERE id=$1", {old.id})[1]
                 for key,value in pairs(old) do
-                    if key == "event_hot_retention_days" and (tostring(old.id)==implicit or tostring(old.id)==disabled) then
+                    if key == "event_hot_retention_days" and (tostring(old.id)==implicit or tostring(old.id)==disabled or tostring(old.id)==same_second) then
                         test.is_nil(row[key])
                     else test.eq(row[key],value,key) end
                 end
