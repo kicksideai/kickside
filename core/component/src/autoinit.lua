@@ -16,8 +16,38 @@
 
 local registry = require("registry")
 local crypto = require("crypto")
+local funcs = require("funcs")
+local security = require("security")
 
 local M = {}
+
+-- Kind declarations are module policy, independent of the requesting scope.
+function M.read_kind(impl_id: string): (any?, error?)
+    local entry, err = registry.get(impl_id)
+    if err then return nil, err end
+    if not entry then return nil end
+    local meta = entry.meta or {}
+    return {meta = {mutation = meta.mutation, projections = meta.projections,
+        thread = meta.thread, retention = meta.retention}}, nil
+end
+
+function M.kind_for_impl(impl_id: string): (any?, error?)
+    return funcs.call("kickside.component:kind_declaration", impl_id)
+end
+
+function M.kind_declaration(impl_id: string): (any?, error?)
+    local policy, policy_err = security.policy("kickside.component:kind_read")
+    if policy_err then return nil, policy_err end
+    local call_policy, call_err = security.policy("kickside.component:kind_read_call")
+    if call_err then return nil, call_err end
+    local scope, scope_err = security.new_scope({policy, call_policy})
+    if scope_err then return nil, scope_err end
+    local executor, executor_err = funcs.new()
+    if executor_err then return nil, executor_err end
+    local bound, bind_err = executor:with_scope(scope)
+    if bind_err then return nil, bind_err end
+    return bound:call("kickside.component:read_kind", impl_id)
+end
 
 -- A component kind is a contract.binding; the ones a module wants auto-provisioned
 -- carry a `meta.provision` block. declarations() discovers kinds by this kind +
@@ -256,7 +286,7 @@ end
 -- research, schemas) -- since they all carry their declaration on their own binding.
 function M.projections_for_impl(impl_id: string): { ProjectionBinding }
     if type(impl_id) ~= "string" or impl_id == "" then return {} end
-    local entry = registry.get(impl_id)
+    local entry = M.kind_for_impl(impl_id)
     if not entry then return {} end
     local meta = (type((entry :: any).meta) == "table" and (entry :: any).meta or {}) :: { [string]: any }
     if type(meta.projections) ~= "table" then return {} end
@@ -278,7 +308,7 @@ end
 -- and convergence read one truth.
 function M.thread_for_impl(impl_id: string): ({ [string]: any }?, error?)
     if type(impl_id) ~= "string" or impl_id == "" then return nil end
-    local entry, lookup_err = registry.get(impl_id)
+    local entry, lookup_err = M.kind_for_impl(impl_id)
     if lookup_err then return nil, lookup_err end
     if not entry then return nil end
     local meta = (type((entry :: any).meta) == "table" and (entry :: any).meta or {}) :: { [string]: any }
@@ -323,7 +353,7 @@ end
 -- none (the thread keeps the engine default).
 function M.retention_for_impl(impl_id: string): Retention?
     if type(impl_id) ~= "string" or impl_id == "" then return nil end
-    local entry = registry.get(impl_id)
+    local entry = M.kind_for_impl(impl_id)
     if not entry then return nil end
     local meta = (type((entry :: any).meta) == "table" and (entry :: any).meta or {}) :: { [string]: any }
     return parse_retention(meta.retention)

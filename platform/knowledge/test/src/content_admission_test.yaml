@@ -8,7 +8,7 @@ entries:
     source: file://content_admission_test.lua
     method: run
     security:
-      actor: { id: "system:knowledge-tests" }
+      actor: { id: "knowledge-tests" }
     modules: [sql, uuid, json, funcs, security, contract, http_client, system]
     imports:
       test: wippy.test:test

@@ -39,7 +39,7 @@ end
 
 local function complete_declaration(db: sql.DB, component_id: string, args: table,
     identity: { [string]: any }, maintenance: boolean): error?
-    local primary = thread_crud.complete(db, component_id, args, actor_id(), identity, maintenance)
+    local primary = thread_crud.complete(db, component_id, {impl_id = args.impl_id}, actor_id(), identity, maintenance)
     local failed = sql_boundary.release(db, primary, "release thread declaration connection")
     if failed and not primary then return committed_error.new(failed) end
     return failed

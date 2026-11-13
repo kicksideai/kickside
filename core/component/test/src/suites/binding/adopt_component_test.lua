@@ -175,7 +175,7 @@ local function define_tests()
 
         test.it("refuses a framework maintenance actor as adopter", function()
             local orphan = register_as(MAINTENANCE)
-            local refused = service("system:kickside.other", operator_scope()):adopt({ component_id = orphan })
+            local refused = service(MAINTENANCE, operator_scope()):adopt({ component_id = orphan })
             test.eq(refused.success, false)
             test.eq(refused.kind, errors.PERMISSION_DENIED, tostring(refused.error))
             test.eq(#adoption_audits(orphan), 0)

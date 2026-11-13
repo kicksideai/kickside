@@ -66,6 +66,15 @@ ordinal, creation time and artifact id, including installations with historical
 duplicates. Immutable source artifacts remain addressable across source changes.
 `create_artifact` keeps its existing append semantics for other callers.
 
+The installation-wide `kickside.uploads.rasterize` setting
+`rasterize_page_selection` applies to every upload. Its default, `sparse`, selects
+pages with little or no extractable text. `all` also OCRs pages that already have
+text, increasing model calls and slowing processing. A nonblank OCR result
+replaces the selected page's text; failed or blank OCR keeps its existing text.
+A blank result commits a blank page only when it has no usable text layer.
+Changing the setting does not reprocess completed uploads. Incomplete stages
+read the current policy on retry; a new processing job starts every stage.
+
 Work that depends on a processed file attaches a completion callback instead of
 polling upload status. A callback is an upload token minted by the module that
 owns the follow-up work:

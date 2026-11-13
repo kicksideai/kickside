@@ -30,14 +30,32 @@ local function is_secret(value_type: any): boolean
     return settings_types.SECRET_TYPES[value_type] == true
 end
 
--- Run a declaration's optional validate_func before a change is persisted. The
+local function equal_value(left: any, right: any): boolean
+    if type(left) ~= "table" or type(right) ~= "table" then return left == right end
+    for key, value in pairs(left) do
+        if not equal_value(value, right[key]) then return false end
+    end
+    for key in pairs(right) do
+        if left[key] == nil then return false end
+    end
+    return true
+end
+
+-- Check the declared enum and optional validate_func before persisting. The
 -- func id is declarative (meta.validate_func on the definition); it receives the
 -- key/value/old_value/definition and returns either (ok, err) or a
 -- { valid, error } table. funcs.call returns (result, err) — a non-nil err is a
 -- dispatch failure (missing/erroring func), which rejects the write. A reachable
--- func that reports invalid rejects with its message. Returns (true) when there
--- is no validate_func or the value is accepted, else (false, message).
+-- func that reports invalid rejects with its message. Returns (true) when
+-- the value is accepted, else (false, message).
 local function run_validate(def: settings_types.Definition, value: settings_types.SettingValue, old_value: settings_types.SettingValue): (boolean, string?)
+    if type(def.schema) == "table" and type(def.schema.enum) == "table" then
+        local matched = false
+        for _, allowed in ipairs(def.schema.enum) do
+            if equal_value(value, allowed) then matched = true; break end
+        end
+        if not matched then return false, "value is not in the declared enum" end
+    end
     local fn = def.validate_func
     if type(fn) ~= "string" or fn == "" then return true end
     local funcs = require("funcs")

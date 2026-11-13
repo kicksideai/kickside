@@ -120,6 +120,52 @@ local function define_tests()
             test.eq(open_settings():get({ namespace = NS, key = "nope" }).success, false)
         end)
 
+        test.it("validates declared enum values before writing an override", function()
+            local s = open_settings()
+            for _, value in ipairs({"sparse", "all"}) do
+                test.is_true(s:set({ namespace = NS, key = "mode", value = value }).success)
+                test.eq(s:get({ namespace = NS, key = "mode" }).value, value)
+            end
+            local revision = assert(writer.stored_revision())
+            local rejected = s:set({ namespace = NS, key = "mode", value = "other" })
+            test.is_false(rejected.success)
+            test.eq(rejected.error, "value is not in the declared enum")
+            test.eq(writer.stored_revision(), revision)
+            test.eq(s:get({ namespace = NS, key = "mode" }).value, "all")
+            test.is_true(s:unset({ namespace = NS, key = "mode" }).success)
+            test.is_true(s:set({ namespace = NS, key = "picker", value = "arbitrary string" }).success)
+            test.eq(s:get({ namespace = NS, key = "picker" }).value, "arbitrary string")
+            test.is_true(s:unset({ namespace = NS, key = "picker" }).success)
+        end)
+
+        test.it("compares structured enum values by content", function()
+            local s = open_settings()
+            test.is_true(s:set({ namespace = NS, key = "profile", value = {labels = {"chosen"}, enabled = false} }).success)
+            test.is_false(s:set({ namespace = NS, key = "profile", value = {labels = {"other"}, enabled = false} }).success)
+            test.is_false(s:set({ namespace = NS, key = "profile", value = {enabled = true, extra = true} }).success)
+            test.is_false(s:set({ namespace = NS, key = "profile", value = {} }).success)
+            test.is_true(s:unset({ namespace = NS, key = "profile" }).success)
+        end)
+
+        test.it("keeps stored values readable when a declaration adds an enum", function()
+            local s = open_settings()
+            test.is_true(s:set({ namespace = NS, key = "mode", value = "all" }).success)
+            local db = assert(sql.get("app:db"))
+            local _, err = db:execute("UPDATE kickside_settings SET value = $1 WHERE namespace = $2 AND key = $3",
+                {'"earlier-value"', NS, "mode"})
+            db:release()
+            test.is_nil(err)
+            assert(writer.reload())
+            test.eq(s:get({ namespace = NS, key = "mode" }).value, "earlier-value")
+            test.eq(s:get_namespace({ namespace = NS }).values.mode, "earlier-value")
+            for _, row in ipairs(s:list({ namespace = NS }).settings) do
+                if row.key == "mode" then test.eq(row.value, "earlier-value") end
+            end
+            test.is_false(s:set({ namespace = NS, key = "mode", value = "earlier-value" }).success)
+            test.eq(s:get({ namespace = NS, key = "mode" }).value, "earlier-value")
+            test.is_true(s:unset({ namespace = NS, key = "mode" }).success)
+        end)
+
         test.it("rejects a wrong-typed value on set", function()
             local r = open_settings():set({ namespace = NS, key = "max_items", value = "notanint" })
             test.eq(r.success, false)

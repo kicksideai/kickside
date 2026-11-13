@@ -230,6 +230,7 @@ entries:
     test: wippy.test:test
     lifecycle: kickside.core.jobs.persist:lifecycle
     job_fixture: app:job_fixture
+    jobs: kickside.core.jobs:jobs
 - name: listing_pagination_test
   kind: function.lua
   meta:

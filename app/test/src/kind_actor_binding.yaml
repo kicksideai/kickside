@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: kickside.component
+entries:
+  - name: member_closed_kind
+    kind: contract.binding
+    meta: {mutation: closed}
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: kickside.component:member_closed_status}
+  - name: member_closed_status
+    kind: function.lua
+    source: 'return {run = function() return {} end}'
+    method: run

@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: kickside.automation.maintenance_actors
+
+entries:
+  - name: kickside_automation_declaration
+    kind: registry.entry
+    meta:
+      type: kickside.execution.maintenance_actor
+      actor_id: system:kickside.automation.declaration
+  - name: kickside_automation_identity_writer
+    kind: registry.entry
+    meta:
+      type: kickside.execution.maintenance_actor
+      actor_id: system:kickside.automation.identity_writer
+  - name: kickside_automation_round
+    kind: registry.entry
+    meta:
+      type: kickside.execution.maintenance_actor
+      actor_id: system:kickside.automation.round

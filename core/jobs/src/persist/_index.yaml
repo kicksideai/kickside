@@ -306,6 +306,8 @@ entries:
     kind: library.lua
     source: file://listing.lua
     modules: [sql, uuid]
+    imports:
+      eligibility: kickside.core.jobs.persist:eligibility
     meta:
       comment: Owner-scoped job and run keyset pages and exact job reads.
 

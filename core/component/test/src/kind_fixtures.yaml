@@ -1,0 +1,96 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: kickside.test
+
+# Writer fixtures use installed kinds; an absent kind is a mutation refusal.
+entries:
+  - name: canonical
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}
+  - name: constraints
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}
+  - name: context_revision
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}
+  - name: failing_lifecycle_update
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}
+  - name: security
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}
+  - name: meta
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}
+  - name: placement
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}
+  - name: last_admin
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}
+  - name: subject
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}
+  - name: patch
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}
+  - name: failure_classification
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}
+  - name: failing_lifecycle_create
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}
+  - name: failing_lifecycle_delete
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}
+  - name: derived_acl
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}
+  - name: adopt
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}
+  - name: purge_retry
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}
+  - name: lifecycle_seam
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}
+  - name: undeclared
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:autoinit_test_status}

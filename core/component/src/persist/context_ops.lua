@@ -3,6 +3,7 @@
 -- command receipt happens before it begins. Declaration commands live in
 -- declaration_ops, the declaration fence in declaration_fence.
 local sql = require("sql")
+local kind_authority = require("kind_authority")
 local time = require("time")
 local json = require("json")
 local security = require("security")
@@ -34,21 +35,21 @@ local function encode(value: any): (string?, error?)
     return encoded, nil
 end
 
-local function lock_and_read(tx: any, component_id: string): ({ [string]: any }?, error?, integer?)
+local function lock_and_read(tx: any, component_id: string): ({ [string]: any }?, error?, integer?, string?)
     local lock_err = meta_ops.lock_component_tx(tx, component_id)
     if lock_err then return nil, lock_err end
-    local rows, read_err = sql.builder.select("private_context", "context_revision"):from(TABLE)
+    local rows, read_err = sql.builder.select("private_context", "context_revision", "impl_id"):from(TABLE)
         :where("component_id = ?", component_id):limit(1):run_with(tx):query()
     if read_err then return nil, errors.wrap(read_err, "failed to read private context") end
     if not rows or not rows[1] then return nil, failure("component not found", errors.NOT_FOUND) end
     local raw = rows[1].private_context
-    if type(raw) == "table" then return raw :: { [string]: any }, nil, tonumber(rows[1].context_revision) :: integer end
+    if type(raw) == "table" then return raw :: { [string]: any }, nil, tonumber(rows[1].context_revision) :: integer, rows[1].impl_id :: string end
     local decoded, decode_err = json.decode(type(raw) == "string" and raw ~= "" and raw or "{}")
     if decode_err then return nil, errors.wrap(decode_err, "stored private context is invalid") end
     if type(decoded) ~= "table" then
         return nil, failure("stored private context is invalid", errors.INTERNAL)
     end
-    return decoded :: { [string]: any }, nil, tonumber(rows[1].context_revision) :: integer
+    return decoded :: { [string]: any }, nil, tonumber(rows[1].context_revision) :: integer, rows[1].impl_id :: string
 end
 
 -- Read a component's current context_revision within the transaction; nil when the
@@ -101,8 +102,10 @@ function M.set_context(tx: any, payload: any): (component_types.CommandResult?, 
     local incoming = payload.private_context or {}
     local invalid = context_policy.validate_public(incoming, payload.delete_keys)
     if invalid then return nil, invalid end
-    local stored, read_err = lock_and_read(tx, payload.component_id)
+    local stored, read_err, _, impl_id = lock_and_read(tx, payload.component_id)
     if read_err then return nil, read_err end
+    local kind_err = kind_authority.check(impl_id :: string, "update")
+    if kind_err then return nil, kind_err end
     return write(tx, payload.component_id, context_policy.preserve_runtime_keys(stored, incoming))
 end
 
@@ -112,8 +115,10 @@ function M.patch_context(tx: any, payload: any): (component_types.CommandResult?
     end
     local invalid = context_policy.validate_public(payload.patch, payload.delete_keys)
     if invalid then return nil, invalid end
-    local stored, read_err = lock_and_read(tx, payload.component_id)
+    local stored, read_err, _, impl_id = lock_and_read(tx, payload.component_id)
     if read_err then return nil, read_err end
+    local kind_err = kind_authority.check(impl_id :: string, "update")
+    if kind_err then return nil, kind_err end
     for key, value in pairs(payload.patch) do stored[key] = value end
     if type(payload.delete_keys) == "table" then
         for _, key in ipairs(payload.delete_keys) do stored[key] = nil end

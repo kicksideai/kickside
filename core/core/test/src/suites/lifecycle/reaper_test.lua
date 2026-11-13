@@ -156,6 +156,34 @@ local function define_tests()
             })
         end
 
+        for _, actor_id in ipairs({"system:knowledge.injection", "system:unlisted"}) do
+            test.it("refuses a direct reaper call from " .. actor_id, function()
+                local result, err = run_as_system({thread_id = lifecycle_thread_id(), events = {},
+                    projection = {body = {}}}, actor_id)
+                test.is_nil(result)
+                test.is_true(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
+            end)
+            test.it("refuses lifecycle publication from " .. actor_id, function()
+                local thread_id = lifecycle_thread_id()
+                local result, err = threads_as(actor_id):append_events({thread_id = thread_id, events = {{
+                    type = "kickside.lifecycle.events:principal.deleted", role = "system",
+                    body = {subject_id = "unowned-" .. suffix, subject_type = "user"},
+                    external = {external_source = "lifecycle", external_id = uuid.v4()},
+                }}})
+                test.is_nil(result)
+                test.is_true(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
+            end)
+            test.it("refuses a system projection from " .. actor_id, function()
+                local thread_id = lifecycle_thread_id()
+                -- The existing admin group supplies WRITE; system identity still needs framework membership.
+                local result, err = threads_as(actor_id, {"app:admin"}):register_projection({
+                    thread_id = thread_id, kind = "unlisted-" .. uuid.v4(),
+                    worker_ref = "func://kickside.core.lifecycle:reaper"})
+                test.is_nil(result)
+                test.is_true(errors.is(err, errors.PERMISSION_DENIED), tostring(err))
+            end)
+        end
+
         test.it("host administrators share the system singleton with independent READ and ADMIN grants", function()
             local thread_id = lifecycle_thread_id()
             local admin = as_owner("lifecycle-admin-" .. suffix, { "app:admin" })
