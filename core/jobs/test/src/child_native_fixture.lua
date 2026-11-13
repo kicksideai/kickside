@@ -12,6 +12,8 @@ function M.db_id(...) return "fixture-db" end
 function M.process_host(...) return "fixture-host" end
 function M.resolve_max_execution_ms(...) return 1000, nil end
 M.PROC_TIMEOUT_MARKER = "fixture-timeout"
+function M.resolve_heartbeat_timeout_ms(...) return nil, nil end
+M.HEARTBEAT_TIMEOUT_MARKER = "fixture-heartbeat-timeout"
 function M.job_still_running(...)
     if M.stage == "lease" then return false, M.source, nil end
     return M.stage ~= "settle_database" and M.stage ~= "settle_dialect", nil, "future"

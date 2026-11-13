@@ -73,6 +73,22 @@ makes the job claimable only after its registered execution child has ended.
 A gone child recovers in the same pass; a live child retains the termination fence.
 Heartbeats renew only matching, unexpired executions without a termination fence.
 
+### Heartbeats
+
+A job opts into progress-based liveness with payload `heartbeat_timeout_ms`
+beside `max_execution_ms`. Its worker calls
+`jobs.heartbeat(id, { token, execution_seq }): (boolean?, error?)` at each
+progress point. A heartbeat renews the execution's lease and moves its
+heartbeat deadline; it returns `false` when the lease no longer holds, so the
+worker stops. The job-child supervisor ends an attempt at the earlier of its
+ceiling and its last heartbeat plus `heartbeat_timeout_ms`; a missed heartbeat
+is an ordinary failure (`job heartbeat timed out`) that retries and, on the
+final attempt, ends the job dead. Infrastructure lease renewals never move the
+heartbeat deadline, and a heartbeat after the supervisor fenced termination
+returns `false`. Delivery to the supervisor runs under the Jobs identity, so
+callers need no process messaging authority. Jobs without
+`heartbeat_timeout_ms` keep the fixed ceiling.
+
 ### Dead outcomes
 
 A worker entry names the function that receives its dead jobs:

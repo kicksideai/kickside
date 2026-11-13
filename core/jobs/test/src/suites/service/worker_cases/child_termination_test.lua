@@ -159,6 +159,84 @@ local function define_tests()
             verify_db:release()
         end)
 
+        test.it("keeps a heartbeating proc past its heartbeat timeout", function()
+            local db = assert(sql.get("app:db"))
+            local dbtype = tostring(db:type())
+            -- 2.4s of work under a 1s heartbeat timeout, heartbeating every 300ms.
+            local job = enqueue_proc_and_claim(db, dbtype, make_thread(db), {
+                heartbeat_timeout_ms = 1000, max_execution_ms = 30000,
+                heartbeat_every_ms = 300, heartbeat_count = 8,
+            })
+            db:release()
+
+            local child_err = worker_child.supervise_job_child(job :: table)
+            test.is_nil(child_err)
+
+            local verify_db = assert(sql.get("app:db"))
+            test.eq(job_row(verify_db, job.id).status, job_types.JOB_STATE.DONE)
+            verify_db:release()
+        end)
+
+        test.it("fails a proc that stops heartbeating and returns it to the queue", function()
+            local db = assert(sql.get("app:db"))
+            local dbtype = tostring(db:type())
+            -- Heartbeats for 0.6s, then blocks without heartbeating.
+            local job = enqueue_proc_and_claim(db, dbtype, make_thread(db), {
+                heartbeat_timeout_ms = 1000, max_execution_ms = 30000,
+                heartbeat_every_ms = 300, heartbeat_count = 2, block = true,
+            })
+            db:release()
+            local started = time.now()
+
+            local child_err, control = worker_child.supervise_job_child(job :: table)
+
+            local elapsed_ms = (tonumber(time.now():sub(started):nanoseconds()) or 0) / 1000000
+            test.not_nil(child_err)
+            test.contains(tostring(child_err), worker_child.HEARTBEAT_TIMEOUT_MARKER)
+            test.is_true(elapsed_ms >= 1500, "the heartbeat timeout restarts at the latest heartbeat")
+            test.is_true(elapsed_ms < 10000, "the heartbeat timeout ends work long before the ceiling")
+
+            local settle_db = assert(sql.get("app:db"))
+            test.is_nil(worker.settle_child_exit(settle_db, dbtype, job :: table, nil, child_err, control))
+            local row = job_row(settle_db, job.id)
+            test.eq(row.status, job_types.JOB_STATE.PENDING)
+            local failed = assert(settle_db:query("SELECT last_error FROM kickside_job WHERE id=$1", { job.id }))[1]
+            test.contains(tostring(failed.last_error), worker_child.HEARTBEAT_TIMEOUT_MARKER)
+            settle_db:release()
+        end)
+
+        test.it("ends a heartbeating proc at its ceiling", function()
+            local db = assert(sql.get("app:db"))
+            local dbtype = tostring(db:type())
+            local job = enqueue_proc_and_claim(db, dbtype, make_thread(db), {
+                heartbeat_timeout_ms = 1000, max_execution_ms = 1500,
+                heartbeat_every_ms = 300, heartbeat_count = 20,
+            })
+            db:release()
+
+            local child_err = worker_child.supervise_job_child(job :: table)
+            test.not_nil(child_err)
+            test.contains(tostring(child_err), worker_child.PROC_TIMEOUT_MARKER)
+        end)
+
+        test.it("refuses a heartbeat for a lease the execution no longer holds", function()
+            local db = assert(sql.get("app:db"))
+            local dbtype = tostring(db:type())
+            local job = enqueue_proc_and_claim(db, dbtype, make_thread(db), {})
+            local alive, heartbeat_err = jobs.heartbeat(job.id, { token = job.lease_token, execution_seq = job.execution_seq })
+            test.is_nil(heartbeat_err)
+            test.is_true(alive)
+            local renewed = assert(db:query("SELECT heartbeat_at FROM kickside_job WHERE id=$1", { job.id }))[1]
+            test.not_nil(renewed.heartbeat_at)
+            local stale, stale_err = jobs.heartbeat(job.id, { token = uuid.v7(), execution_seq = job.execution_seq })
+            test.is_nil(stale_err)
+            test.is_false(stale)
+            local later, later_err = jobs.heartbeat(job.id, { token = job.lease_token, execution_seq = job.execution_seq + 1 })
+            test.is_nil(later_err)
+            test.is_false(later)
+            db:release()
+        end)
+
         test.it("terminates a proc that exceeds max_execution and retries it", function()
             with_db(function(db: sql.DB)
                 local dbtype = tostring(db:type())

@@ -71,7 +71,7 @@ end
 
 local CONTROL_TOPIC = "kickside.core.jobs:execution_control"
 local EXECUTION_SIGNAL = "kickside.core.jobs:execution_signal"
-local CONTROL_KINDS: { [string]: boolean } = { revoked = true, lease_renewed = true }
+local CONTROL_KINDS: { [string]: boolean } = { revoked = true, lease_renewed = true, heartbeat = true }
 local NAME_PREFIX = "kickside.core.jobs.execution:"
 local CHILD_PREFIX = "kickside.core.jobs.execution_child:"
 local DEFAULT_TERMINATE_GRACE_MS = 2000
@@ -102,10 +102,11 @@ function M.child_alive(job_id: string, lease_token: string): (boolean, error?)
     return pid ~= nil, nil
 end
 
--- notify delivers one committed lease control (revocation or renewal) to the
--- token-qualified execution owner. Delivery runs in the execution_signal
--- function under the Jobs identity, so revoking and renewing principals need no
--- process messaging authority. Returns false when no owner is registered.
+-- notify delivers one committed lease control (revocation, renewal or an
+-- execution heartbeat) to the token-qualified execution owner. Delivery runs in
+-- the execution_signal function under the Jobs identity, so revoking, renewing
+-- and heartbeating principals need no process messaging authority. Returns
+-- false when no owner is registered.
 function M.notify(job_id: string, lease_token: string, execution_seq: number,
         kind: string, lease_until: string?): (boolean, error?)
     local sent, call_err = funcs.call(EXECUTION_SIGNAL, job_id, lease_token, execution_seq, kind, lease_until)
@@ -337,8 +338,10 @@ local function supervise(hooks: table, child_pid: string, opts: table, state: ta
         elseif kind == "crash" then
             return nil, (errors.new({ message = tostring((opts :: any).crash_message) .. child_pid, kind = errors.INTERNAL }) :: error), nil
         elseif kind == "timeout" then
+            -- A wait hook names the deadline that elapsed; the default is the ceiling.
+            local message = (sig :: any).message or (opts :: any).timeout_message
             return terminate_child(hooks, child_pid, opts, "timeout", outcome_error(errors.TIMEOUT,
-                tostring((opts :: any).timeout_message), "job_execution_timeout", nil), state)
+                tostring(message), "job_execution_timeout", nil), state)
         elseif kind == "cancel" or kind == "heartbeat_lost" then
             local reason = kind == "cancel" and "cancelled" or "heartbeat lost"
             local message = kind == "cancel" and (opts :: any).cancel_message or "worker heartbeat exited during execution"
@@ -364,8 +367,9 @@ local function supervise(hooks: table, child_pid: string, opts: table, state: ta
             end
         elseif kind == "peer_down" then
             return await_peer_exit(hooks, child_pid, opts, grace, state)
-        elseif kind == "other" or kind == "lease_renewed" then
-            -- Event noise and a committed extension are direct inputs. Neither
+        elseif kind == "other" or kind == "lease_renewed" or kind == "heartbeat" then
+            -- Event noise, a committed extension and a heartbeat are direct
+            -- inputs. The wait hook owns the deadlines a heartbeat moves; none
             -- changes the max-execution deadline.
         else
             return nil, (errors.new({ message = "proc supervise unknown signal: " .. kind, kind = errors.INTERNAL }) :: error), nil

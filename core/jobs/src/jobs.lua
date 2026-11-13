@@ -17,6 +17,8 @@ local claim = require("claim")
 local error_envelope = require("error_envelope")
 local committed_error = require("committed_error")
 local sql_boundary = require("sql_boundary")
+local lease_heartbeat = require("lease_heartbeat")
+local proc_supervisor = require("proc_supervisor")
 
 local runtime_policy = require("runtime_policy")
 local jobs = {}
@@ -225,6 +227,31 @@ function jobs.lease_valid(id: string, lease: table): (boolean?, error?)
         }, dbtype)
         return current == true, err
     end)
+end
+
+-- heartbeat(id, lease) proves a running execution progresses. It renews the
+-- execution's lease and moves its heartbeat deadline (payload
+-- heartbeat_timeout_ms). It returns false when the lease no longer holds, so
+-- the worker stops; delivery to the supervisor runs under the Jobs identity.
+function jobs.heartbeat(id: string, lease: table): (boolean?, error?)
+    if type(id) ~= "string" or id == "" or type(lease) ~= "table"
+        or type(lease.token) ~= "string" or lease.token == ""
+        or type(lease.execution_seq) ~= "number" then
+        return nil, (errors.new({ message = "heartbeat requires a job id and lease fence", kind = errors.INVALID }) :: error)
+    end
+    local renewed, renew_err = with_db(function(db: sql.DB, dbtype: string): (table?, error?)
+        local alive, extend_err, lease_until = lease_heartbeat.extend_lease(db, dbtype, id, lease.token,
+            math.floor(lease.execution_seq) :: integer)
+        if extend_err then return nil, extend_err end
+        return { alive = alive, lease_until = lease_until }, nil
+    end, true)
+    if renew_err then return nil, renew_err end
+    if type(renewed) ~= "table" then return nil, response_error("heartbeat") end
+    if renewed.alive ~= true then return false, nil end
+    local _, notify_err = proc_supervisor.notify(id, lease.token, lease.execution_seq :: number,
+        "heartbeat", renewed.lease_until)
+    if notify_err then return nil, notify_err end
+    return true, nil
 end
 
 function jobs.wake_tx(tx: sql.Transaction, key: string, dbtype: string?): (table?, error?)
