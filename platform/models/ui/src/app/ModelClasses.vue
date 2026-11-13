@@ -10,8 +10,8 @@ defineProps<{ classes: ClassGroup[] }>()
 </script>
 
 <template>
-  <div class="km-classes">
-    <div v-if="!classes.length" class="km-pool-body">
+  <div class="km-classes kx-system-pane">
+    <div v-if="!classes.length" class="km-pool-body kx-system-body">
       <EmptyState
         icon="tabler:category-2"
         title="No model classes"
@@ -19,7 +19,7 @@ defineProps<{ classes: ClassGroup[] }>()
       />
     </div>
 
-    <div v-else class="km-pool-table km-classes-list">
+    <div v-else class="km-pool-table km-classes-list kx-system-body">
       <article v-for="c in classes" :key="c.name" class="km-class">
         <div class="km-class-head">
           <Avatar :icon="c.icon || 'tabler:category'" size="sm" />

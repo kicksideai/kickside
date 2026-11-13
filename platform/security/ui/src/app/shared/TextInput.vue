@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import InputText from 'primevue/inputtext'
 // Bare text/number/password input bound with v-model. Visual treatment matches
 // the select and search controls.
 withDefaults(defineProps<{
@@ -15,18 +16,14 @@ withDefaults(defineProps<{
 }>(), { type: 'text' })
 const emit = defineEmits<{ (e: 'update:modelValue', value: string | number): void }>()
 
-function onInput(e: Event) {
-  const el = e.target as HTMLInputElement
-  emit('update:modelValue', el.value)
-}
 </script>
 
 <template>
-  <input
+  <InputText
     class="km-input"
     :class="mono && 'mono'"
     :type="type"
-    :value="modelValue"
+    :model-value="String(modelValue)"
     :placeholder="placeholder"
     :readonly="readonly"
     :disabled="disabled"
@@ -34,6 +31,6 @@ function onInput(e: Event) {
     :min="min"
     :max="max"
     :step="step"
-    @input="onInput"
+    @update:model-value="emit('update:modelValue', $event ?? '')"
   />
 </template>
