@@ -9,6 +9,7 @@ namespace: kickside.uploads.archive
 entries:
   # Tunable unpack limits. The ns.requirements in the parent module rewrite this
   # entry's meta per deployment; consts reads it.
+
   - name: config
     kind: registry.entry
     meta:
@@ -48,6 +49,9 @@ entries:
       type: static
       size: 2
       workers: 2
+    security:
+      policies:
+        - kickside.uploads:token_call
 
   - name: on_delete
     kind: function.lua

@@ -3,6 +3,7 @@ namespace: kickside.uploads.env
 
 entries:
   # kickside.uploads.env:database_resource
+
   - name: database_resource
     kind: env.variable
     meta:
@@ -12,6 +13,7 @@ entries:
     variable: KICKSIDE_UPLOADS_DATABASE_RESOURCE
 
   # kickside.uploads.env:storage_id
+
   - name: storage_id
     kind: env.variable
     meta:
@@ -21,6 +23,7 @@ entries:
     variable: KICKSIDE_UPLOADS_STORAGE_ID
 
   # kickside.uploads.env:storage_s3
+
   - name: storage_s3
     kind: env.variable
     meta:
@@ -28,3 +31,11 @@ entries:
       icon: tabler:cloud-upload
       private: true
     variable: KICKSIDE_UPLOADS_STORAGE_S3
+
+  - name: key_storage
+    kind: env.storage.os
+
+  - name: encryption_key
+    kind: env.variable
+    storage: kickside.uploads.env:key_storage
+    default: ENCRYPTION_KEY

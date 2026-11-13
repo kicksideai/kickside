@@ -2,6 +2,17 @@ version: "1.0"
 namespace: app
 
 entries:
+
+  - name: secret_cipher_test
+    kind: function.lua
+    meta: {type: test, suite: secret_cipher}
+    source: file://secret_cipher_test.lua
+    method: run
+    modules: [crypto, base64]
+    imports:
+      test: wippy.test:test
+      secret_cipher: kickside.contract:secret_cipher
+
   - name: writable_sink_test
     kind: function.lua
     meta: { type: test, suite: kickside_contract }
@@ -176,6 +187,7 @@ entries:
       actions: access
       resources: '*'
       effect: deny
+
   - name: user_endpoint_policy_test
     kind: function.lua
     meta:

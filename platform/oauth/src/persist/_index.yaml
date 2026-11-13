@@ -3,6 +3,7 @@ namespace: kickside.oauth.persist
 
 entries:
   # kickside.oauth.persist:oauth_repo
+
   - name: oauth_repo
     kind: library.lua
     meta:
@@ -43,3 +44,4 @@ entries:
     modules: [sql, json, time, env, crypto, base64]
     imports:
       oauth_types: kickside.oauth:oauth_types
+      secret_cipher: kickside.contract:secret_cipher

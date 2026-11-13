@@ -2,6 +2,7 @@ version: "1.0"
 namespace: app
 
 entries:
+
   - name: upload_create_probe
     kind: function.lua
     source: file://upload_create_probe.lua
@@ -9,6 +10,7 @@ entries:
     imports:
       api: kickside.uploads.api:upload_handler
       http: app:upload_http_probe
+
   - name: upload_http_dedup_test
     kind: function.lua
     source: file://upload_http_dedup_test.lua
@@ -19,6 +21,7 @@ entries:
       test: wippy.test:test
       provision: kickside.core.threads:provision
       types: kickside.uploads:types
+
   - name: upload_app_policy_test
     kind: function.lua
     meta: { type: test, suite: uploads }
@@ -26,10 +29,12 @@ entries:
     method: run
     modules: [security]
     imports: { test: wippy.test:test }
+
   - name: upload_http_probe
     kind: library.lua
     source: file://upload_http_probe.lua
     modules: [ctx]
+
   - name: upload_get_fixture
     kind: library.lua
     source: file://fixtures/get_upload.lua
@@ -42,6 +47,7 @@ entries:
       upload_query_repo: kickside.uploads.persist:upload_query_repo
       component: kickside.component:component
       http_errors: kickside.contract:http_errors
+
   - name: upload_read_probe
     kind: function.lua
     modules: [security, contract]
@@ -55,6 +61,7 @@ entries:
       delete_api: app:upload_delete_fixture
       execution_identity: kickside.execution:execution_identity
       types: kickside.uploads:types
+
   - name: upload_artifacts_fixture
     kind: library.lua
     source: file://fixtures/artifacts.lua
@@ -70,6 +77,7 @@ entries:
       component: kickside.component:component
       types: kickside.uploads:types
       http_errors: kickside.contract:http_errors
+
   - name: upload_delete_fixture
     kind: library.lua
     source: file://fixtures/delete_upload.lua
@@ -82,6 +90,7 @@ entries:
       component: kickside.component:component
       types: kickside.uploads:types
       http_errors: kickside.contract:http_errors
+
   - name: upload_artifacts_probe
     kind: function.lua
     modules: [security, contract]
@@ -95,6 +104,7 @@ entries:
       delete_api: app:upload_delete_fixture
       execution_identity: kickside.execution:execution_identity
       types: kickside.uploads:types
+
   - name: upload_delete_probe
     kind: function.lua
     modules: [security, contract]
@@ -108,6 +118,7 @@ entries:
       delete_api: app:upload_delete_fixture
       execution_identity: kickside.execution:execution_identity
       types: kickside.uploads:types
+
   - name: upload_identity_probe
     kind: function.lua
     source: file://upload_read_probe.lua
@@ -121,6 +132,7 @@ entries:
       delete_api: app:upload_delete_fixture
       execution_identity: kickside.execution:execution_identity
       types: kickside.uploads:types
+
   - name: upload_events_probe
     kind: function.lua
     source: file://upload_read_probe.lua
@@ -134,6 +146,7 @@ entries:
       delete_api: app:upload_delete_fixture
       execution_identity: kickside.execution:execution_identity
       types: kickside.uploads:types
+
   - name: upload_raw_probe
     kind: function.lua
     modules: [security, contract]
@@ -147,6 +160,7 @@ entries:
       delete_api: app:upload_delete_fixture
       execution_identity: kickside.execution:execution_identity
       types: kickside.uploads:types
+
   - name: upload_raw_fixture
     kind: library.lua
     source: file://fixtures/get_raw.lua
@@ -162,6 +176,7 @@ entries:
       upload_tokens: kickside.uploads.persist:upload_tokens
       types: kickside.uploads:types
       http_errors: kickside.contract:http_errors
+
   - name: shared_upload_access_test
     kind: function.lua
     meta: { type: test, suite: uploads }
@@ -922,6 +937,7 @@ entries:
     source: file://signed_upload_resources.lua
     imports:
       adapter: app:packed_cloud_adapter
+
   - name: signed_upload_response
     kind: library.lua
     source: file://fixtures/response.lua
@@ -929,6 +945,7 @@ entries:
     imports:
       uploads_resources: app:signed_upload_resources
       metadata_sanitizer: kickside.uploads:metadata_sanitizer
+
   - name: signed_upload_list_fixture
     kind: library.lua
     source: file://fixtures/list_uploads.lua
@@ -940,6 +957,7 @@ entries:
       types: kickside.uploads:types
       upload_read_model: kickside.uploads.persist:upload_read_model
       http_errors: kickside.contract:http_errors
+
   - name: signed_upload_list_probe
     kind: function.lua
     source: file://signed_upload_list_probe.lua
@@ -994,9 +1012,11 @@ entries:
   - name: navigation_registry_fixture
     kind: library.lua
     source: file://navigation_registry_fixture.lua
+
   - name: navigation_api_fixture
     kind: library.lua
     source: file://navigation_api_fixture.lua
+
   - name: navigation_response_fixture
     kind: library.lua
     source: file://fixtures/response.lua
@@ -1005,6 +1025,7 @@ entries:
       registry: app:navigation_registry_fixture
       uploads_resources: app:navigation_api_fixture
       metadata_sanitizer: kickside.uploads:metadata_sanitizer
+
   - name: navigation_list_fixture
     kind: library.lua
     source: file://fixtures/list_uploads.lua
@@ -1016,6 +1037,7 @@ entries:
       types: kickside.uploads:types
       upload_read_model: app:navigation_upload_read_model_fixture
       http_errors: kickside.contract:http_errors
+
   - name: navigation_get_fixture
     kind: library.lua
     source: file://fixtures/get_upload.lua
@@ -1028,6 +1050,7 @@ entries:
       upload_query_repo: app:navigation_upload_query_repo_fixture
       upload_read_model: app:navigation_upload_read_model_fixture
       http_errors: kickside.contract:http_errors
+
   - name: navigation_response_test
     kind: function.lua
     source: file://navigation_response_test.lua
@@ -1107,3 +1130,13 @@ entries:
     method: GET
     path: /uploads/{uuid}/artifacts/{artifact_id}/raw
     func: kickside.uploads.api:artifact_raw_handler
+
+  - name: cipher_compatibility_test
+    kind: function.lua
+    meta: {type: test, suite: key_owner}
+    source: file://cipher_compatibility_test.lua
+    method: run
+    modules: [env, crypto, base64, json]
+    imports:
+      test: wippy.test:test
+      caller: kickside.uploads.persist:upload_tokens

@@ -139,9 +139,9 @@ function worker.parse(raw: string?, required: boolean?): (Binding?, error?)
     return { worker_ref = canonical, worker_runtime = runtime, target_id = target_id }, nil
 end
 
--- A projection may invoke only an explicitly declared worker without a private
--- or configured security frame. Recheck on dispatch as registry declarations
--- can change after a cursor was registered.
+-- A projection retains its stored principal. A declared worker may add only
+-- service-only policies; member scopes and actor overrides remain inadmissible.
+-- Recheck on dispatch because declarations can change after registration.
 function worker.validate(binding: table, system_identity: boolean?): (Binding?, error?)
     local target_id = tostring(binding.target_id)
     local declared_runtime = tostring(binding.worker_runtime)
@@ -168,8 +168,32 @@ function worker.validate(binding: table, system_identity: boolean?): (Binding?, 
             kind = errors.INVALID }) :: error)
     end
     local configured_security = entry_field(entry, "security")
-    if (meta.private == true and system_identity ~= true)
-        or (type(configured_security) == "table" and next(configured_security) ~= nil) then
+    local scoped = false
+    if type(configured_security) == "table" then
+        for field, policies in pairs(configured_security) do
+            if field ~= "policies" or type(policies) ~= "table" then
+                scoped = true
+                break
+            end
+            for index, id in pairs(policies) do
+                if type(index) ~= "number" or index < 1 or index > #policies
+                    or index ~= math.floor(index) or type(id) ~= "string" then
+                    scoped = true
+                    break
+                end
+                local policy, policy_err = registry.get(id)
+                if policy_err then return nil, policy_err end
+                local policy_meta = entry_field(policy, "meta")
+                local groups = entry_field(policy, "groups")
+                if entry_kind(policy) ~= "security.policy" or type(policy_meta) ~= "table"
+                    or policy_meta.service_only ~= true or (groups ~= nil and (type(groups) ~= "table" or next(groups) ~= nil)) then
+                    scoped = true
+                    break
+                end
+            end
+        end
+    end
+    if (meta.private == true and system_identity ~= true) or scoped then
         return nil, (errors.new({ message = "private or scoped projection worker is not allowed: " .. target_id,
             kind = errors.PERMISSION_DENIED }) :: error)
     end

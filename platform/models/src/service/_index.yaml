@@ -2,6 +2,7 @@ version: "1.0"
 namespace: kickside.models.service
 
 entries:
+
   - name: cache_bootloader
     kind: function.lua
     meta:
@@ -14,6 +15,10 @@ entries:
     method: run
     imports:
       models_repo: kickside.models.persist:repo
+
+    security:
+      policies:
+        - kickside.models:reload_profiles_call
 
   # ─── Admin UI (self-served web component) ────────────────────────────
 

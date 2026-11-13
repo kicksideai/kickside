@@ -7,6 +7,7 @@ namespace: kickside.models.api
 # endpoints live under kickside.models.api.admin.
 
 entries:
+
   - name: list_models
     kind: function.lua
     meta:
@@ -16,6 +17,9 @@ entries:
     imports:
       models: kickside.models.catalog:model_catalog
     method: handler
+    security:
+      policies:
+        - kickside.models:reload_profiles_call
 
   - name: list_models.endpoint
     kind: http.endpoint
@@ -51,6 +55,9 @@ entries:
     imports:
       models: kickside.models.catalog:model_catalog
     method: handler
+    security:
+      policies:
+        - kickside.models:reload_profiles_call
 
   - name: models_by_name.endpoint
     kind: http.endpoint

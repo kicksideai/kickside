@@ -8,6 +8,7 @@ namespace: kickside.models.api.admin
 # ordinary users in app.security.
 
 entries:
+
   - name: admin
     kind: function.lua
     meta:
@@ -19,6 +20,9 @@ entries:
       provider_read_model: kickside.models.providers:provider_read_model
       model_catalog: kickside.models.catalog:model_catalog
     method: handler
+    security:
+      policies:
+        - kickside.models:reload_profiles_call
 
   - name: admin.endpoint
     kind: http.endpoint
@@ -34,6 +38,10 @@ entries:
     imports:
       models_repo: kickside.models.persist:repo
     method: handler
+    security:
+      policies:
+        - kickside.models:secret_key_access
+        - kickside.models:reload_profiles_call
 
   - name: create_profile.endpoint
     kind: http.endpoint
@@ -49,6 +57,10 @@ entries:
     imports:
       models_repo: kickside.models.persist:repo
     method: handler
+    security:
+      policies:
+        - kickside.models:secret_key_access
+        - kickside.models:reload_profiles_call
 
   - name: update_profile.endpoint
     kind: http.endpoint
@@ -64,6 +76,9 @@ entries:
     imports:
       models_repo: kickside.models.persist:repo
     method: handler
+    security:
+      policies:
+        - kickside.models:reload_profiles_call
 
   - name: delete_profile.endpoint
     kind: http.endpoint
@@ -79,6 +94,9 @@ entries:
     imports:
       model_discovery: kickside.models.discovery:model_discovery
     method: handler
+    security:
+      policies:
+        - kickside.models:reload_profiles_call
 
   - name: discover_profile.endpoint
     kind: http.endpoint
@@ -94,6 +112,9 @@ entries:
     imports:
       model_discovery: kickside.models.discovery:model_discovery
     method: handler
+    security:
+      policies:
+        - kickside.models:reload_profiles_call
 
   - name: test_profile.endpoint
     kind: http.endpoint
@@ -112,6 +133,9 @@ entries:
       model_catalog: kickside.models.catalog:model_catalog
       model_discovery: kickside.models.discovery:model_discovery
     method: handler
+    security:
+      policies:
+        - kickside.models:reload_profiles_call
 
   - name: test_card.endpoint
     kind: http.endpoint
@@ -128,6 +152,9 @@ entries:
       models_repo: kickside.models.persist:repo
       model_catalog: kickside.models.catalog:model_catalog
     method: handler
+    security:
+      policies:
+        - kickside.models:reload_profiles_call
 
   - name: upsert_card.endpoint
     kind: http.endpoint
@@ -143,6 +170,9 @@ entries:
     imports:
       models_repo: kickside.models.persist:repo
     method: handler
+    security:
+      policies:
+        - kickside.models:reload_profiles_call
 
   - name: delete_card.endpoint
     kind: http.endpoint

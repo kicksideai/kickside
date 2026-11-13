@@ -1,0 +1,139 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: app
+entries:
+- name: projection_owner_policy_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: key_owner
+  source: file://projection_owner_policy_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - env
+  imports:
+    test: wippy.test:test
+    worker: kickside.core.projections.persist:worker
+- name: projection_owner_probe
+  kind: function.lua
+  source: file://projection_owner_policy_test.lua
+  method: probe
+  modules:
+  - funcs
+  - security
+  - env
+  imports:
+    test: wippy.test:test
+    worker: kickside.core.projections.persist:worker
+- name: projection_owner_worker
+  kind: function.lua
+  meta:
+    type: projection.worker
+  source: file://projection_owner_policy_test.lua
+  method: owner
+  modules:
+  - funcs
+  - security
+  - env
+  imports:
+    test: wippy.test:test
+    worker: kickside.core.projections.persist:worker
+  security:
+    policies:
+    - app:projection_owner_environment
+- name: projection_owner_environment
+  kind: security.policy
+  meta:
+    service_only: true
+  policy:
+    resources:
+    - app:projection_owner_value
+    actions:
+    - env.get
+    effect: allow
+- name: projection_owner_storage
+  kind: env.storage.memory
+- name: projection_owner_value
+  kind: env.variable
+  storage: app:projection_owner_storage
+  default: owner-resource-value
+- name: projection_owner_caller
+  kind: security.policy
+  policy:
+    resources: '*'
+    actions:
+    - funcs.call
+    - funcs.security
+    - registry.get
+    - registry.find
+    effect: allow
+- name: projection_owner_actor
+  kind: function.lua
+  meta:
+    type: projection.worker
+  source: file://projection_owner_policy_test.lua
+  method: owner
+  modules:
+  - funcs
+  - security
+  - env
+  imports:
+    test: wippy.test:test
+    worker: kickside.core.projections.persist:worker
+  security:
+    actor:
+      id: system:projection-owner
+    policies:
+    - app:projection_owner_environment
+- name: projection_owner_mixed
+  kind: function.lua
+  meta:
+    type: projection.worker
+  source: file://projection_owner_policy_test.lua
+  method: owner
+  modules:
+  - funcs
+  - security
+  - env
+  imports:
+    test: wippy.test:test
+    worker: kickside.core.projections.persist:worker
+  security:
+    policies:
+    - app:projection_owner_environment
+    - app:test_scope_policy
+- name: projection_owner_missing
+  kind: function.lua
+  meta:
+    type: projection.worker
+  source: file://projection_owner_policy_test.lua
+  method: owner
+  modules:
+  - funcs
+  - security
+  - env
+  imports:
+    test: wippy.test:test
+    worker: kickside.core.projections.persist:worker
+  security:
+    policies:
+    - app:projection_owner_missing_policy
+- name: projection_owner_private
+  kind: function.lua
+  meta:
+    type: projection.worker
+    private: true
+  source: file://projection_owner_policy_test.lua
+  method: owner
+  modules:
+  - funcs
+  - security
+  - env
+  imports:
+    test: wippy.test:test
+    worker: kickside.core.projections.persist:worker
+  security:
+    policies:
+    - app:projection_owner_environment
