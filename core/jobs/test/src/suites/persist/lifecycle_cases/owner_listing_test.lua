@@ -3,9 +3,73 @@ local sql = require("sql")
 local uuid = require("uuid")
 local lifecycle = require("lifecycle")
 local job_fixture = require("job_fixture")
+local jobs = require("jobs")
 
 local function define_tests()
     test.describe("Thread owner job listings", function()
+        test.it("distinguishes parked slots from due, scheduled and stranded work", function()
+            local db = assert(sql.get("app:db"))
+            local dbtype = tostring(db:type())
+            local owner = uuid.v7()
+            local before = assert(jobs.health())
+            local specs = {
+                {key = "idle", slot = true, parked = true, due = false},
+                {key = "due", slot = true, scheduled_at = "2000-01-01T00:00:00Z", due = true},
+                {key = "scheduled", slot = false, scheduled_at = "2099-01-01T00:00:00Z", due = false},
+                {key = "stranded", slot = false, parked = true, due = false},
+            }
+            local expected, ids = {}, {}
+            for _, spec in ipairs(specs) do
+                local id = assert(lifecycle.enqueue_job(db, dbtype, {
+                    owner_locator = {kind = "thread", id = owner},
+                    job_type = "test.owner_listing", payload = {},
+                    job_identity = {namespace = "owner-listing", scope = owner, key = spec.key},
+                    slot = spec.slot, parked = spec.parked, scheduled_at = spec.scheduled_at,
+                }))
+                expected[id], ids[#ids + 1] = spec, id
+                if spec.key == "stranded" then
+                    assert(db:execute("UPDATE kickside_job SET last_error=$1 WHERE id=$2", {"worker output invalid", id}))
+                end
+            end
+            local rows, read_err = jobs.list_jobs({owner}, {status = "pending"}, 100)
+            test.is_nil(read_err)
+            test.eq(#rows, 4)
+            local due_count, idle_count = 0, 0
+            for _, row in ipairs(rows) do
+                local spec = expected[row.id]
+                test.not_nil(spec)
+                test.eq(row.status, "pending")
+                test.eq(row.slot, spec.slot)
+                test.eq(row.due, spec.due)
+                test.eq(row.scheduled_at ~= nil, spec.scheduled_at ~= nil)
+                if row.due then due_count = due_count + 1 end
+                if row.slot and row.scheduled_at == nil then idle_count = idle_count + 1 end
+                if spec.key == "stranded" then test.eq(row.last_error, "worker output invalid") end
+            end
+            test.eq(due_count, 1)
+            test.eq(idle_count, 1)
+            local exact = assert(jobs.get_jobs(ids))
+            for id, spec in pairs(expected) do
+                test.eq(exact[id].slot, spec.slot)
+                test.eq(exact[id].due, spec.due)
+                local single = assert(jobs.get_job(id))
+                test.eq(single.slot, spec.slot)
+                test.eq(single.due, spec.due)
+            end
+            local after = assert(jobs.health())
+            test.eq(after.due_unclaimed_count, before.due_unclaimed_count + due_count)
+            test.eq(after.failed_slots, before.failed_slots)
+            local stranded = {}
+            for _, issue in ipairs(after.issues) do
+                if issue.code == "stranded_jobs" then
+                    for _, id in ipairs(issue.job_ids) do stranded[id] = true end
+                end
+            end
+            for id, spec in pairs(expected) do test.eq(stranded[id] == true, spec.key == "stranded") end
+            assert(db:execute("DELETE FROM kickside_job WHERE owner_kind='thread' AND owner_id=$1", {owner}))
+            test.is_nil(select(2, db:release()))
+        end)
+
         test.it("lists canonical thread-owned jobs and runs without a stored thread_id", function()
             local db, db_err = sql.get("app:db")
             if not db then error("test database unavailable: " .. tostring(db_err)) end
@@ -43,6 +107,8 @@ local function define_tests()
             test.eq(#jobs, 1)
             test.eq(jobs[1].id, owned_id)
             test.eq(jobs[1].thread_id, owner)
+            test.eq(jobs[1].slot, false)
+            test.eq(jobs[1].due, false)
             local filtered, filtered_err = lifecycle.list_jobs(db, { owner }, { thread_id = owner }, 100)
             test.is_nil(filtered_err)
             test.eq(#filtered, 1)
