@@ -94,7 +94,11 @@ infrastructure failures retry up to the largest attempt limit, and a
 deterministic handler failure ends the outcome job dead. Handlers are
 idempotent. A thread owner whose cleanup has started, or a worker entry removed
 from the registry, receives no outcome. Enqueue refuses a job whose worker
-declares an invalid `meta.job_dead`.
+declares an invalid `meta.job_dead`: the target must exist, be `function.lua`,
+and admit an outcome without a concurrency key. Outcome jobs never generate
+outcomes; a failed outcome is terminal and logged, including self-declarations
+and mutual handler cycles. A later declaration change that prevents admission is
+logged without undoing the original job's death.
 
 `jobs.health()` reports `stranded_jobs` with `job_ids` for erroneous pending
 one-shot jobs without a schedule. This invariant is unhealthy immediately; the

@@ -314,8 +314,6 @@ local function enqueue_dead_outcome(db_or_tx: Executor, dbtype: string, id: stri
     if not handler then return nil end
     local _, enqueue_err = enqueue.enqueue_job(db_or_tx, dbtype, dead_outcome.params(row, handler :: string))
     if enqueue_err then
-        local details = enqueue_err:details()
-        if type(details) == "table" and details.reason == "thread_cleanup" then return nil end
         if not enqueue_err:retryable() then
             log:warn("dead outcome admission refused", {job_id = id, error = tostring(enqueue_err)})
             return nil
