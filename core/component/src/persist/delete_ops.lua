@@ -2,6 +2,8 @@
 local sql = require("sql")
 local placement = require("placement")
 local component_types = require("component_types")
+local jobs = require("jobs")
+local json = require("json")
 type Executor = sql.DB | sql.Transaction
 
 local function response_error(field: string): error
@@ -13,6 +15,27 @@ local function rows_error(rows: any, err: error?, operation: string, field: stri
     if err then return errors.wrap(err, operation) end
     if type(rows) ~= "table" then return response_error(field) end
     return nil
+end
+
+local function enroll_delete_tx(tx: sql.Transaction, dbtype: string, component_id: string, intent: any): (string?, error?)
+    local queued, enqueue_err = jobs.enqueue_tx(tx, dbtype, {
+        namespace = "component", scope = component_id, key = "delete",
+        owner_locator = {kind = "component", id = component_id},
+        job_type = "kickside.component:delete_worker", immutable_payload = {component_id = component_id},
+    })
+    if enqueue_err then return nil, enqueue_err end
+    if type(queued) ~= "table" or type(queued.id) ~= "string" or queued.id == "" then
+        return nil, response_error("deletion_job.id")
+    end
+    if intent.job_id ~= queued.id then
+        intent.job_id = queued.id
+        local encoded, encode_err = json.encode(intent)
+        if encode_err then return nil, encode_err end
+        local updated, update_err = tx:execute("UPDATE kickside_components SET delete_intent=$1 WHERE component_id=$2", {encoded, component_id})
+        if update_err then return nil, update_err end
+        if type(updated) ~= "table" or tonumber(updated.rows_affected) ~= 1 then return nil, response_error("delete_intent.rows_affected") end
+    end
+    return queued.id, nil
 end
 
 local function affected_count(result: any, err: error?, operation: string, field: string,
@@ -205,4 +228,5 @@ local function delete_component(tx: Executor, db: Executor, command: component_t
     }, nil
 end
 
-return { validate_delete_tx = validate_delete_tx, deletion_ready_tx = deletion_ready_tx, delete_component = delete_component }
+return { validate_delete_tx = validate_delete_tx, deletion_ready_tx = deletion_ready_tx, delete_component = delete_component,
+    enroll_delete_tx = enroll_delete_tx }

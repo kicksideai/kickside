@@ -5,7 +5,6 @@ local contract = require("contract")
 local registry = require("registry")
 local security = require("security")
 local time = require("time")
-local json = require("json")
 local jobs = require("jobs")
 local persisted_json = require("persisted_json")
 local committed_error = require("committed_error")
@@ -296,22 +295,11 @@ function M.begin_delete(component_id: string, gate_user_id: string?, child_polic
     if enqueue then
         local dialect, dialect_err = db:type()
         if dialect_err then return false, "delete", abort_transaction(db, tx, dialect_err) end
-        local queued, enqueue_err = jobs.enqueue_tx(tx, tostring(dialect), {
-            namespace = "component", scope = component_id, key = "delete",
-            owner_locator = {kind = "component", id = component_id},
-            job_type = "kickside.component:delete_worker", immutable_payload = {component_id = component_id},
-        })
-        if enqueue_err or not queued then
+        local enrolled, enqueue_err = ops.enroll_delete_tx(tx, tostring(dialect), component_id, intent)
+        if enqueue_err or not enrolled then
             return false, "delete", abort_transaction(db, tx, enqueue_err or internal("component deletion enqueue returned no job", component_id))
         end
-        if job_id ~= queued.id or rows[1].delete_intent == nil then
-            intent.job_id = queued.id
-            local encoded, encode_err = json.encode(intent)
-            if encode_err then return false, "delete", abort_transaction(db, tx, encode_err) end
-            local _, intent_err = tx:execute("UPDATE kickside_components SET delete_intent=$1 WHERE component_id=$2", {encoded, component_id})
-            if intent_err then return false, "delete", abort_transaction(db, tx, intent_err) end
-        end
-        job_id = queued.id
+        job_id = enrolled
     end
     local _, commit_err = tx:commit()
     if commit_err then

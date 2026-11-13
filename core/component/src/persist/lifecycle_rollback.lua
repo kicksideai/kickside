@@ -6,6 +6,8 @@
 -- transaction under the component row lock.
 
 local context_ops = require("context_ops")
+local delete_ops = require("delete_ops")
+local persisted_json = require("persisted_json")
 
 local M = {}
 
@@ -47,7 +49,8 @@ end
 -- upgrade_tx(tx, component_id, upgrade) -> { component_id, changes_made }:
 -- applies upgrade(chain) -> (chain, changed) to the stored rollback chain under
 -- the component row lock and writes the result when it changed. A stored
--- chain that already holds the upgraded shape is left as it is.
+-- chain that already holds the upgraded shape is left as it is. A deletion
+-- blocked on the old chain resumes through its original Jobs identity.
 function M.upgrade_tx(tx: any, component_id: string, upgrade: any): (any?, error?)
     if type(upgrade) ~= "function" then return nil, invalid("rollback upgrade rule is required") end
     local stored, read_err = context_ops.lock_and_read_tx(tx, component_id)
@@ -55,11 +58,27 @@ function M.upgrade_tx(tx: any, component_id: string, upgrade: any): (any?, error
     local current, current_err = M.validate(stored._rollback or {})
     if current_err or not current then return nil, current_err end
     local upgraded, changed = upgrade(current)
-    if changed ~= true then return { component_id = component_id, changes_made = false }, nil end
-    local steps, invalid_err = M.validate(upgraded)
-    if invalid_err then return nil, invalid_err end
-    stored._rollback = steps
-    return context_ops.write_context_tx(tx, component_id, stored)
+    local result: any = { component_id = component_id, changes_made = false }
+    if changed == true then
+        local steps, invalid_err = M.validate(upgraded)
+        if invalid_err then return nil, invalid_err end
+        stored._rollback = steps
+        local write_err
+        result, write_err = context_ops.write_context_tx(tx, component_id, stored)
+        if write_err then return nil, write_err end
+    end
+    local rows, fence_err = tx:query("SELECT deleting_at,delete_intent FROM kickside_components WHERE component_id=$1", {component_id})
+    if fence_err then return nil, fence_err end
+    if type(rows) ~= "table" or not rows[1] then return nil, invalid("rollback upgrade component fence is absent") end
+    if rows[1].deleting_at ~= nil and rows[1].delete_intent ~= nil then
+        local intent, intent_err = persisted_json.decode_table(rows[1].delete_intent, "component.delete_intent")
+        if intent_err then return nil, intent_err end
+        local dialect, dialect_err = tx:db_type()
+        if dialect_err then return nil, dialect_err end
+        local _, enqueue_err = delete_ops.enroll_delete_tx(tx, tostring(dialect), component_id, intent)
+        if enqueue_err then return nil, enqueue_err end
+    end
+    return result, nil
 end
 
 return M

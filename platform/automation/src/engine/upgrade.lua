@@ -247,7 +247,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
                 local context = type(row.private_context) == "table" and (row.private_context :: Map) or {}
                 local _, changes = declaration_mod.upgrade_rollback(context._rollback)
                 local refused = false
-                if #changes.removed > 0 or #declaration_mod.watch_projections(context._rollback) > 0 then
+                if row.deleting_at ~= nil or #changes.removed > 0 or #declaration_mod.watch_projections(context._rollback) > 0 then
                     local result, err = upgrade_rollback(id)
                     if err or not result then
                         refused = true
