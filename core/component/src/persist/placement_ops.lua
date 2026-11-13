@@ -161,7 +161,10 @@ local function create_component(tx: Executor, db: Executor, command: component_t
         created_at = now_ts,
         updated_at = now_ts,
     }
-    if secret_write then component_row.encrypted_secrets = secret_write.encrypted end
+    if secret_write then
+        component_row.encrypted_secrets = secret_write.encrypted
+        component_row.secrets_generation = secret_write.generation
+    end
     if initial_hash ~= nil then component_row.identity_hash = initial_hash end
     local inserted, err = sql.builder.insert(component_types.TABLES.COMPONENTS)
         :set_map(component_row)

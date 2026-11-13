@@ -32,6 +32,7 @@ type ComponentResult = {
     private_context: { [string]: any }?,
     secret_fields: {component_types.SecretField}?,
     encrypted_secrets: string?,
+    secrets_generation: integer?,
     context_revision: integer?,
     meta: { [string]: string }?,
     access_level: integer?,
@@ -302,7 +303,7 @@ function methods._finalize_row(self: Reader, component: ComponentResult): error?
     if self._include_private_context then
         local context, context_err = persisted_json.decode_table(component.private_context, "component.private_context", true)
         if context_err then return context_err end
-        local declarations, declaration_err = secrets_document.paths(component.encrypted_secrets)
+        local declarations, declaration_err = secrets_document.paths(component.encrypted_secrets, component.secrets_generation)
         if declaration_err then return declaration_err end
         declarations = declarations :: {component_types.SecretField}
         component.secret_fields = declarations
@@ -313,7 +314,7 @@ function methods._finalize_row(self: Reader, component: ComponentResult): error?
             include_secrets = allowed == true
         end
         if #declarations > 0 and include_secrets then
-            local secrets, decrypt_err = secrets_document.decode(component.component_id, component.encrypted_secrets)
+            local secrets, decrypt_err = secrets_document.decode(component.component_id, component.encrypted_secrets, component.secrets_generation)
             if decrypt_err then return decrypt_err end
             context, context_err = secret_fields.merge(declarations, context or {}, secrets :: component_types.JsonMap)
         elseif #declarations > 0 then
@@ -321,6 +322,7 @@ function methods._finalize_row(self: Reader, component: ComponentResult): error?
         end
         if context_err then return context_err end
         component.encrypted_secrets = nil
+        component.secrets_generation = nil
         component.private_context = context :: { [string]: any }?
         component.context_revision = tonumber(component.context_revision) :: integer
     end

@@ -99,6 +99,12 @@ replacement semantics. Existing context revisions and execution identity remain
 unchanged. List, query and ordinary context reads never decrypt credentials.
 The versioned envelope records its exact paths in a base64 metadata header;
 AES-GCM authenticates that header together with the component id and version.
+The header also records `secrets_generation`, a monotonic row counter advanced
+atomically on each secret write. Reads verify it against the same row, including
+masked reads, and reject replayed envelopes with `component_secrets_integrity`.
+Changing the header to match cannot bypass AES-GCM authentication. Non-secret
+writes preserve both ciphertext and generation. Restoring the entire row,
+including its counter, from an older backup is outside this replay protection.
 Path names are public schema metadata. Masked readers of encrypted rows use this
 stored header without registry lookup or access to the installation key. External
 service surfaces also consult the component-owned declaration reader, so newly

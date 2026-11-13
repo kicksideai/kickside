@@ -176,6 +176,7 @@ return {run = test.run_cases(function()
             for i, id in ipairs(ids) do
                 local rows, read_err = db:query("SELECT * FROM kickside_components WHERE component_id=$1", {id})
                 test.is_nil(read_err)
+                test.eq(tonumber(rows[1].secrets_generation), 1)
                 test.eq(tonumber(rows[1].context_revision), 7)
                 test.eq(rows[1].updated_at, timestamp)
                 test.is_nil((json.encode(rows[1]):find("legacy-credential", 1, true)))

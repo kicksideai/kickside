@@ -40,7 +40,7 @@ end
 local function lock_and_read(tx: any, component_id: string): ({ [string]: any }?, error?, integer?, component_types.SecretRow?)
     local lock_err = meta_ops.lock_component_tx(tx, component_id)
     if lock_err then return nil, lock_err end
-    local rows, read_err = sql.builder.select("component_id", "impl_id", "private_context", "context_revision", "encrypted_secrets"):from(TABLE)
+    local rows, read_err = sql.builder.select("component_id", "impl_id", "private_context", "context_revision", "encrypted_secrets", "secrets_generation"):from(TABLE)
         :where("component_id = ?", component_id):limit(1):run_with(tx):query()
     if read_err then return nil, errors.wrap(read_err, "failed to read private context") end
     if not rows or not rows[1] then return nil, failure("component not found", errors.NOT_FOUND) end
@@ -92,7 +92,7 @@ local function write(tx: any, component_id: string, context: { [string]: any }, 
         :set("context_revision", sql.builder.expr("context_revision + 1"))
         :set("updated_at", time.now():utc():format_rfc3339())
         :where("component_id = ?", component_id)
-    if secrets then statement = statement:set("encrypted_secrets", secrets.encrypted or sql.as.null()) end
+    if secrets then statement = statement:set("encrypted_secrets", secrets.encrypted or sql.as.null()):set("secrets_generation", secrets.generation) end
     local result, err = statement:run_with(tx):exec()
     if err then return nil, errors.wrap(err, "failed to write private context") end
     if result.rows_affected == 0 then return nil, failure("component not found", errors.NOT_FOUND) end
@@ -113,7 +113,7 @@ local function write_context(tx: any, row: component_types.SecretRow, stored: co
         if patch_err then return nil, patch_err end
         return write(tx, row.component_id, updated :: component_types.JsonMap)
     end
-    local declarations, declaration_err = secrets_document.write_paths(row.impl_id, row.encrypted_secrets)
+    local declarations, declaration_err = secrets_document.write_paths(row.impl_id, row.encrypted_secrets, row.secrets_generation)
     if declaration_err then return nil, declaration_err end
     declarations = declarations :: {component_types.SecretField}
     local touches_secret = row.encrypted_secrets == nil and #declarations > 0
@@ -127,9 +127,9 @@ local function write_context(tx: any, row: component_types.SecretRow, stored: co
     end
     local context = stored
     if row.encrypted_secrets ~= nil then
-        local secrets, decrypt_err = secrets_document.decode(row.component_id, row.encrypted_secrets)
+        local secrets, decrypt_err = secrets_document.decode(row.component_id, row.encrypted_secrets, row.secrets_generation)
         if decrypt_err then return nil, decrypt_err end
-        local stored_paths, paths_err = secrets_document.paths(row.encrypted_secrets)
+        local stored_paths, paths_err = secrets_document.paths(row.encrypted_secrets, row.secrets_generation)
         if paths_err then return nil, paths_err end
         local merge_err: error?
         context, merge_err = secret_fields.merge(stored_paths :: component_types.SecretField[], context, secrets :: component_types.JsonMap)
@@ -137,7 +137,7 @@ local function write_context(tx: any, row: component_types.SecretRow, stored: co
     end
     local updated, patch_err = secret_fields.patch(declarations, context, patch)
     if patch_err then return nil, patch_err end
-    local visible, secrets, prepare_err = secrets_document.prepare(row.component_id, row.impl_id, updated :: component_types.JsonMap, row.encrypted_secrets)
+    local visible, secrets, prepare_err = secrets_document.prepare(row.component_id, row.impl_id, updated :: component_types.JsonMap, row.encrypted_secrets, row.secrets_generation)
     if prepare_err then return nil, prepare_err end
     return write(tx, row.component_id, visible, secrets)
 end
@@ -156,11 +156,11 @@ function M.set_context(tx: any, payload: any): (component_types.CommandResult?, 
     local kind_err = kind_authority.check(row.impl_id, "update")
     if kind_err then return nil, kind_err end
     if row.encrypted_secrets ~= nil then
-        local _, authenticate_err = secrets_document.decode(row.component_id, row.encrypted_secrets)
+        local _, authenticate_err = secrets_document.decode(row.component_id, row.encrypted_secrets, row.secrets_generation)
         if authenticate_err then return nil, authenticate_err end
     end
     local context = context_policy.preserve_runtime_keys(stored, incoming)
-    local visible, secrets, prepare_err = secrets_document.prepare(row.component_id, row.impl_id, context, row.encrypted_secrets)
+    local visible, secrets, prepare_err = secrets_document.prepare(row.component_id, row.impl_id, context, row.encrypted_secrets, row.secrets_generation)
     if prepare_err then return nil, prepare_err end
     return write(tx, row.component_id, visible, secrets)
 end
@@ -177,7 +177,7 @@ function M.patch_context(tx: any, payload: any): (component_types.CommandResult?
     row = row :: component_types.SecretRow
     local kind_err = kind_authority.check(row.impl_id, "update")
     if kind_err then return nil, kind_err end
-    local declarations, declaration_err = secrets_document.write_paths(row.impl_id, row.encrypted_secrets)
+    local declarations, declaration_err = secrets_document.write_paths(row.impl_id, row.encrypted_secrets, row.secrets_generation)
     if declaration_err then return nil, declaration_err end
     declarations = declarations :: {component_types.SecretField}
     local touches_secret = payload.secret_changes ~= nil or #declarations > 0
@@ -189,9 +189,9 @@ function M.patch_context(tx: any, payload: any): (component_types.CommandResult?
         end
     end
     if touches_secret and row.encrypted_secrets ~= nil then
-        local secrets, decrypt_err = secrets_document.decode(row.component_id, row.encrypted_secrets)
+        local secrets, decrypt_err = secrets_document.decode(row.component_id, row.encrypted_secrets, row.secrets_generation)
         if decrypt_err then return nil, decrypt_err end
-        local stored_paths, paths_err = secrets_document.paths(row.encrypted_secrets)
+        local stored_paths, paths_err = secrets_document.paths(row.encrypted_secrets, row.secrets_generation)
         if paths_err then return nil, paths_err end
         stored, read_err = secret_fields.merge(stored_paths :: component_types.SecretField[], stored, secrets :: component_types.JsonMap)
         if read_err then return nil, read_err end
@@ -204,7 +204,7 @@ function M.patch_context(tx: any, payload: any): (component_types.CommandResult?
         stored = changed :: component_types.JsonMap
     end
     if touches_secret then
-        local visible, secrets, prepare_err = secrets_document.prepare(row.component_id, row.impl_id, stored, row.encrypted_secrets)
+        local visible, secrets, prepare_err = secrets_document.prepare(row.component_id, row.impl_id, stored, row.encrypted_secrets, row.secrets_generation)
         if prepare_err then return nil, prepare_err end
         return write(tx, row.component_id, visible, secrets)
     end
