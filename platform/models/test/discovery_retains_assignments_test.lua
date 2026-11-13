@@ -103,6 +103,45 @@ local function define_tests()
             test.is_nil(delete_err)
             if not ok then error(err, 0) end
         end)
+        test.it("keeps stored capabilities on rediscovery and infers them only for new cards", function()
+            local profile, perr = repo.create_profile({
+                name = "Capability retention",
+                provider_id = "wippy.llm.openai_compat:provider",
+                config = { base_url = "https://example.invalid/v1" },
+            })
+            test.is_nil(perr)
+            local original_adapter, original_lookup = discovery.adapter_for, reference_registry.lookup
+            local rows = { { id = "example-model", context_length = 8192 } }
+            discovery.adapter_for = function() return {
+                fetch = function() return rows, nil end,
+            } end
+            reference_registry.lookup = function() return nil end
+            local ok, err = pcall(function()
+                local first, first_err = discovery.discover(profile.id)
+                test.is_nil(first_err)
+                local name = first.models[1].name
+                test.eq(table.concat(first.models[1].capabilities, ","), "generate")
+                local _, save_err = repo.upsert_card({ name = name, capabilities = { "generate", "structured_output" } }, first.models[1])
+                test.is_nil(save_err)
+
+                rows = { { id = "example-model", context_length = 8192 }, { id = "example-model-2", context_length = 8192 } }
+                local again, again_err = discovery.discover(profile.id)
+                test.is_nil(again_err)
+                test.eq(again.count, 2)
+                for _, card in ipairs(again.models) do
+                    if card.name == name then
+                        test.eq(table.concat(card.capabilities, ","), "generate,structured_output")
+                    else
+                        test.eq(table.concat(card.capabilities, ","), "generate")
+                    end
+                end
+            end)
+            discovery.adapter_for, reference_registry.lookup = original_adapter, original_lookup
+            local _, delete_err = repo.delete_profile(profile.id)
+            test.is_nil(delete_err)
+            if not ok then error(err, 0) end
+        end)
+
         test.it("retains administrator classes and enabled state while refreshing provider metadata", function()
             local profile, perr = repo.create_profile({
                 name = "Northwind discovery regression",

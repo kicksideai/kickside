@@ -39,11 +39,12 @@ function M.discover(profile_id: string): (any?, any?)
         local provider_id = tostring(profile.provider_id)
         local provider_model = adapter.model_id and adapter.model_id(item) or mapper.provider_model_id(item)
         if provider_model then
-            local capabilities = adapter.capabilities and adapter.capabilities(provider_model, item, profile)
-                or mapper.infer_capabilities(provider_model, item)
-            local classes = mapper.infer_classes(provider_model, capabilities, item)
             local name = mapper.public_name(profile.id, provider_model)
             local existing = existing_cards[name]
+            local capabilities = existing and existing.capabilities
+                or adapter.capabilities and adapter.capabilities(provider_model, item, profile)
+                or mapper.infer_capabilities(provider_model, item)
+            local classes = mapper.infer_classes(provider_model, capabilities, item)
             if existing then classes = existing.class end
             -- Fill context window / pricing the provider's own /models API does not
             -- report (OpenAI, Anthropic, Bedrock) from the reference catalog. Only
