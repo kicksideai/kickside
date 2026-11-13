@@ -9,7 +9,7 @@ return {run = test.run_cases(function()
             local key, err = cipher.decode_key(string.rep("01aB", 16))
             test.is_nil(err)
             test.eq(key, string.rep(string.char(1, 171), 16))
-            for _, hex in ipairs({"", string.rep("a", 63), string.rep("a", 66), string.rep("gg", 32)}) do
+            for _, hex in ipairs({"", string.rep("a", 63), string.rep("a", 66), string.rep("gg", 32), string.rep(" a", 32), string.rep("+a", 32)}) do
                 local invalid, invalid_err = cipher.decode_key(hex)
                 test.is_nil(invalid)
                 test.is_true(errors.is(invalid_err, errors.INVALID))

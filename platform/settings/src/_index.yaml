@@ -155,6 +155,8 @@ entries:
     meta: { comment: "AES encryption for secret-typed settings, keyed by ENCRYPTION_KEY (64 hex / 32 bytes)." }
     source: file://secrets.lua
     modules: [base64, env]
+    imports:
+      secret_cipher: kickside.contract:secret_cipher
 
   # Per-method dispatchers over the single settings.lua source; each is one
   # contract method. The import set is the transitive closure of settings.lua's
@@ -162,8 +164,6 @@ entries:
   # Reads retain the caller identity so declarative read_access can check the
   # admin capability. Their narrow policies add cache/registry access and the
   # configured DB and encryption key only for the function invocation.
-    imports:
-      secret_cipher: kickside.contract:secret_cipher
   - name: reader_cache
     kind: security.policy
     meta: { comment: Settings read functions may read and warm the override cache. }
