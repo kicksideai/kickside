@@ -38,7 +38,9 @@ local function ensure_running(job: any): (boolean, string?)
     if type(job) ~= "table" or tostring(job.id or "") == "" or tostring(job.lease_token or "") == "" then
         return true, nil
     end
-    local active, active_err = jobs.lease_valid(tostring(job.id), {
+    -- Each check is a progress point: the heartbeat keeps the attempt alive
+    -- and reports whether the job still holds its lease.
+    local active, active_err = jobs.heartbeat(tostring(job.id), {
         token = job.lease_token, execution_seq = job.execution_seq,
     })
     if active_err then

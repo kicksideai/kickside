@@ -6,6 +6,7 @@ local artifact_content_repo = require("artifact_content_repo")
 local artifact_parts_repo = require("artifact_parts_repo")
 local rasterizer = require("rasterizer")
 local page_images = require("page_images")
+local jobs = require("jobs")
 
 -- Render the pages the page selection picks for OCR: sparse pages by default,
 -- or every page. A complete set of extracted page images serves as the existing
@@ -144,6 +145,17 @@ end
 
 -- Probe the first failed batch page by page. If no page renders, report one
 -- document failure and stop; otherwise retain per-page failures and usable pages.
+-- Heartbeat the processing job after a rendered batch. A job that no longer
+-- holds its lease stops rendering, as its fenced page writes would.
+local function heartbeat(params: any): string?
+    local ref = type(params.cancel_ref) == "table" and params.cancel_ref or nil
+    if not ref or type(ref.job_id) ~= "string" or ref.job_id == "" then return nil end
+    local alive, err = jobs.heartbeat(ref.job_id, { token = ref.lease_token, execution_seq = ref.execution_seq })
+    if err then return tostring(err) end
+    if alive ~= true then return "job no longer holds its lease" end
+    return nil
+end
+
 local function render_pages(params: any, entry: any, ref: any, selected: { integer }, opts: any, source_id: string?, markdown_id: string?, source_checksum: string?): (integer, { any }, string?)
     local rendered = 0
     local failures: { any } = {}
@@ -186,6 +198,8 @@ local function render_pages(params: any, entry: any, ref: any, selected: { integ
             diagnosed = true
         end
         page = last + 1
+        local heartbeat_err = heartbeat(params)
+        if heartbeat_err then return rendered, failures, heartbeat_err end
     end
     return rendered, failures, nil
 end

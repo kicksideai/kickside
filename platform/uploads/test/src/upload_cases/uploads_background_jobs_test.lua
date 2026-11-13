@@ -256,11 +256,14 @@ end
 local function define_tests()
     test.describe("kickside.uploads packaging", function()
         test.before_all(require_integration_schema)
-        test.it("keeps the converter safety net above the default upload budget", function()
+        test.it("keeps the converter safety net above the default progress timeout", function()
+            -- One conversion call cannot heartbeat, so the progress timeout bounds it.
             local converter = entry("kickside.convert.doc2md:converter")
-            local setting = entry("kickside.uploads:setting.process_max_execution_ms")
-            test.eq(tonumber(value(setting, "default")), 600000)
-            test.is_true(tonumber(value(converter, "limits").max_execution_ms) >= tonumber(value(setting, "default")))
+            local ceiling = entry("kickside.uploads:setting.process_max_execution_ms")
+            local progress = entry("kickside.uploads:setting.process_heartbeat_timeout_ms")
+            test.eq(tonumber(value(ceiling, "default")), 14400000)
+            test.eq(tonumber(value(progress, "default")), 600000)
+            test.is_true(tonumber(value(converter, "limits").max_execution_ms) >= tonumber(value(progress, "default")))
         end)
 
         test.it("does not publish a module-local processing queue", function()
@@ -512,7 +515,7 @@ local function define_budget_tests()
             test.is_nil(err)
             test.not_nil(upload)
             local upload_id = tostring(upload.uuid)
-            test.eq(tonumber(upload.processing_max_execution_ms), budget_ms or 600000)
+            test.eq(tonumber(upload.processing_max_execution_ms), budget_ms or 14400000)
             local run: any = nil
             local deadline = time.now():add("120s")
             while time.now():before(deadline) do

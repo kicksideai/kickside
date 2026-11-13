@@ -20,28 +20,41 @@ local JOB_TYPE = "kickside.uploads.service:process_job_proc"
 local SETTINGS_CONTRACT = "kickside.settings:settings"
 local SETTINGS_NS = "kickside.uploads"
 local SETTING_MAX_EXECUTION_MS = "process_max_execution_ms"
-local DEFAULT_MAX_EXECUTION_MS = 600000
+local DEFAULT_MAX_EXECUTION_MS = 14400000
+local SETTING_HEARTBEAT_TIMEOUT_MS = "process_heartbeat_timeout_ms"
+local DEFAULT_HEARTBEAT_TIMEOUT_MS = 600000
 
 local function failure(message: string, kind: string, error_kind: string, retryable: boolean?): error
     return errors.new({ message = message, kind = kind, retryable = retryable == true,
         details = { error_kind = error_kind } })
 end
 
--- Admin-tunable hard ceiling for one processing attempt, served from the warmed
--- settings cache. The worker uses it as the per-job termination deadline. A
--- settings outage degrades to the code default rather than blocking the upload.
-local function max_execution_ms(): integer
+-- An admin-tunable processing limit in milliseconds, served from the warmed
+-- settings cache. A settings outage degrades to the code default rather than
+-- blocking the upload.
+local function setting_ms(key: string, default: integer): integer
     local def = contract.get(SETTINGS_CONTRACT)
     if def then
         local inst = def:open()
         if inst then
-            local r = inst:get({ namespace = SETTINGS_NS, key = SETTING_MAX_EXECUTION_MS })
+            local r = inst:get({ namespace = SETTINGS_NS, key = key })
             if r and r.success and tonumber(r.value) and tonumber(r.value) >= 1 then
                 return math.floor(tonumber(r.value) :: number) :: integer
             end
         end
     end
-    return DEFAULT_MAX_EXECUTION_MS
+    return default
+end
+
+-- The hard ceiling of one processing attempt, even while it makes progress.
+local function max_execution_ms(): integer
+    return setting_ms(SETTING_MAX_EXECUTION_MS, DEFAULT_MAX_EXECUTION_MS)
+end
+
+-- The longest an attempt may run without progress: every pipeline stage,
+-- rendered page batch and transcribed page batch heartbeats the job.
+local function heartbeat_timeout_ms(): integer
+    return setting_ms(SETTING_HEARTBEAT_TIMEOUT_MS, DEFAULT_HEARTBEAT_TIMEOUT_MS)
 end
 
 local function upload_identity(upload: any, deferred: boolean?): (any?, any?, any?)
@@ -109,7 +122,8 @@ local function enqueue_upload_job(upload: any, deferred: boolean?, persist: any?
         max_attempts = 5,
         concurrency_key = "uploads:" .. component_id,
         immutable_payload = { upload_id = upload.uuid,
-            max_execution_ms = tonumber(upload.processing_max_execution_ms) or max_execution_ms() },
+            max_execution_ms = tonumber(upload.processing_max_execution_ms) or max_execution_ms(),
+            heartbeat_timeout_ms = heartbeat_timeout_ms() },
         trace_context = upload.trace_context,
     }
     local event = {

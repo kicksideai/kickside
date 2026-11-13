@@ -931,6 +931,27 @@ local function define_tests()
 			test.eq("completed", stored.storage_state)
 		end)
 
+		test.it("heartbeats the processing job at its stage boundaries", function()
+			local upload = create_transcription_upload("heartbeat-stage", { transcription_error_test = "ocr_error" })
+			local queued, queue_err = process_worker.enqueue_upload_job(upload, true)
+			test.is_nil(queue_err)
+			local db = assert(sql.get("app:db"))
+			local queued_row = assert(db:query("SELECT payload FROM kickside_job WHERE id=$1", { queued.job_id }))[1]
+			local payload = type(queued_row.payload) == "string" and json.decode(queued_row.payload) or queued_row.payload
+			test.eq(tonumber(payload.heartbeat_timeout_ms), 600000)
+			local job = admit_job(db, queued.job_id, 1)
+			local claimed_heartbeat = tostring(job.heartbeat_at)
+			local input, _, input_err = worker_dispatch.build_worker_input(job)
+			test.is_nil(input_err)
+			-- A retriable stage failure on the first of five attempts leaves the job running.
+			local _, run_err = process_job.run(input)
+			test.not_nil(run_err)
+			local after = assert(db:query("SELECT status,heartbeat_at FROM kickside_job WHERE id=$1", { job.id }))[1]
+			db:release()
+			test.eq(after.status, "running")
+			test.is_true(tostring(after.heartbeat_at) > claimed_heartbeat, "the stage boundaries heartbeat the job")
+		end)
+
 		test.it("keeps existing primary text when enrichment transcription fails", function()
 			local transient = create_transcription_upload("transcription-enrich", {
 				transcription_error_test = "ocr_error",
