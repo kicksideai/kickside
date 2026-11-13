@@ -78,7 +78,7 @@ entries:
   - name: secrets_document
     kind: library.lua
     source: file://secrets_document.lua
-    modules: [funcs, base64, json, security]
+    modules: [funcs, base64, json, security, uuid]
     imports:
       secret_fields: kickside.component:secret_fields
       component_types: kickside.component:types

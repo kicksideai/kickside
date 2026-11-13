@@ -212,6 +212,7 @@ function M.select(state: ReaderState): (any?, error?)
         table.insert(select_fields, "c.private_context")
         table.insert(select_fields, "c.encrypted_secrets")
         table.insert(select_fields, "c.secrets_generation")
+        table.insert(select_fields, "c.secrets_incarnation")
         table.insert(select_fields, "c.context_revision")
     end
     if state._include_placement then

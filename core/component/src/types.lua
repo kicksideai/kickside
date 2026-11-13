@@ -158,11 +158,11 @@ type SecretKind = {id: string, meta: {secret_fields: {SecretField}, credential_s
 type SecretDeclarations = {kinds: {SecretKind}, version: string}
 type SecretChange = {path: {string}, value: string?, clear: boolean?}
 type SecretPresence = {set: boolean}
-type SecretWrite = {encrypted: string?, generation: integer}
+type SecretWrite = {encrypted: string?, generation: integer, incarnation: string}
 type SecretsRequest = {component_id: string, access_mask: integer?}
 type SecretsResult = {success: boolean?, component_id: string?, secrets: JsonMap?, context_revision: integer?,
     error: string?, kind: string?, retryable: boolean?, details: JsonMap?}
-type SecretRow = {component_id: string, impl_id: string, encrypted_secrets: string?, secrets_generation: integer?}
+type SecretRow = {component_id: string, impl_id: string, encrypted_secrets: string?, secrets_generation: integer?, secrets_incarnation: string?}
 
 type JsonMap = { [string]: any }
 type MetadataMap = { [string]: string }

@@ -156,6 +156,8 @@ entries:
     method: run
     modules: [sql, uuid, time, json]
     imports:
+      placement: kickside.component.persist:placement_ops
+      deletion: kickside.component.persist:delete_ops
       reader: kickside.component.persist:component_reader
       test: wippy.test:test
       context_ops: kickside.component.persist:context_ops

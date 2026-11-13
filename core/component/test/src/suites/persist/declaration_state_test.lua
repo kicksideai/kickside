@@ -10,6 +10,7 @@ local funcs = require("funcs")
 local security = require("security")
 
 type Map = { [string]: any }
+local seeded: {string} = {}
 
 local function db(): sql.DB
     local opened, err = sql.get("app:db")
@@ -27,6 +28,7 @@ local function seed(opened: sql.DB, state: Map, impl_id: string?): string
         position = "n", created_at = now, updated_at = now,
     }):run_with(opened):exec()
     if insert_err then error(tostring(insert_err)) end
+    seeded[#seeded + 1] = id
     return id
 end
 
@@ -60,6 +62,19 @@ end
 
 local run_cases = test.run_cases(function()
     test.describe("component declaration state", function()
+        test.before_each(function() seeded = {} end)
+        test.after_each(function()
+            local opened = db()
+            for _, id in ipairs(seeded) do
+                local tx = assert(opened:begin())
+                local removed, remove_err = ops.dispatch(tx, opened,
+                    {type = "DELETE_COMPONENT", payload = {component_id = id}})
+                if remove_err then tx:rollback() else tx:commit() end
+                test.is_nil(remove_err)
+                test.is_true(removed.deleted)
+            end
+            test.is_nil(select(2, opened:release()))
+        end)
         test.it("identity selection fences a previously authorized declaration without changing retained configuration", function()
             local d=db()
             local id=seed(d,{_portable_input={title="retained"},cursor=9,debt={key="original"}})
@@ -156,11 +171,13 @@ local run_cases = test.run_cases(function()
         test.it("does not replace a declared secret when its encrypted document cannot authenticate", function()
             local d = db()
             local id = uuid.v7()
-            local encrypted = assert(funcs.call("kickside.component.system:seal_secrets", uuid.v7(), {api_key = "prior-secret"}, {{path = {"api_key"}, type = "string"}}))
+            seeded[#seeded + 1] = id
+            local incarnation = uuid.v4()
+            local encrypted = assert(funcs.call("kickside.component.system:seal_secrets", uuid.v7(), {api_key = "prior-secret"}, {{path = {"api_key"}, type = "string"}}, 0, incarnation))
             local raw = assert(json.encode({api_key = {set = true}, cursor = 7}))
             local now = time.now():format(time.RFC3339)
             local _, insert_err = sql.builder.insert("kickside_components"):set_map({
-                component_id = id, impl_id = "app:secret_kind", private_context = raw, encrypted_secrets = encrypted,
+                component_id = id, impl_id = "app:secret_kind", private_context = raw, encrypted_secrets = encrypted, secrets_incarnation = incarnation,
                 position = "n", created_at = now, updated_at = now,
             }):run_with(d):exec()
             test.is_nil(insert_err, tostring(insert_err))

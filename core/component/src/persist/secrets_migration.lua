@@ -10,7 +10,7 @@ local cleanup = require("error_envelope").cleanup
 
 type Params = {string | integer}
 type Report = {converted: integer, invalid: integer, needs_continue: boolean}
-type Candidate = {component_id: string, impl_id: string, private_context: unknown, encrypted_secrets: string?, secrets_generation: integer?}
+type Candidate = {component_id: string, impl_id: string, private_context: unknown, encrypted_secrets: string?, secrets_generation: integer?, secrets_incarnation: string?}
 type Selection = {component_id: string}
 type Scan = {cursor: string, complete: boolean, invalid: integer}
 local M = {}
@@ -74,7 +74,7 @@ local function convert(db: sql.DB, id: string): (boolean?, error?)
     local primary = meta_ops.lock_component_tx(tx, id)
     local row: Candidate? = nil
     if not primary then
-        local rows, read_err = tx:query("SELECT component_id,impl_id,private_context,encrypted_secrets,secrets_generation FROM kickside_components WHERE component_id=$1", {id})
+        local rows, read_err = tx:query("SELECT component_id,impl_id,private_context,encrypted_secrets,secrets_generation,secrets_incarnation FROM kickside_components WHERE component_id=$1", {id})
         primary = read_err
         if rows and rows[1] then row = rows[1] :: Candidate end
     end
@@ -86,29 +86,29 @@ local function convert(db: sql.DB, id: string): (boolean?, error?)
         primary = decode_err
         local complete = false
         if not primary and row.encrypted_secrets ~= nil then
-            local declarations, declaration_err = document.write_paths(row.impl_id, row.encrypted_secrets, row.secrets_generation)
+            local declarations, declaration_err = document.write_paths(row.impl_id, row.encrypted_secrets, row.secrets_generation, row.secrets_incarnation)
             primary = declaration_err
-            local stored_paths, paths_err = document.paths(row.encrypted_secrets, row.secrets_generation)
+            local stored_paths, paths_err = document.paths(row.encrypted_secrets, row.secrets_generation, row.secrets_incarnation)
             primary = primary or paths_err
             if not primary then
                 local effective = declarations :: types.SecretField[]
                 local existing = stored_paths :: types.SecretField[]
                 complete = #effective == #existing and fields.complete(effective, context :: types.JsonMap)
                 if not complete then
-                    local secrets, decrypt_err = document.decode(row.component_id, row.encrypted_secrets, row.secrets_generation)
+                    local secrets, decrypt_err = document.decode(row.component_id, row.encrypted_secrets, row.secrets_generation, row.secrets_incarnation)
                     primary = decrypt_err
                     if not primary then context, primary = fields.merge(stored_paths :: types.SecretField[], context :: types.JsonMap, secrets :: types.JsonMap) end
                 end
             end
         end
         if not primary and not complete then
-            local visible, secret_write, prepare_err = document.prepare(row.component_id, row.impl_id, context :: types.JsonMap, row.encrypted_secrets, row.secrets_generation)
+            local visible, secret_write, prepare_err = document.prepare(row.component_id, row.impl_id, context :: types.JsonMap, row.encrypted_secrets, row.secrets_generation, row.secrets_incarnation)
             primary = prepare_err
             if not primary and secret_write then
                 local encoded, encode_err = json.encode(visible)
                 primary = encode_err
                 if not primary then
-                    local result, write_err = tx:execute("UPDATE kickside_components SET private_context=$1,encrypted_secrets=$2,secrets_generation=$3 WHERE component_id=$4", {encoded, secret_write.encrypted, secret_write.generation, row.component_id})
+                    local result, write_err = tx:execute("UPDATE kickside_components SET private_context=$1,encrypted_secrets=$2,secrets_generation=$3,secrets_incarnation=$4 WHERE component_id=$5", {encoded, secret_write.encrypted, secret_write.generation, secret_write.incarnation, row.component_id})
                     primary = write_err
                     changed = result and result.rows_affected == 1
                 end

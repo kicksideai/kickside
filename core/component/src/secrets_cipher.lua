@@ -30,27 +30,27 @@ local function key(): (string?, error?)
     return cached_key, cached_error
 end
 
-function M.encode(component_id: string, value: types.JsonMap, declarations: {types.SecretField}, generation: integer?): (string?, error?)
+function M.encode(component_id: string, value: types.JsonMap, declarations: {types.SecretField}, generation: integer?, incarnation: string?): (string?, error?)
     local id, id_err = uuid.format(component_id, "standard")
     if id_err then return nil, id_err end
     local k, key_err = key()
     if key_err then return nil, key_err end
     local plaintext, json_err = json.encode(value)
     if json_err then return nil, json_err end
-    local header, header_err = document.header(declarations, generation)
+    local header, header_err = document.header(declarations, generation, incarnation)
     if header_err then return nil, header_err end
     local sealed, seal_err = cipher.seal(plaintext, k :: string, PREFIX .. id .. ":" .. (header :: string))
     if seal_err then return nil, seal_err end
     return PREFIX .. (header :: string) .. ":" .. (sealed :: string), nil
 end
 
-function M.decode(component_id: string, raw: string?, generation: integer?): (types.JsonMap?, error?)
+function M.decode(component_id: string, raw: string?, generation: integer?, incarnation: string?): (types.JsonMap?, error?)
     local id, id_err = uuid.format(component_id, "standard")
     if id_err then return nil, id_err end
     local k, key_err = key()
     if key_err then return nil, key_err end
     if raw == nil then return {}, nil end
-    local _, header, sealed, inspect_err = document.inspect(raw, generation)
+    local _, header, sealed, inspect_err = document.inspect(raw, generation, incarnation)
     if inspect_err then return nil, inspect_err end
     local plaintext, decrypt_err = cipher.open(sealed :: string, k :: string, PREFIX .. id .. ":" .. (header :: string))
     if decrypt_err then

@@ -7,11 +7,65 @@ local json = require("json")
 local context_ops = require("context_ops")
 local component = require("component")
 local reader = require("reader")
+local placement = require("placement")
+local deletion = require("deletion")
 
 local SENTINEL = "component-storage-credential-sentinel"
 
 return {run = test.run_cases(function()
     test.describe("separate component secret storage", function()
+        test.it("rejects ciphertext from a deleted incarnation of the same component", function()
+            local db = assert(sql.get("app:db"))
+            local id, actor_id = uuid.v7(), uuid.v7()
+            local old
+            for _, credential in ipairs({"deleted-incarnation-secret", "current-incarnation-secret"}) do
+                local tx = assert(db:begin())
+                local result, create_err = placement.create_component(tx, db, {type = "CREATE_COMPONENT",
+                    payload = {component_id = id, impl_id = "app:secret_kind", actor_id = actor_id,
+                        private_context = {api_key = credential, cursor = 7}}})
+                if create_err then tx:rollback() else tx:commit() end
+                test.is_nil(create_err)
+                test.is_true(result.changes_made)
+                test.eq(assert(component.get_private_context(id)).api_key, credential)
+                local row = assert(db:query("SELECT * FROM kickside_components WHERE component_id=$1", {id}))[1]
+                test.eq(tonumber(row.secrets_generation), 1)
+                if old == nil then
+                    old = row
+                    local delete_tx = assert(db:begin())
+                    local deleted, delete_err = deletion.delete_component(delete_tx, db,
+                        {type = "DELETE_COMPONENT", payload = {component_id = id}})
+                    if delete_err then delete_tx:rollback() else delete_tx:commit() end
+                    test.is_nil(delete_err)
+                    test.is_true(deleted.deleted)
+                else
+                    test.is_nil(select(2, db:execute("UPDATE kickside_components SET encrypted_secrets=$1 WHERE component_id=$2", {old.encrypted_secrets, id})))
+                    local value, read_err = component.get_private_context(id)
+                    test.is_nil(value)
+                    test.eq(read_err:details().code, "component_secrets_integrity")
+                    local masked, masked_err = reader.new():with_components(id)
+                        :include_options({private_context = true, meta = false}):one()
+                    test.is_nil(masked)
+                    test.eq(masked_err:details().code, "component_secrets_integrity")
+                    local refused_tx = assert(db:begin())
+                    local refused, write_err = context_ops.set_context(refused_tx,
+                        {component_id = id, private_context = {api_key = "refused-replacement"}})
+                    test.is_nil(select(2, refused_tx:rollback()))
+                    test.is_nil(refused)
+                    test.eq(write_err:details().code, "component_secrets_integrity")
+                    test.is_nil(select(2, db:execute("UPDATE kickside_components SET encrypted_secrets=$1 WHERE component_id=$2", {row.encrypted_secrets, id})))
+                    test.eq(assert(component.get_private_context(id)).api_key, credential)
+                    test.not_nil(row.secrets_incarnation)
+                    test.is_true(row.secrets_incarnation ~= old.secrets_incarnation)
+                    local delete_tx = assert(db:begin())
+                    local deleted, delete_err = deletion.delete_component(delete_tx, db,
+                        {type = "DELETE_COMPONENT", payload = {component_id = id}})
+                    if delete_err then delete_tx:rollback() else delete_tx:commit() end
+                    test.is_nil(delete_err)
+                    test.is_true(deleted.deleted)
+                end
+            end
+            test.is_nil(select(2, db:release()))
+        end)
         test.it("partitions credentials in the existing write and preserves revisions", function()
             local db, db_err = sql.get("app:db")
             test.is_nil(db_err)
@@ -87,8 +141,9 @@ return {run = test.run_cases(function()
             test.is_nil(replaced_read_err)
             test.eq(replaced_context.api_key, "replacement-secret-sentinel")
             test.eq(replaced_context.cursor, 10)
-            local rotated = assert(db:query("SELECT encrypted_secrets,secrets_generation,context_revision FROM kickside_components WHERE component_id=$1", {id}))[1]
+            local rotated = assert(db:query("SELECT encrypted_secrets,secrets_generation,secrets_incarnation,context_revision FROM kickside_components WHERE component_id=$1", {id}))[1]
             test.eq(tonumber(rotated.secrets_generation), 3)
+            test.eq(rotated.secrets_incarnation, rows[1].secrets_incarnation)
             test.is_nil(select(2, db:execute("UPDATE kickside_components SET encrypted_secrets=$1 WHERE component_id=$2", {encrypted, id})))
             local replayed, replay_err = component.get_private_context(id)
             test.is_nil(replayed)

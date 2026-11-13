@@ -10,6 +10,7 @@ local funcs = require("funcs")
 local security = require("security")
 local context_ops = require("context_ops")
 local reader = require("reader")
+local INCARNATION = "11111111-1111-4111-8111-111111111111"
 
 return {run = test.run_cases(function()
     test.describe("existing component secrets migration", function()
@@ -18,32 +19,32 @@ return {run = test.run_cases(function()
             local bad, id = uuid.v7(), uuid.v7()
             local bad_context = assert(json.encode({api_key = {set = true}, auth = {password = "retained-legacy"}}))
             test.is_nil(select(2, db:execute([[INSERT INTO kickside_components
-                (component_id,impl_id,private_context,encrypted_secrets,context_revision)
-                VALUES ($1,'app:evolving_secret_kind',$2,'invalid-envelope',7)]], {bad, bad_context})))
-            local encrypted = assert(funcs.call("kickside.component.system:seal_secrets", id, {api_key = "original-secret", retired_token = "retained-encrypted-secret"}, {{path = {"api_key"}, type = "string"}, {path = {"retired_token"}, type = "string"}}))
+                (component_id,impl_id,private_context,encrypted_secrets,context_revision,secrets_incarnation)
+                VALUES ($1,'app:evolving_secret_kind',$2,'invalid-envelope',7,$3)]], {bad, bad_context, INCARNATION})))
+            local encrypted = assert(funcs.call("kickside.component.system:seal_secrets", id, {api_key = "original-secret", retired_token = "retained-encrypted-secret"}, {{path = {"api_key"}, type = "string"}, {path = {"retired_token"}, type = "string"}}, 0, INCARNATION))
             test.is_nil(select(2, db:execute([[INSERT INTO kickside_components
-                (component_id,impl_id,private_context,encrypted_secrets,context_revision)
-                VALUES ($1,'app:evolving_secret_kind',$2,$3,7)]], {id,
-                assert(json.encode({api_key = {set = true}, retired_token = {set = true}, auth = {password = "newly-declared-secret", user = "kept"}})), encrypted})))
+                (component_id,impl_id,private_context,encrypted_secrets,context_revision,secrets_incarnation)
+                VALUES ($1,'app:evolving_secret_kind',$2,$3,7,$4)]], {id,
+                assert(json.encode({api_key = {set = true}, retired_token = {set = true}, auth = {password = "newly-declared-secret", user = "kept"}})), encrypted, INCARNATION})))
             local malformed = {}
             for _, present in ipairs({true, false}) do
                 local malformed_id = uuid.v7()
                 local previous = assert(funcs.call("kickside.component.system:seal_secrets", malformed_id,
-                    {api_key = "retained-secret"}, {{path = {"api_key"}, type = "string"}}))
+                    {api_key = "retained-secret"}, {{path = {"api_key"}, type = "string"}}, 0, INCARNATION))
                 test.is_nil(select(2, db:execute([[INSERT INTO kickside_components
-                    (component_id,impl_id,private_context,encrypted_secrets)
-                    VALUES ($1,'app:evolving_secret_kind',$2,$3)]], {malformed_id,
-                    assert(json.encode({api_key = {set = true}, auth = {password = {set = present}}})), previous})))
+                    (component_id,impl_id,private_context,encrypted_secrets,secrets_incarnation)
+                    VALUES ($1,'app:evolving_secret_kind',$2,$3,$4)]], {malformed_id,
+                    assert(json.encode({api_key = {set = true}, auth = {password = {set = present}}})), previous, INCARNATION})))
                 malformed[#malformed + 1] = {id = malformed_id, encrypted = previous, present = present}
             end
             local complete_id = uuid.v7()
             local complete_envelope = assert(funcs.call("kickside.component.system:seal_secrets", complete_id,
                 {api_key = "unchanged-secret", auth = {password = "unchanged-password"}},
-                {{path = {"api_key"}, type = "string"}, {path = {"auth", "password"}, type = "string"}}))
+                {{path = {"api_key"}, type = "string"}, {path = {"auth", "password"}, type = "string"}}, 0, INCARNATION))
             test.is_nil(select(2, db:execute([[INSERT INTO kickside_components
-                (component_id,impl_id,private_context,encrypted_secrets)
-                VALUES ($1,'app:evolving_secret_kind',$2,$3)]], {complete_id,
-                assert(json.encode({api_key = {set = true}, auth = {password = {set = true}}})), complete_envelope})))
+                (component_id,impl_id,private_context,encrypted_secrets,secrets_incarnation)
+                VALUES ($1,'app:evolving_secret_kind',$2,$3,$4)]], {complete_id,
+                assert(json.encode({api_key = {set = true}, auth = {password = {set = true}}})), complete_envelope, INCARNATION})))
             local before, before_err = component.get_private_context(id)
             test.is_nil(before_err)
             test.eq(before.api_key, "original-secret")
@@ -67,7 +68,7 @@ return {run = test.run_cases(function()
                 test.eq(assert(json.decode(retained.private_context)).auth.password.set, invalid.present)
                 test.is_nil(select(2, db:execute("DELETE FROM kickside_components WHERE component_id=$1", {invalid.id})))
             end
-            local invalid_row = assert(db:query("SELECT private_context,encrypted_secrets,context_revision FROM kickside_components WHERE component_id=$1", {bad}))[1]
+            local invalid_row = assert(db:query("SELECT private_context,encrypted_secrets,context_revision,secrets_incarnation FROM kickside_components WHERE component_id=$1", {bad}))[1]
             test.eq(assert(json.decode(invalid_row.private_context)).auth.password, "retained-legacy")
             test.eq(invalid_row.encrypted_secrets, "invalid-envelope")
             test.eq(tonumber(invalid_row.context_revision), 7)
@@ -108,9 +109,10 @@ return {run = test.run_cases(function()
             test.eq(report.converted, 0)
             test.eq(report.invalid, 1)
             test.is_false(report.needs_continue)
-            local after = assert(db:query("SELECT private_context,encrypted_secrets,context_revision FROM kickside_components WHERE component_id=$1", {id}))[1]
+            local after = assert(db:query("SELECT private_context,encrypted_secrets,context_revision,secrets_incarnation FROM kickside_components WHERE component_id=$1", {id}))[1]
             test.eq(after.private_context, before)
             test.eq(tonumber(after.context_revision), 7)
+            test.is_nil(after.secrets_incarnation)
             test.is_nil(after.encrypted_secrets)
             local value, read_err = component.get_private_context(id)
             test.is_nil(value)
@@ -130,7 +132,7 @@ return {run = test.run_cases(function()
             test.is_nil(err)
             test.eq(report.converted, 1)
             test.eq(report.invalid, 0)
-            local row = assert(db:query("SELECT private_context,encrypted_secrets,context_revision FROM kickside_components WHERE component_id=$1", {id}))[1]
+            local row = assert(db:query("SELECT private_context,encrypted_secrets,context_revision,secrets_incarnation FROM kickside_components WHERE component_id=$1", {id}))[1]
             test.not_nil(row.encrypted_secrets)
             test.eq(tonumber(row.context_revision), 7)
             local visible = assert(json.decode(tostring(row.private_context)))
@@ -170,6 +172,10 @@ return {run = test.run_cases(function()
             test.is_nil(last_err)
             test.eq(last.converted, 1)
             test.is_false(last.needs_continue)
+            local incarnations = {}
+            for _, id in ipairs(ids) do
+                incarnations[id] = assert(db:query("SELECT secrets_incarnation FROM kickside_components WHERE component_id=$1", {id}))[1].secrets_incarnation
+            end
             local again, again_err = migration.run(2)
             test.is_nil(again_err)
             test.eq(again.converted, 0)
@@ -177,6 +183,11 @@ return {run = test.run_cases(function()
                 local rows, read_err = db:query("SELECT * FROM kickside_components WHERE component_id=$1", {id})
                 test.is_nil(read_err)
                 test.eq(tonumber(rows[1].secrets_generation), 1)
+                local valid, validate_err = uuid.validate(rows[1].secrets_incarnation)
+                test.is_nil(validate_err)
+                test.is_true(valid)
+                test.eq(rows[1].secrets_incarnation, incarnations[id])
+                if i > 1 then test.is_true(rows[1].secrets_incarnation ~= incarnations[ids[i - 1]]) end
                 test.eq(tonumber(rows[1].context_revision), 7)
                 test.eq(rows[1].updated_at, timestamp)
                 test.is_nil((json.encode(rows[1]):find("legacy-credential", 1, true)))

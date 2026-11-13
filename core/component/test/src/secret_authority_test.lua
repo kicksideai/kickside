@@ -6,6 +6,7 @@ local sql = require("sql")
 local uuid = require("uuid")
 local json = require("json")
 
+local INCARNATION = "11111111-1111-4111-8111-111111111111"
 local SENTINEL = "component-authority-secret-sentinel"
 local function client(actor_id: string, trusted: boolean)
     local policies = {assert(security.policy("app:secret_caller_access"))}
@@ -134,11 +135,11 @@ return {run = test.run_cases(function()
             for _, encrypted in ipairs({false, true}) do
                 if encrypted then
                     local sealed, seal_err = funcs.call("kickside.component.system:seal_secrets", id,
-                        {api_key = SENTINEL}, {{path = {"api_key"}, type = "string"}})
+                        {api_key = SENTINEL}, {{path = {"api_key"}, type = "string"}}, 0, INCARNATION)
                     test.is_nil(seal_err)
                     test.is_nil(select(2, db:execute([[UPDATE kickside_components
-                        SET private_context=$1,encrypted_secrets=$2 WHERE component_id=$3]],
-                        {assert(json.encode({api_key = {set = true}, cursor = 7})), sealed, id})))
+                        SET private_context=$1,encrypted_secrets=$2,secrets_incarnation=$4 WHERE component_id=$3]],
+                        {assert(json.encode({api_key = {set = true}, cursor = 7})), sealed, id, INCARNATION})))
                 end
                 local by_meta, meta_err = call:call("kickside.component.binding:get_access_context_by_meta_func",
                     {meta = {privacy_fixture = id}, include_context = true})

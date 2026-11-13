@@ -106,7 +106,8 @@ local function create_component(tx: Executor, db: Executor, command: component_t
             initial_identity.credential_id, initial_identity.link_id)
         context._execution_identity = initial_identity
     end
-    local visible, secret_write, prepare_err = secrets_document.prepare(component_id, payload.impl_id, context)
+    local incarnation = uuid.v4()
+    local visible, secret_write, prepare_err = secrets_document.prepare(component_id, payload.impl_id, context, nil, nil, incarnation)
     if prepare_err then return nil, prepare_err end
     local private_context, enc_err = encode_context(visible)
     if enc_err then
@@ -154,6 +155,7 @@ local function create_component(tx: Executor, db: Executor, command: component_t
     local component_row: { [string]: any } = {
         component_id = component_id,
         impl_id = payload.impl_id,
+        secrets_incarnation = incarnation,
         private_context = private_context,
         parent_id = parent_id,
         position = position,
