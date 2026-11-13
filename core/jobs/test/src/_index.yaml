@@ -308,6 +308,48 @@ entries:
     imports:
       job_types: kickside.core.jobs:types
 
+  - name: job_dead_proc
+    kind: process.lua
+    meta:
+      type: test_helper
+      comment: Test-only proc:// worker whose dead jobs reach app:job_dead_recorder.
+      job_dead: app:job_dead_recorder
+    source: file://job_sleep_proc.lua
+    method: run
+    modules:
+      - time
+      - channel
+      - process
+    imports:
+      job_types: kickside.core.jobs:types
+
+  - name: job_dead_invalid_proc
+    kind: process.lua
+    meta:
+      type: test_helper
+      comment: Test-only proc:// worker with an invalid dead handler declaration.
+      job_dead: ""
+    source: file://job_sleep_proc.lua
+    method: run
+    modules:
+      - time
+      - channel
+      - process
+    imports:
+      job_types: kickside.core.jobs:types
+
+  - name: job_dead_recorder
+    kind: function.lua
+    meta:
+      type: test_helper
+      comment: Test-only dead handler that reads the dead job and sends it to the registered test receiver.
+    source: file://job_dead_recorder.lua
+    method: run
+    modules:
+      - process
+    imports:
+      jobs: kickside.core.jobs:jobs
+
   - name: job_crash_probe
     kind: process.lua
     meta:
@@ -2205,6 +2247,7 @@ entries:
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
       capacity: app:capacity_native_adapter
+      dead_outcome: kickside.core.jobs.persist:dead_outcome
 
   - name: enqueue_native_test
     kind: function.lua
@@ -3086,6 +3129,7 @@ entries:
       lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
       proc_supervisor: kickside.core.jobs:proc_supervisor
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      dead_outcome: kickside.core.jobs.persist:dead_outcome
   - name: run_history_native_test
     kind: function.lua
     source: file://run_history_native_test.lua
@@ -3200,6 +3244,7 @@ entries:
       lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
       proc_supervisor: kickside.core.jobs:proc_supervisor
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      dead_outcome: kickside.core.jobs.persist:dead_outcome
   - name: transition_native_test
     kind: function.lua
     source: file://transition_native_test.lua

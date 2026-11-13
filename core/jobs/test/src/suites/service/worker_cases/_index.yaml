@@ -293,3 +293,27 @@ entries:
   modules: [process, time, channel]
   imports:
     test: wippy.test:test
+- name: dead_outcome_test
+  kind: function.lua
+  meta:
+    title: Job Worker
+    type: test
+    suite: kickside_core
+    group: KickSide Core / Jobs
+    comment: Dead jobs reach the dead handler their worker declares.
+  source: file://dead_outcome_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - json
+  - time
+  - process
+  - channel
+  imports:
+    test: wippy.test:test
+    job_types: kickside.core.jobs:types
+    worker: kickside.core.jobs.service:loop
+    worker_dispatch: kickside.core.jobs.service:worker_dispatch
+    worker_child: kickside.core.jobs.service:worker_child
+    job_fixture: app:job_fixture

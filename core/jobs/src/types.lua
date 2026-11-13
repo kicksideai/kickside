@@ -263,6 +263,8 @@ M.CLAIM_REFUSAL = {
 -- respawns each exited slot.
 M.MIN_WORKERS = 1
 M.MAX_WORKERS = 256
+-- The largest attempt limit the retry policy accepts.
+M.MAX_ATTEMPTS = 1000000
 
 -- Registry id of the claim-loop process the pool root spawns per slot.
 M.LOOP_PROCESS_ID = "kickside.core.jobs.service:loop"

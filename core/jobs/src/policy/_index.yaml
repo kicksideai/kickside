@@ -7,6 +7,8 @@ entries:
     comment: Lists editable policy paths and their presentation bounds.
   kind: library.lua
   source: file://fields.lua
+  imports:
+    job_types: kickside.core.jobs:types
 - name: runtime
   meta:
     comment: Resolves the committed policy from Settings overrides and subscribes to Settings changes.
