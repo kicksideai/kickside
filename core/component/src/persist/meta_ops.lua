@@ -1,5 +1,6 @@
 -- Public metadata writes share the caller's component transaction.
 local sql = require("sql")
+local kind_authority = require("kind_authority")
 local registry = require("registry")
 local funcs = require("funcs")
 local security = require("security")
@@ -100,6 +101,15 @@ local function set_public_meta(tx: Executor, component_id: string?, fields: any,
     -- component queue on the component row instead of crossing on meta rows.
     local lock_err = lock_component_tx(tx, component_id)
     if lock_err then return nil, false, lock_err end
+
+    local rows, read_err = sql.builder.select("impl_id"):from(component_types.TABLES.COMPONENTS)
+        :where("component_id = ?", component_id):run_with(tx):query()
+    if read_err then return nil, false, read_err :: error end
+    if not rows or not rows[1] then
+        return nil, false, errors.new({kind = errors.NOT_FOUND, message = "component not found"})
+    end
+    local kind_err = kind_authority.check(rows[1].impl_id :: string, "update")
+    if kind_err then return nil, false, kind_err end
 
     local now_ts = time.now():utc():format_rfc3339()
     local results: { any } = {}

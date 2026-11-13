@@ -37,7 +37,10 @@ function M.builder(operation, name)
         if operation == "update" then stage = type(self.update_value) == "table" and "lock" or "touch" end
         return M.result(stage, {rows_affected = stage == "lock" and M.lock_count or 1})
     end
-    function query:query() return M.result("read", M.rows) end
+    function query:query()
+        if operation == "select" and name == "impl_id" then return M.result("kind_read", {{impl_id = "app:legacy_kind"}}) end
+        return M.result("read", M.rows)
+    end
     return query
 end
 return M

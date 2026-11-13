@@ -18,7 +18,7 @@ local function invoke(stage)
 end
 return {run = test.run_cases(function()
     test.describe("native component metadata boundaries", function()
-        for _, stage in ipairs({"lock", "read", "encode", "owner", "delete", "insert", "touch", "floor_read", "floor_write"}) do
+        for _, stage in ipairs({"lock", "read", "kind_read", "encode", "owner", "delete", "insert", "touch", "floor_read", "floor_write"}) do
             for _, kind in ipairs({errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.PERMISSION_DENIED,
                 errors.UNAVAILABLE, errors.INTERNAL, errors.CANCELED, errors.CONFLICT, errors.TIMEOUT,
                 errors.RATE_LIMITED, errors.UNKNOWN}) do

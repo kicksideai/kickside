@@ -8,7 +8,7 @@ local function invoke(stage: string)
     if stage == "placement" or stage == "descendant" then
         return writer.set_placement(fixture, fixture, {type = "SET_PLACEMENT", payload = {component_id = id, has_parent_arg = true, parent_id = "parent", position = "new-position"}})
     end
-    return writer.create_component(fixture, fixture, {type = "CREATE_COMPONENT", payload = {component_id = id, impl_id = "implementation",
+    return writer.create_component(fixture, fixture, {type = "CREATE_COMPONENT", payload = {component_id = id, impl_id = "app:legacy_kind",
         actor_id = stage == "permission" and "system:worker" or id, private_context = {}, initial_meta = {title = "label"}}})
 end
 return {run = test.run_cases(function()

@@ -24,7 +24,7 @@ local function builder(...)
             if fixture.stage == "fence" then return nil, fixture.source end
             return {{identity_generation = 7, identity_hash = "hash"}}, nil
         end
-        return fixture.rows or {{private_context = fixture.raw, context_revision = 7}}, nil
+        return fixture.rows or {{private_context = fixture.raw, context_revision = 7, impl_id = "app:legacy_kind"}}, nil
     end
     function query:exec()
         fixture.writes = fixture.writes + 1

@@ -146,7 +146,13 @@ function M.read_node(tx: Executor, component_id: string, for_write: boolean?): (
         :where("component_id = ?", component_id)
         :limit(1)
     if for_write then
+        -- A reroot page retains its direct parent pointer until path and
+        -- closure work finishes, even after outside closure edges are removed.
         query = query:where("deleting_at IS NULL")
+            :where("NOT EXISTS (SELECT 1 FROM " .. component_types.TABLES.ANCESTOR
+                .. " a JOIN " .. component_types.TABLES.COMPONENTS .. " d ON d.component_id=a.ancestor_id"
+                .. " LEFT JOIN " .. component_types.TABLES.COMPONENTS .. " p ON p.component_id=d.parent_id"
+                .. " WHERE a.component_id=? AND (d.deleting_at IS NOT NULL OR p.deleting_at IS NOT NULL))", component_id)
         local dialect, dialect_err = (tx :: sql.Transaction):db_type()
         if dialect_err then return nil, dialect_err end
         if dialect == sql.type.POSTGRES then query = query:suffix("FOR UPDATE") end
@@ -317,9 +323,9 @@ function M.ancestor_ids(tx: Executor, component_id: string): ({ string }?, error
     return out, nil
 end
 
--- Strict descendants of a node, as { component_id, path }, in id order.
+-- Strict descendants of a node, including kind and path, in id order.
 function M.descendants(tx: Executor, component_id: string): (Node[]?, error?)
-    local rows, err = sql.builder.select("c.component_id", "c.path")
+    local rows, err = sql.builder.select("c.component_id", "c.impl_id", "c.path")
         :from(ANCESTOR .. " a")
         :inner_join(component_types.TABLES.COMPONENTS .. " c ON c.component_id = a.component_id")
         :where("a.ancestor_id = ?", component_id)
