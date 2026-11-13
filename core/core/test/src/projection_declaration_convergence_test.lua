@@ -293,6 +293,37 @@ return {run = test.run_cases(function()
             stop_pool()
             test.eq(tonumber(state(id).body.stats.count), 3)
         end)
+        test.it("replays an explicit declaration reset without legacy output history", function()
+            local threads, actor, scope, id = setup(true)
+            assert(threads:register_projection({thread_id = id, kind = KIND,
+                worker_ref = "func://app:test_count_worker", worker_input_mode = "prefetch_events",
+                events = {input = {{type = "app:threads_keep"}}, output = {}}}))
+            for _, event_type in ipairs({"app:threads_keep", "app:threads_skip", "app:threads_keep"}) do
+                assert(threads:append_event({thread_id = id, event = {type = event_type, role = "user", body = {}}}))
+            end
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 5}))
+            stop_pool()
+            local before = state(id)
+            test.eq(tonumber(before.body.stats.count), 2)
+            before.body.declaration_status.output_history = nil
+            local db = assert(sql.get("app:db"))
+            assert(db:execute("UPDATE kickside_projection SET body=$1 WHERE id=$2",
+                {assert(json.encode(before.body)), before.id}))
+            assert(db:release())
+            assert(threads:register_projection({thread_id = id, kind = KIND, reset = true,
+                worker_ref = "func://app:test_count_worker", worker_input_mode = "prefetch_events",
+                events = {input = {{type = "app:threads_keep"}, {type = "app:threads_skip"}}, output = {}}}))
+            test.eq(tonumber(state(id).last_seq), 0)
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 5}))
+            stop_pool()
+            local after = state(id)
+            test.eq(tonumber(after.last_seq), 3)
+            test.eq(tonumber(after.body.stats.count), 3)
+            test.is_nil(after.body.declaration_status.rebuild_until_seq)
+            test.is_nil(after.body.declaration_status.reason)
+        end)
         test.it("preserves a pruned fold and exposes the forward-only declaration revision", function()
             local threads, actor, scope, id = setup(true)
             assert(threads:register_projection({thread_id = id, kind = KIND,
