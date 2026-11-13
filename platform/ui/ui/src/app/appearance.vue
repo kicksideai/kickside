@@ -305,7 +305,7 @@ watch(hostVisible, (visible, previous) => {
                 class="ap-tone-swatch"
                 :pt="{ preview: { class: 'ap-tone-preview', 'aria-label': 'Base tone color', 'data-testid': 'appearance-base-tone-picker' } }"
               />
-              <input v-model="primaryColor" class="ap-binput ap-tone-hex" type="text" maxlength="7" placeholder="Default" aria-label="Base tone hex" />
+              <input v-model="primaryColor" class="ap-binput ap-tone-hex" type="text" maxlength="7" :placeholder="defaultTone" aria-label="Base tone hex" />
               <button v-if="primaryColor" class="ap-btn ap-btn-ghost" @click="clearTone"><Icon icon="tabler:rotate" aria-hidden="true" /> Reset</button>
             </div>
             <p v-if="toneWarning" class="ap-tone-warn" role="alert">

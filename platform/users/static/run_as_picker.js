@@ -2,7 +2,7 @@ import { a as j, b as q, W as R } from "./index-D52CRMw6.js";
 import { defineComponent as B, ref as f, useId as K, computed as C, watch as _, nextTick as U, openBlock as d, createElementBlock as u, Fragment as I, createElementVNode as m, unref as g, createVNode as A, toDisplayString as M, withCtx as T, withDirectives as F, vModelText as H, renderList as D, normalizeClass as O, createCommentVNode as S, onBeforeUnmount as W, createBlock as P, mergeProps as G } from "vue";
 import { api as J, define as X } from "@wippy-fe/proxy";
 import { Icon as L } from "@iconify/vue";
-import { _ as Y } from "./AnchoredPanel.vue_vue_type_script_setup_true_lang-DSLnUKFT.js";
+import { _ as Y } from "./AnchoredPanel.vue_vue_type_script_setup_true_lang-CU5LLZRq.js";
 const Z = ["aria-expanded", "aria-controls", "aria-label", "disabled"], Q = { class: "p-select-label" }, rr = {
   key: 0,
   class: "kx-ps-val"

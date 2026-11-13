@@ -6,7 +6,7 @@ import Chip from 'primevue/chip'
 import RadioButton from 'primevue/radiobutton'
 import WcMount from '@widgets/app/WcMount.vue'
 import type { Scope } from '../types.ts'
-import { Button, FormField, IconButton, Notice, Pill, Spinner } from './shared'
+import { Button, EmptyState, FormField, IconButton, Notice, Pill, Spinner } from './shared'
 import { type Delegation, useDelegations } from './useDelegations'
 
 // Run-as permissions: which groups may pick an account in a component's "Run as"
@@ -102,103 +102,103 @@ defineExpose({ load: store.load })
 </script>
 
 <template>
-  <section class="ks-runas" aria-label="Run-as permissions">
-    <header class="ks-runas-head">
-      <div>
-        <h2 class="ks-runas-title">Run-as permissions</h2>
-        <p class="ks-runas-lede">
-          Agents, automations and workflows run with the access of the account set in their
-          <b>Run as</b> setting. A permission lets members of a group choose a specific account there,
-          typically a bot account, so the component works with that account's access instead of their own.
-        </p>
-      </div>
-      <div class="ks-runas-acts">
-        <IconButton icon="tabler:refresh" label="Refresh" :disabled="loading || locked" :spin="loading" @click="store.load" />
-        <Button v-if="!formOpen" variant="primary" small icon="tabler:plus" :disabled="locked" @click="openForm">New permission</Button>
-      </div>
-    </header>
-
-    <div v-if="error" role="alert"><Notice severity="danger" @dismiss="error = ''">{{ error }}</Notice></div>
-    <Notice v-if="confirmation" data-test="delegation-confirmation" severity="success" @dismiss="confirmation = ''">{{ confirmation }}</Notice>
-
-    <form v-if="formOpen" class="ks-runas-form" @submit.prevent="save">
-      <div class="ks-runas-form-head">
-        <span>New run-as permission</span>
-        <IconButton icon="tabler:x" label="Cancel" :disabled="locked" @click="formOpen = false" />
-      </div>
-      <fieldset :disabled="locked" :inert="locked">
-        <ol class="ks-runas-steps">
-          <li>
-            <FormField label="Account to run as" help="The account whose access the component uses. Its group memberships decide what the component can do.">
-              <WcMount tag="wc-principal-picker" :attrs="{ kinds: 'user', placeholder: 'Choose an account…' }" :config="{ principal_id: user }" @change="choice($event, 'user')" @error="pickerError" />
-            </FormField>
-          </li>
-          <li>
-            <FormField label="Who may choose it" help="Members of these groups see this account in the Run as setting. Nobody's group membership changes.">
-              <WcMount tag="wc-principal-picker" :attrs="{ kinds: 'group', placeholder: 'Add a group…' }" :config="{}" @change="choice($event, 'group')" @error="pickerError" />
-            </FormField>
-            <div v-if="groups.length" class="ks-runas-chips" aria-label="Selected groups">
-              <Chip v-for="group in groups" :key="group.id" :label="group.label" :removable="!locked"
-                :pt="{ removeIcon: { 'aria-label': `Remove group ${group.label}` } }"
-                @remove="groups = groups.filter(value => value.id !== group.id)" />
-            </div>
-          </li>
-          <li>
-            <fieldset>
-              <legend class="km-field-label">On which components</legend>
-              <div class="ks-runas-component-options">
-                <label class="ks-runas-component-option" :for="`${componentScopeId}-any`">
-                  <RadioButton v-model="anyComponent" :input-id="`${componentScopeId}-any`" :name="componentScopeId" :value="true" :disabled="locked" />
-                  Any component
-                </label>
-                <label class="ks-runas-component-option" :for="`${componentScopeId}-one`">
-                  <RadioButton v-model="anyComponent" :input-id="`${componentScopeId}-one`" :name="componentScopeId" :value="false" :disabled="locked" />
-                  One component
-                </label>
-              </div>
-              <small class="km-field-help">The person choosing the account must also be able to manage the component.</small>
-            </fieldset>
-            <WcMount v-if="!anyComponent" class="ks-runas-component" tag="wc-component-picker" :attrs="{ source: '/api/v1/security/delegations/roots', title: 'Component', placeholder: 'Choose a component you manage…' }" :config="root ? { thread_id: root } : {}" @change="componentChoice" @error="pickerError" />
-          </li>
-        </ol>
-      </fieldset>
-      <div class="ks-runas-form-foot">
-        <Button variant="ghost" small :disabled="locked" @click="formOpen = false">Cancel</Button>
-        <Button variant="primary" small icon="tabler:device-floppy" :disabled="!canSave || locked" :loading="saving" @click="save">Save permission</Button>
-      </div>
-    </form>
-
-    <div v-if="pending && !saving" class="ks-runas-pending">
-      <span>We could not confirm whether the permission changed. Select Retry to check before making another change.</span>
-      <Button small @click="store.submit">Retry</Button>
-    </div>
-
-    <Button v-if="revoked.length" class="ks-runas-history" variant="ghost" small :aria-expanded="showRevoked" @click="showRevoked = !showRevoked">{{ showRevoked ? 'Hide revoked permissions' : 'Show revoked permissions' }}</Button>
-
-    <Spinner v-if="loading && !delegations.length" label="Loading run-as permissions…" />
-    <div v-else-if="visibleGrants.length" class="ks-runas-list">
-      <article v-for="grant in visibleGrants" :key="grant.policy_id" class="ks-runas-grant" :class="{ revoked: !grant.active }">
-        <Icon class="ks-runas-grant-icon" icon="tabler:user-shield" aria-hidden="true" />
-        <div class="ks-runas-grant-body">
-          <div class="ks-runas-grant-line">
-            <span v-if="grant.active" class="ks-runas-who">{{ grant.groups.map(id => groupLabel[id] || 'Group unavailable').join(', ') }}</span>
-            <span class="ks-runas-verb">{{ grant.active ? 'can run as' : 'Permission to run as' }}</span>
-            <span class="ks-runas-who">{{ accountLabel[grant.principal.id] || 'Account unavailable' }}</span>
-          </div>
-          <div class="ks-runas-grant-meta">
-            <span v-if="grant.root === '*'">on any component they manage</span>
-            <span v-else-if="grant.root_label">on <b>{{ grant.root_label }}</b></span>
-            <span v-else>on an unavailable component</span>
-          </div>
+  <section class="ks-runas kx-system-pane" aria-label="Run-as permissions">
+    <div class="kx-system-tools">
+      <header class="ks-runas-head kx-system-toolbar">
+        <span class="ks-runas-count">{{ active.length }} active {{ active.length === 1 ? 'permission' : 'permissions' }}</span>
+        <div class="ks-runas-acts">
+          <IconButton icon="tabler:refresh" label="Refresh" :disabled="loading || locked" :spin="loading" @click="store.load" />
+          <Button v-if="!formOpen" variant="primary" icon="tabler:plus" :disabled="locked" @click="openForm">New permission</Button>
         </div>
-        <Pill v-if="!grant.active" severity="secondary">revoked</Pill>
-        <Button v-else variant="ghost" small icon="tabler:user-off" :disabled="locked" :aria-label="`Revoke run-as permission for ${accountLabel[grant.principal.id] || 'Account unavailable'}`" @click="revoke(grant)">Revoke</Button>
-      </article>
+      </header>
+      <p class="ks-runas-lede">
+        Agents, automations and workflows run with the access of the account set in their
+        <b>Run as</b> setting. A permission lets members of a group choose a specific account there,
+        typically a bot account, so the component works with that account's access instead of their own.
+      </p>
+
     </div>
-    <div v-else-if="!error && !formOpen" class="ks-runas-empty">
-      <Icon icon="tabler:user-shield" aria-hidden="true" />
-      <b>No active run-as permissions</b>
-      <span>Without an active permission, the Run as setting offers only <b>Me</b>.</span>
+    <div class="kx-system-body ks-runas-body">
+      <div v-if="error" role="alert"><Notice severity="danger" @dismiss="error = ''">{{ error }}</Notice></div>
+      <Notice v-if="confirmation" data-test="delegation-confirmation" severity="success" @dismiss="confirmation = ''">{{ confirmation }}</Notice>
+
+      <form v-if="formOpen" class="ks-runas-form" @submit.prevent="save">
+        <div class="ks-runas-form-head">
+          <span>New run-as permission</span>
+          <IconButton icon="tabler:x" label="Cancel" :disabled="locked" @click="formOpen = false" />
+        </div>
+        <fieldset :disabled="locked" :inert="locked">
+          <ol class="ks-runas-steps">
+            <li>
+              <FormField label="Account to run as" help="The account whose access the component uses. Its group memberships decide what the component can do.">
+                <WcMount tag="wc-principal-picker" :attrs="{ kinds: 'user', placeholder: 'Choose an account…' }" :config="{ principal_id: user }" @change="choice($event, 'user')" @error="pickerError" />
+              </FormField>
+            </li>
+            <li>
+              <FormField label="Who may choose it" help="Members of these groups see this account in the Run as setting. Nobody's group membership changes.">
+                <WcMount tag="wc-principal-picker" :attrs="{ kinds: 'group', placeholder: 'Add a group…' }" :config="{}" @change="choice($event, 'group')" @error="pickerError" />
+              </FormField>
+              <div v-if="groups.length" class="ks-runas-chips" aria-label="Selected groups">
+                <Chip v-for="group in groups" :key="group.id" :label="group.label" :removable="!locked"
+                  :pt="{ removeIcon: { 'aria-label': `Remove group ${group.label}` } }"
+                  @remove="groups = groups.filter(value => value.id !== group.id)" />
+              </div>
+            </li>
+            <li>
+              <fieldset>
+                <legend class="km-field-label">On which components</legend>
+                <div class="ks-runas-component-options">
+                  <label class="ks-runas-component-option" :for="`${componentScopeId}-any`">
+                    <RadioButton v-model="anyComponent" :input-id="`${componentScopeId}-any`" :name="componentScopeId" :value="true" :disabled="locked" />
+                    Any component
+                  </label>
+                  <label class="ks-runas-component-option" :for="`${componentScopeId}-one`">
+                    <RadioButton v-model="anyComponent" :input-id="`${componentScopeId}-one`" :name="componentScopeId" :value="false" :disabled="locked" />
+                    One component
+                  </label>
+                </div>
+                <small class="km-field-help">The person choosing the account must also be able to manage the component.</small>
+              </fieldset>
+              <WcMount v-if="!anyComponent" class="ks-runas-component" tag="wc-component-picker" :attrs="{ source: '/api/v1/security/delegations/roots', title: 'Component', placeholder: 'Choose a component you manage…' }" :config="root ? { thread_id: root } : {}" @change="componentChoice" @error="pickerError" />
+            </li>
+          </ol>
+        </fieldset>
+        <div class="ks-runas-form-foot">
+          <Button variant="ghost" small :disabled="locked" @click="formOpen = false">Cancel</Button>
+          <Button variant="primary" small icon="tabler:device-floppy" :disabled="!canSave || locked" :loading="saving" @click="save">Save permission</Button>
+        </div>
+      </form>
+
+      <div v-if="pending && !saving" class="ks-runas-pending">
+        <span>We could not confirm whether the permission changed. Select Retry to check before making another change.</span>
+        <Button small @click="store.submit">Retry</Button>
+      </div>
+
+      <Button v-if="revoked.length" class="ks-runas-history" variant="ghost" small :aria-expanded="showRevoked" @click="showRevoked = !showRevoked">{{ showRevoked ? 'Hide revoked permissions' : 'Show revoked permissions' }}</Button>
+
+      <Spinner v-if="loading && !delegations.length" label="Loading run-as permissions…" />
+      <div v-else-if="visibleGrants.length" class="ks-runas-list">
+        <article v-for="grant in visibleGrants" :key="grant.policy_id" class="kx-card ks-runas-grant" :class="{ revoked: !grant.active }">
+          <Icon class="ks-runas-grant-icon" icon="tabler:user-shield" aria-hidden="true" />
+          <div class="ks-runas-grant-body">
+            <div class="ks-runas-grant-line">
+              <span v-if="grant.active" class="ks-runas-who">{{ grant.groups.map(id => groupLabel[id] || 'Group unavailable').join(', ') }}</span>
+              <span class="ks-runas-verb">{{ grant.active ? 'can run as' : 'Permission to run as' }}</span>
+              <span class="ks-runas-who">{{ accountLabel[grant.principal.id] || 'Account unavailable' }}</span>
+            </div>
+            <div class="ks-runas-grant-meta">
+              <span v-if="grant.root === '*'">on any component they manage</span>
+              <span v-else-if="grant.root_label">on <b>{{ grant.root_label }}</b></span>
+              <span v-else>on an unavailable component</span>
+            </div>
+          </div>
+          <Pill v-if="!grant.active" severity="secondary">revoked</Pill>
+          <Button v-else variant="ghost" small icon="tabler:user-off" :disabled="locked" :aria-label="`Revoke run-as permission for ${accountLabel[grant.principal.id] || 'Account unavailable'}`" @click="revoke(grant)">Revoke</Button>
+        </article>
+      </div>
+      <EmptyState v-else-if="!error && !formOpen" icon="tabler:user-shield" title="No active run-as permissions">
+        <template #hint>Without an active permission, the Run as setting offers only <b>Me</b>.</template>
+      </EmptyState>
     </div>
   </section>
 </template>
