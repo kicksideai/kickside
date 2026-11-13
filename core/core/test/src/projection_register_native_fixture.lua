@@ -6,7 +6,7 @@ function M.reset(dbtype: string, stage: string, source: any, existing: boolean)
     M.dbtype, M.stage, M.source, M.existing = dbtype, stage, source, existing
     M.rollback_source, M.effect_id, M.proof_stage, M.proof = nil, nil, nil, nil
     M.body = '{"meta":{"worker_ref":"func://app:test_count_worker","worker_runtime":"func","worker_input_mode":"cursor_only"}}'
-    M.retention_notifications = 0
+    M.retention_notifications, M.wakes = 0, 0
     M.enqueue_value = "job"
     M.queries, M.writes, M.encodes, M.begins, M.commits, M.rollbacks, M.notifications = 0, 0, 0, 0, 0, 0, 0
 end
@@ -90,6 +90,10 @@ end
 function M.nudge_workers(...: any): (any, error?)
     M.notifications = M.notifications + 1
     return completion("nudge", 0)
+end
+function M.wake_job(...: any): (any, error?)
+    M.wakes = M.wakes + 1
+    return completion("wake", {})
 end
 function M.notify(...: any): (any, error?)
     M.retention_notifications = M.retention_notifications + 1

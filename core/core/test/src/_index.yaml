@@ -896,6 +896,8 @@ entries:
       core_db: kickside.core:db
       execution_identity: kickside.execution:execution_identity
       proj_types: kickside.core.projections:types
+      proj_register: kickside.core.projections.persist:register
+      persisted_json: kickside.contract:persisted_json
       component_identity: kickside.core.threads:component_identity
 
   - name: thread_provision_race_test
@@ -2724,6 +2726,8 @@ entries:
       execution_identity: app:provision_native_execution_adapter
       core_db: kickside.core:db
       proj_types: kickside.core.projections:types
+      proj_register: kickside.core.projections.persist:register
+      persisted_json: kickside.contract:persisted_json
       component_envelope: kickside.component:envelope
       error_envelope: kickside.contract:error_envelope
 
@@ -4324,3 +4328,52 @@ entries:
       claim: kickside.core.jobs.persist:claim
       lifecycle: kickside.core.jobs.persist:lifecycle
       completion: kickside.core.jobs.service:worker_completion
+
+  - name: projection_declaration_refresh_kind
+    kind: contract.binding
+    meta:
+      class: [test.declaration.refresh]
+      thread: {class: test.declaration.refresh}
+      projections:
+        - kind: test.declaration.refresh
+          worker_ref: func://app:test_count_worker
+          input_mode: prefetch_events
+          events:
+            input:
+              - {type: app:threads_keep}
+              - {type: app:threads_skip}
+      events:
+        input:
+          - {type: app:threads_keep}
+          - {type: app:threads_skip}
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  - name: projection_declaration_convergence_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_core
+    source: file://projection_declaration_convergence_test.lua
+    method: run
+    modules: [sql, uuid, json, security, contract, process, channel]
+    imports:
+      test: wippy.test:test
+      provision: kickside.core.threads:provision
+      prune: kickside.core.retention:prune
+
+  - name: projection_declaration_manual_kind
+    kind: contract.binding
+    meta:
+      class: [test.declaration.manual]
+      thread: {class: test.declaration.manual}
+      events:
+        input:
+          - {type: app:threads_keep}
+          - {type: app:threads_skip}
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status

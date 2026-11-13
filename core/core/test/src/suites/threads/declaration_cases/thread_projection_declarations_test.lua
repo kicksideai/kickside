@@ -138,7 +138,7 @@ local function define_tests()
             test.eq(event_type_count(thread_id, "kickside.test.threads:trigger"), 0)
         end)
 
-        test.it("re-registering a declared projection preserves the read-model and never writes private_context", function()
+        test.it("refreshing a changed declared projection rebuilds the fold and preserves private_context", function()
             local thread_id = uuid.v4()
 
             -- First emit declares + first-touches the test.count projection.
@@ -188,15 +188,14 @@ local function define_tests()
             test.is_nil(second_err)
             test.eq(second.inserted, 1)
 
-            -- The read-model survives the re-registration: the count is not reset.
             local after_reg = projection_body_of(thread_id, "test.count") :: table
-            test.eq(tonumber((after_reg.stats :: table).count), 1)
+            test.is_nil(after_reg.stats)
+            test.eq(after_reg.declaration_status.from_seq, 1)
             test.is_nil(after_reg.events)
             local listed, list_err = as_owner(LIST_PROJECTIONS, { thread_id = thread_id })
             test.is_nil(list_err)
             local last_seq = tonumber(listed.cursors[1].last_seq)
-            test.is_true(last_seq >= 1)
-            test.eq(tonumber((after_reg.stats :: table).count), last_seq)
+            test.eq(last_seq, 0)
 
             -- private_context is byte-identical: no provisioning/registration path
             -- touched the component's owned state.

@@ -23,6 +23,8 @@ local autoinit = require("autoinit")
 local retention_repo = require("retention_repo")
 local core_db = require("core_db")
 local proj_types = require("proj_types")
+local proj_register = require("proj_register")
+local persisted_json = require("persisted_json")
 local execution_identity = require("execution_identity")
 local component_identity = require("component_identity")
 local component_envelope = require("component_envelope")
@@ -182,7 +184,7 @@ end
 
 -- converge makes every component of a declaring kind match its declaration: a
 -- missing thread row is recreated (thread-declaring kinds), a missing declared
--- projection or cursor is registered (any kind declaring projections). Declared state thereby survives anything — a partial
+-- projection or cursor is registered, and changed declarations are refreshed (any kind declaring projections). Declared state thereby survives anything — a partial
 -- delete, a lost row, a module uninstall/reinstall — because the next service
 -- start reasserts the declaration. Boot runs it on service start and after
 -- each install's migrations are applied. Each component converges under its own
@@ -202,7 +204,7 @@ function M.converge(opener_actor: any, opener_scope: any): ({ [string]: any }, e
     local _db = db :: sql.DB
 
     -- One divergence set per declaring kind: components missing their thread row,
-    -- plus components missing declared projections.
+    -- plus components with missing or changed declared projections.
     local function divergent_components(kind: { [string]: any }): ({ [string]: boolean }, error?)
         local ids: { [string]: boolean } = {}
         -- A missing thread is recreatable only for a kind that declares its
@@ -237,21 +239,40 @@ function M.converge(opener_actor: any, opener_scope: any): ({ [string]: any }, e
             local escaped_key = tostring(declared_key):gsub("'", "''")
             local cursor_key = type(decl.cursor_key) == "string" and decl.cursor_key ~= "" and decl.cursor_key or proj_types.KEY_DEFAULT
             local escaped_cursor = cursor_key:gsub("'", "''")
-            local missing_rows, proj_err = sql.builder
-                .select("c.component_id AS component_id")
-                :from("kickside_components c")
-                :join("kickside_thread t ON t.id = c.component_id")
-                :left_join("kickside_projection p ON p.thread_id = t.id AND p.kind = '" .. escaped_kind .. "' AND p.projection_key = '" .. escaped_key .. "'")
-                :left_join("kickside_projection_cursor pc ON pc.projection_id=p.id AND pc.cursor_key='" .. escaped_cursor .. "'")
-                :left_join("kickside_job j ON j.id=pc.job_id")
-                :where("(p.id IS NULL OR pc.id IS NULL OR j.id IS NULL)")
-                :where("c.impl_id = ?", tostring(kind.component_impl_id or kind.impl_id))
-                :run_with(_db):query()
-            if proj_err then
-                return ids, (errors.wrap(proj_err, "converge: projection scan failed") :: error)
-            end
-            for _, row in ipairs((missing_rows or {}) :: { any }) do
-                ids[tostring((row :: { [string]: any }).component_id)] = true
+            local expected: table? = nil
+            local after: string? = nil
+            while true do
+                local scan = sql.builder
+                    .select("c.component_id AS component_id", "p.body AS body", "pc.id AS cursor_id", "j.id AS job_id")
+                    :from("kickside_components c")
+                    :join("kickside_thread t ON t.id = c.component_id")
+                    :left_join("kickside_projection p ON p.thread_id = t.id AND p.kind = '" .. escaped_kind .. "' AND p.projection_key = '" .. escaped_key .. "'")
+                    :left_join("kickside_projection_cursor pc ON pc.projection_id=p.id AND pc.cursor_key='" .. escaped_cursor .. "'")
+                    :left_join("kickside_job j ON j.id=pc.job_id")
+                    :where("c.impl_id = ?", tostring(kind.component_impl_id or kind.impl_id))
+                if after then scan = scan:where("c.component_id > ?", after) end
+                local rows, proj_err = scan:order_by("c.component_id ASC"):limit(256):run_with(_db):query()
+                if proj_err then return ids, errors.wrap(proj_err, "converge: projection scan failed") end
+                if #(rows or {}) > 0 and expected == nil then
+                    local body, declaration_err = proj_register.declaration_body({
+                        worker_ref = decl.worker_ref, worker_input_mode = decl.input_mode,
+                        worker_config = decl.worker_config, events = decl.events, drop_notify = decl.drop_notify,
+                    })
+                    if declaration_err then return ids, declaration_err end
+                    expected = body
+                end
+                for _, row in ipairs((rows or {}) :: { any }) do
+                    local current = row :: { [string]: any }
+                    local divergent = current.body == nil or current.cursor_id == nil or current.job_id == nil
+                    if not divergent then
+                        local stored, decode_err = persisted_json.decode_table(current.body, "kickside_projection.body")
+                        if decode_err then return ids, decode_err end
+                        divergent = not proj_register.declaration_matches(stored, expected)
+                    end
+                    if divergent then ids[tostring(current.component_id)] = true end
+                    after = tostring(current.component_id)
+                end
+                if #(rows or {}) < 256 then break end
             end
         end
         return ids, nil

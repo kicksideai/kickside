@@ -114,6 +114,7 @@ local function append_writes(output: table, source_id: string, body: table): (ta
 end
 
 local function next_body(before: table, output: table): (table?, error?)
+    local status = before.declaration_status
     local result: table = before
     if output.body ~= nil then
         if type(output.body) ~= "table" then return nil, invalid("projection worker body must be an object") end
@@ -125,6 +126,7 @@ local function next_body(before: table, output: table): (table?, error?)
     for _, key in ipairs({ "meta", "worker_config", "events", "drop_notify" }) do
         if result[key] == nil then result[key] = before[key] end
     end
+    result.declaration_status = status
     return result, nil
 end
 
