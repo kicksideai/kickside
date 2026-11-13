@@ -27,8 +27,25 @@ local function define_tests()
             test.eq(window(inherited), 90)
             local disabled = scratch.postgres() and "false" or "0"
             scratch.exec("UPDATE kickside_retention_policy SET enabled=" .. disabled .. ",archive_mode='hard_delete' WHERE id=$1", {custom})
+            local before = scratch.query("SELECT id,thread_id,event_hot_retention_days,archive_mode,enabled,created_at,updated_at FROM kickside_retention_policy ORDER BY id")
             scratch.migrate(PREFIX .. "13_retention_default")
             scratch.migrate(PREFIX .. "13_retention_default")
+            local after = scratch.query("SELECT id,thread_id,event_hot_retention_days,archive_mode,enabled,created_at,updated_at FROM kickside_retention_policy ORDER BY id")
+            test.eq(#after, #before)
+            for index, row in ipairs(before) do
+                for key, value in pairs(row) do test.eq(after[index][key], value) end
+            end
+            local indexes
+            if scratch.postgres() then
+                indexes = scratch.query("SELECT indexname AS name FROM pg_indexes WHERE tablename='kickside_retention_policy'")
+            else
+                indexes = scratch.query("PRAGMA index_list(kickside_retention_policy)")
+            end
+            local names = {}
+            for _, index in ipairs(indexes) do names[index.name] = true end
+            for _, name in ipairs({"idx_kickside_retention_policy_enabled", "idx_kickside_retention_policy_thread", "uq_kickside_retention_policy_thread"}) do
+                test.is_true(names[name])
+            end
             test.eq(window(inherited), 90)
             test.eq(window(explicit), 90)
             test.eq(window(custom), 7)

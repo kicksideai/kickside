@@ -1516,6 +1516,7 @@ entries:
       registry: app:retention_policy_native_registry_adapter
       time: app:retention_policy_native_time_adapter
       row_size: kickside.core:row_size
+      ret_consts: kickside.core.retention:consts
 
   - name: retention_policy_native_test
     kind: function.lua
@@ -2236,6 +2237,7 @@ entries:
       sql: app:retention_persist_native_sql_adapter
       clock: kickside.core.jobs:clock
       ret_consts: kickside.core.retention:consts
+      retention_policy: kickside.core:policy_config
       retention_notifier: app:retention_persist_native_notifier_adapter
 
   - name: retention_persist_native_test

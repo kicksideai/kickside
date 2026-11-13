@@ -8,8 +8,7 @@ local function define_tests()
     test.describe("Default retention backlog", function()
         test.it("drains multiple batches of newly expired events without a cadence pause", function()
             local id = fixture.make_thread()
-            fixture.add_bulk_events(id, 10001)
-            fixture.exec("UPDATE kickside_event SET created_at=$1 WHERE thread_id=$2", {fixture.ts(-60), id})
+            fixture.add_bulk_events(id, 10001, 60)
             local db = fixture.open_db()
             local total = 0
             for pass = 1, 3 do

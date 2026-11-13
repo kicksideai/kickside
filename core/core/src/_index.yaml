@@ -36,6 +36,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.core.migrations:12_blocked_projection_pins
         path: .meta.target_db
+      - entry: kickside.core.migrations:13_retention_default
+        path: .meta.target_db
       - entry: kickside.core:db_config
         path: .meta.db_id
 
@@ -57,7 +59,6 @@ entries:
     meta:
       comment: Core-owned event and write-receipt retention plus bounded sweep policy.
       retention:
-        events: 90d
         receipts_orphan: 30d
       sweep:
         batch_events: 5000
@@ -73,6 +74,7 @@ entries:
     modules: [registry, time]
     imports:
       row_size: kickside.core:row_size
+      ret_consts: kickside.core.retention:consts
 
   - name: row_size
     kind: library.lua

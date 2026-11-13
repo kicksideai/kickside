@@ -5,6 +5,7 @@ local sql = require("sql")
 local uuid = require("uuid")
 local clock = require("clock")
 local consts = require("ret_consts")
+local retention_policy = require("retention_policy")
 local retention_notifier = require("retention_notifier")
 
 local repo = {}
@@ -56,8 +57,15 @@ function repo.normalize(input: table?): (Policy?, error?)
         return nil, (errors.new({ message = "archive_mode must be one of: tombstone_only, hard_delete", kind = errors.INVALID }) :: error)
     end
 
+    local default_days = consts.DEFAULTS.event_hot_retention_days
+    if raw == nil then
+        local defaults, defaults_err = retention_policy.policy()
+        if defaults_err then return nil, defaults_err end
+        default_days = math.max(consts.DAYS_MIN, math.ceil(defaults.events_ms / 86400000))
+    end
+
     return {
-        event_hot_retention_days = clamp_days(data.event_hot_retention_days, consts.DEFAULTS.event_hot_retention_days),
+        event_hot_retention_days = clamp_days(data.event_hot_retention_days, default_days),
         archive_mode = type(archive_mode) == "string" and archive_mode or consts.DEFAULTS.archive_mode,
         enabled = data.enabled ~= false,
     }, nil
