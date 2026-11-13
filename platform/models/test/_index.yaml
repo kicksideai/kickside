@@ -345,3 +345,14 @@ entries:
       llm: app:card_test_llm
       prompt: wippy.llm:prompt
       model_catalog: app:card_test_catalog
+
+  - name: secret_key_policy_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_models }
+    source: file://secret_key_policy_test.lua
+    method: run
+    modules: [json, sql]
+    imports:
+      test: wippy.test:test
+      catalog_policy: kickside.models.catalog:policy
+      models_repo: kickside.models.persist:repo
