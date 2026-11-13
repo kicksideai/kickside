@@ -236,7 +236,8 @@ end
 function jobs.heartbeat(id: string, lease: table): (boolean?, error?)
     if type(id) ~= "string" or id == "" or type(lease) ~= "table"
         or type(lease.token) ~= "string" or lease.token == ""
-        or type(lease.execution_seq) ~= "number" then
+        or type(lease.execution_seq) ~= "number" or lease.execution_seq < 1
+        or lease.execution_seq == math.huge or lease.execution_seq ~= math.floor(lease.execution_seq) then
         return nil, (errors.new({ message = "heartbeat requires a job id and lease fence", kind = errors.INVALID }) :: error)
     end
     local renewed, renew_err = with_db(function(db: sql.DB, dbtype: string): (table?, error?)

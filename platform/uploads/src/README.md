@@ -249,3 +249,25 @@ errors (a string or a message-only envelope) map to retryable
 An uncached PDF read invokes the adapter once. The current PDF API parses during
 `open()` for page count and again during `render()`; removing those two parses
 requires a converter API change. Uploads adds no separate count call to a read.
+
+### Processing limits
+
+The default hard ceiling `process_max_execution_ms` is 7200000 ms (two hours).
+`process_heartbeat_timeout_ms` defaults to 600000 ms (ten minutes). A processor
+entry declares `meta.reports_progress: true` when it calls `jobs.heartbeat` through
+the supplied `cancel_ref` between useful batches. A pipeline stage can declare
+`reports_progress` directly; an explicit stage value overrides the processor.
+Only pipelines whose every stage declares progress support receive the job-wide
+progress deadline. Opaque and custom processors retain the hard-ceiling policy.
+
+An existing explicit hard-ceiling override keeps its effective behavior. Setting
+an explicit progress timeout opts that installation into progress deadlines for
+compatible pipelines. Jobs already queued retain their captured limits; manual
+retry captures current settings. A saved ceiling that differs from the current
+setting also retains its original policy.
+
+The normal maintenance callback settles uploads whose processing job is already
+dead, including earlier records without processing intents. Each bounded batch
+uses the same settlement as dead outcomes, and maintenance re-arms while batches
+remain. A permanent failure to prepare a failure callback is recorded separately
+as `callback_error` on the failure event; it does not undo the failed upload.

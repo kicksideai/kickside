@@ -171,7 +171,7 @@ local function resolve_heartbeat_timeout_ms(job: table): (integer?, error?)
     if decode_err then return nil, decode_err end
     if payload.heartbeat_timeout_ms == nil then return nil, nil end
     local timeout = tonumber(payload.heartbeat_timeout_ms)
-    if not timeout or timeout < 1 or timeout ~= math.floor(timeout) then
+    if not timeout or timeout < 1 or timeout == math.huge or timeout ~= math.floor(timeout) then
         return nil, (errors.new({ message = "heartbeat_timeout_ms must be a positive integer",
             kind = errors.INVALID, retryable = false }) :: error)
     end

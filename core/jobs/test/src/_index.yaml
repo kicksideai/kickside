@@ -3584,8 +3584,9 @@ entries:
   - name: child_native_source
     kind: library.lua
     source: file://child_native_source.lua
-    modules: [logger, time]
+    modules: [logger]
     imports:
+      time: app:child_native_time
       execution_policy: app:child_native_execution_policy
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       job_types: kickside.core.jobs:types
@@ -4316,3 +4317,20 @@ entries:
     modules: [process]
     imports:
       jobs: kickside.core.jobs:jobs
+
+  - name: child_native_time
+    kind: library.lua
+    source: file://child_native_time.lua
+    modules: [time]
+    imports:
+      fixture: app:child_native_fixture
+
+  - name: progress_deadline_test
+    kind: function.lua
+    source: file://progress_deadline_test.lua
+    method: run
+    meta: {type: test, suite: jobs_progress_deadline}
+    imports:
+      test: wippy.test:test
+      child: app:child_native_source
+      fixture: app:child_native_fixture

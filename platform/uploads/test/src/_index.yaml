@@ -335,9 +335,12 @@ entries:
   - name: failing_stage
     kind: function.lua
     meta:
+      reports_progress: true
       comment: Test-only universal upload stage that fails when explicitly requested.
     source: file://failing_stage.lua
     method: process
+    imports:
+      jobs: kickside.core.jobs:jobs
 
   - name: packed_storage_test
     kind: function.lua

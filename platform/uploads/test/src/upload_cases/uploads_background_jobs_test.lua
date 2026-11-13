@@ -25,6 +25,8 @@ local upload_types = require("types")
 local provision = require("provision")
 local pipeline_lib = require("pipeline_lib")
 local process_worker = require("process_worker")
+local upload_type = require("upload_type")
+local settings_writer = require("settings_writer")
 local processing_intent_repo = require("processing_intent_repo")
 local process_job = require("process_job")
 local callback_job = require("callback_job")
@@ -261,7 +263,7 @@ local function define_tests()
             local converter = entry("kickside.convert.doc2md:converter")
             local ceiling = entry("kickside.uploads:setting.process_max_execution_ms")
             local progress = entry("kickside.uploads:setting.process_heartbeat_timeout_ms")
-            test.eq(tonumber(value(ceiling, "default")), 14400000)
+            test.eq(tonumber(value(ceiling, "default")), 7200000)
             test.eq(tonumber(value(progress, "default")), 600000)
             test.is_true(tonumber(value(converter, "limits").max_execution_ms) >= tonumber(value(progress, "default")))
         end)
@@ -273,6 +275,40 @@ local function define_tests()
             test.is_nil((registry.get("kickside.uploads:recover_pending")))
             test.is_nil((registry.get("kickside.uploads:recover_pending.service")))
         end)
+
+        for _, case in ipairs({
+            {name = "uninstrumented processor", reports = false},
+            {name = "progress processor", reports = true, heartbeat = 600000},
+            {name = "existing execution override", reports = true, ceiling = 1800000},
+            {name = "explicit heartbeat opt-in", reports = true, ceiling = 1800000, progress = 600000, heartbeat = 600000},
+            {name = "large execution override", reports = true, ceiling = 900000000000},
+        }) do
+            test.it("captures compatible limits for " .. case.name, function()
+                local id, owner = uuid_v4(), "progress-user-" .. uuid_v4()
+                ensure_uploads_component(owner)
+                if case.ceiling then assert(settings_writer.set("kickside.uploads", "process_max_execution_ms", case.ceiling, "uploads-test")) end
+                if case.progress then assert(settings_writer.set("kickside.uploads", "process_heartbeat_timeout_ms", case.progress, "uploads-test")) end
+                local original = upload_type.get_pipeline
+                upload_type.get_pipeline = function()
+                    return {{func = "app:failing_stage", reports_progress = case.reports}}, nil
+                end
+                local ok, failure = pcall(function()
+                    local upload = assert(upload_record_repo.create(id, owner, 1, "text/plain", "app:uploads", id,
+                        "app:types.failing", upload_metadata(owner, "progress.txt"), "uploaded"))
+                    local queued = assert(process_worker.enqueue_upload_job(upload, true))
+                    local db = assert(sql.get("app:db"))
+                    local rows = assert(db:query("SELECT payload FROM kickside_job WHERE id=$1", {queued.job_id}))
+                    db:release()
+                    local payload = type(rows[1].payload) == "string" and json.decode(rows[1].payload) or rows[1].payload
+                    test.eq(payload.max_execution_ms, case.ceiling or 7200000)
+                    test.eq(payload.heartbeat_timeout_ms, case.heartbeat)
+                end)
+                upload_type.get_pipeline = original
+                assert(settings_writer.clear("kickside.uploads", "process_max_execution_ms", "uploads-test"))
+                assert(settings_writer.clear("kickside.uploads", "process_heartbeat_timeout_ms", "uploads-test"))
+                test.is_true(ok, tostring(failure))
+            end)
+        end
 
         test.it("submits uploads to one idempotent core job", function()
             local upload_id = uuid_v4()
@@ -515,7 +551,7 @@ local function define_budget_tests()
             test.is_nil(err)
             test.not_nil(upload)
             local upload_id = tostring(upload.uuid)
-            test.eq(tonumber(upload.processing_max_execution_ms), budget_ms or 14400000)
+            test.eq(tonumber(upload.processing_max_execution_ms), budget_ms or 7200000)
             local run: any = nil
             local deadline = time.now():add("120s")
             while time.now():before(deadline) do

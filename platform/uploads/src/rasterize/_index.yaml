@@ -29,6 +29,7 @@ entries:
     kind: function.lua
     meta:
       type: processor
+      reports_progress: true
       comment: Universal upload stage; renders the pages selected for OCR (empty/low-text pages by default) to rendered-page image artifacts.
     source: file://stage.lua
     method: process

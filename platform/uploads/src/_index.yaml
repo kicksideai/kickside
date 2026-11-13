@@ -313,7 +313,7 @@ entries:
     namespace: kickside.uploads
     key: process_max_execution_ms
     value_type: int
-    default: 14400000
+    default: 7200000
     title: Processing time limit (ms)
     category: Limits
     order: 20
@@ -334,7 +334,7 @@ entries:
     title: Processing progress timeout (ms)
     category: Limits
     order: 21
-    description: Maximum milliseconds an upload processing attempt may run without progress before the job worker terminates it and retries. Each completed stage, rendered page batch and transcribed page batch counts as progress.
+    description: Maximum milliseconds an upload processing attempt may run without progress before the job worker terminates it and retries. Only pipelines whose processors declare reports_progress use this deadline. Existing ceiling overrides retain their policy until this setting is explicitly set.
     scope: global
     editable: true
     visible: true

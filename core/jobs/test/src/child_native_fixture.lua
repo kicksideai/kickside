@@ -1,5 +1,6 @@
 local M: any = {}
 function M.reset(stage, source)
+    M.clock_ms, M.script, M.deadlines, M.heartbeat_timeout, M.ceiling = 0, {}, {}, nil, 1000
     M.stage, M.source, M.opens, M.releases, M.spawns = stage, source, 0, 0, 0
     M.settled, M.release_error, M.release_at = false, nil, nil
 end
@@ -10,9 +11,9 @@ end
 function M.policy(...) return {proc_max_execution_ms = 1000}, nil end
 function M.db_id(...) return "fixture-db" end
 function M.process_host(...) return "fixture-host" end
-function M.resolve_max_execution_ms(...) return 1000, nil end
+function M.resolve_max_execution_ms(...) return M.ceiling, nil end
 M.PROC_TIMEOUT_MARKER = "fixture-timeout"
-function M.resolve_heartbeat_timeout_ms(...) return nil, nil end
+function M.resolve_heartbeat_timeout_ms(...) return M.heartbeat_timeout, nil end
 M.HEARTBEAT_TIMEOUT_MARKER = "fixture-heartbeat-timeout"
 function M.job_still_running(...)
     if M.stage == "lease" then return false, M.source, nil end
@@ -30,7 +31,22 @@ function M.get(...)
 end
 function M.execution_name(...) return "fixture-supervisor" end
 function M.parse_deadline(...) return {}, nil end
+function M.wait_once(_, deadline)
+    M.deadlines[#M.deadlines + 1] = deadline:sub(M.origin):milliseconds()
+    local step = table.remove(M.script, 1)
+    M.clock_ms = step.at
+    return step.signal
+end
 function M.supervise_loop(hooks, pid, opts)
+    if M.stage == "progress" then
+        while #M.script > 0 do
+            local signal = hooks.wait()
+            if signal.kind == "timeout" then
+                return nil, errors.new({kind = errors.TIMEOUT, message = signal.message or "fixture-timeout"}), nil, false
+            end
+        end
+        return {ok = true}, nil, nil, false
+    end
     if M.stage == "fence_database" or M.stage == "fence" then return nil, hooks.prepare_termination(), nil, false end
     if M.stage == "exit" then
         local output, err = opts.interpret_exit(M.exit_value)

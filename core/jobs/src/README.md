@@ -73,21 +73,25 @@ makes the job claimable only after its registered execution child has ended.
 A gone child recovers in the same pass; a live child retains the termination fence.
 Heartbeats renew only matching, unexpired executions without a termination fence.
 
-### Heartbeats
+### Lease ownership and progress
 
-A job opts into progress-based liveness with payload `heartbeat_timeout_ms`
-beside `max_execution_ms`. Its worker calls
-`jobs.heartbeat(id, { token, execution_seq }): (boolean?, error?)` at each
-progress point. A heartbeat renews the execution's lease and moves its
-heartbeat deadline; it returns `false` when the lease no longer holds, so the
-worker stops. The job-child supervisor ends an attempt at the earlier of its
-ceiling and its last heartbeat plus `heartbeat_timeout_ms`; a missed heartbeat
-is an ordinary failure (`job heartbeat timed out`) that retries and, on the
-final attempt, ends the job dead. Infrastructure lease renewals never move the
-heartbeat deadline, and a heartbeat after the supervisor fenced termination
-returns `false`. Delivery to the supervisor runs under the Jobs identity, so
-callers need no process messaging authority. Jobs without
-`heartbeat_timeout_ms` keep the fixed ceiling.
+Automatic lease renewal proves ownership, even when the handler is blocked.
+A job without payload `heartbeat_timeout_ms` keeps its existing execution policy.
+To bound time without useful work, declare a positive integer `heartbeat_timeout_ms`
+and call `jobs.heartbeat(id, { token, execution_seq }): (boolean?, error?)` after
+progress. This uses the existing fenced `extend_lease` write (`heartbeat_at`,
+`lease_until`) and execution control channel; it adds no liveness store.
+
+The supervisor starts the progress deadline when it spawns the execution child.
+Each received, token-and-sequence-matching progress heartbeat resets that deadline
+to receipt time plus `heartbeat_timeout_ms`. Automatic ownership renewals never
+reset it. The same supervisor wait ends the attempt at the earlier of that deadline
+and the spawn time plus `max_execution_ms` (or the captured policy ceiling).
+A missed deadline is `job heartbeat timed out`: it consumes the attempt, retries
+under the existing policy, and ends `dead` on the final attempt. Termination fences
+late heartbeats. `false` means the lease no longer holds; an error means progress
+could not be reported. Callers need Jobs access, with control delivery under the
+Jobs identity. Useful checkpoints remain the worker's responsibility.
 
 ### Dead outcomes
 
@@ -110,7 +114,11 @@ infrastructure failures retry up to the largest attempt limit, and a
 deterministic handler failure ends the outcome job dead. Handlers are
 idempotent. A thread owner whose cleanup has started, or a worker entry removed
 from the registry, receives no outcome. Enqueue refuses a job whose worker
-declares an invalid `meta.job_dead`.
+declares an invalid `meta.job_dead`: the target must exist, be `function.lua`,
+and admit an outcome without a concurrency key. Outcome jobs never generate
+outcomes; a failed outcome is terminal and logged, including self-declarations
+and mutual handler cycles. A later declaration change that prevents admission is
+logged without undoing the original job's death.
 
 `jobs.health()` reports `stranded_jobs` with `job_ids` for erroneous pending
 one-shot jobs without a schedule. This invariant is unhealthy immediately; the

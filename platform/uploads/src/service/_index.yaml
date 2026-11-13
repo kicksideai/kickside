@@ -18,6 +18,7 @@ entries:
       jobs: kickside.core.jobs:jobs
       provision: kickside.core.threads:provision
       processing_intent_repo: kickside.uploads.persist:processing_intent_repo
+      upload_type: kickside.uploads:upload_type
 
   - name: process_job_proc
     kind: process.lua

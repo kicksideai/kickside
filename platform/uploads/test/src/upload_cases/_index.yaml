@@ -71,6 +71,7 @@ entries:
   - base64
   - hash
   imports:
+    upload_type: kickside.uploads:upload_type
     test: wippy.test:test
     settings_writer: kickside.settings.persist:settings_writer
     jobs: kickside.core.jobs:jobs
