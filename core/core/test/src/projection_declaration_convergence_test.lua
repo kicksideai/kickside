@@ -331,6 +331,117 @@ return {run = test.run_cases(function()
             test.eq(state(id).generation, stable.generation)
             test.eq(state(id).body.declaration_status.revision, 2)
         end)
+        test.it("preserves a fold when a destination prunes its emitted outputs", function()
+            local threads, actor, scope, id = setup(true)
+            local downstream, _, _, destination = setup(true)
+            assert(threads:register_projection({thread_id = id, kind = KIND,
+                worker_ref = "func://app:test_emitting_worker", worker_input_mode = "prefetch_events",
+                events = {input = {{type = "app:threads_keep"}}, output = {{type = "app:threads_note"}}}}))
+            assert(downstream:register_projection({thread_id = destination, kind = KIND,
+                worker_ref = "func://app:test_count_worker", worker_input_mode = "prefetch_events",
+                events = {input = {{type = "app:threads_note"}}, output = {}}}))
+            assert(threads:append_event({thread_id = id, event = {type = "app:threads_keep",
+                role = "user", body = {destination = destination}}}))
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
+            assert(downstream:catch_up_projection({thread_id = destination, kind = KIND, max_ticks = 10}))
+            stop_pool()
+            test.eq(tonumber(state(destination).body.stats.count), 1)
+            local db = assert(sql.get("app:db"))
+            test.eq(assert(prune.prune_thread(db, destination,
+                {cutoff = "2100-01-01T00:00:00Z", max_total = 1})).deleted, 1)
+            test.eq(#assert(db:query("SELECT id FROM kickside_event WHERE thread_id=$1", {destination})), 0)
+            test.eq(#assert(db:query("SELECT id FROM kickside_event WHERE thread_id=$1", {id})), 1)
+            assert(db:execute("UPDATE kickside_components SET impl_id=$1 WHERE component_id=$2",
+                {"app:projection_declaration_emitting_kind", id}))
+            assert(db:release())
+            converge(scope)
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
+            assert(downstream:catch_up_projection({thread_id = destination, kind = KIND, max_ticks = 10}))
+            stop_pool()
+            test.eq(tonumber(state(destination).body.stats.count), 1, "pruned outputs do not reach downstream twice")
+            test.eq(tonumber(state(id).body.count), 1)
+            test.eq(state(id).body.declaration_status.reason, "outputs pruned")
+            test.eq(state(id).body.declaration_status.from_seq, 2)
+        end)
+        test.it("keeps an existing fold forward only without destination history proof", function()
+            local threads, actor, scope, id = setup(true)
+            assert(threads:register_projection({thread_id = id, kind = KIND,
+                worker_ref = "func://app:test_count_worker", worker_input_mode = "prefetch_events",
+                events = {input = {{type = "app:threads_keep"}}, output = {}}}))
+            assert(threads:append_event({thread_id = id, event = {type = "app:threads_keep", body = {}}}))
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
+            stop_pool()
+            local before = state(id)
+            before.body.declaration_status.output_history = nil
+            local db = assert(sql.get("app:db"))
+            assert(db:execute("UPDATE kickside_projection SET body=$1 WHERE id=$2",
+                {assert(json.encode(before.body)), before.id}))
+            assert(db:release())
+            declare(id)
+            converge(scope)
+            local after = state(id)
+            test.eq(after.body.declaration_status.reason, "output history unknown")
+            test.eq(after.body.declaration_status.from_seq, 2)
+            test.eq(tonumber(after.body.stats.count), 1)
+            test.eq(tonumber(after.last_seq), 1)
+            test.eq(converge(scope).healed, 0)
+        end)
+        test.it("bounds destination history and preserves overflow across declaration changes", function()
+            local threads, actor, scope, id = setup(true)
+            assert(threads:register_projection({thread_id = id, kind = KIND,
+                worker_ref = "func://app:test_emitting_worker", worker_input_mode = "prefetch_events",
+                events = {input = {{type = "app:threads_keep"}}, output = {{type = "app:threads_note"}}}}))
+            for _ = 1, 64 do
+                local destination = uuid.v4()
+                assert(threads:create({id = destination, impl_id = "app:projection_declaration_manual_kind",
+                    thread_class = "test.declaration.manual"}))
+                assert(threads:append_event({thread_id = id, event = {type = "app:threads_keep",
+                    body = {destination = destination}}}))
+            end
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
+            stop_pool()
+            local before = state(id)
+            local count = 0
+            for _ in pairs(before.body.declaration_status.output_history.destinations) do count = count + 1 end
+            test.eq(count, 64)
+            test.is_false(before.body.declaration_status.output_history.overflow)
+            assert(threads:register_projection({thread_id = id, kind = KIND, ensure = true,
+                worker_ref = "func://app:test_emitting_worker", worker_input_mode = "prefetch_events",
+                worker_config = {revision = 2},
+                events = {input = {{type = "app:threads_keep"}}, output = {{type = "app:threads_note"}}}}))
+            test.is_nil(state(id).body.declaration_status.reason, "64 retained destinations permit rebuild")
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
+            stop_pool()
+            local overflow_destination = uuid.v4()
+            assert(threads:create({id = overflow_destination, impl_id = "app:projection_declaration_manual_kind",
+                thread_class = "test.declaration.manual"}))
+            assert(threads:append_event({thread_id = id, event = {type = "app:threads_keep",
+                body = {destination = overflow_destination}}}))
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
+            stop_pool()
+            local history = state(id).body.declaration_status.output_history
+            count = 0
+            for _ in pairs(history.destinations) do count = count + 1 end
+            test.eq(count, 64)
+            test.is_true(history.overflow)
+            for revision = 3, 4 do
+                assert(threads:register_projection({thread_id = id, kind = KIND, ensure = true,
+                    worker_ref = "func://app:test_emitting_worker", worker_input_mode = "prefetch_events",
+                    worker_config = {revision = revision},
+                    events = {input = {{type = "app:threads_keep"}}, output = {{type = "app:threads_note"}}}}))
+                local after = state(id)
+                test.eq(after.body.declaration_status.reason, "output destinations overflow")
+                test.eq(after.body.declaration_status.from_seq, 66)
+                test.is_true(after.body.declaration_status.output_history.overflow)
+                test.eq(tonumber(after.body.count), 65)
+            end
+        end)
         test.it("refreshes a legacy projection with an unknown start forward only", function()
             local threads, actor, scope, id = setup(true)
             for _ = 1, 3 do

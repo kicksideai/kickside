@@ -32,6 +32,7 @@ entries:
     modules: [sql, json, registry, uuid]
     imports:
       clock: kickside.core.jobs:clock
+      types: kickside.core.projections:types
       threads_writer: kickside.core.threads.persist:writer
       jobs_wake: kickside.core.jobs.persist:wake
       jobs: kickside.core.jobs:jobs

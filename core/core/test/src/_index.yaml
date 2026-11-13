@@ -3389,6 +3389,7 @@ entries:
       registry: app:projection_apply_native_registry_adapter
       clock: app:projection_apply_native_clock_adapter
       jobs_wake: app:projection_apply_native_wake_adapter
+      types: kickside.core.projections:types
       threads_writer: app:projection_apply_native_threads_writer_adapter
       jobs: app:projection_apply_native_jobs_adapter
       cursor_waiters: app:projection_apply_native_cursor_waiters_adapter

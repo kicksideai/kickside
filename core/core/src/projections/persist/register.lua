@@ -156,6 +156,39 @@ function writer.declaration_digest(body: table): (string?, error?)
     return canonical_json.hash(apply_declaration_fields({}, body))
 end
 
+local function output_history_reason(tx: sql.Transaction, status: table): (string?, error?)
+    local history = status.output_history
+    if history == nil then return "output history unknown", nil end
+    if type(history) ~= "table" or type(history.destinations) ~= "table"
+        or type(history.overflow) ~= "boolean" then return nil, response_error("output_history") end
+    if history.overflow then return "output destinations overflow", nil end
+    local ids, placeholders = {}, {}
+    for id, first_seq in pairs(history.destinations) do
+        if type(id) ~= "string" or id == "" or type(first_seq) ~= "number"
+            or first_seq < 1 or first_seq ~= math.floor(first_seq) then
+            return nil, response_error("output_history.destination")
+        end
+        ids[#ids + 1] = id
+        placeholders[#ids] = "$" .. tostring(#ids)
+        if #ids > types.OUTPUT_DESTINATION_LIMIT then return nil, response_error("output_history.limit") end
+    end
+    if #ids == 0 then return nil, nil end
+    local rows, err = tx:query("SELECT id,max_pruned_seq FROM kickside_thread WHERE id IN ("
+        .. table.concat(placeholders, ",") .. ")", ids)
+    rows, err = sql_boundary.bounded_rows(rows, err, "failed to read projection destinations",
+        "output_history.rows", 0, #ids, response_error)
+    if err then return nil, err end
+    if not rows then return nil, response_error("output_history.rows") end
+    if #rows ~= #ids then return "outputs pruned", nil end
+    for _, row in ipairs(rows) do
+        local boundary = tonumber(row.max_pruned_seq)
+        local first_seq = history.destinations[row.id]
+        if boundary == nil or type(first_seq) ~= "number" then return nil, response_error("output_history.boundary") end
+        if boundary >= first_seq then return "outputs pruned", nil end
+    end
+    return nil, nil
+end
+
 local function bounded(value: any, name: string, min_value: integer,
     max_value: integer, fallback: integer): (integer?, error?)
     if value == nil then return fallback, nil end
@@ -322,7 +355,8 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
 
     local digest, digest_err = writer.declaration_digest(body)
     if digest_err then return nil, digest_err end
-    body.declaration_status = {revision = 1, start_seq = start_seq, from_seq = start_seq + 1}
+    body.declaration_status = {revision = 1, start_seq = start_seq, from_seq = start_seq + 1,
+        output_history = {destinations = {}, overflow = false}}
     local body_json, body_encode_err = json.encode(body)
     if body_encode_err then return nil, errors.wrap(body_encode_err, "failed to encode projection body") end
     if not body_json then
@@ -358,12 +392,21 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
             end
         end
         if declaration_changed and not reset then
-            if own_start ~= nil and pruned_seq <= own_start then
-                reset = true
-                start_seq = own_start
+            if own_start == nil then
+                refresh_reason = "history start unknown"
+            elseif pruned_seq > own_start then
+                refresh_reason = "history pruned"
             else
+                local history_err: error?
+                refresh_reason, history_err = output_history_reason(tx, prior :: table)
+                if history_err then return nil, history_err end
+                if refresh_reason == nil then
+                    reset = true
+                    start_seq = own_start
+                end
+            end
+            if refresh_reason then
                 refresh_from = event_count
-                refresh_reason = own_start == nil and "history start unknown" or "history pruned"
             end
         end
         local status = prior
@@ -371,7 +414,7 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
             status = {revision = revision + (declaration_changed and 1 or 0),
                 start_seq = reset and start_seq or own_start,
                 from_seq = (refresh_from or start_seq) + 1,
-                reason = refresh_reason}
+                reason = refresh_reason, output_history = prior and prior.output_history or nil}
         end
         local body_to_write: string
         if reset then
