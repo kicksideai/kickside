@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.19](https://github.com/kicksideai/kickside/compare/uploads-v0.3.18...uploads-v0.3.19) (2026-11-13)
+
+
+### Bug Fixes
+
+* **uploads:** keep the converter's retry classification on conversion failures ([#468](https://github.com/kicksideai/kickside/issues/468)) ([aef74a1](https://github.com/kicksideai/kickside/commit/aef74a1039e6d3808bb5ee6384f6d51b46b6b85a))
+
 ## [0.3.18](https://github.com/kicksideai/kickside/compare/uploads-v0.3.17...uploads-v0.3.18) (2026-11-13)
 
 

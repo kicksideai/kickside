@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: app
+entries:
+  - name: classified_doc2md
+    kind: library.lua
+    source: file://classified_doc2md.lua
+  - name: classified_documents_processor
+    kind: function.lua
+    source: file://fixtures/documents_processor.lua
+    method: process
+    modules: [fs, env, hash, contract]
+    imports:
+      uploads_resources: kickside.uploads.binding:uploads_resources
+      artifact_content_repo: kickside.uploads.persist:artifact_content_repo
+      artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
+      doc2md: app:classified_doc2md
+  - name: conversion_errors_test
+    kind: function.lua
+    source: file://conversion_errors_test.lua
+    method: run
+    meta: {type: test, suite: conversion_errors}
+    modules: [uuid, fs, funcs]
+    imports:
+      test: wippy.test:test
+      records: kickside.uploads.persist:upload_record_repo
