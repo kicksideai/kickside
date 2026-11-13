@@ -29,7 +29,7 @@ entries:
     kind: function.lua
     meta:
       type: processor
-      comment: Universal upload stage; renders empty/low-text documents to rendered-page image artifacts.
+      comment: Universal upload stage; renders the pages selected for OCR (empty/low-text pages by default) to rendered-page image artifacts.
     source: file://stage.lua
     method: process
     modules: [funcs, contract, logger]
@@ -69,6 +69,26 @@ entries:
     scope: global
     editable: true
     visible: true
+
+  - name: setting.rasterize_page_selection
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: Which pages of a document are rendered for OCR - sparse-text pages, or every page.
+    namespace: kickside.uploads.rasterize
+    key: rasterize_page_selection
+    value_type: string
+    default: "sparse"
+    title: Pages to OCR
+    category: Rasterization
+    order: 15
+    description: Applies to every upload on this installation. sparse renders pages with little or no extractable text; all OCRs pages that already have text, with more model calls and slower processing. Failed or blank OCR keeps the page's existing text.
+    scope: global
+    editable: true
+    visible: true
+    schema:
+      type: string
+      enum: [sparse, all]
 
   - name: setting.rasterize_max_text_bytes
     kind: registry.entry

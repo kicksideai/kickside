@@ -12,6 +12,10 @@ M.DEFAULT_MIN_PAGE_BYTES = 51200
 M.DEFAULT_MAX_TEXT_BYTES_PER_PAGE = 800
 M.DEFAULT_CONFIDENT_TEXT_BYTES_PER_PAGE = 1600
 M.DEFAULT_MIN_TEXT_SOURCE_RATIO = 0.02
+-- Page selection: SELECT_SPARSE picks pages whose text layer is missing or sparse;
+-- SELECT_ALL picks every page that has no committed OCR outcome.
+M.SELECT_SPARSE = "sparse"
+M.SELECT_ALL = "all"
 
 local function sorted_by_ordinal(list: { any }): { any }
     table.sort(list, function(a, b) return (tonumber(a.ordinal) or 0) < (tonumber(b.ordinal) or 0) end)
@@ -148,14 +152,37 @@ function M.text_pages(content: any, outcomes: any?): { any }
     return pages
 end
 
+local function can_replace(text: string, replacement: any): boolean
+    return replacement ~= nil and (trim(replacement) ~= "" or trim(text) == "")
+end
+
+function M.build_markdown(sections: { any }): string
+    local parts = {}
+    for _, section in ipairs(sections) do
+        local body = trim(section.text)
+        parts[#parts + 1] = "<!-- page " .. tostring(section.page) .. " -->" .. (body ~= "" and ("\n\n" .. body) or "")
+    end
+    return table.concat(parts, "\n\n")
+end
+
 function M.replace_pages(content: string, replacements: { any }): string
+    local pages = M.text_pages(content)
+    if #pages == 0 then
+        if #replacements == 0 then return content end
+        -- Unmarked text has no page boundaries, so replacement requires usable text for every page.
+        for _, section in ipairs(replacements) do
+            if not can_replace(content, section.text) and trim(content) ~= "" then return content end
+        end
+        return M.build_markdown(replacements)
+    end
     local by_page = {}
     for _, section in ipairs(replacements) do by_page[section.page] = section.text end
     local parts, offset = {}, 1
-    for _, page in ipairs(M.text_pages(content)) do
+    for _, page in ipairs(pages) do
         parts[#parts + 1] = content:sub(offset, page.start - 1)
-        if by_page[page.page] ~= nil then
-            parts[#parts + 1] = "<!-- page " .. page.page .. " -->\n\n" .. trim(by_page[page.page])
+        local replacement = by_page[page.page]
+        if can_replace(page.text, replacement) then
+            parts[#parts + 1] = "<!-- page " .. page.page .. " -->\n\n" .. trim(replacement)
             if page.finish < #content then parts[#parts + 1] = "\n\n" end
         else
             parts[#parts + 1] = content:sub(page.start, page.finish)
@@ -166,15 +193,17 @@ function M.replace_pages(content: string, replacements: { any }): string
     return table.concat(parts)
 end
 
-function M.needs_ocr_text(content: any, page_count: any, max_text_per_page: any, status: any?): boolean
-    return M.ocr_text_reason(content, page_count, max_text_per_page, status) ~= nil
+function M.needs_ocr_text(content: any, page_count: any, max_text_per_page: any, status: any?, selection: string?): boolean
+    return M.ocr_text_reason(content, page_count, max_text_per_page, status, selection) ~= nil
 end
 
-function M.ocr_text_reason(content: any, page_count: any, max_text_per_page: any, status: any?): string?
-    if status == "readable" or status == "blank" then return nil end
+function M.ocr_text_reason(content: any, page_count: any, max_text_per_page: any, status: any?, selection: string?): string?
+    if status == "readable" or (status == "blank" and selection ~= M.SELECT_ALL) then return nil end
     if status == "failed" then return "failed_page" end
     local text = trim(content)
+    if status == "blank" and text == "" then return nil end
     if text == "" then return "empty_text" end
+    if selection == M.SELECT_ALL then return "all_pages" end
 
     local pages = math.max(1, math.floor(tonumber(page_count) or 1))
     local per_page = math.max(1, math.floor(tonumber(max_text_per_page) or M.DEFAULT_MAX_TEXT_BYTES_PER_PAGE))
@@ -188,12 +217,12 @@ function M.ocr_text_reason(content: any, page_count: any, max_text_per_page: any
     return nil
 end
 
-function M.needs_ocr_document(content: any, page_count: any, max_text_per_page: any, source_size: any): boolean
-    return M.ocr_document_reason(content, page_count, max_text_per_page, source_size) ~= nil
+function M.needs_ocr_document(content: any, page_count: any, max_text_per_page: any, source_size: any, selection: string?): boolean
+    return M.ocr_document_reason(content, page_count, max_text_per_page, source_size, selection) ~= nil
 end
 
-function M.ocr_document_reason(content: any, page_count: any, max_text_per_page: any, source_size: any): string?
-    local text_reason = M.ocr_text_reason(content, page_count, max_text_per_page)
+function M.ocr_document_reason(content: any, page_count: any, max_text_per_page: any, source_size: any, selection: string?): string?
+    local text_reason = M.ocr_text_reason(content, page_count, max_text_per_page, nil, selection)
     if text_reason then return text_reason end
 
     local size = tonumber(source_size) or 0
