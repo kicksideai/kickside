@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.40](https://github.com/kicksideai/kickside/compare/kickside-v0.2.39...kickside-v0.2.40) (2026-11-13)
+
+
+### Bug Fixes
+
+* align System settings navigation and administration panes ([#449](https://github.com/kicksideai/kickside/issues/449)) ([f113972](https://github.com/kicksideai/kickside/commit/f113972709e065c17ecc112b61cc4bd141b75a87))
+* **ui:** use the website accent by default ([#451](https://github.com/kicksideai/kickside/issues/451)) ([3fff841](https://github.com/kicksideai/kickside/commit/3fff84187005155c49d2c96bb4f0184319668ac5))
+
 ## [0.2.39](https://github.com/kicksideai/kickside/compare/kickside-v0.2.38...kickside-v0.2.39) (2026-11-12)
 
 

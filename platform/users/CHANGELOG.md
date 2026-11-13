@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.22](https://github.com/kicksideai/kickside/compare/users-v0.2.21...users-v0.2.22) (2026-11-13)
+
+
+### Bug Fixes
+
+* align System settings navigation and administration panes ([#449](https://github.com/kicksideai/kickside/issues/449)) ([f113972](https://github.com/kicksideai/kickside/commit/f113972709e065c17ecc112b61cc4bd141b75a87))
+
 ## [0.2.21](https://github.com/kicksideai/kickside/compare/users-v0.2.20...users-v0.2.21) (2026-11-12)
 
 

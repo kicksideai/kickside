@@ -131,6 +131,8 @@ async function resetField(ns: string, key: string) {
 
 // The rasterize format select options.
 const FORMATS = ['jpeg', 'png', 'webp']
+// The rasterize page selection options.
+const PAGE_SELECTIONS = ['sparse', 'all']
 
 onMounted(load)
 </script>
@@ -220,12 +222,12 @@ onMounted(load)
         <!-- Page rasterization -->
         <section v-if="has(NS_RAST, 'rasterize_empty_enabled')" class="ap-card">
           <header class="ap-h"><Icon icon="tabler:photo" aria-hidden="true" /> Page rasterization</header>
-          <p class="ap-sub">Render empty or low-text documents to page images so vision captioning can embed them.</p>
+          <p class="ap-sub">Choose which document pages to render for OCR across every upload on this installation.</p>
 
           <div class="ap-toggle-row">
             <div class="ap-toggle-text">
               <span class="ap-toggle-name">Rasterize empty documents</span>
-              <span class="ap-toggle-desc">Render pages when little or no text can be extracted.</span>
+              <span class="ap-toggle-desc">Render document pages using the Pages to OCR selection.</span>
             </div>
             <ToggleSwitch
               :model-value="!!draft[id(NS_RAST, 'rasterize_empty_enabled')]"
@@ -234,6 +236,14 @@ onMounted(load)
           </div>
 
           <div class="ap-field-grid">
+            <div v-if="has(NS_RAST, 'rasterize_page_selection')" class="ap-fg">
+              <label class="ap-blabel">Pages to OCR</label>
+              <Select class="ap-select"
+                :model-value="draft[id(NS_RAST, 'rasterize_page_selection')]"
+                :options="PAGE_SELECTIONS"
+                @update:model-value="draft[id(NS_RAST, 'rasterize_page_selection')] = $event" />
+              <p class="ap-hint">Applies to every upload on this installation. All pages runs OCR even on pages that already have text, with more model calls and slower processing. Failed or blank OCR keeps the page’s existing text.</p>
+            </div>
             <div v-if="has(NS_RAST, 'rasterize_format')" class="ap-fg">
               <label class="ap-blabel">Image format</label>
               <Select class="ap-select"

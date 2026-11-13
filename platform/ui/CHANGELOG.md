@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.12](https://github.com/kicksideai/kickside/compare/ui-v0.2.11...ui-v0.2.12) (2026-11-13)
+
+
+### Bug Fixes
+
+* **ui:** use the website accent by default ([#451](https://github.com/kicksideai/kickside/issues/451)) ([3fff841](https://github.com/kicksideai/kickside/commit/3fff84187005155c49d2c96bb4f0184319668ac5))
+
 ## [0.2.11](https://github.com/kicksideai/kickside/compare/ui-v0.2.10...ui-v0.2.11) (2026-11-12)
 
 
