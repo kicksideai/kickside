@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.41](https://github.com/kicksideai/kickside/compare/kickside-v0.2.40...kickside-v0.2.41) (2026-11-13)
+
+
+### Bug Fixes
+
+* **app:** remove member creation of a system actor ([#455](https://github.com/kicksideai/kickside/issues/455)) ([77e3191](https://github.com/kicksideai/kickside/commit/77e3191adaae061c56463fb9e1290a879cb94a34))
+
 ## [0.2.40](https://github.com/kicksideai/kickside/compare/kickside-v0.2.39...kickside-v0.2.40) (2026-11-13)
 
 
