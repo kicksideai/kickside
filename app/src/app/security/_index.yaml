@@ -15,10 +15,33 @@ entries:
     meta: {type: test, suite: app_security}
     source: file://compact_user_runtime_policy_test.lua
     method: run
-    modules: [registry, security, json]
+    modules: [registry, security, json, funcs]
     imports:
       test: wippy.test:test
       policy_coverage: kickside.security:policy_coverage
+      execution_identity: kickside.execution:execution_identity
+      scope_projection: kickside.security.service:scope_projection
+
+  - name: system_actor_probe
+    kind: function.lua
+    meta: {type: test_helper}
+    source: |
+      local security = require("security")
+      return {run = function(params)
+        local caller = assert(security.actor()):id()
+        local ok, actor, err = pcall(security.new_actor, params.id, {security_groups = {"app.security:user"}})
+        return {caller = caller, created = ok and actor ~= nil, refused = not ok or err ~= nil}
+      end}
+    method: run
+    modules: [security]
+
+  - name: system_actor_probe_call
+    kind: security.policy
+    meta: {type: test_helper}
+    policy:
+      resources: app.security:system_actor_probe
+      actions: [funcs.call, funcs.security]
+      effect: allow
 
   - name: resolver_identity_capability_test
     kind: function.lua

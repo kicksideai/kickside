@@ -2,22 +2,6 @@ version: "1.0"
 namespace: app.security
 
 entries:
-  - name: user.runtime_actor_delegation
-    kind: security.policy
-    meta:
-      type: app.security.policy_binding
-      surface: app.runtime.security
-      intent: trusted_product_runtime
-      comment: Narrow actor creation for managed KB injection; arbitrary scope construction and policy reads are intentionally not granted.
-    groups:
-      - app.security:user
-    policy:
-      resources:
-        - system:knowledge.injection
-      actions:
-        - security.actor.create
-      effect: allow
-
   - name: user.runtime_process_context
     kind: security.policy
     meta:
