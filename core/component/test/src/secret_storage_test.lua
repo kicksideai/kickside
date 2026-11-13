@@ -15,6 +15,7 @@ return {run = test.run_cases(function()
         test.it("partitions credentials in the existing write and preserves revisions", function()
             local db, db_err = sql.get("app:db")
             test.is_nil(db_err)
+            db = assert(db)
             local id = uuid.v7()
             local timestamp = time.now():utc():format_rfc3339()
             local _, seed_err = db:execute([[INSERT INTO kickside_components

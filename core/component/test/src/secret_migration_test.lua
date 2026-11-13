@@ -146,6 +146,7 @@ return {run = test.run_cases(function()
         test.it("commits bounded rows, resumes and preserves context revisions and timestamps", function()
             local db, db_err = sql.get("app:db")
             test.is_nil(db_err)
+            db = assert(db)
             local ids: {string} = {}
             local timestamp = time.now():utc():format_rfc3339()
             for i = 1, 5 do
