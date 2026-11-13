@@ -207,6 +207,16 @@ local function advance_tx(db: sql.DB, job: table, snapshot: table, prefetched_la
         return { self_completed = true, completion = done, stale = true }, nil
     end
 
+    local projections, projection_err = tx:query("SELECT body FROM kickside_projection WHERE id=$1" .. suffix,
+        {snapshot.projection_id})
+    if projection_err then return abort(errors.wrap(projection_err, "projection body read failed")) end
+    if type(projections) ~= "table" or #projections ~= 1 then return abort(response_error("projection.rows")) end
+    local current_body, decode_err = json.decode(projections[1].body)
+    if decode_err then return abort(errors.wrap(decode_err, "projection body decode failed")) end
+    if type(current_body) ~= "table" then return abort(response_error("projection.body")) end
+    -- Destination proof belongs to the shared projection, not a cursor snapshot.
+    body.declaration_status = current_body.declaration_status
+
     local prior = tonumber(snapshot.last_seq)
     if prior == nil then return abort(response_error("cursor.last_seq")) end
     local last = prefetched_last
@@ -219,7 +229,40 @@ local function advance_tx(db: sql.DB, job: table, snapshot: table, prefetched_la
     end
     local folded, fold_err = next_body(body, output)
     if fold_err then return abort(fold_err) end
-    if #writes > 0 then
+    local status = folded and folded.declaration_status
+    local rebuild_until = type(status) == "table" and tonumber(status.rebuild_until_seq) or nil
+    local abandoned = false
+    if rebuild_until ~= nil and prior < rebuild_until then
+        local history = status.output_history
+        if type(history) ~= "table" or type(history.destinations) ~= "table" then
+            return abort(response_error("output_history"))
+        end
+        for _, write in ipairs(writes) do
+            local earliest = history.destinations[write.thread_id]
+            if earliest ~= nil then
+                local destination = locked_threads[write.thread_id]
+                if destination == nil then abandoned = true; break end
+                local boundary = tonumber(destination.max_pruned_seq)
+                if boundary == nil or type(earliest) ~= "number" then
+                    return abort(response_error("output_history.boundary"))
+                end
+                if boundary >= earliest then abandoned = true; break end
+            end
+        end
+        if abandoned then
+            -- Discard this page's fold and every output before any append.
+            folded = current_body
+            last = current_head
+            status.reason, status.from_seq = "outputs pruned during rebuild", current_head + 1
+            local fenced, fence_err = tx:execute([[UPDATE kickside_projection_cursor SET generation=generation+1,
+                last_seq=$1,last_error=NULL,updated_at=$2 WHERE projection_id=$3]],
+                {last, clock.now(dbtype), snapshot.projection_id})
+            local fence_write_err = write_error(fenced, fence_err, "projection rebuild fence failed", "rebuild.fence")
+            if fence_write_err then return abort(fence_write_err) end
+        end
+        if abandoned then status.rebuild_until_seq = nil end
+    end
+    if not abandoned and #writes > 0 then
         local wake_keys: string[] = {}
         local appended_threads: {[string]: boolean} = {}
         for _, write in ipairs(writes :: table[]) do
@@ -282,7 +325,9 @@ local function advance_tx(db: sql.DB, job: table, snapshot: table, prefetched_la
     if fold_write_err then return abort(fold_write_err) end
     local headed, head_err = tx:execute([[UPDATE kickside_projection_cursor SET last_seq=$1,
         last_error=$2,updated_at=$3 WHERE id=$4 AND generation=$5 AND last_seq=$6 AND status='active']],
-        { last, output.last_error, now, snapshot.id, snapshot.generation, snapshot.last_seq })
+        { last, output.last_error, now, snapshot.id,
+            abandoned and snapshot.generation + 1 or snapshot.generation,
+            abandoned and last or snapshot.last_seq })
     local head_write_err = write_error(headed, head_err, "projection cursor advance failed", "cursor.update")
     if head_write_err then return abort(head_write_err) end
     local options: table = {}

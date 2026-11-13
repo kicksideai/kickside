@@ -4363,11 +4363,14 @@ entries:
       suite: kickside_core
     source: file://projection_declaration_convergence_test.lua
     method: run
-    modules: [sql, uuid, json, security, contract, process, channel]
+    modules: [sql, uuid, json, security, contract, process, channel, time]
     imports:
       test: wippy.test:test
       provision: kickside.core.threads:provision
       prune: kickside.core.retention:prune
+      apply: kickside.core.projections:apply
+      claim: kickside.core.jobs.persist:claim
+      clock: kickside.core.jobs:clock
       proj_register: kickside.core.projections.persist:register
 
   - name: projection_declaration_manual_kind

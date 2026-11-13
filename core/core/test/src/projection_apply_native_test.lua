@@ -6,7 +6,7 @@ local kinds = {errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.P
     errors.RATE_LIMITED, errors.UNKNOWN}
 local routes = {}
 for _, stage in ipairs({"append_encode", "identity", "admission", "get", "type", "begin", "lock",
-    "cursor", "body_encode", "update", "cursor_update", "append", "wake", "complete", "commit", "notify", "retention", "release"}) do
+    "cursor", "projection_read", "projection_decode", "body_encode", "update", "cursor_update", "append", "wake", "complete", "commit", "notify", "retention", "release"}) do
     routes[#routes + 1] = {stage = stage, mode = "advance"}
 end
 for _, stage in ipairs({"get", "type", "begin", "lock", "cursor", "pin", "fence", "invalidate", "complete", "commit", "notify", "release"}) do
@@ -90,6 +90,7 @@ local function outcomes()
         test.it("keeps declaration status when the worker returns a " .. mode, function()
             fixture.reset("", nil, "advance")
             local status = {revision = 2, start_seq = 0, from_seq = 5, reason = "history pruned"}
+            fixture.current_body = {declaration_status = status}
             local output = {}
             output[mode] = {count = 3, declaration_status = {revision = 999}}
             local value, err = apply.advance("app:db", {id = "job", lease_token = "token", execution_seq = 1},
@@ -100,6 +101,26 @@ local function outcomes()
             test.eq(fixture.encoded_body.declaration_status.revision, 2)
             test.eq(fixture.encoded_body.declaration_status.from_seq, 5)
             test.eq(fixture.encoded_body.declaration_status.reason, "history pruned")
+        end)
+    end
+    for _, overflow in ipairs({false, true}) do
+        test.it("merges the current minimum destination sequence with sticky overflow/" .. tostring(overflow), function()
+            fixture.reset("", nil, "advance")
+            fixture.current_body = {declaration_status = {revision = 1,
+                output_history = {destinations = {other = 1, existing = 2}, overflow = overflow}}}
+            fixture.append_sequence = 3
+            local writes = assert(apply.append_writes({append_events = {{thread_id = "other",
+                event = {type = "example", body_json = "{}"}}}}, "thread", {}, "projection", "input"))
+            local result, err = apply.advance("app:db", {id = "job", lease_token = "token", execution_seq = 1},
+                {id = "cursor", thread_id = "thread", projection_id = "projection", generation = 1,
+                    last_seq = 0, body = {declaration_status = {revision = 1,
+                        output_history = {destinations = {}, overflow = false}}}}, 1, {append_events = writes})
+            test.is_nil(err)
+            test.not_nil(result)
+            local history = fixture.encoded_body.declaration_status.output_history
+            test.eq(history.destinations.existing, 2)
+            test.eq(history.destinations.other, 1)
+            test.eq(history.overflow, overflow)
         end)
     end
     test.it("defers output demand until all appends and prelocks the completing job", function()
@@ -181,6 +202,8 @@ local function outcomes()
         {stage = "admission", field = "admitted.writes"}, {stage = "get", field = "database"},
         {stage = "type", field = "database.type"}, {stage = "begin", field = "transaction"},
         {stage = "lock", field = "locked_threads"}, {stage = "cursor", field = "cursor.rows"},
+        {stage = "projection_read", field = "projection.rows"},
+        {stage = "projection_decode", field = "projection.body"},
         {stage = "body_encode", field = "body_json"}, {stage = "update", field = "projection.update"},
         {stage = "cursor_update", field = "cursor.update"}, {stage = "append", field = "append"},
         {stage = "wake", field = "wake"}, {stage = "complete", field = "completion"}, {stage = "fence", mode = "fail", field = "failure.fence"},

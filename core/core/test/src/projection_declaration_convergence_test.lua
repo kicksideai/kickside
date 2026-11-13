@@ -10,6 +10,10 @@ local channel = require("channel")
 local provision = require("provision")
 local prune = require("prune")
 local register = require("proj_register")
+local apply = require("apply")
+local claim = require("claim")
+local clock = require("clock")
+local time = require("time")
 
 local KIND = "test.declaration.refresh"
 local IMPL = "app:projection_declaration_refresh_kind"
@@ -364,6 +368,108 @@ return {run = test.run_cases(function()
             test.eq(tonumber(state(id).body.count), 1)
             test.eq(state(id).body.declaration_status.reason, "outputs pruned")
             test.eq(state(id).body.declaration_status.from_seq, 2)
+        end)
+        test.it("abandons an approved rebuild when its destination prunes before replay", function()
+            local threads, actor, scope, id = setup(true)
+            local downstream, _, _, destination = setup(true)
+            assert(threads:register_projection({thread_id = id, kind = KIND,
+                worker_ref = "func://app:test_emitting_worker", worker_input_mode = "prefetch_events",
+                events = {input = {{type = "app:threads_keep"}}, output = {{type = "app:threads_note"}}}}))
+            assert(downstream:register_projection({thread_id = destination, kind = KIND,
+                worker_ref = "func://app:test_count_worker", worker_input_mode = "prefetch_events",
+                events = {input = {{type = "app:threads_note"}}, output = {}}}))
+            assert(threads:append_event({thread_id = id, event = {type = "app:threads_keep",
+                role = "user", body = {destination = destination}}}))
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
+            assert(downstream:catch_up_projection({thread_id = destination, kind = KIND, max_ticks = 10}))
+            stop_pool()
+            test.eq(tonumber(state(destination).body.stats.count), 1)
+            local db = assert(sql.get("app:db"))
+            assert(db:execute("UPDATE kickside_components SET impl_id=$1 WHERE component_id=$2",
+                {"app:projection_declaration_emitting_kind", id}))
+            assert(db:release())
+            converge(scope)
+            test.eq(tonumber(state(id).last_seq), 0, "retained history approves rebuilding")
+            test.is_nil(state(id).body.declaration_status.reason)
+            db = assert(sql.get("app:db"))
+            test.eq(assert(prune.prune_thread(db, destination,
+                {cutoff = "2100-01-01T00:00:00Z", max_total = 1})).deleted, 1)
+            test.eq(#assert(db:query("SELECT id FROM kickside_event WHERE thread_id=$1", {destination})), 0)
+            test.eq(#assert(db:query("SELECT id FROM kickside_event WHERE thread_id=$1", {id})), 1)
+            assert(db:release())
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
+            assert(downstream:catch_up_projection({thread_id = destination, kind = KIND, max_ticks = 10}))
+            stop_pool()
+            test.eq(tonumber(state(destination).body.stats.count), 1, "pruned outputs do not reach downstream twice")
+            test.eq(state(id).body.declaration_status.reason, "outputs pruned during rebuild")
+            test.eq(state(id).body.declaration_status.from_seq, 2)
+            test.eq(tonumber(state(id).last_seq), 1)
+            assert(threads:append_event({thread_id = id, event = {type = "app:threads_skip",
+                body = {destination = destination}}}))
+            start_pool()
+            assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 10}))
+            assert(downstream:catch_up_projection({thread_id = destination, kind = KIND, max_ticks = 10}))
+            stop_pool()
+            test.eq(tonumber(state(destination).body.stats.count), 2, "forward-only refresh emits later inputs")
+            test.eq(state(id).body.declaration_status.reason, "outputs pruned during rebuild")
+        end)
+        test.it("merges destination proofs from the current row across two cursor snapshots", function()
+            local threads, actor, scope, id = setup(true)
+            local destination, other = uuid.v4(), uuid.v4()
+            for _, target in ipairs({destination, other}) do
+                assert(threads:create({id = target, impl_id = "app:projection_declaration_manual_kind",
+                    thread_class = "test.declaration.manual"}))
+            end
+            local params = {thread_id = id, kind = KIND,
+                worker_ref = "func://app:test_emitting_worker", worker_input_mode = "prefetch_events",
+                events = {input = {{type = "app:threads_keep"}}, output = {{type = "app:threads_note"}}}}
+            local first = assert(threads:register_projection(params))
+            for _, target in ipairs({destination, other}) do
+                assert(threads:append_event({thread_id = id, event = {type = "app:threads_keep",
+                    body = {destination = target}}}))
+            end
+            params.cursor_key, params.start_seq, params.ensure = "second", 1, true
+            local second = assert(threads:register_projection(params))
+            local function load(cursor_id: string): (table, table)
+                local db = assert(sql.get("app:db"))
+                local dialect = assert(db:type())
+                local row = assert(db:query([[SELECT c.*,p.body,p.kind FROM kickside_projection_cursor c
+                    JOIN kickside_projection p ON p.id=c.projection_id WHERE c.id=$1]], {cursor_id}))[1]
+                row.body = assert(json.decode(row.body))
+                local tx = assert(db:begin())
+                local token = uuid.v7()
+                local leased = assert(claim.lease_row(tx, dialect, row.job_id, token,
+                    clock.format(time.now():add("1m"), dialect), clock.now(dialect)))
+                assert(tx:commit())
+                assert(db:release())
+                return row, {id = row.job_id, lease_token = token, execution_seq = leased.execution_seq}
+            end
+            local one, job_one = load(first.projection.cursor_id)
+            local two, job_two = load(second.projection.cursor_id)
+            local db = assert(sql.get("app:db"))
+            local inputs = assert(db:query("SELECT id FROM kickside_event WHERE thread_id=$1 ORDER BY seq", {id}))
+            assert(db:release())
+            local writes = {}
+            for index, target in ipairs({destination, other}) do
+                local prepared = assert(apply.append_writes({append_events = {{thread_id = target,
+                    event = {type = "app:threads_note", body = {}}}}}, id, one.body, one.projection_id, inputs[index].id))
+                writes[#writes + 1] = prepared[1]
+            end
+            assert(apply.advance("app:db", job_one, one, 2, {body = {count = 2}, append_events = writes}))
+            assert(apply.advance("app:db", job_two, two, 2, {body = {count = 1}, append_events = {writes[2]}}))
+            local history = state(id).body.declaration_status.output_history
+            test.eq(history.destinations[destination], 1, "second snapshot does not erase the first destination")
+            test.eq(history.destinations[other], 1, "deduplication preserves the earliest sequence")
+            db = assert(sql.get("app:db"))
+            test.eq(assert(prune.prune_thread(db, destination,
+                {cutoff = "2100-01-01T00:00:00Z", max_total = 1})).deleted, 1)
+            assert(db:execute("UPDATE kickside_components SET impl_id=$1 WHERE component_id=$2",
+                {"app:projection_declaration_emitting_kind", id}))
+            assert(db:release())
+            converge(scope)
+            test.eq(state(id).body.declaration_status.reason, "outputs pruned")
         end)
         test.it("keeps an existing fold forward only without destination history proof", function()
             local threads, actor, scope, id = setup(true)

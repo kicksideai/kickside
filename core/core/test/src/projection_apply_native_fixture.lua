@@ -8,6 +8,7 @@ function M.reset(stage: string, source: any, mode: string)
     M.published_after, M.wake_keys, M.cached_appends = 0, {}, 0
     M.encoded_body, M.appended_events = nil, nil
     M.thread_locked, M.cursor_before_thread = false, false
+    M.current_body, M.append_sequence = {}, 1
 end
 function M.outcome(stage: string, value: any): (any, error?)
     if M.stage == stage then
@@ -26,6 +27,7 @@ function M.encode(_body: any): (any, error?)
     M.encodes = M.encodes + 1
     return M.outcome(M.encodes == 1 and "append_encode" or "body_encode", "{}")
 end
+function M.decode(_body: any): (any, error?) return M.outcome("projection_decode", M.current_body) end
 function M.from_row(...: any): (any, error?) return M.outcome("identity", {component_id = "component"}) end
 function M.run_as(...: any): (any, error?)
     return M.outcome("admission", {writes = {{thread_id = "other", events = {{type = "example", body_json = "{}"}}}}})
@@ -35,7 +37,9 @@ function M.append_system_tx(_tx: any, _dbtype: any, thread_id: any, _events: any
     M.appended_events = _events
     if opts and opts.defer_wake == true then M.deferred = M.deferred + 1 end
     if opts and type(opts.locked_threads) == "table" then M.cached_appends = M.cached_appends + 1 end
-    return M.outcome("append", {max_seq = 1, inserted = 1, thread_id = thread_id})
+    local events = {}
+    for _ in ipairs(_events) do events[#events + 1] = {seq = M.append_sequence} end
+    return M.outcome("append", {max_seq = M.append_sequence, inserted = 1, thread_id = thread_id, events = events})
 end
 function M.wake_multi(_tx: any, keys: any, _dbtype: any, completing: any): (any, error?)
     M.wakes = M.wakes + 1
@@ -65,6 +69,9 @@ end
 function M.transaction(): any
     return {
         query = function(_self: any, _statement: any, _args: any): (any, error?)
+            if _statement:find("SELECT body FROM kickside_projection", 1, true) then
+                return M.outcome("projection_read", {{body = "{}"}})
+            end
             return M.outcome("cursor", {{generation = M.mode == "stale" and 2 or 1,
                 last_seq = 0, status = "active", job_id = "job"}})
         end,

@@ -414,7 +414,8 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
             status = {revision = revision + (declaration_changed and 1 or 0),
                 start_seq = reset and start_seq or own_start,
                 from_seq = (refresh_from or start_seq) + 1,
-                reason = refresh_reason, output_history = prior and prior.output_history or nil}
+                reason = refresh_reason, output_history = prior and prior.output_history or nil,
+                rebuild_until_seq = declaration_changed and reset and event_count or nil}
         end
         local body_to_write: string
         if reset then
