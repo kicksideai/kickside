@@ -304,6 +304,22 @@ entries:
     jobs: kickside.core.jobs:jobs
     jobs_config: kickside.core.jobs:config
     migration_runner: wippy.migration:runner
+- name: rollback_maintenance_live_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: kickside_automation_rollback_upgrade
+    timeout: 120s
+  source: file://rollback_maintenance_live_test.lua
+  method: run
+  modules: [json, time, process, funcs, logger]
+  imports:
+    test: wippy.test:test
+    component: kickside.component:component
+    engine_upgrade: kickside.automation.engine:upgrade
+    jobs: kickside.core.jobs:jobs
+    round_harness: kickside.automation:round_harness
+    deletion_worker: app:deletion_test_worker
 - name: rollback_upgrade_test
   kind: function.lua
   meta:

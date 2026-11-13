@@ -15,6 +15,7 @@ end
 function M.enqueue_tx() return M.result("enqueue", {id = "job"}) end
 function M.enroll_delete_tx() return M.result("enqueue", "job") end
 function M.nudge_workers() return M.result("nudge", 0) end
+M.notify_delete_committed = M.nudge_workers
 function M.db_id() return "fixture-db" end
 function M.sql_get()
     M.opens = M.opens + 1

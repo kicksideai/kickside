@@ -229,4 +229,4 @@ local function delete_component(tx: Executor, db: Executor, command: component_t
 end
 
 return { validate_delete_tx = validate_delete_tx, deletion_ready_tx = deletion_ready_tx, delete_component = delete_component,
-    enroll_delete_tx = enroll_delete_tx }
+    enroll_delete_tx = enroll_delete_tx, notify_delete_committed = jobs.nudge_workers }

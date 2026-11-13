@@ -75,8 +75,9 @@ function M.upgrade_tx(tx: any, component_id: string, upgrade: any): (any?, error
         if intent_err then return nil, intent_err end
         local dialect, dialect_err = tx:db_type()
         if dialect_err then return nil, dialect_err end
-        local _, enqueue_err = delete_ops.enroll_delete_tx(tx, tostring(dialect), component_id, intent)
+        local job_id, enqueue_err = delete_ops.enroll_delete_tx(tx, tostring(dialect), component_id, intent)
         if enqueue_err then return nil, enqueue_err end
+        result.deletion_job_id = job_id
     end
     return result, nil
 end

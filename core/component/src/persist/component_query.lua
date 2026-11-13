@@ -12,6 +12,7 @@ local M = {}
 type ReaderState = {
     _user_id: string?,
     _component_ids: string[]?,
+    _after_component_id: string?,
     _no_component_match: boolean,
     _impl_ids: string[]?,
     _match_ids: string?,
@@ -141,6 +142,9 @@ end
 -- Apply id / impl / meta / text filters shared by main and count queries.
 local function apply_filters(state: ReaderState, query_builder: any): any
     local self = state
+    if self._after_component_id then
+        query_builder = query_builder:where("c.component_id > ?", self._after_component_id)
+    end
     local clauses: { string } = {}
     local args: { any } = {}
     if self._component_ids and #self._component_ids > 0 then

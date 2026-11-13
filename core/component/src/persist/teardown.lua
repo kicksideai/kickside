@@ -5,7 +5,6 @@ local contract = require("contract")
 local registry = require("registry")
 local security = require("security")
 local time = require("time")
-local jobs = require("jobs")
 local persisted_json = require("persisted_json")
 local committed_error = require("committed_error")
 local meta_service = require("meta_service")
@@ -308,7 +307,7 @@ function M.begin_delete(component_id: string, gate_user_id: string?, child_polic
     local notification_err = error_envelope.cleanup(function(): (any, error?) return db:release() end,
         nil, "release component teardown database")
     if enqueue then
-        notification_err = error_envelope.cleanup(jobs.nudge_workers, notification_err, "nudge component deletion workers")
+        notification_err = error_envelope.cleanup(ops.notify_delete_committed, notification_err, "nudge component deletion workers")
         notification_err = error_envelope.cleanup(function(): (any, error?)
             return meta_service.notify_access(component_id, nil, {event = "component.deleting", component_id = component_id,
                 deletion_job_id = job_id})

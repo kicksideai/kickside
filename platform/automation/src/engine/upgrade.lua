@@ -235,11 +235,11 @@ function part.attach(M: any, dependencies: any, P: any): ()
         local report: Map = { upgraded = {}, current = 0, retained = {}, failed = {} }
         if #impl_ids == 0 then return report, nil end
         local log = (dependencies.logger :: any):named("automation.upgrade")
-        local offset = 0
+        local after_component_id: string? = nil
         while true do
             local rows, rows_err = (dependencies.component :: any).list_system({ impl_ids = impl_ids,
-                include = { private_context = true }, limit = PAGE, offset = offset,
-                order_by = { field = "created_at", direction = "ASC" } })
+                include = { private_context = true }, limit = PAGE, after_component_id = after_component_id,
+                order_by = { field = "component_id", direction = "ASC" } })
             if rows_err then return nil, rows_err end
             if type(rows) ~= "table" or #rows == 0 then break end
             for _, row in ipairs(rows) do
@@ -273,7 +273,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
                 end
             end
             if #rows < PAGE then break end
-            offset = offset + #rows
+            after_component_id = tostring(rows[#rows].component_id)
         end
         return report, nil
     end
