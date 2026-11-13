@@ -19,4 +19,8 @@ local function run(input: any): table
     return { record = { status = "completed" } }
 end
 
-return { run = run, RECEIVER = RECEIVER }
+local function fail(): (any?, error?)
+    error(errors.new({kind = errors.INVALID, retryable = false, message = "outcome rejected"}))
+end
+
+return { run = run, fail = fail, RECEIVER = RECEIVER }

@@ -18,6 +18,7 @@ entries:
       actor: { id: system:kickside.uploads.retention }
       policies: [kickside.uploads.security:retention_db_access, kickside.uploads.security:retention_prune_boundary]
     imports:
+      process_job: kickside.uploads.service:process_dead
       uploads_retention_policy: kickside.uploads:retention_policy
       upload_read_model_retention: kickside.uploads.persist:read_model_retention
       artifact_cleanup_repo: kickside.uploads.persist:artifact_cleanup_repo

@@ -343,8 +343,10 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
     end
     local capacity_descriptor, capacity_err = capacity.admit(params.worker_ref or params.job_type, concurrency_key)
     if capacity_err then return nil, capacity_err end
-    local _, dead_handler_err = dead_outcome.handler(params.worker_ref or params.job_type)
-    if dead_handler_err then return nil, dead_handler_err end
+    if not dead_outcome.is_outcome({job_identity = job_identity}) then
+        local _, dead_handler_err = dead_outcome.handler(params.worker_ref or params.job_type)
+        if dead_handler_err then return nil, dead_handler_err end
+    end
     local scheduled_at = params.scheduled_at or now
     if params.scheduled_at ~= nil then
         local instant, parse_err = clock.parse(params.scheduled_at)

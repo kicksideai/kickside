@@ -13,6 +13,7 @@ local job_fixture = require("job_fixture")
 local worker = require("worker")
 local dispatch = require("worker_dispatch")
 local worker_child = require("worker_child")
+local enqueue = require("lifecycle_enqueue")
 
 local DEAD_PROC = "proc://app:job_dead_proc"
 local SLEEP_PROC = "proc://app:job_sleep_proc"
@@ -158,6 +159,51 @@ local function define_tests()
                 test.eq(deliver(db, dbtype, outcomes[1].id), job_types.JOB_STATE.DONE)
             end)
         end)
+
+        test.it("ends a failing self-declared outcome without another outcome", function()
+            with_db(function(db: sql.DB, dbtype: string)
+                local job = leased_proc(db, dbtype, "proc://app:job_dead_self_proc", 1,
+                    {fail = true, error_kind = "INVALID"})
+                worker.process_job(db, dbtype, "test-pid-" .. uuid.v7(), job)
+                local rows = assert(db:query("SELECT id FROM kickside_job WHERE worker_ref=$1 AND CAST(payload AS TEXT) LIKE $2",
+                    {"app:job_dead_self_handler", "%" .. job.id .. "%"}))
+                test.eq(#rows, 1)
+                local outcome_id = rows[1].id
+                test.eq(deliver(db, dbtype, outcome_id), job_types.JOB_STATE.DEAD, tostring(job_row(db, outcome_id).last_error))
+                local children = assert(db:query("SELECT id FROM kickside_job WHERE CAST(payload AS TEXT) LIKE $1", {"%" .. outcome_id .. "%"}))
+                test.eq(#children, 0, "an outcome never generates another outcome")
+                test.contains(tostring(job_row(db, outcome_id).last_error), "outcome rejected")
+            end)
+        end)
+
+        test.it("commits death when outcome admission is refused after worker admission", function()
+            with_db(function(db: sql.DB, dbtype: string)
+                local job = leased_proc(db, dbtype, DEAD_PROC, 1, {fail = true, error_kind = "INVALID"})
+                local original = enqueue.enqueue_job
+                enqueue.enqueue_job = function()
+                    return nil, errors.new({kind = errors.INVALID, retryable = false, message = "target declaration changes"})
+                end
+                local ok, run_err = pcall(worker.process_job, db, dbtype, "test-pid-" .. uuid.v7(), job)
+                enqueue.enqueue_job = original
+                test.is_true(ok, tostring(run_err))
+                test.eq(job_row(db, job.id).status, job_types.JOB_STATE.DEAD)
+                test.eq(#outcomes_for(db, job.id), 0)
+            end)
+        end)
+
+        for _, target in ipairs({"missing", "nonfunction", "capacity"}) do
+            test.it("refuses an undeliverable dead handler: " .. target, function()
+                with_db(function(db: sql.DB, dbtype: string)
+                    local _, err = job_fixture.enqueue_leased(db, dbtype, {
+                        thread_id = make_thread(db), job_type = "dead.outcome.test",
+                        worker_ref = "proc://app:job_dead_" .. target .. "_proc", payload = {},
+                    })
+                    test.not_nil(err)
+                    test.is_true(errors.is(err, errors.INVALID), tostring(err))
+                    test.contains(tostring(err), "meta.job_dead")
+                end)
+            end)
+        end
 
         test.it("refuses to enqueue a job whose worker declares an invalid dead handler", function()
             with_db(function(db: sql.DB, dbtype: string)

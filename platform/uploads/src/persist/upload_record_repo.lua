@@ -334,7 +334,9 @@ function upload_record_repo.settle_storage_tx(tx, uuid: string, storage_state: s
         :set("updated_at", now_rfc3339())
         :where("uuid = ? AND storage_state IN (?, ?)", uuid, "uploaded", storage_state)
     if dead_job_id ~= nil then
-        query = query:where("processing_intent_state = ? AND processing_job_id = ?", "acknowledged", dead_job_id)
+        query = query:where("((processing_intent_state = 'acknowledged' AND processing_job_id = ?) OR "
+            .. "(processing_intent_state IS NULL AND (processing_job_id IS NULL OR processing_job_id = ?)))",
+            dead_job_id, dead_job_id)
     end
     local result, exec_err = query:run_with(tx):exec()
     if exec_err then return nil, typed(errors.UNAVAILABLE, "Failed to settle upload: " .. tostring(exec_err)) end

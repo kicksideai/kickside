@@ -13,6 +13,7 @@ local lifecycle_cancel = require("lifecycle_cancel")
 local proc_supervisor = require("proc_supervisor")
 local sql_boundary = require("sql_boundary")
 local dead_outcome = require("dead_outcome")
+local log = require("logger"):named("job_outcome")
 
 local lifecycle = {}
 
@@ -295,17 +296,30 @@ end
 -- started receives none.
 local function enqueue_dead_outcome(db_or_tx: Executor, dbtype: string, id: string): error?
     local rows, read_err = db_or_tx:query([[SELECT id,status,worker_ref,owner_kind,owner_id,thread_id,
-        queue_tier,priority FROM kickside_job WHERE id=$1]], { id })
+        queue_tier,priority,job_identity FROM kickside_job WHERE id=$1]], { id })
     if read_err then return errors.wrap(read_err, "dead outcome job read failed") end
     if type(rows) ~= "table" or type(rows[1]) ~= "table" then return response_error("dead_outcome.rows") end
     local row = rows[1]
     if row.status ~= job_types.JOB_STATE.DEAD then return nil end
+    if dead_outcome.is_outcome(row) then
+        log:warn("dead outcome delivery ends", {job_id = id})
+        return nil
+    end
     local handler, handler_err = dead_outcome.handler(row.worker_ref)
-    if handler_err or not handler then return handler_err end
+    if handler_err then
+        if handler_err:retryable() then return handler_err end
+        log:warn("dead outcome target is undeliverable", {job_id = id, error = tostring(handler_err)})
+        return nil
+    end
+    if not handler then return nil end
     local _, enqueue_err = enqueue.enqueue_job(db_or_tx, dbtype, dead_outcome.params(row, handler :: string))
     if enqueue_err then
         local details = enqueue_err:details()
         if type(details) == "table" and details.reason == "thread_cleanup" then return nil end
+        if not enqueue_err:retryable() then
+            log:warn("dead outcome admission refused", {job_id = id, error = tostring(enqueue_err)})
+            return nil
+        end
         return errors.wrap(enqueue_err, "dead outcome enqueue failed")
     end
     return nil

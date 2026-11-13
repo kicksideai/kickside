@@ -7,6 +7,11 @@ local trim = require("text_trim").trim
 
 local upload_query_repo = {}
 
+local function intentless_job(upload: string): string
+    return upload .. "processing_intent_state IS NULL AND j.job_identity='7:uploads' || CAST(length("
+        .. upload .. "uuid) AS TEXT) || ':' || " .. upload .. "uuid || '7:process'"
+end
+
 local function select_upload_columns()
     return sql.builder.select(
         "uuid", "actor_id", "size", "mime_type",
@@ -112,8 +117,10 @@ function upload_query_repo.find_by_processing_job(actor_id: string, job_id: stri
     if err then return nil, err end
     local rows, query_err = select_upload_columns()
         :from("kickside_uploads")
-        :where("actor_id = ? AND processing_job_id = ? AND processing_intent_state = ?",
-            actor_id, job_id, "acknowledged")
+        :where("actor_id = ?", actor_id)
+        :where("((processing_job_id = ? AND processing_intent_state = 'acknowledged') OR "
+            .. "(EXISTS (SELECT 1 FROM kickside_job j WHERE j.id=? AND " .. intentless_job("kickside_uploads.") .. ")))",
+            job_id, job_id)
         :limit(1)
         :run_with(db):query()
     db:release()
@@ -122,6 +129,29 @@ function upload_query_repo.find_by_processing_job(actor_id: string, job_id: stri
     end
     if #rows == 0 then return nil, nil end
     return parse_upload_row(rows[1])
+end
+
+-- The current intent is authoritative. Intent-less uploads use their published
+-- canonical job identity until their first retry creates an intent.
+function upload_query_repo.list_dead_processing_jobs(limit: integer): (table?, any?)
+    if type(limit) ~= "number" or limit ~= math.floor(limit) or limit < 1 or limit > 500 then
+        return nil, errors.new({message = "repair batch must be an integer in [1, 500]", kind = errors.INVALID})
+    end
+    local db, err = resources.get_db()
+    if err then return nil, err end
+    local rows, read_err = db:query([[
+        SELECT j.id FROM kickside_uploads u JOIN kickside_job j ON j.owner_kind='user' AND j.owner_id=u.actor_id
+          AND ((u.processing_intent_state='acknowledged' AND CAST(j.id AS TEXT)=u.processing_job_id)
+            OR (]] .. intentless_job("u.") .. [[))
+        WHERE u.storage_state='uploaded' AND j.status='dead'
+          AND j.job_type='kickside.uploads.service:process_job_proc'
+        ORDER BY u.created_at,u.uuid,j.id DESC LIMIT $1
+    ]], {limit})
+    db:release()
+    if read_err then return nil, read_err end
+    local ids = {}
+    for _, row in ipairs(rows) do ids[#ids + 1] = tostring(row.id) end
+    return ids, nil
 end
 
 -- Intent is committed on the upload record before enqueue. The jobs enqueue

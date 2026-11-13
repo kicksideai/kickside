@@ -5,6 +5,7 @@ local policy = require("uploads_retention_policy")
 local read_model_module = require("upload_read_model_retention")
 local artifact_cleanup = require("artifact_cleanup_repo")
 local processing_hooks = require("processing_hooks")
+local process_job = require("process_job")
 
 local M = {}
 
@@ -16,6 +17,8 @@ end
 function M.run(): any
     local settings, policy_err = policy.policy()
     if policy_err or not settings then return { success = false, error = policy_err or missing("policy") } end
+    local repaired, repair_err, repair_more = process_job.repair_dead(settings.batch_deleted_read_model)
+    if repair_err then return {success = false, error = repair_err} end
     local definition, contract_err = contract.get("kickside.core:threads")
     if contract_err or not definition then
         return { success = false, error = errors.new({ message = "Core threads contract unavailable: "
@@ -35,8 +38,8 @@ function M.run(): any
     if blob_err or blobs == nil then return { success = false, error = blob_err or missing("blob prune") } end
     local placements, placement_err = processing_hooks.prune(blob_cutoff, settings.batch_orphan_blob)
     if placement_err or placements == nil then return { success = false, error = placement_err or missing("extension prune") } end
-    return { success = true, deleted = count, blobs_deleted = blobs, placements_deleted = placements,
-        needs_continue = model_progress.needs_continue or blob_progress.needs_continue }
+    return { success = true, deleted = count, blobs_deleted = blobs, placements_deleted = placements, processing_repaired = repaired,
+        needs_continue = repair_more or model_progress.needs_continue or blob_progress.needs_continue }
 end
 
 return M
