@@ -110,7 +110,6 @@ entries:
       llm: wippy.llm:llm
       prompt: wippy.llm:prompt
       model_catalog: kickside.models.catalog:model_catalog
-      model_discovery: kickside.models.discovery:model_discovery
     method: handler
 
   - name: test_card.endpoint

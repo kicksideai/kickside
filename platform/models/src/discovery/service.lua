@@ -23,6 +23,7 @@ function M.discover(profile_id: string): (any?, any?)
 
     local rows, err = adapter.fetch(profile)
     if err then
+        err = "model discovery failed"
         local _, status_err = models_repo.set_profile_status(profile_id, "unhealthy", err or "model discovery failed", nil)
         if status_err then return nil, status_err end
         return nil, err
@@ -143,6 +144,7 @@ function M.test(profile_id: string, opts: any): (any?, any?)
         err = err or "connection test failed"
     end
     if not result then
+        err = "connection test failed"
         if not scoped_model then
             local _, status_err = models_repo.set_profile_status(profile_id, "unhealthy", err or "connection test failed", nil)
             if status_err then return nil, status_err end

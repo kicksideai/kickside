@@ -65,7 +65,7 @@ end
 
 local function sensitive_key(key: any): boolean
     local k = tostring(key or ""):lower()
-    return k == "headers"
+    return k == "headers" or k == "access_key"
         or k:find("secret", 1, true) ~= nil
         or k:find("token", 1, true) ~= nil
         or k:find("api_key", 1, true) ~= nil
@@ -103,15 +103,48 @@ local function has_fields(value: any): boolean
     return false
 end
 
-local function public_config(config: any): any
-    if type(config) ~= "table" then return {} end
-    local out = {}
+local function split_config(config: any): (any, any)
+    local public, secret = {}, {}
+    if type(config) ~= "table" then return public, secret end
     for k, v in pairs(config) do
-        if tostring(k) ~= "headers" and not sensitive_config_key(k) then
-            out[k] = v
+        if sensitive_config_key(k) then
+            secret[k] = v
+        elseif type(v) == "table" then
+            local nested_public, nested_secret = split_config(v)
+            public[k] = nested_public
+            if has_fields(nested_secret) then secret[k] = nested_secret end
+        else
+            public[k] = v
+        end
+    end
+    return public, secret
+end
+
+local function public_config(config: any): any
+    local public = split_config(config)
+    return public
+end
+
+local function merge_config(base: any, patch: any): any
+    local out = {}
+    for k, v in pairs(base or {}) do
+        out[k] = type(v) == "table" and merge_config(v, {}) or v
+    end
+    for k, v in pairs(patch or {}) do
+        if type(v) == "table" and not sensitive_config_key(k) then
+            out[k] = merge_config(type(out[k]) == "table" and out[k] or {}, v)
+        else
+            out[k] = type(v) == "table" and merge_config(v, {}) or v
         end
     end
     return out
+end
+
+local function clear_headers(secret: any)
+    for k, v in pairs(secret) do
+        if tostring(k):lower() == "headers" then secret[k] = nil
+        elseif type(v) == "table" then clear_headers(v) end
+    end
 end
 
 local function public_profile(profile: any): any
@@ -230,12 +263,12 @@ end
 local function copy_config(input: any, existing_config: any?): any
     local config = {}
     if type(existing_config) == "table" then
-        for k, v in pairs(existing_config) do
+        for k, v in pairs(public_config(existing_config)) do
             config[k] = v
         end
     end
     if type(input.config) == "table" then
-        for k, v in pairs(input.config) do
+        for k, v in pairs(public_config(input.config)) do
             local key = tostring(k)
             if not SECRET_KEYS[key] and not sensitive_config_key(key) then
                 config[key] = v
@@ -255,12 +288,11 @@ local function copy_config(input: any, existing_config: any?): any
 end
 
 local function copy_secret_config(input: any, existing_secret: any?): any
-    local secret_config = {}
-    if type(existing_secret) == "table" then
-        for k, v in pairs(existing_secret) do
-            secret_config[k] = v
-        end
-    end
+    local _, submitted = split_config(input.config)
+    for key, _ in pairs(SECRET_KEYS) do submitted[key] = nil end
+    local secret_config = merge_config(existing_secret, submitted)
+    if input.headers ~= nil then secret_config.headers = input.headers end
+    if input.clear_headers == true then clear_headers(secret_config) end
     for key, _ in pairs(SECRET_KEYS) do
         local clear_key = "clear_" .. key
         if input[clear_key] == true then
@@ -351,16 +383,7 @@ local function provider_context(profile: any): any
     if type(profile) ~= "table" then return {} end
     local config = profile.config or {}
     local secret = profile.secret_config or {}
-    local ctx: any = {}
-    for k, v in pairs(config) do
-        ctx[k] = v
-    end
-    for key, _ in pairs(secret) do
-        if secret_value(secret[key]) ~= nil then
-            ctx[key] = secret[key]
-        end
-    end
-    return ctx
+    return merge_config(config, secret)
 end
 
 local function clean_profile_input(input: any, existing: any?): (any?, string?)
@@ -397,6 +420,8 @@ local function clean_profile_input(input: any, existing: any?): (any?, string?)
 end
 
 
+M.split_config = split_config
+M.merge_config = merge_config
 M.decode_json = decode_json
 M.normalize_list = normalize_list
 M.explicit_list = explicit_list
