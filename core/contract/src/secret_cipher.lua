@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local crypto = require("crypto")
 local base64 = require("base64")
 

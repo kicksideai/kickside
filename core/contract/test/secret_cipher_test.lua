@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
 local cipher = require("secret_cipher")
 local crypto = require("crypto")
