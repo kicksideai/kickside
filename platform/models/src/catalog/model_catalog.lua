@@ -72,7 +72,7 @@ end
 local function sorted_values(map: any): { any }
     local out = {}
     for _, card in pairs(map) do
-        if card.enabled ~= false then table.insert(out, card) end
+        if catalog_card_policy.available(card) then table.insert(out, card) end
     end
     table.sort(out, function(a, b) return tostring(a.name) < tostring(b.name) end)
     return out
@@ -111,7 +111,7 @@ function M.get_by_name(name: string): (any?, any?)
     if err then return nil, err end
     local card = map[name]
     if card and card.error then return nil, card.error end
-    if not card or card.enabled == false then return nil, "No model found with name: " .. name end
+    if not card or not catalog_card_policy.available(card) then return nil, "No model found with name: " .. name end
     return card
 end
 
@@ -148,7 +148,7 @@ function M.resolve(model_identifier: string): (any?, any?)
     if not class_name then
         local card = map[model_identifier]
         if card and card.error then return nil, card.error end
-        if card and card.enabled ~= false then return card end
+        if card and catalog_card_policy.available(card) then return card end
     end
     local class_models = class_cards(sorted_values(map), class_name or model_identifier)
     if #class_models > 0 then

@@ -1,6 +1,6 @@
 -- Recording stand-in for the http module: the admin handlers under test read
 -- their request body from here and report status and payload back to it.
-local M = { CONTENT = { JSON = "application/json" }, STATUS = { OK = 200, BAD_REQUEST = 400 } }
+local M = { CONTENT = { JSON = "application/json" }, STATUS = { OK = 200, BAD_REQUEST = 400, INTERNAL_ERROR = 500 } }
 local raw_body: any = nil
 local last_status: number = 200
 local last_payload: any = nil

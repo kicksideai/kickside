@@ -13,6 +13,8 @@ local card_policy = require("catalog_card_policy")
 
 local M = {}
 
+type Executor = sql.DB | sql.Transaction
+
 local function now(): integer
     return os.time() :: integer
 end
@@ -165,6 +167,62 @@ function M.deliver_profile_changed(change: table): (boolean, error?)
     return sent == true, nil
 end
 
+local function insert_profile(exec: Executor, id: string, cleaned: any, secret_json: string, ts: integer): any?
+    local _, err = exec:execute([[
+        INSERT INTO kickside_model_provider_profiles
+            (id, name, provider_id, config_json, secret_json, enabled, status, message, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, 'unknown', '', $7, $8)
+    ]], { id, cleaned.name, cleaned.provider_id, policy.encode_json(cleaned.config), secret_json, policy.bool_int(cleaned.enabled), ts, ts })
+    if err then return "profile create failed: " .. tostring(err) end
+    return nil
+end
+
+local function update_profile_row(exec: Executor, id: string, cleaned: any, secret_json: string, ts: integer): any?
+    local _, err = exec:execute([[
+        UPDATE kickside_model_provider_profiles
+        SET name = $1, provider_id = $2, config_json = $3, secret_json = $4, enabled = $5, updated_at = $6
+        WHERE id = $7
+    ]], { cleaned.name, cleaned.provider_id, policy.encode_json(cleaned.config), secret_json, policy.bool_int(cleaned.enabled), ts, id })
+    if err then return "profile update failed: " .. tostring(err) end
+    return nil
+end
+
+local function write_card(exec: Executor, card: any, ts: integer): any?
+    local _, err = exec:execute([[
+        INSERT INTO kickside_model_cards
+            (name, title, description, provider_id, provider_profile_id, provider_model,
+             capabilities_json, classes_json, priority, max_tokens, output_tokens,
+             dimensions, pricing_json, options_json, source, enabled, metadata_json,
+             created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+        ON CONFLICT (name) DO UPDATE SET
+            title = excluded.title,
+            description = excluded.description,
+            provider_id = excluded.provider_id,
+            provider_profile_id = excluded.provider_profile_id,
+            provider_model = excluded.provider_model,
+            capabilities_json = excluded.capabilities_json,
+            classes_json = excluded.classes_json,
+            priority = excluded.priority,
+            max_tokens = excluded.max_tokens,
+            output_tokens = excluded.output_tokens,
+            dimensions = excluded.dimensions,
+            pricing_json = excluded.pricing_json,
+            options_json = excluded.options_json,
+            source = excluded.source,
+            enabled = excluded.enabled,
+            metadata_json = excluded.metadata_json,
+            updated_at = excluded.updated_at
+    ]], {
+        card.name, card.title, card.description, card.provider_id, card.provider_profile_id, card.provider_model,
+        policy.encode_json(card.capabilities), policy.encode_json(card.classes), card.priority, card.max_tokens, card.output_tokens,
+        card.dimensions, policy.encode_json(card.pricing), policy.encode_json(card.options), card.source, policy.bool_int(card.enabled),
+        policy.encode_json(card.metadata), ts, ts,
+    })
+    if err then return "model save failed: " .. tostring(err) end
+    return nil
+end
+
 function M.create_profile(input: any): (any?, any?)
     local cleaned, cerr = policy.clean_profile_input(input, nil)
     if not cleaned then return nil, cerr end
@@ -185,14 +243,9 @@ function M.create_profile(input: any): (any?, any?)
     end
     local secret_json, serr = policy.encrypt_secret(cleaned.secret_config)
     if secret_json == nil then dbh:release(); return nil, serr end
-    local ts = now()
-    local _, err = dbh:execute([[
-        INSERT INTO kickside_model_provider_profiles
-            (id, name, provider_id, config_json, secret_json, enabled, status, message, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, 'unknown', '', $7, $8)
-    ]], { id, cleaned.name, cleaned.provider_id, policy.encode_json(cleaned.config), secret_json, policy.bool_int(cleaned.enabled), ts, ts })
+    local err = insert_profile(dbh, id, cleaned, secret_json, now())
     dbh:release()
-    if err then return nil, "profile create failed: " .. tostring(err) end
+    if err then return nil, err end
     local _, reload_err = M.reload()
     if reload_err then return nil, reload_err end
     local _, emit_err = M.emit_profile_changed(id, cleaned.provider_id, nil)
@@ -212,14 +265,9 @@ function M.update_profile(id: string, input: any): (any?, any?)
     local handle, derr = db()
     if not handle then return nil, derr end
     local dbh = handle :: sql.DB
-    local ts = now()
-    local _, err = dbh:execute([[
-        UPDATE kickside_model_provider_profiles
-        SET name = $1, provider_id = $2, config_json = $3, secret_json = $4, enabled = $5, updated_at = $6
-        WHERE id = $7
-    ]], { cleaned.name, cleaned.provider_id, policy.encode_json(cleaned.config), secret_json, policy.bool_int(cleaned.enabled), ts, id })
+    local err = update_profile_row(dbh, id, cleaned, secret_json, now())
     dbh:release()
-    if err then return nil, "profile update failed: " .. tostring(err) end
+    if err then return nil, err end
     local _, reload_err = M.reload()
     if reload_err then return nil, reload_err end
     local _, emit_err = M.emit_profile_changed(id, cleaned.provider_id, existing.provider_id)
@@ -290,7 +338,7 @@ function M.list_cards(): ({ any }?, any?)
     if err then return nil, err end
     local out = {}
     for _, card in ipairs(snap.cards or {}) do
-        if card.enabled ~= false then table.insert(out, card) end
+        if card_policy.available(card) then table.insert(out, card) end
     end
     return out
 end
@@ -333,40 +381,9 @@ function M.upsert_card(input: any, base: any?): (any?, any?)
     local handle, derr = db()
     if not handle then return nil, derr end
     local dbh = handle :: sql.DB
-    local ts = now()
-    local _, err = dbh:execute([[
-        INSERT INTO kickside_model_cards
-            (name, title, description, provider_id, provider_profile_id, provider_model,
-             capabilities_json, classes_json, priority, max_tokens, output_tokens,
-             dimensions, pricing_json, options_json, source, enabled, metadata_json,
-             created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
-        ON CONFLICT (name) DO UPDATE SET
-            title = excluded.title,
-            description = excluded.description,
-            provider_id = excluded.provider_id,
-            provider_profile_id = excluded.provider_profile_id,
-            provider_model = excluded.provider_model,
-            capabilities_json = excluded.capabilities_json,
-            classes_json = excluded.classes_json,
-            priority = excluded.priority,
-            max_tokens = excluded.max_tokens,
-            output_tokens = excluded.output_tokens,
-            dimensions = excluded.dimensions,
-            pricing_json = excluded.pricing_json,
-            options_json = excluded.options_json,
-            source = excluded.source,
-            enabled = excluded.enabled,
-            metadata_json = excluded.metadata_json,
-            updated_at = excluded.updated_at
-    ]], {
-        card.name, card.title, card.description, card.provider_id, card.provider_profile_id, card.provider_model,
-        policy.encode_json(card.capabilities), policy.encode_json(card.classes), card.priority, card.max_tokens, card.output_tokens,
-        card.dimensions, policy.encode_json(card.pricing), policy.encode_json(card.options), card.source, policy.bool_int(card.enabled),
-        policy.encode_json(card.metadata), ts, ts,
-    })
+    local err = write_card(dbh, card, now())
     dbh:release()
-    if err then return nil, "model save failed: " .. tostring(err) end
+    if err then return nil, err end
     local _, reload_err = M.reload()
     if reload_err then return nil, reload_err end
 
@@ -376,6 +393,168 @@ function M.upsert_card(input: any, base: any?): (any?, any?)
         if item.name == card.name then return card_policy.public_card(item) end
     end
     return card_policy.public_card(card)
+end
+
+-- The portable model setup: every provider profile (non-secret config, env
+-- pointers, and the names of omitted stored secrets) and every stored card.
+function M.export(): (any?, any?)
+    local snap, err = M.snapshot()
+    if err then return nil, err end
+    local profiles: { any } = {}
+    for _, profile in ipairs(snap.profiles or {}) do
+        if profile.error then
+            return nil, "profile " .. tostring(profile.id) .. " cannot be exported: " .. tostring(profile.error)
+        end
+        table.insert(profiles, policy.export_profile(profile))
+    end
+    local cards: { any } = {}
+    for _, card in ipairs(snap.cards or {}) do
+        table.insert(cards, card_policy.public_card(card))
+    end
+    return { version = models_types.EXPORT_VERSION, profiles = profiles, cards = cards }
+end
+
+local function import_list(value: any, label: string): ({ any }?, string?)
+    if value == nil then return {} end
+    if type(value) ~= "table" then return nil, label .. " must be a list" end
+    for key, _ in pairs(value) do
+        if type(key) ~= "number" then return nil, label .. " must be a list" end
+    end
+    return value :: { any }
+end
+
+-- Merges an export document into the stored setup by profile id and card name;
+-- nothing is deleted and stored secrets stay. Every item is cleaned against its
+-- stored row before anything is written, and the writes run in one transaction.
+-- Re-importing an unchanged document writes nothing. A refused document returns
+-- (nil, err). A failure after commit returns the report with the error.
+function M.import(doc: any): (any?, any?)
+    if type(doc) ~= "table" then return nil, "import document must be an object" end
+    if doc.version ~= models_types.EXPORT_VERSION then
+        return nil, "unsupported import document version: " .. tostring(doc.version)
+    end
+    local doc_profiles, lerr = import_list(doc.profiles, "profiles")
+    if not doc_profiles then return nil, lerr end
+    local doc_cards, cerr = import_list(doc.cards, "cards")
+    if not doc_cards then return nil, cerr end
+
+    local snap, snap_err = M.snapshot()
+    if snap_err then return nil, snap_err end
+    local stored_profiles: { [string]: any } = {}
+    for _, profile in ipairs(snap.profiles or {}) do stored_profiles[tostring(profile.id)] = profile end
+    local stored_cards: { [string]: any } = {}
+    for _, card in ipairs(snap.cards or {}) do stored_cards[tostring(card.name)] = card end
+
+    local report = {
+        profiles = { created = {}, updated = {}, unchanged = {} },
+        cards = { created = {}, updated = {}, unchanged = {} },
+    }
+    local profile_writes: { any } = {}
+    local card_writes: { any } = {}
+    local seen_profiles: { [string]: boolean } = {}
+    local resulting_providers: { [string]: string } = {}
+    for id, profile in pairs(stored_profiles) do resulting_providers[id] = tostring(profile.provider_id) end
+
+    for index, item in ipairs(doc_profiles) do
+        local id = type(item) == "table" and item.id or nil
+        if type(id) ~= "string" or id == "" or models_types.slug(id) ~= id then
+            return nil, "profiles[" .. tostring(index) .. "]: id must be a slug"
+        end
+        if seen_profiles[id] then return nil, "profile " .. id .. " appears twice" end
+        seen_profiles[id] = true
+        local existing = stored_profiles[id]
+        if existing and existing.error then
+            return nil, "profile " .. id .. " cannot be read: " .. tostring(existing.error)
+        end
+        local cleaned, clean_err = policy.clean_profile_input(item, existing)
+        if not cleaned then return nil, "profile " .. id .. ": " .. tostring(clean_err) end
+        if not policy.same_value(cleaned.secret_config, existing and existing.secret_config or {}) then
+            return nil, "profile " .. id .. ": the import document carries no secrets; set them on the profile or use an *_env pointer"
+        end
+        resulting_providers[id] = cleaned.provider_id
+        if existing and policy.same_value(
+            { cleaned.name, cleaned.provider_id, cleaned.config, cleaned.enabled },
+            { existing.name, existing.provider_id, existing.config, existing.enabled }) then
+            table.insert(report.profiles.unchanged, id)
+        else
+            local secret_json, secret_err = policy.encrypt_secret(cleaned.secret_config)
+            if secret_json == nil then return nil, "profile " .. id .. ": " .. tostring(secret_err) end
+            table.insert(existing and report.profiles.updated or report.profiles.created, id)
+            table.insert(profile_writes, { id = id, cleaned = cleaned, secret_json = secret_json, existing = existing })
+        end
+    end
+
+    local seen_cards: { [string]: boolean } = {}
+    for index, item in ipairs(doc_cards) do
+        local name = type(item) == "table" and item.name or nil
+        if type(name) ~= "string" or name == "" then
+            return nil, "cards[" .. tostring(index) .. "]: name is required"
+        end
+        if seen_cards[name] then return nil, "card " .. name .. " appears twice" end
+        seen_cards[name] = true
+        local base = stored_cards[name]
+        local card, clean_err = card_policy.clean_card_input(item, base)
+        if not card then return nil, "card " .. name .. ": " .. tostring(clean_err) end
+        if card.provider_profile_id ~= nil then
+            local profile_provider = resulting_providers[tostring(card.provider_profile_id)]
+            if profile_provider == nil then
+                return nil, "card " .. name .. ": provider profile " .. tostring(card.provider_profile_id) .. " does not exist"
+            end
+            if profile_provider ~= card.provider_id then
+                return nil, "card " .. name .. ": provider " .. tostring(card.provider_id) .. " does not match its profile's provider " .. profile_provider
+            end
+        end
+        if base and policy.same_value(card, card_policy.clean_card_input({ name = name }, base)) then
+            table.insert(report.cards.unchanged, name)
+        else
+            table.insert(base and report.cards.updated or report.cards.created, name)
+            table.insert(card_writes, card)
+        end
+    end
+
+    if #profile_writes == 0 and #card_writes == 0 then return report end
+
+    local handle, derr = db()
+    if not handle then return nil, derr end
+    local dbh = handle :: sql.DB
+    local tx, txerr = dbh:begin()
+    if txerr or not tx then
+        dbh:release()
+        return nil, "import transaction failed: " .. tostring(txerr)
+    end
+    local ts = now()
+    local write_err: any = nil
+    for _, write in ipairs(profile_writes) do
+        if write.existing then
+            write_err = update_profile_row(tx, write.id, write.cleaned, write.secret_json, ts)
+        else
+            write_err = insert_profile(tx, write.id, write.cleaned, write.secret_json, ts)
+        end
+        if write_err then break end
+    end
+    if not write_err then
+        for _, card in ipairs(card_writes) do
+            write_err = write_card(tx, card, ts)
+            if write_err then break end
+        end
+    end
+    if write_err then
+        tx:rollback()
+        dbh:release()
+        return nil, write_err
+    end
+    local _, commit_err = tx:commit()
+    dbh:release()
+    if commit_err then return nil, "import commit failed: " .. tostring(commit_err) end
+
+    local _, reload_err = M.reload()
+    if reload_err then return report, "import committed; model cache reload failed: " .. tostring(reload_err) end
+    for _, write in ipairs(profile_writes) do
+        local previous = write.existing and write.existing.provider_id or nil
+        local _, emit_err = M.emit_profile_changed(write.id, write.cleaned.provider_id, previous)
+        if emit_err then return report, "import committed; profile change notification failed: " .. tostring(emit_err) end
+    end
+    return report
 end
 
 function M.delete_card(name: string): (boolean, any?)

@@ -157,3 +157,15 @@ export interface ProviderEditorSpec {
   icon: string
   fields: ProviderField[]
 }
+
+export interface ImportChanges {
+  created: string[]
+  updated: string[]
+  unchanged: string[]
+}
+
+export interface ImportReport {
+  success: boolean
+  profiles: ImportChanges
+  cards: ImportChanges
+}

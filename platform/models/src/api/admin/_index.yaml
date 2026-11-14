@@ -150,3 +150,37 @@ entries:
     method: DELETE
     func: delete_card
     path: /models/cards
+
+  - name: export
+    kind: function.lua
+    meta:
+      comment: GET /models/export — provider profiles (no secret values) and stored model cards as one portable document.
+    source: file://export_models.lua
+    modules: [http]
+    imports:
+      models_repo: kickside.models.persist:repo
+    method: handler
+
+  - name: export.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: export
+    path: /models/export
+
+  - name: import
+    kind: function.lua
+    meta:
+      comment: POST /models/import — merges an export document in one transaction and reports created, updated, and unchanged items.
+    source: file://import_models.lua
+    modules: [http, json]
+    imports:
+      models_repo: kickside.models.persist:repo
+    method: handler
+
+  - name: import.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: POST
+    func: import
+    path: /models/import

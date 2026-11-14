@@ -71,6 +71,10 @@ entries:
         path: .meta.router
       - entry: kickside.models.api.admin:delete_card.endpoint
         path: .meta.router
+      - entry: kickside.models.api.admin:export.endpoint
+        path: .meta.router
+      - entry: kickside.models.api.admin:import.endpoint
+        path: .meta.router
 
   - name: ui_server
     kind: ns.requirement
