@@ -114,6 +114,17 @@ local function public_config(config: any): any
     return out
 end
 
+local function same_value(a: any, b: any): boolean
+    if type(a) ~= "table" or type(b) ~= "table" then return a == b end
+    for k, v in pairs(a) do
+        if not same_value(v, b[k]) then return false end
+    end
+    for k, _ in pairs(b) do
+        if a[k] == nil then return false end
+    end
+    return true
+end
+
 local function public_profile(profile: any): any
     local config = public_config(profile.config)
     local secret_fields = {}
@@ -143,6 +154,20 @@ local function public_profile(profile: any): any
         has_api_key = type(profile.secret_config) == "table" and type(profile.secret_config.api_key) == "string" and profile.secret_config.api_key ~= "",
         has_api_key_env = type(config.api_key_env) == "string" and config.api_key_env ~= "",
         secret_fields = secret_fields,
+    }
+end
+
+-- A profile in the export document: its public settings and the names of the
+-- stored secrets the document leaves out.
+local function export_profile(profile: any): any
+    local public = public_profile(profile)
+    return {
+        id = public.id,
+        name = public.name,
+        provider_id = public.provider_id,
+        enabled = public.enabled,
+        config = public.config,
+        secret_fields = #public.secret_fields > 0 and public.secret_fields or nil,
     }
 end
 
@@ -408,6 +433,8 @@ M.encrypt_secret = encrypt_secret
 M.decrypt_secret = decrypt_secret
 M.provider_context = provider_context
 M.public_profile = public_profile
+M.export_profile = export_profile
+M.same_value = same_value
 M.clean_profile_input = clean_profile_input
 
 return M

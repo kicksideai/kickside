@@ -7,5 +7,7 @@ cp "$models_test_dir/../src/api/list_models.lua" "$models_test_dir/fixtures/list
 # source (sources outside the harness directory cannot be referenced).
 cp "$models_test_dir/../src/api/admin/upsert_card.lua" "$models_test_dir/fixtures/upsert_card.lua"
 cp "$models_test_dir/../src/api/admin/get_admin.lua" "$models_test_dir/fixtures/get_admin.lua"
+cp "$models_test_dir/../src/api/admin/export_models.lua" "$models_test_dir/fixtures/export_models.lua"
+cp "$models_test_dir/../src/api/admin/import_models.lua" "$models_test_dir/fixtures/import_models.lua"
 
 cp "$models_test_dir/../src/discovery/reference_openrouter.lua" "$models_test_dir/fixtures/reference_openrouter.lua"

@@ -51,10 +51,17 @@ local function build_card(row: any, profile: any?): (any?, any?)
         dimensions = tonumber(row.dimensions),
         source = row.source or models_types.SOURCE_MANUAL,
         provider_profile_id = row.provider_profile_id,
-        enabled = tonumber(row.enabled) ~= 0 and not (profile and (profile.error or profile.enabled == false)),
+        enabled = tonumber(row.enabled) ~= 0,
+        profile_enabled = not (profile and profile.enabled == false),
         error = profile and profile.error or nil,
         metadata = metadata,
     }
+end
+
+-- A card serves requests when it is enabled and its provider profile is
+-- readable and enabled. `enabled` itself is the card's own stored setting.
+local function available(card: any): boolean
+    return card.enabled ~= false and card.error == nil and card.profile_enabled ~= false
 end
 
 local function public_card(card: any): any
@@ -145,6 +152,7 @@ local function clean_card_input(input: any, base: any?): (any?, string?)
 end
 
 M.build_card = build_card
+M.available = available
 M.public_card = public_card
 M.clean_card_input = clean_card_input
 

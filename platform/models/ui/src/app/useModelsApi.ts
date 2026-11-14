@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { api } from '@wippy-fe/proxy'
-import type { Adapter, ClassGroup, ModelCard, Preset, Profile } from '../types.ts'
+import type { Adapter, ClassGroup, ImportReport, ModelCard, Preset, Profile } from '../types.ts'
 
 // Admin data store for the models surface. Owns the four admin collections, the
 // load lifecycle, and the profile / card mutations. Every mutation reloads the
@@ -102,6 +102,30 @@ export function useModelsApi() {
     return mutate(() => api.delete(`/api/v1/models/cards?name=${encodeURIComponent(name)}`).then(() => {}), 'failed to delete model')
   }
 
+  // The portable model setup document (GET /models/export): profiles without
+  // secret values, and the stored model cards.
+  async function exportSetup(): Promise<unknown | null> {
+    error.value = ''
+    try {
+      const { data } = await api.get('/api/v1/models/export')
+      return data
+    } catch (e) {
+      error.value = messageOf(e, 'failed to export models')
+      return null
+    }
+  }
+
+  // Merges an export document (POST /models/import); the report lists created,
+  // updated and unchanged profile ids and card names.
+  async function importSetup(doc: unknown): Promise<ImportReport | null> {
+    let report: ImportReport | null = null
+    const ok = await mutate(async () => {
+      const { data } = await api.post('/api/v1/models/import', doc)
+      report = data as ImportReport
+    }, 'failed to import models')
+    return ok ? report : null
+  }
+
   async function discover(id: string): Promise<{ ok: boolean; message: string }> {
     discovering.value = id
     error.value = ''
@@ -163,5 +187,6 @@ export function useModelsApi() {
     adapters, presets, profiles, models, classes,
     loading, saving, discovering, probing, error,
     load, loadClasses, saveProfile, deleteProfile, saveCard, saveCards, deleteCard, discover, testProfile, testModel,
+    exportSetup, importSetup,
   }
 }

@@ -1,0 +1,42 @@
+version: "1.0"
+namespace: app
+
+# Contract suite for exporting and importing provider profiles and model cards.
+# The export and import handlers run from their real source files (copied into
+# ../fixtures by test/prepare.sh) against the recording HTTP fake. Provider and
+# model names are synthetic; no network call is made.
+
+entries:
+  - name: models_io_export
+    kind: library.lua
+    meta: { comment: The real GET /models/export handler source. }
+    source: file://../fixtures/export_models.lua
+    imports:
+      http: app:card_save_fake_http
+      models_repo: kickside.models.persist:repo
+
+  - name: models_io_import
+    kind: library.lua
+    meta: { comment: The real POST /models/import handler source. }
+    source: file://../fixtures/import_models.lua
+    modules: [json]
+    imports:
+      http: app:card_save_fake_http
+      models_repo: kickside.models.persist:repo
+
+  - name: models_io_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_models_io
+      comment: Export and import reproduce profiles and cards without secrets, idempotently and atomically.
+    source: file://models_io_test.lua
+    modules: [json, sql, registry, security]
+    method: run
+    imports:
+      test: wippy.test:test
+      fake_http: app:card_save_fake_http
+      export_handler: app:models_io_export
+      import_handler: app:models_io_import
+      models_repo: kickside.models.persist:repo
+      model_catalog: kickside.models.catalog:model_catalog

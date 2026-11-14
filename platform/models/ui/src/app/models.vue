@@ -3,7 +3,7 @@ import SystemTabs from '@kickside/ui-kit/SystemTabs.vue'
 import { computed, ref, watch } from 'vue'
 import { host } from '@wippy-fe/proxy'
 import { useHostVisibilityRefresh } from '@wippy-fe/webcomponent-vue'
-import type { ModelCard, ModelProbeState, Preset, Profile, TestState } from '../types.ts'
+import type { ImportChanges, ModelCard, ModelProbeState, Preset, Profile, TestState } from '../types.ts'
 import { Drawer, IconButton, Notice, RailHeader, Shell, Spinner } from './shared'
 import ProviderList from './ProviderList.vue'
 import ModelPool from './ModelPool.vue'
@@ -44,6 +44,8 @@ const editingModel = ref<ModelCard | null>(null)
 const testState = ref<TestState>({ status: 'idle' })
 const probeState = ref<ModelProbeState>({ status: 'idle' })
 const probeDetailsModel = ref('')
+const importInput = ref<HTMLInputElement | null>(null)
+const importSummary = ref('')
 
 // Capability / class suggestion universe for the model editor, drawn from the
 // live catalog so token inputs propose what already exists.
@@ -185,6 +187,38 @@ function onProbeDetailsToggle(model: ModelCard) {
   probeDetailsModel.value = probeDetailsModel.value === model.name ? '' : model.name
 }
 
+async function onExport() {
+  const doc = await store.exportSetup()
+  if (!doc) return
+  const url = URL.createObjectURL(new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'models-export.json'
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+function changeSummary(label: string, changes: ImportChanges): string {
+  return `${label}: ${changes.created.length} created, ${changes.updated.length} updated, ${changes.unchanged.length} unchanged`
+}
+
+async function onImportFile(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  importSummary.value = ''
+  let doc: unknown
+  try {
+    doc = JSON.parse(await file.text())
+  } catch {
+    error.value = `${file.name} is not valid JSON`
+    return
+  }
+  const report = await store.importSetup(doc)
+  if (report) importSummary.value = `${changeSummary('Providers', report.profiles)}. ${changeSummary('Models', report.cards)}.`
+}
+
 async function askDeleteProfile(profile: Profile) {
   const ok = await host.confirm({
     header: 'Delete provider',
@@ -228,6 +262,7 @@ useHostVisibilityRefresh(async () => {
       { value: 'classes', label: 'Classes', count: classes.length },
     ]" @update:value="view = $event as typeof view" />
     <Notice v-if="error" severity="danger" class="km-top-notice" @dismiss="error = ''">{{ error }}</Notice>
+    <Notice v-if="importSummary" class="km-top-notice" @dismiss="importSummary = ''">{{ importSummary }}</Notice>
 
     <Spinner v-if="loading && !models.length && !profiles.length" label="Loading models…" />
 
@@ -237,6 +272,9 @@ useHostVisibilityRefresh(async () => {
           <template #actions>
             <IconButton icon="tabler:plus" label="Add provider" :disabled="saving" @click="openAdd" />
             <IconButton icon="tabler:refresh" label="Refresh" :disabled="loading" :spin="loading" @click="store.load" />
+            <IconButton icon="tabler:download" label="Export models" :disabled="saving" @click="onExport" />
+            <IconButton icon="tabler:upload" label="Import models" :disabled="saving" @click="importInput?.click()" />
+            <input ref="importInput" type="file" accept="application/json,.json" hidden @change="onImportFile" />
           </template>
         </RailHeader>
         <div class="kx-rail-body">

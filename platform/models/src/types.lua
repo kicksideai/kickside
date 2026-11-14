@@ -19,6 +19,9 @@ M.SOURCE_OVERLAY = "overlay"
 
 M.DEFAULT_PROVIDER = "wippy.llm.openai_compat:provider"
 
+-- Version of the GET /models/export and POST /models/import document.
+M.EXPORT_VERSION = 1
+
 -- Topic a provider profile write broadcasts to. Provider-owned background
 -- services (e.g. the Vertex token supervisor) subscribe and self-filter by
 -- provider; the write path never targets a service by provider name.
