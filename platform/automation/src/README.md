@@ -73,6 +73,30 @@ that ID conflicts. `set_execution_identity` is an ADMIN control for changing the
 execution principal and also requires a caller ID and expected identity
 generation.
 
+## Reconfiguration revisions
+
+`automations.reconfigure(id, input, {expected_revision = revision})` accepts an
+optional non-negative integer Component `context_revision` (the `context`
+subject version returned by Component `locate`). The generic action is
+`call_action(id, "reconfigure", {declaration = input, expected_revision = revision})`;
+`PUT /api/v1/automations/{id}` accepts `{input, expected_revision}`.
+Omitting the revision preserves unconditional reconfiguration.
+
+The engine forwards `{expected_revision}` as the second argument to the kind's
+`reconfigure(input, options?)`. Kinds pass it to
+`update_portable_input(id, declaration, {expected_revision = options.expected_revision, ...})`
+alongside their planned source, state, and public metadata. Recurring tasks and
+Data Sync implement this contract. The trusted writer carries the precondition
+in the durable declaration command; Component checks it under the component row
+lock in the transaction that writes the declaration, state, metadata and fence.
+Automation requires Component >=0.3.19, which implements this receipt field.
+A mismatch returns a nonretryable native `CONFLICT` (HTTP 409) without changing
+those values or applying the planned source update. Two edits with the same
+revision can produce at most one accepted configuration. A replay of the already
+applied command succeeds through its receipt even after its revision advances.
+Command reservation and failure receipts remain part of the command history.
+No caller-side pre-read substitutes for this check.
+
 ## Authority-bearing inputs
 
 Kind input schemas can mark a field with `x-authority: subject`. Only the
