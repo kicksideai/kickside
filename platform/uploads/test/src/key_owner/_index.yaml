@@ -2,34 +2,165 @@
 version: '1.0'
 namespace: app
 entries:
-  - name: key_owner_test
-    kind: function.lua
-    meta: {type: test, suite: key_owner}
-    source: file://../key_owner_test.lua
-    method: run
-    modules: [funcs, security, env]
-    imports:
-      test: wippy.test:test
-      upload_tokens: kickside.uploads.persist:upload_tokens
-  - name: key_owner_probe
-    kind: function.lua
-    source: file://../key_owner_test.lua
-    method: probe
-    modules: [funcs, security, env]
-    imports:
-      test: wippy.test:test
-      upload_tokens: kickside.uploads.persist:upload_tokens
-
-  - name: key_owner_caller
-    kind: security.policy
-    policy:
-      resources: '*'
-      actions: [funcs.call, funcs.security, registry.get, registry.find, db.get, store.get, store.key.get, store.key.set, process.registry.lookup, process.send, pg.open, pg.broadcast]
-      effect: allow
-
-  - name: key_owner_probe_call
-    kind: security.policy
-    policy:
-      resources: [app:key_owner_probe]
-      actions: [funcs.call, funcs.security]
-      effect: allow
+- name: key_owner_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: key_owner
+  source: file://../key_owner_test.lua
+  method: run
+  modules:
+  - funcs
+  - security
+  - env
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    upload_tokens: kickside.uploads.persist:upload_tokens
+    records: kickside.uploads.persist:upload_record_repo
+    types: kickside.uploads:types
+- name: key_owner_probe
+  kind: function.lua
+  source: file://../key_owner_test.lua
+  method: probe
+  modules:
+  - funcs
+  - security
+  - env
+  - sql
+  - uuid
+  imports:
+    test: wippy.test:test
+    upload_tokens: kickside.uploads.persist:upload_tokens
+    records: kickside.uploads.persist:upload_record_repo
+    types: kickside.uploads:types
+- name: key_owner_caller
+  kind: security.policy
+  policy:
+    resources: '*'
+    actions:
+    - funcs.call
+    - funcs.security
+    - registry.get
+    - registry.find
+    - db.get
+    - store.get
+    - store.key.get
+    - store.key.set
+    - process.registry.lookup
+    - process.send
+    - pg.open
+    - pg.broadcast
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.security
+    effect: allow
+- name: key_owner_probe_call
+  kind: security.policy
+  policy:
+    resources:
+    - app:key_owner_probe
+    actions:
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: read_token_authorization_test
+  kind: function.lua
+  source: file://../key_owner_authorization_test.lua
+  method: run
+  modules:
+  - uuid
+  - security
+  - funcs
+  - env
+  - sql
+  - time
+  imports:
+    test: wippy.test:test
+    records: kickside.uploads.persist:upload_record_repo
+    tokens: kickside.uploads.persist:upload_tokens
+    raw: app:upload_raw_fixture
+    http_probe: app:upload_http_probe
+    types: kickside.uploads:types
+  meta:
+    type: test
+    suite: key_owner
+- name: read_token_probe
+  kind: function.lua
+  source: file://../key_owner_authorization_test.lua
+  method: probe
+  modules:
+  - uuid
+  - security
+  - funcs
+  - env
+  - sql
+  - time
+  imports:
+    test: wippy.test:test
+    records: kickside.uploads.persist:upload_record_repo
+    tokens: kickside.uploads.persist:upload_tokens
+    raw: app:upload_raw_fixture
+    http_probe: app:upload_http_probe
+    types: kickside.uploads:types
+- name: read_token_raw_probe
+  kind: function.lua
+  source: file://../key_owner_authorization_test.lua
+  method: raw_probe
+  modules:
+  - uuid
+  - security
+  - funcs
+  - env
+  - sql
+  - time
+  imports:
+    test: wippy.test:test
+    records: kickside.uploads.persist:upload_record_repo
+    tokens: kickside.uploads.persist:upload_tokens
+    raw: app:upload_raw_fixture
+    http_probe: app:upload_http_probe
+    types: kickside.uploads:types
+- name: read_token_probe_call
+  kind: security.policy
+  policy:
+    resources:
+    - app:read_token_probe
+    - app:read_token_raw_probe
+    actions:
+    - funcs.call
+    - funcs.security
+    - funcs.context
+    effect: allow
+- name: read_token_runtime
+  kind: security.policy
+  policy:
+    resources: '*'
+    actions:
+    - registry.get
+    - registry.find
+    - db.get
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.security
+    effect: allow
+- name: read_token_issuer
+  kind: security.policy
+  policy:
+    resources:
+    - kickside.uploads.tokens:pack_read
+    actions:
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: read_token_empty
+  kind: security.policy
+  policy:
+    resources:
+    - app:unused
+    actions:
+    - funcs.call
+    effect: allow

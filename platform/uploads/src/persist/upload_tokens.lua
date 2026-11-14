@@ -104,6 +104,11 @@ local function pack_read(params)
     if ttl <= 0 then return nil, "expires_in must be positive" end
     if ttl > MAX_READ_TTL_SECONDS then ttl = MAX_READ_TTL_SECONDS end
 
+    local upload, lookup_err = require("upload_query_repo").get(params.upload_id)
+    if lookup_err then return nil, lookup_err end
+    local _, access_err = require("original_read").authorize({uuid = params.upload_id, actor_id = upload.actor_id :: string})
+    if access_err then return nil, access_err end
+
     local now = os.time()
     local payload = {
         purpose = READ_PURPOSE,

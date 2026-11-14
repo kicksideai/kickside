@@ -4,13 +4,27 @@ local funcs=require("funcs")
 local security=require("security")
 local env=require("env")
 local owner=require("upload_tokens")
+local sql=require("sql")
+local uuid=require("uuid")
+local records=require("records")
+local types=require("types")
+local function fixture(id,actor)
+    local container=types.component_id_for_owner(actor)
+    local db=assert(sql.get("app:db"))
+    assert(db:execute([[INSERT INTO kickside_components(component_id,impl_id,private_context,created_at,updated_at)
+        VALUES($1,'kickside.uploads:uploads_component','{}',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) ON CONFLICT DO NOTHING]],{container}))
+    assert(db:execute([[INSERT INTO kickside_component_access(access_id,subject_id,subject_type,component_id,source_component_id,access_mask,created_at)
+        VALUES($1,$2,'user',$3,$4,15,CURRENT_TIMESTAMP) ON CONFLICT DO NOTHING]],{uuid.v4(),actor,container,container}))
+    db:release()
+    assert(records.create(id,actor,5,"text/plain","app:uploads",id,"kickside.uploads:types.generic",{},"completed"))
+end
 
 local function operation(): any
-    local callback, callback_err = owner.pack({upload_id="key-owner-upload",function_id="app:key_owner_callback",actor_id="member",actor_context={}})
+    local callback, callback_err = owner.pack({upload_id="11111111-1111-4111-8111-111111111111",function_id="app:key_owner_callback",actor_id="member",actor_context={}})
     local unpacked, unpack_err = owner.unpack(callback)
-    local token, read_err = owner.pack_read({upload_id="key-owner-upload"})
-    local read, verify_err = owner.unpack_read(token,{upload_id="key-owner-upload"})
-    return {success=unpacked ~= nil and unpacked.upload_id=="key-owner-upload" and read ~= nil and read.upload_id=="key-owner-upload",
+    local token, read_err = owner.pack_read({upload_id="11111111-1111-4111-8111-111111111111"})
+    local read, verify_err = owner.unpack_read(token,{upload_id="11111111-1111-4111-8111-111111111111"})
+    return {success=unpacked ~= nil and unpacked.upload_id=="11111111-1111-4111-8111-111111111111" and read ~= nil and read.upload_id=="11111111-1111-4111-8111-111111111111",
         error=tostring(callback_err or unpack_err or read_err or verify_err)}
 end
 
@@ -25,8 +39,15 @@ end
 
 local function define_tests()
     test.describe("Uploads key ownership",function()
-        test.it("keeps the published token methods callable with existing module runtime authority",function()
-            local scope=security.new_scope({assert(security.policy("app:key_owner_probe_call")),assert(security.policy("kickside.uploads.security:module_runtime"))})
+        test.before_all(function()
+            fixture("11111111-1111-4111-8111-111111111111","member")
+            fixture("22222222-2222-4222-8222-222222222222",security.actor():id())
+        end)
+        test.it("keeps token methods callable through explicit owner admission",function()
+            local scope=security.new_scope({assert(security.policy("app:key_owner_probe_call")),assert(security.policy("kickside.uploads.security:module_runtime")),
+                assert(security.policy("kickside.uploads:token_call")),
+                assert(security.policy("app:read_token_runtime")),
+                assert(security.policy("kickside.uploads.security:uploads_resource_access"))})
             local result,err=funcs.new():with_actor(security.new_actor("member",{})):with_scope(scope):call("app:key_owner_probe")
             test.is_nil(err,tostring(err));test.is_true(result.success,tostring(result.error))
             test.is_true(result.before_denied);test.is_true(result.after_denied)
@@ -46,10 +67,10 @@ local function define_tests()
                     test.is_nil(callback_err,tostring(callback_err));test.eq(callback.upload_id,"legacy-upload")
                     local read,read_err=owner.unpack_read(fixture.read,{upload_id="legacy-upload"})
                     test.is_nil(read_err,tostring(read_err));test.eq(read.upload_id,"legacy-upload")
-                    local packed,pack_err=owner.pack_read({upload_id="key-width-upload"})
+                    local packed,pack_err=owner.pack_read({upload_id="22222222-2222-4222-8222-222222222222"})
                     test.is_nil(pack_err,tostring(pack_err));test.not_nil(packed)
-                    local opened,open_err=owner.unpack_read(packed,{upload_id="key-width-upload"})
-                    test.is_nil(open_err,tostring(open_err));test.eq(opened.upload_id,"key-width-upload")
+                    local opened,open_err=owner.unpack_read(packed,{upload_id="22222222-2222-4222-8222-222222222222"})
+                    test.is_nil(open_err,tostring(open_err));test.eq(opened.upload_id,"22222222-2222-4222-8222-222222222222")
                 end
             end)
             local _,restore_err=env.set("ENCRYPTION_KEY",previous)
@@ -66,7 +87,7 @@ local function define_tests()
         end)
 
         test.it("keeps encryption in the owner while the caller cannot read the key",function()
-            local scope=security.new_scope({assert(security.policy("app:key_owner_caller"))})
+            local scope=security.new_scope({assert(security.policy("app:key_owner_caller")),assert(security.policy("kickside.uploads.security:uploads_resource_access"))})
             local result,err=funcs.new():with_actor(security.new_actor("member",{})):with_scope(scope):call("app:key_owner_probe")
             test.is_nil(err,tostring(err))
             test.is_true(result.before_denied)

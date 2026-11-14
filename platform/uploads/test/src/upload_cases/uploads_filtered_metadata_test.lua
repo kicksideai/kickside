@@ -310,7 +310,17 @@ local function define_tests()
         end)
 
         test.it("packs narrow upload read capabilities without execution identity", function()
-            local upload_id = "read-token-" .. uuid_v4()
+            local upload_id = uuid_v4()
+            local actor=security.actor():id()
+            local container=upload_types.component_id_for_owner(actor)
+            local db=assert(sql.get("app:db"))
+            assert(db:execute([[INSERT INTO kickside_components(component_id,impl_id,private_context,created_at,updated_at)
+                VALUES($1,'kickside.uploads:uploads_component','{}',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) ON CONFLICT DO NOTHING]],{container}))
+            assert(db:execute([[INSERT INTO kickside_component_access(access_id,subject_id,subject_type,component_id,source_component_id,access_mask,created_at)
+                VALUES($1,$2,'user',$3,$4,15,CURRENT_TIMESTAMP) ON CONFLICT DO NOTHING]],{uuid_v4(),actor,container,container}))
+            db:release()
+            assert(upload_record_repo.create(upload_id,actor,5,"text/plain","app:uploads",upload_id,
+                "kickside.uploads:types.generic",{},"completed"))
             local token, err = upload_tokens.pack_read({
                 upload_id = upload_id,
                 artifact_id = "artifact-1",

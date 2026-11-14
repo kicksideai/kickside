@@ -971,8 +971,9 @@ entries:
     source: file://delivery_url_test.lua
     method: run
     meta: {type: test, suite: upload_delivery}
-    modules: [uuid, time]
+    modules: [uuid, time, security, sql]
     imports:
+      types: kickside.uploads:types
       test: wippy.test:test
       uploads: app:delivery_uploads
       records: kickside.uploads.persist:upload_record_repo

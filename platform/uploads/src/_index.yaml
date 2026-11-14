@@ -525,7 +525,7 @@ entries:
       resources:
         - kickside.uploads.persist:token_pack
         - kickside.uploads.persist:token_unpack
-        - kickside.uploads.persist:token_pack_read
+        - kickside.uploads.tokens:pack_read
         - kickside.uploads.persist:token_unpack_read
       actions: [funcs.call, funcs.security]
       effect: allow

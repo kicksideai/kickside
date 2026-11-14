@@ -15,7 +15,7 @@ function M.unpack(token)
 end
 
 function M.pack_read(params)
-    local result, err = funcs.call("kickside.uploads.persist:token_pack_read", params)
+    local result, err = funcs.call("kickside.uploads.tokens:pack_read", params)
     if err then error(err, 0) end
     return result.value, result.error
 end

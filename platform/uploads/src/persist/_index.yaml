@@ -199,6 +199,8 @@ entries:
     modules: [crypto, base64, json, env]
     imports:
       secret_cipher: kickside.contract:secret_cipher
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      original_read: kickside.uploads:original_read
     security:
       policies: [kickside.uploads:secret_key_access]
 
@@ -209,16 +211,8 @@ entries:
     modules: [crypto, base64, json, env]
     imports:
       secret_cipher: kickside.contract:secret_cipher
-    security:
-      policies: [kickside.uploads:secret_key_access]
-
-  - name: token_pack_read
-    kind: function.lua
-    source: file://upload_tokens.lua
-    method: pack_read_entry
-    modules: [crypto, base64, json, env]
-    imports:
-      secret_cipher: kickside.contract:secret_cipher
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      original_read: kickside.uploads:original_read
     security:
       policies: [kickside.uploads:secret_key_access]
 
@@ -229,5 +223,7 @@ entries:
     modules: [crypto, base64, json, env]
     imports:
       secret_cipher: kickside.contract:secret_cipher
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
+      original_read: kickside.uploads:original_read
     security:
       policies: [kickside.uploads:secret_key_access]

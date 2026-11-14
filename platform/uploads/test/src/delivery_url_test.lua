@@ -6,13 +6,24 @@ local tokens = require("tokens")
 local cloud = require("cloud")
 local uuid = require("uuid")
 local time = require("time")
+local security=require("security")
+local sql=require("sql")
+local types=require("types")
 
 return {run = test.run_cases(function()
     test.describe("authorized upload delivery", function()
         local api = uploads
         local function record(path)
             local id = uuid.v4()
-            assert(records.create(id, uuid.v4(), 5, "application/pdf", "app:uploads", path,
+            local actor=security.actor():id()
+            local container=types.component_id_for_owner(actor)
+            local db=assert(sql.get("app:db"))
+            assert(db:execute([[INSERT INTO kickside_components(component_id,impl_id,private_context,created_at,updated_at)
+                VALUES($1,'kickside.uploads:uploads_component','{}',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) ON CONFLICT DO NOTHING]],{container}))
+            assert(db:execute([[INSERT INTO kickside_component_access(access_id,subject_id,subject_type,component_id,source_component_id,access_mask,created_at)
+                VALUES($1,$2,'user',$3,$4,15,CURRENT_TIMESTAMP) ON CONFLICT DO NOTHING]],{uuid.v4(),actor,container,container}))
+            db:release()
+            assert(records.create(id, actor, 5, "application/pdf", "app:uploads", path,
                 "kickside.uploads:types.generic", {filename = "document.pdf"}, "completed"))
             return id
         end
