@@ -44,8 +44,6 @@ function M.run_proc_supervised(...: any): (any, error?) return M.outcome("proc",
 function M.process_host(): (any, error?) return M.outcome("process_host", "app:host") end
 function M.is_deterministic_kind(_kind: any): boolean return true end
 function M.fail(...: any): (any, error?) return M.outcome("failure", {}) end
-function M.append_writes(...: any): (any, error?) return {}, nil end
-function M.next_body(before: any, output: any): (any, error?) return output.body or before, nil end
 function M.advance(...: any): (any, error?)
     M.advances = M.advances + 1
     return M.outcome("advance", {last_seq = 1})

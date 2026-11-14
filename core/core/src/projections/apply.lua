@@ -2,9 +2,7 @@
 -- locked before its cursor, and any worker-requested event writes are applied
 -- in this same transaction. A stale generation or head cannot publish a fold.
 local sql = require("sql")
-local types = require("types")
 local json = require("json")
-local uuid = require("uuid")
 local clock = require("clock")
 local registry = require("registry")
 local threads_writer = require("threads_writer")
@@ -77,11 +75,10 @@ local function dense_array(value: any): boolean
     return count == #value
 end
 
-local function append_writes(output: table, source_id: string, body: table, projection_id: string, input_event_id: string?): (table[]?, error?)
+local function append_writes(output: table, source_id: string, body: table): (table[]?, error?)
     if output.append_events == nil then return {}, nil end
     if not dense_array(output.append_events) then return nil, invalid("append_events must be a dense array") end
     local writes: table[] = {}
-    local output_index = 0
     local types = input_type_set(body)
     for i, write in ipairs(output.append_events) do
         if type(write) ~= "table" or type(write.thread_id) ~= "string" or write.thread_id == "" then
@@ -99,24 +96,6 @@ local function append_writes(output: table, source_id: string, body: table, proj
             end
             local copy: table = {}
             for key, value in pairs(event) do copy[key] = value end
-            if copy.id ~= nil and type(copy.id) ~= "string" then
-                return nil, invalid("append event id must be a string")
-            end
-            output_index = output_index + 1
-            local external = type(copy.external) == "table" and copy.external or nil
-            local identified = type(copy.id) == "string" and copy.id:find("%S") ~= nil
-                or (external and type(external.external_source) == "string" and external.external_source:find("%S") ~= nil
-                    and type(external.external_id) == "string" and external.external_id:find("%S") ~= nil)
-            if not identified then
-                if type(input_event_id) ~= "string" or input_event_id == "" then
-                    return nil, response_error("append.input_event_id")
-                end
-                local id, id_err = uuid.v5("6ba7b811-9dad-11d1-80b4-00c04fd430c8",
-                    table.concat({"kickside.projection.output", projection_id, input_event_id, tostring(output_index)}, "\0"))
-                if id_err then return nil, errors.wrap(id_err, "projection output identity failed") end
-                if type(id) ~= "string" or id == "" then return nil, response_error("append.id") end
-                copy.id = id
-            end
             if copy.body_json ~= nil and type(copy.body_json) ~= "string" then
                 return nil, invalid("append event body_json must be JSON")
             end
@@ -134,10 +113,8 @@ local function append_writes(output: table, source_id: string, body: table, proj
     return writes, nil
 end
 
-M.append_writes = append_writes
-
 local function next_body(before: table, output: table): (table?, error?)
-    local status = before.declaration_status
+    local declaration_status = before.declaration_status
     local result: table = before
     if output.body ~= nil then
         if type(output.body) ~= "table" then return nil, invalid("projection worker body must be an object") end
@@ -149,11 +126,9 @@ local function next_body(before: table, output: table): (table?, error?)
     for _, key in ipairs({ "meta", "worker_config", "events", "drop_notify" }) do
         if result[key] == nil then result[key] = before[key] end
     end
-    result.declaration_status = status
+    result.declaration_status = declaration_status
     return result, nil
 end
-
-M.next_body = next_body
 
 local function completion(tx: sql.Transaction, job: table, opts: table): (table?, error?)
     local done, err = jobs.complete_tx(tx, tostring(job.id), {
@@ -207,16 +182,6 @@ local function advance_tx(db: sql.DB, job: table, snapshot: table, prefetched_la
         return { self_completed = true, completion = done, stale = true }, nil
     end
 
-    local projections, projection_err = tx:query("SELECT body FROM kickside_projection WHERE id=$1" .. suffix,
-        {snapshot.projection_id})
-    if projection_err then return abort(errors.wrap(projection_err, "projection body read failed")) end
-    if type(projections) ~= "table" or #projections ~= 1 then return abort(response_error("projection.rows")) end
-    local current_body, decode_err = json.decode(projections[1].body)
-    if decode_err then return abort(errors.wrap(decode_err, "projection body decode failed")) end
-    if type(current_body) ~= "table" then return abort(response_error("projection.body")) end
-    -- Destination proof belongs to the shared projection, not a cursor snapshot.
-    body.declaration_status = current_body.declaration_status
-
     local prior = tonumber(snapshot.last_seq)
     if prior == nil then return abort(response_error("cursor.last_seq")) end
     local last = prefetched_last
@@ -229,40 +194,20 @@ local function advance_tx(db: sql.DB, job: table, snapshot: table, prefetched_la
     end
     local folded, fold_err = next_body(body, output)
     if fold_err then return abort(fold_err) end
-    local status = folded and folded.declaration_status
-    local rebuild_until = type(status) == "table" and tonumber(status.rebuild_until_seq) or nil
-    local abandoned = false
-    if rebuild_until ~= nil and prior < rebuild_until then
-        local history = status.output_history
-        if type(history) ~= "table" or type(history.destinations) ~= "table" then
-            return abort(response_error("output_history"))
-        end
-        for _, write in ipairs(writes) do
-            local earliest = history.destinations[write.thread_id]
-            if earliest ~= nil then
-                local destination = locked_threads[write.thread_id]
-                if destination == nil then abandoned = true; break end
-                local boundary = tonumber(destination.max_pruned_seq)
-                if boundary == nil or type(earliest) ~= "number" then
-                    return abort(response_error("output_history.boundary"))
-                end
-                if boundary >= earliest then abandoned = true; break end
-            end
-        end
-        if abandoned then
-            -- Discard this page's fold and every output before any append.
-            folded = current_body
-            last = current_head
-            status.reason, status.from_seq = "outputs pruned during rebuild", current_head + 1
-            local fenced, fence_err = tx:execute([[UPDATE kickside_projection_cursor SET generation=generation+1,
-                last_seq=$1,last_error=NULL,updated_at=$2 WHERE projection_id=$3]],
-                {last, clock.now(dbtype), snapshot.projection_id})
-            local fence_write_err = write_error(fenced, fence_err, "projection rebuild fence failed", "rebuild.fence")
-            if fence_write_err then return abort(fence_write_err) end
-        end
-        if abandoned then status.rebuild_until_seq = nil end
-    end
-    if not abandoned and #writes > 0 then
+    local encoded, encode_err = json.encode(folded)
+    if encode_err then return abort(errors.wrap(encode_err, "projection worker body is not JSON")) end
+    if type(encoded) ~= "string" then return abort(response_error("body_json")) end
+    local now = clock.now(dbtype)
+    local updated, update_err = tx:execute([[UPDATE kickside_projection SET body=$1,state='valid',last_event_seq=$2,
+        updated_at=$3 WHERE id=$4]], { encoded, last, now, snapshot.projection_id })
+    local fold_write_err = write_error(updated, update_err, "projection fold write failed", "projection.update")
+    if fold_write_err then return abort(fold_write_err) end
+    local headed, head_err = tx:execute([[UPDATE kickside_projection_cursor SET last_seq=$1,
+        last_error=$2,updated_at=$3 WHERE id=$4 AND generation=$5 AND last_seq=$6 AND status='active']],
+        { last, output.last_error, now, snapshot.id, snapshot.generation, snapshot.last_seq })
+    local head_write_err = write_error(headed, head_err, "projection cursor advance failed", "cursor.update")
+    if head_write_err then return abort(head_write_err) end
+    if #writes > 0 then
         local wake_keys: string[] = {}
         local appended_threads: {[string]: boolean} = {}
         for _, write in ipairs(writes :: table[]) do
@@ -272,36 +217,6 @@ local function advance_tx(db: sql.DB, job: table, snapshot: table, prefetched_la
             if type(appended) ~= "table" or type(appended.max_seq) ~= "number"
                 or type(appended.inserted) ~= "number" or type(appended.thread_id) ~= "string" then
                 return abort(response_error("append"))
-            end
-            local status = folded and folded.declaration_status
-            local history = type(status) == "table" and status.output_history or nil
-            if history ~= nil then
-                if type(history) ~= "table" or type(history.destinations) ~= "table"
-                    or type(history.overflow) ~= "boolean" then return abort(response_error("output_history")) end
-                if not history.overflow then
-                    if type(appended.events) ~= "table" or #appended.events ~= #write.events then
-                        return abort(response_error("append.events"))
-                    end
-                    local count = 0
-                    for _ in pairs(history.destinations) do count = count + 1 end
-                    for _, event in ipairs(appended.events) do
-                        local seq = tonumber(event.seq)
-                        if seq == nil or seq < 1 or seq ~= math.floor(seq) then
-                            return abort(response_error("append.events.seq"))
-                        end
-                        local earliest = history.destinations[appended.thread_id]
-                        if earliest == nil then
-                            if count == types.OUTPUT_DESTINATION_LIMIT then
-                                history.overflow = true
-                                break
-                            end
-                            count = count + 1
-                        elseif type(earliest) ~= "number" then
-                            return abort(response_error("output_history.destination"))
-                        end
-                        history.destinations[appended.thread_id] = math.min(earliest or seq, seq)
-                    end
-                end
             end
             if appended.inserted > 0 and not appended_threads[appended.thread_id] then
                 appended_threads[appended.thread_id] = true
@@ -315,21 +230,6 @@ local function advance_tx(db: sql.DB, job: table, snapshot: table, prefetched_la
             if type(woken) ~= "table" then return abort(response_error("wake")) end
         end
     end
-    local encoded, encode_err = json.encode(folded)
-    if encode_err then return abort(errors.wrap(encode_err, "projection worker body is not JSON")) end
-    if type(encoded) ~= "string" then return abort(response_error("body_json")) end
-    local now = clock.now(dbtype)
-    local updated, update_err = tx:execute([[UPDATE kickside_projection SET body=$1,state='valid',last_event_seq=$2,
-        updated_at=$3 WHERE id=$4]], { encoded, last, now, snapshot.projection_id })
-    local fold_write_err = write_error(updated, update_err, "projection fold write failed", "projection.update")
-    if fold_write_err then return abort(fold_write_err) end
-    local headed, head_err = tx:execute([[UPDATE kickside_projection_cursor SET last_seq=$1,
-        last_error=$2,updated_at=$3 WHERE id=$4 AND generation=$5 AND last_seq=$6 AND status='active']],
-        { last, output.last_error, now, snapshot.id,
-            abandoned and snapshot.generation + 1 or snapshot.generation,
-            abandoned and last or snapshot.last_seq })
-    local head_write_err = write_error(headed, head_err, "projection cursor advance failed", "cursor.update")
-    if head_write_err then return abort(head_write_err) end
     local options: table = {}
     if last < current_head then options.rearm = now else options.demand_satisfied = true end
     if last > prior then options.record = { status = "completed" } end
@@ -420,7 +320,7 @@ end
 -- Resolve returned writes live before taking an apply connection. Actor-bound
 -- authorization re-enters Component and Threads, including SQLite's single pool.
 function M.advance(db_id: string, job: table, snapshot: table, prefetched_last: number, output: table): (table?, error?)
-    local writes, write_err = append_writes(output, tostring(snapshot.thread_id), snapshot.body, tostring(snapshot.projection_id), nil)
+    local writes, write_err = append_writes(output, tostring(snapshot.thread_id), snapshot.body)
     if write_err then return nil, write_err end
     if #writes > 0 and (snapshot.actor_id ~= nil or snapshot.execution_identity_json ~= nil) then
         local identity, identity_err = execution_identity.from_row(snapshot.actor_id, snapshot.execution_identity_json)

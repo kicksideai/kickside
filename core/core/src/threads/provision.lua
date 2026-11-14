@@ -28,6 +28,8 @@ local execution_identity = require("execution_identity")
 local component_identity = require("component_identity")
 local component_envelope = require("component_envelope")
 local error_envelope = require("error_envelope")
+local lifecycle_log = require("component_lifecycle_log")
+local component_lifecycle = require("component_lifecycle")
 
 local M = {}
 
@@ -181,18 +183,44 @@ local function converge_executor(component_id: string, opener_actor: any, opener
     return scoped, nil
 end
 
--- Each maintenance turn finds at most 256 divergent components using declaration
--- digests. The continuation is a keyset position, never an accumulated work list.
+-- Each maintenance turn repairs at most 256 divergent components using declaration
+-- digests and visits at most 256 lifecycle components. The continuation is a
+-- keyset position, never an accumulated work list.
 function M.converge(opener_actor: any, opener_scope: any, continuation: table?): ({ [string]: any }, error?)
     local summary: { [string]: any } = {checked = 0, healed = 0, skipped = {}}
     local db, db_err = sql.get(core_db.id())
     if db_err then return summary, errors.wrap(db_err, "converge: db unavailable") end
     if not db then return summary, missing_result("get") end
+    local lifecycle_healed = false
     local function finish(cause: error?): ({ [string]: any }, error?)
+        if lifecycle_healed then
+            local _, wake_err = component_lifecycle.committed()
+            if wake_err then
+                cause = cause and error_envelope.wrap_secondary(wake_err, cause, "converge: job worker wake failed")
+                    or errors.wrap(wake_err, "converge: job worker wake failed")
+            end
+        end
         local _, release_err = db:release()
         if release_err and cause then return summary, error_envelope.wrap_secondary(release_err, cause, "converge: database release failed") end
         return summary, release_err and errors.wrap(release_err, "converge: database release failed") or cause
     end
+    local function converge_lifecycle(component_id: string, impl_id: string): error?
+        local dbtype, type_err = db:type()
+        if type_err then return type_err end
+        local tx, begin_err = db:begin()
+        if begin_err then return begin_err end
+        if not tx then return missing_result("begin") end
+        local _, own_err = component_lifecycle.converge_own(tx, tostring(dbtype), component_id, impl_id)
+        if own_err then
+            local _, rollback_err = tx:rollback()
+            if rollback_err then return error_envelope.wrap_secondary(rollback_err, own_err, "converge: lifecycle rollback failed") end
+            return own_err
+        end
+        local _, commit_err = tx:commit()
+        if not commit_err then lifecycle_healed = true end
+        return commit_err
+    end
+    local function quoted(value: string): string return "'" .. value:gsub("'", "''") .. "'" end
     local kinds = autoinit.declared_kinds()
     table.sort(kinds, function(a, b) return a.impl_id < b.impl_id end)
     local first = continuation and continuation.kind_index or 1
@@ -206,6 +234,33 @@ function M.converge(opener_actor: any, opener_scope: any, continuation: table?):
         if existing_err then return finish(errors.wrap(existing_err, "converge: component scan failed")) end
         if type(existing) ~= "table" then return finish(missing_result("components")) end
         if #existing > 0 then
+            local own_lifecycle, on_thread = false, type(kind.class) == "string" and kind.class ~= ""
+            for _, decl in ipairs(kind.projections or {}) do
+                if decl.on == autoinit.PROJECTION_ON.LIFECYCLE then own_lifecycle = true end
+                if decl.on == nil or decl.on == "" or decl.on == autoinit.PROJECTION_ON.THREAD then on_thread = true end
+            end
+            own_lifecycle = own_lifecycle and not lifecycle_log.is_exempt(tostring(kind.component_impl_id or kind.impl_id))
+            local candidates: {any}? = nil
+            local lifecycle_id = "NULL"
+            if own_lifecycle then
+                local page = sql.builder.select("c.component_id AS component_id"):from("kickside_components c")
+                    :where("c.impl_id = ?", tostring(kind.component_impl_id or kind.impl_id))
+                if after then page = page:where("c.component_id > ?", after) end
+                local rows, page_err = page:order_by("c.component_id ASC"):limit(remaining):run_with(db):query()
+                if page_err then return finish(errors.wrap(page_err, "converge: lifecycle page failed")) end
+                if type(rows) ~= "table" then return finish(missing_result("lifecycle_page")) end
+                candidates = rows
+                local cases: {string} = {}
+                for _, row in ipairs(rows) do
+                    cases[#cases + 1] = "WHEN " .. quoted(tostring(row.component_id)) .. " THEN " .. quoted(lifecycle_log.thread_id(tostring(row.component_id)))
+                end
+                if #cases > 0 then
+                    lifecycle_id = "CASE c.component_id " .. table.concat(cases, " ") .. " END"
+                    local dbtype, type_err = db:type()
+                    if type_err then return finish(type_err) end
+                    if dbtype == "postgres" then lifecycle_id = "CAST(" .. lifecycle_id .. " AS UUID)" end
+                end
+            end
             local scan = sql.builder.select("c.component_id AS component_id")
                 :from("kickside_components c")
                 :left_join("kickside_thread t ON t.id=c.component_id")
@@ -219,23 +274,30 @@ function M.converge(opener_actor: any, opener_scope: any, continuation: table?):
                 args[#args + 1] = kind.class
             end
             for pindex, decl in ipairs(kind.projections or {}) do
-                local function quoted(value: string): string return "'" .. value:gsub("'", "''") .. "'" end
-                local key = type(decl.projection_key) == "string" and decl.projection_key ~= "" and decl.projection_key or proj_types.KEY_DEFAULT
-                local cursor_key = type(decl.cursor_key) == "string" and decl.cursor_key ~= "" and decl.cursor_key or proj_types.KEY_DEFAULT
-                local expected, declaration_err = proj_register.declaration_body({worker_ref = decl.worker_ref,
-                    worker_input_mode = decl.input_mode, worker_config = decl.worker_config, events = decl.events, drop_notify = decl.drop_notify})
-                if declaration_err then return finish(declaration_err) end
-                local digest, digest_err = proj_register.declaration_digest(expected)
-                if digest_err then return finish(digest_err) end
-                local p, pc, j = "p" .. tostring(pindex), "pc" .. tostring(pindex), "j" .. tostring(pindex)
-                scan = scan:left_join("kickside_projection " .. p .. " ON " .. p .. ".thread_id=t.id AND " .. p .. ".kind=" .. quoted(decl.kind) .. " AND " .. p .. ".projection_key=" .. quoted(key))
-                    :left_join("kickside_projection_cursor " .. pc .. " ON " .. pc .. ".projection_id=" .. p .. ".id AND " .. pc .. ".cursor_key=" .. quoted(cursor_key))
-                    :left_join("kickside_job " .. j .. " ON " .. j .. ".id=" .. pc .. ".job_id")
-                predicates[#predicates + 1] = "(t.id IS NOT NULL AND (" .. p .. ".id IS NULL OR " .. p .. ".declaration_digest IS NULL OR " .. p .. ".declaration_digest <> ? OR " .. pc .. ".id IS NULL OR " .. j .. ".id IS NULL))"
-                args[#args + 1] = digest
+                local own = decl.on == autoinit.PROJECTION_ON.LIFECYCLE and own_lifecycle
+                if own or decl.on == nil or decl.on == "" or decl.on == autoinit.PROJECTION_ON.THREAD then
+                    local key = type(decl.projection_key) == "string" and decl.projection_key ~= "" and decl.projection_key or proj_types.KEY_DEFAULT
+                    local cursor_key = type(decl.cursor_key) == "string" and decl.cursor_key ~= "" and decl.cursor_key or proj_types.KEY_DEFAULT
+                    local expected, declaration_err = proj_register.declaration_body({worker_ref = decl.worker_ref,
+                        worker_input_mode = decl.input_mode, worker_config = decl.worker_config, events = decl.events, drop_notify = decl.drop_notify})
+                    if declaration_err then return finish(declaration_err) end
+                    local digest, digest_err = proj_register.declaration_digest(expected)
+                    if digest_err then return finish(digest_err) end
+                    local p, pc, j = "p" .. tostring(pindex), "pc" .. tostring(pindex), "j" .. tostring(pindex)
+                    local thread_id = own and lifecycle_id or "t.id"
+                    scan = scan:left_join("kickside_projection " .. p .. " ON " .. p .. ".thread_id=" .. thread_id .. " AND " .. p .. ".kind=" .. quoted(decl.kind) .. " AND " .. p .. ".projection_key=" .. quoted(key))
+                        :left_join("kickside_projection_cursor " .. pc .. " ON " .. pc .. ".projection_id=" .. p .. ".id AND " .. pc .. ".cursor_key=" .. quoted(cursor_key))
+                        :left_join("kickside_job " .. j .. " ON " .. j .. ".id=" .. pc .. ".job_id")
+                    predicates[#predicates + 1] = "(" .. (own and "" or "t.id IS NOT NULL AND ") .. "(" .. p .. ".id IS NULL OR " .. p .. ".declaration_digest IS NULL OR " .. p .. ".declaration_digest <> ? OR " .. pc .. ".id IS NULL OR " .. j .. ".id IS NULL))"
+                    args[#args + 1] = digest
+                end
             end
             if #predicates > 0 then
                 scan = scan:where("(" .. table.concat(predicates, " OR ") .. ")", table.unpack(args))
+                if candidates then
+                    if #candidates > 0 then scan = scan:where("c.component_id <= ?", tostring(candidates[#candidates].component_id))
+                    else scan = scan:where("1=0") end
+                end
                 if after then scan = scan:where("c.component_id > ?", after) end
                 local rows, scan_err = scan:order_by("c.component_id ASC"):limit(remaining):run_with(db):query()
                 if scan_err then return finish(errors.wrap(scan_err, "converge: declaration scan failed")) end
@@ -243,14 +305,19 @@ function M.converge(opener_actor: any, opener_scope: any, continuation: table?):
                 for _, row in ipairs(rows) do
                     local component_id = tostring(row.component_id)
                     summary.checked = summary.checked + 1
-                    local executor, exec_err = converge_executor(component_id, opener_actor, opener_scope)
                     local cause: error? = nil
-                    if exec_err or not executor then
-                        cause = errors.wrap(exec_err or missing_result("executor"), "converge identity unavailable")
-                    else
-                        local _, converge_err = executor:call(CONVERGE_THREAD_FN, {component_id = component_id,
-                            impl_id = kind.impl_id, thread_class = kind.class})
-                        if converge_err then cause = errors.wrap(converge_err, "converge_thread failed") end
+                    if on_thread then
+                        local executor, exec_err = converge_executor(component_id, opener_actor, opener_scope)
+                        if exec_err or not executor then
+                            cause = errors.wrap(exec_err or missing_result("executor"), "converge identity unavailable")
+                        else
+                            local _, converge_err = executor:call(CONVERGE_THREAD_FN, {component_id = component_id,
+                                impl_id = kind.impl_id, thread_class = kind.class})
+                            if converge_err then cause = errors.wrap(converge_err, "converge_thread failed") end
+                        end
+                    end
+                    if not cause and own_lifecycle then
+                        cause = converge_lifecycle(component_id, tostring(kind.impl_id))
                     end
                     if cause then
                         summary.skipped[#summary.skipped + 1] = {component_id = component_id, impl_id = kind.impl_id,
@@ -259,11 +326,12 @@ function M.converge(opener_actor: any, opener_scope: any, continuation: table?):
                         summary.healed = summary.healed + 1
                     end
                 end
-                if #rows == remaining then
-                    summary.continuation = {kind_index = index, after = tostring(rows[#rows].component_id)}
+                local visited = candidates or rows
+                if #visited == remaining then
+                    summary.continuation = {kind_index = index, after = tostring(visited[#visited].component_id)}
                     return finish(nil)
                 end
-                remaining = remaining - #rows
+                remaining = remaining - #visited
             end
         end
         after = nil

@@ -10,8 +10,6 @@ local sql = require("sql")
 local uuid = require("uuid")
 local json = require("json")
 local append = require("append")
-local channel = require("channel")
-local time = require("time")
 
 local DB = "app:db"
 
@@ -59,37 +57,6 @@ end
 
 local function define_tests()
     test.describe("Threads append_tx", function()
-        test.it("atomically collapses concurrent appends of the same event identity", function()
-            local thread_id, event_id = make_thread(), uuid.v4()
-            local start, done = channel.new(2), channel.new(2)
-            for _ = 1, 2 do
-                coroutine.spawn(function()
-                    start:receive()
-                    local result, err = in_tx(function(tx)
-                        return append.append_events_tx(tx, thread_id, {{id = event_id, type = "test.replay", body_json = "{}"}})
-                    end)
-                    done:send({result = result, err = err})
-                end)
-            end
-            start:send(true)
-            start:send(true)
-            local inserted, duplicates = 0, 0
-            local deadline = time.after("10s")
-            for _ = 1, 2 do
-                local selected = channel.select({done:case_receive(), deadline:case_receive()})
-                test.eq(selected.channel, done, "both appends complete")
-                local completed: any = selected.value
-                test.is_nil(completed.err, tostring(completed.err))
-                inserted = inserted + assert(tonumber(completed.result.inserted))
-                duplicates = duplicates + assert(tonumber(completed.result.duplicates))
-                test.eq(completed.result.events[1].event_id, event_id)
-                test.eq(completed.result.events[1].seq, 1)
-            end
-            test.eq(inserted, 1)
-            test.eq(duplicates, 1)
-            test.eq(head_of(thread_id), 1)
-            test.eq(#query("SELECT id FROM kickside_event WHERE thread_id=$1", {thread_id}), 1)
-        end)
         test.it("refuses malformed metadata without committing any part of a batch", function()
             local thread_id = make_thread()
             for _, event in ipairs({

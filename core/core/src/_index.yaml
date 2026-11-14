@@ -36,7 +36,7 @@ entries:
         path: .meta.target_db
       - entry: kickside.core.migrations:12_blocked_projection_pins
         path: .meta.target_db
-      - entry: kickside.core.migrations:13_projection_declaration_digest
+      - entry: kickside.core.migrations:15_projection_declaration_digest
         path: .meta.target_db
       - entry: kickside.core:db_config
         path: .meta.db_id

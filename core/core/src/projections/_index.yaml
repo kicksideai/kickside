@@ -29,10 +29,9 @@ entries:
     meta:
       comment: Generation and sequence fenced cursor apply with atomic jobs completion.
     source: file://apply.lua
-    modules: [sql, json, registry, uuid]
+    modules: [sql, json, registry]
     imports:
       clock: kickside.core.jobs:clock
-      types: kickside.core.projections:types
       threads_writer: kickside.core.threads.persist:writer
       jobs_wake: kickside.core.jobs.persist:wake
       jobs: kickside.core.jobs:jobs

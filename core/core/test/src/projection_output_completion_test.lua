@@ -47,16 +47,14 @@ return test.run_cases(function()
                 local snapshot=checked(db:query([[SELECT c.*,p.body,p.kind FROM kickside_projection_cursor c
                     JOIN kickside_projection p ON p.id=c.projection_id WHERE c.id=$1]],{row.cursor_id}))[1]
                 snapshot.body=checked(json.decode(snapshot.body))
-                local input_event_id=checked(db:query("SELECT id FROM kickside_event WHERE thread_id=$1 AND seq=1",{snapshot.thread_id}))[1].id
                 local first=index==1 and output_ids[1] or output_ids[2]
                 local second=index==1 and output_ids[2] or output_ids[1]
-                local writes=checked(apply.append_writes({append_events={
-                    {thread_id=first,events={{type="fixture:output",body_json="{}"}}},
-                    {thread_id=second,events={{type="fixture:output",body_json="{}"}}},
-                }},snapshot.thread_id,snapshot.body,snapshot.projection_id,input_event_id))
                 coroutine.spawn(function()
                     start:receive()
-                    local ok,result,err=pcall(apply.advance,"app:db",job,snapshot,1,{append_events=writes})
+                    local ok,result,err=pcall(apply.advance,"app:db",job,snapshot,1,{append_events={
+                        {thread_id=first,events={{type="fixture:output",body_json="{}"}}},
+                        {thread_id=second,events={{type="fixture:output",body_json="{}"}}},
+                    }})
                     done:send({ok=ok,result=result,err=err})
                 end)
             end

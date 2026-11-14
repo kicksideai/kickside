@@ -236,64 +236,27 @@ function M.run(input: any): (table?, error?)
             -- before invoking either a function or a monitored process.
             local release_err = release(db, nil)
             if release_err then return nil, release_err end
-            local folded_body = body
-            local writes: table[] = {}
-            local folded_last = last
-            for index, event in ipairs(batch) do
-                local to_seq = seen_last
-                if index < #batch then
-                    local next_seq = tonumber(batch[index + 1].seq)
-                    if next_seq == nil then return nil, response_error("event.seq") end
-                    to_seq = next_seq - 1
-                end
-                local event_input = {
-                    thread_id = current.thread_id, trace_context = trace_context.common({event}), worker_input_mode = mode,
-                    cursor = {id = cursor_id, cursor_key = current.cursor_key, last_seq = folded_last,
-                        target_seq = to_seq, batch_size = 1, generation = tonumber(current.generation)},
-                    projection = {id = current.projection_id, kind = current.kind, body = folded_body},
-                    range = {from_seq = folded_last + 1, to_seq = to_seq, target_seq = to_seq, processed_count = 1},
-                    events = mode == "prefetch_events" and {event} or nil,
-                }
-                if binding.worker_runtime == "proc" then
-                    local host, host_err = apply.process_host()
-                    if host_err then return nil, host_err end
-                    if type(host) ~= "string" or host == "" then return nil, response_error("process_host") end
-                    output, row_err = worker.run_proc_supervised(binding, event_input, {
-                        proc_host = host,
-                    })
-                else
-                    output, row_err = worker.run(binding, event_input)
-                end
-                if row_err then
-                    -- Only the worker's own failure is the projection's outcome;
-                    -- binding and identity failures stay with Jobs.
-                    local details = (row_err :: error):details()
-                    if type(details) ~= "table" or details.reason ~= worker.WORKER_FAILED then return nil, row_err end
-                    local deterministic = job_types.is_deterministic_kind((row_err :: error):kind())
-                    local failed, fail_err = apply.fail(db_id, job, current, row_err :: error, deterministic)
-                    if fail_err then return nil, fail_err end
-                    if failed then return failed, nil end
-                    return nil, row_err
-                end
-                if type(output) ~= "table" then return nil, response_error("worker.output") end
-                local prepared, prepare_err = apply.append_writes(output, tostring(current.thread_id), body,
-                    tostring(current.projection_id), event.id)
-                if prepare_err then return nil, prepare_err end
-                if type(prepared) ~= "table" then return nil, response_error("append_writes") end
-                for _, write in ipairs(prepared) do writes[#writes + 1] = write end
-                local updated_body, body_err = apply.next_body(folded_body, output)
-                if body_err then return nil, body_err end
-                if type(updated_body) ~= "table" then return nil, response_error("worker.body") end
-                folded_body = updated_body
-                local reported = output.last_seq == nil and to_seq or tonumber(output.last_seq)
-                if reported == nil or reported < folded_last or reported > to_seq then
-                    return nil, errors.new({message = "projection worker last_seq is outside the loaded range", kind = errors.INVALID})
-                end
-                folded_last = reported
-                if reported < to_seq then break end
+            if binding.worker_runtime == "proc" then
+                local host, host_err = apply.process_host()
+                if host_err then return nil, host_err end
+                if type(host) ~= "string" or host == "" then return nil, response_error("process_host") end
+                output, row_err = worker.run_proc_supervised(binding, work_input, {
+                    proc_host = host,
+                })
+            else
+                output, row_err = worker.run(binding, work_input)
             end
-            output = {body = folded_body, append_events = #writes > 0 and writes or nil,
-                last_seq = folded_last, last_error = output.last_error}
+            if row_err then
+                -- Only the worker's own failure is the projection's outcome;
+                -- binding and identity failures stay with Jobs.
+                local details = (row_err :: error):details()
+                if type(details) ~= "table" or details.reason ~= worker.WORKER_FAILED then return nil, row_err end
+                local deterministic = job_types.is_deterministic_kind((row_err :: error):kind())
+                local failed, fail_err = apply.fail(db_id, job, current, row_err :: error, deterministic)
+                if fail_err then return nil, fail_err end
+                if failed then return failed, nil end
+                return nil, row_err
+            end
             db = nil
         end
     end

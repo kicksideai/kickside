@@ -921,7 +921,6 @@ entries:
       execution_identity: kickside.execution:execution_identity
       proj_types: kickside.core.projections:types
       proj_register: kickside.core.projections.persist:register
-      persisted_json: kickside.contract:persisted_json
       component_identity: kickside.core.threads:component_identity
       component_lifecycle_log: kickside.core.threads.persist:lifecycle
       component_lifecycle: kickside.core.lifecycle:component_lifecycle_impl
@@ -2753,7 +2752,7 @@ entries:
       execution_identity: app:provision_native_execution_adapter
       core_db: kickside.core:db
       component_lifecycle_log: kickside.core.threads.persist:lifecycle
-      component_lifecycle: kickside.core.lifecycle:component_lifecycle_impl
+      component_lifecycle: app:provision_native_lifecycle_adapter
       proj_types: kickside.core.projections:types
       proj_register: kickside.core.projections.persist:register
       component_envelope: kickside.component:envelope
@@ -3409,7 +3408,6 @@ entries:
   - name: projection_apply_native_source
     kind: library.lua
     source: file://projection_apply_native_source.lua
-    modules: [uuid]
     imports:
       error_envelope: kickside.contract:error_envelope
       sql: app:projection_apply_native_sql_adapter
@@ -3417,7 +3415,6 @@ entries:
       registry: app:projection_apply_native_registry_adapter
       clock: app:projection_apply_native_clock_adapter
       jobs_wake: app:projection_apply_native_wake_adapter
-      types: kickside.core.projections:types
       threads_writer: app:projection_apply_native_threads_writer_adapter
       jobs: app:projection_apply_native_jobs_adapter
       cursor_waiters: app:projection_apply_native_cursor_waiters_adapter
@@ -4391,14 +4388,11 @@ entries:
       suite: kickside_core
     source: file://projection_declaration_convergence_test.lua
     method: run
-    modules: [sql, uuid, json, security, contract, process, channel, time]
+    modules: [sql, uuid, json, security, contract, process, channel]
     imports:
       test: wippy.test:test
       provision: kickside.core.threads:provision
       prune: kickside.core.retention:prune
-      apply: kickside.core.projections:apply
-      claim: kickside.core.jobs.persist:claim
-      clock: kickside.core.jobs:clock
       proj_register: kickside.core.projections.persist:register
 
   - name: projection_declaration_manual_kind
@@ -4417,37 +4411,42 @@ entries:
         methods:
           get_status: kickside.core.threads:thread_status
 
-  - name: test_emitting_worker
-    kind: function.lua
-    meta: {type: projection.worker}
-    source: file://test_emitting_worker.lua
-    method: run
-    modules: [sql, uuid]
-    imports:
-      writer: kickside.core.threads.persist:writer
-
-  - name: projection_declaration_emitting_kind
+  - name: lifecycle_convergence_kind
     kind: contract.binding
     meta:
-      class: [test.declaration.refresh]
-      thread: {class: test.declaration.refresh}
+      class: [test.lifecycle.converge]
       projections:
-        - kind: test.declaration.refresh
-          worker_ref: func://app:test_emitting_worker
+        - on: lifecycle
+          kind: test.lifecycle.converge
+          projection_key: custom
+          cursor_key: progress
+          worker_ref: func://app:test_count_worker
           input_mode: prefetch_events
           events:
             input:
-              - {type: app:threads_keep}
-              - {type: app:threads_skip}
-            output:
-              - {type: app:threads_note}
-      events:
-        input:
-          - {type: app:threads_keep}
-          - {type: app:threads_skip}
-        output:
-          - {type: app:threads_note}
+              - {type: 'kickside.component.events:created'}
+              - {type: 'kickside.component.events:updated'}
     contracts:
       - contract: kickside.contract:component
         methods:
           get_status: kickside.core.threads:thread_status
+
+  - name: lifecycle_convergence_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_core}
+    source: file://lifecycle_convergence_test.lua
+    method: run
+    modules: [sql, uuid, json, security, contract, process, channel, time]
+    imports:
+      test: wippy.test:test
+      provision: kickside.core.threads:provision
+      lifecycle: kickside.core.threads.persist:lifecycle
+      register: kickside.core.projections.persist:register
+      prune: kickside.core.retention:prune
+      writer: kickside.core.projections.persist:writer
+
+  - name: provision_native_lifecycle_adapter
+    kind: library.lua
+    source: file://provision_native_lifecycle_adapter.lua
+    imports:
+      fixture: app:provision_native_fixture

@@ -6,10 +6,21 @@ end}
 function M.reset(stage: string, source: any)
     M.stage, M.source, M.release_source, M.grant_result = stage, source, nil, nil
     M.scope_decision, M.unchanged_count, M.changed_count, M.max_page = nil, nil, nil, 0
+    M.lifecycle, M.wakes = false, 0
     M.gets, M.queries, M.releases, M.upserts = 0, 0, 0, 0
     M.retentions, M.grants, M.calls, M.contract_gets, M.opens = 0, 0, 0, 0, 0, 0
 end
 local db = {}
+function db:type(): string return "sqlite" end
+function db:begin(): any return {commit = function(): boolean return true end} end
+function M.converge_own(tx: any, dialect: string, id: string, impl: string): (string?, error?)
+    M.calls = M.calls + 1
+    return id, nil
+end
+function M.committed(): (table?, error?)
+    M.wakes = M.wakes + 1
+    return {}, nil
+end
 function db:release(): (boolean?, error?)
     M.releases = M.releases + 1
     if M.stage == "release" or M.stage == "retention_release" or M.stage == "thread_scan_release" then return nil, M.release_source or M.source end
@@ -62,7 +73,8 @@ function M.declarations(): {any}
     return {{scope = "user", class = "class", impl_id = "impl", grants = {{subject_id = "reader", access_mask = 1}}}}
 end
 function M.declared_kinds(): {any}
-    return {{class = "class", impl_id = "impl", projections = {{kind = "projection", worker_ref = "func://app:test_count_worker"}}}}
+    return {{class = not M.lifecycle and "class" or nil, impl_id = "impl", projections = {{kind = "projection",
+        on = M.lifecycle and "lifecycle" or nil, worker_ref = "func://app:test_count_worker"}}}}
 end
 M.builder = {}
 function M.builder.select(columns: string, ...: any): any
@@ -88,6 +100,15 @@ function M.builder.select(columns: string, ...: any): any
         end
         if (M.changed_count or M.unchanged_count) and limit == 1 and not digest_scan then
             return {{component_id = "component"}}, nil
+        end
+        if M.lifecycle and not digest_scan then
+            assert(limit and limit <= 256, "lifecycle candidates stay bounded")
+            local rows = {}
+            for index = after + 1, math.min(after + limit, M.changed_count or M.unchanged_count) do
+                rows[#rows + 1] = {component_id = string.format("%06d", index)}
+            end
+            M.max_page = math.max(M.max_page, #rows)
+            return rows, nil
         end
         if M.changed_count then
             assert(digest_scan and limit and limit <= 256, "divergence query uses a digest and a bounded limit")

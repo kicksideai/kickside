@@ -161,6 +161,28 @@ return {run = test.run_cases(function()
             test.eq(fixture.queries, 80)
             test.eq(fixture.max_page, 256)
         end)
+        for _, changed in ipairs({false, true}) do
+            test.it("bounds ten thousand lifecycle digest checks/" .. tostring(changed), function()
+                fixture.reset("", nil)
+                fixture.lifecycle = true
+                if changed then fixture.changed_count = 10000 else fixture.unchanged_count = 10000 end
+                local continuation, total, turns = nil, 0, 0
+                repeat
+                    local before, queries, wakes = fixture.calls, fixture.queries, fixture.wakes
+                    local summary, err = provision.converge({}, {}, continuation)
+                    test.is_nil(err)
+                    test.is_true(fixture.calls - before <= 256)
+                    test.eq(fixture.queries - queries, 3)
+                    test.eq(fixture.wakes - wakes, changed and 1 or 0, "committed repairs notify before the page returns")
+                    total = total + summary.healed
+                    turns = turns + 1
+                    continuation = summary.continuation
+                until not continuation
+                test.eq(total, changed and 10000 or 0)
+                test.eq(turns, 40)
+                test.eq(fixture.max_page, 256)
+            end)
+        end
         test.it("valid convergence de-duplicates the divergence set", function()
             fixture.reset("", nil)
             local summary, err = provision.converge({}, {})

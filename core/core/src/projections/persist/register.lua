@@ -156,39 +156,6 @@ function writer.declaration_digest(body: table): (string?, error?)
     return canonical_json.hash(apply_declaration_fields({}, body))
 end
 
-local function output_history_reason(tx: sql.Transaction, status: table): (string?, error?)
-    local history = status.output_history
-    if history == nil then return "output history unknown", nil end
-    if type(history) ~= "table" or type(history.destinations) ~= "table"
-        or type(history.overflow) ~= "boolean" then return nil, response_error("output_history") end
-    if history.overflow then return "output destinations overflow", nil end
-    local ids, placeholders = {}, {}
-    for id, first_seq in pairs(history.destinations) do
-        if type(id) ~= "string" or id == "" or type(first_seq) ~= "number"
-            or first_seq < 1 or first_seq ~= math.floor(first_seq) then
-            return nil, response_error("output_history.destination")
-        end
-        ids[#ids + 1] = id
-        placeholders[#ids] = "$" .. tostring(#ids)
-        if #ids > types.OUTPUT_DESTINATION_LIMIT then return nil, response_error("output_history.limit") end
-    end
-    if #ids == 0 then return nil, nil end
-    local rows, err = tx:query("SELECT id,max_pruned_seq FROM kickside_thread WHERE id IN ("
-        .. table.concat(placeholders, ",") .. ")", ids)
-    rows, err = sql_boundary.bounded_rows(rows, err, "failed to read projection destinations",
-        "output_history.rows", 0, #ids, response_error)
-    if err then return nil, err end
-    if not rows then return nil, response_error("output_history.rows") end
-    if #rows ~= #ids then return "outputs pruned", nil end
-    for _, row in ipairs(rows) do
-        local boundary = tonumber(row.max_pruned_seq)
-        local first_seq = history.destinations[row.id]
-        if boundary == nil or type(first_seq) ~= "number" then return nil, response_error("output_history.boundary") end
-        if boundary >= first_seq then return "outputs pruned", nil end
-    end
-    return nil, nil
-end
-
 local function bounded(value: any, name: string, min_value: integer,
     max_value: integer, fallback: integer): (integer?, error?)
     if value == nil then return fallback, nil end
@@ -241,9 +208,8 @@ end
 -- thread row, upserts the projection (merging the body's read-model on
 -- re-register unless reset=true), and upserts the cursor. No tx management:
 -- the caller begins and commits; on error the caller rolls back. Declaration
--- convergence passes ensure=true. Changed declarations rebuild from their own
--- start when history is intact, otherwise preserve the fold at the refresh head.
--- Both transitions fence previously loaded workers.
+-- convergence passes ensure=true. Changed declarations preserve the fold and
+-- advance to the refresh head, fencing previously loaded workers.
 function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thread_id: string, params: table): (RegisterResult?, error?)
     if type(params) ~= "table" then
         return nil, (errors.new({ message = "projection registration params must be an object", kind = errors.INVALID }) :: error)
@@ -296,7 +262,6 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
     end
     local reset = params.reset == true
     local refresh_from: number? = nil
-    local refresh_reason: string? = nil
 
     local now = now_string(dbtype)
     local lock = dbtype == sql.type.SQLITE and "" or "FOR UPDATE"
@@ -355,8 +320,7 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
 
     local digest, digest_err = writer.declaration_digest(body)
     if digest_err then return nil, digest_err end
-    body.declaration_status = {revision = 1, start_seq = start_seq, from_seq = start_seq + 1,
-        output_history = {destinations = {}, overflow = false}}
+    body.declaration_status = {revision = 1, from_seq = start_seq + 1}
     local body_json, body_encode_err = json.encode(body)
     if body_encode_err then return nil, errors.wrap(body_encode_err, "failed to encode projection body") end
     if not body_json then
@@ -378,63 +342,27 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
 
     if #projection_rows > 0 then
         projection_id = tostring(projection_rows[1].id)
-        local merged, decode_err = persisted_json.decode_table(projection_rows[1].body, "kickside_projection.body")
-        if decode_err then return nil, errors.wrap(decode_err, "failed to decode existing projection body") end
-        declaration_changed = not writer.declaration_matches(merged :: table, body :: table)
-        local prior = type(merged.declaration_status) == "table" and merged.declaration_status or nil
-        local own_start: number? = nil
-        local revision = 1
-        if prior then
-            own_start, revision = tonumber(prior.start_seq), tonumber(prior.revision)
-            if (own_start ~= nil and (own_start < 0 or own_start ~= math.floor(own_start)
-                or own_start > event_count)) or revision == nil or revision < 1 or revision ~= math.floor(revision) then
-                return fail("projection declaration status is invalid", errors.INTERNAL)
-            end
-        end
-        if declaration_changed and not reset then
-            if own_start == nil then
-                refresh_reason = "history start unknown"
-            elseif pruned_seq > own_start then
-                refresh_reason = "history pruned"
-            else
-                local history_err: error?
-                refresh_reason, history_err = output_history_reason(tx, prior :: table)
-                if history_err then return nil, history_err end
-                if refresh_reason == nil then
-                    reset = true
-                    start_seq = own_start
+        local body_to_write = body_json
+        if not reset then
+            local merged, decode_err = persisted_json.decode_table(projection_rows[1].body, "kickside_projection.body")
+            if decode_err then return nil, errors.wrap(decode_err, "failed to decode existing projection body") end
+            declaration_changed = not writer.declaration_matches(merged :: table, body :: table)
+            if declaration_changed then
+                local prior = type(merged.declaration_status) == "table" and merged.declaration_status or nil
+                local revision = prior and tonumber(prior.revision) or 1
+                if revision == nil or revision < 1 or revision ~= math.floor(revision) then
+                    return fail("projection declaration revision is invalid", errors.INTERNAL)
                 end
-            end
-            if refresh_reason then
                 refresh_from = event_count
+                merged.declaration_status = {revision = revision + 1, from_seq = event_count + 1}
             end
-        end
-        local status = prior
-        if reset or declaration_changed then
-            status = {revision = revision + (declaration_changed and 1 or 0),
-                start_seq = reset and start_seq or own_start,
-                from_seq = (refresh_from or start_seq) + 1,
-                reason = refresh_reason, output_history = prior and prior.output_history or nil,
-                rebuild_until_seq = declaration_changed and reset and params.reset ~= true and event_count or nil}
-        end
-        local body_to_write: string
-        if reset then
-            body.declaration_status = status
-            local encoded, encode_err = json.encode(body)
-            if encode_err then return nil, errors.wrap(encode_err, "failed to encode rebuilt projection body") end
-            if not encoded then return nil, response_error("rebuilt_body") end
-            body_to_write = encoded
-        else
             apply_declaration_fields(merged :: table, body)
-            merged.declaration_status = status
             local merged_json, merged_err = json.encode(merged)
             if merged_err then return nil, errors.wrap(merged_err, "failed to encode merged projection body") end
-            if not merged_json then
-                return nil, response_error("merged_body", "merged projection body encoder returns no result")
-            end
-            body_to_write = merged_json :: string
+            if not merged_json then return nil, response_error("merged_body") end
+            body_to_write = merged_json
         end
-        if params.ensure ~= true or declaration_changed or reset then
+        if params.ensure ~= true or declaration_changed then
             local projection_update = sql.builder.update("kickside_projection")
                 :set("body", body_to_write)
                 :set("declaration_digest", digest)
@@ -542,7 +470,7 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
         local prior_generation = tonumber(cursor_rows[1].generation)
         if prior_generation == nil then return fail("projection cursor generation is missing", errors.INTERNAL) end
         generation = prior_generation
-        if params.ensure ~= true or declaration_changed or reset then
+        if params.ensure ~= true or declaration_changed then
             if not declaration_changed then
                 local pin_err = release_cursor_pin(tx, thread_id, cursor_id, prior_generation)
                 if pin_err then return nil, pin_err end
