@@ -2,7 +2,6 @@ version: "1.0"
 namespace: kickside.contract
 
 entries:
-
   - name: secret_cipher
     kind: library.lua
     source: file://secret_cipher.lua
@@ -86,7 +85,6 @@ entries:
       error_envelope: kickside.contract:error_envelope
 
   # kickside.contract:component
-
   - name: component
     kind: contract.definition
     meta:
@@ -128,7 +126,6 @@ entries:
             format: application/schema+json
 
   # kickside.contract:content_provider
-
   - name: content_provider
     kind: contract.definition
     meta:
@@ -234,7 +231,6 @@ entries:
             format: application/schema+json
 
   # kickside.contract:deletable
-
   - name: deletable
     kind: contract.definition
     meta:
@@ -275,7 +271,6 @@ entries:
             format: application/schema+json
 
   # kickside.contract:portable
-
   - name: portable
     kind: contract.definition
     meta:
