@@ -320,6 +320,12 @@ entries:
     modules: [sql]
     method: handle
 
+  - name: callback_reject
+    kind: function.lua
+    source: file://callback_probe.lua
+    modules: [sql]
+    method: reject
+
   - name: admit_upload
     kind: function.lua
     meta:
