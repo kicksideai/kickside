@@ -6,6 +6,10 @@ local base64 = require("base64")
 
 return {run = test.run_cases(function()
     test.describe("authenticated secret storage", function()
+        test.it("exports native AES operations without a per-call adapter", function()
+            test.eq(cipher.encrypt, crypto.encrypt.aes)
+            test.eq(cipher.decrypt, crypto.decrypt.aes)
+        end)
         test.it("decodes a complete AES-256 key and rejects malformed keys", function()
             local key, err = cipher.decode_key(string.rep("01aB", 16))
             test.is_nil(err)
@@ -14,6 +18,38 @@ return {run = test.run_cases(function()
                 local invalid, invalid_err = cipher.decode_key(hex)
                 test.is_nil(invalid)
                 test.is_true(errors.is(invalid_err, errors.INVALID))
+            end
+        end)
+        test.it("preserves every supported AES key length", function()
+            for _, bytes in ipairs({16, 24, 32}) do
+                local key, err = cipher.decode_key(string.rep("ab", bytes))
+                test.is_nil(err)
+                test.eq(key, string.rep(string.char(171), bytes))
+            end
+        end)
+        test.it("reads literal ciphertext vectors for every consumer format", function()
+            local key = string.rep(string.char(171), 32)
+            local vectors = {
+                {name = "settings", plaintext = "settings-fixture-secret", ciphertext = "JmlH1QsgdE7qdaGrbVnyRkH9bxh0MfPwrmFYcqW0u1Q0+cqYSfuVzjAs9e4sha2ymZLL"},
+                {name = "models", plaintext = "models-fixture-secret", ciphertext = "ALktw4L92IkYZUut/beD/5qvM62sf/F/DGHbuF1G/LWXJrElrFg18e9J0xQdGAnVyg=="},
+                {name = "oauth payload", plaintext = '{"tokens":{"access_token":"oauth-fixture-secret"}}', ciphertext = "GlJl/G8tNkDbxuNL9+cS5jvnY4F2Xw2ibIlQFel8l/MMNuFN098aq7hUJ1jPatTLifTEFDeuyLKgbKZu/4//BCfKID4AwImyspMrZZhq"},
+                {name = "oauth access", plaintext = "oauth-fixture-secret", ciphertext = "qabtEAT9Q6v/jM/v5iA4K9ppUveB3JrP9p8cFZpzUYe6xAh+/ua1Br3hFZICqvPk"},
+                {name = "uploads", plaintext = '{"actor_context":[],"actor_id":"fixture-actor","function_id":"example:complete","issued_at":4102444800,"upload_id":"upload-fixture"}', ciphertext = "mxC4R2MuYroEBelwotgAJxaDGkUF3SzAmbh+OO9MF2pPkipTyx1v/fuCGrGonpFu4I13g0kXlalm1TG43uv872gI+Sra8rwoZL+SbdUhOH6LLSNMtgl7yXS7ymyprbHaLv/rgZfhmjhOdghTkgiZ3TIfFJlC0KOrMgp5fJuOC8/vZwFRgm6cqj08WCfJ65s+1tsy+rAVAiIN0Zy14TM19A=="},
+            }
+            for _, vector in ipairs(vectors) do
+                local plain, err = cipher.open(vector.ciphertext, key)
+                test.is_nil(err, vector.name)
+                test.eq(plain, vector.plaintext, vector.name)
+            end
+            local mcp_key = assert(cipher.decode_key("22016e9b0678c54e81cace75275731dfe6c42fb842ab0f763f10ca0f3dde9743"))
+            local mcp, mcp_err = cipher.open("AAECAwQFBgcICQoLQ8goGhyPza3bRhxTPyfwZ7NrDnujdzrQJzEOGibfB/p6AhR8Bk9rt2IHfgcYmxUOcEytkhI=", mcp_key,
+                "2b0d692e17135c0af6348adc3a72394f8b0fa791478d4ec475dac957287496b2")
+            test.is_nil(mcp_err)
+            test.eq(mcp, '{"access_token":"mcp-fixture-secret"}')
+            for index, ciphertext in ipairs({"AAECAwQFBgcICQoLdbzDlHLinWXEeaFsuQdOX5MTWqrEdoa4Pdc=", "AAECAwQFBgcICQoLI7BNqyDYbYzVnvmFqMgcazSd5WDTcxTp3jc=", "AAECAwQFBgcICQoLQyljOit5ETElQ6Af2HNuWz8nUwlR63wcZaY="}) do
+                local plain, err = cipher.open(ciphertext, string.rep(string.char(171), 8 + index * 8), "component-one")
+                test.is_nil(err)
+                test.eq(plain, "credential")
             end
         end)
         test.it("reads the existing nonce-prefixed AES-GCM base64 format", function()
