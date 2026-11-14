@@ -7,11 +7,7 @@ local M = {}
 function M.check(impl_id: string, operation: string): error?
     local entry, lookup_err = autoinit.kind_for_impl(impl_id)
     if lookup_err and not errors.is(lookup_err, errors.NOT_FOUND) then return lookup_err end
-    if not entry then
-        return errors.new({kind = errors.NOT_FOUND, retryable = false,
-            message = "component kind declaration is unavailable: " .. impl_id,
-            details = {code = "component_kind_unknown", impl_id = impl_id}})
-    end
+    if not entry then return nil end
     local mode = entry.meta and entry.meta.mutation
     if mode == nil or mode == "open" then return nil end
     if mode ~= "closed" then
@@ -24,6 +20,18 @@ function M.check(impl_id: string, operation: string): error?
     return errors.new({kind = errors.PERMISSION_DENIED, retryable = false,
         message = "component kind " .. operation .. " requires admission: " .. impl_id,
         details = {code = "component_kind_mutation_denied", impl_id = impl_id, operation = operation}})
+end
+
+-- A tree operation changes many components under one requesting frame.
+function M.checker(operation: string): (string) -> error?
+    local admitted: {[string]: boolean} = {}
+    return function(impl_id: string): error?
+        if admitted[impl_id] then return nil end
+        local err = M.check(impl_id, operation)
+        if err then return err end
+        admitted[impl_id] = true
+        return nil
+    end
 end
 
 return M
