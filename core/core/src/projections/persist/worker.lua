@@ -139,10 +139,10 @@ function worker.parse(raw: string?, required: boolean?): (Binding?, error?)
     return { worker_ref = canonical, worker_runtime = runtime, target_id = target_id }, nil
 end
 
--- A projection may invoke only an explicitly declared worker without a private
--- or configured security frame. Recheck on dispatch as registry declarations
--- can change after a cursor was registered.
-function worker.validate(binding: table, system_identity: boolean?): (Binding?, error?)
+-- A projection retains its stored principal. A declared worker may add only
+-- service-only policies; member scopes and actor overrides remain inadmissible.
+-- Admission is immutable within a registry revision.
+local function validate_declaration(binding: table, system_identity: boolean?): (Binding?, error?)
     local target_id = tostring(binding.target_id)
     local declared_runtime = tostring(binding.worker_runtime)
     local entry, entry_err = registry.get(target_id)
@@ -168,8 +168,32 @@ function worker.validate(binding: table, system_identity: boolean?): (Binding?, 
             kind = errors.INVALID }) :: error)
     end
     local configured_security = entry_field(entry, "security")
-    if (meta.private == true and system_identity ~= true)
-        or (type(configured_security) == "table" and next(configured_security) ~= nil) then
+    local scoped = false
+    if type(configured_security) == "table" then
+        for field, policies in pairs(configured_security) do
+            if field ~= "policies" or type(policies) ~= "table" then
+                scoped = true
+                break
+            end
+            for index, id in pairs(policies) do
+                if type(index) ~= "number" or index < 1 or index > #policies
+                    or index ~= math.floor(index) or type(id) ~= "string" then
+                    scoped = true
+                    break
+                end
+                local policy, policy_err = registry.get(id)
+                if policy_err then return nil, policy_err end
+                local policy_meta = entry_field(policy, "meta")
+                local groups = entry_field(policy, "groups")
+                if entry_kind(policy) ~= "security.policy" or type(policy_meta) ~= "table"
+                    or policy_meta.service_only ~= true or (groups ~= nil and (type(groups) ~= "table" or next(groups) ~= nil)) then
+                    scoped = true
+                    break
+                end
+            end
+        end
+    end
+    if (meta.private == true and system_identity ~= true) or scoped then
         return nil, (errors.new({ message = "private or scoped projection worker is not allowed: " .. target_id,
             kind = errors.PERMISSION_DENIED }) :: error)
     end
@@ -178,6 +202,33 @@ function worker.validate(binding: table, system_identity: boolean?): (Binding?, 
     end
 
     return { worker_ref = scheme_for(expected) .. target_id, worker_runtime = expected, target_id = target_id }, nil
+end
+
+local admitted_version: string? = nil
+local admitted_bindings: {[string]: table} = {}
+
+function worker.validate(binding: table, system_identity: boolean?): (Binding?, error?)
+    local version, version_err = registry.current_version()
+    if version_err then return nil, version_err end
+    if not version then
+        return nil, errors.new({kind = errors.INTERNAL, message = "projection registry version unavailable",
+            retryable = false})
+    end
+    local revision = tostring(version:id())
+    if admitted_version ~= revision then
+        admitted_version, admitted_bindings = revision, {}
+    end
+    local key = tostring(binding.worker_runtime) .. "://" .. tostring(binding.target_id)
+        .. (system_identity == true and "/system" or "/member")
+    local admitted = admitted_bindings[key]
+    if not admitted then
+        local value, err = validate_declaration(binding, system_identity)
+        if err or not value then return nil, err end
+        admitted = value
+        admitted_bindings[key] = admitted
+    end
+    return {worker_ref = admitted.worker_ref, worker_runtime = admitted.worker_runtime,
+        target_id = admitted.target_id}, nil
 end
 
 -- Optional notification worker is declared on the fold worker, never supplied

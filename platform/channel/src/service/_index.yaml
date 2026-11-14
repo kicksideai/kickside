@@ -2,6 +2,7 @@ version: "1.0"
 namespace: kickside.channel.service
 
 entries:
+
   - name: hub_signal
     kind: library.lua
     meta: { comment: "Conversation hub messages through the channel-owned hub_signal_deliver function." }
@@ -12,6 +13,7 @@ entries:
 
   # Hub messages run under the channel identity: bridges and ingress writers act
   # under their principals and need no process messaging authority.
+
   - name: hub_signal_transport
     kind: security.policy
     meta:
@@ -81,10 +83,11 @@ entries:
     modules: [logger, time, channel, security, contract]
     security:
       policies:
-      - kickside.channel.service:bridge_registry
-      - kickside.channel:thread_inbound_publish
-      - kickside.channel:thread_reply_publish
-      - kickside.channel:thread_responder_session_publish
+        - kickside.channel.service:bridge_registry
+        - kickside.channel:thread_inbound_publish
+        - kickside.channel:thread_reply_publish
+        - kickside.channel:thread_responder_session_publish
+        - kickside.channel:upload_token_call
     imports:
       llm: wippy.llm:llm
       prompt: wippy.llm:prompt

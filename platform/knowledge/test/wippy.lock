@@ -9,8 +9,8 @@ modules:
     - name: kickside/core
       version: 0.0.0
     - name: kickside/doc2md
-      version: 0.8.21
-      hash: e5d66ebe2da394f2eba7bbc318f4d1d2e647065e95dddc3a531e088a2ad2b700
+      version: 0.8.22
+      hash: f7d2155373f5b081fc8334e1a7b7104a819639a0d7f2adb3e9624b7bffb88a3c
     - name: kickside/execution
       version: 0.2.7
     - name: kickside/jobs
@@ -41,8 +41,8 @@ modules:
       version: 0.7.37
       hash: 10c09e1327244a67a8bb23aa0312da6b92012822f218426764e638125faa1fa9
     - name: wippy/llm
-      version: 0.5.19
-      hash: 1851a5dbb11031ef813cc6965530e489b1e9d96ec34c94154ae36942c9d2c59b
+      version: 0.5.20
+      hash: 7e998e27a8d543adcff7f77b99d9f71325124479251c46ce9f4933fcb028f473
     - name: wippy/migration
       version: 0.3.26
       hash: cf4848ad3f8ba8d31d944b2f3a7274bc2b7cf2888dd80f0db63b2c71a85f89c1

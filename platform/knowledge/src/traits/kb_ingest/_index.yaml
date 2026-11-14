@@ -2,11 +2,13 @@ version: "1.0"
 namespace: kickside.knowledge.traits.kb_ingest
 
 entries:
+
   - name: fetch_url
     kind: function.lua
     security:
       policies:
         - kickside.knowledge.security:content_upserted_publish
+        - kickside.knowledge:upload_token_call
     meta:
       type: tool
       mcp:

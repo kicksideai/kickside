@@ -5,7 +5,19 @@ local fixture = require("fixture")
 local sql_fixture = require("sql_fixture")
 return {run = test.run_cases(function()
     test.describe("native projection worker dependencies", function()
-        for _, stage in ipairs({"query", "decode", "call", "exit", "transport", "direct_exit"}) do
+        test.it("reuses admitted declarations for validation and dispatch",function()
+            fixture.reset("admission",nil)
+            local binding={worker_ref="func://app:worker",worker_runtime="func",target_id="app:worker"}
+            test.not_nil((worker.validate(binding)))
+            test.eq(fixture.gets,2)
+            local before=fixture.gets
+            for _=1,10 do
+                test.not_nil((worker.validate(binding)))
+                test.not_nil((worker.run(binding,{})))
+            end
+            test.eq(fixture.gets,before,"dispatch rereads admitted declarations")
+        end)
+        for _, stage in ipairs({"version", "query", "decode", "call", "exit", "transport", "direct_exit"}) do
             for _, kind in ipairs({errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID,
                 errors.PERMISSION_DENIED, errors.UNAVAILABLE, errors.INTERNAL, errors.CANCELED,
                 errors.CONFLICT, errors.TIMEOUT, errors.RATE_LIMITED, errors.UNKNOWN}) do
