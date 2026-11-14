@@ -44,6 +44,7 @@ entries:
   - sql
   imports:
     component_identity: kickside.core.threads:component_identity
+    owner_identity: kickside.core.threads:owner_identity
     execution_identity: app:principal_resolution_execution
     threads_env: kickside.core.threads:env
     threads_notify: kickside.core.threads:notify

@@ -74,7 +74,7 @@ local function snapshot(db: sql.DB, cursor_id: string, job_id: string): (table?,
         local identity, identity_err = execution_identity.from_row(row.actor_id, row.execution_identity_json)
         if identity_err then return nil, identity_err end
         if type(identity) ~= "table" then return nil, response_error("execution_identity") end
-    elseif row.actor_id ~= nil then
+    elseif row.actor_id ~= nil and not execution_identity.is_maintenance_key(row.actor_id) then
         return nil, (errors.new({ message = "projection cursor execution identity is missing", kind = errors.INVALID }) :: error)
     end
     local body, body_err = body_from(row.body)
@@ -201,7 +201,7 @@ function M.run(input: any): (table?, error?)
         local parsed, parse_err = worker.parse(ref, true)
         if parse_err then return nil, release(db, parse_err) end
         if type(parsed) ~= "table" then return nil, release(db, response_error("worker.reference")) end
-        local system_identity = current.actor_id == nil and current.execution_identity_json == nil
+        local system_identity = current.execution_identity_json == nil
         local binding, binding_err = worker.validate(parsed, system_identity)
         if binding_err then return nil, release(db, binding_err) end
         if type(binding) ~= "table" then return nil, release(db, response_error("worker.binding")) end

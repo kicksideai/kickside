@@ -107,7 +107,10 @@ entries:
       threads_env: kickside.core.threads:env
       threads_thread_row: kickside.core.threads.persist:thread_row
       component_meta: kickside.component.persist:meta_ops
+      component_context: kickside.component.persist:context_ops
+      component_types: kickside.component:types
       execution_identity: kickside.execution:execution_identity
+      owner_identity: kickside.core.threads:owner_identity
 
   - name: component_lifecycle
     kind: function.lua
@@ -125,7 +128,10 @@ entries:
       threads_env: kickside.core.threads:env
       threads_thread_row: kickside.core.threads.persist:thread_row
       component_meta: kickside.component.persist:meta_ops
+      component_context: kickside.component.persist:context_ops
+      component_types: kickside.component:types
       execution_identity: kickside.execution:execution_identity
+      owner_identity: kickside.core.threads:owner_identity
 
   - name: component_lifecycle.updated
     kind: function.lua
@@ -143,7 +149,10 @@ entries:
       threads_env: kickside.core.threads:env
       threads_thread_row: kickside.core.threads.persist:thread_row
       component_meta: kickside.component.persist:meta_ops
+      component_context: kickside.component.persist:context_ops
+      component_types: kickside.component:types
       execution_identity: kickside.execution:execution_identity
+      owner_identity: kickside.core.threads:owner_identity
 
   - name: component_lifecycle.deleted
     kind: function.lua
@@ -161,7 +170,10 @@ entries:
       threads_env: kickside.core.threads:env
       threads_thread_row: kickside.core.threads.persist:thread_row
       component_meta: kickside.component.persist:meta_ops
+      component_context: kickside.component.persist:context_ops
+      component_types: kickside.component:types
       execution_identity: kickside.execution:execution_identity
+      owner_identity: kickside.core.threads:owner_identity
 
   - name: component_lifecycle_binding
     kind: contract.binding

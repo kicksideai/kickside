@@ -750,6 +750,64 @@ entries:
         methods:
           get_status: kickside.core.threads:thread_status
 
+  # Kinds whose lifecycle projection seeds the component it belongs to through
+  # the owner's component access path: one provisioned by the system lifecycle
+  # actor, one provisioned for a user.
+  - name: provision_owner_seeded_system_decl
+    kind: contract.binding
+    meta:
+      title: Test Owner-Seeded System Component
+      class:
+        - test_owner_seeded
+      provision:
+        scope: system
+      projections:
+        - kind: test.owner_seed
+          on: lifecycle
+          worker_ref: "func://app:test_lifecycle_seed_worker"
+          input_mode: prefetch_events
+          events:
+            input:
+              - type: kickside.component.events:created
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  - name: provision_owner_seeded_user_decl
+    kind: contract.binding
+    meta:
+      title: Test Owner-Seeded User Component
+      class:
+        - test_user_seeded
+      provision:
+        scope: user
+      projections:
+        - kind: test.owner_seed
+          on: lifecycle
+          worker_ref: "func://app:test_lifecycle_seed_worker"
+          input_mode: prefetch_events
+          events:
+            input:
+              - type: kickside.component.events:created
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  - name: test_lifecycle_seed_worker
+    kind: function.lua
+    meta:
+      type: projection.worker
+      title: Test Lifecycle Seed Worker
+      comment: Test-only lifecycle projection worker; seeds its component through the component access path.
+    source: file://test_lifecycle_seed_worker.lua
+    method: run
+    modules:
+      - security
+    imports:
+      component: kickside.component:component
+
   - name: provision_test
     kind: function.lua
     meta:
@@ -1573,6 +1631,7 @@ entries:
       error_envelope: kickside.contract:error_envelope
       sql: app:thread_database_native_sql_adapter
       component_identity: kickside.core.threads:component_identity
+      owner_identity: kickside.core.threads:owner_identity
       execution_identity: kickside.execution:execution_identity
       threads_env: kickside.core.threads:env
       threads_notify: kickside.core.threads:notify
@@ -2625,7 +2684,10 @@ entries:
       threads_env: kickside.core.threads:env
       threads_thread_row: kickside.core.threads.persist:thread_row
       component_meta: kickside.component.persist:meta_ops
+      component_context: kickside.component.persist:context_ops
+      component_types: kickside.component:types
       execution_identity: kickside.execution:execution_identity
+      owner_identity: kickside.core.threads:owner_identity
 
   - name: audit_publication_native_test
     kind: function.lua

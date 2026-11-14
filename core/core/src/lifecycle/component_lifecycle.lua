@@ -11,7 +11,10 @@ local jobs_wake = require("jobs_wake")
 local sql_boundary = require("sql_boundary")
 local thread_row = require("threads_thread_row")
 local component_meta = require("component_meta")
+local component_context = require("component_context")
+local component_types = require("component_types")
 local execution_identity = require("execution_identity")
+local owner_identity = require("owner_identity")
 
 local M = {}
 
@@ -47,7 +50,30 @@ local function merged_worker_config(p: table, parent_id: string, parent_impl_id:
     return cfg
 end
 
-local function attach_lifecycle_projections(args: table, lifecycle_thread_id: string, attach_parent: boolean): error?
+-- The identity the component's own lifecycle projections run under, derived from
+-- its owner record like a thread's declared projections. The record is read in
+-- the component transaction: a component being created is not committed yet.
+local function owner_identity_tx(tx: sql.Transaction, component_id: string): ({ [string]: any }?, error?)
+    local context, context_err = component_context.lock_and_read_tx(tx, component_id)
+    if context_err then return nil, context_err end
+    if type(context) ~= "table" then return nil, fail("component owner record is unreadable") end
+    local stored = (context :: { [string]: any })[execution_identity.CONTEXT_KEY]
+    local owner: any = nil
+    if stored == nil then
+        local meta, meta_err = component_meta.public_meta_tx(tx, component_id)
+        if meta_err then return nil, meta_err end
+        if type(meta) ~= "table" then return nil, fail("component owner record is unreadable") end
+        owner = (meta :: { [string]: any })[component_types.OWNER_META_KEY]
+    end
+    return owner_identity.of_owner(stored, owner)
+end
+
+-- Attaches the component's own lifecycle projections (`on: lifecycle`), which run
+-- as the component's owner, and with a parent the parent kind's child.lifecycle
+-- projections, which run under the framework system identity. Both attach while
+-- the component exists: a deleted component's events reach the projections
+-- registered before.
+local function attach_lifecycle_projections(args: table, lifecycle_thread_id: string): error?
     local parent_id = trim(args.parent_id)
     local parent_impl_id = trim(args.parent_impl_id)
     local child_id = trim(args.component_id)
@@ -59,9 +85,21 @@ local function attach_lifecycle_projections(args: table, lifecycle_thread_id: st
     end
 
     local function attach(impl_id: string, on: string): error?
-        for _, p in ipairs(autoinit.projections_for_impl(impl_id)) do
+        local own = on == autoinit.PROJECTION_ON.LIFECYCLE
+        local identity: { [string]: any } = { system = true }
+        local declared = autoinit.projections_for_impl(impl_id)
+        if own then
+            for _, p in ipairs(declared) do
+                if p.on == on then
+                    local owner, owner_err = owner_identity_tx(tx, child_id)
+                    if owner_err then return owner_err end
+                    identity = owner :: { [string]: any }
+                    break
+                end
+            end
+        end
+        for _, p in ipairs(declared) do
             if p.on == on then
-                local own = on == autoinit.PROJECTION_ON.LIFECYCLE
                 local key = p.projection_key
                 local config = p.worker_config
                 if not own then
@@ -78,7 +116,9 @@ local function attach_lifecycle_projections(args: table, lifecycle_thread_id: st
                     debounce_idle_ms = p.debounce_idle_ms,
                     debounce_max_ms = p.debounce_max_ms,
                     events = p.events,
-                    system_identity = true,
+                    execution_identity_row = identity.row,
+                    system_identity = identity.system == true,
+                    maintenance_owner = identity.owner,
                     ensure = own,
                 }
                 local _, reg_err = writer.register_projection_tx(tx, dbtype, lifecycle_thread_id, params)
@@ -90,7 +130,7 @@ local function attach_lifecycle_projections(args: table, lifecycle_thread_id: st
 
     local own_err = attach(child_impl_id, autoinit.PROJECTION_ON.LIFECYCLE)
     if own_err then return own_err end
-    if attach_parent and parent_id ~= "" and parent_impl_id ~= "" then
+    if parent_id ~= "" and parent_impl_id ~= "" then
         if parent_id == child_id then
             return fail("child.lifecycle projection cannot target the parent component itself", errors.INVALID)
         end
@@ -134,8 +174,10 @@ local function handle(kind: string, args: any): (any?, error?)
     local lifecycle_thread_id, ensure_err = lifecycle_log.ensure_tx(tx, component_id, impl_id)
     if ensure_err or not lifecycle_thread_id then return nil, ensure_err end
 
-    local attach_err = attach_lifecycle_projections(req, lifecycle_thread_id :: string, kind ~= lifecycle_log.KIND.DELETED)
-    if attach_err then return nil, attach_err end
+    if kind ~= lifecycle_log.KIND.DELETED then
+        local attach_err = attach_lifecycle_projections(req, lifecycle_thread_id :: string)
+        if attach_err then return nil, attach_err end
+    end
 
     local dedup_key: string
     if kind == lifecycle_log.KIND.CREATED then
@@ -206,7 +248,7 @@ function M.converge_own(tx: sql.Transaction, dbtype: string, component_id: strin
     local lifecycle_thread_id, ensure_err = lifecycle_log.ensure_tx(tx, component_id, impl_id)
     if ensure_err or not lifecycle_thread_id then return nil, ensure_err end
     local attach_err = attach_lifecycle_projections({ tx = tx, dbtype = dbtype,
-        component_id = component_id, impl_id = impl_id }, lifecycle_thread_id :: string, false)
+        component_id = component_id, impl_id = impl_id }, lifecycle_thread_id :: string)
     if attach_err then return nil, attach_err end
     return lifecycle_thread_id, nil
 end

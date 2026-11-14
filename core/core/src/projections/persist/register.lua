@@ -106,9 +106,24 @@ end
 
 -- The execution identity a projection registration carries (IDENTITY-1 §4 T
 -- row): an explicit v2 row from admission/SET, an explicit v2 identity, or the
--- framework system identity passed explicitly. Nothing is captured from the
--- ambient caller; any other identity version or a missing identity refuses.
+-- framework system identity passed explicitly, optionally naming the framework
+-- maintenance actor that owns the projection's component. A maintenance owner is
+-- stored as its key with no identity context; its runs act as that actor. Nothing
+-- is captured from the ambient caller; any other identity version or a missing
+-- identity refuses.
 local function identity_row_from_params(params: table): (any?, error?)
+    if params.maintenance_owner ~= nil then
+        if params.system_identity ~= true or params.execution_identity_row ~= nil
+            or params.execution_identity ~= nil then
+            return nil, (errors.new({ message = "a maintenance owner is a framework system identity only",
+                kind = errors.INVALID, details = { error_kind = "declaration" } }) :: error)
+        end
+        if not execution_identity.is_maintenance_key(params.maintenance_owner) then
+            return nil, (errors.new({ message = "projection maintenance owner is not a framework maintenance actor",
+                kind = errors.INVALID, details = { error_kind = "declaration" } }) :: error)
+        end
+        return { actor_id = params.maintenance_owner }, nil
+    end
     if type(params.execution_identity_row) == "table" then
         local row = params.execution_identity_row :: table
         local identity, row_err = execution_identity.from_row(row.actor_id, row.actor_context)

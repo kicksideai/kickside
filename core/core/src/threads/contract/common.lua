@@ -6,9 +6,9 @@ local sql = require("sql")
 local security = require("security")
 local env = require("threads_env")
 local component_identity = require("component_identity")
+local owner_identity = require("owner_identity")
 local notify = require("threads_notify")
 local execution_identity = require("execution_identity")
-local error_envelope = require("error_envelope")
 
 local M = {}
 
@@ -91,20 +91,22 @@ function M.actor_principal(): (any?, error?)
 end
 
 -- declared_identity answers the execution identity a thread's declared
--- projections run under, as { row?, system?, error? } (IDENTITY-1 §4 T row).
--- It is owner-loaded, never captured: the component's own stored v2 identity
--- (set at creation or by SET), or the framework system identity for a
--- framework-created component that carries none. A stored identity that is not
--- valid v2 (a parked legacy row) refuses; a failed component read is returned
--- as the error.
+-- projections run under, as { row?, system?, owner? } (IDENTITY-1 §4 T row).
+-- It is owner-loaded, never captured: owner_identity derives it from the
+-- component's stored v2 identity (set at creation or by SET), or for a
+-- framework-created component that carries none, from the maintenance actor
+-- recorded as its owner. A stored identity that is not valid v2 (a parked
+-- legacy row) refuses; a failed component read is returned as the error.
 function M.declared_identity(component_id: string): ({ [string]: any }?, error?)
     local stored, load_err = component_identity.execution_identity_of(component_id)
     if load_err then return nil, load_err end
-    if stored == nil then return { system = true }, nil end
-    local row, row_err = execution_identity.to_row(stored)
-    row, row_err = error_envelope.binding(row, row_err, nil, "materialize declared execution identity", "declared_identity_row_missing")
-    if row_err then return nil, row_err end
-    return { row = row }, nil
+    local owner: string? = nil
+    if stored == nil then
+        local owner_err: error?
+        owner, owner_err = component_identity.owner_of(component_id)
+        if owner_err then return nil, owner_err end
+    end
+    return owner_identity.of_owner(stored, owner)
 end
 
 -- open_db opens the slice's pooled connection.

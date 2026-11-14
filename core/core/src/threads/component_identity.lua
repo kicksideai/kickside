@@ -1,7 +1,8 @@
--- The execution identity stored on a component (its private _execution_identity),
--- read through the trusted component tier: the owner loader for a thread's
--- declared projections and for converge (IDENTITY-1 §4 T row). Kept apart from
--- threads_component, which sits on the component lifecycle import path.
+-- The execution identity stored on a component (its private _execution_identity)
+-- and its recorded owner, read through the trusted component tier: the owner
+-- loader for a thread's declared projections and for converge (IDENTITY-1 §4 T
+-- row). Kept apart from threads_component, which sits on the component lifecycle
+-- import path.
 local component_client = require("component_client")
 local execution_identity = require("execution_identity")
 local error_envelope = require("error_envelope")
@@ -24,6 +25,17 @@ function M.execution_identity_of(component_id: string): (any?, error?)
             message = "component identity validation returns no successful proof", details = {code = "component_identity_validation_missing"}})
     end
     return stored, nil
+end
+
+-- Answers (owner_key?, err): the actor recorded as the component's owner, or nil
+-- when it records none.
+function M.owner_of(component_id: string): (string?, error?)
+    local record, read_err = component_client.component_owner_record(component_id)
+    if read_err then return nil, errors.wrap(read_err, "read component owner") end
+    if type(record) ~= "table" or type(record.actor_id) ~= "string" or record.actor_id == "" then
+        return nil, nil
+    end
+    return record.actor_id :: string, nil
 end
 
 return M

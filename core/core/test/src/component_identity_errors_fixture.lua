@@ -8,6 +8,7 @@ function M.context(...)
     if M.stage == "absent" then return {}, nil end
     return {_execution_identity = stored}, nil
 end
+function M.owner(...) return nil, nil end
 function M.validate(...)
     M.validations = M.validations + 1
     if M.stage == "validate" then return false, M.source end

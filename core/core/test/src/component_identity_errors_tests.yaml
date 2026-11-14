@@ -11,6 +11,12 @@ entries:
     component_client: app:component_identity_errors_component
     execution_identity: app:component_identity_errors_execution
     error_envelope: kickside.contract:error_envelope
+- name: component_identity_errors_owner_identity
+  kind: library.lua
+  source: file://src_link/threads/owner_identity.lua
+  imports:
+    execution_identity: app:component_identity_errors_execution
+    error_envelope: kickside.contract:error_envelope
 - name: component_identity_errors_common_source
   kind: library.lua
   source: file://component_identity_errors_common_source.lua
@@ -19,6 +25,7 @@ entries:
   - security
   imports:
     component_identity: app:component_identity_errors_source
+    owner_identity: app:component_identity_errors_owner_identity
     execution_identity: app:component_identity_errors_execution
     threads_env: kickside.core.threads:env
     threads_notify: kickside.core.threads:notify

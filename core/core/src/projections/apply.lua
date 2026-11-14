@@ -320,7 +320,7 @@ end
 function M.advance(db_id: string, job: table, snapshot: table, prefetched_last: number, output: table): (table?, error?)
     local writes, write_err = append_writes(output, tostring(snapshot.thread_id), snapshot.body)
     if write_err then return nil, write_err end
-    if #writes > 0 and (snapshot.actor_id ~= nil or snapshot.execution_identity_json ~= nil) then
+    if #writes > 0 and snapshot.execution_identity_json ~= nil then
         local identity, identity_err = execution_identity.from_row(snapshot.actor_id, snapshot.execution_identity_json)
         if identity_err then return nil, identity_err end
         if type(identity) ~= "table" then return nil, response_error("execution_identity") end
