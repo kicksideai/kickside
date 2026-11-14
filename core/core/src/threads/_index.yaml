@@ -156,6 +156,15 @@ entries:
       component_client: kickside.component:component
       execution_identity: kickside.execution:execution_identity
 
+  - name: owner_identity
+    kind: library.lua
+    meta:
+      comment: Derives the execution identity a component's declared projections run under from its owner record.
+    source: file://owner_identity.lua
+    imports:
+      error_envelope: kickside.contract:error_envelope
+      execution_identity: kickside.execution:execution_identity
+
   - name: notify
     kind: library.lua
     meta:
@@ -334,8 +343,8 @@ entries:
     source: file://contract/common.lua
     modules: [sql, security]
     imports:
-      error_envelope: kickside.contract:error_envelope
       component_identity: kickside.core.threads:component_identity
+      owner_identity: kickside.core.threads:owner_identity
       execution_identity: kickside.execution:execution_identity
       threads_env: kickside.core.threads:env
       threads_notify: kickside.core.threads:notify

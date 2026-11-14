@@ -238,7 +238,7 @@ local function define_tests()
             test.is_nil(query_err, tostring(query_err))
             test.not_nil(rows)
             test.eq(#rows, 1, "the system lifecycle declaration must register one reaper")
-            test.is_nil(rows[1].actor_id)
+            test.eq(tostring(rows[1].actor_id), lifecycle_consts.SYSTEM_ACTOR, "the reaper runs as the lifecycle component's owner")
             test.is_nil(rows[1].execution_identity_json)
             test.is_true(tostring(rows[1].body):find("kickside.core.lifecycle:reaper", 1, true) ~= nil)
 
@@ -246,6 +246,7 @@ local function define_tests()
             test.is_nil(parse_err)
             local system_binding = binding :: any
             system_binding.system_identity = true
+            system_binding.actor_id = rows[1].actor_id
             local system_actor = security.new_actor(lifecycle_consts.SYSTEM_ACTOR,
                 { system = true, groups = { "system", "lifecycle" } })
             local process_scope, scope_err = security.named_scope(lifecycle_consts.SYSTEM_SCOPE)

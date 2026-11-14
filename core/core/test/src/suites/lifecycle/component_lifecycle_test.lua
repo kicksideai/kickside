@@ -103,7 +103,7 @@ local function define_tests()
                     test.is_nil(read_err, tostring(read_err))
                     test.eq(#rows, 1, "own lifecycle declaration has no durable cursor")
                     test.eq(rows[1].projection_key, "default")
-                    test.is_nil(rows[1].actor_id)
+                    test.eq(tostring(rows[1].actor_id), owner_id, "own lifecycle projection runs as the component owner")
                     test.not_nil(rows[1].job_id)
                     return rows[1]
                 end

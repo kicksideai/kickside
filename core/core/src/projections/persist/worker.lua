@@ -280,12 +280,18 @@ worker.TICK_OWNER = "kickside.core.projections:tick"
 -- every projection invocation resolves), so the worker runs as the principal
 -- that registered it under that principal's current authority. A stored row
 -- that is not valid v2 or no longer resolves returns its typed error unchanged;
--- nothing falls back to the runner. A binding with no stored identity is a
--- system projection and runs in the runner's own framework context. Returns
--- (actor?, scope?, err?).
+-- nothing falls back to the runner. A maintenance owner (a key with no identity
+-- context) runs as that framework actor under the runner's scope. A binding with
+-- no stored identity is a system projection and runs in the runner's own
+-- framework context. Returns (actor?, scope?, err?).
 local function resolve_binding_identity(binding: table): (any, any, error?)
     if type(binding.actor_id) ~= "string" or (binding.actor_id :: string) == "" then
         return nil, nil, nil
+    end
+    if binding.actor_context == nil then
+        local frame, frame_err = execution_identity.maintenance_frame(binding.actor_id)
+        if frame_err or not frame then return nil, nil, frame_err end
+        return (frame :: any).actor, (frame :: any).scope, nil
     end
     local identity, row_err = execution_identity.from_row(binding.actor_id, binding.actor_context)
     if row_err or not identity then return nil, nil, row_err end

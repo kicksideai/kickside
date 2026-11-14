@@ -63,7 +63,7 @@ local function declaration_response(field: string): error
         details = {code = "thread_declaration_response", field = field}})
 end
 
--- identity: { row?, system?, error? } from the contract's declared_identity.
+-- identity: { row?, system?, owner?, error? } from the contract's declared_identity.
 local function register_declared_projection(db: DB, thread_id: string, p: table, identity: { [string]: any }): error?
     local params = {
         kind = p.kind,
@@ -77,6 +77,7 @@ local function register_declared_projection(db: DB, thread_id: string, p: table,
         events = p.events,
         execution_identity_row = identity.row,
         system_identity = identity.system == true,
+        maintenance_owner = identity.owner,
         ensure = true,
     }
     -- Validate existing cursor identities, then refresh through the registration
