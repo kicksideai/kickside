@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.19](https://github.com/kicksideai/kickside/compare/component-v0.3.18...component-v0.3.19) (2026-11-14)
+
+
+### Bug Fixes
+
+* **component:** preserve undeclared kinds and deduplicate tree admission ([#463](https://github.com/kicksideai/kickside/issues/463)) ([d3b83b8](https://github.com/kicksideai/kickside/commit/d3b83b82445464c5da3777522ea5a340622367a5))
+
 ## [0.3.18](https://github.com/kicksideai/kickside/compare/component-v0.3.17...component-v0.3.18) (2026-11-13)
 
 
