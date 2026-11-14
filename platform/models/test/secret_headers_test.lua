@@ -120,6 +120,13 @@ return {run = test.run_cases(function()
                 test.eq(llm_fixture.failure, failure)
             end
         end)
+        test.it("preserves useful provider transport diagnostics while redacting credential labels", function()
+            test.eq(common.scrub_message("connection refused at provider"), "connection refused at provider")
+            test.eq(common.scrub_message("HTTP timeout after 30 seconds"), "HTTP timeout after 30 seconds")
+            test.eq(common.scrub_message("Bearer secret-sentinel, retry denied"), "Bearer [redacted], retry denied")
+            test.eq(common.scrub_message("api_key=secret-sentinel token:secret-sentinel"), "api_key=[redacted] token:[redacted]")
+            test.eq(#common.scrub_message(string.rep("a", 800)), 700)
+        end)
         test.it("returns bounded provider errors and stores no echoed credentials", function()
             local sentinel = "provider-credential-sentinel"
             test.eq(common.response_error({status_code = 401, body = '{"error":{"message":"Invalid credential: ' .. sentinel .. '"}}'}),

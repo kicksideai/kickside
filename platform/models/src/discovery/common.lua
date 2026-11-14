@@ -106,8 +106,13 @@ function M.append_query(url: string, params: any): string
     return url .. sep .. table.concat(parts, "&")
 end
 
-function M.scrub_message(_value: any): string
-    return "provider request failed"
+function M.scrub_message(value: any): string
+    local s = tostring(value or "")
+    s = s:gsub("[Bb]earer%s+[^%s,\"'}]+", "Bearer [redacted]")
+    s = s:gsub("([Aa][Pp][Ii][-_]?[Kk][Ee][Yy]%s*[=:]%s*)[^%s,\"'}]+", "%1[redacted]")
+    s = s:gsub("([Tt][Oo][Kk][Ee][Nn]%s*[=:]%s*)[^%s,\"'}]+", "%1[redacted]")
+    if #s > 700 then s = s:sub(1, 697) .. "..." end
+    return s
 end
 
 function M.response_error(response: any, label: string?): string
