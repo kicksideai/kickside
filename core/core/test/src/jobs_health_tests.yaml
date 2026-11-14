@@ -1,0 +1,28 @@
+version: "1.0"
+namespace: app
+
+entries:
+  - name: jobs_health_probe
+    kind: function.lua
+    source: file://jobs_health_probe.lua
+    method: run
+    imports:
+      job_health: kickside.core.threads:job_health
+
+  - name: jobs_health_test
+    kind: function.lua
+    meta: { type: test, suite: core_jobs_health_api }
+    source: file://jobs_health_test.lua
+    method: run
+    modules: [security, funcs]
+    imports:
+      test: wippy.test:test
+
+  - name: jobs_health_base
+    kind: security.policy
+    meta:
+      comment: Runtime authority an authenticated actor holds; excludes the health endpoint access grant.
+    policy:
+      resources: '*'
+      actions: [funcs.call, funcs.security, funcs.context, registry.get, registry.find, db.get, env.get]
+      effect: allow
