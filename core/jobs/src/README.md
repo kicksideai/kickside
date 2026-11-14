@@ -75,23 +75,8 @@ Heartbeats renew only matching, unexpired executions without a termination fence
 
 ### Lease ownership and progress
 
-Automatic lease renewal proves ownership, even when the handler is blocked.
-A job without payload `heartbeat_timeout_ms` keeps its existing execution policy.
-To bound time without useful work, declare a positive integer `heartbeat_timeout_ms`
-and call `jobs.heartbeat(id, { token, execution_seq }): (boolean?, error?)` after
-progress. This uses the existing fenced `extend_lease` write (`heartbeat_at`,
-`lease_until`) and execution control channel; it adds no liveness store.
-
-The supervisor starts the progress deadline when it spawns the execution child.
-Each received, token-and-sequence-matching progress heartbeat resets that deadline
-to receipt time plus `heartbeat_timeout_ms`. Automatic ownership renewals never
-reset it. The same supervisor wait ends the attempt at the earlier of that deadline
-and the spawn time plus `max_execution_ms` (or the captured policy ceiling).
-A missed deadline is `job heartbeat timed out`: it consumes the attempt, retries
-under the existing policy, and ends `dead` on the final attempt. Termination fences
-late heartbeats. `false` means the lease no longer holds; an error means progress
-could not be reported. Callers need Jobs access, with control delivery under the
-Jobs identity. Useful checkpoints remain the worker's responsibility.
+See [lease ownership and progress](../README.md#lease-ownership-and-progress) for
+heartbeat declaration, fencing, deadlines, and failure semantics.
 
 ### Dead outcomes
 
