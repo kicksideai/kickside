@@ -41,6 +41,7 @@ local function scoped_query(dbtype: string, collection: string, thread_ids: stri
         "max_attempts", "queue_tier", "idempotency_key", "last_error", "wake_enabled", "wake_control_pending", "execution_seq",
         "scheduled_at", "finished_at", "created_at", "updated_at",
     }
+    if owner_kind ~= nil and not runs then columns[#columns + 1] = "job_identity" end
     if dbtype == sql.type.POSTGRES then
         for i, column in ipairs(columns) do
             if column == "created_at" or column == "started_at" then
