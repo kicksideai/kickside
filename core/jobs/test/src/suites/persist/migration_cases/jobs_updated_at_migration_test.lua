@@ -154,6 +154,29 @@ return test.run_cases(function()
     test.describe("Jobs owns its updated_at trigger", function()
         test.after_each(drop)
 
+        test.it("indexes populated owner history through the forward migration", function()
+            reset()
+            migrate("kickside.core.jobs.migrations:04_jobs")
+            local id = insert_job()
+            local entry = "kickside.core.jobs.migrations:26_owner_listing"
+            migrate(entry)
+            test.eq(query("SELECT id FROM kickside_job WHERE id=$1", {id})[1].id, id)
+            local indexes
+            if postgres() then
+                indexes = query("SELECT indexdef AS definition FROM pg_indexes WHERE indexname='idx_job_owner_created'")
+            else
+                indexes = query("SELECT sql AS definition FROM sqlite_master WHERE name='idx_job_owner_created'")
+            end
+            test.eq(#indexes, 1)
+            test.contains(indexes[1].definition, "owner_kind")
+            test.contains(indexes[1].definition, "created_at DESC")
+            execute("DELETE FROM _migrations WHERE id=$1", {entry})
+            migrate(entry)
+            migrate(entry, "down")
+            migrate(entry)
+            test.eq(query("SELECT id FROM kickside_job WHERE id=$1", {id})[1].id, id)
+        end)
+
         test.it("installs Jobs without Core and keeps its trigger across migration rollback", function()
             reset()
             migrate("kickside.core.jobs.migrations:04_jobs")

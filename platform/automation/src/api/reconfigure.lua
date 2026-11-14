@@ -1,4 +1,4 @@
--- PUT /api/v1/automations/{id} { input } — reconfigure an installed automation in
+-- PUT /api/v1/automations/{id} { input, expected_revision? } — reconfigure an installed automation in
 -- place. Thin HTTP wrapper around automations_lib.reconfigure, which dispatches
 -- the kind's action. A kind applies its new declaration and source
 -- through the one fenced reconfigure command; that command updates, creates or
@@ -40,7 +40,7 @@ local function handler()
     end
     local body_t: any = type(body) == "table" and body or {}
 
-    local result, err = automations_lib.reconfigure(component_id :: string, body_t.input)
+    local result, err = automations_lib.reconfigure(component_id :: string, body_t.input, {expected_revision = body_t.expected_revision})
     if err ~= nil then
         local status, payload = api_errors.status(err, "reconfigure_failed", "reconfigure failed")
         res:set_status(status)

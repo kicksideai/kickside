@@ -969,3 +969,17 @@ entries:
       threads_thread_crud: kickside.core.threads.persist:thread_crud
       threads_reader: kickside.core.threads.persist:reader
       threads_component: kickside.core.threads:component
+
+  - name: retire_subjects_method
+    kind: function.lua
+    meta:
+      comment: Owner-only bounded subject retirement for permanently fenced purged entity identities.
+    source: file://contract/subjects.lua
+    method: retire_subjects
+    modules: [sql, security]
+    imports:
+      contract_common: kickside.core.threads:contract_common
+      subjects: kickside.core.threads.persist:subjects
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error

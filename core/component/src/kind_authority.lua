@@ -22,16 +22,4 @@ function M.check(impl_id: string, operation: string): error?
         details = {code = "component_kind_mutation_denied", impl_id = impl_id, operation = operation}})
 end
 
--- A tree operation changes many components under one requesting frame.
-function M.checker(operation: string): (string) -> error?
-    local admitted: {[string]: boolean} = {}
-    return function(impl_id: string): error?
-        if admitted[impl_id] then return nil end
-        local err = M.check(impl_id, operation)
-        if err then return err end
-        admitted[impl_id] = true
-        return nil
-    end
-end
-
 return M
