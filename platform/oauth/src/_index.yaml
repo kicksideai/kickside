@@ -2,6 +2,7 @@ version: "1.0"
 namespace: kickside.oauth
 
 entries:
+
   - name: definition
     kind: ns.definition
     readme: file://README.md
@@ -15,7 +16,7 @@ entries:
     component: kickside/component
 
   - name: dep.kickside.contract
-    version: '*'
+    version: '>=0.3.8'
     kind: ns.dependency
     component: kickside/contract
 
@@ -40,6 +41,7 @@ entries:
     component: wippy/views
 
   # ─── Dependency interface (ns.requirement) ───────────────────────────
+
   - name: target_db
     kind: ns.requirement
     meta:
@@ -54,6 +56,7 @@ entries:
   # Resolved DB id for the persist layer. The target_db requirement rewrites
   # .meta.db_id here; oauth_types.db_id() reads it back so the repo binds the
   # configured database, not a hardcoded literal.
+
   - name: db_config
     kind: registry.entry
     meta:
@@ -128,6 +131,7 @@ entries:
     modules: [registry]
 
   # kickside.oauth:base_connector
+
   - name: base_connector
     kind: contract.binding
     meta:
@@ -145,3 +149,17 @@ entries:
           refresh_token: kickside.oauth.binding:refresh_token_func
 
   # kickside.oauth:connector
+
+  - name: encryption_key
+    kind: ns.requirement
+    default: ENCRYPTION_KEY
+    targets:
+      - {entry: kickside.oauth.env:encryption_key, path: .variable}
+
+  - name: secret_key_access
+    kind: security.policy
+    meta: {service_only: true}
+    policy:
+      resources: [kickside.oauth.env:encryption_key]
+      actions: [env.get]
+      effect: allow

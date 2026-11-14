@@ -1,46 +1,16 @@
 local crypto = require("crypto")
+local secret_cipher = require("secret_cipher")
 local base64 = require("base64")
 local json = require("json")
-local env = require("env")
 
 local READ_PURPOSE = "upload.read"
 local DEFAULT_READ_TTL_SECONDS = 300
 local MAX_READ_TTL_SECONDS = 3600
 
--- Convert hex string to bytes
-local function hex_decode(hex_str)
-    if not hex_str or #hex_str % 2 ~= 0 then
-        return nil, "Invalid hex string"
-    end
-
-    local bytes = ""
-    for i = 1, #hex_str, 2 do
-        local hex_byte = hex_str:sub(i, i + 1)
-        local byte_val = tonumber(hex_byte, 16)
-        if not byte_val then
-            return nil, "Invalid hex character"
-        end
-        bytes = bytes .. string.char(byte_val)
-    end
-    return bytes
-end
-
 -- Get encryption key from environment
 local function get_encryption_key()
-    local key_hex = env.get("ENCRYPTION_KEY")
-    if not key_hex then
-        error("ENCRYPTION_KEY environment variable is required but not set")
-    end
-
-    local key, err = hex_decode(key_hex)
-    if err then
-        error("Failed to decode encryption key: " .. err)
-    end
-
-    if #key ~= 16 and #key ~= 24 and #key ~= 32 then
-        error("Encryption key must be 16, 24, or 32 bytes after decoding, got " .. #key)
-    end
-
+    local key, err = secret_cipher.load_key("kickside.uploads.env:encryption_key")
+    if err then error(err, 0) end
     return key
 end
 
@@ -100,6 +70,11 @@ local function pack_read(params)
     ttl = math.floor(ttl)
     if ttl <= 0 then return nil, "expires_in must be positive" end
     if ttl > MAX_READ_TTL_SECONDS then ttl = MAX_READ_TTL_SECONDS end
+
+    local upload, lookup_err = require("upload_query_repo").get_read_ref(params.upload_id)
+    if lookup_err then return nil, lookup_err end
+    local _, access_err = require("original_read").authorize({uuid = params.upload_id, actor_id = upload.actor_id :: string})
+    if access_err then return nil, access_err end
 
     local now = os.time()
     local payload = {
@@ -191,31 +166,26 @@ local function pack(params)
 
     local encryption_key = get_encryption_key()
 
-    local encrypted, err = crypto.encrypt.aes(json_data, encryption_key :: string)
+    local encrypted, err = secret_cipher.seal(json_data, encryption_key :: string)
     if err then
-        return nil, "Encryption error: " .. err
+        return nil, "Encryption error: " .. tostring(err)
     end
 
-    return base64.encode(encrypted)
+    return encrypted
 end
 
 -- Unpack and validate upload completion token
 local function unpack(token: string?)
     if not token then return nil, "No token provided" end
 
-    local encrypted_data = base64.decode(token)
-    if not encrypted_data then
-        return nil, "Invalid token format"
-    end
-
     local encryption_key = get_encryption_key()
 
-    local json_data, err = crypto.decrypt.aes(encrypted_data, encryption_key :: string)
+    local json_data, err = secret_cipher.open(token, encryption_key :: string)
     if err then
-        return nil, "Invalid upload token: " .. err
+        return nil, "Invalid upload token: " .. tostring(err)
     end
 
-    local payload, err = json.decode(json_data)
+    local payload, err = json.decode(json_data :: string)
     if err then
         return nil, "Malformed token payload: " .. err
     end
@@ -236,8 +206,20 @@ local function unpack(token: string?)
 end
 
 return {
-    pack = pack,
-    unpack = unpack,
-    pack_read = pack_read,
-    unpack_read = unpack_read,
+    pack_entry = function(params)
+        local value, err = pack(params)
+        return { value = value, error = err }
+    end,
+    unpack_entry = function(token)
+        local value, err = unpack(token)
+        return { value = value, error = err }
+    end,
+    pack_read_entry = function(params)
+        local value, err = pack_read(params)
+        return { value = value, error = err }
+    end,
+    unpack_read_entry = function(token, expected)
+        local value, err = unpack_read(token, expected)
+        return { value = value, error = err }
+    end,
 }

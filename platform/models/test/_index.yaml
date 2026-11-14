@@ -2,10 +2,21 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: cipher_compatibility_test
+    kind: function.lua
+    meta: {type: test, suite: cipher_compatibility}
+    source: file://cipher_compatibility_test.lua
+    method: run
+    modules: [env, crypto, base64]
+    imports:
+      test: wippy.test:test
+      caller: kickside.models.persist:models_secrets
+
   - name: dep.wippy.test
     kind: ns.dependency
     component: wippy/test
     version: "*"
+
   - name: cache_publication_test
     kind: function.lua
     meta: { type: test, suite: kickside_models }
@@ -15,18 +26,19 @@ entries:
     imports:
       test: wippy.test:test
       models_repo: kickside.models.persist:repo
+
   - name: cache_publication_probe
     kind: process.lua
     meta: { type: test_helper }
     source: file://cache_publication_probe.lua
     method: run
-    modules: [process, channel, time]
+    modules: [process, channel, time, funcs]
     imports:
       models_repo: kickside.models.persist:repo
-      models_cache: kickside.models.service:models_cache
     security:
       actor: { id: models-cache-test }
       policies: [app:user]
+
   - name: discovery_retains_assignments_test
     kind: function.lua
     meta: { type: test, suite: kickside_models }
@@ -221,12 +233,14 @@ entries:
   - name: models_list_fixture_state
     kind: library.lua
     source: file://models_list_fixture_state.lua
+
   - name: models_list_fixture
     kind: library.lua
     source: file://fixtures/list_models.lua
     imports:
       http: app:models_list_fixture_state
       models: app:models_catalog_fixture
+
   - name: models_list_test
     kind: function.lua
     meta: { type: test }
@@ -313,3 +327,33 @@ entries:
       model_catalog: kickside.models.catalog:model_catalog
       registry_models: wippy.llm.discovery:models
       models_repo: kickside.models.persist:repo
+
+  - name: cache_publication_reload
+    kind: function.lua
+    meta: {type: test_helper}
+    source: file://cache_publication_reload.lua
+    method: run
+    modules: [process, channel, time]
+    imports:
+      models_cache: kickside.models.service:models_cache
+      profile_reload: app:profile_reload_fixture
+
+  - name: profile_reload_fixture
+    kind: library.lua
+    source: file://fixtures/profile_reload.lua
+    modules: [sql]
+    imports:
+      models_repo: kickside.models.persist:repo
+      models_cache: kickside.models.service:models_cache
+      catalog_policy: kickside.models.catalog:policy
+      catalog_card_policy: kickside.models.catalog:card_policy
+
+  - name: cipher_compatibility_test
+    kind: function.lua
+    meta: {type: test, suite: key_owner}
+    source: file://cipher_compatibility_test.lua
+    method: run
+    modules: [env, crypto, base64]
+    imports:
+      test: wippy.test:test
+      caller: kickside.models.persist:models_secrets

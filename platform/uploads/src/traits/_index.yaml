@@ -3,6 +3,7 @@ namespace: kickside.uploads.traits
 
 entries:
   # kickside.uploads.traits:count_files
+
   - name: count_files
     kind: function.lua
     meta:
@@ -39,8 +40,9 @@ entries:
       - contract
     method: handle
     
-  # kickside.uploads.traits:file_manager
     imports:
+  # kickside.uploads.traits:file_manager
+
   - name: file_manager
     kind: registry.entry
     meta:
@@ -77,6 +79,7 @@ entries:
       - kickside.uploads.traits:*
     
   # kickside.uploads.traits:list_files
+
   - name: list_files
     kind: function.lua
     meta:
@@ -115,8 +118,9 @@ entries:
       - contract
     method: handle
     
-  # kickside.uploads.traits:view_files
     imports:
+  # kickside.uploads.traits:view_files
+
   - name: view_files
     kind: function.lua
     meta:
@@ -235,6 +239,7 @@ entries:
       text_trim: kickside.uploads:text_trim
 
   # kickside.uploads.traits:fetch_url
+
   - name: fetch_url
     kind: function.lua
     meta:
@@ -361,7 +366,12 @@ entries:
       net_safety: kickside.uploads:net_safety
       upload_status: kickside.uploads:upload_status
 
+    security:
+      policies:
+        - kickside.uploads:token_call
+
   # kickside.uploads.traits:upload_file
+
   - name: upload_file
     kind: function.lua
     meta:
@@ -433,3 +443,6 @@ entries:
       upload_lib: kickside.uploads:uploads
       upload_read_model: kickside.uploads.persist:upload_read_model
       upload_status: kickside.uploads:upload_status
+    security:
+      policies:
+        - kickside.uploads:token_call

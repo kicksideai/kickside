@@ -16,7 +16,7 @@ function M.request()
                 stream = function() return bytes end,
             } } } }
         end,
-        query = function() return nil end }
+        query = function(_, key) return key == "token" and ctx.get("upload_token") or nil end }
 end
 function M.response()
     return { set_content_type = function() end,

@@ -9,6 +9,16 @@ namespace: app
 # Harness-only; never published.
 
 entries:
+  - name: cipher_compatibility_test
+    kind: function.lua
+    meta: {type: test, suite: cipher_compatibility}
+    source: file://cipher_compatibility_test.lua
+    method: run
+    modules: [env, crypto, base64]
+    imports:
+      test: wippy.test:test
+      caller: kickside.settings:settings_secrets
+
   - name: about_test
     kind: function.lua
     meta:
@@ -208,6 +218,7 @@ entries:
     prefix: /api
 
   # ─── Scopes the contract suite opens the settings service under ───────
+
   - name: settings_admin_policy
     kind: security.policy
     meta:
@@ -248,6 +259,7 @@ entries:
       effect: allow
 
   # ─── Settings declarations the contract suite drives ──────────────────
+
   - name: setting_max_items
     kind: registry.entry
     meta:
@@ -358,6 +370,7 @@ entries:
     validate_func: app:validate_false_transition
 
   # ─── Settings block fixture ──────────────────────────────────────────
+
   - name: block.settings
     kind: registry.entry
     meta:
@@ -454,3 +467,39 @@ entries:
     default: {enabled: true}
     schema:
       enum: [{enabled: true}, {enabled: false, labels: [chosen]}]
+
+  - name: key_owner_test
+    kind: function.lua
+    meta: {type: test, suite: key_owner, group: Settings key ownership}
+    source: file://key_owner_test.lua
+    method: run
+    modules: [funcs, security, env, contract, store]
+    imports:
+      test: wippy.test:test
+      settings_cache: kickside.settings:settings_cache
+
+  - name: key_owner_probe
+    kind: function.lua
+    source: file://key_owner_test.lua
+    method: probe
+    modules: [funcs, security, env, contract, store]
+    imports:
+      test: wippy.test:test
+      settings_cache: kickside.settings:settings_cache
+
+  - name: key_owner_caller
+    kind: security.policy
+    policy:
+      resources: '*'
+      actions: [access, contract.get, contract.open, contract.call, contract.implementations, contract.security, funcs.call, funcs.security, registry.get, registry.find, db.get, store.get, store.key.get, store.key.set, store.key.delete, pg.open, pg.broadcast]
+      effect: allow
+
+  - name: cipher_compatibility_test
+    kind: function.lua
+    meta: {type: test, suite: key_owner}
+    source: file://cipher_compatibility_test.lua
+    method: run
+    modules: [env, crypto, base64]
+    imports:
+      test: wippy.test:test
+      caller: kickside.settings:settings_secrets

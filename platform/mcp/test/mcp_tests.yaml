@@ -80,6 +80,10 @@ entries:
   - time
   - security
   - funcs
+  - crypto
+  - base64
+  - hash
+  - json
   imports:
     mcp_oauth_flow: kickside.mcp.oauth:flow
     mcp_oauth_repo: kickside.mcp.oauth:repo

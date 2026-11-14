@@ -2,6 +2,7 @@ version: "1.0"
 namespace: kickside.uploads.service
 
 entries:
+
   - name: process_worker
     kind: library.lua
     meta:
@@ -31,6 +32,7 @@ entries:
       policies:
         - kickside.uploads.security:deferred_owner
         - kickside.uploads.security:deferred_actor
+        - kickside.uploads:token_call
     imports:
       jobs_config: kickside.core.jobs:config
       threads_writer: kickside.core.threads.persist:writer
@@ -55,6 +57,7 @@ entries:
       policies:
         - kickside.uploads.security:deferred_owner
         - kickside.uploads.security:deferred_actor
+        - kickside.uploads:token_call
     imports:
       execution_identity: kickside.execution:execution_identity
       upload_query_repo: kickside.uploads.persist:upload_query_repo
