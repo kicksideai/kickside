@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.80](https://github.com/kicksideai/kickside/compare/jobs-v0.1.79...jobs-v0.1.80) (2026-11-14)
+
+
+### Bug Fixes
+
+* **jobs:** allow owners to purge enumerated slots ([#490](https://github.com/kicksideai/kickside/issues/490)) ([4b4a250](https://github.com/kicksideai/kickside/commit/4b4a2509784a14d951f8fd599813744b940d1020))
+
 ## [0.1.79](https://github.com/kicksideai/kickside/compare/jobs-v0.1.78...jobs-v0.1.79) (2026-11-14)
 
 
