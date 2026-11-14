@@ -4,13 +4,19 @@ import { dirname, join, relative } from 'node:path'
 
 const prefix = '\0shell-vendor:'
 const importMapPattern = /<script\b[^>]*type="importmap"[^>]*>[\s\S]*?<\/script>/
-const primevue = ['config', 'button', 'tag', 'dialog', 'checkbox', 'inputtext', 'password',
-  'select', 'datatable', 'column', 'avatar', 'accordion', 'accordionpanel', 'accordionheader',
-  'accordioncontent', 'chip', 'textarea', 'toggleswitch', 'radiobutton', 'inputnumber',
-  'datepicker', 'listbox', 'panel', 'card', 'toolbar', 'message', 'badge', 'divider', 'menu']
-export const shellModules = ['@wippy-fe/proxy', 'vue', 'pinia', 'vue-router', 'luxon',
-  '@iconify/vue', ...primevue.map(name => 'primevue/' + name), 'axios', 'nanoevents']
-export const shellExternal = (id, importer) => shellModules.includes(id) && !importer?.startsWith(prefix)
+// Vue and the modules bound to it come from the Web Host import map, as they do for every module
+// web component. The shell and the surfaces it mounts then share one Vue, PrimeVue and Iconify
+// instance, so the icon collections the shell registers reach every surface (EE2-2845).
+// The snapshot is the same Host import map contract that module web components build against.
+const hostImportMap = JSON.parse(readFileSync(
+  new URL('../../../../platform/workflows/ui/web-host.import-map.snapshot.json', import.meta.url), 'utf8'))
+const vueBound = id => ['vue', 'pinia', 'vue-router', '@iconify/vue', 'primevue'].includes(id)
+  || id.startsWith('primevue/')
+export const hostModules = Object.keys(hostImportMap.imports).filter(vueBound)
+// Modules that do not import Vue stay vendored as lock-pinned local files.
+export const shellModules = ['@wippy-fe/proxy', 'luxon', 'axios', 'nanoevents']
+export const shellExternal = (id, importer) =>
+  hostModules.includes(id) || (shellModules.includes(id) && !importer?.startsWith(prefix))
 const packageName = id => id.split('/').slice(0, id.startsWith('@') ? 2 : 1).join('/')
 const sri = bytes => 'sha256-' + createHash('sha256').update(bytes).digest('base64')
 
@@ -65,6 +71,7 @@ export function shellVendor() {
     },
     outputOptions(options) {
       return { ...options, paths: specifier => {
+        if (hostModules.includes(specifier)) return specifier
         const entry = imports[specifier]
         if (!entry) this.error('Unvendored shell external: ' + specifier)
         return '/app/app/main/' + entry.file
