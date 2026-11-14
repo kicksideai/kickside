@@ -316,8 +316,8 @@ function M.list_cards_public(): ({ any }?, any?)
 end
 
 function M.upsert_card(input: any, base: any?, inferred_capabilities: any?): (any?, any?)
-    -- Edit the saved copy when there is one so
-    -- omitted fields (options included) keep their saved values.
+    -- Edit the saved copy when there is one so omitted fields (options and
+    -- capability ownership included) keep their saved values.
     if type(input) == "table" then
         local overlays, read_err = M.list_card_overlays()
         if read_err then return nil, read_err end
@@ -364,8 +364,7 @@ function M.upsert_card(input: any, base: any?, inferred_capabilities: any?): (an
         card.name, card.title, card.description, card.provider_id, card.provider_profile_id, card.provider_model,
         policy.encode_json(card.capabilities), policy.encode_json(card.classes), card.priority, card.max_tokens, card.output_tokens,
         card.dimensions, policy.encode_json(card.pricing), policy.encode_json(card.options), card.source, policy.bool_int(card.enabled),
-        policy.encode_json(card.metadata),
-        card.capability_ownership and policy.encode_json(card.capability_ownership) or nil, ts, ts,
+        policy.encode_json(card.metadata), policy.encode_json(card.capability_ownership), ts, ts,
     })
     dbh:release()
     if err then return nil, "model save failed: " .. tostring(err) end

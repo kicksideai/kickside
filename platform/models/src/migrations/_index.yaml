@@ -40,6 +40,9 @@ entries:
         - kickside.models.migrations:02_discovered_capabilities
       timestamp: "2026-11-13T00:00:01Z"
     source: file://03_capability_ownership.lua
+    modules: [json]
     imports:
       migration: wippy.migration:migration
+      discovery_mapper: kickside.models.discovery:mapper
+      provider_registry: kickside.models.discovery:provider_registry
     method: migrate

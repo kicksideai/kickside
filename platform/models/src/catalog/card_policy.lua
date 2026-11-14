@@ -22,62 +22,35 @@ local function effective_capabilities(inferred: any, overrides: any): { string }
     end
     local additions: { string } = {}
     for capability, enabled in pairs(overrides) do
-        if enabled == true and not policy.table_has(out, capability) then
-            table.insert(additions, capability)
-        end
+        if enabled == true and not policy.table_has(out, capability) then table.insert(additions, capability) end
     end
     table.sort(additions)
     for _, capability in ipairs(additions) do table.insert(out, capability) end
     return out
 end
 
+-- A card's capabilities are its last inferred set with administrator overrides
+-- applied. Discovery replaces the inferred set; a save records the membership
+-- change it makes as overrides; a reset returns capabilities to discovery.
 local function capability_ownership(input: any, base: any?, inferred: any?): (any?, any?, string?)
-    local previous = base and base.capabilities or {}
-    local saved = base and base.capability_ownership
-    local ownership: any = nil
-    if saved ~= nil then
-        ownership = { inferred = saved.inferred, overrides = {} }
-        for capability, enabled in pairs(saved.overrides or {}) do
-            ownership.overrides[capability] = enabled
+    local saved = base and base.capability_ownership or { inferred = {}, overrides = {} }
+    local ownership = { inferred = inferred or saved.inferred, overrides = {} }
+    for capability, enabled in pairs(saved.overrides) do ownership.overrides[capability] = enabled end
+    if inferred == nil then
+        local current = effective_capabilities(saved.inferred, saved.overrides)
+        local target = policy.explicit_list(input.capabilities, base and base.capabilities or { "generate" })
+        for _, capability in ipairs(current) do
+            if not policy.table_has(target, capability) then ownership.overrides[capability] = false end
         end
-    end
-    if inferred ~= nil then
-        if ownership == nil then ownership = { overrides = {} } end
-        if ownership.inferred == nil and base ~= nil then
-            -- Every stored legacy capability may be an administrator addition.
-            for _, capability in ipairs(previous) do
-                ownership.overrides[capability] = true
-            end
-            for _, capability in ipairs(inferred) do
-                if not policy.table_has(previous, capability) then ownership.overrides[capability] = false end
-            end
-        end
-        ownership.inferred = inferred
-        return effective_capabilities(inferred, ownership.overrides), ownership
-    end
-
-    local capabilities = policy.explicit_list(input.capabilities, base and previous or { "generate" })
-    if input.capabilities ~= nil then
-        if ownership == nil then
-            ownership = { overrides = {} }
-            if base == nil then ownership.inferred = {} end
-        end
-        for _, capability in ipairs(previous) do
-            if not policy.table_has(capabilities, capability) then ownership.overrides[capability] = false end
-        end
-        for _, capability in ipairs(capabilities) do
-            if not policy.table_has(previous, capability) then ownership.overrides[capability] = true end
+        for _, capability in ipairs(target) do
+            if not policy.table_has(current, capability) then ownership.overrides[capability] = true end
         end
     end
     if input.reset_capabilities ~= nil then
         if type(input.reset_capabilities) ~= "table" then return nil, nil, "reset_capabilities must be a list" end
-        if ownership == nil or ownership.inferred == nil then return nil, nil, "discover capabilities before resetting overrides" end
         for _, capability in ipairs(input.reset_capabilities) do ownership.overrides[capability] = nil end
     end
-    if ownership ~= nil and ownership.inferred ~= nil then
-        capabilities = effective_capabilities(ownership.inferred, ownership.overrides)
-    end
-    return capabilities, ownership
+    return effective_capabilities(ownership.inferred, ownership.overrides), ownership
 end
 
 local function build_card(row: any, profile: any?): (any?, any?)
@@ -91,12 +64,8 @@ local function build_card(row: any, profile: any?): (any?, any?)
     if pricing_err then return nil, pricing_err end
     local metadata, metadata_err = policy.decode_json(row.metadata_json, {})
     if metadata_err then return nil, metadata_err end
-    local ownership = nil
-    if row.capability_ownership_json ~= nil then
-        local ownership_err
-        ownership, ownership_err = policy.decode_json(row.capability_ownership_json, {})
-        if ownership_err then return nil, ownership_err end
-    end
+    local ownership, ownership_err = policy.decode_json(row.capability_ownership_json, nil)
+    if ownership_err then return nil, ownership_err end
     local open_context = profile and not profile.error and policy.provider_context(profile) or nil
 
     return {
