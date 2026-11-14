@@ -1,5 +1,5 @@
-import { s as me, B as se, a as _, f as dt, b as Dt, c as Bt, d as fr, p as mr, M as wt, l as xt, e as Xe, g as ft, R as Ee, _ as gr, L as hr, h as $e, v as xe, i as vr, U as br, I as kt, j as yr, r as Et, k as wr, m as xr, n as N, x as Ze, W as kr, u as Pr, o as Cr, q as $r, t as Sr, P as Ir } from "./index-DCyVY6h3.js";
-import { openBlock as u, createElementBlock as g, mergeProps as b, createElementVNode as v, createBlock as P, resolveDynamicComponent as G, createCommentVNode as C, renderSlot as F, toDisplayString as B, resolveComponent as j, createVNode as y, normalizeStyle as Lr, normalizeClass as L, toHandlers as _e, resolveDirective as ge, withDirectives as le, createSlots as Rt, withCtx as D, Fragment as H, renderList as Se, createTextVNode as fe, normalizeProps as Ar, Transition as Tr, defineComponent as Ft, computed as W, unref as l, vShow as Dr, ref as O, watch as Ue, onMounted as Br, onBeforeUnmount as Er, withModifiers as Pt, withKeys as Ct, isRef as Rr } from "vue";
+import { s as me, B as se, a as U, f as dt, b as Dt, c as Bt, d as fr, p as mr, M as wt, l as xt, e as Xe, g as ft, R as Ee, _ as gr, L as hr, h as $e, v as xe, i as vr, U as br, I as kt, j as yr, r as Et, k as wr, m as xr, n as N, x as Ze, W as kr, u as Pr, o as Cr, q as $r, t as Sr, P as Ir } from "./index-DCyVY6h3.js";
+import { openBlock as u, createElementBlock as g, mergeProps as b, createElementVNode as v, createBlock as P, resolveDynamicComponent as G, createCommentVNode as C, renderSlot as F, toDisplayString as B, resolveComponent as j, createVNode as y, normalizeStyle as Lr, normalizeClass as L, toHandlers as Ue, resolveDirective as ge, withDirectives as le, createSlots as Rt, withCtx as D, Fragment as H, renderList as Se, createTextVNode as fe, normalizeProps as Ar, Transition as Tr, defineComponent as Ft, computed as W, unref as l, vShow as Dr, ref as O, watch as _e, onMounted as Br, onBeforeUnmount as Er, withModifiers as Pt, withKeys as Ct, isRef as Rr } from "vue";
 import { Icon as A } from "@iconify/vue";
 import { on as Fr, api as ie, loadByTagName as Or, host as Mr, define as zr } from "@wippy-fe/proxy";
 var Ot = {
@@ -7,20 +7,20 @@ var Ot = {
   extends: me
 };
 function Nr(e) {
-  return Vr(e) || Ur(e) || _r(e) || jr();
+  return Vr(e) || _r(e) || Ur(e) || jr();
 }
 function jr() {
   throw new TypeError(`Invalid attempt to spread non-iterable instance.
 In order to be iterable, non-array objects must have a [Symbol.iterator]() method.`);
 }
-function _r(e, t) {
+function Ur(e, t) {
   if (e) {
     if (typeof e == "string") return Ye(e, t);
     var r = {}.toString.call(e).slice(8, -1);
     return r === "Object" && e.constructor && (r = e.constructor.name), r === "Map" || r === "Set" ? Array.from(e) : r === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(r) ? Ye(e, t) : void 0;
   }
 }
-function Ur(e) {
+function _r(e) {
   if (typeof Symbol < "u" && e[Symbol.iterator] != null || e["@@iterator"] != null) return Array.from(e);
 }
 function Vr(e) {
@@ -118,7 +118,7 @@ var Wr = `
   classes: Gr
 }), Hr = {
   name: "BaseTag",
-  extends: _,
+  extends: U,
   props: {
     value: null,
     severity: null,
@@ -301,7 +301,7 @@ var en = `
   classes: tn
 }), nn = {
   name: "BaseInputGroup",
-  extends: _,
+  extends: U,
   style: rn,
   provide: function() {
     return {
@@ -327,7 +327,7 @@ var on = {
   classes: on
 }), ln = {
   name: "BaseInputGroupAddon",
-  extends: _,
+  extends: U,
   style: sn,
   provide: function() {
     return {
@@ -612,7 +612,7 @@ function In(e, t, r, n, i, a) {
   }, null, -1)])), 16);
 }
 jt.render = In;
-var _t = {
+var Ut = {
   name: "AngleUpIcon",
   extends: me
 };
@@ -653,7 +653,7 @@ function En(e, t, r, n, i, a) {
     fill: "currentColor"
   }, null, -1)])), 16);
 }
-_t.render = En;
+Ut.render = En;
 var Rn = `
     .p-inputnumber {
         display: inline-flex;
@@ -1077,13 +1077,13 @@ function Nn(e, t) {
   return (t === "string" ? String : Number)(e);
 }
 function jn(e) {
-  return Kn(e) || Vn(e) || Un(e) || _n();
+  return Kn(e) || Vn(e) || _n(e) || Un();
 }
-function _n() {
+function Un() {
   throw new TypeError(`Invalid attempt to spread non-iterable instance.
 In order to be iterable, non-array objects must have a [Symbol.iterator]() method.`);
 }
-function Un(e, t) {
+function _n(e, t) {
   if (e) {
     if (typeof e == "string") return it(e, t);
     var r = {}.toString.call(e).slice(8, -1);
@@ -1101,7 +1101,7 @@ function it(e, t) {
   for (var r = 0, n = Array(t); r < t; r++) n[r] = e[r];
   return n;
 }
-var Ut = {
+var _t = {
   name: "InputNumber",
   extends: Mn,
   inheritAttrs: !1,
@@ -1397,7 +1397,7 @@ var Ut = {
           }
           case "Delete":
             if (t.preventDefault(), r === n) {
-              var M = a.charAt(r), I = this.getDecimalCharIndexes(a), T = I.decimalCharIndex, U = I.decimalCharIndexWithoutPrefix;
+              var M = a.charAt(r), I = this.getDecimalCharIndexes(a), T = I.decimalCharIndex, _ = I.decimalCharIndexWithoutPrefix;
               if (this.isNumeralChar(M)) {
                 var J = this.getDecimalLength(a);
                 if (this._group.test(M))
@@ -1407,7 +1407,7 @@ var Ut = {
                 else if (T > 0 && r > T) {
                   var q = this.isDecimalMode() && (this.minFractionDigits || 0) < J ? "" : "0";
                   o = a.slice(0, r) + q + a.slice(r + 1);
-                } else U === 1 ? (o = a.slice(0, r) + "0" + a.slice(r + 1), o = this.parseValue(o) > 0 ? o : "") : o = a.slice(0, r) + a.slice(r + 1);
+                } else _ === 1 ? (o = a.slice(0, r) + "0" + a.slice(r + 1), o = this.parseValue(o) > 0 ? o : "") : o = a.slice(0, r) + a.slice(r + 1);
               }
               this.updateValue(t, o, null, "delete-back-single");
             } else
@@ -1595,8 +1595,8 @@ var Ut = {
         if (n === "range-insert") {
           var E = this.parseValue((o || "").slice(0, x)), R = E !== null ? E.toString() : "", M = R.split("").join("(".concat(this.groupChar, ")?")), I = new RegExp(M, "g");
           I.test(s);
-          var T = r.split("").join("(".concat(this.groupChar, ")?")), U = new RegExp(T, "g");
-          U.test(s.slice(I.lastIndex)), w = I.lastIndex + U.lastIndex, this.$refs.input.$el.setSelectionRange(w, w);
+          var T = r.split("").join("(".concat(this.groupChar, ")?")), _ = new RegExp(T, "g");
+          _.test(s.slice(I.lastIndex)), w = I.lastIndex + _.lastIndex, this.$refs.input.$el.setSelectionRange(w, w);
         } else if (k === p)
           n === "insert" || n === "delete-back-single" ? this.$refs.input.$el.setSelectionRange(w + 1, w + 1) : n === "delete-single" ? this.$refs.input.$el.setSelectionRange(w - 1, w - 1) : (n === "delete-range" || n === "spin") && this.$refs.input.$el.setSelectionRange(w, w);
         else if (n === "delete-back-single") {
@@ -1709,7 +1709,7 @@ var Ut = {
   },
   components: {
     InputText: Bt,
-    AngleUpIcon: _t,
+    AngleUpIcon: Ut,
     AngleDownIcon: jt,
     TimesIcon: Dt
   }
@@ -1771,7 +1771,7 @@ function Qn(e, t, r, n, i, a) {
   }, function() {
     return [v("button", b({
       class: [e.cx("incrementButton"), e.incrementButtonClass]
-    }, _e(a.upButtonListeners, !0), {
+    }, Ue(a.upButtonListeners, !0), {
       disabled: e.disabled,
       tabindex: -1,
       "aria-hidden": "true",
@@ -1790,7 +1790,7 @@ function Qn(e, t, r, n, i, a) {
   }, function() {
     return [v("button", b({
       class: [e.cx("decrementButton"), e.decrementButtonClass]
-    }, _e(a.downButtonListeners, !0), {
+    }, Ue(a.downButtonListeners, !0), {
       disabled: e.disabled,
       tabindex: -1,
       "aria-hidden": "true",
@@ -1810,7 +1810,7 @@ function Qn(e, t, r, n, i, a) {
     return [e.showButtons && e.buttonLayout !== "stacked" ? (u(), g("button", b({
       key: 0,
       class: [e.cx("incrementButton"), e.incrementButtonClass]
-    }, _e(a.upButtonListeners, !0), {
+    }, Ue(a.upButtonListeners, !0), {
       disabled: e.disabled,
       tabindex: -1,
       "aria-hidden": "true",
@@ -1830,7 +1830,7 @@ function Qn(e, t, r, n, i, a) {
     return [e.showButtons && e.buttonLayout !== "stacked" ? (u(), g("button", b({
       key: 0,
       class: [e.cx("decrementButton"), e.decrementButtonClass]
-    }, _e(a.downButtonListeners, !0), {
+    }, Ue(a.downButtonListeners, !0), {
       disabled: e.disabled,
       tabindex: -1,
       "aria-hidden": "true",
@@ -1846,7 +1846,7 @@ function Qn(e, t, r, n, i, a) {
     })], 16, qn)) : C("", !0)];
   })], 16, Wn);
 }
-Ut.render = Qn;
+_t.render = Qn;
 var Vt = {
   name: "AngleDoubleRightIcon",
   extends: me
@@ -1935,7 +1935,7 @@ function pa(e, t, r, n, i, a) {
 Kt.render = pa;
 var ua = {
   name: "BasePaginator",
-  extends: _,
+  extends: U,
   props: {
     totalRecords: {
       type: Number,
@@ -1980,7 +1980,7 @@ var ua = {
 }, Wt = {
   name: "CurrentPageReport",
   hostName: "Paginator",
-  extends: _,
+  extends: U,
   props: {
     pageCount: {
       type: Number,
@@ -2027,7 +2027,7 @@ Wt.render = ca;
 var Gt = {
   name: "FirstPageLink",
   hostName: "Paginator",
-  extends: _,
+  extends: U,
   props: {
     template: {
       type: Function,
@@ -2065,7 +2065,7 @@ Gt.render = da;
 var Jt = {
   name: "JumpToPageDropdown",
   hostName: "Paginator",
-  extends: _,
+  extends: U,
   emits: ["page-change"],
   props: {
     page: Number,
@@ -2123,7 +2123,7 @@ Jt.render = fa;
 var Ht = {
   name: "JumpToPageInput",
   hostName: "Paginator",
-  extends: _,
+  extends: U,
   inheritAttrs: !1,
   emits: ["page-change"],
   props: {
@@ -2152,7 +2152,7 @@ var Ht = {
     }
   },
   components: {
-    JTPInput: Ut
+    JTPInput: _t
   }
 };
 function ma(e, t, r, n, i, a) {
@@ -2172,7 +2172,7 @@ Ht.render = ma;
 var Zt = {
   name: "LastPageLink",
   hostName: "Paginator",
-  extends: _,
+  extends: U,
   props: {
     template: {
       type: Function,
@@ -2210,7 +2210,7 @@ Zt.render = ga;
 var qt = {
   name: "NextPageLink",
   hostName: "Paginator",
-  extends: _,
+  extends: U,
   props: {
     template: {
       type: Function,
@@ -2248,7 +2248,7 @@ qt.render = ha;
 var Qt = {
   name: "PageLinks",
   hostName: "Paginator",
-  extends: _,
+  extends: U,
   inheritAttrs: !1,
   emits: ["click"],
   props: {
@@ -2304,7 +2304,7 @@ Qt.render = ba;
 var Xt = {
   name: "PrevPageLink",
   hostName: "Paginator",
-  extends: _,
+  extends: U,
   props: {
     template: {
       type: Function,
@@ -2342,7 +2342,7 @@ Xt.render = ya;
 var Yt = {
   name: "RowsPerPageDropdown",
   hostName: "Paginator",
-  extends: _,
+  extends: U,
   emits: ["rows-change"],
   props: {
     options: Array,
@@ -3167,7 +3167,7 @@ var Na = `
   root: {
     pointerEvents: "auto"
   }
-}, _a = {
+}, Ua = {
   mask: function(t) {
     var r = t.instance, n = t.props, i = ["left", "right", "top", "bottom"], a = i.find(function(o) {
       return o === n.position;
@@ -3189,14 +3189,14 @@ var Na = `
   pcCloseButton: "p-drawer-close-button",
   content: "p-drawer-content",
   footer: "p-drawer-footer"
-}, Ua = se.extend({
+}, _a = se.extend({
   name: "drawer",
   style: Na,
-  classes: _a,
+  classes: Ua,
   inlineStyles: ja
 }), Va = {
   name: "BaseDrawer",
-  extends: _,
+  extends: U,
   props: {
     visible: {
       type: Boolean,
@@ -3253,7 +3253,7 @@ var Na = `
       default: !0
     }
   },
-  style: Ua,
+  style: _a,
   provide: function() {
     return {
       $pcDrawer: this,
@@ -3591,7 +3591,7 @@ function ri(e) {
 }
 function ni(e) {
   const t = pe(e.status);
-  return t === "completed" || t === "error";
+  return t === "completed" || t === "error" || t === "processing";
 }
 const ai = /* @__PURE__ */ new Set(["completed", "error"]);
 function ii(e) {
@@ -3656,7 +3656,7 @@ const li = {
   },
   emits: ["update:partsExpanded"],
   setup(e, { emit: t }) {
-    const r = e, n = W(() => r.preview ? ri(r.preview) : null), i = W(() => r.preview ? [ar(r.preview), Be(r.preview.size), tr(r.preview.created_at)].filter(Boolean).join(" · ") : ""), a = t;
+    const r = e, n = W(() => r.preview ? ri(r.preview) || (r.preview.status === "processing" ? { tone: "info", text: "Processing. Retry is available if the job has stopped." } : null) : null), i = W(() => r.preview ? [ar(r.preview), Be(r.preview.size), tr(r.preview.created_at)].filter(Boolean).join(" · ") : ""), a = t;
     return (o, s) => (u(), P(l(rr), {
       visible: !!e.preview,
       position: "right",
@@ -3755,12 +3755,12 @@ const li = {
               "aria-hidden": "true"
             }, null, 8, ["icon"]),
             v("span", null, B(n.value.text), 1),
-            n.value.tone === "error" ? (u(), P(l(N), {
+            n.value.tone === "error" || e.preview.status === "processing" ? (u(), P(l(N), {
               key: 0,
               type: "button",
               class: "kx-pv-retry",
               size: "small",
-              severity: "danger",
+              severity: n.value.tone === "error" ? "danger" : "secondary",
               outlined: "",
               label: "Retry",
               "data-testid": "uploads-preview-retry",
@@ -3776,7 +3776,7 @@ const li = {
                 }, null, 8, ["class"])
               ]),
               _: 1
-            }, 8, ["loading", "disabled"])) : C("", !0)
+            }, 8, ["severity", "loading", "disabled"])) : C("", !0)
           ], 10, mi)) : C("", !0),
           v("div", gi, [
             y(l(N), {
@@ -4014,7 +4014,7 @@ function Ci(e) {
   function I(d) {
     d.raw_url && (r.value = d);
   }
-  const T = W(() => t.value ? o(t.value.uuid).parts : []), U = W(() => t.value ? o(t.value.uuid).total : 0), J = W(() => t.value ? o(t.value.uuid).page : 1), q = W(() => Math.max(1, Math.ceil(U.value / Pe))), te = W(() => U.value ? (J.value - 1) * Pe + 1 : 0), re = W(() => Math.min(U.value, (J.value - 1) * Pe + T.value.length)), he = W(() => !!(t.value && m(t.value.uuid))), ue = W(() => !!(t.value && o(t.value.uuid).loading));
+  const T = W(() => t.value ? o(t.value.uuid).parts : []), _ = W(() => t.value ? o(t.value.uuid).total : 0), J = W(() => t.value ? o(t.value.uuid).page : 1), q = W(() => Math.max(1, Math.ceil(_.value / Pe))), te = W(() => _.value ? (J.value - 1) * Pe + 1 : 0), re = W(() => Math.min(_.value, (J.value - 1) * Pe + T.value.length)), he = W(() => !!(t.value && m(t.value.uuid))), ue = W(() => !!(t.value && o(t.value.uuid).loading));
   function Ke(d) {
     if (!t.value) return;
     const S = Math.min(Math.max(1, d), q.value);
@@ -4110,7 +4110,7 @@ function Ci(e) {
     viewPrimary: M,
     viewArtifact: I,
     currentArtifacts: T,
-    partsTotal: U,
+    partsTotal: _,
     partsPage: J,
     partsPages: q,
     partsRangeStart: te,
@@ -4144,7 +4144,7 @@ const $i = () => Pr(), Si = () => Cr(), Ii = { class: "kx" }, Li = { class: "kx-
 }, ji = {
   key: 1,
   class: "kx-empty"
-}, _i = { class: "kx-empty-ico" }, Ui = {
+}, Ui = { class: "kx-empty-ico" }, _i = {
   key: 2,
   class: "kx-empty"
 }, Vi = { class: "kx-list" }, Ki = { class: "kx-ficon" }, Wi = { class: "kx-id" }, Gi = ["title"], Ji = { class: "kx-sub" }, Hi = { class: "kx-type" }, Zi = ["title"], qi = { class: "kx-date" }, Qi = { class: "kx-actions" }, Xi = {
@@ -4165,7 +4165,7 @@ const $i = () => Pr(), Si = () => Cr(), Ii = { class: "kx" }, Li = { class: "kx-
     const M = O(!1), {
       preview: I,
       artifactView: T,
-      partsExpanded: U,
+      partsExpanded: _,
       busyAction: J,
       activePreviewSource: q,
       openPreview: te,
@@ -4195,7 +4195,7 @@ const $i = () => Pr(), Si = () => Cr(), Ii = { class: "kx" }, Li = { class: "kx-
     function ve() {
       V++, Q.value = "", Z.value = !1, re(), mt();
     }
-    Ue(() => ae.value.route, async (h) => {
+    _e(() => ae.value.route, async (h) => {
       const c = String(h ?? "").replace(/^\/+|\/+$/g, "");
       if (ze !== null && c !== ze) return;
       ze = null;
@@ -4248,11 +4248,11 @@ const $i = () => Pr(), Si = () => Cr(), Ii = { class: "kx" }, Li = { class: "kx-
       c !== x.value && (x.value = c, Y());
     }
     let be = null;
-    Ue(m, () => {
+    _e(m, () => {
       be && clearTimeout(be), be = setTimeout(() => {
         x.value = 1, Y();
       }, 300);
-    }), Ue($, () => {
+    }), _e($, () => {
       x.value = 1, Y();
     });
     function vt() {
@@ -4262,7 +4262,7 @@ const $i = () => Pr(), Si = () => Cr(), Ii = { class: "kx" }, Li = { class: "kx-
         Ne.value = { ...Ne.value, ...c.meta }, Y();
       }), X && (je = h));
     }
-    Ue(He, () => {
+    _e(He, () => {
       vt();
     });
     async function sr(h) {
@@ -4481,7 +4481,7 @@ const $i = () => Pr(), Si = () => Cr(), Ii = { class: "kx" }, Li = { class: "kx-
             }),
             c[12] || (c[12] = fe(" Loading…", -1))
           ])) : !i.value && !m.value && $.value === "all" ? (u(), g("div", ji, [
-            v("div", _i, [
+            v("div", Ui, [
               y(l(A), {
                 icon: "tabler:cloud-upload",
                 "aria-hidden": "true"
@@ -4609,15 +4609,15 @@ const $i = () => Pr(), Si = () => Cr(), Ii = { class: "kx" }, Li = { class: "kx-
               },
               onPage: c[8] || (c[8] = (f) => or(f.page + 1))
             }, null, 8, ["first", "total-records"])) : C("", !0)
-          ], 64)) : (u(), g("div", Ui, [...c[15] || (c[15] = [
+          ], 64)) : (u(), g("div", _i, [...c[15] || (c[15] = [
             v("div", { class: "kx-empty-title" }, "No matches", -1),
             v("div", { class: "kx-empty-sub" }, "No files match the current search or filter.", -1)
           ])]))
         ])
       ]),
       y(Pi, {
-        "parts-expanded": l(U),
-        "onUpdate:partsExpanded": c[9] || (c[9] = (f) => Rr(U) ? U.value = f : null),
+        "parts-expanded": l(_),
+        "onUpdate:partsExpanded": c[9] || (c[9] = (f) => Rr(_) ? _.value = f : null),
         preview: l(I),
         "artifact-view": l(T),
         "busy-action": l(J),
