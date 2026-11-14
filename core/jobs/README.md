@@ -50,6 +50,11 @@ inputs and inserts its successor for the same owner. A running predecessor
 returns a retryable conflict with its job ID. See the dependency interface for
 the optional `replaced_job_id` result.
 
+Owners enumerate retained jobs in bounded pages with
+`jobs.list_owner_jobs({kind = "component", id = owner_id}, filters, limit, after)`.
+Authorize the owner first, then use the returned native continuation through all
+pages. See the dependency interface for the position and authority contract.
+
 After a caller-owned `jobs.enqueue_tx(tx, dbtype, params)` transaction commits,
 call `jobs.nudge_workers()` to notify the worker pool. Retired slot owners call
 `jobs.purge_slot({ namespace = namespace, scope = scope, key = key })` and honor

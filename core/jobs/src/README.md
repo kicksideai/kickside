@@ -43,6 +43,18 @@ all resolve that config, so runtime SQL always follows the host's database mappi
 
 `jobs.get_job(id)` reads the exact job returned by enqueue and returns `(row, nil)`, `(nil, nil)` when absent, or `(nil, err)` on failure. The owning caller authorizes its resource before reading the job. Thread listings remain scoped to canonical thread owners.
 
+`jobs.list_owner_jobs({kind = "component", id = owner_id}, filters?, limit?, after?)`
+returns `(rows, nil, has_more)` for exactly that native owner locator. As with
+thread listings, the caller must authorize the owner before calling Jobs; Jobs
+never resolves consumer permissions. Other owner kinds and IDs are excluded.
+The default limit is 100; a supplied limit must be a positive integer. Filters
+are `status`, `job_type`, `queue_tier`, and the legacy `thread_id` owner-ID filter.
+Pages order by `created_at DESC, id DESC` through the owner chronology index.
+Continue with `{id = last_row.id, owner_id = last_row.owner_id}` until `has_more`
+is false. A missing, foreign, or filter-mismatched anchor returns INVALID.
+Rows expose `owner_kind`, `owner_id`, `slot`, and the same fields as `list_jobs`.
+Keep the anchor until the next page is read; deleting it invalidates continuation.
+
 Job listings and exact job reads include boolean `slot` and derived `due` fields.
 `due` means the stored status is `pending` and `scheduled_at` is at or before the
 database's current time. Pending-work counts use `due`, rather than status alone.
