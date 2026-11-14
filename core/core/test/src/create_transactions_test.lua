@@ -11,7 +11,7 @@ local function encoded(value: any): string
     return data
 end
 local function call(): (any, error?)
-    return api.create(fixture.database(), {component_id = "thread", trusted_audit = true}, nil, {system = true}, nil, true)
+    return api.create(fixture.database(), {component_id = "thread", trusted_audit = true, impl_id = "kickside.core.retention.pin_tests:inherited_retention_descriptor"}, nil, {system = true}, nil, true)
 end
 return {run = test.run_cases(function()
     test.describe("native existing-component thread creation transactions", function()
