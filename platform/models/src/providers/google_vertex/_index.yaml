@@ -2,6 +2,7 @@ version: "1.0"
 namespace: kickside.models.providers.google_vertex
 
 entries:
+
   - name: token_engine
     kind: library.lua
     meta:
@@ -23,6 +24,9 @@ entries:
     imports:
       token_engine: kickside.models.providers.google_vertex:token_engine
       models_types: kickside.models:models_types
+    security:
+      policies:
+        - kickside.models:reload_profiles_call
 
   - name: vertex_token_supervisor.service
     kind: process.service

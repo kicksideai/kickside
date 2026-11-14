@@ -2,6 +2,7 @@ version: "1.0"
 namespace: kickside.models.persist
 
 entries:
+
   - name: repo
     kind: library.lua
     meta:
@@ -16,6 +17,7 @@ entries:
 
   # Profile change delivery runs under the models identity: writing principals
   # need no process messaging authority.
+
   - name: profile_changed_transport
     kind: security.policy
     meta:
@@ -50,3 +52,19 @@ entries:
     meta: { comment: "AES encryption for provider profile secrets, keyed by ENCRYPTION_KEY." }
     source: file://secrets.lua
     modules: [crypto, base64, env]
+    imports:
+      secret_cipher: kickside.contract:secret_cipher
+
+
+  - name: reload_profiles
+    kind: function.lua
+    source: file://profile_reload.lua
+    method: run
+    modules: [sql]
+    imports:
+      models_repo: kickside.models.persist:repo
+      models_cache: kickside.models.service:models_cache
+      catalog_policy: kickside.models.catalog:policy
+      catalog_card_policy: kickside.models.catalog:card_policy
+    security:
+      policies: [kickside.models:secret_key_access]
