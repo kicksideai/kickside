@@ -1,9 +1,8 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
-import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
+import { lazyPage } from '@widgets/lazy'
 import type { ComponentProps } from './types.ts'
 import type { Events } from './constants.ts'
-import Security from './app/Security.vue'
 import stylesText from './styles.css?inline'
 import pkg from '../package.json'
 
@@ -17,7 +16,13 @@ class KicksideSecurityElement extends WippyVueElement<ComponentProps, Events> {
   }
 
   static get vueConfig() {
-    return { rootComponent: Security, plugins: [PrimeVuePlugin] }
+    return {
+      lazyConfig: lazyPage(
+        () => import('./lazy-mount').then((module) => module.mountConfig),
+        'Could not load Security. Reload the page to try again.',
+        useEvents,
+      ),
+    }
   }
 }
 

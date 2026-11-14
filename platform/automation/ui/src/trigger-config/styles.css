@@ -13,9 +13,13 @@
 @tailwind base;
 
 :host { display: block; font-size: 13px; color: var(--p-text-color); }
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host > div:empty, :host > div:has(> [data-lazy-state]) { min-height: 107px; }
 *, *::before, *::after { box-sizing: border-box; }
 
 .kx-tc { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+/* Holds the editor height while the source catalog loads. */
+.kx-tc:has(> .kx-tc-note[aria-live]) { min-height: 107px; }
 .kx-tc-field, .kx-tc-sub { min-width: 0; }
 .kx-tc-off { opacity: .6; pointer-events: none; }
 

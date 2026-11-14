@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 import vue from '@vitejs/plugin-vue'
 import { wippyComponentPlugin } from '@wippy-fe/vite-plugin'
 import { defineConfig } from 'vite'
+import { wcRuntimeChunk } from '../../widgets/ui/wc-build'
 
 interface WebHostImportMapSnapshot {
   releaseTag: string
@@ -75,10 +76,11 @@ export default defineConfig({
       formats: ['es'],
     },
     rollupOptions: {
-      preserveEntrySignatures: false,
+      preserveEntrySignatures: 'strict',
       input: entries,
       external: Object.keys(webHostImportMap.imports),
       output: {
+        manualChunks: wcRuntimeChunk,
         entryFileNames: '[name].js',
         chunkFileNames: '[name]-[hash].js',
         assetFileNames: '[name]-[hash][extname]',

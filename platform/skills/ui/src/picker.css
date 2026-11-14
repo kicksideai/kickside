@@ -1,4 +1,5 @@
 @import "@wippy-fe/theme/theme-config.css";
+@import "@kickside/ui-kit/spin.css";
 @import "@widgets/app/multiselect-field.css";
 
 /* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
@@ -16,7 +17,7 @@
 .sp { font-family: inherit; color: var(--p-text-color); display: flex; flex-direction: column; gap: 10px; }
 
 /* Layout wrapper the shared MultiSelectField emits around <wc-multiselect>. */
-.kx-msfield { display: block; width: 100%; }
+.kx-msfield { display: block; width: 100%; min-height: 38px; }
 
 /* Fallback shown when the picker element fails to load. */
 .kx-group-empty {
@@ -26,3 +27,6 @@
 
 /* Muted explanatory note under the picker. */
 .sp-hint { margin: 0; font-size: 12px; line-height: 1.5; color: var(--p-text-muted-color); }
+
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host > div:empty, :host > div:has(> [data-lazy-state]) { min-height: 84px; }

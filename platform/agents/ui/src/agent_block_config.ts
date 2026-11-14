@@ -1,7 +1,7 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
-import AgentBlockConfig from './app/AgentBlockConfig.vue'
+import { lazyControl } from '@widgets/lazy'
 import stylesText from './agent-block-config.css?inline'
 
 export interface AgentBlockConfigValue {
@@ -22,6 +22,12 @@ const PROPS_SCHEMA: WippyPropsSchema = {
   type: 'object',
   properties: { config: { type: 'object', description: 'Canonical Agent Block instance configuration.' } },
 }
+
+const AgentBlockConfig = lazyControl(
+  () => import('./app/AgentBlockConfig.vue'),
+  { loading: 'Loading agent block settings…', failed: 'Could not load the agent block settings. Reload the page to try again.' },
+  useEvents,
+)
 
 class KicksideAgentBlockConfigElement extends WippyVueElement<Props, Events> {
   static get wippyConfig(): WippyElementConfig<Props> {

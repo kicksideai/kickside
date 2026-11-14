@@ -1,7 +1,7 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
-import AgentEdit from './app/AgentEdit.vue'
+import { lazyControl } from '@widgets/lazy'
 import stylesText from './styles.css?inline'
 
 interface AgentEditProps {
@@ -22,6 +22,12 @@ const PROPS_SCHEMA: WippyPropsSchema = {
     mode: { type: 'string' },
   },
 }
+
+const AgentEdit = lazyControl(
+  () => import('./app/AgentEdit.vue'),
+  { loading: 'Loading agent editor…', failed: 'Could not load the agent editor. Reload the page to try again.' },
+  useEvents,
+)
 
 class KicksideAgentEditElement extends WippyVueElement<AgentEditProps> {
   static get wippyConfig(): WippyElementConfig<AgentEditProps> {

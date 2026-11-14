@@ -26,7 +26,8 @@ $UiKitConsumers = @('app-main', 'agents', 'automation', 'channel', 'connection',
 # @widgets path alias. TypeScript resolves that source's bare imports from the
 # widgets package directory, so its local dependencies must exist first.
 $WidgetSourceConsumers = @('agents', 'automation', 'channel', 'connection', 'hub', 'identity', 'inbox', 'knowledge',
-    'mcp', 'models', 'settings', 'skills', 'sync', 'transform', 'ui', 'uploads', 'users', 'webhooks', 'workflows')
+    'mcp', 'models', 'renderers', 'security', 'sessions', 'settings', 'skills', 'sync', 'transform', 'ui', 'uploads',
+    'users', 'webhooks', 'workflows')
 
 $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot

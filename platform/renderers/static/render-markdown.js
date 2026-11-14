@@ -1,24 +1,25 @@
-import { u as z, W as D, s as N } from "./styles-C28Y9Spn.js";
+import { u as D, W as N } from "./wc-runtime-h8e5VJvv.js";
 import { defineComponent as P, ref as b, onBeforeUnmount as q, watch as w, computed as F, openBlock as c, createElementBlock as d, unref as t, createVNode as _, createElementVNode as v, createCommentVNode as C, toDisplayString as H, Fragment as x, renderList as R, createBlock as $, nextTick as I } from "vue";
 import { Icon as L } from "@iconify/vue";
 import { api as W, define as j } from "@wippy-fe/proxy";
 import { u as A, _ as G } from "./TablePager.vue_vue_type_script_setup_true_lang-j7ct7P2v.js";
-const K = {
+import { s as K } from "./styles-HTuIrRec.js";
+const O = {
   key: 0,
   class: "rv-state"
-}, O = {
+}, J = {
   key: 1,
   class: "rv-state err"
-}, J = ["aria-busy", "innerHTML"], Q = /* @__PURE__ */ P({
+}, Q = ["aria-busy", "innerHTML"], X = /* @__PURE__ */ P({
   __name: "RenderMarkdown",
-  setup(S) {
-    const p = z(), u = A(), { result: i, loading: y, error: g } = u, f = b(!1);
+  setup(T) {
+    const p = D(), u = A(), { result: i, loading: y, error: g } = u, f = b(!1);
     let m = 0, l = 0;
     const k = b(null);
     q(() => {
       m++, l++;
     });
-    async function T() {
+    async function E() {
       const o = ++m;
       u.clear(), f.value = !1;
       const a = p.value?.source;
@@ -41,18 +42,18 @@ const K = {
         }
       }
     }
-    w(() => [p.value?.source, p.value?.sourceUrl], T, { immediate: !0 });
-    const E = F(() => i.value?.kind === "markdown" ? i.value.html : "");
-    async function U() {
+    w(() => [p.value?.source, p.value?.sourceUrl], E, { immediate: !0 });
+    const U = F(() => i.value?.kind === "markdown" ? i.value.html : "");
+    async function V() {
       const o = ++l;
       if (await I(), o !== l) return;
       const a = [...k.value?.querySelectorAll(".md-mermaid") ?? []];
       for (const n of a) {
         const r = n.textContent ?? "";
         try {
-          const { default: s } = await import("./mermaid.core-CmK1425T.js").then((B) => B.cb);
+          const { default: s } = await import("./mermaid.core-9Jub3RWO.js").then((z) => z.cb);
           if (o !== l) return;
-          const e = getComputedStyle(n), h = e.getPropertyValue("--p-content-background").trim(), V = e.getPropertyValue("--p-content-border-color").trim();
+          const e = getComputedStyle(n), h = e.getPropertyValue("--p-content-background").trim(), M = e.getPropertyValue("--p-content-border-color").trim();
           s.initialize({
             startOnLoad: !1,
             securityLevel: "strict",
@@ -62,7 +63,7 @@ const K = {
               primaryColor: h,
               secondaryColor: h,
               tertiaryColor: h,
-              primaryBorderColor: V,
+              primaryBorderColor: M,
               primaryTextColor: e.color,
               secondaryTextColor: e.color,
               tertiaryTextColor: e.color,
@@ -72,9 +73,9 @@ const K = {
               fontSize: e.fontSize
             }
           });
-          const { svg: M } = await s.render(`md-mermaid-${crypto.randomUUID()}`, r);
+          const { svg: B } = await s.render(`md-mermaid-${crypto.randomUUID()}`, r);
           if (o !== l) return;
-          n.innerHTML = M;
+          n.innerHTML = B;
         } catch (s) {
           if (o !== l) return;
           const e = document.createElement("div");
@@ -82,8 +83,8 @@ const K = {
         }
       }
     }
-    return w(E, U, { immediate: !0 }), (o, a) => (c(), d("div", null, [
-      f.value || t(y) && !t(i) ? (c(), d("div", K, [
+    return w(U, V, { immediate: !0 }), (o, a) => (c(), d("div", null, [
+      f.value || t(y) && !t(i) ? (c(), d("div", O, [
         _(t(L), {
           icon: "tabler:loader-2",
           class: "spin",
@@ -91,7 +92,7 @@ const K = {
         }),
         a[0] || (a[0] = v("span", null, "Loading…", -1))
       ])) : C("", !0),
-      t(g) ? (c(), d("div", O, [
+      t(g) ? (c(), d("div", J, [
         _(t(L), {
           icon: "tabler:alert-circle",
           "aria-hidden": "true"
@@ -112,28 +113,34 @@ const K = {
           class: "md markdown-body",
           "aria-busy": t(y),
           innerHTML: t(i).html
-        }, null, 8, J)
+        }, null, 8, Q)
       ], 64)) : C("", !0)
     ]));
   }
-}), X = {
+}), Y = {
   type: "object",
   properties: {
     source: { type: "string", default: "", description: "Markdown/plain text to render inline." },
     "source-url": { type: "string", default: "", description: "URL to fetch the source text from (auth via proxy) when source is empty." }
   }
 };
-class Y extends D {
+class S extends N {
   static get wippyConfig() {
     return {
-      propsSchema: X,
+      propsSchema: Y,
       hostCssKeys: ["themeConfigUrl"],
-      inlineCss: N
+      inlineCss: K
     };
   }
   static get vueConfig() {
-    return { rootComponent: Q };
+    return { rootComponent: X };
   }
 }
-j(import.meta.url, Y);
+async function ae() {
+  return S;
+}
+j(import.meta.url, S);
+export {
+  ae as webComponent
+};
 //# sourceMappingURL=render-markdown.js.map

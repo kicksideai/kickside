@@ -1,8 +1,8 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
+import { lazyControl } from '@widgets/lazy'
 import type { Trait } from './app/agent-form.types'
-import MasterNamespacePicker from './app/MasterNamespacePicker.vue'
 import stylesText from './styles.css?inline'
 
 // The master capabilities' config component (kickside-master-namespace-picker). Used by
@@ -32,6 +32,12 @@ const PROPS_SCHEMA: WippyPropsSchema = {
     },
   },
 }
+
+const MasterNamespacePicker = lazyControl(
+  () => import('./app/MasterNamespacePicker.vue'),
+  { loading: 'Loading capability scope picker…', failed: 'Could not load the capability scope picker. Reload the page to try again.' },
+  useEvents,
+)
 
 class KicksideMasterNamespacePickerElement extends WippyVueElement<MasterPickerProps, MasterPickerEvents> {
   static get wippyConfig(): WippyElementConfig<MasterPickerProps> {

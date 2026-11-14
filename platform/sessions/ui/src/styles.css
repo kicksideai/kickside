@@ -17,6 +17,10 @@
    the other pages use). */
 :host { display: block; height: 100%; min-height: 0; }
 :host > div { height: 100%; min-height: 0; }
+/* The wrapper's loader takes the viewport height as an only child, so it is held to this
+   surface. A reconnect during a pending import can leave a second loader until the mount. */
+wippy-loading, wippy-error { height: 100%; }
+wippy-loading ~ wippy-loading { display: none; }
 *, *::before, *::after { box-sizing: border-box; }.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 /* Favorites are a decorative domain marker, not a warning state. Pair the hue

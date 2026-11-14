@@ -1,7 +1,7 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
-import AgentPicker from './app/AgentPicker.vue'
+import { lazyControl } from '@widgets/lazy'
 import stylesText from './styles.css?inline'
 
 interface AgentPickerProps {
@@ -26,6 +26,12 @@ const PROPS_SCHEMA: WippyPropsSchema = {
     schema: { type: 'string', default: '' },
   },
 }
+
+const AgentPicker = lazyControl(
+  () => import('./app/AgentPicker.vue'),
+  { loading: 'Loading agent picker…', failed: 'Could not load the agent picker. Reload the page to try again.', iconOnly: true },
+  useEvents,
+)
 
 class KicksideAgentPickerElement extends WippyVueElement<AgentPickerProps, AgentPickerEvents> {
   static get wippyConfig(): WippyElementConfig<AgentPickerProps> {

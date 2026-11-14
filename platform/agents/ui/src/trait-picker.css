@@ -1,5 +1,6 @@
 @import "@wippy-fe/theme/theme-config.css";
 @import "@kickside/ui-kit/focus.css";
+@import "@kickside/ui-kit/spin.css";
 @import "@kickside/ui-kit/kx-tone.css";
 @import "@widgets/app/wc-mount.css";
 @import "@widgets/app/anchored-panel.css";
@@ -120,3 +121,5 @@
 
 .kx-trait-details .kx-trait-description { display: block; overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; -webkit-line-clamp: unset; }
 .kx-trait-tools { list-style: none; margin: .5rem 0; padding: 0; display: grid; gap: .5rem; }
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host > div:empty, :host > div:has(> [data-lazy-state]) { min-height: 91px; }

@@ -7,3 +7,7 @@
    preflight; without it PrimeVue controls keep UA defaults the theme never
    overrides. */
 @tailwind base;
+
+/* The loaded height, reserved while the implementation loads or fails. Width is never reserved. */
+:host(wc-workflow-picker) > div:empty, :host(wc-workflow-picker) > div:has(> [data-lazy-state]) { min-height: 86px; }
+:host(kickside-workflow-embed) > div:empty, :host(kickside-workflow-embed) > div:has(> [data-lazy-state]) { min-height: 115px; }

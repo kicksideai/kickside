@@ -1,53 +1,54 @@
-import { u as v, W as f, s as k } from "./styles-CrKXLCsi.js";
-import { defineComponent as y, ref as a, onMounted as g, openBlock as n, createElementBlock as r, createElementVNode as e, toDisplayString as l, Fragment as h, createTextVNode as _, createCommentVNode as c } from "vue";
+import { u as f, W as y } from "./wc-runtime-DjtZy7dL.js";
+import { defineComponent as k, ref as a, onMounted as g, openBlock as s, createElementBlock as r, createElementVNode as e, toDisplayString as l, Fragment as h, createTextVNode as _, createCommentVNode as c } from "vue";
 import { loadByTagName as b, api as w, define as C } from "@wippy-fe/proxy";
+import { s as E } from "./styles-D9m6R71p.js";
 import "@iconify/vue";
-const E = { class: "ks-about" }, S = {
+const S = { class: "ks-about" }, x = {
   key: 0,
   class: "ks-loading"
-}, x = {
+}, K = {
   key: 1,
   role: "alert",
   class: "ks-err"
-}, K = { class: "ks-about-facts" }, V = { class: "ks-about-runtime" }, L = { "aria-labelledby": "third-party-notices" }, N = {
+}, V = { class: "ks-about-facts" }, L = { class: "ks-about-runtime" }, N = { "aria-labelledby": "third-party-notices" }, T = {
   key: 0,
   role: "alert",
   class: "ks-err"
-}, T = ["source"], B = /* @__PURE__ */ y({
+}, B = ["source"], M = /* @__PURE__ */ k({
   __name: "about",
-  setup(p) {
-    const o = a(null), i = a(""), u = a(!0);
-    async function m() {
+  setup(m) {
+    const n = a(null), i = a(""), u = a(!0);
+    async function v() {
       u.value = !0, i.value = "";
       try {
         const { data: t } = await w.get("/api/v1/settings/about");
         if (!t?.success) throw new Error(t?.error || "Failed to load application information");
-        o.value = t;
+        n.value = t;
       } catch (t) {
-        o.value = null, i.value = t instanceof Error ? t.message : String(t);
+        n.value = null, i.value = t instanceof Error ? t.message : String(t);
       } finally {
         u.value = !1;
       }
     }
-    v(m);
+    f(v);
     const d = a("");
     return g(() => {
       b("wc-render-markdown", { timeoutMs: 8e3 }).catch((t) => {
         d.value = t instanceof Error ? t.message : String(t);
       });
-    }), (t, s) => (n(), r("div", E, [
-      s[4] || (s[4] = e("header", { class: "ks-pane-head" }, [
+    }), (t, o) => (s(), r("div", S, [
+      o[4] || (o[4] = e("header", { class: "ks-pane-head" }, [
         e("div", { class: "ks-pane-head-text" }, [
           e("h1", null, "About KickSide")
         ])
       ], -1)),
-      u.value ? (n(), r("p", S, "Loading…")) : i.value ? (n(), r("p", x, l(i.value), 1)) : o.value ? (n(), r(h, { key: 2 }, [
-        e("dl", K, [
+      u.value ? (s(), r("p", x, "Loading…")) : i.value ? (s(), r("p", K, l(i.value), 1)) : n.value ? (s(), r(h, { key: 2 }, [
+        e("dl", V, [
           e("div", null, [
-            s[0] || (s[0] = e("dt", null, "KickSide version", -1)),
-            e("dd", null, l(o.value.version || "Development build"), 1)
+            o[0] || (o[0] = e("dt", null, "KickSide version", -1)),
+            e("dd", null, l(n.value.version || "Development build"), 1)
           ]),
-          s[1] || (s[1] = e("div", null, [
+          o[1] || (o[1] = e("div", null, [
             e("dt", null, "Licence"),
             e("dd", null, [
               e("a", {
@@ -58,33 +59,39 @@ const E = { class: "ks-about" }, S = {
             ])
           ], -1))
         ]),
-        e("p", V, [
-          s[2] || (s[2] = _("Runs on the Wippy runtime (MPL-2.0) ", -1)),
-          e("span", null, l(o.value.runtime_version), 1)
+        e("p", L, [
+          o[2] || (o[2] = _("Runs on the Wippy runtime (MPL-2.0) ", -1)),
+          e("span", null, l(n.value.runtime_version), 1)
         ]),
-        e("section", L, [
-          s[3] || (s[3] = e("h2", { id: "third-party-notices" }, "Third-party notices", -1)),
-          d.value ? (n(), r("p", N, l(d.value), 1)) : c("", !0),
+        e("section", N, [
+          o[3] || (o[3] = e("h2", { id: "third-party-notices" }, "Third-party notices", -1)),
+          d.value ? (s(), r("p", T, l(d.value), 1)) : c("", !0),
           e("wc-render-markdown", {
             class: "ks-about-notices",
-            source: o.value.notices
-          }, null, 8, T)
+            source: n.value.notices
+          }, null, 8, B)
         ])
       ], 64)) : c("", !0)
     ]));
   }
 });
-class M extends f {
+class p extends y {
   static get wippyConfig() {
     return {
       propsSchema: { type: "object", properties: {} },
       hostCssKeys: ["themeConfigUrl"],
-      inlineCss: k
+      inlineCss: E
     };
   }
   static get vueConfig() {
-    return { rootComponent: B };
+    return { rootComponent: M };
   }
 }
-C(import.meta.url, M);
+async function j() {
+  return p;
+}
+C(import.meta.url, p);
+export {
+  j as webComponent
+};
 //# sourceMappingURL=about.js.map

@@ -141,7 +141,7 @@ onMounted(async () => {
         <span>Loading Agent picker…</span>
       </div>
       <wc-agent-picker v-else :config="pickerConfig" @change="onAgentChange"></wc-agent-picker>
-      <small v-if="pickerReady">Select one exact installed Agent.</small>
+      <small>Select one exact installed Agent.</small>
     </div>
     <label v-else class="kx-agent-block__field">
       <span>Instructions</span>

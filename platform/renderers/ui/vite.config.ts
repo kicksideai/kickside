@@ -2,12 +2,14 @@ import { resolve } from 'node:path'
 import vue from '@vitejs/plugin-vue'
 import { wippyComponentPlugin } from '@wippy-fe/vite-plugin'
 import { defineConfig } from 'vite'
+import { hostExternals, wcRuntimeChunk } from '../../widgets/ui/wc-build'
 
 // One project, four isolated elements. Each entry is its own bundle, so the heavy
 // renderers (pdfjs in render-pdf, markdown-it + highlight.js in render-markdown)
 // load only when that viewer is actually mounted — never into a host like the
 // wiki. <wc-resource-view> is the tiny host that picks + mounts the right one.
 export default defineConfig({
+  resolve: { alias: { '@widgets': resolve(__dirname, '../../widgets/ui/src') } },
   base: './',
   plugins: [vue({ template: { compilerOptions: { isCustomElement: (t) => t.startsWith('wc-') } } }), wippyComponentPlugin()],
   define: {
@@ -37,7 +39,7 @@ export default defineConfig({
       formats: ['es'],
     },
     rollupOptions: {
-      preserveEntrySignatures: false,
+      preserveEntrySignatures: 'strict',
       input: {
         'resource-view': resolve(__dirname, 'src/resource-view.ts'),
         'render-markdown': resolve(__dirname, 'src/render-markdown.ts'),
@@ -51,8 +53,9 @@ export default defineConfig({
         'render-xlsx': resolve(__dirname, 'src/render-xlsx.ts'),
         'render-pptx': resolve(__dirname, 'src/render-pptx.ts'),
       },
-      external: ['vue', '@iconify/vue', '@wippy-fe/proxy'],
+      external: hostExternals,
       output: {
+        manualChunks: wcRuntimeChunk,
         entryFileNames: '[name].js',
         chunkFileNames: '[name]-[hash].js',
         assetFileNames: '[name]-[hash][extname]',

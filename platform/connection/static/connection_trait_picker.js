@@ -1,85 +1,13 @@
-import { u as T, a as w, b as V, r as B, C as x, W as A, s as I, P as L } from "./styles-Bx2Y_Hv8.js";
-import { defineComponent as O, ref as l, computed as u, watch as _, onMounted as U, resolveComponent as $, openBlock as t, createElementBlock as i, createElementVNode as y, toDisplayString as p, createBlock as j, createCommentVNode as a, normalizeClass as M } from "vue";
-import { api as W, loadByTagName as z, define as D } from "@wippy-fe/proxy";
+import { W as t, u as o } from "./wc-runtime-KO3cNuNo.js";
+import { P as n } from "./primevue-plugin-CaP7wV_M.js";
+import { l as i, s as r } from "./styles-LyS_4lzj.js";
 import "@iconify/vue";
-const J = { class: "connpick" }, K = { class: "connpick-field" }, R = {
-  key: 1,
-  class: "connpick-hint"
-}, q = {
-  key: 2,
-  class: "connpick-error"
-}, F = {
-  key: 3,
-  class: "connpick-error"
-}, G = /* @__PURE__ */ O({
-  __name: "ConnectionTraitPicker",
-  setup(C) {
-    const v = T(), g = w(), s = l([]), o = l(""), d = l(!1), r = l(""), n = u(() => v.value.provider || ""), k = u(() => v.value.label || (n.value ? `${n.value} connection` : "Connection")), m = u(() => s.value.find((e) => e.component_id === o.value)), h = u(() => JSON.stringify({ connection_id: o.value }));
-    _(
-      () => v.value.config,
-      (e) => {
-        o.value = e?.connection_id || "";
-      },
-      { immediate: !0 }
-    ), _(n, () => P(), { immediate: !0 });
-    function f(e) {
-      return e ? B(e.connection_state, e.expires_at) : "";
-    }
-    function b(e) {
-      const c = f(e);
-      return c ? x[c] : "";
-    }
-    function E() {
-      g("config-changed", { connection_id: o.value || void 0 });
-    }
-    function N(e) {
-      const c = e.detail;
-      o.value = c?.connection_id || "", E();
-    }
-    async function P() {
-      if (!n.value) {
-        s.value = [];
-        return;
-      }
-      d.value = !0, r.value = "";
-      try {
-        const { data: e } = await W.get(`/api/v1/connections?provider=${encodeURIComponent(n.value)}&limit=100`);
-        s.value = e?.connections ?? [];
-      } catch (e) {
-        r.value = V(e);
-      } finally {
-        d.value = !1;
-      }
-    }
-    return U(() => {
-      z("wc-connection-picker", { timeoutMs: 8e3 }).catch(() => {
-      });
-    }), (e, c) => {
-      const S = $("wc-connection-picker");
-      return t(), i("div", J, [
-        y("label", K, [
-          y("span", null, p(k.value), 1),
-          n.value ? (t(), j(S, {
-            key: 0,
-            source: "/api/v1/connections",
-            providers: n.value,
-            "reply-only": "false",
-            placeholder: "Auto-select default",
-            value: h.value,
-            onChange: N
-          }, null, 8, ["providers", "value"])) : a("", !0)
-        ]),
-        m.value ? (t(), i("div", {
-          key: 0,
-          class: M(["connpick-meta", `state-${f(m.value)}`])
-        }, p(b(m.value)), 3)) : a("", !0),
-        n.value && !s.value.length && !d.value ? (t(), i("p", R, "No " + p(n.value) + " connection yet.", 1)) : a("", !0),
-        n.value ? a("", !0) : (t(), i("p", q, "Connection provider is not configured for this capability.")),
-        r.value ? (t(), i("p", F, p(r.value), 1)) : a("", !0)
-      ]);
-    };
-  }
-}), H = {
+import { define as s } from "@wippy-fe/proxy";
+const p = i(
+  () => import("./ConnectionTraitPicker-3eGysQg5.js"),
+  { loading: "Loading connection picker…", failed: "Could not load the connection picker. Reload the page to try again." },
+  o
+), a = {
   type: "object",
   properties: {
     // config carries { connection_id } as a JSON object; the host parser only
@@ -89,17 +17,23 @@ const J = { class: "connpick" }, K = { class: "connpick-field" }, R = {
     label: { type: "string" }
   }
 };
-class Q extends A {
+class e extends t {
   static get wippyConfig() {
     return {
-      propsSchema: H,
+      propsSchema: a,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: I
+      inlineCss: r
     };
   }
   static get vueConfig() {
-    return { rootComponent: G, plugins: [L] };
+    return { rootComponent: p, plugins: [n] };
   }
 }
-D(import.meta.url, Q);
+async function y() {
+  return e;
+}
+s(import.meta.url, e);
+export {
+  y as webComponent
+};
 //# sourceMappingURL=connection_trait_picker.js.map

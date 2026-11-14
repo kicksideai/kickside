@@ -1,23 +1,24 @@
-import { u as y, W as _, s as h } from "./styles-C28Y9Spn.js";
-import { defineComponent as g, ref as l, watch as U, onBeforeUnmount as b, openBlock as r, createElementBlock as a, createVNode as c, unref as d, createElementVNode as p, toDisplayString as C, createCommentVNode as k } from "vue";
+import { u as _, W as h } from "./wc-runtime-h8e5VJvv.js";
+import { defineComponent as g, ref as i, watch as b, onBeforeUnmount as U, openBlock as r, createElementBlock as a, createVNode as c, unref as d, createElementVNode as p, toDisplayString as C, createCommentVNode as k } from "vue";
 import { Icon as m } from "@iconify/vue";
 import { api as R, define as L } from "@wippy-fe/proxy";
-const j = { class: "mediav" }, x = {
+import { s as x } from "./styles-HTuIrRec.js";
+const j = { class: "mediav" }, w = {
   key: 0,
   class: "rv-state"
 }, E = {
   key: 1,
   class: "rv-state err"
-}, V = ["src"], w = /* @__PURE__ */ g({
+}, V = ["src"], B = /* @__PURE__ */ g({
   __name: "RenderAudio",
-  setup(v) {
-    const i = y(), s = l(!1), o = l(""), t = l("");
+  setup(f) {
+    const l = _(), s = i(!1), o = i(""), t = i("");
     function u() {
       t.value && (URL.revokeObjectURL(t.value), t.value = "");
     }
-    async function f() {
+    async function y() {
       o.value = "", u();
-      const n = i.value?.sourceUrl;
+      const n = l.value?.sourceUrl;
       if (n) {
         s.value = !0;
         try {
@@ -30,8 +31,8 @@ const j = { class: "mediav" }, x = {
         }
       }
     }
-    return U(() => i.value?.sourceUrl, f, { immediate: !0 }), b(u), (n, e) => (r(), a("div", j, [
-      s.value ? (r(), a("div", x, [
+    return b(() => l.value?.sourceUrl, y, { immediate: !0 }), U(u), (n, e) => (r(), a("div", j, [
+      s.value ? (r(), a("div", w, [
         c(d(m), {
           icon: "tabler:loader-2",
           class: "spin",
@@ -53,23 +54,29 @@ const j = { class: "mediav" }, x = {
       }, null, 8, V)) : k("", !0)
     ]));
   }
-}), B = {
+}), N = {
   type: "object",
   properties: {
     "source-url": { type: "string", default: "", description: "URL to fetch the audio bytes from (auth via proxy)." }
   }
 };
-class N extends _ {
+class v extends h {
   static get wippyConfig() {
     return {
-      propsSchema: B,
+      propsSchema: N,
       hostCssKeys: ["themeConfigUrl"],
-      inlineCss: h
+      inlineCss: x
     };
   }
   static get vueConfig() {
-    return { rootComponent: w };
+    return { rootComponent: B };
   }
 }
-L(import.meta.url, N);
+async function D() {
+  return v;
+}
+L(import.meta.url, v);
+export {
+  D as webComponent
+};
 //# sourceMappingURL=render-audio.js.map

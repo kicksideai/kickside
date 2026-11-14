@@ -1,9 +1,8 @@
-import { WippyVueElement, define } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
-import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
+import { lazyPage } from '@widgets/lazy'
 import type { ComponentProps } from './types.ts'
 import type { Events } from './constants.ts'
-import Users from './app/users.vue'
 import stylesText from './styles.css?inline'
 import pkg from '../package.json'
 
@@ -17,7 +16,13 @@ class KicksideUsersElement extends WippyVueElement<ComponentProps, Events> {
   }
 
   static get vueConfig() {
-    return { rootComponent: Users, plugins: [PrimeVuePlugin] }
+    return {
+      lazyConfig: lazyPage(
+        () => import('./index-mount').then((module) => module.mountConfig),
+        'Could not load Users. Reload the page to try again.',
+        useEvents,
+      ),
+    }
   }
 }
 
