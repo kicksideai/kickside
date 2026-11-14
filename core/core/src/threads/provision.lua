@@ -27,6 +27,8 @@ local execution_identity = require("execution_identity")
 local component_identity = require("component_identity")
 local component_envelope = require("component_envelope")
 local error_envelope = require("error_envelope")
+local lifecycle_log = require("component_lifecycle_log")
+local component_lifecycle = require("component_lifecycle")
 
 local M = {}
 
@@ -182,7 +184,11 @@ end
 
 -- converge makes every component of a declaring kind match its declaration: a
 -- missing thread row is recreated (thread-declaring kinds), a missing declared
--- projection or cursor is registered (any kind declaring projections). Declared state thereby survives anything — a partial
+-- projection or cursor is registered (any kind declaring projections) on the
+-- thread it is declared on: the component's thread, or for `on: lifecycle` the
+-- component's lifecycle thread. A `child.lifecycle` projection belongs to each
+-- child's lifecycle thread and is registered by that child's lifecycle events.
+-- Declared state thereby survives anything — a partial
 -- delete, a lost row, a module uninstall/reinstall — because the next service
 -- start reasserts the declaration. Boot runs it on service start and after
 -- each install's migrations are applied. Each component converges under its own
@@ -201,8 +207,12 @@ function M.converge(opener_actor: any, opener_scope: any): ({ [string]: any }, e
     if not db then return summary, missing_result("get") end
     local _db = db :: sql.DB
 
+    local function on_thread(decl: { [string]: any }): boolean
+        return decl.on == nil or decl.on == "" or decl.on == autoinit.PROJECTION_ON.THREAD
+    end
+
     -- One divergence set per declaring kind: components missing their thread row,
-    -- plus components missing declared projections.
+    -- plus components missing declared projections on their thread.
     local function divergent_components(kind: { [string]: any }): ({ [string]: boolean }, error?)
         local ids: { [string]: boolean } = {}
         -- A missing thread is recreatable only for a kind that declares its
@@ -227,46 +237,103 @@ function M.converge(opener_actor: any, opener_scope: any): ({ [string]: any }, e
         end
         for _, projection in ipairs((kind.projections or {}) :: { any }) do
             local decl = projection :: { [string]: any }
-            -- An omitted declared key stores as the projections default — the scan
-            -- must compare against what register actually wrote.
-            local declared_key = decl.projection_key
-            if type(declared_key) ~= "string" or declared_key == "" then
-                declared_key = proj_types.KEY_DEFAULT
-            end
-            local escaped_kind = tostring(decl.kind):gsub("'", "''")
-            local escaped_key = tostring(declared_key):gsub("'", "''")
-            local cursor_key = type(decl.cursor_key) == "string" and decl.cursor_key ~= "" and decl.cursor_key or proj_types.KEY_DEFAULT
-            local escaped_cursor = cursor_key:gsub("'", "''")
-            local missing_rows, proj_err = sql.builder
-                .select("c.component_id AS component_id")
-                :from("kickside_components c")
-                :join("kickside_thread t ON t.id = c.component_id")
-                :left_join("kickside_projection p ON p.thread_id = t.id AND p.kind = '" .. escaped_kind .. "' AND p.projection_key = '" .. escaped_key .. "'")
-                :left_join("kickside_projection_cursor pc ON pc.projection_id=p.id AND pc.cursor_key='" .. escaped_cursor .. "'")
-                :left_join("kickside_job j ON j.id=pc.job_id")
-                :where("(p.id IS NULL OR pc.id IS NULL OR j.id IS NULL)")
-                :where("c.impl_id = ?", tostring(kind.component_impl_id or kind.impl_id))
-                :run_with(_db):query()
-            if proj_err then
-                return ids, (errors.wrap(proj_err, "converge: projection scan failed") :: error)
-            end
-            for _, row in ipairs((missing_rows or {}) :: { any }) do
-                ids[tostring((row :: { [string]: any }).component_id)] = true
+            if on_thread(decl) then
+                -- An omitted declared key stores as the projections default — the scan
+                -- must compare against what register actually wrote.
+                local declared_key = decl.projection_key
+                if type(declared_key) ~= "string" or declared_key == "" then
+                    declared_key = proj_types.KEY_DEFAULT
+                end
+                local escaped_kind = tostring(decl.kind):gsub("'", "''")
+                local escaped_key = tostring(declared_key):gsub("'", "''")
+                local cursor_key = type(decl.cursor_key) == "string" and decl.cursor_key ~= "" and decl.cursor_key or proj_types.KEY_DEFAULT
+                local escaped_cursor = cursor_key:gsub("'", "''")
+                local missing_rows, proj_err = sql.builder
+                    .select("c.component_id AS component_id")
+                    :from("kickside_components c")
+                    :join("kickside_thread t ON t.id = c.component_id")
+                    :left_join("kickside_projection p ON p.thread_id = t.id AND p.kind = '" .. escaped_kind .. "' AND p.projection_key = '" .. escaped_key .. "'")
+                    :left_join("kickside_projection_cursor pc ON pc.projection_id=p.id AND pc.cursor_key='" .. escaped_cursor .. "'")
+                    :left_join("kickside_job j ON j.id=pc.job_id")
+                    :where("(p.id IS NULL OR pc.id IS NULL OR j.id IS NULL)")
+                    :where("c.impl_id = ?", tostring(kind.component_impl_id or kind.impl_id))
+                    :run_with(_db):query()
+                if proj_err then
+                    return ids, (errors.wrap(proj_err, "converge: projection scan failed") :: error)
+                end
+                for _, row in ipairs((missing_rows or {}) :: { any }) do
+                    ids[tostring((row :: { [string]: any }).component_id)] = true
+                end
             end
         end
         return ids, nil
     end
 
+    -- Components of a kind missing one of its own lifecycle projections
+    -- (`on: lifecycle`) on their lifecycle thread: projection row, cursor or job.
+    local function lifecycle_divergent(kind: { [string]: any }): ({ string }, error?)
+        local own: { { [string]: any } } = {}
+        for _, projection in ipairs((kind.projections or {}) :: { any }) do
+            local decl = projection :: { [string]: any }
+            if decl.on == autoinit.PROJECTION_ON.LIFECYCLE then own[#own + 1] = decl end
+        end
+        if #own == 0 or lifecycle_log.is_exempt(tostring(kind.component_impl_id or kind.impl_id)) then return {}, nil end
+        local components, list_err = sql.builder.select("component_id"):from("kickside_components")
+            :where("impl_id = ?", tostring(kind.component_impl_id or kind.impl_id))
+            :run_with(_db):query()
+        if list_err then return {}, (errors.wrap(list_err, "converge: lifecycle component scan failed") :: error) end
+        local out: { string } = {}
+        for _, row in ipairs((components or {}) :: { any }) do
+            local component_id = tostring((row :: { [string]: any }).component_id)
+            local thread_id = lifecycle_log.thread_id(component_id)
+            for _, decl in ipairs(own) do
+                local key = type(decl.projection_key) == "string" and decl.projection_key ~= "" and decl.projection_key or proj_types.KEY_DEFAULT
+                local cursor_key = type(decl.cursor_key) == "string" and decl.cursor_key ~= "" and decl.cursor_key or proj_types.KEY_DEFAULT
+                local present, proj_err = _db:query([[SELECT p.id FROM kickside_projection p
+                    JOIN kickside_projection_cursor pc ON pc.projection_id = p.id
+                    JOIN kickside_job j ON j.id = pc.job_id
+                    WHERE p.thread_id = $1 AND p.kind = $2 AND p.projection_key = $3 AND pc.cursor_key = $4]],
+                    { thread_id, tostring(decl.kind), key, cursor_key })
+                if proj_err then return {}, (errors.wrap(proj_err, "converge: lifecycle projection scan failed") :: error) end
+                if #((present or {}) :: { any }) == 0 then
+                    out[#out + 1] = component_id
+                    break
+                end
+            end
+        end
+        return out, nil
+    end
+
+    -- Registers a component's own lifecycle projections in one transaction.
+    local function converge_lifecycle(component_id: string, impl_id: string): error?
+        local dbtype, type_err = _db:type()
+        if type_err then return type_err end
+        local tx, begin_err = _db:begin()
+        if begin_err then return begin_err end
+        if not tx then return missing_result("begin") end
+        local _, own_err = component_lifecycle.converge_own(tx, tostring(dbtype), component_id, impl_id)
+        if own_err then
+            local _, rollback_err = tx:rollback()
+            if rollback_err then return error_envelope.wrap_secondary(rollback_err, own_err, "converge: lifecycle rollback failed") end
+            return own_err
+        end
+        local _, commit_err = tx:commit()
+        return commit_err
+    end
+
+    local lifecycle_healed = false
+    local function scan_failed(scan_err: error): ({ [string]: any }, error?)
+        local _, release_err = _db:release()
+        if release_err then
+            return summary, error_envelope.wrap_secondary(release_err, scan_err, "converge: database release failed")
+        end
+        return summary, scan_err
+    end
+
     for _, kind in ipairs(autoinit.declared_kinds()) do
         local k = kind :: { [string]: any }
         local divergent, scan_err = divergent_components(k)
-        if scan_err then
-            local _, release_err = _db:release()
-            if release_err then
-                return summary, error_envelope.wrap_secondary(release_err, scan_err, "converge: database release failed")
-            end
-            return summary, scan_err
-        end
+        if scan_err then return scan_failed(scan_err) end
         for component_id, _ in pairs(divergent) do
             summary.checked = summary.checked + 1
             local executor, exec_err = converge_executor(component_id, opener_actor, opener_scope)
@@ -287,6 +354,22 @@ function M.converge(opener_actor: any, opener_scope: any): ({ [string]: any }, e
                 end
             end
         end
+        local lifecycle_ids, lifecycle_err = lifecycle_divergent(k)
+        if lifecycle_err then return scan_failed(lifecycle_err) end
+        for _, component_id in ipairs(lifecycle_ids) do
+            summary.checked = summary.checked + 1
+            local heal_err = converge_lifecycle(component_id, tostring(k.impl_id))
+            if heal_err then
+                skip(component_id, tostring(k.impl_id), errors.wrap(heal_err, "converge lifecycle projections failed"))
+            else
+                summary.healed = summary.healed + 1
+                lifecycle_healed = true
+            end
+        end
+    end
+    if lifecycle_healed then
+        local _, nudge_err = component_lifecycle.committed()
+        if nudge_err then return scan_failed(errors.wrap(nudge_err, "converge: job worker wake failed")) end
     end
 
     local _, release_err = _db:release()

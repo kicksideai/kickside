@@ -628,6 +628,7 @@ entries:
       test: wippy.test:test
       provision: kickside.core.threads:provision
       autoinit: kickside.component:autoinit
+      component_lifecycle_log: kickside.core.threads.persist:lifecycle
 
   - name: provision_kind_read_deny
     kind: security.policy
@@ -727,6 +728,28 @@ entries:
         methods:
           get_status: kickside.core.threads:thread_status
 
+  # A system kind that seeds itself from its own lifecycle: the declared
+  # lifecycle projection consumes the component's created event.
+  - name: provision_seeded_test_decl
+    kind: contract.binding
+    meta:
+      title: Test Seeded System Component
+      class:
+        - test_seeded
+      provision:
+        scope: system
+      projections:
+        - kind: test.seed
+          on: lifecycle
+          worker_ref: "func://app:test_count_worker"
+          events:
+            input:
+              - type: kickside.component.events:created
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
   - name: provision_test
     kind: function.lua
     meta:
@@ -751,6 +774,7 @@ entries:
       test: wippy.test:test
       provision: kickside.core.threads:provision
       autoinit: kickside.component:autoinit
+      component_lifecycle_log: kickside.core.threads.persist:lifecycle
 
   - name: dep.wippy.bootloader
     version: "*"
@@ -897,6 +921,8 @@ entries:
       execution_identity: kickside.execution:execution_identity
       proj_types: kickside.core.projections:types
       component_identity: kickside.core.threads:component_identity
+      component_lifecycle_log: kickside.core.threads.persist:lifecycle
+      component_lifecycle: kickside.core.lifecycle:component_lifecycle_impl
 
   - name: thread_provision_race_test
     kind: function.lua
@@ -2723,6 +2749,8 @@ entries:
       component_identity: app:provision_native_identity_adapter
       execution_identity: app:provision_native_execution_adapter
       core_db: kickside.core:db
+      component_lifecycle_log: kickside.core.threads.persist:lifecycle
+      component_lifecycle: kickside.core.lifecycle:component_lifecycle_impl
       proj_types: kickside.core.projections:types
       component_envelope: kickside.component:envelope
       error_envelope: kickside.contract:error_envelope

@@ -16,6 +16,7 @@ local process = require("process")
 local time = require("time")
 local json = require("json")
 local funcs = require("funcs")
+local lifecycle = require("component_lifecycle_log")
 
 local DB = "app:db"
 local PROCESS_SCOPE = "wippy.security:process"
@@ -713,6 +714,66 @@ local function define_tests()
             test.eq(#ids2, #ids)
             local d2 = db()
             test.eq(count(d2, "kickside_thread", "id", cid), 1)
+            d2:release()
+        end)
+
+        test.it("ensure_system wires a system kind's lifecycle projection to its created event", function()
+            local cid = autoinit.component_id(autoinit.SYSTEM_SCOPE_KEY, "test_seeded")
+            local sys_actor = security.new_actor("system:lifecycle", { security_groups = {} })
+            local _, err = provision.ensure_system(sys_actor, scope())
+            test.is_nil(err)
+
+            local d = db()
+            local thread_id = lifecycle.thread_id(cid)
+            local rows = assert(d:query([[SELECT c.job_id FROM kickside_projection p
+                JOIN kickside_projection_cursor c ON c.projection_id=p.id
+                WHERE p.thread_id=$1 AND p.kind=$2]], { thread_id, "test.seed" }))
+            test.eq(#rows, 1, "the lifecycle projection has one durable cursor")
+            test.not_nil(rows[1].job_id)
+            local events = assert(d:query("SELECT type FROM kickside_event WHERE thread_id=$1 ORDER BY seq", { thread_id }))
+            test.is_true(#events >= 1)
+            test.eq(events[1].type, lifecycle.EVENT.CREATED)
+            d:release()
+        end)
+
+        test.it("converge reaches a fixpoint over kinds that declare lifecycle projections", function()
+            local sys_actor = security.new_actor("system:lifecycle", { system = true, security_groups = {} })
+            local _, ensure_err = provision.ensure_system(sys_actor, scope())
+            test.is_nil(ensure_err)
+            local _, first_err = provision.converge(sys_actor, scope())
+            test.is_nil(first_err)
+            local summary, converge_err = provision.converge(sys_actor, scope())
+            test.is_nil(converge_err)
+            test.eq(tonumber((summary :: any).healed), 0, "a converged state is reported divergent again")
+            test.eq(#((summary :: any).skipped), 0)
+        end)
+
+        test.it("converge restores a system kind's lost lifecycle projection on its lifecycle thread", function()
+            local sys_actor = security.new_actor("system:lifecycle", { system = true, security_groups = {} })
+            local cid = autoinit.component_id(autoinit.SYSTEM_SCOPE_KEY, "test_seeded")
+            local _, ensure_err = provision.ensure_system(sys_actor, scope())
+            test.is_nil(ensure_err)
+            local thread_id = lifecycle.thread_id(cid)
+
+            local d = db()
+            sql.builder.delete("kickside_projection_cursor")
+                :where("projection_id IN (SELECT id FROM kickside_projection WHERE thread_id = ?)", thread_id)
+                :run_with(d):exec()
+            sql.builder.delete("kickside_projection"):where(sql.builder.eq({ thread_id = thread_id })):run_with(d):exec()
+            test.eq(count(d, "kickside_projection", "thread_id", thread_id), 0)
+            d:release()
+
+            local summary, converge_err = provision.converge(sys_actor, scope())
+            test.is_nil(converge_err)
+            test.eq(#((summary :: any).skipped), 0)
+
+            local d2 = db()
+            local rows = assert(d2:query([[SELECT p.actor_id, c.job_id FROM kickside_projection p
+                JOIN kickside_projection_cursor c ON c.projection_id=p.id
+                WHERE p.thread_id=$1 AND p.kind=$2]], { thread_id, "test.seed" }))
+            test.eq(#rows, 1, "the lifecycle projection is registered again")
+            test.not_nil(rows[1].job_id)
+            test.is_nil(rows[1].actor_id)
             d2:release()
         end)
 

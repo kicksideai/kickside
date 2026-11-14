@@ -237,6 +237,8 @@ entries:
       execution_identity: kickside.execution:execution_identity
       proj_types: kickside.core.projections:types
       component_identity: kickside.core.threads:component_identity
+      component_lifecycle_log: kickside.core.threads.persist:lifecycle
+      component_lifecycle: kickside.core.lifecycle:component_lifecycle_impl
 
   - name: workspace_plugin
     kind: process.lua
