@@ -29,6 +29,14 @@ vars:
 profiles:
   postgres:
     override:
+      app:processing_repair_migration_db:kind: db.sql.postgres
+      app:processing_repair_migration_db:host: ${pg_host}
+      app:processing_repair_migration_db:port: ${pg_port}
+      app:processing_repair_migration_db:database: ${pg_database}
+      app:processing_repair_migration_db:username: ${pg_username}
+      app:processing_repair_migration_db:password: ${pg_password}
+      app:processing_repair_migration_db:options.sslmode: disable
+      app:processing_repair_migration_db:options.search_path: uploads_repair_upgrade
       app:dedup_migration_db:kind: db.sql.postgres
       app:dedup_migration_db:host: ${pg_host}
       app:dedup_migration_db:port: ${pg_port}

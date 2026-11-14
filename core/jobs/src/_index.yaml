@@ -19,6 +19,8 @@ entries:
     meta:
       comment: SQL database resource backing the kickside_job tables.
     targets:
+      - entry: kickside.core.jobs.migrations:26_identity_lookup
+        path: .meta.target_db
       - entry: kickside.core.jobs.migrations:04_jobs
         path: .meta.target_db
       - entry: kickside.core.jobs.migrations:07_job_slots

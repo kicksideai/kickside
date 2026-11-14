@@ -52,6 +52,17 @@ return {run = test.run_cases(function()
             db = assert(sql.get("app:policy_migration_db"))
             test.is_nil(assert(db:query("SELECT lease_policy FROM kickside_job WHERE id=$1", {running}))[1].lease_policy)
             db:release()
+            migrate("26_identity_lookup")
+            local repeated, repeat_err = funcs.call("kickside.core.jobs.migrations:26_identity_lookup",
+                {database_id = "app:policy_migration_db", direction = "up", id = "identity-lookup-reapply"})
+            test.is_nil(repeat_err)
+            test.eq(repeated.status, "complete")
+            db = assert(sql.get("app:policy_migration_db"))
+            local existing = assert(db:query("SELECT id,status,lease_token FROM kickside_job WHERE job_identity=$1", {running}))[1]
+            test.eq(tostring(existing.id), running)
+            test.eq(existing.status, "running")
+            test.eq(existing.lease_token, "old-token")
+            db:release()
         end)
     end)
 end)}

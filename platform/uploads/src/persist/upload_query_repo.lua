@@ -19,9 +19,7 @@ end
 -- work created before intents exist. A missing terminal row is not live work.
 function upload_query_repo.interrupted_processing_condition(upload: string): string
     local jobs = "SELECT 1 FROM kickside_job j WHERE j.owner_kind='user' AND j.owner_id=" .. upload .. "actor_id"
-        .. " AND j.job_type='kickside.uploads.service:process_job_proc'"
-        .. " AND (CAST(j.id AS TEXT)=" .. upload .. "processing_job_id OR j.job_identity="
-        .. canonical_job(upload) .. ")"
+        .. " AND j.job_type='kickside.uploads.service:process_job_proc' AND j.job_identity=" .. canonical_job(upload)
     return "(" .. upload .. "processing_intent_state='acknowledged' OR ("
         .. upload .. "processing_intent_state IS NULL AND (EXISTS (" .. jobs .. ") OR EXISTS ("
         .. "SELECT 1 FROM kickside_upload_read_model r WHERE r.upload_id=" .. upload .. "uuid AND r.status='processing'))))"
@@ -147,26 +145,53 @@ function upload_query_repo.find_by_processing_job(actor_id: string, job_id: stri
     return parse_upload_row(rows[1])
 end
 
--- The current intent is authoritative. Intent-less uploads use their published
--- canonical job identity until their first retry creates an intent.
-function upload_query_repo.list_dead_processing_jobs(limit: integer): (table?, any?)
+-- Bound inspection before checking Jobs. The durable keyset cursor advances
+-- after settlement, including windows with no interrupted jobs.
+function upload_query_repo.list_dead_processing_jobs(limit: integer): (table?, any?, table?)
     if type(limit) ~= "number" or limit ~= math.floor(limit) or limit < 1 or limit > 500 then
         return nil, errors.new({message = "repair batch must be an integer in [1, 500]", kind = errors.INVALID})
     end
     local db, err = resources.get_db()
     if err then return nil, err end
+    local checkpoints, cursor_err = db:query("SELECT after_id FROM kickside_upload_processing_repair WHERE id=1")
+    if cursor_err then db:release(); return nil, cursor_err end
+    local before_id = checkpoints[1].after_id
+    local pointer = "u.processing_job_id"
+    if tostring(db:type()) == sql.type.POSTGRES then pointer = "CAST(NULLIF(u.processing_job_id,'') AS UUID)" end
+    local matching = "j.owner_kind='user' AND j.owner_id=u.actor_id"
+        .. " AND j.job_type='kickside.uploads.service:process_job_proc'"
     local rows, read_err = db:query([[
-        SELECT u.uuid AS upload_id, j.id AS job_id FROM kickside_uploads u
-        LEFT JOIN kickside_job j ON j.owner_kind='user' AND j.owner_id=u.actor_id
-          AND ((u.processing_intent_state='acknowledged' AND CAST(j.id AS TEXT)=u.processing_job_id)
-            OR (]] .. intentless_job("u.") .. [[))
-          AND j.job_type='kickside.uploads.service:process_job_proc' AND j.status='dead'
-        WHERE u.storage_state='uploaded' AND ]] .. upload_query_repo.interrupted_processing_condition("u.") .. [[
-        ORDER BY u.created_at,u.uuid,j.id DESC LIMIT $1
-    ]], {limit})
+        WITH candidates AS MATERIALIZED (
+            SELECT uuid,actor_id,processing_intent_state,processing_job_id
+            FROM kickside_uploads WHERE storage_state='uploaded' AND uuid>$1
+            ORDER BY uuid LIMIT $2
+        )
+        SELECT u.uuid AS upload_id,
+            COALESCE((SELECT j.id FROM kickside_job j WHERE j.id=]] .. pointer .. [[ AND ]] .. matching .. [[ AND j.status='dead'),
+                (SELECT j.id FROM kickside_job j WHERE u.processing_intent_state IS NULL AND j.job_identity=]] .. canonical_job("u.") .. [[
+                    AND ]] .. matching .. [[ AND j.status='dead' ORDER BY j.id DESC LIMIT 1)) AS job_id,
+            CASE WHEN ]] .. upload_query_repo.interrupted_processing_condition("u.") .. [[
+                AND NOT EXISTS (SELECT 1 FROM kickside_job j WHERE j.id=]] .. pointer .. [[ AND j.status<>'dead')
+                THEN 1 ELSE 0 END AS repairable
+        FROM candidates u ORDER BY u.uuid
+    ]], {before_id, limit})
     db:release()
     if read_err then return nil, read_err end
-    return rows, nil
+    local candidates = {}
+    for _, row in ipairs(rows) do
+        if tonumber(row.repairable) == 1 then candidates[#candidates + 1] = row end
+    end
+    return candidates, nil, {before_id = before_id, after_id = #rows == limit and rows[#rows].upload_id or "",
+        inspected = #rows, needs_continue = #rows == limit}
+end
+
+function upload_query_repo.advance_processing_repair_cursor(progress: table): any?
+    local db, err = resources.get_db()
+    if err then return err end
+    local _, write_err = db:execute([[UPDATE kickside_upload_processing_repair SET after_id=$1
+        WHERE id=1 AND after_id=$2]], {progress.after_id, progress.before_id})
+    db:release()
+    return write_err
 end
 
 -- Intent is committed on the upload record before enqueue. The jobs enqueue

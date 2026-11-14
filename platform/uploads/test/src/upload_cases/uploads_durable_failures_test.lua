@@ -783,7 +783,13 @@ local function define_tests()
                 -- Published rows contain no outcome job. Older intent-less rows also lack a job pointer.
                 assert(db:execute("UPDATE kickside_job SET status='dead',last_error='execution ended',finished_at=$1 WHERE id=$2",
                     {jobs_lifecycle.now_string(tostring(db:type())), queued.job_id}))
-                if pruned then assert(db:execute("DELETE FROM kickside_job WHERE id=$1", {queued.job_id})) end
+                if pruned then
+                    -- A retained older attempt cannot replace the current intent's missing job.
+                    assert(db:execute([[INSERT INTO kickside_job(id,thread_id,job_type,worker_ref,status,owner_kind,owner_id,job_identity)
+                        SELECT $1,thread_id,job_type,worker_ref,'dead',owner_kind,owner_id,job_identity
+                        FROM kickside_job WHERE id=$2]], {uuid_v4(), queued.job_id}))
+                    assert(db:execute("DELETE FROM kickside_job WHERE id=$1", {queued.job_id}))
+                end
                 db:release()
                 local result, err = funcs.call("kickside.uploads:retention")
                 test.is_nil(err, tostring(err))
