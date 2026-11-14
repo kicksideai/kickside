@@ -284,7 +284,6 @@ entries:
       error_envelope: kickside.contract:error_envelope
       committed_error: kickside.contract:committed_error
       sql_boundary: kickside.core.jobs.persist:sql_boundary
-      lease_heartbeat: kickside.core.jobs.persist:lease_heartbeat
       proc_supervisor: kickside.core.jobs:proc_supervisor
 
   # The config suite's env.set/env.get fixtures (int/duration parsers and the

@@ -92,8 +92,9 @@ Automatic lease renewal proves ownership, even when the handler is blocked.
 A job without payload `heartbeat_timeout_ms` keeps its existing execution policy.
 To bound time without useful work, declare a positive integer `heartbeat_timeout_ms`
 and call `jobs.heartbeat(id, { token, execution_seq }): (boolean?, error?)` after
-progress. This uses the existing fenced `extend_lease` write (`heartbeat_at`,
-`lease_until`) and execution control channel; it adds no liveness store.
+progress. This uses the existing `lease_valid` read fence and execution control channel.
+Progress does not write the job row or extend ownership; automatic `extend_lease`
+renewals persist ownership in `heartbeat_at` and `lease_until`.
 
 The supervisor starts the progress deadline when it spawns the execution child.
 Each received, token-and-sequence-matching progress heartbeat resets that deadline

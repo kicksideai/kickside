@@ -223,11 +223,15 @@ local function define_tests()
             local db = assert(sql.get("app:db"))
             local dbtype = tostring(db:type())
             local job = enqueue_proc_and_claim(db, dbtype, make_thread(db), {})
+            local before = assert(db:query("SELECT heartbeat_at,lease_until,updated_at FROM kickside_job WHERE id=$1", {job.id}))[1]
             local alive, heartbeat_err = jobs.heartbeat(job.id, { token = job.lease_token, execution_seq = job.execution_seq })
             test.is_nil(heartbeat_err)
             test.is_true(alive)
             local renewed = assert(db:query("SELECT heartbeat_at FROM kickside_job WHERE id=$1", { job.id }))[1]
-            test.not_nil(renewed.heartbeat_at)
+            test.eq(renewed.heartbeat_at, before.heartbeat_at, "progress does not write ownership state")
+            local after = assert(db:query("SELECT lease_until,updated_at FROM kickside_job WHERE id=$1", {job.id}))[1]
+            test.eq(after.lease_until, before.lease_until)
+            test.eq(after.updated_at, before.updated_at)
             local stale, stale_err = jobs.heartbeat(job.id, { token = uuid.v7(), execution_seq = job.execution_seq })
             test.is_nil(stale_err)
             test.is_false(stale)

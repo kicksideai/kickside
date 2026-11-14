@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local native = require("time")
 local fixture = require("fixture")
 fixture.origin = native.now()

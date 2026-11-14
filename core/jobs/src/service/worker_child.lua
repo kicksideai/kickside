@@ -149,9 +149,6 @@ local function supervise_job_child(job: table, run_id: string?, heartbeat_pid: s
             end
             if message.kind == "revoked" then return { kind = "revoked" } end
             if message.kind == "heartbeat" then
-                local renewed, parse_err = proc_supervisor.parse_deadline(message.lease_until)
-                if parse_err or not renewed then return { kind = "lease_expired" } end
-                lease_deadline = renewed
                 heartbeat_deadline = next_heartbeat()
                 return { kind = "heartbeat" }
             end
