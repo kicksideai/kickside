@@ -40,6 +40,7 @@ entries:
     upload_tokens: kickside.uploads.persist:upload_tokens
     uploads_events: kickside.uploads.persist:uploads_events
     types: kickside.uploads:types
+    upload_type: kickside.uploads:upload_type
     provision: kickside.core.threads:provision
     pipeline_lib: kickside.uploads:pipeline
     process_worker: kickside.uploads.service:process_worker
