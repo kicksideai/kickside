@@ -31,6 +31,7 @@ local process_worker = require("process_worker")
 local processing_intent_repo = require("processing_intent_repo")
 local process_job = require("process_job")
 local callback_job = require("callback_job")
+local jobs = require("jobs")
 local upload_response = require("upload_response")
 local processor = require("processor")
 local file_provider = require("file_provider")
@@ -633,6 +634,42 @@ local function define_tests()
 			test.eq("failed", row.storage_state)
 			test.eq(bytes, (storage:readfile(path)))
 		end)
+
+        for _, failed_call in ipairs({1, 2, 3}) do
+            test.it("propagates heartbeat notification failure at progress point " .. failed_call, function()
+                local id, owner = uuid_v4(), "heartbeat-error-" .. uuid_v4()
+                ensure_uploads_component(owner)
+                local upload = assert(upload_record_repo.create(id, owner, 1, "application/octet-stream",
+                    "app:uploads", id, "app:types.failing", upload_metadata(owner, "progress.bin"),
+                    "uploaded", nil, nil, true, 7200000))
+                local queued = assert(process_worker.enqueue_upload_job(upload, true))
+                local db = assert(sql.get("app:db"))
+                local leased = admit_job(db, queued.job_id, 1)
+                local input = assert(worker_dispatch.build_worker_input(leased))
+                local heartbeat, calls = jobs.heartbeat, 0
+                local unavailable = errors.new({message = "progress notification unavailable", kind = errors.UNAVAILABLE,
+                    retryable = true, details = {code = "progress_notification_unavailable"}})
+                jobs.heartbeat = function(job_id, lease)
+                    local active, err = heartbeat(job_id, lease)
+                    if err or not active then return active, err end
+                    calls = calls + 1
+                    if calls == failed_call then return nil, unavailable end
+                    return true, nil
+                end
+                local result, err = process_job.run(input)
+                jobs.heartbeat = heartbeat
+                test.is_nil(result)
+                test.eq(type(err), "userdata", tostring(err))
+                test.eq(err:kind(), errors.UNAVAILABLE)
+                test.is_true(err:retryable())
+                test.eq(err:details().code, "progress_notification_unavailable")
+                test.eq(assert(upload_query_repo.get(id)).storage_state, "uploaded")
+                test.eq(assert(db:query("SELECT status FROM kickside_job WHERE id=$1", {queued.job_id}))[1].status, "running")
+                test.eq(#assert(db:query("SELECT id FROM kickside_event WHERE external_id=$1 AND type=$2",
+                    {id, uploads_events.TYPE.COMPLETED})), 0)
+                db:release()
+            end)
+        end
 
         test.it("keeps failure settled when the callback permanently refuses delivery", function()
             local id, owner = uuid_v4(), "callback-delivery-" .. uuid_v4()

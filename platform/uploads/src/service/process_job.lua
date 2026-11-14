@@ -34,7 +34,7 @@ local function terminal_failure(job: any, retriable: any): boolean
     return retriable == false or is_final_attempt(job)
 end
 
-local function ensure_running(job: any): (boolean, string?)
+local function ensure_running(job: any): (boolean, any?)
     if type(job) ~= "table" or tostring(job.id or "") == "" or tostring(job.lease_token or "") == "" then
         return true, nil
     end
@@ -44,10 +44,10 @@ local function ensure_running(job: any): (boolean, string?)
         token = job.lease_token, execution_seq = job.execution_seq,
     })
     if active_err then
-        return false, tostring(active_err)
+        return false, active_err
     end
     if active ~= true then
-        return false, "job cancelled"
+        return false, nil
     end
     return true, nil
 end
@@ -188,6 +188,7 @@ local function run(input: any): (any, any?)
     end
 
     local running, running_err = ensure_running(job)
+    if running_err then return nil, running_err end
     if not running then
         return { skipped = true, cancelled = true, upload_id = upload_id, reason = running_err }, nil
     end
