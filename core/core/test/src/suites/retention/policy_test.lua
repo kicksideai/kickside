@@ -1,6 +1,7 @@
 local registry = require("registry")
 local test = require("test")
 local policy = require("retention_policy")
+local repo = require("retention_repo")
 
 local function meta(): table
     return { retention = { events = "90d", receipts_orphan = "30d" },
@@ -28,6 +29,7 @@ local function define_tests()
                     local result, err = policy.policy()
                     test.is_nil(err)
                     test.eq(result.events_ms, 90 * 86400000)
+                    test.eq(assert(repo.normalize()).event_hot_retention_days, 90)
                     result.events_ms = 1
                 end
                 test.eq(resolutions, 1)
@@ -51,7 +53,18 @@ local function define_tests()
             if not ok then error(failure) end
             local restored, restore_policy_err = policy.policy()
             test.is_nil(restore_policy_err)
-            test.eq(restored.events_ms, 90 * 86400000)
+            test.eq(restored.events_ms, 30 * 86400000)
+        end)
+
+        test.it("shares the baseline default and resolves explicit registry windows for thread policies", function()
+            local input = meta()
+            input.retention.events = nil
+            local value, resolve_err = policy.resolve(input)
+            test.is_nil(resolve_err)
+            test.eq(value.events_ms, 30 * 86400000)
+            local defaults, defaults_err = repo.normalize()
+            test.is_nil(defaults_err)
+            test.eq(defaults.event_hot_retention_days, 30)
         end)
 
         test.it("resolves event and receipt retention windows and the row size limit", function()
@@ -67,7 +80,7 @@ local function define_tests()
         test.it("reads only age windows and the row size limit from the registered policy", function()
             local resolved, err = policy.policy()
             test.is_nil(err)
-            test.eq(resolved.events_ms, 90 * 86400000)
+            test.eq(resolved.events_ms, 30 * 86400000)
             test.eq(resolved.receipts_orphan_ms, 30 * 86400000)
             test.eq(resolved.max_row_bytes, 4194304)
             for key in pairs(resolved) do

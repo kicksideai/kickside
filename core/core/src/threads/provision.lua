@@ -104,28 +104,24 @@ local function materialize(threads: any, actor: any, scope: any, scope_key: stri
     -- first create. Provisioning does not carry a second projection-registration
     -- path; reruns only converge access + retention.
 
-    -- Retention / vacuum policy for the component's thread (idempotent upsert).
-    -- ALWAYS create a policy so every provisioned thread is governed by a sane
-    -- default window (the retention-defaults rule); a declaration may tighten the
-    -- event window, an omitted one falls to consts.DEFAULTS. Without this a thread
-    -- with no declared retention would carry no policy row and never be swept.
-    local rdb, rdb_err = sql.get(core_db.id())
-    if rdb_err then return nil, (errors.wrap(rdb_err, "provision retention database unavailable") :: error) end
-    if not rdb then return nil, missing_result("get") end
+    -- An absent window inherits the live Core policy; only declarations store an override.
     local r = decl.retention
-    local windows: { [string]: any } = {}
     if type(r) == "table" and type(r.event_days) == "number" then
-        windows.event_hot_retention_days = r.event_days
-    end
-    local _, retention_err = retention_repo.upsert(rdb, component_id :: string, windows)
-    local _, release_err = rdb:release()
-    if release_err then
-        if retention_err then
-            return nil, error_envelope.wrap_secondary(release_err, retention_err, "provision retention database release failed")
+        local rdb, rdb_err = sql.get(core_db.id())
+        if rdb_err then return nil, (errors.wrap(rdb_err, "provision retention database unavailable") :: error) end
+        if not rdb then return nil, missing_result("get") end
+        local _, retention_err = retention_repo.upsert(rdb, component_id :: string, {
+            event_hot_retention_days = r.event_days,
+        })
+        local _, release_err = rdb:release()
+        if release_err then
+            if retention_err then
+                return nil, error_envelope.wrap_secondary(release_err, retention_err, "provision retention database release failed")
+            end
+            return nil, (errors.wrap(release_err, "provision retention database release failed") :: error)
         end
-        return nil, (errors.wrap(release_err, "provision retention database release failed") :: error)
+        if retention_err then return nil, retention_err end
     end
-    if retention_err then return nil, retention_err end
 
     -- Declared additional grants (e.g. admin READ, user WRITE-only on a system thread).
     local grant_err = apply_grants(actor, scope, component_id :: string, (decl.grants or {}) :: { any })

@@ -70,7 +70,7 @@ function M.retention_upsert(handle: any, component_id: string, windows: table): 
     return {}, nil
 end
 function M.declarations(): {any}
-    return {{scope = "user", class = "class", impl_id = "impl", grants = {{subject_id = "reader", access_mask = 1}}}}
+    return {{scope = "user", class = "class", impl_id = "impl", retention = {event_days = 7}, grants = {{subject_id = "reader", access_mask = 1}}}}
 end
 function M.declared_kinds(): {any}
     return {{class = not M.lifecycle and "class" or nil, impl_id = "impl", projections = {{kind = "projection",
