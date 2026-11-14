@@ -106,24 +106,6 @@ function M.append_query(url: string, params: any): string
     return url .. sep .. table.concat(parts, "&")
 end
 
-local function first_string(value: any, keys: { string }): string?
-    if type(value) ~= "table" then return nil end
-    for _, key in ipairs(keys) do
-        local candidate = value[key]
-        if type(candidate) == "string" and candidate ~= "" then return candidate end
-    end
-    return nil
-end
-
-local function provider_error(parsed: any): string?
-    if type(parsed) ~= "table" then return nil end
-    if type(parsed.error) == "string" and parsed.error ~= "" then return parsed.error end
-    if type(parsed.error) == "table" then
-        return first_string(parsed.error, { "message", "detail", "description", "code", "type" })
-    end
-    return first_string(parsed, { "error_description", "message", "detail", "reason" })
-end
-
 function M.scrub_message(value: any): string
     local s = tostring(value or "")
     s = s:gsub("[Bb]earer%s+[^%s,\"'}]+", "Bearer [redacted]")
@@ -138,19 +120,6 @@ function M.response_error(response: any, label: string?): string
     local status = response and tonumber(response.status_code)
     if status then prefix = prefix .. " (HTTP " .. tostring(status) .. ")" end
 
-    local body = response and response.body or nil
-    if type(body) == "string" and body ~= "" then
-        local parsed = json.decode(body)
-        local message = provider_error(parsed)
-        if not message then
-            message = body:gsub("%s+", " ")
-            if #message > 260 then message = message:sub(1, 257) .. "..." end
-        end
-        if message and message ~= "" then
-            return prefix .. ": " .. M.scrub_message(message)
-        end
-    end
-
     return prefix
 end
 
@@ -161,7 +130,7 @@ function M.decode_response(response: any, label: string?): (any?, string?)
         return nil, M.response_error(response, label)
     end
     local parsed, perr = json.decode(response.body or "")
-    if perr then return nil, "failed to parse model list: " .. tostring(perr) end
+    if perr then return nil, "failed to parse model list" end
     return parsed
 end
 

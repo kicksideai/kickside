@@ -1,10 +1,10 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local http = require("http")
 local json = require("json")
 local llm = require("llm")
 local prompt = require("prompt")
 local time = require("time")
 local model_catalog = require("model_catalog")
-local model_discovery = require("model_discovery")
 
 local function has(list: any, value: string): boolean
     if type(list) ~= "table" then return false end
@@ -12,30 +12,6 @@ local function has(list: any, value: string): boolean
         if item == value then return true end
     end
     return false
-end
-
-local function err_message(err: any): string
-    if err == nil then return "unknown error" end
-    if type(err) == "string" then return err end
-    if type(err) == "table" then
-        if type(err.message) == "string" then return err.message end
-        if type(err.error) == "string" then return err.error end
-    end
-    local ok, msg = pcall(function()
-        if err.message then return err:message() end
-        return tostring(err)
-    end)
-    if ok and msg and msg ~= "" then return tostring(msg) end
-    return tostring(err)
-end
-
-local function scrub_message(message: string): string
-    local out = tostring(message or "")
-    out = out:gsub("Bearer%s+[%w%._%-=]+", "Bearer [redacted]")
-    out = out:gsub("([Aa]uthorization%s*[:=]%s*)[%w%._%-=]+", "%1[redacted]")
-    out = out:gsub("([Aa]pi[_%-]?[Kk]ey%s*[:=]%s*)[%w%._%-=]+", "%1[redacted]")
-    out = out:gsub("([Tt]oken%s*[:=]%s*)[%w%._%-=]+", "%1[redacted]")
-    return out
 end
 
 local function result_text(response: any): string
@@ -57,20 +33,6 @@ local function is_reasoning(card: any, provider: any): boolean
     return has(card.capabilities, "reasoning")
         or has(card.capabilities, "extended_thinking")
         or (type(options) == "table" and options.reasoning_model_request == true)
-end
-
-local function provider_probe_detail(provider: any): string?
-    if type(provider) ~= "table" then return nil end
-    if type(provider.provider_profile_id) ~= "string" or provider.provider_profile_id == "" then return nil end
-    if type(provider.provider_model) ~= "string" or provider.provider_model == "" then return nil end
-    local profile_id = tostring(provider.provider_profile_id)
-    local provider_model = tostring(provider.provider_model)
-    local result, err = model_discovery.test(profile_id, { model = provider_model })
-    local message = result and result.message or err
-    if type(message) == "string" and message ~= "" then
-        return message
-    end
-    return nil
 end
 
 local function handler()
@@ -129,11 +91,7 @@ local function handler()
     local elapsed_ms = math.floor((time.now():unix_nano() - started) / 1000000)
 
     if gen_err or not response then
-        local message = scrub_message(err_message(gen_err))
-        local provider_detail = provider_probe_detail(provider)
-        if provider_detail and provider_detail ~= "" and provider_detail ~= message then
-            message = message .. "; provider probe: " .. scrub_message(provider_detail)
-        end
+        local message = "model generation failed"
         res:set_status(http.STATUS.BAD_REQUEST)
         res:write_json({
             success = false,

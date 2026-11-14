@@ -30,3 +30,18 @@ entries:
       provider_openai_like: kickside.models.discovery:provider.openai_like
       discovery_common: kickside.models.discovery:common
     method: migrate
+
+  - name: 03_encrypt_legacy_headers
+    kind: function.lua
+    meta:
+      type: migration
+      depends_on:
+        - ns:wippy.migration
+        - kickside.models.migrations:02_discovered_capabilities
+      timestamp: "2026-11-13T00:00:01Z"
+    source: file://03_encrypt_legacy_headers.lua
+    method: migrate
+    modules: [json]
+    imports:
+      migration: wippy.migration:migration
+      catalog_policy: kickside.models.catalog:policy

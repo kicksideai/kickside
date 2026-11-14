@@ -8,6 +8,7 @@ local fake_http = require("fake_http")
 local admin_handler = require("admin_handler")
 local model_catalog = require("model_catalog")
 local funcs = require("funcs")
+local json = require("json")
 
 local function with_corrupt_profile(fn, stored_secret, stored_config)
     local db, err = sql.get("app:db")
@@ -52,6 +53,40 @@ end
 
 local function define_tests()
     test.describe("model provider-profile secrets", function()
+        test.it("migrates legacy custom headers atomically without exposing or losing credentials", function()
+            local id = "legacy-header-fixture"
+            local secret = "header-credential-sentinel"
+            local db = assert(sql.get("app:db"))
+            local existing = assert(catalog_policy.encrypt_secret({api_key = "preserved-api-key"}))
+            test.is_nil(select(2, db:execute([[INSERT INTO kickside_model_provider_profiles
+                (id,name,provider_id,config_json,secret_json,enabled,status,message,created_at,updated_at)
+                VALUES ($1,'Legacy headers','wippy.llm.openai_compat:provider',$2,$3,1,'healthy','',3,7)]],
+                {id, assert(json.encode({base_url = "https://example.invalid", headers = {Authorization = secret}})), existing})))
+            local result, err = funcs.call("kickside.models.migrations:03_encrypt_legacy_headers",
+                {database_id = "app:db", id = "legacy-headers-upgrade", direction = "up", force = true})
+            test.is_nil(err)
+            test.eq(result.failed, 0)
+            local row = assert(db:query("SELECT * FROM kickside_model_provider_profiles WHERE id=$1", {id}))[1]
+            test.is_nil((assert(json.encode(row)):find(secret, 1, true)))
+            test.eq(tonumber(row.updated_at), 7)
+            test.is_nil(assert(json.decode(row.config_json)).headers)
+            local decoded = assert(catalog_policy.decrypt_secret(row.secret_json))
+            test.eq(decoded.headers.Authorization, secret)
+            test.eq(decoded.api_key, "preserved-api-key")
+            test.is_nil(select(2, models_repo.reload()))
+            local profile = assert(models_repo.get_profile(id))
+            test.eq(catalog_policy.provider_context(profile).headers.Authorization, secret)
+            test.is_nil((assert(json.encode(catalog_policy.public_profile(profile))):find(secret, 1, true)))
+            local repeated = assert(funcs.call("kickside.models.migrations:03_encrypt_legacy_headers",
+                {database_id = "app:db", id = "legacy-headers-repeat", direction = "up", force = true}))
+            test.eq(repeated.failed, 0)
+            local after = assert(db:query("SELECT * FROM kickside_model_provider_profiles WHERE id=$1", {id}))[1]
+            test.eq(after.secret_json, row.secret_json)
+            test.eq(after.config_json, row.config_json)
+            test.is_nil(select(2, db:execute("DELETE FROM kickside_model_provider_profiles WHERE id=$1", {id})))
+            test.is_nil(select(2, db:release()))
+            test.is_nil(select(2, models_repo.reload()))
+        end)
         test.it("returns an error for an undecryptable stored secret", function()
             local secret, err = catalog_policy.decrypt_secret("not-a-valid-encrypted-secret")
             test.is_nil(secret)

@@ -264,7 +264,7 @@ entries:
     kind: function.lua
     meta: { type: test, suite: kickside_models }
     source: file://models_secret_decode_test.lua
-    modules: [sql, funcs]
+    modules: [sql, funcs, json]
     method: run
     imports:
       test: wippy.test:test
@@ -312,4 +312,47 @@ entries:
       test: wippy.test:test
       model_catalog: kickside.models.catalog:model_catalog
       registry_models: wippy.llm.discovery:models
+      models_repo: kickside.models.persist:repo
+
+  - name: secret_headers_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_models}
+    source: file://secret_headers_test.lua
+    method: run
+    modules: [sql, json, funcs]
+    imports:
+      test: wippy.test:test
+      policy: kickside.models.catalog:policy
+      repo: kickside.models.persist:repo
+      common: kickside.models.discovery:common
+      discovery: kickside.models.discovery:model_discovery
+      card_test: app:card_test_source
+      fake_http: app:card_save_fake_http
+      llm_fixture: app:card_test_llm
+
+  - name: card_test_llm
+    kind: library.lua
+    source: file://card_test_llm.lua
+  - name: card_test_catalog
+    kind: library.lua
+    source: file://card_test_catalog.lua
+  - name: card_test_source
+    kind: library.lua
+    source: file://card_test_source.lua
+    modules: [json, time]
+    imports:
+      http: app:card_save_fake_http
+      llm: app:card_test_llm
+      prompt: wippy.llm:prompt
+      model_catalog: app:card_test_catalog
+
+  - name: secret_key_policy_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_models }
+    source: file://secret_key_policy_test.lua
+    method: run
+    modules: [json, sql]
+    imports:
+      test: wippy.test:test
+      catalog_policy: kickside.models.catalog:policy
       models_repo: kickside.models.persist:repo

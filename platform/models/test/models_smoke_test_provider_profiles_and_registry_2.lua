@@ -217,14 +217,14 @@ local function define_tests()
             test.eq(profile.config.api_key_env, "LOCAL_API_KEY")
             test.is_nil(profile.config.api_token)
             test.is_nil(profile.config.headers)
-            test.is_false(has(profile.secret_fields, "headers"))
+            test.is_true(has(profile.secret_fields, "headers"))
 
             local stored = models_repo.get_profile("profile-config-scrub-test")
             test.not_nil(stored)
             local stored_config = type(stored.config) == "table" and stored.config or {}
             local stored_secret = type(stored.secret_config) == "table" and stored.secret_config or {}
             test.is_nil(stored_config.headers)
-            test.is_nil(stored_secret.headers)
+            test.eq(stored_secret.headers.Authorization, "Bearer must-not-leak")
         end)
 
 
