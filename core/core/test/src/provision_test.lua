@@ -192,7 +192,7 @@ local function define_tests()
             local stored = sql.builder.select("thread_class"):from("kickside_thread")
                 :where(sql.builder.eq({ id = component_id })):run_with(d):query()
             test.eq(tostring(stored[1].thread_class), "test.converge.thread")
-            test.eq(count(d, "kickside_retention_policy", "thread_id", component_id), 1)
+            test.eq(count(d, "kickside_retention_policy", "thread_id", component_id), 0)
             local grants = d:query([[SELECT subject_id,subject_type,access_mask,inherited
                 FROM kickside_component_access WHERE component_id=$1 ORDER BY access_id]], { component_id })
             for _, key in ipairs({ "type", "thread_class" }) do
@@ -278,6 +278,9 @@ local function define_tests()
             test.not_nil(appended)
 
             local before_db = db()
+            local _, policy_err = before_db:execute([[INSERT INTO kickside_retention_policy
+                (id,thread_id,event_hot_retention_days) VALUES($1,$2,45)]], {uuid.v7(),component_id})
+            test.is_nil(policy_err)
             local thread_before = before_db:query([[SELECT id,thread_class,state,event_count,attrs,updated_at
                 FROM kickside_thread WHERE id=$1]], { component_id })[1]
             local retention_before = before_db:query([[SELECT thread_id,event_hot_retention_days,archive_mode,enabled

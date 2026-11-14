@@ -33,6 +33,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.core.jobs.migrations:22_capacity_groups
         path: .meta.target_db
+      - entry: kickside.core.jobs.migrations:26_owner_listing
+        path: .meta.target_db
       - entry: kickside.core.jobs.migrations:25_retention_order
         path: .meta.target_db
       - entry: kickside.core.jobs.migrations:24_lease_policy
