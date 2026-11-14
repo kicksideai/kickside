@@ -20,7 +20,7 @@ workspace:
     kickside/jobs: ../../../core/jobs
     kickside/realtime-dispatch: ../../../core/realtime-dispatch
 vars:
-  http_port: 0
+  http_port: 19150
   sqlite_path: ":memory:"
   pg_host: localhost
   pg_port: 5433

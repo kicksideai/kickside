@@ -90,3 +90,10 @@ condition = "AND"
 regexTarget = "secret"
 paths = ['''(^|/)platform/skills/test/\.wippy\.yaml$''']
 regexes = ['''^0123456789abcdef0123456789abcdef$''']
+
+[[allowlists]]
+description = "Dummy token key in the Security HTTP health suite"
+condition = "AND"
+regexTarget = "secret"
+paths = ['''(^|/)platform/security/test/src/health_http_tests\.yaml$''']
+regexes = ['''^0123456789abcdef0123456789abcdef$''']
