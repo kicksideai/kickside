@@ -634,6 +634,40 @@ local function define_tests()
 			test.eq(bytes, (storage:readfile(path)))
 		end)
 
+        test.it("keeps failure settled when the callback permanently refuses delivery", function()
+            local id, owner = uuid_v4(), "callback-delivery-" .. uuid_v4()
+            ensure_uploads_component(owner)
+            local metadata = upload_metadata(owner, "callback.txt")
+            local identity = metadata[IDENTITY_META_KEY]
+            metadata.__upload_token = assert(upload_tokens.pack({upload_id = id,
+                function_id = "app:callback_probe", on_error_id = "app:callback_reject",
+                actor_id = identity.actor_id, actor_context = identity.actor_context}))
+            local upload = assert(upload_record_repo.create(id, owner, 1, "text/plain", "app:uploads", id,
+                "app:types.failing", metadata, "uploaded", nil, nil, true, 600000))
+            local queued = assert(process_worker.enqueue_upload_job(upload, true))
+            local db = assert(sql.get("app:db"))
+            local dbtype = tostring(db:type())
+            local processing = admit_job(db, queued.job_id, 5)
+            test.is_nil(jobs_lifecycle.fail_job(db, processing, dbtype, "execution ended", "deterministic"))
+            local settled, settle_err = process_job.dead({payload = {job_id = queued.job_id}})
+            test.is_nil(settle_err, tostring(settle_err))
+            test.is_true(settled.settled)
+            local callbacks = assert(db:query("SELECT id FROM kickside_job WHERE job_type=$1 AND CAST(payload AS TEXT) LIKE $2",
+                {"kickside.uploads.service:callback_job", "%" .. id .. "%"}))
+            test.eq(#callbacks, 1)
+            local callback = admit_job(db, callbacks[1].id, 1)
+            local _, delivery_err = worker_dispatch.execute_job(db, dbtype, callback)
+            test.is_true(errors.is(delivery_err, errors.INVALID), tostring(delivery_err))
+            test.contains(tostring(delivery_err), "callback permanently refuses delivery")
+            test.is_nil(jobs_lifecycle.fail_job(db, callback, dbtype, tostring(delivery_err), "deterministic"))
+            test.eq(assert(db:query("SELECT status FROM kickside_job WHERE id=$1", {callback.id}))[1].status, "dead")
+            test.eq(assert(upload_query_repo.get(id)).storage_state, "failed")
+            local events = assert(db:query("SELECT id FROM kickside_event WHERE external_id=$1 AND type=$2",
+                {id, uploads_events.TYPE.FAILED}))
+            test.eq(#events, 1)
+            db:release()
+        end)
+
 		test.it("settles terminal failure when its callback token is unreadable", function()
             local id, owner = uuid_v4(), "callback-failure-" .. uuid_v4()
             ensure_uploads_component(owner)
