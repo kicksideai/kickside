@@ -17,6 +17,10 @@ local subjects = require("subjects")
 local public_url = require("mcp_public_url")
 local registry = require("registry")
 local errors = require("errors")
+local crypto = require("crypto")
+local base64 = require("base64")
+local hash = require("hash")
+local json = require("json")
 
 local function define_tests()
     test.describe("MCP OAuth authorization server", function()
@@ -62,6 +66,30 @@ local function define_tests()
 
         test.before_all(function() subjects.put(actor, subjects.STATUS.ACTIVE, {}) end)
         test.after_all(cleanup)
+
+        test.it("reads an existing sealed grant and preserves native readback of new writes", function()
+            local code = "mcp-fixed-code"
+            local vector = "AAECAwQFBgcICQoLQ8goGhyPza3bRhxTPyfwZ7NrDnujdzrQJzEOGibfB/p6AhR8Bk9rt2IHfgcYmxUOcEytkhI="
+            test.is_nil(oauth_repo.put_code(code, {actor_id=actor, client_id="fixture-client",
+                redirect_uri=redirect, code_challenge="fixture-challenge", grant={access_token="new-grant-secret"}}))
+            local db=assert(sql.get("app:db"))
+            local rows, read_err=db:query("SELECT grant_json FROM kickside_mcp_oauth_codes WHERE code_hash=$1",{oauth_repo.code_hash(code)})
+            test.is_nil(read_err)
+            local envelope, json_err=json.decode(rows[1].grant_json)
+            test.is_nil(json_err)
+            local raw, decode_err=base64.decode(envelope.sealed)
+            test.is_nil(decode_err)
+            local key=assert(hash.sha256("kickside.mcp.oauth:grant:v1:"..code,true))
+            local native, native_err=crypto.decrypt.aes(raw,key,oauth_repo.code_hash(code))
+            test.is_nil(native_err)
+            local grant, grant_err=json.decode(native)
+            test.is_nil(grant_err);test.eq(grant.access_token,"new-grant-secret")
+            local _, write_err=db:execute("UPDATE kickside_mcp_oauth_codes SET grant_json=$1 WHERE code_hash=$2",
+                {assert(json.encode({sealed=vector})),oauth_repo.code_hash(code)})
+            db:release();test.is_nil(write_err)
+            local existing, existing_err=oauth_repo.consume_code(code)
+            test.is_nil(existing_err);test.eq(existing.grant.access_token,"mcp-fixture-secret")
+        end)
 
         test.it("serves spec-complete discovery metadata", function()
             local rm = flow.protected_resource_metadata("https://x.example/")

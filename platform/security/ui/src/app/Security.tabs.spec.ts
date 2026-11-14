@@ -1,0 +1,43 @@
+import { describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+
+const { get } = vi.hoisted(() => ({ get: vi.fn(async () => ({ data: { scopes: [], policies: [], delegations: [] } })) }))
+vi.mock('@wippy-fe/proxy', () => ({ api: { get }, host: { confirm: vi.fn() } }))
+vi.mock('@wippy-fe/webcomponent-vue', () => ({ useHostVisibilityRefresh: (callback: () => unknown) => { void callback() } }))
+vi.mock('@widgets/app/WcMount.vue', () => ({ default: { template: '<div />' } }))
+import Security from './Security.vue'
+
+describe('Security administration tabs', () => {
+  it('uses keyboard tabs while retaining role and permission drafts and lazy grant loading', async () => {
+    get.mockClear()
+    const wrapper = mount(Security, { attachTo: document.body })
+    await flushPromises()
+    expect(get.mock.calls).toHaveLength(2)
+    await wrapper.get('button[aria-label="New role"]').trigger('click')
+    await wrapper.get('input[placeholder="Reviewer"]').setValue('draft-scope')
+    const scopes = wrapper.get('[role=tab][aria-selected=true]')
+    const grants = wrapper.get('[role=tab][aria-controls$="_tabpanel_delegations"]')
+    ;(scopes.element as HTMLElement).focus()
+    await scopes.trigger('keydown', { code: 'ArrowRight' })
+    expect(document.activeElement).toBe(grants.element)
+    expect(grants.attributes('aria-selected')).toBe('false')
+    expect(get.mock.calls).toHaveLength(2)
+    await grants.trigger('keydown', { code: 'Enter' })
+    await flushPromises()
+    expect(grants.attributes('aria-selected')).toBe('true')
+    expect(get).toHaveBeenLastCalledWith('/api/v1/security/delegations')
+    expect(wrapper.get('.p-tabs .p-tablist [role=tablist]').attributes('aria-label')).toBe('Security administration')
+    await wrapper.findAll('button').find(button => button.text() === 'New permission')!.trigger('click')
+    await flushPromises()
+    await wrapper.findAll('.ks-runas input[type=radio]')[1]!.setValue(true)
+    await grants.trigger('keydown', { code: 'ArrowLeft' })
+    expect(document.activeElement).toBe(scopes.element)
+    await scopes.trigger('keydown', { code: 'Enter' })
+    await flushPromises()
+    expect((wrapper.get('input[placeholder="Reviewer"]').element as HTMLInputElement).value).toBe('draft-scope')
+    await grants.trigger('click')
+    await flushPromises()
+    expect((wrapper.findAll('.ks-runas input[type=radio]')[1]!.element as HTMLInputElement).checked).toBe(true)
+    expect(get.mock.calls).toHaveLength(4)
+  })
+})

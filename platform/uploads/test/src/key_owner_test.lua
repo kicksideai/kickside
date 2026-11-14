@@ -53,7 +53,7 @@ local function define_tests()
             test.is_true(result.before_denied);test.is_true(result.after_denied)
         end)
 
-        test.it("keeps every accepted key size and both previous token formats",function()
+        test.it("enforces the installation key width and preserves both previous token formats",function()
             local previous=env.get("ENCRYPTION_KEY")
             local ok,failure=pcall(function()
                 for _,fixture in ipairs({
@@ -63,6 +63,12 @@ local function define_tests()
                 }) do
                     local _,set_err=env.set("ENCRYPTION_KEY",string.rep("ab",fixture.bytes))
                     test.is_nil(set_err)
+                    if fixture.bytes ~= 32 then
+                        local callback,callback_err=owner.unpack(fixture.callback)
+                        test.is_nil(callback);test.not_nil(callback_err)
+                        local read,read_err=owner.unpack_read(fixture.read,{upload_id="legacy-upload"})
+                        test.is_nil(read);test.not_nil(read_err)
+                    else
                     local callback,callback_err=owner.unpack(fixture.callback)
                     test.is_nil(callback_err,tostring(callback_err));test.eq(callback.upload_id,"legacy-upload")
                     local read,read_err=owner.unpack_read(fixture.read,{upload_id="legacy-upload"})
@@ -71,6 +77,7 @@ local function define_tests()
                     test.is_nil(pack_err,tostring(pack_err));test.not_nil(packed)
                     local opened,open_err=owner.unpack_read(packed,{upload_id="22222222-2222-4222-8222-222222222222"})
                     test.is_nil(open_err,tostring(open_err));test.eq(opened.upload_id,"22222222-2222-4222-8222-222222222222")
+                    end
                 end
             end)
             local _,restore_err=env.set("ENCRYPTION_KEY",previous)

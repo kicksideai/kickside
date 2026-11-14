@@ -49,7 +49,7 @@ entries:
     meta:
       comment: OAuth client + single-use authorization-code persistence; codes store only their sha256 and zero their grant on consume.
     source: file://repo.lua
-    modules: [sql, json, uuid, time, hash, base64]
+    modules: [sql, json, uuid, time, hash]
     imports:
       secret_cipher: kickside.contract:secret_cipher
       mcp_types: kickside.mcp:mcp_types

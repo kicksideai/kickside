@@ -7,7 +7,7 @@ entries:
     meta: {type: test, suite: cipher_compatibility}
     source: file://cipher_compatibility_test.lua
     method: run
-    modules: [env]
+    modules: [env, crypto, base64]
     imports:
       test: wippy.test:test
       caller: kickside.models.persist:models_secrets
@@ -353,7 +353,7 @@ entries:
     meta: {type: test, suite: key_owner}
     source: file://cipher_compatibility_test.lua
     method: run
-    modules: [env]
+    modules: [env, crypto, base64]
     imports:
       test: wippy.test:test
       caller: kickside.models.persist:models_secrets

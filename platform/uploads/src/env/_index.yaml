@@ -38,4 +38,4 @@ entries:
   - name: encryption_key
     kind: env.variable
     storage: kickside.uploads.env:key_storage
-    default: ENCRYPTION_KEY
+    variable: ENCRYPTION_KEY

@@ -159,8 +159,6 @@ entries:
     kind: library.lua
     meta: { comment: "AES encryption for secret-typed settings, keyed by ENCRYPTION_KEY (64 hex / 32 bytes)." }
     source: file://secrets.lua
-    modules: [base64, env]
-
     imports:
       secret_cipher: kickside.contract:secret_cipher
 
@@ -549,10 +547,4 @@ entries:
     kind: ns.requirement
     default: ENCRYPTION_KEY
     targets:
-      - {entry: kickside.settings.env:encryption_key, path: .default}
-      - {entry: kickside.settings:reader_secrets, path: '.policy.resources +='}
-
-  - name: dependency.contract
-    kind: ns.dependency
-    component: kickside/contract
-    version: '*'
+      - {entry: kickside.settings.env:encryption_key, path: .variable}

@@ -1,0 +1,65 @@
+{
+  "success": true,
+  "data": [
+    {
+      "discriminator": "default",
+      "content_type": "application/json",
+      "data_id": "019f48ab-2282-7582-ae15-77c053cd9c41",
+      "dataflow_id": "718d6cbb-6f7f-48ee-bfec-ff7e37895078",
+      "metadata": {},
+      "node_id": "7ad0f448-f846-4fb0-a9e9-ba165ed66d99",
+      "type": "node.input",
+      "created_at": "2026-07-09T16:56:42.884310265-04:00",
+      "content": "{\"query\":\"industrial automation trends\",\"total_results\":\"76700000\",\"results\":[{\"title\":\"Top 10 industrial automation trends - IoT Analytics\",\"link\":\"https://iot-analytics.com/top-10-industrial-automation-trends/\",\"snippet\":\"Jan 28, 2026 ... 10 industrial automation trends observed at SPS 2023 \u00b7 1. Solutions that enable flexibility \u00b7 2. IT/OT convergence \u00b7 3. Increasing emphasis on\u00a0...\",\"displayLink\":\"iot-analytics.com\"},{\"title\":\"8 Key Industrial Automation Trends in 2025 | US\",\"link\":\"https://www.rockwellautomation.com/en-us/company/news/the-journal/8-key-industrial-automation-trends-in-2025.html\",\"snippet\":\"8 Key Industrial Automation Trends in 2025 \u00b7 1. Industrial Internet of Things (IIoT) \u00b7 2. Edge Computing and Cloud Computing, Separately or Together \u00b7 3.\",\"displayLink\":\"www.rockwellautomation.com\"},{\"title\":\"The Future of Industrial Automation: 5 Key Trends\",\"link\":\"https://ibtinc.com/learn/industrial-automation-future-trends/\",\"snippet\":\"Jul 23, 2024 ... Discover 5 key industrial automation trends! Learn how AI, cobots, \\u0026 edge computing are transforming factories \\u0026 how to stay competitive in\u00a0...\",\"displayLink\":\"ibtinc.com\"},{\"snippet\":\"Mar 26, 2025 ... After years of rapid expansion, the industrial automation sector has hit a speed bump in 2024 which will continue in 2025.\",\"displayLink\":\"www.rolandberger.com\",\"title\":\"Challenging outlook for industrial automation - Roland Berger\",\"link\":\"https://www.rolandberger.com/en/Insights/Publications/Challenging-outlook-for-industrial-automation.html\"},{\"link\":\"https://www.mckinsey.com/industries/automotive-and-assembly/our-insights/is-industrial-automation-headed-for-a-tipping-point\",\"snippet\":\"Jun 16, 2023 ... Over the past few decades, industrial automation has evolved gradually, with few changes in market structure. But the pace of change is\u00a0...\",\"displayLink\":\"www.mckinsey.com\",\"title\":\"Is industrial automation headed for a tipping point? - McKinsey\"},{\"title\":\"5 Industrial Automation Trends That Defined 2025\",\"link\":\"https://dynamicsourcemfg.com/5-industrial-automation-trends-that-defined-2025/\",\"snippet\":\"Dec 8, 2025 ... Industry analyses highlight robots, cobots, and autonomous mobile robots (AMRs) as core industrial automation trends for 2025, enabled by better\u00a0...\",\"displayLink\":\"dynamicsourcemfg.com\"},{\"displayLink\":\"www.bain.com\",\"title\":\"Industrial Automation: From Control to Intelligence | Bain \\u0026 Company\",\"link\":\"https://www.bain.com/insights/industrial-automation-from-control-to-intelligence/\",\"snippet\":\"Apr 7, 2026 ... Industrial automation has begun a structural shift: Value is moving away from control and toward intelligence. \u00b7 Profit pools are moving to the\u00a0...\"},{\"link\":\"https://www.reddit.com/r/PLC/comments/11qdiwx/future_of_automation_where_is_this_industry_in_10/\",\"snippet\":\"Mar 13, 2023 ... Automation will enhance safety, efficiency, and productivity across industries. We can expect disruptions in manufacturing, logistics,\u00a0...\",\"displayLink\":\"www.reddit.com\",\"title\":\"Future of automation? Where is this industry in 10 years? Any trends ...\"},{\"title\":\"Trends in Industrial Automation: Transforming Manufacturing in ...\",\"link\":\"https://www.autodesk.com/blogs/design-and-manufacturing/industrial-automation/\",\"snippet\":\"Sep 11, 2025 ... Industrial automation, projected to reach $378.57 billion by 2030, is being transformed by IIoT, Industry 4.0, AI, edge computing,\u00a0...\",\"displayLink\":\"www.autodesk.com\"},{\"link\":\"https://www.jrautomation.com/blog/2026-key-trends-in-automation-shaping-the-future-of-manufacturing\",\"snippet\":\"Jun 3, 2026 ... Explore the key automation trends shaping manufacturing in 2026, from AI-powered systems and digital twins to flexible solutions that drive\u00a0...\",\"displayLink\":\"www.jrautomation.com\",\"title\":\"2026 Key Trends in Automation Shaping the Future of Manufacturing\"}],\"count\":10}"
+    },
+    {
+      "data_id": "019f48ab-3062-770f-a676-2a75f1dbeb58",
+      "type": "agent.action",
+      "content": "{\"tool_calls\":[],\"result\":\"Based on the provided search results, several key trends are shaping the landscape of industrial automation through 2025 and into 2026. The overarching theme is a structural shift from simple **control** to advanced **intelligence**.\\n\\n### 1. Artificial Intelligence (AI) and Intelligence-Driven Automation\\nThe most significant trend is the integration of AI to move beyond programmed tasks toward autonomous decision-making.\\n*   **AI-Powered Systems:** AI is being used to transform factories by enabling smarter, more predictive operations.\\n*   **Shift to Intelligence:** Value in the industry is moving away from basic machine control and toward intelligent systems that can analyze data and optimize processes.\\n\\n### 2. Connectivity and Data Integration\\nThe convergence of physical machinery and digital data is central to modern automation.\\n*   **IIoT (Industrial Internet of Things):** Connecting machines to networks to gather real-time data.\\n*   **IT/OT Convergence:** The merging of Information Technology (IT) and Operational Technology (OT) to bridge the gap between business data and factory floor operations.\\n*   **Edge and Cloud Computing:** Using a combination of edge computing (processing data near the source) and cloud computing to manage the massive influx of industrial data.\\n\\n### 3. Advanced Robotics and Flexibility\\nThe demand for adaptable manufacturing solutions is driving new types of robotics.\\n*   **Cobots (Collaborative Robots):** Robots designed to work safely alongside human workers.\\n*   **AMRs (Autonomous Mobile Robots):** Robots that can navigate factory floors independently to move goods and materials.\\n*   **Flexibility:** A major focus is on solutions that allow production lines to be easily reconfigured to handle different products or changing market demands.\\n\\n### 4. Digital Transformation Tools\\nNew technologies are creating \\\"digital mirrors\\\" of physical processes.\\n*   **Digital Twins:** Creating virtual representations of physical assets or systems to simulate and optimize performance.\\n*   **Industry 4.0:** The broader movement toward fully interconnected, smart manufacturing ecosystems.\\n\\n### 5. Market Outlook and Challenges\\n*   **Growth Projections:** The industrial automation market is projected to reach significant heights, with some estimates placing it at approximately **$378.57 billion by 2030**.\\n*   **Economic \\\"Speed Bumps\\\":** Despite the technological advancements, some analysts note that the sector faced a period of slower expansion (a \\\"speed bump\\\") through 2024 and 2025.\"}",
+      "content_type": "application/json",
+      "dataflow_id": "718d6cbb-6f7f-48ee-bfec-ff7e37895078",
+      "key": "1_action",
+      "created_at": "2026-07-09T16:56:46.436727637-04:00",
+      "metadata": {
+        "model": "class:fast",
+        "tokens": {
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 1207,
+          "completion_tokens": 519,
+          "total_tokens": 1726,
+          "cache_write_tokens": 0,
+          "cache_read_tokens": 0,
+          "thinking_tokens": 0
+        },
+        "finish_reason": "stop",
+        "llm_meta": {},
+        "iteration": 1,
+        "agent_id": "user_agent:019f3d71-8439-7db5-ba43-2173fb738b52"
+      },
+      "node_id": "7ad0f448-f846-4fb0-a9e9-ba165ed66d99"
+    },
+    {
+      "data_id": "019f48ab-3063-7324-acd5-30af59038710",
+      "key": "019f48ab-3063-7313-ad9b-481e0df7ddca",
+      "node_id": "7ad0f448-f846-4fb0-a9e9-ba165ed66d99",
+      "content_type": "application/json",
+      "metadata": {},
+      "dataflow_id": "718d6cbb-6f7f-48ee-bfec-ff7e37895078",
+      "type": "node.yield",
+      "created_at": "2026-07-09T16:56:46.455061053-04:00",
+      "content": "{\"node_id\":\"7ad0f448-f846-4fb0-a9e9-ba165ed66d99\",\"yield_id\":\"019f48ab-3063-7313-ad9b-481e0df7ddca\",\"reply_to\":\"dataflow.yield_reply.7ad0f448-f846-4fb0-a9e9-ba165ed66d99\",\"yield_context\":{\"run_nodes\":[]}}"
+    },
+    {
+      "node_id": "7ad0f448-f846-4fb0-a9e9-ba165ed66d99",
+      "discriminator": "result.error",
+      "data_id": "019f48ab-307d-7a60-a78c-44eaa25b6169",
+      "dataflow_id": "718d6cbb-6f7f-48ee-bfec-ff7e37895078",
+      "created_at": "2026-07-09T16:56:46.46231998-04:00",
+      "content_type": "application/json",
+      "type": "node.result",
+      "content": "Failed",
+      "metadata": {}
+    }
+  ]
+}

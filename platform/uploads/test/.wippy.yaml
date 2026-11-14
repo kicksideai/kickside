@@ -1,5 +1,7 @@
 version: '1.0'
 override:
+  kickside.uploads.env:encryption_key:storage: app:env_storage
+  kickside.uploads.env:encryption_key:default: abababababababababababababababababababababababababababababababab
   app:gateway:addr: ":${http_port}"
   app:db:file: ${sqlite_path}
   kickside.core.jobs.service:worker.service:lifecycle.auto_start: false

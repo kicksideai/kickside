@@ -1,0 +1,27 @@
+{
+  "success": true,
+  "data": [
+    {
+      "node_id": "a42879e5-b237-4094-ac43-f333369da3e6",
+      "created_at": "2026-07-09T16:56:42.27091105-04:00",
+      "content_type": "application/json",
+      "metadata": {},
+      "type": "node.input",
+      "discriminator": "default",
+      "data_id": "019f48ab-201d-7606-bfd5-3608e780984e",
+      "dataflow_id": "718d6cbb-6f7f-48ee-bfec-ff7e37895078",
+      "content": "{\"query\":\"industrial automation trends\"}"
+    },
+    {
+      "data_id": "019f48ab-228a-7158-b718-231a4e3758f4",
+      "content": "{\"data_ids\":[\"019f48ab-2282-7582-ae15-77c053cd9c41\"],\"success\":true,\"message\":\"Function executed successfully\"}",
+      "discriminator": "result.success",
+      "dataflow_id": "718d6cbb-6f7f-48ee-bfec-ff7e37895078",
+      "type": "node.result",
+      "created_at": "2026-07-09T16:56:42.890464258-04:00",
+      "node_id": "a42879e5-b237-4094-ac43-f333369da3e6",
+      "content_type": "application/json",
+      "metadata": {}
+    }
+  ]
+}

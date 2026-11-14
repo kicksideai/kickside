@@ -2,7 +2,6 @@ local crypto = require("crypto")
 local secret_cipher = require("secret_cipher")
 local base64 = require("base64")
 local json = require("json")
-local env = require("env")
 
 local READ_PURPOSE = "upload.read"
 local DEFAULT_READ_TTL_SECONDS = 300
@@ -10,18 +9,8 @@ local MAX_READ_TTL_SECONDS = 3600
 
 -- Get encryption key from environment
 local function get_encryption_key()
-    local variable, variable_err = env.get("kickside.uploads.env:encryption_key")
-    if variable_err then error(variable_err, 0) end
-    local key_hex = env.get(variable)
-    if not key_hex then
-        error("ENCRYPTION_KEY environment variable is required but not set")
-    end
-
-    local key, err = secret_cipher.decode_key(key_hex)
-    if err then
-        error("Failed to decode encryption key: " .. tostring(err))
-    end
-
+    local key, err = secret_cipher.load_key("kickside.uploads.env:encryption_key")
+    if err then error(err, 0) end
     return key
 end
 
@@ -82,7 +71,7 @@ local function pack_read(params)
     if ttl <= 0 then return nil, "expires_in must be positive" end
     if ttl > MAX_READ_TTL_SECONDS then ttl = MAX_READ_TTL_SECONDS end
 
-    local upload, lookup_err = require("upload_query_repo").get(params.upload_id)
+    local upload, lookup_err = require("upload_query_repo").get_read_ref(params.upload_id)
     if lookup_err then return nil, lookup_err end
     local _, access_err = require("original_read").authorize({uuid = params.upload_id, actor_id = upload.actor_id :: string})
     if access_err then return nil, access_err end
@@ -177,28 +166,23 @@ local function pack(params)
 
     local encryption_key = get_encryption_key()
 
-    local encrypted, err = secret_cipher.encrypt(json_data, encryption_key :: string)
+    local encrypted, err = secret_cipher.seal(json_data, encryption_key :: string)
     if err then
-        return nil, "Encryption error: " .. err
+        return nil, "Encryption error: " .. tostring(err)
     end
 
-    return base64.encode(encrypted :: string)
+    return encrypted
 end
 
 -- Unpack and validate upload completion token
 local function unpack(token: string?)
     if not token then return nil, "No token provided" end
 
-    local encrypted_data = base64.decode(token)
-    if not encrypted_data then
-        return nil, "Invalid token format"
-    end
-
     local encryption_key = get_encryption_key()
 
-    local json_data, err = secret_cipher.decrypt(encrypted_data, encryption_key :: string)
+    local json_data, err = secret_cipher.open(token, encryption_key :: string)
     if err then
-        return nil, "Invalid upload token: " .. err
+        return nil, "Invalid upload token: " .. tostring(err)
     end
 
     local payload, err = json.decode(json_data :: string)

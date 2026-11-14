@@ -9,7 +9,6 @@ local uuid = require("uuid")
 local time = require("time")
 local hash = require("hash")
 local secret_cipher = require("secret_cipher")
-local base64 = require("base64")
 local mcp_types = require("mcp_types")
 local persisted_json = require("persisted_json")
 local quota = require("credential_quota")
@@ -226,10 +225,8 @@ function M.put_code(raw_code: string, args: any): string?
     if encode_err then return tostring(encode_err) end
     local key, key_err = grant_key(raw_code)
     if key_err or not key then return "OAuth grant key derivation failed" end
-    local ciphertext, seal_err = secret_cipher.encrypt(encoded, key, M.code_hash(raw_code))
-    if seal_err or not ciphertext then return "OAuth grant encryption failed" end
-    local sealed, base_err = base64.encode(ciphertext :: string)
-    if base_err then return tostring(base_err) end
+    local sealed, seal_err = secret_cipher.seal(encoded, key, M.code_hash(raw_code))
+    if seal_err or not sealed then return "OAuth grant encryption failed" end
     local envelope, envelope_err = json.encode({ sealed = sealed })
     if envelope_err then return tostring(envelope_err) end
     local db, db_err = db_open()
@@ -304,10 +301,9 @@ function M.consume_code(raw_code: string): (any?, any?)
     if grant_err then return nil, grant_err end
     if grant.sealed ~= nil then
         if type(grant.sealed) ~= "string" then return nil, grant_failure() end
-        local ciphertext, decode_err = base64.decode(grant.sealed)
         local key, key_err = grant_key(raw_code)
-        if decode_err or key_err or not ciphertext or not key then return nil, grant_failure() end
-        local plaintext, open_err = secret_cipher.decrypt(ciphertext, key, h)
+        if key_err or not key then return nil, grant_failure() end
+        local plaintext, open_err = secret_cipher.open(grant.sealed, key, h)
         if open_err or not plaintext then return nil, grant_failure() end
         grant, grant_err = persisted_json.decode_table(plaintext, "kickside_mcp_oauth_codes.grant_json.sealed")
         if grant_err then return nil, grant_err end
