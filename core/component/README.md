@@ -46,6 +46,11 @@ variables in the harness configuration for your test server.
 
 Use Component for independently owned, shared, placed, or deleted resources. Open instances through the actor-bound client with the required READ, WRITE, DELETE, or ADMIN mask. Keep configuration private and safe display state in public metadata; delete through the owning lifecycle.
 
+Closed kinds require owning-module admission for creation, context, and public
+metadata changes. Owners can still move them, move their containing folders, and
+delete a parent with `reparent_root` under ordinary Component access and placement
+rules. See the [kind mutation specification](src/README.md#kind-mutation-admission-spec).
+
 ## Reference
 
 - [Module reference](src/README.md)

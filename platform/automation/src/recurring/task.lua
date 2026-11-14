@@ -46,7 +46,7 @@ function M.install(input)
     return plan(input)
 end
 
-function M.reconfigure(input)
+function M.reconfigure(input, options)
     local id = ctx.get("component_id")
     -- Partial edits use the opened component context. No caller identity rides
     -- this declaration, and an omitted enabled field preserves live drive state.
@@ -66,6 +66,7 @@ function M.reconfigure(input)
     if input.title ~= nil then meta.title = planned.state.title end
     local applied, apply_err = automations.update_portable_input(id, declaration, {
         source = planned.source, state = planned.state, public_meta = meta, enabled = planned.enabled,
+        expected_revision = options and options.expected_revision,
     })
     if apply_err then return nil, apply_err end
     return { success = true, id = id }, nil

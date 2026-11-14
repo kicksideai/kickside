@@ -139,3 +139,9 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 ## License
 
 [KickSide Community License 1.0](LICENSE). Vendored dependencies retain their own licenses.
+
+Reconfiguration accepts an optional `{expected_revision = revision}` third
+argument. It compares the Component context revision atomically with the
+configuration write and returns `CONFLICT` for stale edits. Calls without this
+option keep unconditional behavior. Kind authors must forward the option to
+`update_portable_input`; see the [revision contract](src/README.md#reconfiguration-revisions).
