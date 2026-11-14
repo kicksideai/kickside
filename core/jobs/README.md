@@ -95,6 +95,27 @@ termination of existing rows admitted before this reserve applies, without
 rewriting or truncating their data. Both claim paths clear the settlement-only
 diagnostic atomically and exclude it from their admission size projection.
 
+### Lease ownership and progress
+
+Automatic lease renewal proves ownership, even when the handler is blocked.
+A job without payload `heartbeat_timeout_ms` keeps its existing execution policy.
+To bound time without useful work, declare a positive integer `heartbeat_timeout_ms`
+and call `jobs.heartbeat(id, { token, execution_seq }): (boolean?, error?)` after
+progress. This uses the existing `lease_valid` read fence and execution control channel.
+Progress does not write the job row or extend ownership; automatic `extend_lease`
+renewals persist ownership in `heartbeat_at` and `lease_until`.
+
+The supervisor starts the progress deadline when it spawns the execution child.
+Each received, token-and-sequence-matching progress heartbeat resets that deadline
+to receipt time plus `heartbeat_timeout_ms`. Automatic ownership renewals never
+reset it. The same supervisor wait ends the attempt at the earlier of that deadline
+and the spawn time plus `max_execution_ms` (or the captured policy ceiling).
+A missed deadline is `job heartbeat timed out`: it consumes the attempt, retries
+under the existing policy, and ends `dead` on the final attempt. Termination fences
+late heartbeats. `false` means the lease no longer holds; an error means progress
+could not be reported. Callers need Jobs access, with control delivery under the
+Jobs identity. Useful checkpoints remain the worker's responsibility.
+
 ## Reference
 
 - [Module reference](src/README.md)

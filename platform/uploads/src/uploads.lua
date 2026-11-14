@@ -406,7 +406,8 @@ function upload_lib.retry_upload(uuid)
         return nil, typed(err, errors.UNAVAILABLE, "infrastructure", "")
     end
 
-    local max_ms = math.floor(tonumber(upload.processing_max_execution_ms) or process_worker.max_execution_ms())
+    -- A retry is a new processing attempt under the current processing limits.
+    local max_ms = process_worker.max_execution_ms()
     local marked, mark_err = upload_record_repo.mark_failed_for_retry(upload.uuid, max_ms)
     if mark_err then return nil, typed(mark_err, errors.UNAVAILABLE, "infrastructure", "") end
     if not marked then

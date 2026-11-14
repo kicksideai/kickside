@@ -307,6 +307,7 @@ entries:
       - process
     imports:
       job_types: kickside.core.jobs:types
+      jobs: kickside.core.jobs:jobs
 
   - name: job_dead_proc
     kind: process.lua
@@ -322,6 +323,7 @@ entries:
       - process
     imports:
       job_types: kickside.core.jobs:types
+      jobs: kickside.core.jobs:jobs
 
   - name: job_dead_invalid_proc
     kind: process.lua
@@ -337,6 +339,7 @@ entries:
       - process
     imports:
       job_types: kickside.core.jobs:types
+      jobs: kickside.core.jobs:jobs
 
   - name: job_dead_recorder
     kind: function.lua
@@ -2515,6 +2518,8 @@ entries:
       error_envelope: kickside.contract:error_envelope
       committed_error: kickside.contract:committed_error
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      lease_heartbeat: kickside.core.jobs.persist:lease_heartbeat
+      proc_supervisor: kickside.core.jobs:proc_supervisor
 
   - name: scope_native_config
     kind: library.lua
@@ -2794,6 +2799,8 @@ entries:
       error_envelope: kickside.contract:error_envelope
       committed_error: kickside.contract:committed_error
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      lease_heartbeat: kickside.core.jobs.persist:lease_heartbeat
+      proc_supervisor: kickside.core.jobs:proc_supervisor
 
   - name: transaction_native_test
     kind: function.lua
@@ -2962,6 +2969,8 @@ entries:
       error_envelope: kickside.contract:error_envelope
       committed_error: kickside.contract:committed_error
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      lease_heartbeat: kickside.core.jobs.persist:lease_heartbeat
+      proc_supervisor: kickside.core.jobs:proc_supervisor
 
   - name: health_native_test
     kind: function.lua
@@ -3577,8 +3586,9 @@ entries:
   - name: child_native_source
     kind: library.lua
     source: file://child_native_source.lua
-    modules: [logger, time]
+    modules: [logger]
     imports:
+      time: app:child_native_time
       execution_policy: app:child_native_execution_policy
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       job_types: kickside.core.jobs:types
@@ -4252,6 +4262,7 @@ entries:
       - channel
       - process
     imports:
+      jobs: kickside.core.jobs:jobs
       job_types: kickside.core.jobs:types
 
   - name: job_dead_missing_proc
@@ -4267,6 +4278,7 @@ entries:
       - channel
       - process
     imports:
+      jobs: kickside.core.jobs:jobs
       job_types: kickside.core.jobs:types
 
   - name: job_dead_nonfunction_proc
@@ -4282,6 +4294,7 @@ entries:
       - channel
       - process
     imports:
+      jobs: kickside.core.jobs:jobs
       job_types: kickside.core.jobs:types
 
   - name: job_dead_capacity_proc
@@ -4297,6 +4310,7 @@ entries:
       - channel
       - process
     imports:
+      jobs: kickside.core.jobs:jobs
       job_types: kickside.core.jobs:types
 
 
@@ -4309,3 +4323,20 @@ entries:
     modules: [process]
     imports:
       jobs: kickside.core.jobs:jobs
+
+  - name: child_native_time
+    kind: library.lua
+    source: file://child_native_time.lua
+    modules: [time]
+    imports:
+      fixture: app:child_native_fixture
+
+  - name: progress_deadline_test
+    kind: function.lua
+    source: file://progress_deadline_test.lua
+    method: run
+    meta: {type: test, suite: jobs_progress_deadline}
+    imports:
+      test: wippy.test:test
+      child: app:child_native_source
+      fixture: app:child_native_fixture

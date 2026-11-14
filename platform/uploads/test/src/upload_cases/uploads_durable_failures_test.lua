@@ -702,6 +702,44 @@ local function define_tests()
 			test.eq(bytes, (storage:readfile(path)))
 		end)
 
+        for _, failed_call in ipairs({1, 2, 3}) do
+            test.it("propagates heartbeat notification failure at progress point " .. failed_call, function()
+                local id, owner = uuid_v4(), "heartbeat-error-" .. uuid_v4()
+                ensure_uploads_component(owner)
+                local upload = assert(upload_record_repo.create(id, owner, 1, "application/octet-stream",
+                    "app:uploads", id, "app:types.failing", upload_metadata(owner, "progress.bin"),
+                    "uploaded", nil, nil, true, 7200000))
+                local queued = assert(process_worker.enqueue_upload_job(upload, true))
+                local db = assert(sql.get("app:db"))
+                local leased = admit_job(db, queued.job_id, 1)
+                local input, _, input_err = worker_dispatch.build_worker_input(leased)
+                test.is_nil(input_err, tostring(input_err))
+                test.not_nil(input)
+                local heartbeat, calls = jobs.heartbeat, 0
+                local unavailable = errors.new({message = "progress notification unavailable", kind = errors.UNAVAILABLE,
+                    retryable = true, details = {code = "progress_notification_unavailable"}})
+                jobs.heartbeat = function(job_id, lease)
+                    local active, err = heartbeat(job_id, lease)
+                    if err or not active then return active, err end
+                    calls = calls + 1
+                    if calls == failed_call then return nil, unavailable end
+                    return true, nil
+                end
+                local result, err = process_job.run(input)
+                jobs.heartbeat = heartbeat
+                test.is_nil(result)
+                test.eq(type(err), "userdata", tostring(err))
+                test.eq(err:kind(), errors.UNAVAILABLE)
+                test.is_true(err:retryable())
+                test.eq(err:details().code, "progress_notification_unavailable")
+                test.eq(assert(upload_query_repo.get(id)).storage_state, "uploaded")
+                test.eq(assert(db:query("SELECT status FROM kickside_job WHERE id=$1", {queued.job_id}))[1].status, "running")
+                test.eq(#assert(db:query("SELECT id FROM kickside_event WHERE external_id=$1 AND type=$2",
+                    {id, uploads_events.TYPE.COMPLETED})), 0)
+                db:release()
+            end)
+        end
+
         test.it("keeps failure settled when the callback permanently refuses delivery", function()
             local id, owner = uuid_v4(), "callback-delivery-" .. uuid_v4()
             ensure_uploads_component(owner)
@@ -1131,6 +1169,42 @@ local function define_tests()
 			local stored, stored_err = upload_query_repo.get(upload.uuid)
 			test.is_nil(stored_err)
 			test.eq("completed", stored.storage_state)
+		end)
+
+		test.it("heartbeats the processing job at its stage boundaries", function()
+			local upload = create_transcription_upload("heartbeat-stage", { transcription_error_test = "ocr_error" })
+			local queued, queue_err = process_worker.enqueue_upload_job(upload, true)
+			test.is_nil(queue_err)
+			local db = assert(sql.get("app:db"))
+			local queued_row = assert(db:query("SELECT payload FROM kickside_job WHERE id=$1", { queued.job_id }))[1]
+			local payload = type(queued_row.payload) == "string" and json.decode(queued_row.payload) or queued_row.payload
+			test.eq(tonumber(payload.heartbeat_timeout_ms), 600000)
+			local job = admit_job(db, queued.job_id, 1)
+			local input, _, input_err = worker_dispatch.build_worker_input(job)
+			test.is_nil(input_err)
+			-- A retriable stage failure on the first of five attempts leaves the job running.
+            local heartbeat, reports = jobs.heartbeat, 0
+            jobs.heartbeat = function(id, lease)
+                test.eq(id, job.id)
+                test.eq(lease.token, job.lease_token)
+                test.eq(lease.execution_seq, job.execution_seq)
+                local before = assert(db:query("SELECT heartbeat_at,lease_until,updated_at FROM kickside_job WHERE id=$1", {id}))[1]
+                local active, err = heartbeat(id, lease)
+                local after = assert(db:query("SELECT heartbeat_at,lease_until,updated_at FROM kickside_job WHERE id=$1", {id}))[1]
+                test.eq(after.heartbeat_at, before.heartbeat_at)
+                test.eq(after.lease_until, before.lease_until)
+                test.eq(after.updated_at, before.updated_at)
+                reports = reports + 1
+                return active, err
+            end
+            local ok, _, run_err = pcall(process_job.run, input)
+            jobs.heartbeat = heartbeat
+            test.is_true(ok)
+            test.is_true(reports >= 2, "admission and stage boundaries report progress")
+			test.not_nil(run_err)
+			local after = assert(db:query("SELECT status,heartbeat_at,lease_until,updated_at FROM kickside_job WHERE id=$1", { job.id }))[1]
+			db:release()
+			test.eq(after.status, "running")
 		end)
 
 		test.it("keeps existing primary text when enrichment transcription fails", function()

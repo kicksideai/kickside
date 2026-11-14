@@ -341,9 +341,12 @@ entries:
   - name: failing_stage
     kind: function.lua
     meta:
+      reports_progress: true
       comment: Test-only universal upload stage that fails when explicitly requested.
     source: file://failing_stage.lua
     method: process
+    imports:
+      jobs: kickside.core.jobs:jobs
 
   - name: packed_storage_test
     kind: function.lua
@@ -430,7 +433,7 @@ entries:
       suite: kickside_uploads_rasterize
       comment: Discovery, PDF adapter, and the empty-document rasterize pipeline stage.
     source: file://rasterize_test.lua
-    modules: [registry, funcs, fs, uuid, security, contract, json, time]
+    modules: [registry, funcs, fs, uuid, security, contract, json, time, sql]
     imports:
       page_images: kickside.uploads.rasterize:page_images
       test: wippy.test:test

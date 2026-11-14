@@ -41,7 +41,9 @@ local function extend_lease(db: sql.DB, dbtype: string, job_id: string, lease_to
     if type(policy) ~= "table" then return false, response_error("policy") end
     local now = lifecycle.now_string(dbtype)
     if not timeout_seconds then
+        -- An execution that no longer exists holds no lease to extend.
         local captured, err = execution_policy.load_from(db, {id = job_id, execution_seq = execution_seq})
+        if err and errors.is(err, errors.NOT_FOUND) then return false, nil end
         if err then return false, err end
         timeout_seconds = captured.lease_timeout_seconds
     end

@@ -1,8 +1,15 @@
+local jobs = require("jobs")
 local M = {}
 
 local TRANSCRIPTION_ERROR_KEYS = { ocr_error = true, asr_error = true, conversion_error = true }
 
 function M.process(params)
+    local ref = type(params) == "table" and params.cancel_ref or nil
+    if type(ref) == "table" then
+        local alive, err = jobs.heartbeat(ref.job_id, {token = ref.lease_token, execution_seq = ref.execution_seq})
+        if err then error(err) end
+        if not alive then return nil, "job cancelled" end
+    end
     local meta = type(params) == "table" and type(params.metadata) == "table" and params.metadata or {}
     if meta.fail_stage_test == true then
         return nil, "test unavailable resource: app:failing_stage"

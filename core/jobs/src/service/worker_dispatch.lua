@@ -163,6 +163,22 @@ local function resolve_max_execution_ms(job: table, policy: any): (integer?, err
 end
 worker.resolve_max_execution_ms = resolve_max_execution_ms
 
+-- Per-job heartbeat timeout in milliseconds (payload heartbeat_timeout_ms), or
+-- nil when the job does not heartbeat. A job that declares it must call
+-- jobs.heartbeat within each timeout or its attempt ends.
+local function resolve_heartbeat_timeout_ms(job: table): (integer?, error?)
+    local payload, decode_err = lifecycle.decode_payload(job.payload)
+    if decode_err then return nil, decode_err end
+    if payload.heartbeat_timeout_ms == nil then return nil, nil end
+    local timeout = tonumber(payload.heartbeat_timeout_ms)
+    if not timeout or timeout < 1 or timeout == math.huge or timeout ~= math.floor(timeout) then
+        return nil, (errors.new({ message = "heartbeat_timeout_ms must be a positive integer",
+            kind = errors.INVALID, retryable = false }) :: error)
+    end
+    return math.floor(timeout) :: integer, nil
+end
+worker.resolve_heartbeat_timeout_ms = resolve_heartbeat_timeout_ms
+
 -- Dispatch a func:// worker_ref. proc:// jobs do not reach here: they are spawned
 -- non-blocking and supervised by run_supervised_proc so the engine holds a pid it
 -- can terminate, which this synchronous funcs.call could never expose.
@@ -200,11 +216,14 @@ local function run_bound_worker(job: table, binding: table): (table?, error?)
     return output, nil
 end
 
--- Error text a supervised proc surfaces when its hard wall-clock ceiling elapses.
--- It is a plain failure (not a lost lease): fail_job runs normally and the job
--- retries through the usual backoff -> dead path.
+-- Error texts a supervised execution surfaces when its hard wall-clock ceiling
+-- or its heartbeat timeout elapses. Each is a plain failure (not a lost lease):
+-- fail_job runs normally and the job retries through the usual backoff -> dead
+-- path.
 local PROC_TIMEOUT_MARKER = "job exceeded max_execution_ms"
 worker.PROC_TIMEOUT_MARKER = PROC_TIMEOUT_MARKER
+local HEARTBEAT_TIMEOUT_MARKER = "job heartbeat timed out"
+worker.HEARTBEAT_TIMEOUT_MARKER = HEARTBEAT_TIMEOUT_MARKER
 
 -- A proc:// worker uses the native error transport in its status envelope. The
 -- runtime can also report a native failure directly in the monitored EXIT.

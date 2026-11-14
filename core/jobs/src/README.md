@@ -88,6 +88,11 @@ makes the job claimable only after its registered execution child has ended.
 A gone child recovers in the same pass; a live child retains the termination fence.
 Heartbeats renew only matching, unexpired executions without a termination fence.
 
+### Lease ownership and progress
+
+See [lease ownership and progress](../README.md#lease-ownership-and-progress) for
+heartbeat declaration, fencing, deadlines, and failure semantics.
+
 ### Dead outcomes
 
 A worker entry names the function that receives its dead jobs:

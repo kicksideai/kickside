@@ -17,6 +17,7 @@ local claim = require("claim")
 local error_envelope = require("error_envelope")
 local committed_error = require("committed_error")
 local sql_boundary = require("sql_boundary")
+local proc_supervisor = require("proc_supervisor")
 
 local runtime_policy = require("runtime_policy")
 local jobs = {}
@@ -225,6 +226,24 @@ function jobs.lease_valid(id: string, lease: table): (boolean?, error?)
         }, dbtype)
         return current == true, err
     end)
+end
+
+-- heartbeat(id, lease) reports progress under the existing ownership fence.
+-- Automatic renewals keep the lease alive; progress only moves the supervisor's
+-- heartbeat deadline. False confirms lease loss; reporting errors propagate.
+function jobs.heartbeat(id: string, lease: table): (boolean?, error?)
+    if type(lease) == "table" and type(lease.execution_seq) == "number"
+        and (lease.execution_seq < 1 or lease.execution_seq == math.huge
+            or lease.execution_seq ~= math.floor(lease.execution_seq)) then
+        return nil, (errors.new({message = "heartbeat requires an integer execution sequence", kind = errors.INVALID}) :: error)
+    end
+    local active, active_err = jobs.lease_valid(id, lease)
+    if active_err then return nil, active_err end
+    if not active then return false, nil end
+    local _, notify_err = proc_supervisor.notify(id, lease.token, lease.execution_seq,
+        "heartbeat", nil)
+    if notify_err then return nil, notify_err end
+    return true, nil
 end
 
 function jobs.wake_tx(tx: sql.Transaction, key: string, dbtype: string?): (table?, error?)

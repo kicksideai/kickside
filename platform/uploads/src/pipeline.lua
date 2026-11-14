@@ -463,8 +463,8 @@ function pipeline_lib.process_upload(upload, opts)
         if continue then
             local continue_ok, continue_err = continue(stage_title)
             if not continue_ok then
-                local error_msg = tostring(continue_err or "job cancelled")
-                log:info("upload processing stopped", { upload_id = upload.uuid, stage = stage_title, error = error_msg })
+                local error_msg = continue_err or "job cancelled"
+                log:info("upload processing stopped", { upload_id = upload.uuid, stage = stage_title, error = tostring(error_msg) })
                 return false, error_msg
             end
         end
@@ -511,8 +511,8 @@ function pipeline_lib.process_upload(upload, opts)
             if continue then
                 local continue_ok, continue_err = continue(stage_title)
                 if not continue_ok then
-                    local error_msg = tostring(continue_err or "job cancelled")
-                    log:info("upload processing stopped after processor", { upload_id = upload.uuid, stage = stage_title, error = error_msg })
+                    local error_msg = continue_err or "job cancelled"
+                    log:info("upload processing stopped after processor", { upload_id = upload.uuid, stage = stage_title, error = tostring(error_msg) })
                     return false, error_msg
                 end
             end

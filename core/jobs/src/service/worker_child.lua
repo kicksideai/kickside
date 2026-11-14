@@ -23,6 +23,7 @@ local function response_error(field: string): error
 end
 local PROC_TIMEOUT_MARKER = worker_dispatch.PROC_TIMEOUT_MARKER
 worker.PROC_TIMEOUT_MARKER = PROC_TIMEOUT_MARKER
+worker.HEARTBEAT_TIMEOUT_MARKER = worker_dispatch.HEARTBEAT_TIMEOUT_MARKER
 
 local function trim(value: any): string
     if type(value) ~= "string" then return "" end
@@ -36,6 +37,8 @@ local function supervise_job_child(job: table, run_id: string?, heartbeat_pid: s
     if policy_err or not policy then return policy_err, nil, false end
     local max_execution_ms, duration_err = worker_dispatch.resolve_max_execution_ms(job, policy)
     if duration_err then return duration_err, nil, false end
+    local heartbeat_timeout_ms, heartbeat_err = worker_dispatch.resolve_heartbeat_timeout_ms(job)
+    if heartbeat_err then return heartbeat_err, nil, false end
     local host = trim(cfg.process_host())
     if host == "" then
         return (errors.new({ message = "job child requires a process host", kind = errors.INTERNAL }) :: error), nil, false
@@ -50,7 +53,18 @@ local function supervise_job_child(job: table, run_id: string?, heartbeat_pid: s
         return register_err and errors.wrap(register_err, "job supervisor registration failed") or response_error("registration"), nil, false
     end
     local deadline: any = nil
+    -- The heartbeat deadline of a job that declares heartbeat_timeout_ms; each
+    -- heartbeat moves it, and the earlier of it and the ceiling ends the attempt.
+    local heartbeat_deadline: any = nil
     local lease_deadline: any = nil
+    local function next_heartbeat(): any
+        if heartbeat_timeout_ms == nil then return nil end
+        return time.now():add((heartbeat_timeout_ms :: integer) * time.MILLISECOND)
+    end
+    local function attempt_deadline(): any
+        if heartbeat_deadline ~= nil and heartbeat_deadline:before(deadline) then return heartbeat_deadline end
+        return deadline
+    end
     local function read_lease(): (boolean, error?, string?)
         local db, err = sql.get(cfg.db_id())
         if err then return false, errors.wrap(err, "job liveness db unavailable"), nil end
@@ -103,6 +117,7 @@ local function supervise_job_child(job: table, run_id: string?, heartbeat_pid: s
             if not pid then return nil, response_error("process.id") end
             child_pid = tostring(pid)
             deadline = ceiling
+            heartbeat_deadline = next_heartbeat()
             return child_pid, nil
         end,
         terminate = function(pid: string): () process.terminate(pid) end,
@@ -120,8 +135,12 @@ local function supervise_job_child(job: table, run_id: string?, heartbeat_pid: s
         end,
         set_lease_deadline = function(value: any): () lease_deadline = value end,
         wait = function(): table
-            local signal = proc_supervisor.wait_once(events_ch, deadline, child_pid,
+            local chosen = attempt_deadline()
+            local signal = proc_supervisor.wait_once(events_ch, chosen, child_pid,
                 heartbeat_pid, control_ch, lease_deadline)
+            if signal.kind == "timeout" and chosen ~= deadline then
+                return { kind = "timeout", message = worker.HEARTBEAT_TIMEOUT_MARKER }
+            end
             if signal.kind ~= "control" or type(signal.message) ~= "table" then return signal end
             local message = signal.message :: any
             if tostring(message.lease_token or "") ~= tostring(job.lease_token or "")
@@ -129,6 +148,10 @@ local function supervise_job_child(job: table, run_id: string?, heartbeat_pid: s
                 return { kind = "other" }
             end
             if message.kind == "revoked" then return { kind = "revoked" } end
+            if message.kind == "heartbeat" then
+                heartbeat_deadline = next_heartbeat()
+                return { kind = "heartbeat" }
+            end
             if message.kind == "lease_renewed" then
                 local renewed, parse_err = proc_supervisor.parse_deadline(message.lease_until)
                 if parse_err or not renewed then return { kind = "lease_expired" } end
