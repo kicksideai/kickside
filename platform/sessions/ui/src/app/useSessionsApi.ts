@@ -1,5 +1,5 @@
 import { api } from '@wippy-fe/proxy'
-import type { ArtifactSummary, ProviderBadge, Session, SessionMessage } from '../types.ts'
+import type { ArtifactSummary, ChatAgent, ChatAgentGroup, ProviderBadge, Session, SessionMessage } from '../types.ts'
 
 const BASE = '/api/v1'
 
@@ -8,6 +8,12 @@ interface MessagesResponse { success: boolean, count: number, messages: SessionM
 interface TokenResponse { success: boolean, token?: string, error?: string }
 interface MutationResponse { success: boolean, error?: string }
 interface AgentsResponse { success: boolean, agents?: { id: string, title?: string }[] }
+interface ChatAgentsResponse {
+  success?: boolean
+  agents?: ChatAgent[]
+  grouped?: { title?: string, agents?: ChatAgent[] }[]
+  error?: string
+}
 interface ProviderBadgesResponse { success: boolean, providers?: { provider?: string, title?: string, icon?: string }[] }
 interface ArtifactsResponse {
   success: boolean
@@ -39,6 +45,22 @@ export function useSessionsApi() {
     } catch {
       return {}
     }
+  }
+
+  // The agents a new chat can start with, grouped as the host's own agent
+  // picker groups them. An agent without a start token cannot start a chat, and
+  // one the API puts in no group is listed last so it is not lost.
+  async function chatAgents(): Promise<ChatAgentGroup[]> {
+    const { data } = await api.get<ChatAgentsResponse>(`${BASE}/agents/list`)
+    if (!data?.success) throw new Error(data?.error || 'Failed to load agents')
+    const usable = (list?: ChatAgent[]) => (list || []).filter((agent: ChatAgent) => agent.name && agent.start_token)
+    const groups: ChatAgentGroup[] = (data.grouped || [])
+      .map((group: { title?: string, agents?: ChatAgent[] }) => ({ title: group.title || '', agents: usable(group.agents) }))
+      .filter((group: ChatAgentGroup) => group.agents.length > 0)
+    const listed = new Set(groups.flatMap(group => group.agents.map(agent => agent.name)))
+    const rest = usable(data.agents).filter((agent: ChatAgent) => !listed.has(agent.name))
+    if (rest.length > 0) groups.push({ title: groups.length > 0 ? 'Other' : '', agents: rest })
+    return groups
   }
 
   // A compact, authenticated registry catalogue. It deliberately contains
@@ -127,5 +149,5 @@ export function useSessionsApi() {
     return typeof data === 'string' ? data : JSON.stringify(data, null, 2)
   }
 
-  return { list, messages, rename, remove, setFavorite, startToken, agentTitles, providerBadges, artifacts, artifact, artifactContent }
+  return { list, messages, rename, remove, setFavorite, startToken, agentTitles, chatAgents, providerBadges, artifacts, artifact, artifactContent }
 }

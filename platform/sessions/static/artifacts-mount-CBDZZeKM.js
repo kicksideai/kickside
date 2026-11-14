@@ -5,7 +5,7 @@ import E from "primevue/button";
 import { on as B } from "@wippy-fe/proxy";
 import { b as Q } from "./wc-runtime-BJD-5iaH.js";
 import { u as X } from "./constants-C0dj8rIt.js";
-import { u as Y } from "./useSessionsApi-P7vRdJK6.js";
+import { u as Y } from "./useSessionsApi-BQAm970o.js";
 import { a as x, b as I } from "./artifactPresentation-Dgf5Fs_k.js";
 const Z = { class: "kx kx-artifacts-page" }, ee = { class: "kx-head" }, te = { class: "kx-head-actions" }, se = { class: "kx-search" }, ae = { class: "kx-select-label" }, le = { class: "kx-body kx-artifacts-body" }, ie = {
   key: 0,
@@ -277,4 +277,4 @@ const Z = { class: "kx kx-artifacts-page" }, ee = { class: "kx-head" }, te = { c
 export {
   Me as mountConfig
 };
-//# sourceMappingURL=artifacts-mount-SjjFRGZz.js.map
+//# sourceMappingURL=artifacts-mount-CBDZZeKM.js.map

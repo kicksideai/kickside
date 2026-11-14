@@ -31,7 +31,8 @@
         "resizeObserver": false,
         "preventLinkClicks": false,
         "iconifyIcons": false,
-        "errorCapture": true
+        "errorCapture": true,
+        "refreshWhenVisible": false
       }
     },
     "scripts": {

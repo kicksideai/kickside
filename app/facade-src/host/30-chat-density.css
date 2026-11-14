@@ -1,0 +1,93 @@
+/* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
+/* The host chat drawer at the density of the Kickside app page, a 13px
+   document root. The host document's root is 16px.
+
+   `zoom: 13 / 16` on the chat body gives every rem and em size in the chat
+   (text, avatars, bubbles, meta row, composer, empty state) its 13px-root value.
+   Sizes the chat declares in px are scaled by the zoom as well, so the ones that
+   are visible are divided back below. The zoom is on the children of the chat
+   container, not on the container or the panel mount, which carry the width the
+   layout gave the panel.
+
+   The session selector row and the close button are not zoomed: PrimeVue opens
+   the selector's list in <body> from the size of its trigger. They are sized in
+   plain px here, and the list in 35-chat-selector-overlay.css. The menus that
+   open in <body> are sized in 36-chat-menus.css.
+
+   Scope: `:where()` adds no specificity. Several host rules here are scoped
+   Vue styles (four classes deep), so the rules below raise their own weight by
+   repeating `.chat-container` instead of using !important. */
+
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container > :not(.session-selector, .chat-container__header-actions) {
+  zoom: 0.8125;
+}
+
+/* px sizes of the chat, divided by the zoom: the side padding of the message list
+   and the meta row (10px), the composer's upload list height (200px), the
+   width of an attached file (230px) and the focus ring width and offset. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container {
+  --wippy-host-chat-padding-x: calc(10px / 0.8125);
+  --kickside-chat-focus-ring-width: calc(var(--p-focus-ring-width) / 0.8125);
+  --kickside-chat-focus-ring-offset: calc(var(--p-focus-ring-offset) / 0.8125);
+}
+/* The outline ring of a control that draws no border. The zoom draws its 2px
+   width 1.625px wide, and Chrome draws that as 1px. The zoomed body reads the
+   ring width and offset divided above, on the container, because a custom
+   property cannot be set from its own value. The halo of a bordered control
+   (`--p-focus-ring-shadow`) is a composite value and stays zoomed. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container > :not(.session-selector, .chat-container__header-actions) {
+  --p-focus-ring-width: var(--kickside-chat-focus-ring-width);
+  --p-focus-ring-offset: var(--kickside-chat-focus-ring-offset);
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container.chat-container .chat-input__upload-list {
+  max-height: calc(200px / 0.8125);
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container.chat-container .message-input__files .w-file {
+  max-width: calc(230px / 0.8125);
+}
+
+/* The text colour is the theme's. The host document has no body colour of its
+   own, so the chat would otherwise draw black on white and pure white on dark. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .layout-chat-wrapper {
+  color: var(--p-text-color);
+}
+
+/* Session selector row: 13px-root geometry. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container.chat-container .session-selector[part="session-selector"] {
+  padding: 10.5px 44.5px 10.5px 14.5px;
+  font-size: 13px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .session-selector .p-select {
+  height: 34.5px;
+  border-radius: 4.875px;
+  font-size: 13px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .session-selector .p-select-label {
+  padding: 6.5px 9.75px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .session-selector .p-select-dropdown {
+  width: 32.5px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .session-selector .p-select-dropdown-icon {
+  width: 13px;
+  height: 13px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .session-selector .session-icon {
+  font-size: 14.625px;
+}
+
+/* Close button: a 30px muted icon button. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container.chat-container .chat-container__header-actions {
+  top: 12.75px;
+  inset-inline-end: 8px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container__header-actions .layout-chat-wrapper__close.layout-chat-wrapper__close {
+  width: 30px;
+  height: 30px;
+  font-size: 18px;
+  color: var(--p-text-muted-color);
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container__header-actions .layout-chat-wrapper__close.layout-chat-wrapper__close:hover {
+  background: var(--p-content-hover-background);
+  color: var(--p-text-color);
+}

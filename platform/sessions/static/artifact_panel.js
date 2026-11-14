@@ -1,93 +1,75 @@
-import { a as te, b as ae, W as ne } from "./wc-runtime-BJD-5iaH.js";
+import { a as Z, u as ee, b as te, W as ae } from "./wc-runtime-BJD-5iaH.js";
 import { P as se } from "./primevue-plugin-CaP7wV_M.js";
-import { defineComponent as ie, ref as p, computed as le, onMounted as oe, onBeforeUnmount as re, withDirectives as ce, openBlock as S, createElementBlock as A, createElementVNode as s, createVNode as I, unref as m, withCtx as q, toDisplayString as w, normalizeClass as j, createTextVNode as B, createCommentVNode as D, vShow as ue } from "vue";
+import { defineComponent as ie, ref as v, computed as ne, onMounted as le, onBeforeUnmount as oe, withDirectives as re, openBlock as S, createElementBlock as A, createElementVNode as i, createVNode as I, unref as m, withCtx as q, toDisplayString as C, normalizeClass as N, createTextVNode as B, createCommentVNode as D, vShow as ce } from "vue";
 import { Icon as E } from "@iconify/vue";
-import { on as G, define as fe } from "@wippy-fe/proxy";
-import de from "primevue/select";
-import { a as b } from "./artifactPresentation-Dgf5Fs_k.js";
-import { u as ve } from "./useSessionsApi-P7vRdJK6.js";
-import { s as pe } from "./styles-B4tHWzmY.js";
-const me = {
+import { on as F, define as ue } from "@wippy-fe/proxy";
+import fe from "primevue/select";
+import { a as y } from "./artifactPresentation-Dgf5Fs_k.js";
+import { s as de, a as pe, l as ve, e as me, b as ye, A as be } from "./hostRoute-CHFKAd6h.js";
+import { u as he } from "./useSessionsApi-BQAm970o.js";
+import { s as ke } from "./styles-BfuGB-97.js";
+const _e = {
   class: "kx-artifact-panel",
   "aria-label": "Artifact preview"
-}, be = { class: "kx-artifact-panel-head" }, ye = { class: "kx-artifact-panel-title" }, he = { class: "kx-artifact-select-option" }, ke = { class: "kx-artifact-select-option-title" }, _e = { class: "kx-artifact-select-option-sub" }, xe = { class: "kx-artifact-panel-actions" }, ge = ["disabled"], we = ["disabled"], Ce = {
+}, xe = { class: "kx-artifact-panel-head" }, we = { class: "kx-artifact-panel-title" }, Ce = { class: "kx-artifact-select-option" }, ge = { class: "kx-artifact-select-option-title" }, Se = { class: "kx-artifact-select-option-sub" }, Ae = { class: "kx-artifact-panel-actions" }, Ie = ["disabled"], Te = ["disabled"], Ee = {
   key: 0,
   class: "kx-artifact-panel-error",
   role: "alert"
-}, Se = ["disabled"], Ae = {
+}, Ve = ["disabled"], Le = {
   class: "sr-only",
   "aria-live": "polite"
-}, Ie = {
+}, Ne = {
   key: 1,
   class: "kx-artifact-panel-body"
-}, Ve = ["id"], Ee = {
+}, Pe = ["id"], Ue = {
   key: 2,
   class: "kx-artifact-panel-empty"
-}, Te = /* @__PURE__ */ ie({
+}, Re = /* @__PURE__ */ ie({
   __name: "ArtifactPanel",
-  setup(F) {
-    const T = ve(), L = te(), c = p([]), a = p(""), u = p(O(window.location.pathname)), f = p(!!u.value), o = p(""), i = p(""), v = p(!1), V = [], U = /* @__PURE__ */ new Set();
-    let d = null, y = 0, h = 0, k = "";
-    const _ = le(() => c.value.find((e) => b(e) === a.value));
-    function W(e) {
-      if (!e || typeof e != "object") return "";
-      const t = e;
-      return String(t.uuid || t.artifactId || "");
-    }
-    function K(e) {
-      if (!e || typeof e != "object") return "";
-      const t = e;
-      return String(t.sessionId || t.session_id || "");
-    }
-    function O(e) {
-      if (!e.startsWith("/sessions/")) return "";
-      const t = e.slice(10).split("/")[0] || "";
-      try {
-        return decodeURIComponent(t);
-      } catch {
-        return "";
-      }
-    }
-    async function N() {
-      const e = u.value, t = ++y;
+  setup($) {
+    const V = he(), P = Z(), H = ee(), c = v([]), a = v(""), u = v(de(window.location.pathname)), f = v(!!u.value), o = v(""), n = v(""), p = v(!1), T = [], L = /* @__PURE__ */ new Set();
+    let d = null, b = 0, h = 0, k = "";
+    const _ = ne(() => c.value.find((e) => y(e) === a.value));
+    async function U() {
+      const e = u.value, t = ++b;
       if (!e) {
-        c.value = [], a.value = "", f.value = !1, i.value = "";
+        c.value = [], a.value = "", f.value = !1, n.value = "";
         return;
       }
-      f.value = !0, i.value = "";
+      f.value = !0, n.value = "";
       try {
-        const n = await T.artifacts({ sessionId: e, limit: 100 });
-        if (t !== y || e !== u.value) return;
-        const r = _.value, l = n.artifacts.filter((g) => !g.session_id || g.session_id === e), x = r?.session_id === e && !l.some((g) => b(g) === a.value) ? [r, ...l] : l;
-        c.value = x, !x.some((g) => b(g) === a.value) && !k && (a.value = x[0] ? b(x[0]) : "");
-      } catch (n) {
-        if (t !== y || e !== u.value) return;
-        a.value || (i.value = n.message || "Could not load artifacts");
+        const s = await V.artifacts({ sessionId: e, limit: 100 });
+        if (t !== b || e !== u.value) return;
+        const r = _.value, l = s.artifacts.filter((w) => !w.session_id || w.session_id === e), x = r?.session_id === e && !l.some((w) => y(w) === a.value) ? [r, ...l] : l;
+        c.value = x, !x.some((w) => y(w) === a.value) && !k && (a.value = x[0] ? y(x[0]) : "");
+      } catch (s) {
+        if (t !== b || e !== u.value) return;
+        a.value || (n.value = s.message || "Could not load artifacts");
       } finally {
-        t === y && (f.value = !1);
+        t === b && (f.value = !1);
       }
     }
-    function C() {
+    function g() {
       d && clearTimeout(d), d = setTimeout(() => {
-        N();
+        U();
       }, 150);
     }
     async function R(e) {
       if (!e) return;
       const t = u.value;
       if (!t) return;
-      if (v.value = !1, i.value = "", c.value.some((l) => b(l) === e)) {
+      if (p.value = !1, n.value = "", c.value.some((l) => y(l) === e)) {
         h++, k = "", a.value = e;
         return;
       }
-      if (U.has(e)) return;
-      const n = ++h;
+      if (L.has(e)) return;
+      const s = ++h;
       k = e;
       const r = a.value;
-      a.value = "", U.add(e);
+      a.value = "", L.add(e);
       try {
-        const l = await T.artifact(e);
-        if (n !== h || t !== u.value) {
+        const l = await V.artifact(e);
+        if (s !== h || t !== u.value) {
           a.value || (a.value = r);
           return;
         }
@@ -95,141 +77,142 @@ const me = {
           a.value = r;
           return;
         }
-        c.value = [l, ...c.value.filter((x) => b(x) !== e)], a.value = e;
+        c.value = [l, ...c.value.filter((x) => y(x) !== e)], a.value = e;
       } catch (l) {
-        n === h && (a.value || (a.value = r), i.value = l.message || "Could not load artifact details");
+        s === h && (a.value || (a.value = r), n.value = l.message || "Could not load artifact details");
       } finally {
-        U.delete(e), k === e && (k = "");
+        L.delete(e), k === e && (k = "");
       }
     }
-    function z(e) {
-      e !== u.value && (u.value = e, y++, h++, d && (clearTimeout(d), d = null), c.value = [], a.value = "", k = "", v.value = !1, i.value = "", f.value = !!e, e && C());
+    function K(e) {
+      e !== u.value && (u.value = e, b++, h++, d && (clearTimeout(d), d = null), c.value = [], a.value = "", k = "", p.value = !1, n.value = "", f.value = !!e, e && g());
     }
-    function H(e) {
+    function O(e) {
       if (e.channel === "kickside:artifact-session") {
-        z(K(e.payload));
+        if (!pe(e.sourcePanelId, ve(H), window.location.pathname)) return;
+        K(me(e.payload));
         return;
       }
       if (e.channel !== "kickside:artifact-open") return;
-      const t = W(e.payload);
-      t && (R(t), C());
+      const t = ye(e.payload);
+      t && (R(t), g());
     }
-    function M(e) {
+    function W(e) {
       if (!e) return "Generation time unavailable";
       const t = new Date(e);
       return Number.isNaN(t.getTime()) ? "Generation time unavailable" : `Generated ${new Intl.DateTimeFormat(void 0, { dateStyle: "medium", timeStyle: "short" }).format(t)}`;
     }
-    function J(e) {
+    function z(e) {
       const t = String(e || "").toLowerCase();
       return t.includes("markdown") ? "md" : t.includes("html") ? "html" : t.includes("json") ? "json" : t.includes("javascript") ? "js" : t.includes("css") ? "css" : "txt";
     }
-    function Q(e) {
-      return `${String(e || "artifact").trim().replace(/[<>:"/\\|?*\u0000-\u001f]+/g, "-").replace(/[. ]+$/g, "") || "artifact"}.${J(_.value?.content_type)}`;
+    function M(e) {
+      return `${String(e || "artifact").trim().replace(/[<>:"/\\|?*\u0000-\u001f]+/g, "-").replace(/[. ]+$/g, "") || "artifact"}.${z(_.value?.content_type)}`;
     }
-    async function P() {
+    async function j() {
       if (!a.value) throw new Error("Select an artifact first");
-      return T.artifactContent(a.value);
+      return V.artifactContent(a.value);
     }
-    async function X() {
-      o.value = "copy", i.value = "";
+    async function J() {
+      o.value = "copy", n.value = "";
       try {
-        await navigator.clipboard.writeText(await P()), v.value = !0, window.setTimeout(() => {
-          v.value = !1;
+        await navigator.clipboard.writeText(await j()), p.value = !0, window.setTimeout(() => {
+          p.value = !1;
         }, 1600);
       } catch (e) {
-        i.value = e.message || "Could not copy artifact";
+        n.value = e.message || "Could not copy artifact";
       } finally {
         o.value = "";
       }
     }
-    async function Y() {
-      o.value = "save", i.value = "";
+    async function Q() {
+      o.value = "save", n.value = "";
       try {
-        const e = await P(), t = new Blob([e], { type: _.value?.content_type || "text/plain;charset=utf-8" }), n = URL.createObjectURL(t), r = document.createElement("a");
-        r.href = n, r.download = Q(_.value?.title), r.click(), URL.revokeObjectURL(n);
+        const e = await j(), t = new Blob([e], { type: _.value?.content_type || "text/plain;charset=utf-8" }), s = URL.createObjectURL(t), r = document.createElement("a");
+        r.href = s, r.download = M(_.value?.title), r.click(), URL.revokeObjectURL(s);
       } catch (e) {
-        i.value = e.message || "Could not save artifact";
+        n.value = e.message || "Could not save artifact";
       } finally {
         o.value = "";
       }
     }
-    function Z() {
-      L?.broadcast("kickside:artifact-close", { panelId: "artifact" });
+    function X() {
+      P?.broadcast("kickside:artifact-close", { panelId: be });
     }
-    const ee = ae(C);
-    return oe(() => {
-      const e = L?.subscribe(H);
-      e && V.push(e), V.push(G("artifact:*", C)), V.push(G("session:*", C));
-    }), re(() => {
-      V.forEach((e) => e()), y++, h++, d && clearTimeout(d);
-    }), (e, t) => ce((S(), A("section", me, [
-      s("header", be, [
-        s("div", ye, [
-          t[2] || (t[2] = s("label", {
+    const Y = te(g);
+    return le(() => {
+      const e = P?.subscribe(O);
+      e && T.push(e), T.push(F("artifact:*", g)), T.push(F("session:*", g));
+    }), oe(() => {
+      T.forEach((e) => e()), b++, h++, d && clearTimeout(d);
+    }), (e, t) => re((S(), A("section", _e, [
+      i("header", xe, [
+        i("div", we, [
+          t[2] || (t[2] = i("label", {
             class: "sr-only",
             for: "artifact-panel-selector"
           }, "Artifact", -1)),
-          I(m(de), {
+          I(m(fe), {
             "input-id": "artifact-panel-selector",
             modelValue: a.value,
             "onUpdate:modelValue": [
-              t[0] || (t[0] = (n) => a.value = n),
-              t[1] || (t[1] = (n) => R(n))
+              t[0] || (t[0] = (s) => a.value = s),
+              t[1] || (t[1] = (s) => R(s))
             ],
             class: "kx-artifact-panel-select",
             "overlay-class": "kx-artifact-panel-select-overlay",
             options: c.value,
             "option-label": "title",
-            "option-value": m(b),
+            "option-value": m(y),
             placeholder: f.value ? "Loading artifacts…" : "Select an artifact",
             disabled: f.value
           }, {
             value: q(() => [
-              s("span", {
-                class: j(["kx-artifact-select-value", { "is-placeholder": !_.value }])
-              }, w(_.value?.title || (f.value ? "Loading artifacts…" : "Select an artifact")), 3)
+              i("span", {
+                class: N(["kx-artifact-select-value", { "is-placeholder": !_.value }])
+              }, C(_.value?.title || (f.value ? "Loading artifacts…" : "Select an artifact")), 3)
             ]),
-            option: q(({ option: n }) => [
-              s("span", he, [
-                s("span", ke, w(n.title || "Untitled artifact"), 1),
-                s("span", _e, w(M(n.created_at)), 1)
+            option: q(({ option: s }) => [
+              i("span", Ce, [
+                i("span", ge, C(s.title || "Untitled artifact"), 1),
+                i("span", Se, C(W(s.created_at)), 1)
               ])
             ]),
             _: 1
           }, 8, ["modelValue", "options", "option-value", "placeholder", "disabled"])
         ]),
-        s("div", xe, [
-          s("button", {
+        i("div", Ae, [
+          i("button", {
             type: "button",
             class: "kx-panel-action",
             disabled: !a.value || !!o.value,
-            onClick: X
+            onClick: J
           }, [
             I(m(E), {
-              icon: o.value === "copy" ? "tabler:loader-2" : v.value ? "tabler:check" : "tabler:copy",
-              class: j({ spin: o.value === "copy" }),
+              icon: o.value === "copy" ? "tabler:loader-2" : p.value ? "tabler:check" : "tabler:copy",
+              class: N({ spin: o.value === "copy" }),
               "aria-hidden": "true"
             }, null, 8, ["icon", "class"]),
-            B(" " + w(v.value ? "Copied" : "Copy"), 1)
-          ], 8, ge),
-          s("button", {
+            B(" " + C(p.value ? "Copied" : "Copy"), 1)
+          ], 8, Ie),
+          i("button", {
             type: "button",
             class: "kx-panel-action",
             disabled: !a.value || !!o.value,
-            onClick: Y
+            onClick: Q
           }, [
             I(m(E), {
               icon: o.value === "save" ? "tabler:loader-2" : "tabler:download",
-              class: j({ spin: o.value === "save" }),
+              class: N({ spin: o.value === "save" }),
               "aria-hidden": "true"
             }, null, 8, ["icon", "class"]),
             t[3] || (t[3] = B(" Save ", -1))
-          ], 8, we),
-          s("button", {
+          ], 8, Te),
+          i("button", {
             type: "button",
             class: "kx-panel-close",
             "aria-label": "Close artifact panel",
-            onClick: Z
+            onClick: X
           }, [
             I(m(E), {
               icon: "tabler:x",
@@ -238,48 +221,48 @@ const me = {
           ])
         ])
       ]),
-      i.value ? (S(), A("div", Ce, [
-        s("span", null, w(i.value), 1),
+      n.value ? (S(), A("div", Ee, [
+        i("span", null, C(n.value), 1),
         a.value ? D("", !0) : (S(), A("button", {
           key: 0,
           type: "button",
           class: "kx-artifact-panel-retry",
           disabled: f.value,
-          onClick: N
-        }, "Retry", 8, Se))
+          onClick: U
+        }, "Retry", 8, Ve))
       ])) : D("", !0),
-      s("span", Ae, w(v.value ? "Artifact copied to clipboard" : ""), 1),
-      a.value ? (S(), A("div", Ie, [
-        s("w-artifact", { id: a.value }, null, 8, Ve)
-      ])) : (S(), A("div", Ee, [
+      i("span", Le, C(p.value ? "Artifact copied to clipboard" : ""), 1),
+      a.value ? (S(), A("div", Ne, [
+        i("w-artifact", { id: a.value }, null, 8, Pe)
+      ])) : (S(), A("div", Ue, [
         I(m(E), {
           icon: "tabler:file-description",
           "aria-hidden": "true"
         }),
-        t[4] || (t[4] = s("span", null, "Select an artifact to preview it.", -1))
+        t[4] || (t[4] = i("span", null, "Select an artifact to preview it.", -1))
       ]))
     ], 512)), [
-      [ue, m(ee) !== !1]
+      [ce, m(Y) !== !1]
     ]);
   }
 });
-class $ extends ne {
+class G extends ae {
   static get wippyConfig() {
     return {
       propsSchema: { type: "object", properties: {} },
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: pe
+      inlineCss: ke
     };
   }
   static get vueConfig() {
-    return { rootComponent: Te, plugins: [se] };
+    return { rootComponent: Re, plugins: [se] };
   }
 }
-async function $e() {
-  return $;
+async function ze() {
+  return G;
 }
-fe(import.meta.url, $);
+ue(import.meta.url, G);
 export {
-  $e as webComponent
+  ze as webComponent
 };
 //# sourceMappingURL=artifact_panel.js.map

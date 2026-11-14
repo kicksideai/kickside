@@ -65,6 +65,11 @@ entries:
                 "children": [
                   { "panel": "main", "size": "1fr", "main": true, "fixed": true },
                   {
+                    "panel": "chat",
+                    "display": "drawer-right",
+                    "drawerSize": { "width": "480px" }
+                  },
+                  {
                     "panel": "artifact",
                     "size": "0px",
                     "display": "drawer-right",
@@ -76,6 +81,15 @@ entries:
                 "direction": "horizontal",
                 "children": [
                   { "panel": "main", "size": "1fr", "main": true, "minSize": "360px", "fixed": true },
+                  {
+                    "panel": "chat",
+                    "size": "416px",
+                    "minSize": "320px",
+                    "maxSize": "672px",
+                    "collapsible": true,
+                    "collapsed": true,
+                    "collapseSize": "0px"
+                  },
                   {
                     "panel": "artifact",
                     "size": "42%",
@@ -92,6 +106,15 @@ entries:
                 "direction": "horizontal",
                 "children": [
                   { "panel": "main", "size": "1fr", "main": true, "minSize": "480px", "fixed": true },
+                  {
+                    "panel": "chat",
+                    "size": "416px",
+                    "minSize": "320px",
+                    "maxSize": "672px",
+                    "collapsible": true,
+                    "collapsed": true,
+                    "collapseSize": "0px"
+                  },
                   {
                     "panel": "artifact",
                     "size": "520px",
@@ -110,9 +133,29 @@ entries:
             },
             "panels": {
               "main": { "kind": "page", "id": "app.views:main" },
+              "chat": {
+                "kind": "builtin",
+                "id": "@HOST/chat-wrapper",
+                "props": {
+                  "showSelector": true,
+                  "closable": true,
+                  "emptyState": { "kind": "component", "tagName": "kickside-chat-empty-state" }
+                }
+              },
               "artifact": {
                 "kind": "component",
                 "tagName": "kickside-artifact-panel"
+              }
+            },
+            "floating": {
+              "chat-tab": {
+                "kind": "builtin",
+                "id": "@HOST/panel-tab",
+                "chrome": false,
+                "anchor": { "right": 0, "top": "50%" },
+                "position": { "x": 0, "y": 0 },
+                "size": { "width": 48, "height": 80 },
+                "props": { "target": "chat", "mode": "auto", "label": "Open chat" }
               }
             },
             "coordinators": {
@@ -129,6 +172,10 @@ entries:
               "artifact": {
                 "kind": "component",
                 "tagName": "kickside-artifact-coordinator"
+              },
+              "chat": {
+                "kind": "component",
+                "tagName": "kickside-chat-coordinator"
               }
             }
           }
@@ -180,7 +227,7 @@ entries:
       - name: custom_css
         value: "fs://custom-css.facade.generated.css"
       - name: host_custom_css
-        value: ""
+        value: "fs://host-custom-css.facade.generated.css"
       - name: children_custom_css
         value: "fs://children-custom-css.facade.generated.css"
       - name: css_variables

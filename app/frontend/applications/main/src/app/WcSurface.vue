@@ -3,6 +3,7 @@ import { setWippyVisibility } from '@wippy-fe/shared'
 import { nextTick, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useWippy } from '../composables/useWippy'
+import { useHostReturnRefresh } from './hostReturn'
 import { isComponentTag } from '../composables/useSurfaces'
 import { normalizePath, resolveNavTarget } from '../router/path'
 import {
@@ -152,6 +153,7 @@ watch(() => [props.tag, props.basePath], mount)
 // Reflect external route changes (deep link, back/forward) into the element.
 watch(() => props.path, () => { if (el) el.setAttribute('route', subPath()) })
 watch(() => props.visible, visible => { if (el) setWippyVisibility(el, visible) })
+useHostReturnRefresh(() => el, () => props.visible)
 onBeforeUnmount(() => {
   // Invalidate unresolved `loadByTagName` calls before removing listeners so a
   // late result cannot recreate a component after this buffer is evicted.

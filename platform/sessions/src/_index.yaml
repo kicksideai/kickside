@@ -128,6 +128,38 @@ entries:
       type: object
       properties: {}
 
+  - name: chat_coordinator_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: KickSide Chat Coordinator
+      title: Chat Coordinator
+      tag_name: kickside-chat-coordinator
+      base_path: kickside-sessions
+      entry_point: chat_coordinator.js
+      auto_register: true
+      secure: false
+      announced: true
+    props:
+      type: object
+      properties: {}
+
+  - name: chat_empty_state_view
+    kind: registry.entry
+    meta:
+      type: view.component
+      name: KickSide Chat Empty State
+      title: Chat Empty State
+      tag_name: kickside-chat-empty-state
+      base_path: kickside-sessions
+      entry_point: chat_empty_state.js
+      auto_register: true
+      secure: false
+      announced: true
+    props:
+      type: object
+      properties: {}
+
   # App navigation entry. Discovered by platform/ui nav aggregation; the SPA
   # mounts the kickside-sessions web component by tag. Hide/show and "set as
   # home" are handled by the existing Appearance editor (no extra wiring).

@@ -1,0 +1,23 @@
+/* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
+/* The list of the chat drawer's session selector, sized for a 13px root (see
+   30-chat-density.css).
+
+   PrimeVue opens this list in <body>, so it cannot be scoped to the panel mount.
+   `data-wippy-attention="exclude"` is what the host's session selector puts on
+   its overlay, and the drawer is the only session selector Kickside mounts in
+   the host document. The one !important is the max-height PrimeVue writes as an
+   inline style. The option font size is custom/80-select.css, which reaches the
+   host document. */
+
+.p-select-overlay[data-wippy-attention="exclude"] {
+  font-size: 13px;
+}
+.p-select-overlay[data-wippy-attention="exclude"] .p-select-list-container {
+  max-height: 182px !important;
+}
+.p-select-overlay[data-wippy-attention="exclude"] .p-select-option {
+  padding: 6.5px 9.75px;
+}
+.p-select-overlay[data-wippy-attention="exclude"] .session-icon {
+  font-size: 14.625px;
+}

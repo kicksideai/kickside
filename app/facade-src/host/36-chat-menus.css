@@ -1,0 +1,39 @@
+/* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
+/* The menus the chat drawer opens in <body>, sized for a 13px root (see
+   30-chat-density.css): the agent menu and the model menu of the meta row, and
+   the composer's attachment menu. PrimeVue opens them outside the zoomed chat
+   body, so they would draw at the host's 16px.
+
+   `agent-menu` and `model-menu` are the classes the host gives its two menus.
+   The attachment menu has no class, only `data-wippy-attention="exclude"` on its
+   root. The drawer is the only chat Kickside mounts in the host document.
+
+   The menu itself is not zoomed, because it carries the position PrimeVue
+   computes from the trigger. Its content is. The width is 13rem at a 13px root.
+   PrimeVue writes the trigger's unzoomed width as an inline min-width when the
+   trigger is wider than the menu, which would make the menu wider than its chip,
+   so the min-width is !important.
+
+   Two sizes are not rem and are given before the zoom: the list's 400px height
+   limit is divided by it, and the search field's font is set in rem, because
+   custom/30-inputtext.css gives `.p-inputtext` 13px, which the zoom would shrink. */
+
+.p-menu-overlay:is(.agent-menu, .model-menu, [data-wippy-attention="exclude"]) {
+  width: 169px;
+  min-width: 169px !important;
+}
+.p-menu-overlay:is(.agent-menu, .model-menu, [data-wippy-attention="exclude"]) > * {
+  zoom: 0.8125;
+}
+.p-menu-overlay:is(.agent-menu, .model-menu, [data-wippy-attention="exclude"]) .p-menu-list {
+  max-height: calc(400px / 0.8125);
+}
+.p-menu-overlay:is(.agent-menu, .model-menu, [data-wippy-attention="exclude"]) .p-inputtext {
+  font-size: 1rem;
+}
+
+/* PrimeVue puts a menu under its chip by the chip's unzoomed height. The chip is
+   28px, so the menu would sit 28px x (1 - 0.8125) below what the chip shows. */
+.p-menu-overlay:is(.agent-menu, .model-menu) {
+  margin-top: calc(-28px * (1 - 0.8125));
+}

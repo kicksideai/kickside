@@ -34,6 +34,8 @@ export default defineConfig({
         artifacts: resolve(__dirname, 'src/artifacts.ts'),
         artifact_panel: resolve(__dirname, 'src/artifact_panel.ts'),
         artifact_coordinator: resolve(__dirname, 'src/artifact_coordinator.ts'),
+        chat_coordinator: resolve(__dirname, 'src/chat_coordinator.ts'),
+        chat_empty_state: resolve(__dirname, 'src/chat_empty_state.ts'),
       },
       name: 'KicksideSessions',
       formats: ['es'],
@@ -45,6 +47,8 @@ export default defineConfig({
         artifacts: resolve(__dirname, 'src/artifacts.ts'),
         artifact_panel: resolve(__dirname, 'src/artifact_panel.ts'),
         artifact_coordinator: resolve(__dirname, 'src/artifact_coordinator.ts'),
+        chat_coordinator: resolve(__dirname, 'src/chat_coordinator.ts'),
+        chat_empty_state: resolve(__dirname, 'src/chat_empty_state.ts'),
       },
       external: hostExternals,
       output: {

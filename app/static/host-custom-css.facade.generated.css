@@ -1,0 +1,241 @@
+/* =====================================================================
+   GENERATED — do not edit. Source: app/facade-src/host/*.css
+   Rebuild: make facade-css  (Windows: make.bat facade-css)
+
+   Facade parameter: host_custom_css
+   Delivered to: the SPA host document only, NOT iframes or shadow roots.
+   Holds: rules for the web host chrome itself, such as the chat drawer.
+   Assembled from: 20-chat-focus-ring.css, 30-chat-density.css, 35-chat-selector-overlay.css, 36-chat-menus.css, 40-chat-tab.css
+   ===================================================================== */
+
+/* --- host/20-chat-focus-ring.css --- */
+/* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
+/* Focus baseline for the host chat drawer (the `chat` panel, @HOST/chat-wrapper).
+
+   The drawer is the Web Host's own chat, rendered in the host document rather
+   than a web component shadow root, so the baseline in children/20-focus-ring.css
+   never reaches it. This is that same baseline, scoped to the one panel mount
+   (`data-wippy-panel-mount` is set by @wippy-fe/layout, `wippy-host-app` is the
+   host-only CSS scope on the managed root).
+
+   The scope is `:where()`, so it adds no specificity and the rules keep exactly
+   the weight they have in children/20-focus-ring.css. A component that draws a
+   box and owns its ring (`.p-button` in custom/40-button.css, 3/5/5) still wins.
+   Same canon, same tokens, no class names: see README.md "Focus canon". */
+
+/* Bordered - input types that always draw a border. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) input:not([type='checkbox']):not([type='radio']):not([type='range']):focus,
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) textarea:focus,
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) select:focus {
+  border-color: var(--p-focus-ring-color);
+  outline: none;
+  box-shadow: var(--p-focus-ring-shadow);
+}
+
+/* Bare - nothing to highlight, so an offset outline and no halo. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) button:focus-visible,
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) summary:focus-visible,
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) a[href]:focus-visible,
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) input[type='checkbox']:focus-visible,
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) input[type='radio']:focus-visible,
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) input[type='range']:focus-visible {
+  outline: var(--p-focus-ring-width) var(--p-focus-ring-style) var(--p-focus-ring-color);
+  outline-offset: var(--p-focus-ring-offset);
+  box-shadow: none;
+}
+
+/* --- host/30-chat-density.css --- */
+/* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
+/* The host chat drawer at the density of the Kickside app page, a 13px
+   document root. The host document's root is 16px.
+
+   `zoom: 13 / 16` on the chat body gives every rem and em size in the chat
+   (text, avatars, bubbles, meta row, composer, empty state) its 13px-root value.
+   Sizes the chat declares in px are scaled by the zoom as well, so the ones that
+   are visible are divided back below. The zoom is on the children of the chat
+   container, not on the container or the panel mount, which carry the width the
+   layout gave the panel.
+
+   The session selector row and the close button are not zoomed: PrimeVue opens
+   the selector's list in <body> from the size of its trigger. They are sized in
+   plain px here, and the list in 35-chat-selector-overlay.css. The menus that
+   open in <body> are sized in 36-chat-menus.css.
+
+   Scope: `:where()` adds no specificity. Several host rules here are scoped
+   Vue styles (four classes deep), so the rules below raise their own weight by
+   repeating `.chat-container` instead of using !important. */
+
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container > :not(.session-selector, .chat-container__header-actions) {
+  zoom: 0.8125;
+}
+
+/* px sizes of the chat, divided by the zoom: the side padding of the message list
+   and the meta row (10px), the composer's upload list height (200px), the
+   width of an attached file (230px) and the focus ring width and offset. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container {
+  --wippy-host-chat-padding-x: calc(10px / 0.8125);
+  --kickside-chat-focus-ring-width: calc(var(--p-focus-ring-width) / 0.8125);
+  --kickside-chat-focus-ring-offset: calc(var(--p-focus-ring-offset) / 0.8125);
+}
+/* The outline ring of a control that draws no border. The zoom draws its 2px
+   width 1.625px wide, and Chrome draws that as 1px. The zoomed body reads the
+   ring width and offset divided above, on the container, because a custom
+   property cannot be set from its own value. The halo of a bordered control
+   (`--p-focus-ring-shadow`) is a composite value and stays zoomed. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container > :not(.session-selector, .chat-container__header-actions) {
+  --p-focus-ring-width: var(--kickside-chat-focus-ring-width);
+  --p-focus-ring-offset: var(--kickside-chat-focus-ring-offset);
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container.chat-container .chat-input__upload-list {
+  max-height: calc(200px / 0.8125);
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container.chat-container .message-input__files .w-file {
+  max-width: calc(230px / 0.8125);
+}
+
+/* The text colour is the theme's. The host document has no body colour of its
+   own, so the chat would otherwise draw black on white and pure white on dark. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .layout-chat-wrapper {
+  color: var(--p-text-color);
+}
+
+/* Session selector row: 13px-root geometry. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container.chat-container .session-selector[part="session-selector"] {
+  padding: 10.5px 44.5px 10.5px 14.5px;
+  font-size: 13px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .session-selector .p-select {
+  height: 34.5px;
+  border-radius: 4.875px;
+  font-size: 13px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .session-selector .p-select-label {
+  padding: 6.5px 9.75px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .session-selector .p-select-dropdown {
+  width: 32.5px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .session-selector .p-select-dropdown-icon {
+  width: 13px;
+  height: 13px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .session-selector .session-icon {
+  font-size: 14.625px;
+}
+
+/* Close button: a 30px muted icon button. */
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container.chat-container .chat-container__header-actions {
+  top: 12.75px;
+  inset-inline-end: 8px;
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container__header-actions .layout-chat-wrapper__close.layout-chat-wrapper__close {
+  width: 30px;
+  height: 30px;
+  font-size: 18px;
+  color: var(--p-text-muted-color);
+}
+:where(.wippy-host-app [data-wippy-panel-mount="chat"]) .chat-container__header-actions .layout-chat-wrapper__close.layout-chat-wrapper__close:hover {
+  background: var(--p-content-hover-background);
+  color: var(--p-text-color);
+}
+
+/* --- host/35-chat-selector-overlay.css --- */
+/* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
+/* The list of the chat drawer's session selector, sized for a 13px root (see
+   30-chat-density.css).
+
+   PrimeVue opens this list in <body>, so it cannot be scoped to the panel mount.
+   `data-wippy-attention="exclude"` is what the host's session selector puts on
+   its overlay, and the drawer is the only session selector Kickside mounts in
+   the host document. The one !important is the max-height PrimeVue writes as an
+   inline style. The option font size is custom/80-select.css, which reaches the
+   host document. */
+
+.p-select-overlay[data-wippy-attention="exclude"] {
+  font-size: 13px;
+}
+.p-select-overlay[data-wippy-attention="exclude"] .p-select-list-container {
+  max-height: 182px !important;
+}
+.p-select-overlay[data-wippy-attention="exclude"] .p-select-option {
+  padding: 6.5px 9.75px;
+}
+.p-select-overlay[data-wippy-attention="exclude"] .session-icon {
+  font-size: 14.625px;
+}
+
+/* --- host/36-chat-menus.css --- */
+/* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
+/* The menus the chat drawer opens in <body>, sized for a 13px root (see
+   30-chat-density.css): the agent menu and the model menu of the meta row, and
+   the composer's attachment menu. PrimeVue opens them outside the zoomed chat
+   body, so they would draw at the host's 16px.
+
+   `agent-menu` and `model-menu` are the classes the host gives its two menus.
+   The attachment menu has no class, only `data-wippy-attention="exclude"` on its
+   root. The drawer is the only chat Kickside mounts in the host document.
+
+   The menu itself is not zoomed, because it carries the position PrimeVue
+   computes from the trigger. Its content is. The width is 13rem at a 13px root.
+   PrimeVue writes the trigger's unzoomed width as an inline min-width when the
+   trigger is wider than the menu, which would make the menu wider than its chip,
+   so the min-width is !important.
+
+   Two sizes are not rem and are given before the zoom: the list's 400px height
+   limit is divided by it, and the search field's font is set in rem, because
+   custom/30-inputtext.css gives `.p-inputtext` 13px, which the zoom would shrink. */
+
+.p-menu-overlay:is(.agent-menu, .model-menu, [data-wippy-attention="exclude"]) {
+  width: 169px;
+  min-width: 169px !important;
+}
+.p-menu-overlay:is(.agent-menu, .model-menu, [data-wippy-attention="exclude"]) > * {
+  zoom: 0.8125;
+}
+.p-menu-overlay:is(.agent-menu, .model-menu, [data-wippy-attention="exclude"]) .p-menu-list {
+  max-height: calc(400px / 0.8125);
+}
+.p-menu-overlay:is(.agent-menu, .model-menu, [data-wippy-attention="exclude"]) .p-inputtext {
+  font-size: 1rem;
+}
+
+/* PrimeVue puts a menu under its chip by the chip's unzoomed height. The chip is
+   28px, so the menu would sit 28px x (1 - 0.8125) below what the chip shows. */
+.p-menu-overlay:is(.agent-menu, .model-menu) {
+  margin-top: calc(-28px * (1 - 0.8125));
+}
+
+/* --- host/40-chat-tab.css --- */
+/* SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0 */
+/* The chat tab: 40px wide, 4px in view at rest, 32px on hover or keyboard focus.
+
+   The host's @HOST/panel-tab draws it 48px wide and 19px in view. That default
+   stays on screens without hover, where a 4px target in the back-gesture zone
+   could not be hit.
+
+   The floating frame is teleported to <body>, outside `.wippy-host-app`, so
+   this is scoped to the frame itself (`data-wippy-floating`). Kickside declares
+   one tab, for the chat, on the right edge.
+
+   Colours, border and shadow come from the --wippy-panel-tab-* tokens in
+   app/static/css-variables.facade.json, light and dark. */
+
+@media (hover: hover) {
+  [data-wippy-floating] .wippy-panel-tab.wippy-panel-tab--right {
+    width: 40px;
+    transform: translateX(44px);
+  }
+  [data-wippy-floating] .wippy-panel-tab.wippy-panel-tab--right:hover,
+  [data-wippy-floating] .wippy-panel-tab.wippy-panel-tab--right:focus-within {
+    transform: translateX(16px);
+  }
+}
+
+/* Only the visible part of the tab takes the pointer. The frame is a 48px box
+   that would otherwise sit over the page at the screen edge and swallow clicks. */
+.wippy-layout-floating--bare:has(> .wippy-layout-floating__content > .wippy-panel-tab) {
+  pointer-events: none;
+}
+.wippy-layout-floating--bare .wippy-panel-tab {
+  pointer-events: auto;
+}

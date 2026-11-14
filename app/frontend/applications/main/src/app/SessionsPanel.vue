@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { setWippyVisibility } from '@wippy-fe/shared'
 import { useWippy } from '../composables/useWippy'
+import { useHostReturnRefresh } from './hostReturn'
 
 const props = withDefaults(defineProps<{
   activeSessionId?: string
@@ -115,6 +116,7 @@ watch(() => props.artifactsActive, active => {
 })
 watch(() => props.mode, mode => { if (element) element.setAttribute('mode', mode) })
 watch(() => props.visible, visible => { if (element) setWippyVisibility(element, visible) })
+useHostReturnRefresh(() => element, () => props.visible)
 onMounted(mountSessions)
 onBeforeUnmount(detach)
 </script>

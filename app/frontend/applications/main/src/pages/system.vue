@@ -11,6 +11,7 @@ import { normalizePath } from '../router/path'
 import WcSurface from '../app/WcSurface.vue'
 import { createRefreshLadder } from '../composables/useRefreshLadder'
 import { useSurfaceActivity } from '../app/surfaceActivity'
+import { onHostReturn } from '../app/hostReturn'
 
 // System consolidates the operator-facing admin areas under one page with a tab
 // strip. The tab set is declarative: /api/v1/settings/tabs returns the
@@ -124,6 +125,10 @@ watch(() => route.params.tab, () => { if (tabs.value.length) applyRouteTab() })
 // still painted as a double-buffer fallback.
 watch(surfaceActive, (active, previous) => {
   if (active && previous === false) void loadTabs()
+})
+// The same refresh when the Web Host brings the whole page back to the front.
+onHostReturn(() => {
+  if (surfaceActive.value) void loadTabs()
 })
 
 let tabsLoad: Promise<void> | null = null
