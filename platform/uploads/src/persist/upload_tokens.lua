@@ -8,24 +8,6 @@ local READ_PURPOSE = "upload.read"
 local DEFAULT_READ_TTL_SECONDS = 300
 local MAX_READ_TTL_SECONDS = 3600
 
--- Convert hex string to bytes
-local function hex_decode(hex_str)
-    if not hex_str or #hex_str % 2 ~= 0 then
-        return nil, "Invalid hex string"
-    end
-
-    local bytes = ""
-    for i = 1, #hex_str, 2 do
-        local hex_byte = hex_str:sub(i, i + 1)
-        local byte_val = tonumber(hex_byte, 16)
-        if not byte_val then
-            return nil, "Invalid hex character"
-        end
-        bytes = bytes .. string.char(byte_val)
-    end
-    return bytes
-end
-
 -- Get encryption key from environment
 local function get_encryption_key()
     local variable, variable_err = env.get("kickside.uploads.env:encryption_key")
@@ -35,13 +17,9 @@ local function get_encryption_key()
         error("ENCRYPTION_KEY environment variable is required but not set")
     end
 
-    local key, err = hex_decode(key_hex)
+    local key, err = secret_cipher.decode_key(key_hex)
     if err then
-        error("Failed to decode encryption key: " .. err)
-    end
-
-    if #key ~= 16 and #key ~= 24 and #key ~= 32 then
-        error("Encryption key must be 16, 24, or 32 bytes after decoding, got " .. #key)
+        error("Failed to decode encryption key: " .. tostring(err))
     end
 
     return key

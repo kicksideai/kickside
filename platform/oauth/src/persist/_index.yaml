@@ -41,7 +41,8 @@ entries:
     meta:
       comment: Shared OAuth database, encryption, and timestamp functions.
     source: file://oauth_repo_support.lua
-    modules: [sql, json, time, env, crypto, base64]
+    modules: [sql, json, time, env, base64]
     imports:
+      secret_cipher: kickside.contract:secret_cipher
       oauth_types: kickside.oauth:oauth_types
       secret_cipher: kickside.contract:secret_cipher

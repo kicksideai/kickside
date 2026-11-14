@@ -2,6 +2,10 @@ version: "1.0"
 namespace: kickside.settings
 
 entries:
+  - name: dep.kickside.contract
+    kind: ns.dependency
+    component: kickside/contract
+    version: ">=0.3.8"
 
   - name: definition
     kind: ns.definition
@@ -155,7 +159,7 @@ entries:
     kind: library.lua
     meta: { comment: "AES encryption for secret-typed settings, keyed by ENCRYPTION_KEY (64 hex / 32 bytes)." }
     source: file://secrets.lua
-    modules: [crypto, base64, env]
+    modules: [base64, env]
 
     imports:
       secret_cipher: kickside.contract:secret_cipher
