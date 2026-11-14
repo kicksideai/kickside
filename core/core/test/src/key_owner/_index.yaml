@@ -13,9 +13,15 @@ entries:
   - funcs
   - security
   - env
+  - registry
+  - time
+  - sql
+  - uuid
+  - process
   imports:
     test: wippy.test:test
     worker: kickside.core.projections.persist:worker
+    execution_identity: kickside.execution:execution_identity
 - name: projection_owner_probe
   kind: function.lua
   source: file://projection_owner_policy_test.lua
@@ -24,9 +30,15 @@ entries:
   - funcs
   - security
   - env
+  - registry
+  - time
+  - sql
+  - uuid
+  - process
   imports:
     test: wippy.test:test
     worker: kickside.core.projections.persist:worker
+    execution_identity: kickside.execution:execution_identity
 - name: projection_owner_worker
   kind: function.lua
   meta:
@@ -37,9 +49,14 @@ entries:
   - funcs
   - security
   - env
+  - registry
+  - time
+  - sql
+  - uuid
   imports:
     test: wippy.test:test
     worker: kickside.core.projections.persist:worker
+    execution_identity: kickside.execution:execution_identity
   security:
     policies:
     - app:projection_owner_environment
@@ -68,6 +85,21 @@ entries:
     - funcs.security
     - registry.get
     - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.security
+    - db.get
+    - process.context
+    - process.spawn
+    - process.spawn.monitored
+    - process.spawn.linked
+    - process.host
+    - process.security
+    - security.actor.create
+    - security.actor.create
+    - security.policy_group.get
+    - security.policy_group.get
     effect: allow
 - name: projection_owner_actor
   kind: function.lua
@@ -79,9 +111,14 @@ entries:
   - funcs
   - security
   - env
+  - registry
+  - time
+  - sql
+  - uuid
   imports:
     test: wippy.test:test
     worker: kickside.core.projections.persist:worker
+    execution_identity: kickside.execution:execution_identity
   security:
     actor:
       id: system:projection-owner
@@ -97,9 +134,14 @@ entries:
   - funcs
   - security
   - env
+  - registry
+  - time
+  - sql
+  - uuid
   imports:
     test: wippy.test:test
     worker: kickside.core.projections.persist:worker
+    execution_identity: kickside.execution:execution_identity
   security:
     policies:
     - app:projection_owner_environment
@@ -114,9 +156,14 @@ entries:
   - funcs
   - security
   - env
+  - registry
+  - time
+  - sql
+  - uuid
   imports:
     test: wippy.test:test
     worker: kickside.core.projections.persist:worker
+    execution_identity: kickside.execution:execution_identity
   security:
     policies:
     - app:projection_owner_missing_policy
@@ -131,9 +178,86 @@ entries:
   - funcs
   - security
   - env
+  - registry
+  - time
+  - sql
+  - uuid
   imports:
     test: wippy.test:test
     worker: kickside.core.projections.persist:worker
+    execution_identity: kickside.execution:execution_identity
   security:
     policies:
     - app:projection_owner_environment
+- name: projection_owner_cipher_func
+  kind: function.lua
+  method: run
+  source: file://projection_owner_cipher.lua
+  modules:
+  - env
+  - security
+  imports:
+    secret_cipher: kickside.contract:secret_cipher
+  security:
+    policies:
+    - app:projection_owner_cipher_access
+  meta:
+    type: projection.worker
+- name: projection_owner_cipher_proc
+  kind: process.lua
+  method: run
+  source: file://projection_owner_cipher.lua
+  modules:
+  - env
+  - security
+  imports:
+    secret_cipher: kickside.contract:secret_cipher
+  security:
+    policies:
+    - app:projection_owner_cipher_access
+  meta:
+    type: projection.worker
+- name: projection_owner_cipher_access
+  kind: security.policy
+  meta:
+    service_only: true
+  policy:
+    resources:
+    - app:projection_owner_cipher_key
+    actions:
+    - env.get
+    effect: allow
+- name: projection_owner_cipher_key
+  kind: env.variable
+  storage: app:projection_owner_storage
+  default: 0123456789abcdef0123456789abcdef
+- name: projection_owner_scope
+  kind: security.scope
+  parent: wippy.security:root
+- name: projection_owner_scope_runtime
+  kind: security.policy
+  groups:
+  - app:projection_owner_scope
+  policy:
+    resources: '*'
+    actions:
+    - funcs.call
+    - funcs.security
+    - registry.get
+    - registry.find
+    - contract.get
+    - contract.open
+    - contract.call
+    - contract.security
+    - db.get
+    - process.context
+    - process.spawn
+    - process.spawn.monitored
+    - process.spawn.linked
+    - process.host
+    - process.security
+    - security.actor.create
+    - security.actor.create
+    - security.policy_group.get
+    - security.policy_group.get
+    effect: allow

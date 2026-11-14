@@ -141,8 +141,8 @@ end
 
 -- A projection retains its stored principal. A declared worker may add only
 -- service-only policies; member scopes and actor overrides remain inadmissible.
--- Recheck on dispatch because declarations can change after registration.
-function worker.validate(binding: table, system_identity: boolean?): (Binding?, error?)
+-- Admission is immutable within a registry revision.
+local function validate_declaration(binding: table, system_identity: boolean?): (Binding?, error?)
     local target_id = tostring(binding.target_id)
     local declared_runtime = tostring(binding.worker_runtime)
     local entry, entry_err = registry.get(target_id)
@@ -202,6 +202,33 @@ function worker.validate(binding: table, system_identity: boolean?): (Binding?, 
     end
 
     return { worker_ref = scheme_for(expected) .. target_id, worker_runtime = expected, target_id = target_id }, nil
+end
+
+local admitted_version: string? = nil
+local admitted_bindings: {[string]: table} = {}
+
+function worker.validate(binding: table, system_identity: boolean?): (Binding?, error?)
+    local version, version_err = registry.current_version()
+    if version_err then return nil, version_err end
+    if not version then
+        return nil, errors.new({kind = errors.INTERNAL, message = "projection registry version unavailable",
+            retryable = false})
+    end
+    local revision = tostring(version:id())
+    if admitted_version ~= revision then
+        admitted_version, admitted_bindings = revision, {}
+    end
+    local key = tostring(binding.worker_runtime) .. "://" .. tostring(binding.target_id)
+        .. (system_identity == true and "/system" or "/member")
+    local admitted = admitted_bindings[key]
+    if not admitted then
+        local value, err = validate_declaration(binding, system_identity)
+        if err or not value then return nil, err end
+        admitted = value
+        admitted_bindings[key] = admitted
+    end
+    return {worker_ref = admitted.worker_ref, worker_runtime = admitted.worker_runtime,
+        target_id = admitted.target_id}, nil
 end
 
 -- Optional notification worker is declared on the fold worker, never supplied

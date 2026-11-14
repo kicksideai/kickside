@@ -70,3 +70,6 @@ profiles:
       "app:sql_transient_second:options.sslmode": "disable"
       "app:sql_transient_second:pool.max_open": 1
       "app:sql_transient_second:pool.max_idle": 1
+
+registry:
+  dispatch_internal_kinds: [registry.entry, ns.requirement, ns.dependency, ns.definition, security.scope]
