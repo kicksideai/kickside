@@ -10,6 +10,7 @@ vars:
   pg_host: localhost
   pg_port: 5433
   pg_database: kickside_test_models
+  pg_ownership_upgrade_database: kickside_test_models_ownership_upgrade
   pg_username: kickside
   pg_password: kickside
 profiles:
@@ -27,7 +28,7 @@ profiles:
       "app:ownership_upgrade_db:kind": db.sql.postgres
       "app:ownership_upgrade_db:host": "${pg_host}"
       "app:ownership_upgrade_db:port": "${pg_port}"
-      "app:ownership_upgrade_db:database": "${pg_database}_upgrade"
+      "app:ownership_upgrade_db:database": "${pg_ownership_upgrade_database}"
       "app:ownership_upgrade_db:username": "${pg_username}"
       "app:ownership_upgrade_db:password": "${pg_password}"
       "app:ownership_upgrade_db:options.sslmode": disable
