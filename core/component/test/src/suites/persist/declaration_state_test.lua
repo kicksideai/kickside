@@ -46,7 +46,7 @@ local function apply_declaration(opened: sql.DB, input: Map): (any?, any)
             component_id = request.component_id, automation_id = request.automation_id,
             command_id = request.command_id, generation = request.generation,
             declaration_hash = request.declaration_hash, declaration = request.declaration,
-            state = request.state, public_meta = request.public_meta,
+            state = request.state, public_meta = request.public_meta, expected_revision = request.expected_revision,
             affected_drive_keys = { "drive-a" },
         }
     end)
@@ -106,6 +106,31 @@ local run_cases = test.run_cases(function()
             test.eq(retained._portable_input.title,"retained")
             test.eq(retained.cursor,9)
             test.eq(retained.debt.key,"original")
+            d:release()
+        end)
+
+        test.it("checks the expected context revision atomically with the declaration and replays its receipt", function()
+            local d = db()
+            local id = seed(d, {_portable_input = {title = "original"}})
+            local input = {component_id = id, automation_id = id, generation = 1,
+                command_id = "first", declaration_hash = "first", declaration = {title = "first"}, expected_revision = 0}
+            local first, err = apply_declaration(d, input)
+            test.is_nil(err, tostring(err))
+            test.is_true(first.changes_made)
+            local again, again_err = apply_declaration(d, input)
+            test.is_nil(again_err, tostring(again_err))
+            test.is_false(again.changes_made)
+            input.generation, input.command_id, input.declaration_hash = 2, "stale", "stale"
+            input.declaration = {title = "stale"}
+            local stale, stale_err = apply_declaration(d, input)
+            test.is_nil(stale)
+            test.is_true(errors.is(stale_err, errors.CONFLICT))
+            test.eq(context(d, id)._portable_input.title, "first")
+            test.eq(tonumber(d:query("SELECT context_revision FROM kickside_components WHERE component_id=$1", {id})[1].context_revision), 1)
+            input.expected_revision = nil
+            local unguarded, unguarded_err = apply_declaration(d, input)
+            test.is_nil(unguarded_err, tostring(unguarded_err))
+            test.is_true(unguarded.changes_made)
             d:release()
         end)
 

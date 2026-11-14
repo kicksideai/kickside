@@ -118,3 +118,10 @@ The parent remains untouched; successfully deleted children stay deleted if
 later cleanup fails. Pending or running jobs retain historical errors without
 stopping the wait; terminal dead or cancelled jobs stop deletion.
 No child is reparented. Callers delete the parent only after this function succeeds.
+
+Automation's verified `apply_declaration` receipt may supply an optional
+`expected_revision` for the Component context subject. The declaration writer
+checks it under the component row lock, in the same transaction as declaration,
+state, public metadata and fence updates. A stale revision returns the native
+nonretryable `CONFLICT`; an already-applied command replays its receipt before
+this check. Omitting the field preserves unconditional declaration writes.
