@@ -108,7 +108,7 @@ entries:
     source: file://ops_test.lua
     method: run
     security:
-      actor: { id: "system:automation" }
+      actor: { id: "system:kickside.automation.declaration" }
       policies: [app:test_scope_policy]
     modules: [sql, json, uuid, time, contract, process, channel]
     imports:
@@ -130,7 +130,7 @@ entries:
     source: file://owner_id_format_test.lua
     method: run
     security:
-      actor: { id: "system:automation" }
+      actor: { id: "system:kickside.automation.declaration" }
       policies: [app:test_scope_policy]
     modules: [sql, uuid, funcs, security]
     imports:
@@ -189,7 +189,7 @@ entries:
     source: file://owner_gc_test.lua
     method: run
     security:
-      actor: { id: "system:automation" }
+      actor: { id: "system:kickside.automation.declaration" }
       policies: [app:test_scope_policy]
     modules: [sql, uuid, time, process, channel]
     imports:
@@ -207,7 +207,7 @@ entries:
     method: run
     modules: [sql]
     security:
-      actor: { id: "system:automation" }
+      actor: { id: "system:kickside.automation.declaration" }
       policies: [app:test_scope_policy]
       groups: [wippy.security:process]
 
@@ -220,7 +220,7 @@ entries:
     source: file://declaration_state_test.lua
     method: run
     security:
-      actor: { id: "system:automation" }
+      actor: { id: "system:kickside.automation.declaration" }
       policies: [app:test_scope_policy]
     modules: [sql, json, uuid, time, funcs, security]
     imports:
@@ -237,7 +237,7 @@ entries:
     source: file://access_test.lua
     method: run
     security:
-      actor: { id: "system:automation" }
+      actor: { id: "system:kickside.automation.declaration" }
       policies: [app:test_scope_policy]
     modules: [sql, uuid, time, json, contract, security]
     imports:

@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: kickside.oauth.maintenance_actors
+
+entries:
+  - name: kickside_oauth_refresh
+    kind: registry.entry
+    meta:
+      type: kickside.execution.maintenance_actor
+      actor_id: system:kickside.oauth.refresh

@@ -9,7 +9,7 @@ local function run(component_id: string): any
     if begin_err or not tx then d:release(); error("probe tx: " .. tostring(begin_err)) end
     local _, err = placement_ops.create_component(tx, d, {
         type = ops.COMMAND_TYPES.CREATE_COMPONENT,
-        payload = { component_id = component_id, impl_id = "kickside.test:security", actor_id = "system:automation" },
+        payload = { component_id = component_id, impl_id = "kickside.test:security", actor_id = "system:kickside.automation.declaration" },
     })
     if err then tx:rollback() else tx:commit() end
     d:release()

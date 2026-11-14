@@ -219,7 +219,7 @@ local function process(params: any): any
         { extract_images = extract_images_enabled(params), page_markers = true }
     )
     if convert_err ~= nil then
-        error("document conversion failed: " .. tostring(convert_err))
+        error(errors.wrap(convert_err, "document conversion failed"))
     end
     if type(document) ~= "table" or type(document.markdown) ~= "string" then
         error("document conversion returned invalid markdown")
@@ -266,7 +266,7 @@ local function process(params: any): any
     local page_resources = {}
     if params.mime_type == "application/pdf" and #(document.images or {}) > 0 then
         local pages, pages_err = doc2md.page_resources({bytes = bytes})
-        if pages_err then error("document page resources failed: " .. tostring(pages_err)) end
+        if pages_err then error(errors.wrap(pages_err, "document page resources failed")) end
         for _, page in ipairs(pages) do page_resources[page.page] = page.image_count end
     end
     local image_count = 0

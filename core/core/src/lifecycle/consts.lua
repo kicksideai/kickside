@@ -8,8 +8,8 @@ local autoinit = require("autoinit")
 
 local M = {}
 
--- The system actor that owns the lifecycle thread. system:* actors are infrastructure
--- identities (see component access notes); this one is the reaper's authority.
+-- The declared framework actor that owns the lifecycle thread and supplies the
+-- reaper's authority (execution_identity owns the shared exact inventory).
 M.SYSTEM_ACTOR = "system:lifecycle"
 M.SYSTEM_SCOPE = "wippy.security:process"
 

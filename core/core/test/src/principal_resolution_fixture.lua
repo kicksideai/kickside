@@ -1,12 +1,13 @@
 local M = {}
 local principal = {kind = "user", id = "principal"}
 function M.reset(route: string, source: error?, cleanup: error?)
+    M.actor_key = nil
     M.route, M.source, M.cleanup = route, source, cleanup
     M.key_reads, M.meta_reads, M.opens, M.releases, M.registers, M.ensures, M.writes, M.appends = 0, 0, 0, 0, 0, 0, 0, 0
 end
 function M.actor()
     if M.route == "absent_actor" then return nil end
-    return {id = function() return (M.route == "maintenance" or M.route == "maintenance_metadata") and "system:test-maintenance" or "actor" end, meta = function()
+    return {id = function() return M.actor_key or ((M.route == "maintenance" or M.route == "maintenance_metadata") and "system:lifecycle" or "actor") end, meta = function()
         if M.route == "actor_key" or M.route == "empty_key" or M.route == "maintenance" then return {} end
         return {principal = principal}
     end}

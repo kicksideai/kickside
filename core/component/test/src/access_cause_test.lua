@@ -1,13 +1,13 @@
 local test = require("test")
 local access = require("access")
 local fixture = require("fixture")
-local function exercise(route)
+local function exercise(route, subject_id: string?)
     local db = fixture.executor()
     local command: any = {payload = {component_id = "component", subject_type = "user", subject_id = "user", access_mask = 1}}
     if route == "grant_update" or route == "grant_insert" then return access.grant_access(db, db, command) end
     if route == "revoke" then return access.revoke_access(db, db, command) end
     if route == "effective" then return access.check_user_access(db, "user", "component", 1, {{subject_type = "user", subject_id = "user"}}, nil, true) end
-    if route == "admin" then return access.apply_subtree_access(db, db, "component", "user", 1, true, "user") end
+    if route == "admin" then return access.apply_subtree_access(db, db, "component", subject_id or "user", 1, true, "user") end
     if route == "list" or route == "database" then return access.list_access("component") end
     if route == "reaching" then return access.reaching_grants("component") end
     if route == "owner" then return access.component_owner_record("component") end
@@ -15,6 +15,29 @@ local function exercise(route)
 end
 return {run = test.run_cases(function()
     test.describe("native component access persistence causes", function()
+        test.it("enumerates unlisted system grants while retaining framework exclusions", function()
+            fixture.reset("stored_grants", nil)
+            fixture.rows = {
+                {subject_type = "user", subject_id = "system:knowledge.injection", access_mask = 8},
+                {subject_type = "user", subject_id = "system:unlisted", access_mask = 8},
+                {subject_type = "user", subject_id = "system:lifecycle", access_mask = 8},
+            }
+            local rows, err = access.list_access("component")
+            test.is_nil(err); test.eq(#rows, 2)
+            test.eq(rows[1].subject_id, "system:knowledge.injection")
+            test.eq(rows[2].subject_id, "system:unlisted")
+        end)
+        for _, key in ipairs({"system:knowledge.injection", "system:unlisted"}) do
+            test.it("preserves the last ordinary admin grant for " .. key, function()
+                fixture.reset("stored_grants", nil)
+                fixture.rows = {{subject_type = "user", subject_id = key, access_mask = 8},
+                    {subject_type = "user", subject_id = "system:lifecycle", access_mask = 8}}
+                local result, err = exercise("admin", key)
+                test.is_nil(result); test.is_true(errors.is(err, errors.INVALID), tostring(err))
+                test.eq(tostring(err), "at least one admin is required")
+                test.eq(fixture.calls, 1, "the last-admin guard must refuse before placement or writes")
+            end)
+        end
         for _, route in ipairs({"grant_update", "grant_insert", "revoke", "effective", "admin", "list", "reaching", "owner", "emails", "email_upsert", "email_delete", "database"}) do
             for _, kind in ipairs({errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.PERMISSION_DENIED,
                 errors.UNAVAILABLE, errors.INTERNAL, errors.CANCELED, errors.CONFLICT, errors.TIMEOUT, errors.RATE_LIMITED, errors.UNKNOWN}) do

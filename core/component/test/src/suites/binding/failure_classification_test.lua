@@ -171,7 +171,8 @@ local function define_tests()
             fx.too_deep = register(PORTABLE_IMPL)
             exec("UPDATE " .. COMPONENTS .. " SET private_context = '" .. nested_context(128, "{}") .. "' WHERE component_id = '" .. fx.too_deep .. "'")
             fx.non_portable = register(NON_PORTABLE_IMPL)
-            fx.not_installed = register(NOT_INSTALLED_IMPL)
+            fx.not_installed = register(IMPL)
+            exec("UPDATE " .. COMPONENTS .. " SET impl_id = '" .. NOT_INSTALLED_IMPL .. "' WHERE component_id = '" .. fx.not_installed .. "'")
             for _, kind in ipairs({ errors.TIMEOUT, errors.CANCELED, errors.RATE_LIMITED, errors.UNAVAILABLE }) do
                 fx["typed_" .. kind] = register(TYPED_FAILURE_DELETABLE_IMPL, { private_context = { fail_kind = kind } })
             end

@@ -33,6 +33,44 @@ Supplying a subject snapshot does not waive implementation visibility. Trusted
 callers own principal resolution and admission; an authority result grants no
 ambient registry access.
 
+## Kind mutation admission (SPEC)
+
+A component kind binding declares `meta.mutation: open` or `closed`. An absent
+value means open, preserving creation and updates for installed kinds without a
+migration. Closed kinds require `component.kind.create` for creation and
+`component.kind.update` for context, public metadata, and placement writes, with
+the exact implementation binding ID as the permission resource. Every changed
+placement requires admission for that component's kind, including descendant path
+rewrites and children re-rooted by deletion. Delete acceptance checks all affected
+kinds in the requesting frame before committing intent; maintenance consumes that
+accepted intent. Placement parents and directly moved components cannot lie
+under an accepted delete mark, including while re-root pages retain their direct
+parent continuation pointer. Reordering without a path change does not move
+descendants. Object access still applies. Import shares registration's creation check. Owning modules grant
+these exact actions/resources only to their admission function entries through
+`security.policies`; member scopes receive no kind mutation grants from Component.
+The mode is read through Component's own declaration scope; its mutation,
+deletion worker and retention entries hold an exact `funcs.call` grant on the private
+`kickside.component:kind_declaration` reader. Admission does not depend on member
+policies, and these attached grants do not let callers invoke the reader from
+their own code. Caller registry visibility does not select the mode. Admission
+then evaluates the exact kind grant in the requesting frame. A missing kind declaration and an absent mode remain open.
+Tree operations resolve admission once per distinct kind in the requesting frame.
+An invalid mode refuses mutation. Module-owned metadata floors, execution identity,
+sharing, and internal declaration commands retain their separate authority.
+`closed` governs create, context, public metadata and placement, not deletion.
+Deletion remains governed by DELETE access and the kind's teardown.
+Kind admission has no actor-ID exemption. Framework creation (including verified
+declaration installs), imports and public updates of closed kinds require the
+same exact kind grant in their calling frame. Maintenance creation additionally
+requires exact-kind `component.own.maintenance`; that ownership capability does
+not grant kind admission. Adoption changes ownership and execution identity under
+`component.adopt`, without changing kind-governed data. A kind-mode or role change
+during an in-flight request is a known operator race.
+Initial public metadata, including a verified creation receipt's `public_meta`
+(even an empty object), uses create admission. Receipt fields overlay the other
+initial metadata; later public metadata changes require update admission.
+
 ## Owner metadata floors
 
 A module reserves a public read-model key with a `registry.entry` whose

@@ -13,6 +13,24 @@ return {run = test.run_cases(function()
             test.is_nil(result); test.eq(err:kind(), errors.PERMISSION_DENIED)
             test.eq(fixture.grants, 0)
         end)
+        for _, actor_id in ipairs({"system:knowledge.injection", "system:unlisted"}) do
+            test.it("refuses explicit notification recipients from " .. actor_id, function()
+                fixture.reset(nil)
+                local scoped = metadata.new({security = {actor = function() return {id = function() return actor_id end} end}})
+                local result, err = scoped.fanout(id, "chosen-topic", {}, {recipients = {"unrelated-user"}})
+                test.is_nil(result); test.is_true(errors.is(err, errors.PERMISSION_DENIED))
+                test.eq(fixture.grants, 0)
+            end)
+        end
+        test.it("retains captured audiences for the component retention actor", function()
+            fixture.reset(nil)
+            local scoped = metadata.new({security = {actor = function()
+                return {id = function() return "system:kickside.component.retention" end}
+            end}})
+            local result, err = scoped.fanout(id, nil, {}, {recipients = {"captured-user"}})
+            test.is_nil(err); test.is_true(result.success); test.eq(result.notified, 1)
+            test.eq(fixture.grants, 0)
+        end)
         for _, kind in ipairs(kinds) do
             for _, options in ipairs({{}, {retryable = false}, {retryable = true}}) do
                 for _, detail in ipairs({{}, {details = {code = "notification_access", nested = {marker = "kept"}}}}) do

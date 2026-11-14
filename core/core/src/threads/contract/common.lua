@@ -63,14 +63,15 @@ function M.actor_id(): string?
 end
 
 function M.is_maintenance_actor(): boolean
-    return execution_identity.is_maintenance_key(M.actor_id())
+    local actor = security.actor()
+    return execution_identity.is_maintenance_key(actor and actor:id() or nil)
 end
 
 -- keyed_principal answers the principal a component service records for an owner
 -- key (the stored component owner), or nil for a key that is no principal.
 function M.keyed_principal(owner_id: string?): (any?, error?)
-    local key = M.trim(owner_id)
-    if key == "" or execution_identity.is_maintenance_key(key) then return nil, nil end
+    local key = owner_id
+    if M.trim(key) == "" or execution_identity.is_maintenance_key(key) then return nil, nil end
     local keyed, key_err = execution_identity.principal_of_key(key)
     if key_err then return nil, errors.wrap(key_err, "Resolve keyed principal") end
     return keyed, nil

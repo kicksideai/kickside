@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.3.18](https://github.com/kicksideai/kickside/compare/component-v0.3.17...component-v0.3.18) (2026-11-13)
+
+
+### Bug Fixes
+
+* **component:** read kind declarations under component authority ([#467](https://github.com/kicksideai/kickside/issues/467)) ([33afe0b](https://github.com/kicksideai/kickside/commit/33afe0baeb4be79b7a7956f7130ac75b262c8b79))
+
+## [0.3.17](https://github.com/kicksideai/kickside/compare/component-v0.3.16...component-v0.3.17) (2026-11-13)
+
+
+### Bug Fixes
+
+* **component:** enforce kind-scoped mutation admission ([#458](https://github.com/kicksideai/kickside/issues/458)) ([601bda5](https://github.com/kicksideai/kickside/commit/601bda5224dbc9f1553fbfe07cca05b80ccb7995))
+* **execution:** declare maintenance actors exactly and authorize thread completion ([#459](https://github.com/kicksideai/kickside/issues/459)) ([c86999c](https://github.com/kicksideai/kickside/commit/c86999c76f99724bd7eab62924dcb3d931f3bee8))
+
 ## [0.3.16](https://github.com/kicksideai/kickside/compare/component-v0.3.15...component-v0.3.16) (2026-11-12)
 
 

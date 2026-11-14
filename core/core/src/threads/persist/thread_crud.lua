@@ -232,6 +232,16 @@ function M.ensure_thread_type(component_id: string, thread_class: string?): (boo
     return component.ensure_thread_type(component_id, thread_class)
 end
 
+local function authorize_completion(component_id: string, params: table, maintenance: boolean?): error?
+    if params.trusted_audit == true or maintenance == true then return nil end
+    local allowed, access_err = component.has_access(component_id, (masks.ACCESS.WRITE :: integer))
+    if access_err then return access_err :: error end
+    if not allowed then
+        return errors.new({message = "component write access required", kind = errors.PERMISSION_DENIED})
+    end
+    return nil
+end
+
 local function mark_thread_type(thread_id: string, thread_class: string, params: table, maintenance: boolean?): error?
     if params.trusted_audit == true or maintenance == true then return nil end
     local _, mark_err = M.ensure_thread_type(thread_id, thread_class)
@@ -298,13 +308,8 @@ function M.create(db: DB, params: table, actor_id: string?, identity: { [string]
     if row_err or not row then return nil, row_err end
 
     local thread_id = component_id
-    if params.trusted_audit ~= true and maintenance ~= true then
-        local allowed, access_err = component.has_access(component_id, (masks.ACCESS.WRITE :: integer))
-        if access_err then return nil, access_err end
-        if not allowed then
-            return nil, (errors.new({ message = "component write access required", kind = errors.PERMISSION_DENIED }) :: error)
-        end
-    end
+    local access_err = authorize_completion(component_id, params, maintenance)
+    if access_err then return nil, access_err end
     local declaration_impl_id: string? = normalize.trim(params.impl_id) ~= "" and (params.impl_id :: string) or nil
     if has_thread_projections(declaration_impl_id) then
         local identity_err = declared_identity_error(identity)
@@ -335,6 +340,8 @@ end
 local function complete_thread(db: DB, thread_id: string, params: table, actor_id: string?, identity: { [string]: any },
     maintenance: boolean?): (CreateResult?, error?)
     params = type(params) == "table" and params or {}
+    local access_err = authorize_completion(thread_id, params, maintenance)
+    if access_err then return nil, access_err end
     local declaration_impl_id: string? = normalize.trim(params.impl_id) ~= "" and (params.impl_id :: string) or nil
 
     if declaration_impl_id then
@@ -391,6 +398,8 @@ function M.complete(db: DB, thread_id: string, params: table, actor_id: string?,
         local _, complete_err = complete_thread(db, thread_id, params, actor_id, identity, maintenance)
         return complete_err
     end
+    local access_err = authorize_completion(thread_id, params, maintenance)
+    if access_err then return access_err end
     local declaration_err = M.apply_thread_declaration(db, thread_id, params.impl_id, identity)
     if declaration_err then return declaration_err end
     -- Output-authorized emits and audit writes intentionally skip public markers.
