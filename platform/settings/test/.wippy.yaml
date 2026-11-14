@@ -4,7 +4,6 @@ override:
 workspace:
   replacements:
     kickside/settings: ..
-    kickside/contract: ../../../core/contract
 vars:
   sqlite_path: ":memory:"
   pg_host: localhost

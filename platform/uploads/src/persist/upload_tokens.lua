@@ -1,5 +1,4 @@
 local crypto = require("crypto")
-local secret_cipher = require("secret_cipher")
 local base64 = require("base64")
 local json = require("json")
 local env = require("env")
@@ -8,6 +7,24 @@ local READ_PURPOSE = "upload.read"
 local DEFAULT_READ_TTL_SECONDS = 300
 local MAX_READ_TTL_SECONDS = 3600
 
+-- Convert hex string to bytes
+local function hex_decode(hex_str)
+    if not hex_str or #hex_str % 2 ~= 0 then
+        return nil, "Invalid hex string"
+    end
+
+    local bytes = ""
+    for i = 1, #hex_str, 2 do
+        local hex_byte = hex_str:sub(i, i + 1)
+        local byte_val = tonumber(hex_byte, 16)
+        if not byte_val then
+            return nil, "Invalid hex character"
+        end
+        bytes = bytes .. string.char(byte_val)
+    end
+    return bytes
+end
+
 -- Get encryption key from environment
 local function get_encryption_key()
     local key_hex = env.get("ENCRYPTION_KEY")
@@ -15,9 +32,13 @@ local function get_encryption_key()
         error("ENCRYPTION_KEY environment variable is required but not set")
     end
 
-    local key, err = secret_cipher.decode_key(key_hex)
+    local key, err = hex_decode(key_hex)
     if err then
-        error("Failed to decode encryption key: " .. tostring(err))
+        error("Failed to decode encryption key: " .. err)
+    end
+
+    if #key ~= 16 and #key ~= 24 and #key ~= 32 then
+        error("Encryption key must be 16, 24, or 32 bytes after decoding, got " .. #key)
     end
 
     return key
@@ -170,12 +191,12 @@ local function pack(params)
 
     local encryption_key = get_encryption_key()
 
-    local encrypted, err = secret_cipher.encrypt(json_data, encryption_key :: string)
+    local encrypted, err = crypto.encrypt.aes(json_data, encryption_key :: string)
     if err then
         return nil, "Encryption error: " .. err
     end
 
-    return base64.encode(encrypted :: string)
+    return base64.encode(encrypted)
 end
 
 -- Unpack and validate upload completion token
@@ -189,12 +210,12 @@ local function unpack(token: string?)
 
     local encryption_key = get_encryption_key()
 
-    local json_data, err = secret_cipher.decrypt(encrypted_data, encryption_key :: string)
+    local json_data, err = crypto.decrypt.aes(encrypted_data, encryption_key :: string)
     if err then
         return nil, "Invalid upload token: " .. err
     end
 
-    local payload, err = json.decode(json_data :: string)
+    local payload, err = json.decode(json_data)
     if err then
         return nil, "Malformed token payload: " .. err
     end

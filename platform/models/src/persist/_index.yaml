@@ -49,6 +49,4 @@ entries:
     kind: library.lua
     meta: { comment: "AES encryption for provider profile secrets, keyed by ENCRYPTION_KEY." }
     source: file://secrets.lua
-    modules: [base64, env]
-    imports:
-      secret_cipher: kickside.contract:secret_cipher
+    modules: [crypto, base64, env]

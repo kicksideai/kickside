@@ -92,8 +92,6 @@ entries:
       comment: Encrypted token packing for upload completion callbacks, including actor_id/actor_context and optional trace_context.
     source: file://upload_tokens.lua
     modules: [crypto, base64, json, env]
-    imports:
-      secret_cipher: kickside.contract:secret_cipher
 
   - name: upload_read_model
     kind: library.lua
