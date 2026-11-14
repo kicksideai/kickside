@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.17](https://github.com/kicksideai/kickside/compare/core-v0.3.16...core-v0.3.17) (2026-11-14)
+
+
+### Features
+
+* **core:** add bounded owner subject retirement ([#488](https://github.com/kicksideai/kickside/issues/488)) ([480e2fd](https://github.com/kicksideai/kickside/commit/480e2fd192be0db6a65cbd79bb85f4cae806c4ed))
+
 ## [0.3.16](https://github.com/kicksideai/kickside/compare/core-v0.3.15...core-v0.3.16) (2026-11-14)
 
 
