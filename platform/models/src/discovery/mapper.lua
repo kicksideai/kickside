@@ -158,6 +158,11 @@ function M.infer_capabilities(model_id: string, item: any): { string }
     return out
 end
 
+function M.capabilities(adapter: any?, model_id: string, item: any, profile: any): { string }
+    if adapter and adapter.capabilities then return adapter.capabilities(model_id, item, profile) end
+    return M.infer_capabilities(model_id, item)
+end
+
 function M.infer_classes(model_id: string, capabilities: { string }, item: any): { string }
     local out: { string } = {}
     if common.table_has(capabilities, "embed") and not common.table_has(capabilities, "generate") then

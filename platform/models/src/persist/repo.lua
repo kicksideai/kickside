@@ -81,7 +81,7 @@ function M.reload(): (any?, any?)
 
     local card_rows, cerr = tx:query([[
         SELECT name, title, description, provider_id, provider_profile_id, provider_model,
-               capabilities_json, classes_json, priority, max_tokens, output_tokens,
+               capabilities_json, classes_json, priority, max_tokens, output_tokens, capability_ownership_json,
                dimensions, pricing_json, options_json, source, enabled, metadata_json,
                created_at, updated_at
         FROM kickside_model_cards
@@ -315,10 +315,10 @@ function M.list_cards_public(): ({ any }?, any?)
     return out
 end
 
-function M.upsert_card(input: any, base: any?): (any?, any?)
-    -- Without a caller-supplied base, edit the saved copy when there is one so
-    -- omitted fields (options included) keep their saved values.
-    if base == nil and type(input) == "table" then
+function M.upsert_card(input: any, base: any?, inferred_capabilities: any?): (any?, any?)
+    -- Edit the saved copy when there is one so omitted fields (options and
+    -- capability ownership included) keep their saved values.
+    if type(input) == "table" then
         local overlays, read_err = M.list_card_overlays()
         if read_err then return nil, read_err end
         for _, item in ipairs(overlays) do
@@ -328,7 +328,7 @@ function M.upsert_card(input: any, base: any?): (any?, any?)
             end
         end
     end
-    local card, cerr = card_policy.clean_card_input(input, base)
+    local card, cerr = card_policy.clean_card_input(input, base, inferred_capabilities)
     if not card then return nil, cerr end
     local handle, derr = db()
     if not handle then return nil, derr end
@@ -339,8 +339,8 @@ function M.upsert_card(input: any, base: any?): (any?, any?)
             (name, title, description, provider_id, provider_profile_id, provider_model,
              capabilities_json, classes_json, priority, max_tokens, output_tokens,
              dimensions, pricing_json, options_json, source, enabled, metadata_json,
-             created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+             capability_ownership_json, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
         ON CONFLICT (name) DO UPDATE SET
             title = excluded.title,
             description = excluded.description,
@@ -348,6 +348,7 @@ function M.upsert_card(input: any, base: any?): (any?, any?)
             provider_profile_id = excluded.provider_profile_id,
             provider_model = excluded.provider_model,
             capabilities_json = excluded.capabilities_json,
+            capability_ownership_json = excluded.capability_ownership_json,
             classes_json = excluded.classes_json,
             priority = excluded.priority,
             max_tokens = excluded.max_tokens,
@@ -363,7 +364,7 @@ function M.upsert_card(input: any, base: any?): (any?, any?)
         card.name, card.title, card.description, card.provider_id, card.provider_profile_id, card.provider_model,
         policy.encode_json(card.capabilities), policy.encode_json(card.classes), card.priority, card.max_tokens, card.output_tokens,
         card.dimensions, policy.encode_json(card.pricing), policy.encode_json(card.options), card.source, policy.bool_int(card.enabled),
-        policy.encode_json(card.metadata), ts, ts,
+        policy.encode_json(card.metadata), policy.encode_json(card.capability_ownership), ts, ts,
     })
     dbh:release()
     if err then return nil, "model save failed: " .. tostring(err) end

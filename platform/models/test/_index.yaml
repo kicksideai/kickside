@@ -31,12 +31,20 @@ entries:
     kind: function.lua
     meta: { type: test, suite: kickside_models }
     source: file://discovery_retains_assignments_test.lua
+    modules: [sql, json, funcs]
     method: run
     imports:
       test: wippy.test:test
       models_repo: kickside.models.persist:repo
+      fake_http: app:card_save_fake_http
+      save_handler: app:card_save_upsert
+      card_policy: kickside.models.catalog:card_policy
       model_discovery: kickside.models.discovery:model_discovery
       reference_registry: kickside.models.discovery:reference_registry
+
+  - name: ownership_upgrade_db
+    kind: db.sql.sqlite
+    file: ":memory:"
 
   - name: profile_change_constrained
     kind: security.policy
