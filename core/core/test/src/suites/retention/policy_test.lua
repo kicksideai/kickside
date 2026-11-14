@@ -10,6 +10,11 @@ end
 
 local function define_tests()
     test.describe("core retention policy", function()
+        test.it("publishes an explicit event duration readable by the replaced policy reader", function()
+            local entry = assert(registry.get(policy.ENTRY))
+            test.eq(entry.meta.retention.events, "30d")
+        end)
+
         test.it("validates once per registry version without sharing mutable values or caching invalid policies", function()
             local version = assert(registry.current_version())
             local entry = assert(registry.get(policy.ENTRY))
