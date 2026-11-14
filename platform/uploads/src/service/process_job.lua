@@ -190,7 +190,7 @@ local function run(input: any): (any, any?)
     local running, running_err = ensure_running(job)
     if running_err then return nil, running_err end
     if not running then
-        return { skipped = true, cancelled = true, upload_id = upload_id, reason = running_err }, nil
+        return { skipped = true, cancelled = true, upload_id = upload_id, reason = "job cancelled" }, nil
     end
 
 
