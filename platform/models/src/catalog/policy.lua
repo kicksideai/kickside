@@ -63,21 +63,39 @@ local function explicit_list(value: any, fallback: { string }): { string }
     return out
 end
 
-local function sensitive_key(key: any): boolean
-    local k = tostring(key or ""):lower()
-    return k == "headers"
-        or k:find("secret", 1, true) ~= nil
-        or k:find("token", 1, true) ~= nil
-        or k:find("api_key", 1, true) ~= nil
-        or k:find("api-key", 1, true) ~= nil
-        or k:find("apikey", 1, true) ~= nil
-        or k:find("authorization", 1, true) ~= nil
-        or k:find("password", 1, true) ~= nil
-        or k:find("credential", 1, true) ~= nil
-end
+local SECRET_KEYS = {
+    api_key = true,
+    access_key = true,
+    secret_key = true,
+    session_token = true,
+    google_credentials = true,
+    access_token = true,
+}
+
+-- Credential aliases are exact field names; ordinary metadata is not classified by substring.
+local PRIVATE_KEYS = {
+    headers = true,
+    authorization = true,
+    password = true,
+    api_token = true,
+    auth_token = true,
+    credential_blob = true,
+    ["api-key"] = true,
+    apikey = true,
+    secret = true,
+    token = true,
+    credential = true,
+    credentials = true,
+}
 
 local function env_ref_key(key: any): boolean
     return tostring(key or ""):lower():match("_env$") ~= nil
+end
+
+local function sensitive_key(key: any): boolean
+    local k = tostring(key or ""):lower()
+    if env_ref_key(k) then k = k:sub(1, -5) end
+    return SECRET_KEYS[k] == true or PRIVATE_KEYS[k] == true
 end
 
 local function sensitive_config_key(key: any): boolean
@@ -206,15 +224,6 @@ local function normalize_retry_config(raw: any): any?
 
     return retry
 end
-
-local SECRET_KEYS = {
-    api_key = true,
-    access_key = true,
-    secret_key = true,
-    session_token = true,
-    google_credentials = true,
-    access_token = true,
-}
 
 local function secret_value(value: any): any
     if type(value) == "string" then
