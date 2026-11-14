@@ -3,6 +3,7 @@ local job_types = require("job_types")
 local M = {stage = "", source = nil, calls = 0, exits = 0, decodes = 0}
 function M.reset(stage: string, source: any)
     M.stage, M.source = stage, source
+    M.serial=(M.serial or 0)+1;M.gets=0
     M.calls, M.exits, M.decodes = 0, 0, 0
     M.actors, M.scopes, M.configures = 0, 0, 0
 end
@@ -16,7 +17,18 @@ function M.decode(value: string): (any, error?)
     if M.stage == "decode" then return nil, M.source end
     return json.decode(value)
 end
+function M.current_version(): (any, error?)
+    if M.stage == "version" then return nil,M.source end
+    return {id=function() return tostring(M.serial) end},nil
+end
 function M.get(_target: string): (any, error?)
+    M.gets=(M.gets or 0)+1
+    if M.stage == "admission" then
+        if _target == "app:worker_policy" then
+            return {kind="security.policy",meta={service_only=true},groups={}},nil
+        end
+        return {kind="function.lua",meta={type="projection.worker"},security={policies={"app:worker_policy"}}},nil
+    end
     return {kind = (M.stage == "exit" or M.stage == "transport" or M.stage == "direct_exit" or M.stage == "payload") and "process.lua" or "function.lua", meta = {type = "projection.worker"}}, nil
 end
 function M.run(_hooks: any, options: any): (any, error?)
