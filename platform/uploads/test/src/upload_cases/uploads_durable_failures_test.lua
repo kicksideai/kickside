@@ -1180,16 +1180,31 @@ local function define_tests()
 			local payload = type(queued_row.payload) == "string" and json.decode(queued_row.payload) or queued_row.payload
 			test.eq(tonumber(payload.heartbeat_timeout_ms), 600000)
 			local job = admit_job(db, queued.job_id, 1)
-			local claimed_heartbeat = tostring(job.heartbeat_at)
 			local input, _, input_err = worker_dispatch.build_worker_input(job)
 			test.is_nil(input_err)
 			-- A retriable stage failure on the first of five attempts leaves the job running.
-			local _, run_err = process_job.run(input)
+            local heartbeat, reports = jobs.heartbeat, 0
+            jobs.heartbeat = function(id, lease)
+                test.eq(id, job.id)
+                test.eq(lease.token, job.lease_token)
+                test.eq(lease.execution_seq, job.execution_seq)
+                local before = assert(db:query("SELECT heartbeat_at,lease_until,updated_at FROM kickside_job WHERE id=$1", {id}))[1]
+                local active, err = heartbeat(id, lease)
+                local after = assert(db:query("SELECT heartbeat_at,lease_until,updated_at FROM kickside_job WHERE id=$1", {id}))[1]
+                test.eq(after.heartbeat_at, before.heartbeat_at)
+                test.eq(after.lease_until, before.lease_until)
+                test.eq(after.updated_at, before.updated_at)
+                reports = reports + 1
+                return active, err
+            end
+            local ok, _, run_err = pcall(process_job.run, input)
+            jobs.heartbeat = heartbeat
+            test.is_true(ok)
+            test.is_true(reports >= 2, "admission and stage boundaries report progress")
 			test.not_nil(run_err)
-			local after = assert(db:query("SELECT status,heartbeat_at FROM kickside_job WHERE id=$1", { job.id }))[1]
+			local after = assert(db:query("SELECT status,heartbeat_at,lease_until,updated_at FROM kickside_job WHERE id=$1", { job.id }))[1]
 			db:release()
 			test.eq(after.status, "running")
-			test.is_true(tostring(after.heartbeat_at) > claimed_heartbeat, "the stage boundaries heartbeat the job")
 		end)
 
 		test.it("keeps existing primary text when enrichment transcription fails", function()
