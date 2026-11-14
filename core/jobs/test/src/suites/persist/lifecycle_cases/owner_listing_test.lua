@@ -7,6 +7,63 @@ local jobs = require("jobs")
 
 local function define_tests()
     test.describe("Thread owner job listings", function()
+        test.it("pages component-owned slots completely and excludes foreign owner locators", function()
+            local db = assert(sql.get("app:db"))
+            local dbtype = tostring(db:type())
+            local owner, foreign = uuid.v7(), uuid.v7()
+            local expected = {}
+            for index = 1, 7 do
+                local locator = index <= 5 and {kind = "component", id = owner}
+                    or (index == 6 and {kind = "component", id = foreign} or {kind = "thread", id = owner})
+                local id = assert(lifecycle.enqueue_job(db, dbtype, {
+                    owner_locator = locator, job_type = "test.owner_page", payload = {}, slot = true, parked = true,
+                    job_identity = {namespace = "owner-page", scope = owner, key = tostring(index)},
+                }))
+                if index <= 5 then expected[#expected + 1] = id end
+            end
+            -- Equal timestamps exercise the id tie breaker on both engines.
+            assert(db:execute("UPDATE kickside_job SET created_at='2026-01-01 00:00:00' WHERE owner_id IN ($1,$2)", {owner, foreign}))
+            table.sort(expected, function(a, b) return a > b end)
+            local locator = {kind = "component", id = owner}
+            local after, received = nil, {}
+            for page = 1, 3 do
+                local rows, err, more = jobs.list_owner_jobs(locator, nil, 2, after)
+                test.is_nil(err, tostring(err))
+                test.eq(#rows, page < 3 and 2 or 1)
+                test.eq(more, page < 3)
+                for _, row in ipairs(rows) do
+                    test.eq(row.owner_kind, "component")
+                    test.eq(row.owner_id, owner)
+                    test.is_true(row.slot)
+                    received[#received + 1] = row.id
+                end
+                after = {id = rows[#rows].id, owner_id = owner}
+            end
+            for i, id in ipairs(expected) do test.eq(received[i], id) end
+            local empty, err, more = jobs.list_owner_jobs(locator, nil, 2, after)
+            test.is_nil(err)
+            test.eq(#empty, 0)
+            test.is_false(more)
+            for _, other in ipairs({{kind = "component", id = foreign}, {kind = "thread", id = owner}}) do
+                local rows, position_err = jobs.list_owner_jobs(other, nil, 2, after)
+                test.is_nil(rows)
+                test.is_true(errors.is(position_err, errors.INVALID))
+            end
+            local threads = assert(jobs.list_jobs({owner}, nil, 2))
+            test.eq(#threads, 1)
+            test.eq(threads[1].owner_kind, "thread")
+            for _, bad in ipairs({{}, {kind = "component"}, {kind = "", id = owner}}) do
+                local rows, invalid_err = jobs.list_owner_jobs(bad, nil, 2)
+                test.is_nil(rows)
+                test.is_true(errors.is(invalid_err, errors.INVALID))
+            end
+            local rows, limit_err = jobs.list_owner_jobs(locator, nil, 0)
+            test.is_nil(rows)
+            test.is_true(errors.is(limit_err, errors.INVALID))
+            assert(db:execute("DELETE FROM kickside_job WHERE owner_id IN ($1,$2)", {owner, foreign}))
+            db:release()
+        end)
+
         test.it("distinguishes parked slots from due, scheduled and stranded work", function()
             local db = assert(sql.get("app:db"))
             local dbtype = tostring(db:type())

@@ -468,7 +468,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
                     writer = spec.writer, writer_args = writer_args, pins = pins, source_update = source_update,
                     drive_policy = drive_policy, type_id = spec.type_id,
                     state = spec.state, public_meta = spec.public_meta, enabled = spec.enabled,
-                    schema = spec.schema, references = references,
+                    schema = spec.schema, references = references, expected_revision = spec.expected_revision,
                     operator_identity = operator_identity, subject_identity = subject_identity,
                     principal = spec.principal, expected_identity_generation = spec.expected_identity_generation,
                     declaration_hash = digest, request_fingerprint = spec.request_fingerprint,
