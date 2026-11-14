@@ -6,6 +6,7 @@ local errors = require("errors")
 local resources = require("uploads_resources")
 local persisted_json = require("persisted_json")
 local artifact_content_repo = require("artifact_content_repo")
+local upload_query_repo = require("upload_query_repo")
 
 local upload_record_repo = {}
 
@@ -321,10 +322,9 @@ end
 
 -- Settle the processing outcome of an upload inside the caller's transaction.
 -- The processing job settles an upload that is uploaded or already holds this
--- outcome. A dead processing job (dead_job_id) settles only the upload whose
--- acknowledged intent still names that job, so a retried upload is never
--- settled by an earlier job. Returns whether the upload holds the outcome.
-function upload_record_repo.settle_storage_tx(tx, uuid: string, storage_state: string, dead_job_id: string?): (boolean?, any?)
+-- outcome. Maintenance and dead outcomes require the same intent snapshot and
+-- no live processing job, so a retry cannot be settled by an earlier attempt.
+function upload_record_repo.settle_storage_tx(tx, uuid: string, storage_state: string, failed_processing: table?): (boolean?, any?)
     if not uuid or uuid == "" then return nil, typed(errors.INVALID, "Upload ID is required") end
     if storage_state ~= "completed" and storage_state ~= "failed" then
         return nil, typed(errors.INVALID, "Upload outcome must be completed or failed")
@@ -333,10 +333,18 @@ function upload_record_repo.settle_storage_tx(tx, uuid: string, storage_state: s
         :set("storage_state", storage_state)
         :set("updated_at", now_rfc3339())
         :where("uuid = ? AND storage_state IN (?, ?)", uuid, "uploaded", storage_state)
-    if dead_job_id ~= nil then
-        query = query:where("((processing_intent_state = 'acknowledged' AND processing_job_id = ?) OR "
-            .. "(processing_intent_state IS NULL AND (processing_job_id IS NULL OR processing_job_id = ?)))",
-            dead_job_id, dead_job_id)
+    if failed_processing ~= nil then
+        if failed_processing.processing_intent_state == nil then
+            query = query:where("processing_intent_state IS NULL")
+        else
+            query = query:where("processing_intent_state = ?", failed_processing.processing_intent_state)
+        end
+        if failed_processing.processing_job_id == nil then
+            query = query:where("processing_job_id IS NULL")
+        else
+            query = query:where("processing_job_id = ?", failed_processing.processing_job_id)
+        end
+        query = query:where(upload_query_repo.interrupted_processing_condition("kickside_uploads."))
     end
     local result, exec_err = query:run_with(tx):exec()
     if exec_err then return nil, typed(errors.UNAVAILABLE, "Failed to settle upload: " .. tostring(exec_err)) end

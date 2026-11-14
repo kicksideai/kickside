@@ -31,6 +31,7 @@ local process_worker = require("process_worker")
 local processing_intent_repo = require("processing_intent_repo")
 local process_job = require("process_job")
 local callback_job = require("callback_job")
+local jobs = require("jobs")
 local upload_response = require("upload_response")
 local processor = require("processor")
 local file_provider = require("file_provider")
@@ -691,8 +692,84 @@ local function define_tests()
             db:release()
         end)
 
+        test.it("retries mixed callback failures before committing failure settlement", function()
+            local id, owner = uuid_v4(), "mixed-callback-" .. uuid_v4()
+            ensure_uploads_component(owner)
+            local metadata = upload_metadata(owner, "failed.bin")
+            local identity = metadata[IDENTITY_META_KEY]
+            local token = assert(upload_tokens.pack({upload_id = id,
+                function_id = "app:callback_probe", on_error_id = "app:callback_probe",
+                actor_id = identity.actor_id, actor_context = identity.actor_context}))
+            metadata.stage_metadata = {ocr_error = "storage_pointer_missing"}
+            metadata.__upload_tokens = {"unreadable-token", token}
+            local upload = assert(upload_record_repo.create(id, owner, 1, "application/octet-stream",
+                "app:uploads", id, "app:types.failing", metadata, "uploaded", nil, nil, true, 600000))
+            local queued = assert(process_worker.enqueue_upload_job(upload, true))
+            local db = assert(sql.get("app:db"))
+            local leased = admit_job(db, queued.job_id, 5)
+            local input = assert(worker_dispatch.build_worker_input(leased))
+            local enqueue = jobs.enqueue_tx
+            local unavailable = errors.new({message = "callback admission unavailable", kind = errors.UNAVAILABLE, retryable = true})
+            jobs.enqueue_tx = function() return nil, unavailable end
+            local result, err = process_job.run(input)
+            jobs.enqueue_tx = enqueue
+            test.is_nil(result)
+            test.eq(err, unavailable)
+            test.eq(assert(upload_query_repo.get(id)).storage_state, "uploaded")
+            test.eq(#assert(db:query("SELECT id FROM kickside_event WHERE external_id=$1 AND type=$2",
+                {id, uploads_events.TYPE.FAILED})), 0)
+            local settled, settle_err = process_job.run(input)
+            test.is_nil(settle_err, tostring(settle_err))
+            test.not_nil(settled.job_error)
+            test.eq(assert(upload_query_repo.get(id)).storage_state, "failed")
+            test.eq(#assert(db:query("SELECT id FROM kickside_job WHERE job_type=$1 AND CAST(payload AS TEXT) LIKE $2",
+                {"kickside.uploads.service:callback_job", "%" .. id .. "%"})), 1)
+            local events = assert(db:query("SELECT body FROM kickside_event WHERE external_id=$1 AND type=$2",
+                {id, uploads_events.TYPE.FAILED}))
+            test.eq(#events, 1)
+            test.not_nil(json.decode(events[1].body).callback_error)
+            db:release()
+        end)
+
         for _, intent in ipairs({true, false}) do
-            test.it("maintenance settles an already-dead processing job with intent=" .. tostring(intent), function()
+            test.it("maintenance leaves live processing work alone with intent=" .. tostring(intent), function()
+                local id, owner = uuid_v4(), "live-upload-" .. uuid_v4()
+                ensure_uploads_component(owner)
+                local upload = assert(upload_record_repo.create(id, owner, 1, "application/octet-stream",
+                    "app:uploads", id, "app:types.failing", upload_metadata(owner, "active.bin"),
+                    "uploaded", nil, nil, intent, 600000))
+                local queued = assert(process_worker.enqueue_upload_job(upload, true))
+                local db = assert(sql.get("app:db"))
+                for _, status in ipairs({"pending", "running"}) do
+                    assert(db:execute("UPDATE kickside_job SET status=$1 WHERE id=$2", {status, queued.job_id}))
+                    local result, err = funcs.call("kickside.uploads:retention")
+                    test.is_nil(err, tostring(err))
+                    test.is_true(result.success, tostring(result.error))
+                    local snapshot = assert(upload_query_repo.get(id))
+                    test.eq(snapshot.storage_state, "uploaded")
+                    local tx = assert(db:begin())
+                    local settled, settle_err = upload_record_repo.settle_storage_tx(tx, id, "failed", snapshot)
+                    assert(tx:rollback())
+                    test.is_nil(settle_err)
+                    test.is_false(settled, "the settlement transaction also fences active work")
+                end
+                db:release()
+            end)
+        end
+
+        test.it("maintenance leaves uploads that never enter processing alone", function()
+            local id, owner = uuid_v4(), "unqueued-upload-" .. uuid_v4()
+            assert(upload_record_repo.create(id, owner, 1, "application/octet-stream",
+                "app:uploads", id, "app:types.failing", {}, "uploaded"))
+            local result, err = funcs.call("kickside.uploads:retention")
+            test.is_nil(err, tostring(err))
+            test.is_true(result.success, tostring(result.error))
+            test.eq(assert(upload_query_repo.get(id)).storage_state, "uploaded")
+        end)
+
+        for _, pruned in ipairs({false, true}) do
+        for _, intent in ipairs({true, false}) do
+            test.it("maintenance settles an already-dead processing job with intent=" .. tostring(intent) .. " pruned=" .. tostring(pruned), function()
                 local id, owner = uuid_v4(), "older-upload-" .. uuid_v4()
                 ensure_uploads_component(owner)
                 local upload = assert(upload_record_repo.create(id, owner, 1, "application/octet-stream",
@@ -700,9 +777,13 @@ local function define_tests()
                     "uploaded", nil, nil, intent, 600000))
                 local queued = assert(process_worker.enqueue_upload_job(upload, true))
                 local db = assert(sql.get("app:db"))
+                assert(upload_read_model.apply_events(queued.thread_id, {{id = uuid_v4(), seq = 1,
+                    type = uploads_events.TYPE.QUEUED, created_at = time.now():utc():format_rfc3339(),
+                    body = {upload_id = id, filename = "earlier.bin"}}}))
                 -- Published rows contain no outcome job. Older intent-less rows also lack a job pointer.
                 assert(db:execute("UPDATE kickside_job SET status='dead',last_error='execution ended',finished_at=$1 WHERE id=$2",
                     {jobs_lifecycle.now_string(tostring(db:type())), queued.job_id}))
+                if pruned then assert(db:execute("DELETE FROM kickside_job WHERE id=$1", {queued.job_id})) end
                 db:release()
                 local result, err = funcs.call("kickside.uploads:retention")
                 test.is_nil(err, tostring(err))
@@ -717,6 +798,8 @@ local function define_tests()
                 test.eq(#events, 1)
                 verify:release()
             end)
+        end
+
         end
 
 		test.it("settles an upload whose processing job dies without its handler", function()
