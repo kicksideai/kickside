@@ -12,7 +12,6 @@ local committed_error = require("committed_error")
 local meta_service = require("meta_service")
 local ops = require("component_ops")
 local placement = require("placement")
-local kind_authority = require("kind_authority")
 local component_lifecycle = require("component_lifecycle")
 local error_envelope = require("error_envelope")
 
@@ -262,15 +261,6 @@ function M.begin_delete(component_id: string, gate_user_id: string?, child_polic
         })
         if validation_err then
             return false, "delete", abort_transaction(db, tx, validation_err)
-        end
-        if child_policy == "reparent_root" then
-            local descendants, descendants_err = placement.descendants(tx :: sql.Transaction, component_id)
-            if descendants_err then return false, "delete", abort_transaction(db, tx, descendants_err) end
-            local check_kind = kind_authority.checker("update")
-            for _, descendant in ipairs(descendants or {}) do
-                local admission_err = check_kind(descendant.impl_id :: string)
-                if admission_err then return false, "delete", abort_transaction(db, tx, admission_err) end
-            end
         end
         local mark_err = ops.mark_deleting_tx(tx, component_id, true)
         if mark_err then

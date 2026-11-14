@@ -63,7 +63,7 @@ local function reroot_child_page(tx: Executor, db: Executor, parent_id: string, 
     return false, nil
 end
 
--- Teardown admits affected kinds before accepting a re-root intent. Marked
+-- Re-rooting preserves child data under the accepted parent delete intent. Marked
 -- children already have their own delete intent; accepting the parent does not retry them.
 type ChildReader = { query: (string, ...unknown) -> ({ table }?, error?) }
 local function validate_delete_tx(tx: Executor | ChildReader, payload: any): ({ { component_id: string, path: string? } }?, error?)
