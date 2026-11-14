@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.26](https://github.com/kicksideai/kickside/compare/automation-v0.2.25...automation-v0.2.26) (2026-11-13)
+
+
+### Bug Fixes
+
+* **execution:** declare maintenance actors exactly and authorize thread completion ([#459](https://github.com/kicksideai/kickside/issues/459)) ([c86999c](https://github.com/kicksideai/kickside/commit/c86999c76f99724bd7eab62924dcb3d931f3bee8))
+
 ## [0.2.25](https://github.com/kicksideai/kickside/compare/automation-v0.2.24...automation-v0.2.25) (2026-11-12)
 
 

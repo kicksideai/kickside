@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.44](https://github.com/kicksideai/kickside/compare/oauth-v0.1.43...oauth-v0.1.44) (2026-11-13)
+
+
+### Bug Fixes
+
+* **execution:** declare maintenance actors exactly and authorize thread completion ([#459](https://github.com/kicksideai/kickside/issues/459)) ([c86999c](https://github.com/kicksideai/kickside/commit/c86999c76f99724bd7eab62924dcb3d931f3bee8))
+
 ## [0.1.43](https://github.com/kicksideai/kickside/compare/oauth-v0.1.42...oauth-v0.1.43) (2026-11-09)
 
 
