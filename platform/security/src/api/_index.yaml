@@ -6,6 +6,20 @@ namespace: kickside.security.api
 # to the firewalled api_router; admin-only by absence from the user allowlist.
 
 entries:
+  - name: jobs_health
+    kind: function.lua
+    source: file://jobs_health.lua
+    method: handler
+    modules: [http, security, logger]
+    imports:
+      api_errors: kickside.security.api:errors
+      jobs: kickside.core.jobs:jobs
+  - name: jobs_health.endpoint
+    kind: http.endpoint
+    method: GET
+    func: jobs_health
+    path: /jobs/health
+
   - name: projection_status
     kind: function.lua
     source: file://projection_status.lua

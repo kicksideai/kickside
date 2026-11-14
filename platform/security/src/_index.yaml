@@ -10,6 +10,10 @@ namespace: kickside.security
 #   kickside.security.migrations — schema
 
 entries:
+  - name: dep.kickside.jobs
+    kind: ns.dependency
+    version: '*'
+    component: kickside/jobs
   - name: dep.kickside.execution
     kind: ns.dependency
     version: '*'
@@ -114,6 +118,8 @@ entries:
       comment: HTTP router the admin security endpoints attach to. Must enforce auth + endpoint_firewall.
       description: HTTP router the admin security endpoints attach to. Must enforce auth + endpoint_firewall.
     targets:
+      - entry: kickside.security.api:jobs_health.endpoint
+        path: .meta.router
       - entry: kickside.security.api:projection_status.endpoint
         path: .meta.router
       - entry: kickside.security.api:list_scopes.endpoint

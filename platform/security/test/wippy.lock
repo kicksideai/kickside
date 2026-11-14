@@ -8,6 +8,8 @@ modules:
       version: 0.0.0
     - name: kickside/execution
       version: 0.0.0
+    - name: kickside/jobs
+      version: 0.1.78
     - name: kickside/realtime-dispatch
       version: 0.0.0
     - name: kickside/security
