@@ -54,6 +54,10 @@ Owners enumerate retained jobs in bounded pages with
 `jobs.list_owner_jobs({kind = "component", id = owner_id}, filters, limit, after)`.
 Authorize the owner first, then use the returned native continuation through all
 pages. See the dependency interface for the position and authority contract.
+Rows include the canonical `job_identity`, so an owner can retire an orphaned
+slot with `jobs.purge_slot({job_identity = row.job_identity, owner_locator = owner})`.
+Jobs requires the locator to match the stored slot. Read the next page before
+purging its anchor, or drain bounded first pages without a continuation anchor.
 
 After a caller-owned `jobs.enqueue_tx(tx, dbtype, params)` transaction commits,
 call `jobs.nudge_workers()` to notify the worker pool. Retired slot owners call

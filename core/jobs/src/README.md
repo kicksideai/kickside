@@ -52,7 +52,10 @@ are `status`, `job_type`, `queue_tier`, and the legacy `thread_id` owner-ID filt
 Pages order by `created_at DESC, id DESC` through the owner chronology index.
 Continue with `{id = last_row.id, owner_id = last_row.owner_id}` until `has_more`
 is false. A missing, foreign, or filter-mismatched anchor returns INVALID.
-Rows expose `owner_kind`, `owner_id`, `slot`, and the same fields as `list_jobs`.
+Rows expose `owner_kind`, `owner_id`, `slot`, the encoded canonical `job_identity`,
+and the same fields as `list_jobs`. Pass the returned identity unchanged to
+`jobs.purge_slot({job_identity = row.job_identity, owner_locator = owner})` to
+retire an orphaned slot even when the owner's own key/state is gone.
 Keep the anchor until the next page is read; deleting it invalidates continuation.
 
 Job listings and exact job reads include boolean `slot` and derived `due` fields.
@@ -100,9 +103,15 @@ access. Jobs owns its transport permission and sends under its own identity;
 callers need no persistence call grant or process-send authority.
 
 `jobs.purge_slot(params: table): (integer?, error?)` removes a retired owner's
-exact slot, selected by the required nonempty strings `namespace`, `scope`, and
-`key`, with its settled run history. The owning caller authorizes retirement
-before invoking this operation. Each call deletes at most 100 settled runs;
+exact slot with its settled run history. Select it with either the nonempty
+strings `namespace`, `scope`, and `key`, or the encoded `job_identity` returned
+by owner listing plus `owner_locator = {kind = ..., id = ...}`. The two identity
+forms cannot be mixed. Jobs checks both locator fields against the stored slot
+and returns PERMISSION_DENIED for a foreign owner before deleting anything.
+The known-key form also checks `owner_locator` when supplied; existing calls
+without it retain their caller-authorized contract. The caller must authorize
+the owner and retirement before invoking either form; a locator is not a
+consumer permission grant. Each call deletes at most 100 settled runs;
 it returns `1` when the slot is removed or `0` when absent. A retryable conflict
 with `details.cleanup_pending` preserves the existing continuation contract:
 `needs_continue = true` requests another page, while `wait_for = "lease_release"`

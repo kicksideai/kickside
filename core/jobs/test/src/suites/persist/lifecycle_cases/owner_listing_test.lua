@@ -7,6 +7,79 @@ local jobs = require("jobs")
 
 local function define_tests()
     test.describe("Thread owner job listings", function()
+        test.it("purges five orphan slots through identities enumerated in pages of two", function()
+            local db = assert(sql.get("app:db"))
+            local dbtype = tostring(db:type())
+            local owner = {kind = "component", id = uuid.v7()}
+            local expected = {}
+            for index = 1, 5 do
+                local id = assert(lifecycle.enqueue_job(db, dbtype, {
+                    owner_locator = owner, job_type = "test.orphan_slot", payload = {}, slot = true, parked = true,
+                    job_identity = {namespace = "orphan:slots", scope = owner.id, key = "t:gone:state:visit:" .. index},
+                }))
+                expected[id] = true
+            end
+            -- No component/item state is created: Jobs alone retains the slot identity.
+            local after, discovered = nil, {}
+            for page = 1, 3 do
+                local rows, err, more = jobs.list_owner_jobs(owner, nil, 2, after)
+                test.is_nil(err, tostring(err))
+                test.eq(#rows, page < 3 and 2 or 1)
+                test.eq(more, page < 3)
+                for _, row in ipairs(rows) do
+                    test.is_true(expected[row.id])
+                    expected[row.id] = false
+                    test.eq(type(row.job_identity), "string")
+                    discovered[#discovered + 1] = row
+                end
+                after = {id = rows[#rows].id, owner_id = owner.id}
+            end
+            for _, row in ipairs(discovered) do
+                for _, foreign in ipairs({{kind = "component", id = uuid.v7()}, {kind = "thread", id = owner.id}}) do
+                    local removed, denied = jobs.purge_slot({job_identity = row.job_identity, owner_locator = foreign})
+                    test.is_nil(removed)
+                    test.is_true(errors.is(denied, errors.PERMISSION_DENIED))
+                    test.not_nil(assert(jobs.get_job(row.id)))
+                end
+                local removed, err = jobs.purge_slot({job_identity = row.job_identity, owner_locator = owner})
+                test.is_nil(err, tostring(err))
+                test.eq(removed, 1)
+                local missing, read_err = jobs.get_job(row.id)
+                test.is_nil(read_err)
+                test.is_nil(missing)
+                test.eq(assert(jobs.purge_slot({job_identity = row.job_identity, owner_locator = owner})), 0)
+            end
+            test.eq(#assert(jobs.list_owner_jobs(owner, nil, 2)), 0)
+            db:release()
+        end)
+
+        test.it("requires an owner locator for discovered identities", function()
+            for _, params in ipairs({{job_identity = "opaque"}, {job_identity = ""},
+                {job_identity = "opaque", owner_locator = {}},
+                {job_identity = "opaque", owner_locator = {kind = "component", id = "owner"}, key = "ambiguous"}}) do
+                local removed, err = jobs.purge_slot(params)
+                test.is_nil(removed)
+                test.is_true(errors.is(err, errors.INVALID))
+            end
+        end)
+
+        test.it("purges enumerated thread slots and preserves known-key retirement", function()
+            local owner = {kind = "thread", id = uuid.v7()}
+            for _, key in ipairs({"discovered", "known"}) do
+                assert(jobs.enqueue({namespace = "thread-orphan", scope = owner.id, key = key,
+                    owner_locator = owner, job_type = "test.thread_orphan", immutable_payload = {}, slot = true, parked = true}))
+            end
+            local rows = assert(jobs.list_owner_jobs(owner, nil, 2))
+            for _, row in ipairs(rows) do
+                local removed, err = jobs.purge_slot({job_identity = row.job_identity, owner_locator = owner})
+                test.is_nil(err, tostring(err))
+                test.eq(removed, 1)
+            end
+            assert(jobs.enqueue({namespace = "thread-orphan", scope = owner.id, key = "known",
+                owner_locator = owner, job_type = "test.thread_orphan", immutable_payload = {}, slot = true, parked = true}))
+            test.eq(assert(jobs.purge_slot({namespace = "thread-orphan", scope = owner.id, key = "known"})), 1)
+        end)
+
         test.it("pages component-owned slots completely and excludes foreign owner locators", function()
             local db = assert(sql.get("app:db"))
             local dbtype = tostring(db:type())
