@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: app
+entries:
+  - name: absent_sink_delete_test
+    kind: function.lua
+    meta: {type: test, suite: automation_absent_sink_delete}
+    source: file://absent_sink_delete_test.lua
+    method: run
+    security:
+      actor: {id: '12345678-1234-4234-8234-123456789abc'}
+    modules: [sql, uuid, registry]
+    imports:
+      test: wippy.test:test
+      component: kickside.component:component
+      automations: kickside.automation:automation
+      deletion_worker: app:deletion_test_worker
+      drive: kickside.automation:drive
+      slot: kickside.automation:slot

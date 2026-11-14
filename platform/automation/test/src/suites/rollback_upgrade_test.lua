@@ -164,6 +164,41 @@ end
 
 local function define_tests()
     test.describe("automation stored rollback upgrade", function()
+        for _, already_current in ipairs({false, true}) do
+            test.it("resumes a dead deletion after rollback maintenance, current=" .. tostring(already_current), function()
+                local env = installed("rollback_maintenance")
+                local id = env.automation_id
+                local original = context(id)._rollback
+                subscribe(env)
+                store_legacy(id, {poll_teardown(id)})
+                local accepted, accept_err = env.caller:call(MANAGE, {action = "uninstall", id = id,
+                    options = {keep_thread = true}})
+                test.is_nil(accept_err, tostring(accept_err))
+                test.not_nil(accepted)
+                local failed, fail_err = deletion_worker.run(id)
+                test.is_nil(failed)
+                test.contains(tostring(fail_err), "no handler registered for target")
+                local old_job = h.query("SELECT id,status FROM kickside_job WHERE owner_kind='component' AND owner_id=$1", {id})[1]
+                test.eq(old_job.status, "dead")
+                if already_current then
+                    local stored = context(id)
+                    stored._rollback = original
+                    h.exec("UPDATE kickside_components SET private_context=$1,context_revision=context_revision+1 WHERE component_id=$2",
+                        {json.encode(stored), id})
+                end
+                run_upgrade()
+                local jobs = h.query("SELECT id,status FROM kickside_job WHERE owner_kind='component' AND owner_id=$1 AND status='pending'", {id})
+                test.eq(#jobs, 1, "update maintenance enrolls the repaired deletion without another uninstall")
+                test.is_true(jobs[1].id ~= old_job.id)
+                local raw_intent = h.query("SELECT delete_intent FROM kickside_components WHERE component_id=$1", {id})[1].delete_intent
+                local intent = type(raw_intent) == "table" and raw_intent or json.decode(raw_intent)
+                test.eq(intent.job_id, jobs[1].id)
+                test.is_true(intent.options.keep_thread)
+                run_upgrade()
+                test.eq(#h.query("SELECT id FROM kickside_job WHERE owner_kind='component' AND owner_id=$1 AND status='pending'", {id}), 1)
+                assert_deleted(env)
+            end)
+        end
         test.it("uninstalls an automation whose stored rollback names the retired trigger teardown once upgraded", function()
             local env = installed("rollback_upgrade")
             local id = env.automation_id

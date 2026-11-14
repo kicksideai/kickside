@@ -112,9 +112,15 @@ end
 function M.upgrade_rollback(input: any, upgrade: any): (any?, error?)
     local token, prepare_err = ops.prepare_rollback_upgrade(input, upgrade)
     if prepare_err then return nil, prepare_err end
-    return M.with_component_tx(function(tx: sql.Transaction, _db: sql.DB): (any?, error?)
+    local result, err = M.with_component_tx(function(tx: sql.Transaction, _db: sql.DB): (any?, error?)
         return ops.upgrade_rollback_tx(tx, token)
     end)
+    if err or not result then return nil, err end
+    if result.deletion_job_id then
+        local notify_err = error_envelope.cleanup(ops.notify_delete_committed, nil, "nudge component deletion workers")
+        if notify_err then return nil, committed_error.new(notify_err) end
+    end
+    return result, nil
 end
 
 -- The one privileged create path for an automation install (design v4 §6.3,

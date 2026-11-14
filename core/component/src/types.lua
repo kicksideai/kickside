@@ -209,6 +209,7 @@ type QueryOrder = {
 
 type QueryFilter = {
     component_ids: string[]?,
+    after_component_id: string?,
     impl_ids: string[]?,
     match_ids: string?,
     meta: MetadataMap | boolean?,

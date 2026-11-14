@@ -942,7 +942,9 @@ entries:
   - name: delete_native_source
     kind: library.lua
     source: file://delete_native_source.lua
+    modules: [json]
     imports:
+      jobs: kickside.core.jobs:jobs
       sql: app:delete_native_sql_adapter
       placement: app:delete_native_placement_adapter
       component_types: kickside.component:types

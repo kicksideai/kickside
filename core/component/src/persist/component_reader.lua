@@ -49,6 +49,7 @@ type Reader = ReaderState & {
     _copy: (Reader) -> Reader,
     with_user: (Reader, string) -> Reader,
     with_components: (Reader, ...any) -> Reader,
+    after_component: (Reader, string) -> Reader,
     with_impl_ids: (Reader, ...any) -> Reader,
     with_id_match: (Reader, string) -> (Reader?, error?),
     with_meta: (Reader, { [string]: string }?) -> Reader,
@@ -120,6 +121,13 @@ function methods.with_user(self: Reader, user_id: string): Reader
     local new_instance = self:_copy()
     new_instance._user_id = user_id
     return setmetatable(new_instance, reader_mt) :: Reader
+end
+
+-- Stable boundary for scans ordered by component_id ASC.
+function methods.after_component(self: Reader, component_id: string): Reader
+    local copy = self:_copy()
+    copy._after_component_id = component_id
+    return copy
 end
 
 -- Filter by specific component IDs (varargs or a single array). Component ids

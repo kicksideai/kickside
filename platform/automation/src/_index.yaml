@@ -520,6 +520,8 @@ entries:
         id: system:kickside.automation.declaration
       policies:
         - kickside.automation.security:declaration_writer
+        - kickside.component:deletion_jobs_policy
+        - kickside.component:deletion_worker_lookup
     imports:
       component: kickside.component:component
       component_command: kickside.component:component_command

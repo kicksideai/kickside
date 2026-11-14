@@ -153,10 +153,16 @@ end
 -- reverse lookups across every user's components (mirrors get_private_context /
 -- open_private — same trust tier, NOT a public access-checked path). `filter`
 -- accepts impl_ids, component_ids, meta, parent_id, path_prefix, include
--- (meta / private_context), limit, offset, and order_by ({field,direction}).
+-- (meta / private_context), limit, offset, after_component_id, and order_by
+-- ({field,direction}). Page by component_id ASC with after_component_id when
+-- rows can disappear during traversal.
 local function list_system(filter: component_types.QueryFilter?): (component_types.ComponentRow[]?, error?)
     local f: component_types.QueryFilter = filter or {}
     local reader: any = component_reader.new()
+
+    if type(f.after_component_id) == "string" and f.after_component_id ~= "" then
+        reader = reader:after_component(f.after_component_id)
+    end
 
     if type(f.component_ids) == "table" and #f.component_ids > 0 then
         reader = reader:with_components(f.component_ids)
