@@ -177,6 +177,7 @@ local function verify(request: any): (any?, error?)
         generation = pending.generation,
         declaration_hash = pending.digest,
         declaration = input.declaration,
+        expected_revision = input.expected_revision,
         state = input.state,
         public_meta = input.public_meta,
         operator_id = input.operator_id,

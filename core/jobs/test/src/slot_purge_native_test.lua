@@ -20,6 +20,28 @@ local function retains(actual: error, source: error): ()
 end
 return {run = test.run_cases(function()
     test.describe("native slot purge dependencies", function()
+        test.it("discovered thread slots retain fence-before-job ordering", function()
+            fixture.reset(nil, nil, sql.type.POSTGRES)
+            fixture.thread_owned = true
+            local removed, err = purge.purge_slot({job_identity = "listed-identity",
+                owner_locator = {kind = "thread", id = "owner"}})
+            test.is_nil(err)
+            test.eq(removed, 1)
+            test.eq(fixture.fences, 1)
+            test.eq(fixture.queries_at_fence, 1)
+        end)
+        test.it("foreign locators cannot fence or mutate a discovered thread slot", function()
+            fixture.reset(nil, nil, sql.type.POSTGRES)
+            fixture.thread_owned = true
+            local removed, err = purge.purge_slot({job_identity = "listed-identity",
+                owner_locator = {kind = "component", id = "owner"}})
+            test.is_nil(removed)
+            test.is_true(errors.is(err, errors.PERMISSION_DENIED))
+            test.is_false(required(err):retryable())
+            test.eq(fixture.fences, 0)
+            test.eq(fixture.writes, 0)
+            test.eq(fixture.rollbacks, 1)
+        end)
         test.it("thread-owned slots acquire the cleanup fence before the job lock", function()
             fixture.reset(nil, nil, sql.type.POSTGRES)
             fixture.thread_owned = true

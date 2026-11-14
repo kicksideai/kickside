@@ -140,3 +140,16 @@ entries:
       migration: wippy.migration:migration
       run_status: kickside.core.jobs:run_status
     method: migrate
+
+  - name: 26_owner_listing
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: Indexes exact owner job history for bounded keyset listing.
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-11-13T00:00:26Z"
+    source: file://26_owner_listing.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

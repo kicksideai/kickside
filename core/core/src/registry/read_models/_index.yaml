@@ -67,6 +67,7 @@ entries:
           delete: kickside.core.threads:delete_method
           list: kickside.core.threads:list_method
           list_events: kickside.core.threads:list_events_method
+          retire_subjects: kickside.core.threads:retire_subjects_method
           prune_boundary: kickside.core.threads:prune_boundary_method
           find_event_by_external: kickside.core.threads:find_event_by_external_method
           append_events: kickside.core.threads:append_events_method

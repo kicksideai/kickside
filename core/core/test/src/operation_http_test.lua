@@ -90,7 +90,7 @@ return {run = test.run_cases(function()
         end
         test.it("confirmed retention absence keeps defaults", function()
             fixture.reset("missing_work", nil, nil); local result = invoke("retention_read")
-            test.is_true(result.body.success); test.is_true(result.body.is_default); test.eq(fixture.releases, 1)
+            test.is_true(result.body.success); test.is_true(result.body.is_default); test.eq(result.body.policy.event_hot_retention_days, 30); test.eq(fixture.releases, 1)
         end)
         for _, route in ipairs(routes) do
             test.it(route .. "/healthy", function()
