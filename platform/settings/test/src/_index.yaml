@@ -9,6 +9,72 @@ namespace: app
 # Harness-only; never published.
 
 entries:
+  - name: definition
+    kind: ns.definition
+    meta: { comment: Settings harness and its policy-driven retention owner. }
+
+  - name: retention_test
+    kind: function.lua
+    meta: { type: test, suite: kickside_settings }
+    source: file://retention_test.lua
+    method: run
+    modules: [contract, security, sql, time, process, channel]
+    imports:
+      test: wippy.test:test
+      settings_writer: kickside.settings.persist:settings_writer
+      settings_changes: kickside.settings:settings_changes
+
+  - name: retention_owner
+    kind: function.lua
+    meta: { type: kickside.retention.owner }
+    source: file://retention_owner.lua
+    method: run
+    modules: [contract, sql, time]
+    imports:
+      settings_cache: kickside.settings:settings_cache
+
+  - name: setting_retention_days
+    kind: registry.entry
+    meta: { type: kickside.settings:definition }
+    namespace: kickside.settings.test
+    key: retention_days
+    value_type: int
+    default: 0
+    editable: true
+
+  - name: dep.kickside.core
+    kind: ns.dependency
+    version: '*'
+    component: kickside/core
+    parameters:
+      - { name: 'kickside.core:target_db', value: 'app:db' }
+      - { name: 'kickside.core.lifecycle:process_host', value: 'app:processes' }
+      - name: kickside.core.lifecycle:user_lifecycle_grant
+        value: { subject_id: 'app.security:user', subject_type: group, access_mask: 2 }
+      - name: kickside.core.lifecycle:admin_lifecycle_grant
+        value: { subject_id: 'app.security:admin', subject_type: group, access_mask: 11 }
+      - { name: 'kickside.core.retention:process_host', value: 'app:processes' }
+      - { name: 'kickside.core.threads:process_host', value: 'app:processes' }
+      - { name: 'kickside.core.retention:api_router', value: 'app:api' }
+      - { name: 'kickside.core.threads:api_router', value: 'app:api' }
+      - { name: 'kickside.core.projections:api_router', value: 'app:api' }
+
+  - name: dep.kickside.component
+    kind: ns.dependency
+    version: '*'
+    component: kickside/component
+    parameters:
+      - { name: 'kickside.component:target_db', value: 'app:db' }
+      - { name: 'kickside.component:api_router', value: 'app:api' }
+
+  - name: dep.kickside.jobs
+    kind: ns.dependency
+    version: '*'
+    component: kickside/jobs
+    parameters:
+      - { name: 'kickside.core.jobs:target_db', value: 'app:db' }
+      - { name: 'kickside.core.jobs:process_host', value: 'app:processes' }
+
   - name: about_test
     kind: function.lua
     meta:

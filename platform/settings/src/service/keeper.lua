@@ -14,6 +14,7 @@ local logger = require("logger")
 local cache = require("settings_cache")
 local writer = require("settings_writer")
 local changes = require("settings_changes")
+local retention_notifier = require("retention_notifier")
 
 local log = logger:named("kickside.settings.keeper")
 
@@ -44,6 +45,12 @@ local function main(): (any?, any?)
         end
         local current = cache.revision()
         if current ~= nil and notified ~= nil and current > notified then
+            -- Any setting can change an owner's policy. Wake only after this
+            -- node's cache holds the committed revision, once per announcement.
+            local _, notify_err = retention_notifier.notify({ kind = "settings_committed", revision = current })
+            if notify_err then
+                log:error("settings retention notification failed", { revision = current, error = tostring(notify_err) })
+            end
             local _, berr = scope:broadcast_local(changes.SUBSCRIBERS, changes.TOPIC, { revision = current })
             if berr then return berr end
         end

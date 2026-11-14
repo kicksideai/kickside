@@ -79,6 +79,21 @@ and `process` modules. A subscriber hears each revision once. Delivery between
 nodes is best-effort: a node that misses a broadcast catches up on the next
 change or when a keeper joins.
 
+### SPEC: Committed settings and retention
+
+After its cache holds a newly announced committed revision, the existing keeper
+also wakes Core retention through `kickside.core.retention:notifier`. The wake
+is generic: any setting can affect an owner's policy, and each owner reads its
+current policy when invoked. Sets and unsets, including revisions received from
+another node, follow the same path. Duplicate publications and reads do not
+produce additional wakes. Catch-up may coalesce several revisions into one
+announcement of the current cache revision. Boot recovery remains Core's
+responsibility; the keeper's initial cache refresh does not send a wake.
+
+Notification is best-effort and failures are logged by the keeper; they cannot
+fail a committed settings write. This adds no process, polling or read-path
+work. Core remains independent of Settings.
+
 ## Contract `kickside.settings:settings`
 
 - `get({ namespace, key }) -> { success, value }`

@@ -1,9 +1,17 @@
 version: "1.0"
 override:
   "app:db:file": "${sqlite_path}"
+  "kickside.core.retention.service:sweeper.service:lifecycle.auto_start": false
+  "kickside.core.jobs.service:worker.service:lifecycle.auto_start": false
 workspace:
   replacements:
     kickside/settings: ..
+    kickside/core: ../../../core/core
+    kickside/component: ../../../core/component
+    kickside/contract: ../../../core/contract
+    kickside/jobs: ../../../core/jobs
+    kickside/execution: ../../../core/execution
+    kickside/realtime-dispatch: ../../../core/realtime-dispatch
 vars:
   sqlite_path: ":memory:"
   pg_host: localhost

@@ -520,3 +520,10 @@ entries:
     meta:
       comment: Migration framework for the module read-model tables.
     component: wippy/migration
+
+  - name: dep.kickside.core
+    version: '>=0.3.17'
+    kind: ns.dependency
+    meta:
+      comment: Wake retention through its public notifier after committed settings reach the local cache.
+    component: kickside/core
