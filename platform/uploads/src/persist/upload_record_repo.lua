@@ -319,8 +319,41 @@ function upload_record_repo.mark_storage_failed(uuid)
     return mark_storage_state(uuid, "failed")
 end
 
+-- Settle the processing outcome of an upload inside the caller's transaction.
+-- The processing job settles an upload that is uploaded or already holds this
+-- outcome. Dead outcomes require the same intent snapshot and dead job, so
+-- a retry cannot be settled by an earlier attempt.
+function upload_record_repo.settle_storage_tx(tx, uuid: string, storage_state: string, failed_processing: table?): (boolean?, any?)
+    if not uuid or uuid == "" then return nil, typed(errors.INVALID, "Upload ID is required") end
+    if storage_state ~= "completed" and storage_state ~= "failed" then
+        return nil, typed(errors.INVALID, "Upload outcome must be completed or failed")
+    end
+    local query = sql.builder.update("kickside_uploads")
+        :set("storage_state", storage_state)
+        :set("updated_at", now_rfc3339())
+        :where("uuid = ? AND storage_state IN (?, ?)", uuid, "uploaded", storage_state)
+    if failed_processing ~= nil then
+        if failed_processing.processing_intent_state == nil then
+            query = query:where("processing_intent_state IS NULL")
+        else
+            query = query:where("processing_intent_state = ?", failed_processing.processing_intent_state)
+        end
+        if failed_processing.processing_job_id == nil then
+            query = query:where("processing_job_id IS NULL")
+        else
+            query = query:where("processing_job_id = ?", failed_processing.processing_job_id)
+        end
+        query = query:where("EXISTS (SELECT 1 FROM kickside_job j WHERE j.id=? AND j.status='dead')",
+            failed_processing.dead_job_id)
+    end
+    local result, exec_err = query:run_with(tx):exec()
+    if exec_err then return nil, typed(errors.UNAVAILABLE, "Failed to settle upload: " .. tostring(exec_err)) end
+    return result.rows_affected > 0, nil
+end
+
 -- Return a failed upload to the uploaded state so its processing runs again.
--- Only a failed upload changes, so a concurrent retry or a live job is not reset.
+-- An acknowledged upload whose recorded job is dead or pruned can also retry.
+-- The primary-key job check and upload update fence live work and concurrent retries.
 function upload_record_repo.mark_failed_for_retry(uuid, processing_max_execution_ms: integer)
     if not uuid or uuid == "" then
         return nil, "Upload ID is required"
@@ -336,7 +369,11 @@ function upload_record_repo.mark_failed_for_retry(uuid, processing_max_execution
         :set("processing_intent_state", "pending")
         :set("processing_max_execution_ms", processing_max_execution_ms)
         :set("updated_at", now_rfc3339())
-        :where("uuid = ? AND storage_state = ?", uuid, "failed")
+        :where("uuid = ?", uuid)
+        :where("(storage_state='failed' OR (storage_state='uploaded' AND processing_intent_state='acknowledged'"
+            .. " AND processing_job_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM kickside_job j WHERE j.id="
+            .. (tostring(db:type()) == sql.type.POSTGRES and "CAST(NULLIF(processing_job_id,'') AS UUID)" or "processing_job_id")
+            .. " AND j.status<>'dead')))")
         :run_with(db)
         :exec()
 

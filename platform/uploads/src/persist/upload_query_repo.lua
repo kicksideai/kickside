@@ -7,6 +7,14 @@ local trim = require("text_trim").trim
 
 local upload_query_repo = {}
 
+local function canonical_job(upload: string): string
+    return "'7:uploads' || CAST(length(" .. upload .. "uuid) AS TEXT) || ':' || " .. upload .. "uuid || '7:process'"
+end
+
+local function intentless_job(upload: string): string
+    return upload .. "processing_intent_state IS NULL AND j.job_identity=" .. canonical_job(upload)
+end
+
 local function select_upload_columns()
     return sql.builder.select(
         "uuid", "actor_id", "size", "mime_type",
@@ -99,6 +107,33 @@ function upload_query_repo.get(uuid)
     local upload = uploads[1]
 
     return parse_upload_row(upload)
+end
+
+-- The upload of an account whose acknowledged processing intent names job_id,
+-- or nil when none does.
+function upload_query_repo.find_by_processing_job(actor_id: string, job_id: string, upload_id: string): (any?, any?)
+    if not actor_id or actor_id == "" or not job_id or job_id == "" or not upload_id or upload_id == "" then
+        return nil, errors.new({kind = errors.INVALID, message = "Actor ID, job ID and upload ID are required",
+            retryable = false, details = {code = "upload_processing_job_required"}})
+    end
+    local db, err = resources.get_db()
+    if err then return nil, err end
+    local query = select_upload_columns():from("kickside_uploads"):where("uuid = ?", upload_id)
+    local statement, params, build_err = query
+        :where("actor_id = ?", actor_id)
+        :where("((processing_job_id = ? AND processing_intent_state = 'acknowledged') OR "
+            .. "(EXISTS (SELECT 1 FROM kickside_job j WHERE j.id=? AND " .. intentless_job("kickside_uploads.") .. ")))",
+            job_id, job_id)
+        :limit(1)
+        :placeholder_format(sql.builder.dollar):to_sql()
+    if build_err then db:release(); return nil, build_err end
+    local rows, query_err = db:query(statement, params)
+    db:release()
+    if query_err then
+        return nil, binding_errors.from(query_err, errors.UNAVAILABLE, "upload_lookup_failed", "Failed to get upload")
+    end
+    if #rows == 0 then return nil, nil end
+    return parse_upload_row(rows[1])
 end
 
 -- Intent is committed on the upload record before enqueue. The jobs enqueue

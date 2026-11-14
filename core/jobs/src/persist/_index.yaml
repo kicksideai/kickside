@@ -14,6 +14,7 @@ entries:
       comment: Claimed-job transitions, run history, cancellation, and enqueue API.
     source: file://lifecycle_transition.lua
     modules:
+      - logger
       - sql
       - time
       - uuid
@@ -29,6 +30,17 @@ entries:
       lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
       proc_supervisor: kickside.core.jobs:proc_supervisor
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      dead_outcome: kickside.core.jobs.persist:dead_outcome
+
+  - name: dead_outcome
+    kind: library.lua
+    meta:
+      comment: The dead handler a worker declares (meta.job_dead) and the outcome job enqueued for it.
+    source: file://dead_outcome.lua
+    modules: [registry]
+    imports:
+      capacity: kickside.core.jobs:capacity
+      job_types: kickside.core.jobs:types
 
   - name: lifecycle_cancel
     kind: library.lua
@@ -86,6 +98,7 @@ entries:
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
       capacity: kickside.core.jobs:capacity
+      dead_outcome: kickside.core.jobs.persist:dead_outcome
 
   - name: thread_fence
     kind: library.lua

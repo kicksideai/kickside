@@ -26,4 +26,8 @@ function M.handle(params: any): any
     return { success = true }
 end
 
+function M.reject()
+    error(errors.new({kind = errors.INVALID, retryable = false, message = "callback permanently refuses delivery"}))
+end
+
 return M

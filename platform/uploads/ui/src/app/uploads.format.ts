@@ -110,7 +110,7 @@ export function uploadNotice(upload: Upload): UploadNotice | null {
 
 export function canPreview(upload: Upload): boolean {
   const status = normStatus(upload.status)
-  return status === 'completed' || status === 'error'
+  return status === 'completed' || status === 'error' || status === 'processing'
 }
 
 const TERMINAL = new Set(['completed', 'error'])

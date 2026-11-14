@@ -31,6 +31,7 @@ local process_worker = require("process_worker")
 local processing_intent_repo = require("processing_intent_repo")
 local process_job = require("process_job")
 local callback_job = require("callback_job")
+local jobs = require("jobs")
 local upload_response = require("upload_response")
 local processor = require("processor")
 local file_provider = require("file_provider")
@@ -699,6 +700,214 @@ local function define_tests()
 			test.is_nil(row_err)
 			test.eq("failed", row.storage_state)
 			test.eq(bytes, (storage:readfile(path)))
+		end)
+
+        test.it("keeps failure settled when the callback permanently refuses delivery", function()
+            local id, owner = uuid_v4(), "callback-delivery-" .. uuid_v4()
+            ensure_uploads_component(owner)
+            local metadata = upload_metadata(owner, "callback.txt")
+            local identity = metadata[IDENTITY_META_KEY]
+            metadata.__upload_token = assert(upload_tokens.pack({upload_id = id,
+                function_id = "app:callback_probe", on_error_id = "app:callback_reject",
+                actor_id = identity.actor_id, actor_context = identity.actor_context}))
+            local upload = assert(upload_record_repo.create(id, owner, 1, "text/plain", "app:uploads", id,
+                "app:types.failing", metadata, "uploaded", nil, nil, true, 600000))
+            local queued = assert(process_worker.enqueue_upload_job(upload, true))
+            local db = assert(sql.get("app:db"))
+            local dbtype = tostring(db:type())
+            local processing = admit_job(db, queued.job_id, 5)
+            test.is_nil(jobs_lifecycle.fail_job(db, processing, dbtype, "execution ended", "deterministic"))
+            local settled, settle_err = process_job.dead({payload = {job_id = queued.job_id}})
+            test.is_nil(settle_err, tostring(settle_err))
+            test.is_true(settled.settled)
+            local callbacks = assert(db:query("SELECT id FROM kickside_job WHERE job_type=$1 AND CAST(payload AS TEXT) LIKE $2",
+                {"kickside.uploads.service:callback_job", "%" .. id .. "%"}))
+            test.eq(#callbacks, 1)
+            local callback = admit_job(db, callbacks[1].id, 1)
+            local _, delivery_err = worker_dispatch.execute_job(db, dbtype, callback)
+            test.is_true(errors.is(delivery_err, errors.INVALID), tostring(delivery_err))
+            test.contains(tostring(delivery_err), "callback permanently refuses delivery")
+            test.is_nil(jobs_lifecycle.fail_job(db, callback, dbtype, tostring(delivery_err), "deterministic"))
+            test.eq(assert(db:query("SELECT status FROM kickside_job WHERE id=$1", {callback.id}))[1].status, "dead")
+            test.eq(assert(upload_query_repo.get(id)).storage_state, "failed")
+            local events = assert(db:query("SELECT id FROM kickside_event WHERE external_id=$1 AND type=$2",
+                {id, uploads_events.TYPE.FAILED}))
+            test.eq(#events, 1)
+            db:release()
+        end)
+
+		test.it("settles terminal failure when its callback token is unreadable", function()
+            local id, owner = uuid_v4(), "callback-failure-" .. uuid_v4()
+            ensure_uploads_component(owner)
+            local metadata = metadata_with_identity(owner, "failed.bin", {
+                __upload_token = "unreadable-token",
+                stage_metadata = {ocr_error = "storage_pointer_missing"},
+            })
+            local upload = assert(upload_record_repo.create(id, owner, 1, "application/octet-stream",
+                "app:uploads", id, "app:types.failing", metadata, "uploaded", nil, nil, true, 600000))
+            local queued = assert(process_worker.enqueue_upload_job(upload, true))
+            local db = assert(sql.get("app:db"))
+            local leased = admit_job(db, queued.job_id, 5)
+            local input, _, input_err = worker_dispatch.build_worker_input(leased)
+            test.is_nil(input_err, tostring(input_err))
+            test.not_nil(input)
+            local _, run_err = process_job.run(input)
+            test.is_nil(run_err, tostring(run_err))
+            test.eq(assert(upload_query_repo.get(id)).storage_state, "failed")
+            local events = assert(db:query("SELECT body FROM kickside_event WHERE external_id=$1 AND type=$2",
+                {id, uploads_events.TYPE.FAILED}))
+            test.eq(#events, 1)
+            test.not_nil(json.decode(events[1].body).callback_error, "undeliverable callback is recorded")
+            db:release()
+        end)
+
+        test.it("retries mixed callback failures before committing failure settlement", function()
+            local id, owner = uuid_v4(), "mixed-callback-" .. uuid_v4()
+            ensure_uploads_component(owner)
+            local metadata = upload_metadata(owner, "failed.bin")
+            local identity = metadata[IDENTITY_META_KEY]
+            local token = assert(upload_tokens.pack({upload_id = id,
+                function_id = "app:callback_probe", on_error_id = "app:callback_probe",
+                actor_id = identity.actor_id, actor_context = identity.actor_context}))
+            metadata.stage_metadata = {ocr_error = "storage_pointer_missing"}
+            metadata.__upload_tokens = {"unreadable-token", token}
+            local upload = assert(upload_record_repo.create(id, owner, 1, "application/octet-stream",
+                "app:uploads", id, "app:types.failing", metadata, "uploaded", nil, nil, true, 600000))
+            local queued = assert(process_worker.enqueue_upload_job(upload, true))
+            local db = assert(sql.get("app:db"))
+            local leased = admit_job(db, queued.job_id, 5)
+            local input, _, input_err = worker_dispatch.build_worker_input(leased)
+            test.is_nil(input_err, tostring(input_err))
+            test.not_nil(input)
+            local enqueue = jobs.enqueue_tx
+            local unavailable = errors.new({message = "callback admission unavailable", kind = errors.UNAVAILABLE, retryable = true})
+            jobs.enqueue_tx = function() return nil, unavailable end
+            local result, err = process_job.run(input)
+            jobs.enqueue_tx = enqueue
+            test.is_nil(result)
+            test.eq(err, unavailable)
+            test.eq(assert(upload_query_repo.get(id)).storage_state, "uploaded")
+            test.eq(#assert(db:query("SELECT id FROM kickside_event WHERE external_id=$1 AND type=$2",
+                {id, uploads_events.TYPE.FAILED})), 0)
+            local settled, settle_err = process_job.run(input)
+            test.is_nil(settle_err, tostring(settle_err))
+            test.not_nil(settled.job_error)
+            test.eq(assert(upload_query_repo.get(id)).storage_state, "failed")
+            test.eq(#assert(db:query("SELECT id FROM kickside_job WHERE job_type=$1 AND CAST(payload AS TEXT) LIKE $2",
+                {"kickside.uploads.service:callback_job", "%" .. id .. "%"})), 1)
+            local events = assert(db:query("SELECT body FROM kickside_event WHERE external_id=$1 AND type=$2",
+                {id, uploads_events.TYPE.FAILED}))
+            test.eq(#events, 1)
+            test.not_nil(json.decode(events[1].body).callback_error)
+            db:release()
+        end)
+
+        for _, state in ipairs({"pending", "running", "dead", "pruned"}) do
+            test.it("Retry fences the recorded processing job in state " .. state, function()
+                local id, owner = uuid_v4(), "retry-owner-" .. uuid_v4()
+                ensure_uploads_component(owner)
+                local upload = assert(upload_record_repo.create(id, owner, 1, "text/plain",
+                    "app:uploads", id, "app:types.failing", upload_metadata(owner, "retry.txt"),
+                    "uploaded", nil, nil, true, 600000))
+                local queued = assert(process_worker.enqueue_upload_job(upload, true))
+                local db = assert(sql.get("app:db"))
+                if state == "pruned" then
+                    assert(db:execute("DELETE FROM kickside_job WHERE id=$1", {queued.job_id}))
+                else
+                    assert(db:execute("UPDATE kickside_job SET status=$1 WHERE id=$2", {state, queued.job_id}))
+                end
+                local retried, err = upload_lib.retry_upload(id)
+                if state == "dead" or state == "pruned" then
+                    test.is_nil(err, tostring(err))
+                    test.not_nil(retried)
+                    local stored = assert(upload_query_repo.get(id))
+                    test.eq(stored.storage_state, "uploaded")
+                    test.eq(stored.processing_intent_state, "acknowledged")
+                    test.is_true(stored.processing_job_id ~= queued.job_id)
+                    local again, again_err = upload_lib.retry_upload(id)
+                    test.is_nil(again)
+                    test.is_true(errors.is(again_err, errors.CONFLICT))
+                else
+                    test.is_nil(retried)
+                    test.is_true(errors.is(err, errors.CONFLICT))
+                    test.eq(assert(upload_query_repo.get(id)).processing_job_id, queued.job_id)
+                end
+                db:release()
+            end)
+        end
+
+		test.it("settles an upload whose processing job dies without its handler", function()
+			local storage = fs.get("app:uploads")
+			local upload_id = "dead-job-" .. uuid_v4()
+			local user_id = "dead-job-user-" .. uuid_v4()
+			ensure_uploads_component(user_id)
+			local path = upload_id .. ".bin"
+			local bytes = "dead job bytes " .. upload_id
+			assert(storage:writefile(path, bytes))
+			local upload = assert(upload_record_repo.create(upload_id, user_id, #bytes, "application/octet-stream",
+				"app:uploads", path, "app:types.failing", upload_metadata(user_id, "dead.bin"), "uploaded",
+				hash.sha256(bytes), nil, true, 600000))
+
+			local queued, queue_err = process_worker.enqueue_upload_job(upload, true)
+			test.is_nil(queue_err)
+			local db = assert(sql.get("app:db"))
+			local dbtype = tostring(db:type())
+			-- The final attempt is killed by its supervisor: the handler never settles.
+			local job = admit_job(db, queued.job_id, 5)
+			test.is_nil(jobs_lifecycle.fail_job(db, job, dbtype, "job exceeded max_execution_ms", "infrastructure"))
+			test.eq(assert(db:query("SELECT status FROM kickside_job WHERE id=$1", { job.id }))[1].status, "dead")
+
+			local outcomes = assert(db:query(
+				"SELECT id FROM kickside_job WHERE worker_ref=$1 AND CAST(payload AS TEXT) LIKE $2",
+				{ "kickside.uploads.service:process_dead", "%" .. job.id .. "%" }))
+			test.eq(#outcomes, 1)
+			local outcome = admit_job(db, outcomes[1].id, 1)
+			local function deliver(): any
+				local output, deliver_err = worker_dispatch.execute_job(db, dbtype, outcome)
+				test.is_nil(deliver_err)
+				return output
+			end
+			local function failed_events(): integer
+				return #assert(db:query([[SELECT id FROM kickside_event
+					WHERE thread_id=$1 AND external_id=$2 AND type=$3]],
+					{ queued.thread_id, upload_id, uploads_events.TYPE.FAILED }))
+			end
+
+			deliver()
+			local settled = assert(upload_query_repo.get(upload_id))
+			test.eq("failed", settled.storage_state)
+			test.eq(1, failed_events())
+			local event = assert(db:query([[SELECT body FROM kickside_event
+				WHERE thread_id=$1 AND external_id=$2 AND type=$3]],
+				{ queued.thread_id, upload_id, uploads_events.TYPE.FAILED }))[1]
+			test.contains(tostring(json.decode(event.body).error), "job exceeded max_execution_ms")
+
+			-- A second delivery of the same outcome changes nothing.
+			deliver()
+			test.eq("failed", assert(upload_query_repo.get(upload_id)).storage_state)
+			test.eq(1, failed_events())
+
+			-- Dedup now treats the bytes as released, and retry accepts the upload.
+			local matched = assert(upload_query_repo.find_by_content_hash(user_id, hash.sha256(bytes), ""))
+			test.eq("failed", matched.storage_state)
+			assert(upload_record_repo.mark_failed_for_retry(upload_id, 600000))
+			-- A late delivery while the retry is being queued leaves it alone.
+			deliver()
+			test.eq("uploaded", assert(upload_query_repo.get(upload_id)).storage_state)
+			db:release()
+			assert(upload_record_repo.mark_storage_failed(upload_id))
+			local retried, retry_err = upload_lib.retry_upload(upload_id)
+			test.is_nil(retry_err)
+			test.eq(upload_id, retried.uuid)
+			local requeued = assert(upload_query_repo.get(upload_id))
+			test.eq("uploaded", requeued.storage_state)
+			test.is_true(requeued.processing_job_id ~= job.id)
+			-- A late delivery after the retry is queued leaves the new attempt alone.
+			local late_db = assert(sql.get("app:db"))
+			local _, late_err = worker_dispatch.execute_job(late_db, dbtype, outcome)
+			late_db:release()
+			test.is_nil(late_err)
+			test.eq("uploaded", assert(upload_query_repo.get(upload_id)).storage_state)
 		end)
 
 		test.it("fails an upload when a transcription stage reports a soft error code", function()
