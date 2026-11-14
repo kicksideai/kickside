@@ -363,6 +363,31 @@ local function define_tests()
     end)
 
     test.describe("kickside.sync reconfigure", function()
+        test.it("keeps the Data Sync declaration and source unchanged on a stale revision", function()
+            local installed = install_ok(declaration())
+            local db = assert(sql.get(DB))
+            local rows = assert(db:query("SELECT context_revision FROM kickside_components WHERE component_id=$1", {installed.id}))
+            local revision = assert(tonumber(rows[1].context_revision))
+            db:release()
+            local function edit(title, expression)
+                return exec:call(MANAGE, {action = "call", id = installed.id, method = "reconfigure", args = {
+                    declaration = declaration({title = title, trigger = {v = 2, source = "app.fixture:records",
+                        schedule = {type = "interval", expression = expression}, backfill = "all"}}),
+                    expected_revision = revision}})
+            end
+            local matched, matched_err = edit("Accepted revision", "3h")
+            test.is_nil(matched_err, tostring(matched_err))
+            test.not_nil(matched)
+            local refused, stale_err = edit("Stale revision", "9h")
+            test.is_nil(refused)
+            test.is_true(errors.is(stale_err, errors.CONFLICT), tostring(stale_err))
+            local main = read_drive(installed.id, "main") :: Map
+            test.eq(main.action.schedule.expression, "3h")
+            test.eq(main.applied.declaration.title, "Accepted revision")
+            test.eq(automations_lib.read_state(installed.id).title, "Accepted revision")
+            test.eq(automations_lib.read_public_state(installed.id).schedule_expression, "3h")
+        end)
+
         test.it("edits a legacy sync with no stored reconcile flag", function()
             local installed = install_ok(declaration({ enabled = false }))
             local db, db_err = sql.get(DB)

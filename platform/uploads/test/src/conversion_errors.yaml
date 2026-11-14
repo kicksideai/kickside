@@ -24,3 +24,16 @@ entries:
     imports:
       test: wippy.test:test
       records: kickside.uploads.persist:upload_record_repo
+
+  - name: types.classified_conversion
+    kind: registry.entry
+    meta:
+      type: upload.type
+      title: Classified document conversion
+    type_key: classified_conversion
+    priority: -10000
+    mime_types: [application/pdf]
+    extensions: [classifiedconversion]
+    pipeline:
+      - func: app:classified_documents_processor
+        options: {extract_images: true}

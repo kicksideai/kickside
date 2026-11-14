@@ -287,10 +287,6 @@ local function set_placement(tx: Executor, db: Executor, command: component_type
         return nil, (errors.new({ message = "component not found", kind = errors.NOT_FOUND }) :: error)
     end
 
-    local check_kind = kind_authority.checker("update")
-    local kind_err = check_kind(node.impl_id :: string)
-    if kind_err then return nil, kind_err end
-
     -- Determine the target parent.
     local new_parent_id = node.parent_id
     if payload.has_parent_arg then
@@ -357,10 +353,6 @@ local function set_placement(tx: Executor, db: Executor, command: component_type
         local derr
         descendants, derr = placement.descendants(tx, component_id)
         if derr then return nil, derr end
-        for _, descendant in ipairs(descendants or {}) do
-            local admission_err = check_kind(descendant.impl_id :: string)
-            if admission_err then return nil, admission_err end
-        end
     end
     local now_ts = time.now():utc():format_rfc3339()
 

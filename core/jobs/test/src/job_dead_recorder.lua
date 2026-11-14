@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Test-only dead handler: reads the dead job its outcome names and sends it to
 -- the process registered under RECEIVER.
 local process = require("process")

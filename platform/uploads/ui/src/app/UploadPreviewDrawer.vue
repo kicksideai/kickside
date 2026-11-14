@@ -43,7 +43,10 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-const notice = computed(() => (props.preview ? uploadNotice(props.preview) : null))
+const notice = computed(() => props.preview
+  ? uploadNotice(props.preview) || (props.preview.status === 'processing'
+    ? { tone: 'info', text: 'Processing. Retry is available if the job has stopped.' } : null)
+  : null)
 const previewMeta = computed(() => props.preview
   ? [typeLabel(props.preview), formatSize(props.preview.size), formatDateTime(props.preview.created_at)].filter(Boolean).join(' · ')
   : '')
@@ -135,11 +138,11 @@ const emit = defineEmits<{ (event: 'update:partsExpanded', value: boolean): void
         <Icon :icon="notice.tone === 'error' ? 'tabler:alert-triangle' : 'tabler:info-circle'" aria-hidden="true" />
         <span>{{ notice.text }}</span>
         <Button
-          v-if="notice.tone === 'error'"
+          v-if="notice.tone === 'error' || preview.status === 'processing'"
           type="button"
           class="kx-pv-retry"
           size="small"
-          severity="danger"
+          :severity="notice.tone === 'error' ? 'danger' : 'secondary'"
           outlined
           label="Retry"
           data-testid="uploads-preview-retry"

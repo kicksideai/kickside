@@ -103,3 +103,21 @@ entries:
       writer: kickside.core.threads.persist:writer
       teardown: kickside.core.threads.persist:teardown
       scaffold: app:prune_scaffold
+
+  - name: subject_retirement_test
+    kind: function.lua
+    meta: {type: test, suite: core_subject_retirement}
+    source: file://subject_retirement_test.lua
+    method: run
+    modules: [sql, uuid, security, contract, channel]
+    imports:
+      test: wippy.test:test
+      append: kickside.core.threads.persist:append
+      scaffold: app:prune_scaffold
+
+  - name: subject_retirement_class_policy
+    kind: security.policy
+    policy:
+      resources: prune_test
+      actions: threads.subjects.retire
+      effect: allow

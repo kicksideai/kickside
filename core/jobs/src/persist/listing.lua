@@ -30,7 +30,7 @@ local function invalid(): error
     return (errors.new({ message = "job history position is invalid or no longer available", kind = errors.INVALID }) :: error)
 end
 
-local function scoped_query(dbtype: string, collection: string, thread_ids: string[], filters: table?): any
+local function scoped_query(dbtype: string, collection: string, thread_ids: string[], filters: table?, owner_kind: string?): any
     local runs = collection == "runs"
     local opts = filters or {}
     local columns = runs and {
@@ -41,6 +41,7 @@ local function scoped_query(dbtype: string, collection: string, thread_ids: stri
         "max_attempts", "queue_tier", "idempotency_key", "last_error", "wake_enabled", "wake_control_pending", "execution_seq",
         "scheduled_at", "finished_at", "created_at", "updated_at",
     }
+    if owner_kind ~= nil and not runs then columns[#columns + 1] = "job_identity" end
     if dbtype == sql.type.POSTGRES then
         for i, column in ipairs(columns) do
             if column == "created_at" or column == "started_at" then
@@ -52,7 +53,7 @@ local function scoped_query(dbtype: string, collection: string, thread_ids: stri
     for i = 1, #thread_ids do marks[i] = "?" end
     local query = sql.builder.select(table.unpack(columns))
         :from(runs and "kickside_job_run" or "kickside_job")
-        :where(sql.builder.eq({ owner_kind = "thread" }))
+        :where(sql.builder.eq({ owner_kind = owner_kind or "thread" }))
         :where(sql.builder.expr("owner_id IN (" .. table.concat(marks, ",") .. ")", table.unpack(thread_ids)))
     local keys = runs and { "job_id", "thread_id", "status" } or { "thread_id", "status", "job_type", "queue_tier" }
     for _, key in ipairs(keys) do
@@ -65,7 +66,7 @@ local function scoped_query(dbtype: string, collection: string, thread_ids: stri
 end
 
 local function read(db: Executor, collection: string, thread_ids: string[], filters: table?,
-        limit: integer, after: table?): (table[]?, error?, boolean?)
+        limit: integer, after: table?, owner_kind: string?): (table[]?, error?, boolean?)
     if type(limit) ~= "number" or limit < 1 or limit ~= math.floor(limit) then
         return nil, (errors.new({ message = "job history limit must be a positive integer", kind = errors.INVALID }) :: error)
     end
@@ -87,7 +88,7 @@ local function read(db: Executor, collection: string, thread_ids: string[], filt
         local authorized = false
         for _, id in ipairs(thread_ids) do if id == after.owner_id then authorized = true end end
         if not authorized then return nil, invalid() end
-        local anchors, anchor_err = scoped_query(tostring(dbtype), collection, thread_ids, filters)
+        local anchors, anchor_err = scoped_query(tostring(dbtype), collection, thread_ids, filters, owner_kind)
             :where(sql.builder.eq({ id = after.id, owner_id = after.owner_id })):limit(1):run_with(db):query()
         local position_err = rows_error(anchors, anchor_err, "job history position read failed", "position.rows")
         if position_err then return nil, position_err end
@@ -95,13 +96,12 @@ local function read(db: Executor, collection: string, thread_ids: string[], filt
         position = anchors[1]
     end
     if #thread_ids == 0 then return {}, nil, false end
-    local query = scoped_query(tostring(dbtype), collection, thread_ids, filters)
+    local query = scoped_query(tostring(dbtype), collection, thread_ids, filters, owner_kind)
         :order_by(timestamp .. " DESC, id DESC"):limit(limit + 1)
     if position then
         local source = collection == "runs" and "kickside_job_run" or "kickside_job"
         local anchor = "(SELECT " .. timestamp .. " FROM " .. source .. " WHERE id=?)"
-        query = query:where(sql.builder.expr("(" .. timestamp .. " < " .. anchor
-            .. " OR (" .. timestamp .. " = " .. anchor .. " AND id < ?))", position.id, position.id, position.id))
+        query = query:where(sql.builder.expr("(" .. timestamp .. ", id) < (" .. anchor .. ", ?)", position.id, position.id))
     end
     local rows, err = query:run_with(db):query()
     local read_err = rows_error(rows, err, "failed to list job history", "history.rows")
@@ -115,6 +115,11 @@ end
 function listing.list_jobs(db: Executor, thread_ids: string[], filters: table?, limit: integer,
         after: table?): (table[]?, error?, boolean?)
     return read(db, "jobs", thread_ids, filters, limit, after)
+end
+
+function listing.list_owner_jobs(db: Executor, owner: {kind: string, id: string}, filters: table?, limit: integer,
+        after: table?): (table[]?, error?, boolean?)
+    return read(db, "jobs", {owner.id}, filters, limit, after, owner.kind)
 end
 
 function listing.list_job_runs(db: Executor, thread_ids: string[], filters: table?, limit: integer,
@@ -160,7 +165,7 @@ local function read_exact_jobs(db: Executor, ids: string[]): (table?, error?)
     local marks, values = selected.marks, selected.values
     if #values == 0 then return {}, nil end
     local rows, err = sql.builder.select(
-        "id", "thread_id", "owner_kind", "owner_id", "job_type", "status", "slot", DUE_COLUMN, "priority", "attempts",
+        "id", "thread_id", "owner_kind", "owner_id", "job_type", "payload", "status", "slot", DUE_COLUMN, "priority", "attempts",
         "max_attempts", "queue_tier", "idempotency_key", "last_error", "wake_enabled", "wake_control_pending", "execution_seq",
         "scheduled_at", "finished_at", "created_at", "updated_at"
     ):from("kickside_job")

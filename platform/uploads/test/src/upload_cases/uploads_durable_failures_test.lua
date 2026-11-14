@@ -362,6 +362,73 @@ end
 local function define_tests()
 	test.describe("kickside.uploads packaging", function()
 		test.before_all(require_integration_schema)
+        for _, spec in ipairs({
+            {name = "retries a transient converter failure and completes", bytes = "convert-unavailable", attempts = 2, succeeds = true},
+            {name = "terminates a permanent converter failure immediately", bytes = "convert-invalid", attempts = 1},
+            {name = "terminates persistent transient conversion at the existing attempt limit", bytes = "convert-unavailable", attempts = 5},
+            {name = "retries a transient page-resource failure and completes", bytes = "pages-unavailable", attempts = 2, succeeds = true},
+        }) do
+            test.it(spec.name, function()
+                local id, owner = uuid_v4(), "converter-user-" .. uuid_v4()
+                ensure_uploads_component(owner)
+                local storage = assert(fs.get("app:uploads"))
+                assert(storage:writefile(id, spec.bytes))
+                local upload = assert(upload_record_repo.create(id, owner, #spec.bytes,
+                    "application/pdf", "app:uploads", id,
+                    "app:types.classified_conversion", upload_metadata(owner, "document.pdf"), "uploaded"))
+                local queued = assert(process_worker.enqueue_upload_job(upload, true))
+                local db = assert(sql.get("app:db"))
+                local ok, err = pcall(function()
+                    for attempt = 1, spec.attempts do
+                        if spec.succeeds and attempt == 2 then assert(storage:writefile(id, "converts")) end
+                        local job = admit_job(db, queued.job_id, attempt)
+                        test.eq(job.max_attempts, 5)
+                        test.eq(job.attempts, attempt)
+                        local input, _, input_err = worker_dispatch.build_worker_input(job)
+                        test.is_nil(input_err)
+                        assert(input)
+                        test.eq(input.job.attempt_no, attempt)
+                        local output = process_job.main(input)
+                        local terminal = attempt == spec.attempts
+                        local stored = assert(upload_query_repo.get(id))
+                        local settled = assert(db:query("SELECT * FROM kickside_job WHERE id=$1", {queued.job_id}))[1]
+                        local events = assert(db:query([[SELECT type FROM kickside_event
+                            WHERE thread_id=$1 AND external_id=$2 AND type IN ($3,$4)]],
+                            {queued.thread_id, id, uploads_events.TYPE.FAILED, uploads_events.TYPE.COMPLETED}))
+                        if not terminal then
+                            test.is_false(output.ok)
+                            test.contains(output.error_native.message, spec.bytes == "pages-unavailable"
+                                and "page resources" or "conversion")
+                            test.eq(stored.storage_state, "uploaded")
+                            test.eq(settled.status, "running")
+                            test.eq(#events, 0)
+                            local _, failure = worker_dispatch.interpret_proc_result({value = output})
+                            test.not_nil(failure)
+                            test.is_nil(jobs_lifecycle.fail_job(db, job, tostring(db:type()), tostring(failure), "infrastructure"))
+                            local pending = assert(db:query("SELECT status FROM kickside_job WHERE id=$1", {queued.job_id}))[1]
+                            test.eq(pending.status, "pending")
+                        else
+                            test.eq(output.ok, spec.succeeds == true)
+                            test.eq(stored.storage_state, spec.succeeds and "completed" or "failed")
+                            test.eq(settled.status, "done")
+                            test.eq(#events, 1)
+                            test.eq(events[1].type, spec.succeeds and uploads_events.TYPE.COMPLETED or uploads_events.TYPE.FAILED)
+                            if spec.succeeds then
+                                test.is_true(output.output.success)
+                                test.eq(assert(artifact_parts_repo.read_primary_content(id)).content, "<!-- page 1 -->\nscan")
+                            else
+                                test.contains(output.error_native.message, spec.bytes == "convert-invalid"
+                                    and "document cannot be decoded" or "converter call deadline exceeded")
+                            end
+                        end
+                    end
+                end)
+                db:release()
+                assert(storage:remove(id))
+                if not ok then error(err) end
+            end)
+        end
+
 		test.it("excludes forged attachment cleanup state from admission and worker processing", function()
 			local user_id = "attachment-user-" .. uuid_v4()
 			ensure_uploads_component(user_id)
@@ -773,81 +840,38 @@ local function define_tests()
             db:release()
         end)
 
-        for _, intent in ipairs({true, false}) do
-            test.it("maintenance leaves live processing work alone with intent=" .. tostring(intent), function()
-                local id, owner = uuid_v4(), "live-upload-" .. uuid_v4()
+        for _, state in ipairs({"pending", "running", "dead", "pruned"}) do
+            test.it("Retry fences the recorded processing job in state " .. state, function()
+                local id, owner = uuid_v4(), "retry-owner-" .. uuid_v4()
                 ensure_uploads_component(owner)
-                local upload = assert(upload_record_repo.create(id, owner, 1, "application/octet-stream",
-                    "app:uploads", id, "app:types.failing", upload_metadata(owner, "active.bin"),
-                    "uploaded", nil, nil, intent, 600000))
+                local upload = assert(upload_record_repo.create(id, owner, 1, "text/plain",
+                    "app:uploads", id, "app:types.failing", upload_metadata(owner, "retry.txt"),
+                    "uploaded", nil, nil, true, 600000))
                 local queued = assert(process_worker.enqueue_upload_job(upload, true))
                 local db = assert(sql.get("app:db"))
-                for _, status in ipairs({"pending", "running"}) do
-                    assert(db:execute("UPDATE kickside_job SET status=$1 WHERE id=$2", {status, queued.job_id}))
-                    local result, err = funcs.call("kickside.uploads:retention")
-                    test.is_nil(err, tostring(err))
-                    test.is_true(result.success, tostring(result.error))
-                    local snapshot = assert(upload_query_repo.get(id))
-                    test.eq(snapshot.storage_state, "uploaded")
-                    local tx = assert(db:begin())
-                    local settled, settle_err = upload_record_repo.settle_storage_tx(tx, id, "failed", snapshot)
-                    assert(tx:rollback())
-                    test.is_nil(settle_err)
-                    test.is_false(settled, "the settlement transaction also fences active work")
-                end
-                db:release()
-            end)
-        end
-
-        test.it("maintenance leaves uploads that never enter processing alone", function()
-            local id, owner = uuid_v4(), "unqueued-upload-" .. uuid_v4()
-            assert(upload_record_repo.create(id, owner, 1, "application/octet-stream",
-                "app:uploads", id, "app:types.failing", {}, "uploaded"))
-            local result, err = funcs.call("kickside.uploads:retention")
-            test.is_nil(err, tostring(err))
-            test.is_true(result.success, tostring(result.error))
-            test.eq(assert(upload_query_repo.get(id)).storage_state, "uploaded")
-        end)
-
-        for _, pruned in ipairs({false, true}) do
-        for _, intent in ipairs({true, false}) do
-            test.it("maintenance settles an already-dead processing job with intent=" .. tostring(intent) .. " pruned=" .. tostring(pruned), function()
-                local id, owner = uuid_v4(), "older-upload-" .. uuid_v4()
-                ensure_uploads_component(owner)
-                local upload = assert(upload_record_repo.create(id, owner, 1, "application/octet-stream",
-                    "app:uploads", id, "app:types.failing", upload_metadata(owner, "earlier.bin"),
-                    "uploaded", nil, nil, intent, 600000))
-                local queued = assert(process_worker.enqueue_upload_job(upload, true))
-                local db = assert(sql.get("app:db"))
-                assert(upload_read_model.apply_events(queued.thread_id, {{id = uuid_v4(), seq = 1,
-                    type = uploads_events.TYPE.QUEUED, created_at = time.now():utc():format_rfc3339(),
-                    body = {upload_id = id, filename = "earlier.bin"}}}))
-                -- Published rows contain no outcome job. Older intent-less rows also lack a job pointer.
-                assert(db:execute("UPDATE kickside_job SET status='dead',last_error='execution ended',finished_at=$1 WHERE id=$2",
-                    {jobs_lifecycle.now_string(tostring(db:type())), queued.job_id}))
-                if pruned then
-                    -- A retained older attempt cannot replace the current intent's missing job.
-                    assert(db:execute([[INSERT INTO kickside_job(id,thread_id,job_type,worker_ref,status,owner_kind,owner_id,job_identity)
-                        SELECT $1,thread_id,job_type,worker_ref,'dead',owner_kind,owner_id,job_identity
-                        FROM kickside_job WHERE id=$2]], {uuid_v4(), queued.job_id}))
+                if state == "pruned" then
                     assert(db:execute("DELETE FROM kickside_job WHERE id=$1", {queued.job_id}))
+                else
+                    assert(db:execute("UPDATE kickside_job SET status=$1 WHERE id=$2", {state, queued.job_id}))
+                end
+                local retried, err = upload_lib.retry_upload(id)
+                if state == "dead" or state == "pruned" then
+                    test.is_nil(err, tostring(err))
+                    test.not_nil(retried)
+                    local stored = assert(upload_query_repo.get(id))
+                    test.eq(stored.storage_state, "uploaded")
+                    test.eq(stored.processing_intent_state, "acknowledged")
+                    test.is_true(stored.processing_job_id ~= queued.job_id)
+                    local again, again_err = upload_lib.retry_upload(id)
+                    test.is_nil(again)
+                    test.is_true(errors.is(again_err, errors.CONFLICT))
+                else
+                    test.is_nil(retried)
+                    test.is_true(errors.is(err, errors.CONFLICT))
+                    test.eq(assert(upload_query_repo.get(id)).processing_job_id, queued.job_id)
                 end
                 db:release()
-                local result, err = funcs.call("kickside.uploads:retention")
-                test.is_nil(err, tostring(err))
-                test.is_true(result.success, tostring(result.error))
-                test.eq(assert(upload_query_repo.get(id)).storage_state, "failed")
-                local again, again_err = funcs.call("kickside.uploads:retention")
-                test.is_nil(again_err)
-                test.is_true(again.success, tostring(again.error))
-                local verify = assert(sql.get("app:db"))
-                local events = assert(verify:query("SELECT id FROM kickside_event WHERE external_id=$1 AND type=$2",
-                    {id, uploads_events.TYPE.FAILED}))
-                test.eq(#events, 1)
-                verify:release()
             end)
-        end
-
         end
 
 		test.it("settles an upload whose processing job dies without its handler", function()

@@ -23,7 +23,7 @@ return {run = test.run_cases(function()
             end
         end)
         for _, method in ipairs({"update", "set_meta", "set_placement"}) do
-            test.it("refuses member " .. method .. " and system actor minting on a closed kind", function()
+            test.it("checks member " .. method .. " and refuses system actor minting on a closed kind", function()
                 local group = uuid.v4()
                 local owner = assert(security.new_actor(uuid.v4(), {}))
                 local client = assert(assert(contract.get("kickside.component:component_service")):with_actor(owner):open())
@@ -47,13 +47,17 @@ return {run = test.run_cases(function()
                 local result, err = funcs.new():with_actor(member):with_scope(scope):call("app:kind_actor_probe",
                     {method = method, request = request})
                 test.is_nil(err)
-                test.is_false(result.success)
-                test.eq(result.kind, errors.PERMISSION_DENIED)
-                test.eq(result.details.code, "component_kind_mutation_denied")
+                if method == "set_placement" then
+                    test.is_true(result.success, tostring(result.error))
+                else
+                    test.is_false(result.success)
+                    test.eq(result.kind, errors.PERMISSION_DENIED)
+                    test.eq(result.details.code, "component_kind_mutation_denied")
+                end
                 local stored = assert(client:get({component_id = id}))
                 test.is_true(stored.success)
                 test.is_nil(stored.meta.title)
-                test.is_true(stored.position ~= "z")
+                test.eq(stored.position == "z", method == "set_placement")
                 local db = assert(sql.get(component_ops.db_id()))
                 local rows = assert(db:query("SELECT private_context, context_revision FROM kickside_components WHERE component_id=$1", {id}))
                 assert(db:release())
