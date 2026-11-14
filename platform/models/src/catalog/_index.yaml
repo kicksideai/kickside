@@ -43,5 +43,17 @@ entries:
     kind: function.lua
     source: file://resolver.lua
     method: resolve
+    security:
+      policies: [kickside.models.catalog:catalog_read]
     imports:
       model_catalog: kickside.models.catalog:model_catalog
+
+  - name: catalog_read
+    kind: security.policy
+    meta:
+      private: true
+      comment: Model readers open the private snapshot inside their execution boundary.
+    policy:
+      resources: [kickside.models:cache]
+      actions: [store.get, store.key.get]
+      effect: allow
