@@ -2,7 +2,6 @@ version: "1.0"
 namespace: kickside.settings
 
 entries:
-
   - name: definition
     kind: ns.definition
     readme: file://README.md
@@ -11,7 +10,6 @@ entries:
       description: Runtime, admin-editable, DB-backed settings. Modules declare typed kickside.settings:definition entries; the DB stores only admin overrides; a per-node store.memory cache (warmed at boot, refreshed on every committed change across the cluster) serves reads; all writes go through one canonical writer. Exposed as the kickside.settings:settings contract.
 
   # ─── Dependency interface (ns.requirement) ───────────────────────────
-
   - name: target_db
     kind: ns.requirement
     meta:
@@ -29,7 +27,6 @@ entries:
   # Resolved DB id for the writer. The target_db requirement rewrites .meta.db_id
   # here; settings_types.db_id() reads it back so the writer binds the
   # configured database, not a hardcoded literal.
-
   - name: db_config
     kind: registry.entry
     meta:
@@ -63,7 +60,6 @@ entries:
         path: .host
 
   # ─── Change propagation (process groups) ─────────────────────────────
-
   - name: changes
     kind: pg.scope
     meta:
@@ -103,7 +99,6 @@ entries:
       effect: allow
 
   # ─── Override cache (store.memory) ───────────────────────────────────
-
   - name: cache
     kind: store.memory
     meta:
@@ -114,7 +109,6 @@ entries:
     max_size: 1000
 
   # ─── Settings domain ─────────────────────────────────────────────────
-
   - name: settings_types
     kind: library.lua
     source: file://types.lua
@@ -157,16 +151,12 @@ entries:
     source: file://secrets.lua
     modules: [crypto, base64, env]
 
-    imports:
-      secret_cipher: kickside.contract:secret_cipher
-
   # Per-method dispatchers over the single settings.lua source; each is one
   # contract method. The import set is the transitive closure of settings.lua's
   # libraries (Wippy resolves a library's require() against the leaf entry).
   # Reads retain the caller identity so declarative read_access can check the
   # admin capability. Their narrow policies add cache/registry access and the
   # configured DB and encryption key only for the function invocation.
-
   - name: reader_cache
     kind: security.policy
     meta: { comment: Settings read functions may read and warm the override cache. }
@@ -202,7 +192,7 @@ entries:
     kind: security.policy
     meta: { comment: Settings read functions may decrypt stored secret overrides. }
     policy:
-      resources: [kickside.settings.env:encryption_key]
+      resources: [ENCRYPTION_KEY]
       actions: [env.get]
       effect: allow
 
@@ -239,7 +229,6 @@ entries:
       policies:
         - kickside.settings:change_publisher
         - kickside.settings:reader_cache
-        - kickside.settings:reader_secrets
 
   - name: unset
     kind: function.lua
@@ -256,7 +245,6 @@ entries:
       policies:
         - kickside.settings:change_publisher
         - kickside.settings:reader_cache
-        - kickside.settings:reader_secrets
 
   - name: list
     kind: function.lua
@@ -295,7 +283,6 @@ entries:
         - kickside.settings:reader_secrets
 
   # ─── Boot warmer ─────────────────────────────────────────────────────
-
   - name: cache_bootloader
     kind: function.lua
     meta:
@@ -310,15 +297,10 @@ entries:
     imports:
       settings_writer: kickside.settings.persist:settings_writer
 
-    security:
-      policies:
-        - kickside.settings:reader_secrets
-
   # ─── UI component (the settings editor as a Wippy web component) ──────
   # Settings is a self-contained component: it BUILDS (ui/), SHIPS (static/), and
   # SERVES (its own http.static) its admin UI, exposed as a view.component the
   # host mounts by tag. No dependency on the app to host the bundle.
-
   - name: ui_server
     kind: ns.requirement
     meta:
@@ -434,7 +416,6 @@ entries:
 
   # Module-owned System tab: installing this module adds the Settings tab to the
   # System page; uninstalling removes it. The host discovers it at /settings/tabs.
-
   - name: tab.settings
     kind: registry.entry
     meta:
@@ -449,7 +430,6 @@ entries:
     access: kickside.settings.api:put_settings.endpoint
 
   # ─── Contract + canonical binding ────────────────────────────────────
-
   - name: settings
     kind: contract.definition
     meta:
@@ -540,15 +520,3 @@ entries:
     meta:
       comment: Migration framework for the module read-model tables.
     component: wippy/migration
-
-  - name: encryption_key
-    kind: ns.requirement
-    default: ENCRYPTION_KEY
-    targets:
-      - {entry: kickside.settings.env:encryption_key, path: .default}
-      - {entry: kickside.settings:reader_secrets, path: '.policy.resources +='}
-
-  - name: dependency.contract
-    kind: ns.dependency
-    component: kickside/contract
-    version: '*'

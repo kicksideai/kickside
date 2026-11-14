@@ -3,7 +3,6 @@ namespace: kickside.uploads.api
 
 entries:
   # kickside.uploads.api:complete_handler
-
   - name: complete_handler
     kind: function.lua
     meta:
@@ -22,12 +21,7 @@ entries:
     pool:
       size: 5
 
-    security:
-      policies:
-        - kickside.uploads:token_call
-
   # kickside.uploads.api:complete_handler.endpoint
-
   - name: complete_handler.endpoint
     kind: http.endpoint
     meta:
@@ -38,7 +32,6 @@ entries:
     path: /uploads/complete
 
   # kickside.uploads.api:delete_handler
-
   - name: delete_handler
     kind: function.lua
     meta:
@@ -63,7 +56,6 @@ entries:
       size: 2
 
   # kickside.uploads.api:delete_handler.endpoint
-
   - name: delete_handler.endpoint
     kind: http.endpoint
     meta:
@@ -74,7 +66,6 @@ entries:
     path: /uploads/{uuid}
 
   # kickside.uploads.api:retry_handler
-
   - name: retry_handler
     kind: function.lua
     meta:
@@ -91,12 +82,7 @@ entries:
     pool:
       size: 2
 
-    security:
-      policies:
-        - kickside.uploads:token_call
-
   # kickside.uploads.api:retry_handler.endpoint
-
   - name: retry_handler.endpoint
     kind: http.endpoint
     meta:
@@ -107,7 +93,6 @@ entries:
     path: /uploads/{uuid}/retry
 
   # kickside.uploads.api:get_handler
-
   - name: get_handler
     kind: function.lua
     meta:
@@ -128,7 +113,6 @@ entries:
       size: 2
 
   # kickside.uploads.api:get_handler.endpoint
-
   - name: get_handler.endpoint
     kind: http.endpoint
     meta:
@@ -139,7 +123,6 @@ entries:
     path: /uploads/{uuid}
 
   # kickside.uploads.api:list_handler
-
   - name: list_handler
     kind: function.lua
     meta:
@@ -159,7 +142,6 @@ entries:
       size: 2
 
   # kickside.uploads.api:list_handler.endpoint
-
   - name: list_handler.endpoint
     kind: http.endpoint
     meta:
@@ -183,7 +165,6 @@ entries:
       uploads_resources: kickside.uploads.binding:uploads_resources
 
   # kickside.uploads.api:presigned_handler
-
   - name: presigned_handler
     kind: function.lua
     meta:
@@ -202,12 +183,7 @@ entries:
     pool:
       size: 5
 
-    security:
-      policies:
-        - kickside.uploads:token_call
-
   # kickside.uploads.api:presigned_handler.endpoint
-
   - name: presigned_handler.endpoint
     kind: http.endpoint
     meta:
@@ -218,7 +194,6 @@ entries:
     path: /uploads/presigned
 
   # kickside.uploads.api:upload_handler
-
   - name: upload_handler
     kind: function.lua
     meta:
@@ -237,12 +212,7 @@ entries:
     pool:
       size: 5
 
-    security:
-      policies:
-        - kickside.uploads:token_call
-
   # kickside.uploads.api:upload_handler.endpoint
-
   - name: upload_handler.endpoint
     kind: http.endpoint
     meta:
@@ -253,7 +223,6 @@ entries:
     path: /uploads
 
   # kickside.uploads.api:raw_handler
-
   - name: raw_handler
     kind: function.lua
     meta:
@@ -274,12 +243,7 @@ entries:
     pool:
       size: 4
 
-    security:
-      policies:
-        - kickside.uploads:token_call
-
   # kickside.uploads.api:raw_handler.endpoint
-
   - name: raw_handler.endpoint
     kind: http.endpoint
     meta:
@@ -290,7 +254,6 @@ entries:
     path: /uploads/{uuid}/raw
 
   # kickside.uploads.api:artifacts_handler
-
   - name: artifacts_handler
     kind: function.lua
     meta:
@@ -313,12 +276,7 @@ entries:
     pool:
       size: 4
 
-    security:
-      policies:
-        - kickside.uploads:token_call
-
   # kickside.uploads.api:artifacts_handler.endpoint
-
   - name: artifacts_handler.endpoint
     kind: http.endpoint
     meta:
@@ -329,7 +287,6 @@ entries:
     path: /uploads/{uuid}/artifacts
 
   # kickside.uploads.api:artifact_raw_handler
-
   - name: artifact_raw_handler
     kind: function.lua
     meta:
@@ -352,12 +309,7 @@ entries:
     pool:
       size: 4
 
-    security:
-      policies:
-        - kickside.uploads:token_call
-
   # kickside.uploads.api:artifact_raw_handler.endpoint
-
   - name: artifact_raw_handler.endpoint
     kind: http.endpoint
     meta:

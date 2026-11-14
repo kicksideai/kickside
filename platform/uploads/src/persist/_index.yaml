@@ -2,7 +2,6 @@ version: "1.0"
 namespace: kickside.uploads.persist
 
 entries:
-
   - name: artifact_schema
     kind: library.lua
     meta:
@@ -89,8 +88,10 @@ entries:
 
   - name: upload_tokens
     kind: library.lua
-    source: file://upload_tokens_client.lua
-    modules: [funcs]
+    meta:
+      comment: Encrypted token packing for upload completion callbacks, including actor_id/actor_context and optional trace_context.
+    source: file://upload_tokens.lua
+    modules: [crypto, base64, json, env]
 
   - name: upload_read_model
     kind: library.lua
@@ -108,7 +109,6 @@ entries:
       read_model_owner_delete: kickside.uploads.persist:read_model_owner_delete
   # Foreground user-operation appends. Durable
   # processing milestones are emitted by the core job engine.
-
   - name: uploads_events
     kind: library.lua
     meta:
@@ -133,7 +133,6 @@ entries:
 
   # Owner delivery runs under this function's realtime notify authority; the
   # projection names the committed upload, never its recipient.
-
   - name: notify_owner
     kind: function.lua
     meta:
@@ -191,43 +190,3 @@ entries:
         - kickside.uploads.security:projection_public_meta
     imports:
       component: kickside.component:component
-
-  - name: token_pack
-    kind: function.lua
-    source: file://upload_tokens.lua
-    method: pack_entry
-    modules: [crypto, base64, json, env]
-    imports:
-      secret_cipher: kickside.contract:secret_cipher
-    security:
-      policies: [kickside.uploads:secret_key_access]
-
-  - name: token_unpack
-    kind: function.lua
-    source: file://upload_tokens.lua
-    method: unpack_entry
-    modules: [crypto, base64, json, env]
-    imports:
-      secret_cipher: kickside.contract:secret_cipher
-    security:
-      policies: [kickside.uploads:secret_key_access]
-
-  - name: token_pack_read
-    kind: function.lua
-    source: file://upload_tokens.lua
-    method: pack_read_entry
-    modules: [crypto, base64, json, env]
-    imports:
-      secret_cipher: kickside.contract:secret_cipher
-    security:
-      policies: [kickside.uploads:secret_key_access]
-
-  - name: token_unpack_read
-    kind: function.lua
-    source: file://upload_tokens.lua
-    method: unpack_read_entry
-    modules: [crypto, base64, json, env]
-    imports:
-      secret_cipher: kickside.contract:secret_cipher
-    security:
-      policies: [kickside.uploads:secret_key_access]

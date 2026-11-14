@@ -150,7 +150,7 @@ local function decrypt_secret(raw: any): (any?, any?)
     if raw == nil or raw == "" then return {} end
     local plain, err = models_secrets.decrypt(raw)
     if err then return nil, err end
-    local secret, decode_err = json.decode(plain :: string)
+    local secret, decode_err = json.decode(plain)
     if decode_err then return nil, decode_err end
     if type(secret) ~= "table" then return nil, "model provider secret must be an object" end
     return secret

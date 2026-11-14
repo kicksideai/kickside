@@ -2,7 +2,6 @@ version: "1.0"
 namespace: kickside.oauth.api
 
 entries:
-
   - name: discover_providers
     kind: function.lua
     meta:
@@ -15,7 +14,6 @@ entries:
     method: handler
 
   # kickside.oauth.api:discover_providers.endpoint
-
   - name: discover_providers.endpoint
     kind: http.endpoint
     meta:
@@ -25,7 +23,6 @@ entries:
     path: /oauth/providers/discover
 
   # kickside.oauth.api:get_connection_details
-
   - name: get_connection_details
     kind: function.lua
     meta:
@@ -44,7 +41,6 @@ entries:
     method: handler
 
   # kickside.oauth.api:get_connection_details.endpoint
-
   - name: get_connection_details.endpoint
     kind: http.endpoint
     meta:
@@ -54,7 +50,6 @@ entries:
     path: /oauth/connections/{component_id}
 
   # kickside.oauth.api:get_provider_info
-
   - name: get_provider_info
     kind: function.lua
     meta:
@@ -67,7 +62,6 @@ entries:
     method: handler
 
   # kickside.oauth.api:get_provider_info.endpoint
-
   - name: get_provider_info.endpoint
     kind: http.endpoint
     meta:
@@ -77,7 +71,6 @@ entries:
     path: /oauth/providers/{provider_name}
 
   # kickside.oauth.api:init_connection
-
   - name: init_connection
     kind: function.lua
     meta:
@@ -98,7 +91,6 @@ entries:
     method: handler
 
   # kickside.oauth.api:init_connection.endpoint
-
   - name: init_connection.endpoint
     kind: http.endpoint
     meta:
@@ -108,7 +100,6 @@ entries:
     path: /oauth/providers/{provider_name}/init
 
   # kickside.oauth.api:update_connection
-
   - name: update_consistency
     kind: library.lua
     meta:
@@ -133,12 +124,7 @@ entries:
       update_consistency: kickside.oauth.api:update_consistency
     method: handler
 
-    security:
-      policies:
-        - kickside.oauth:secret_key_access
-
   # kickside.oauth.api:update_connection.endpoint
-
   - name: update_connection.endpoint
     kind: http.endpoint
     meta:

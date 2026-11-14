@@ -3,7 +3,7 @@ local sql = require("sql")
 local json = require("json")
 local time = require("time")
 local env = require("env")
-local secret_cipher = require("secret_cipher")
+local crypto = require("crypto")
 local base64 = require("base64")
 local oauth_types = require("oauth_types")
 local M = {}
@@ -34,10 +34,7 @@ local function get_db(): (sql.DB?, string?)
 end
 
 local function get_encryption_key(): (string?, string?)
-    local variable, err = env.get("kickside.oauth.env:encryption_key")
-    if err then return nil, "Failed to get encryption key: " .. tostring(err) end
-    local key
-    key, err = env.get(variable)
+    local key, err = env.get("ENCRYPTION_KEY")
     if err then
         return nil, "Failed to get encryption key: " .. err
     end
@@ -50,9 +47,17 @@ local function get_encryption_key(): (string?, string?)
         return nil, "ENCRYPTION_KEY must be 64 hex characters (32 bytes)"
     end
 
-    local decoded, decode_err = secret_cipher.decode_key(key)
-    if decode_err then return nil, "ENCRYPTION_KEY contains invalid hex characters" end
-    return decoded
+    local binary_key = ""
+    for i = 1, #key, 2 do
+        local hex_byte = key:sub(i, i + 1)
+        local byte = tonumber(hex_byte, 16)
+        if not byte then
+            return nil, "ENCRYPTION_KEY contains invalid hex characters"
+        end
+        binary_key = binary_key .. string.char(byte)
+    end
+
+    return binary_key
 end
 
 local function encrypt_oauth_data(oauth_data: oauth_types.SecretPayload, key: string): (string?, string?)
@@ -67,13 +72,13 @@ local function encrypt_oauth_data(oauth_data: oauth_types.SecretPayload, key: st
     end
 
     -- Then encrypt
-    local encrypted, err = secret_cipher.encrypt(json_data, key)
+    local encrypted, err = crypto.encrypt.aes(json_data, key)
     if err then
         return nil, "Failed to encrypt OAuth data: " .. err
     end
 
     -- base64 so the ciphertext is valid UTF-8 text on both SQLite and Postgres.
-    return base64.encode(encrypted :: string)
+    return base64.encode(encrypted)
 end
 
 local function decrypt_oauth_data(encrypted_data: string?, key: string): (oauth_types.SecretPayload?, string?)
@@ -92,13 +97,13 @@ local function decrypt_oauth_data(encrypted_data: string?, key: string): (oauth_
     if derr then
         return nil, "Failed to decode OAuth data: " .. derr
     end
-    local decrypted, err = secret_cipher.decrypt(decoded, key)
+    local decrypted, err = crypto.decrypt.aes(decoded, key)
     if err then
         return nil, "Failed to decrypt OAuth data: " .. err
     end
 
     -- Then JSON decode
-    local data, err = json.decode(decrypted :: string)
+    local data, err = json.decode(decrypted)
     if err then
         return nil, "Failed to decode decrypted JSON: " .. err
     end
@@ -116,13 +121,13 @@ local function encrypt_access_token(access_token: string?, key: string): (string
         return nil, nil -- No token to encrypt
     end
 
-    local encrypted, err = secret_cipher.encrypt(access_token, key)
+    local encrypted, err = crypto.encrypt.aes(access_token, key)
     if err then
         return nil, "Failed to encrypt access token: " .. err
     end
 
     -- base64 so the ciphertext is valid UTF-8 text on both SQLite and Postgres.
-    return base64.encode(encrypted :: string)
+    return base64.encode(encrypted)
 end
 
 -- Decrypt just the access token
@@ -135,7 +140,7 @@ local function decrypt_access_token(encrypted_token: string?, key: string): (str
     if derr then
         return nil, "Failed to decode access token: " .. derr
     end
-    local decrypted, err = secret_cipher.decrypt(decoded, key)
+    local decrypted, err = crypto.decrypt.aes(decoded, key)
     if err then
         return nil, "Failed to decrypt access token: " .. err
     end

@@ -1,7 +1,6 @@
 version: "1.0"
 namespace: kickside.settings.service
 entries:
-
   - name: cache_bootloader
     kind: function.lua
     source: file://cache_bootloader.lua
@@ -10,14 +9,9 @@ entries:
     imports:
       settings_writer: kickside.settings.persist:settings_writer
 
-    security:
-      policies:
-        - kickside.settings:reader_secrets
-
   # Keeps this node's override cache at the committed revision and tells local
   # subscribers after each change. The .host on keeper.service is injected by the
   # kickside.settings:process_host requirement.
-
   - name: keeper
     kind: process.lua
     meta:
@@ -29,9 +23,6 @@ entries:
       settings_cache: kickside.settings:settings_cache
       settings_writer: kickside.settings.persist:settings_writer
       settings_changes: kickside.settings:settings_changes
-    security:
-      policies:
-        - kickside.settings:reader_secrets
 
   - name: keeper.service
     kind: process.service

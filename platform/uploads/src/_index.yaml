@@ -6,7 +6,6 @@ namespace: kickside.uploads
 # artifact policy lives here.
 
 entries:
-
   - name: retention
     kind: function.lua
     meta:
@@ -50,7 +49,6 @@ entries:
   # universally-dropped-in stages). Specific types (documents/archive) outrank it on
   # their own mime/ext; anything else lands here with no conversion of its own. The
   # ".*" mime is matched as a Lua pattern by upload_type, so it accepts all uploads.
-
   - name: types.generic
     kind: registry.entry
     meta:
@@ -166,7 +164,6 @@ entries:
   # ─── Uploads page UI (self-served web component) ──────────────────────
   # The page web component renders the file list + drag-drop upload over the
   # native kickside/uploads HTTP API; it ships and serves its own built bundle.
-
   - name: ui_server
     kind: ns.requirement
     meta:
@@ -219,7 +216,6 @@ entries:
   # Module-owned nav entry: installing this module adds the Uploads surface to the
   # nav; uninstalling removes it. The host bundle already knows how to render
   # route_name "uploads" (mounts the kickside-uploads web component by tag).
-
   - name: nav_item
     kind: registry.entry
     meta:
@@ -238,7 +234,6 @@ entries:
   # Serve original bytes and artifact bytes so the Uploads UI can render a file
   # preview through the shared wc-resource-view viewer. Attach to the firewalled
   # /api/v1 router.
-
   - name: api_router
     kind: ns.requirement
     meta:
@@ -458,7 +453,6 @@ entries:
     targets:
     - entry: kickside.uploads.binding:uploads_resources
       path: .imports.storage_backend
-
   - name: processing_hooks
     kind: ns.requirement
     default: kickside.uploads.binding:processing_hooks_default
@@ -472,7 +466,6 @@ entries:
       path: .imports.processing_hooks
     - entry: kickside.uploads:retention
       path: .imports.processing_hooks
-
   - name: storage_runtime_policy
     kind: ns.requirement
     default: kickside.uploads.security:storage_runtime_default
@@ -503,29 +496,3 @@ entries:
       access_policy: kickside.component:access_policy
       execution_identity: kickside.execution:execution_identity
       types: kickside.uploads:types
-
-  - name: encryption_key
-    kind: ns.requirement
-    default: ENCRYPTION_KEY
-    targets:
-      - {entry: kickside.uploads.env:encryption_key, path: .default}
-      - {entry: kickside.uploads:secret_key_access, path: '.policy.resources +='}
-
-  - name: secret_key_access
-    kind: security.policy
-    meta: {service_only: true}
-    policy:
-      resources: [kickside.uploads.env:encryption_key]
-      actions: [env.get]
-      effect: allow
-
-  - name: token_call
-    kind: security.policy
-    policy:
-      resources:
-        - kickside.uploads.persist:token_pack
-        - kickside.uploads.persist:token_unpack
-        - kickside.uploads.persist:token_pack_read
-        - kickside.uploads.persist:token_unpack_read
-      actions: [funcs.call, funcs.security]
-      effect: allow

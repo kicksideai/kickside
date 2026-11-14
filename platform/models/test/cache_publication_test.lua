@@ -26,15 +26,13 @@ local function define_tests()
                 local timeout = time.after("5s")
                 local selected = channel.select({ messages:case_receive(), timeout:case_receive() })
                 if selected.channel ~= messages then error("cache publication probe timed out") end
-                return selected.value.event, selected.value.resume_pid
+                return selected.value.event
             end
             local older, older_err = process.spawn("app:cache_publication_probe", "app:processes", {
                 parent = tostring(process.pid()), action = "older",
             })
             test.is_nil(older_err)
-            local paused, resume_pid = receive()
-            test.eq(paused, "paused")
-            test.not_nil(resume_pid)
+            test.eq(receive(), "paused")
             local _, newer_err = process.spawn("app:cache_publication_probe", "app:processes", {
                 parent = tostring(process.pid()), action = action, profile = PROFILE, card = CARD,
             })
@@ -44,7 +42,7 @@ local function define_tests()
             local selected = channel.select({ messages:case_receive(), deadline:case_receive() })
             local published_early = selected.channel == messages
             -- Always release the paused reader, including on an unfixed runtime.
-            process.send(resume_pid, "models.cache.resume", true)
+            process.send(tostring(older), "models.cache.resume", true)
             local completed = published_early and 1 or 0
             while completed < 2 do
                 local event = receive()

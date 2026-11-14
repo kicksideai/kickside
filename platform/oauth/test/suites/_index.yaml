@@ -9,14 +9,12 @@ namespace: app
 # published.
 
 entries:
-
   - name: dep.wippy.test
     kind: ns.dependency
     version: "*"
     component: wippy/test
 
   # ─── Host resources ──────────────────────────────────────────────────
-
   - name: db
     kind: db.sql.sqlite
     foreign_keys: true
@@ -91,7 +89,6 @@ entries:
           resolve: app:scope_resolver_stub
 
   # ─── Suites ──────────────────────────────────────────────────────────
-
   - name: packaging_test
     kind: function.lua
     meta:
@@ -196,7 +193,6 @@ entries:
     kind: registry.entry
     meta: { oauth_provider: authorized-delete-test }
     data: {}
-
   - name: authorized_connection_seed
     kind: function.lua
     source: file://authorized_connection_delete_test.lua
@@ -209,20 +205,17 @@ entries:
       interleave: app:authorized_delete_interleave
       delete_binding: app:interleaved_delete_binding
       deletion_worker: app:deletion_test_worker
-
   - name: authorized_delete_interleave
     kind: library.lua
     source: file://authorized_delete_interleave.lua
     imports:
       refresh_schedule: kickside.oauth:refresh_schedule
       pending_delete: kickside.component.persist:pending_delete
-
   - name: authorized_delete_context
     kind: library.lua
     source: file://authorized_delete_context.lua
     imports:
       interleave: app:authorized_delete_interleave
-
   - name: interleaved_delete_binding
     kind: library.lua
     source: file://../src_link/binding/delete_connection_func.lua
@@ -230,7 +223,6 @@ entries:
       ctx: app:authorized_delete_context
       refresh_schedule: app:authorized_delete_interleave
       oauth_repo: kickside.oauth.persist:oauth_repo
-
   - name: authorized_connection_delete_test
     kind: function.lua
     source: file://authorized_connection_delete_test.lua
@@ -391,7 +383,6 @@ entries:
       test: wippy.test:test
 
   # ─── Dependencies ────────────────────────────────────────────────────
-
   - name: dep.kickside.oauth
     kind: ns.dependency
     version: '*'
@@ -521,7 +512,6 @@ entries:
       connector_contract:
         implementation_id: app:refresh_fixture_connector
         context_values: {}
-
   - name: refresh_fixture_connector
     kind: contract.binding
     contracts:
@@ -530,7 +520,6 @@ entries:
           init_oauth: app:refresh_fixture_unused
           handle_callback: app:refresh_fixture_unused
           refresh_token: app:refresh_fixture_effect
-
   - name: refresh_fixture_effect
     kind: function.lua
     source: file://refresh_provider_fixture.lua
@@ -538,7 +527,6 @@ entries:
     modules: [sql, security, time]
     imports:
       oauth_token_repo: kickside.oauth.persist:oauth_token_repo
-
   - name: refresh_fixture_unused
     kind: function.lua
     source: file://refresh_provider_fixture.lua
@@ -550,15 +538,12 @@ entries:
   - name: refresh_http_fixture
     kind: library.lua
     source: file://refresh_http_fixture.lua
-
   - name: refresh_context_fixture
     kind: library.lua
     source: file://refresh_context_fixture.lua
-
   - name: refresh_creds_fixture
     kind: library.lua
     source: file://refresh_creds_fixture.lua
-
   - name: refresh_connector_with_transport_adapter
     kind: library.lua
     source: file://../src_link/binding/refresh_token_func.lua
@@ -570,7 +555,6 @@ entries:
       creds: app:refresh_creds_fixture
       form: kickside.oauth:form
       provider_errors: kickside.oauth:provider_errors
-
   - name: refresh_token_http_test
     kind: function.lua
     meta: { type: test, suite: kickside_oauth }
@@ -602,20 +586,17 @@ entries:
     modules: [http, sql, time]
     imports:
       oauth_repo: kickside.oauth.persist:oauth_repo
-
   - name: refresh_endpoint_fixture.endpoint
     kind: http.endpoint
     meta: { router: public_api }
     method: POST
     path: /test-token
     func: refresh_endpoint_fixture
-
   - name: refresh_test_client
     kind: env.variable
     variable: OAUTH_HTTP_TEST_CLIENT
     storage: app:env_storage
     default: local-test-client
-
   - name: refresh_endpoint_provider
     kind: registry.entry
     meta: { oauth_provider: http-refresh-test }
@@ -625,7 +606,6 @@ entries:
         context_values:
           oauth_token_endpoint: http://127.0.0.1:19145/public/test-token
           oauth_client_id_env: app:refresh_test_client
-
   - name: refresh_network_provider
     kind: registry.entry
     meta: { oauth_provider: http-refresh-network-test }
@@ -635,7 +615,6 @@ entries:
         context_values:
           oauth_token_endpoint: https://127.0.0.1:19145/public/test-token
           oauth_client_id_env: app:refresh_test_client
-
   - name: refresh_endpoint_test
     kind: function.lua
     meta: { type: test, suite: kickside_oauth }
@@ -678,7 +657,6 @@ entries:
     modules: [http, json]
     imports:
       form: kickside.oauth:form
-
   - name: protocol_token
     kind: function.lua
     source: file://protocol_fixture.lua
@@ -686,14 +664,12 @@ entries:
     modules: [http, json]
     imports:
       form: kickside.oauth:form
-
   - name: protocol_token.endpoint
     kind: http.endpoint
     meta: {router: "app:public_api"}
     method: POST
     path: /protocol-token
     func: app:protocol_token
-
   - name: protocol_callback
     kind: function.lua
     source: file://../src_link/binding/handle_callback_func.lua
@@ -704,7 +680,6 @@ entries:
       form: kickside.oauth:form
       provider_errors: kickside.oauth:provider_errors
       token_request: kickside.oauth.client:token_request
-
   - name: protocol_refresh
     kind: function.lua
     source: file://../src_link/binding/refresh_token_func.lua
@@ -715,7 +690,6 @@ entries:
       form: kickside.oauth:form
       provider_errors: kickside.oauth:provider_errors
       token_request: kickside.oauth.client:token_request
-
   - name: protocol_init
     kind: function.lua
     source: file://../src_link/binding/init_oauth_func.lua
@@ -723,7 +697,6 @@ entries:
     modules: [ctx, time, hash, crypto, base64, logger]
     imports:
       creds: app:protocol_creds
-
   - name: protocol_e2e_test
     kind: function.lua
     source: file://protocol_e2e_test.lua
@@ -744,13 +717,3 @@ entries:
       claim: kickside.core.jobs.persist:claim
       lifecycle: kickside.core.jobs.persist:lifecycle
       completion: kickside.core.jobs.service:worker_completion
-
-  - name: cipher_compatibility_test
-    kind: function.lua
-    meta: {type: test, suite: key_owner}
-    source: file://cipher_compatibility_test.lua
-    method: run
-    modules: [env]
-    imports:
-      test: wippy.test:test
-      caller: kickside.oauth.persist:oauth_repo_support

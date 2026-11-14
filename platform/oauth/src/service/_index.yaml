@@ -2,7 +2,6 @@ version: "1.0"
 namespace: kickside.oauth.service
 
 entries:
-
   - name: negotiator_readiness
     kind: library.lua
     source: file://negotiator_readiness.lua
@@ -25,7 +24,6 @@ entries:
       policies: [kickside.oauth.api.public:callback_registry_runtime]
 
   # kickside.oauth.service:connection_negotiator
-
   - name: connection_negotiator
     kind: process.lua
     meta:
@@ -47,9 +45,6 @@ entries:
       callback_reply: kickside.oauth.service:callback_reply
       callback_names: kickside.oauth:callback_names
     method: run
-    security:
-      policies:
-        - kickside.oauth:secret_key_access
 
   - name: callback_reply
     kind: library.lua
@@ -60,7 +55,6 @@ entries:
 
   # The callback answer runs under the OAuth identity: the negotiating principal
   # needs no process messaging authority.
-
   - name: callback_reply_transport
     kind: security.policy
     meta:
@@ -86,7 +80,6 @@ entries:
         - kickside.oauth.service:callback_reply_transport
 
   # kickside.oauth.service:token_refresh
-
   - name: token_refresh
     kind: process.lua
     meta:
@@ -100,9 +93,6 @@ entries:
     imports:
       token_refresh_core: kickside.oauth:token_refresh_core
     method: handle
-    security:
-      policies:
-        - kickside.oauth:secret_key_access
 
   - name: refresh_bootstrap
     kind: process.lua

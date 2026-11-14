@@ -6,7 +6,6 @@ entries:
   meta:
     comment: Actor-validated private provider configuration for an OAuth connection. Token envelopes remain owned by OAuth.
   methods:
-
   - name: get_config
     description: Read provider-owned runtime options after Component READ authorization. Does not return tokens, client credentials, profile or negotiation state. Storage failures remain typed errors.
     input_schemas:
@@ -15,7 +14,6 @@ entries:
     output_schemas:
     - format: application/schema+json
       definition: '{"type":"object","properties":{"provider":{"type":"string"},"connection_state":{"type":"string"},"config":{"type":"object"}},"required":["provider","connection_state","config"],"additionalProperties":false}'
-
 - name: implementation
   kind: contract.binding
   contracts:
@@ -31,6 +29,3 @@ entries:
     component: kickside.component:component
     repo: kickside.oauth.persist:oauth_read_repo
     oauth_types: kickside.oauth:oauth_types
-  security:
-    policies:
-      - kickside.oauth:secret_key_access

@@ -1,5 +1,4 @@
 local crypto = require("crypto")
-local secret_cipher = require("secret_cipher")
 local base64 = require("base64")
 local json = require("json")
 local env = require("env")
@@ -28,9 +27,7 @@ end
 
 -- Get encryption key from environment
 local function get_encryption_key()
-    local variable, variable_err = env.get("kickside.uploads.env:encryption_key")
-    if variable_err then error(variable_err, 0) end
-    local key_hex = env.get(variable)
+    local key_hex = env.get("ENCRYPTION_KEY")
     if not key_hex then
         error("ENCRYPTION_KEY environment variable is required but not set")
     end
@@ -194,12 +191,12 @@ local function pack(params)
 
     local encryption_key = get_encryption_key()
 
-    local encrypted, err = secret_cipher.encrypt(json_data, encryption_key :: string)
+    local encrypted, err = crypto.encrypt.aes(json_data, encryption_key :: string)
     if err then
         return nil, "Encryption error: " .. err
     end
 
-    return base64.encode(encrypted :: string)
+    return base64.encode(encrypted)
 end
 
 -- Unpack and validate upload completion token
@@ -213,12 +210,12 @@ local function unpack(token: string?)
 
     local encryption_key = get_encryption_key()
 
-    local json_data, err = secret_cipher.decrypt(encrypted_data, encryption_key :: string)
+    local json_data, err = crypto.decrypt.aes(encrypted_data, encryption_key :: string)
     if err then
         return nil, "Invalid upload token: " .. err
     end
 
-    local payload, err = json.decode(json_data :: string)
+    local payload, err = json.decode(json_data)
     if err then
         return nil, "Malformed token payload: " .. err
     end
@@ -239,20 +236,8 @@ local function unpack(token: string?)
 end
 
 return {
-    pack_entry = function(params)
-        local value, err = pack(params)
-        return { value = value, error = err }
-    end,
-    unpack_entry = function(token)
-        local value, err = unpack(token)
-        return { value = value, error = err }
-    end,
-    pack_read_entry = function(params)
-        local value, err = pack_read(params)
-        return { value = value, error = err }
-    end,
-    unpack_read_entry = function(token, expected)
-        local value, err = unpack_read(token, expected)
-        return { value = value, error = err }
-    end,
+    pack = pack,
+    unpack = unpack,
+    pack_read = pack_read,
+    unpack_read = unpack_read,
 }

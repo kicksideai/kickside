@@ -341,25 +341,3 @@ entries:
     kind: ns.dependency
     component: kickside/contract
     version: '*'
-
-  - name: encryption_key
-    kind: ns.requirement
-    default: ENCRYPTION_KEY
-    targets:
-      - {entry: kickside.models.env:encryption_key, path: .default}
-      - {entry: kickside.models:secret_key_access, path: '.policy.resources +='}
-
-  - name: secret_key_access
-    kind: security.policy
-    meta: {service_only: true}
-    policy:
-      resources: [kickside.models.env:encryption_key]
-      actions: [env.get]
-      effect: allow
-
-  - name: reload_profiles_call
-    kind: security.policy
-    policy:
-      resources: [kickside.models.persist:reload_profiles]
-      actions: [funcs.call, funcs.security]
-      effect: allow

@@ -1,7 +1,6 @@
 version: "1.0"
 namespace: kickside.oauth
 entries:
-
   - name: token_refresh_core
     kind: library.lua
     meta:
@@ -58,9 +57,6 @@ entries:
       execution_identity: kickside.execution:execution_identity
       component: kickside.component:component
       token_refresh_core: kickside.oauth:token_refresh_core
-    security:
-      policies:
-        - kickside.oauth:secret_key_access
 
   - name: dispatch_refresh
     kind: function.lua
