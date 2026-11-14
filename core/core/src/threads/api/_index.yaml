@@ -46,35 +46,6 @@ entries:
     path: /jobs
     func: list_jobs
 
-  - name: health
-    kind: function.lua
-    meta:
-      comment: GET handler — return jobs.health() to an administrator.
-    source: file://health.lua
-    method: handler
-    modules: [http]
-    imports:
-      http_errors: kickside.contract:http_errors
-      threads_contract: kickside.core.threads:job_health
-
-  - name: health.endpoint
-    kind: http.endpoint
-    meta:
-      comment: GET /jobs/health, admin only; component access does not apply.
-    method: GET
-    path: /jobs/health
-    func: health
-
-  - name: health_access
-    kind: security.policy
-    meta:
-      comment: Grants the host's administrator group access to the jobs health endpoint.
-    groups: []
-    policy:
-      resources: kickside.core.threads.api:health.endpoint
-      actions: access
-      effect: allow
-
   - name: list_job_runs
     kind: function.lua
     meta:

@@ -55,22 +55,10 @@ entries:
         path: .meta.scope
       - entry: kickside.core.threads.api:list_job_runs.endpoint
         path: .meta.scope
-      - entry: kickside.core.threads.api:health.endpoint
-        path: .meta.scope
       - entry: kickside.core.security:module_access
         path: .groups +=
       - entry: kickside.core.security:module_runtime
         path: .groups +=
-
-  - name: admin_scope
-    kind: ns.requirement
-    default: ""
-    meta:
-      value_kind: security.scope
-      comment: Application administrator security group allowed to read jobs health.
-    targets:
-      - entry: kickside.core.threads.api:health_access
-        path: ".groups +="
 
   - name: process_host
     kind: ns.requirement
@@ -116,8 +104,6 @@ entries:
       - entry: kickside.core.threads.api:list_jobs.endpoint
         path: .meta.router
       - entry: kickside.core.threads.api:list_job_runs.endpoint
-        path: .meta.router
-      - entry: kickside.core.threads.api:health.endpoint
         path: .meta.router
 
   # ─── Tunable knob (env.variable) ─────────────────────────────────────
@@ -970,15 +956,6 @@ entries:
       thread_resource: kickside.core.threads:contract_resource
       jobs: kickside.core.jobs:jobs
       clock: kickside.core.jobs:clock
-
-  - name: job_health
-    kind: library.lua
-    source: file://contract/job_health.lua
-    modules: [security]
-    meta:
-      comment: Jobs health read gated by the administrator access policy.
-    imports:
-      jobs: kickside.core.jobs:jobs
 
   - name: natural_upsert
     kind: library.lua

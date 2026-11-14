@@ -282,7 +282,6 @@ local function define_tests()
                 ["kickside.core.threads:contract_graph"] = true,
                 ["kickside.core.threads:component_scope"] = true,
                 ["kickside.core.threads:job_history"] = true,
-                ["kickside.core.threads:job_health"] = true,
             }
             local checked = 0
             for _, fn in ipairs(core_entries_of_kind("function.lua")) do

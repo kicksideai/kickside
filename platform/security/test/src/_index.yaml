@@ -353,6 +353,9 @@ entries:
       comment: Test API router.
       server: gateway
     prefix: /api
+    middleware: [token_auth]
+    post_middleware: [endpoint_firewall]
+    options: {token_store: 'app:health_http_tokens'}
 
   - name: user
     kind: security.policy

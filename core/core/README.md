@@ -77,7 +77,6 @@ or Hub plan. Existing explicit bindings take precedence over defaults.
 | [`kickside.core.retention:api_router`](src/retention/_index.yaml) | Host supplies the value |
 | [`kickside.core.security:user_security_scope`](src/security/module_access/_index.yaml) | `kickside.security.groups:members` |
 | [`kickside.core.threads:user_security_scope`](src/threads/_index.yaml) | `kickside.security.groups:members` |
-| [`kickside.core.threads:admin_scope`](src/threads/_index.yaml) | Empty; `GET /jobs/health` stays closed until the host binds its administrator group |
 | [`kickside.core.threads:process_host`](src/threads/_index.yaml) | Host supplies the value |
 | [`kickside.core.threads:api_router`](src/threads/_index.yaml) | Host supplies the value |
 

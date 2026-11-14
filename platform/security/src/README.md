@@ -138,3 +138,23 @@ IDs in new authority snapshots; existing snapshots remain issuance audit data.
 The live source-policy API is qualified on released Runtime 0.3.54a or newer.
 Use that Runtime before switching Users to selected-policy authority. The
 retained materialization entry point supports staged Users upgrades.
+
+## Jobs operator health
+
+`GET /jobs/health` on the existing `kickside.security:api_router` returns
+`{success: true, health: ...}` with the unchanged result of `jobs.health()`.
+Security already loads Jobs through Component; its operator HTTP surface exposes
+this instance diagnostic without adding HTTP requirements to Jobs consumers.
+
+This is instance-wide operator data, not tenant-administrator data. It includes
+worker identities, heartbeat timestamps, job IDs and database-wide counts across
+owners. It excludes job payloads and stored error text. The router must enforce
+authentication and `endpoint_firewall`. Like the other Security admin endpoints,
+the handler requires `access` on its own endpoint,
+`kickside.security.api:jobs_health.endpoint`. Member allowlists do not grant this
+permission. Existing wildcard instance-operator policies authorize it; permission
+to list security scopes alone does not. There is no new group requirement.
+
+A failed health read returns HTTP 500 with a stable public error,
+`Jobs health is unavailable`, without internal diagnostics. The server logs the
+underlying error.

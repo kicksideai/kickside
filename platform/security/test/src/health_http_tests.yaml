@@ -1,0 +1,34 @@
+version: '1.0'
+namespace: app
+entries:
+  - name: health_http_test
+    kind: function.lua
+    source: file://health_http_test.lua
+    method: run
+    meta: {type: test, suite: jobs_health_http}
+    modules: [sql, security, registry, http_client, json, uuid]
+    imports:
+      test: wippy.test:test
+      jobs: kickside.core.jobs:jobs
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      canonical_json: kickside.contract:canonical_json
+  - name: health_http_storage
+    kind: store.memory
+    lifecycle: {auto_start: true}
+  - name: health_http_tokens
+    kind: security.token_store
+    store: app:health_http_storage
+    default_expiration: 5m
+    token_key: '0123456789abcdef0123456789abcdef'
+    token_length: 32
+  - name: health_http_admin
+    kind: security.policy
+    groups: [app:health_http_operators]
+    policy: {resources: '*', actions: '*', effect: allow}
+  - name: health_http_catalog_access
+    kind: security.policy
+    groups: [app:health_http_catalog_admins]
+    policy:
+      resources: [kickside.security.api:list_scopes.endpoint]
+      actions: access
+      effect: allow
