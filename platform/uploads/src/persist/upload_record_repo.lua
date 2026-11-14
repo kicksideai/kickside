@@ -345,6 +345,10 @@ function upload_record_repo.settle_storage_tx(tx, uuid: string, storage_state: s
             query = query:where("processing_job_id = ?", failed_processing.processing_job_id)
         end
         query = query:where(upload_query_repo.interrupted_processing_condition("kickside_uploads."))
+        if failed_processing.processing_job_id ~= nil then
+            query = query:where("NOT EXISTS (SELECT 1 FROM kickside_job j WHERE j.id=? AND j.status<>'dead')",
+                failed_processing.processing_job_id)
+        end
     end
     local result, exec_err = query:run_with(tx):exec()
     if exec_err then return nil, typed(errors.UNAVAILABLE, "Failed to settle upload: " .. tostring(exec_err)) end

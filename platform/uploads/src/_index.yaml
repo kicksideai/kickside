@@ -92,6 +92,8 @@ entries:
     targets:
       - entry: kickside.uploads.env:database_resource
         path: .default
+      - entry: kickside.uploads.migrations:06_processing_repair_cursor
+        path: .meta.target_db
       - entry: kickside.uploads.migrations:01_create_uploads_table
         path: .meta.target_db
       - entry: kickside.uploads.migrations:02_create_upload_read_model

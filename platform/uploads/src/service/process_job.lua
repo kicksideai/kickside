@@ -265,7 +265,7 @@ local function dead(input: any): (any, any?)
 end
 
 local function repair_dead(limit: integer): (integer?, any?, boolean?)
-    local candidates, list_err = upload_query_repo.list_dead_processing_jobs(limit)
+    local candidates, list_err, progress = upload_query_repo.list_dead_processing_jobs(limit)
     if list_err then return nil, list_err end
     local repaired = 0
     for _, candidate in ipairs(candidates) do
@@ -285,7 +285,9 @@ local function repair_dead(limit: integer): (integer?, any?, boolean?)
         if settle_err then return nil, settle_err end
         if result and result.settled then repaired = repaired + 1 end
     end
-    return repaired, nil, #candidates == limit
+    local cursor_err = upload_query_repo.advance_processing_repair_cursor(progress :: table)
+    if cursor_err then return nil, cursor_err end
+    return repaired, nil, progress.needs_continue
 end
 
 -- proc:// entry point. The monitored process transports one status value, with
