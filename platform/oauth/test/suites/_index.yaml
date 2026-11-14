@@ -9,6 +9,16 @@ namespace: app
 # published.
 
 entries:
+  - name: cipher_compatibility_test
+    kind: function.lua
+    meta: {type: test, suite: cipher_compatibility}
+    source: file://cipher_compatibility_test.lua
+    method: run
+    modules: [env]
+    imports:
+      test: wippy.test:test
+      caller: kickside.oauth.persist:oauth_repo_support
+
   - name: dep.wippy.test
     kind: ns.dependency
     version: "*"

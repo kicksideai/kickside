@@ -74,7 +74,7 @@ entries:
     meta:
       comment: Shared KickSide contract definitions implemented by the upload content provider.
     component: kickside/contract
-    version: '*'
+    version: '>=0.3.8'
 
   - name: dependency.migration
     kind: ns.dependency

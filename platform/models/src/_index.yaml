@@ -340,4 +340,4 @@ entries:
   - name: dep.kickside.contract
     kind: ns.dependency
     component: kickside/contract
-    version: '*'
+    version: '>=0.3.8'

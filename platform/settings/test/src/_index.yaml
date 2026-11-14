@@ -9,6 +9,16 @@ namespace: app
 # Harness-only; never published.
 
 entries:
+  - name: cipher_compatibility_test
+    kind: function.lua
+    meta: {type: test, suite: cipher_compatibility}
+    source: file://cipher_compatibility_test.lua
+    method: run
+    modules: [env]
+    imports:
+      test: wippy.test:test
+      caller: kickside.settings:settings_secrets
+
   - name: about_test
     kind: function.lua
     meta:
