@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- A worker entry names the function that receives its dead jobs in
 -- meta.job_dead. The dead transition enqueues one outcome job for that function
 -- in its own transaction (lifecycle.fail_tx), so the owner learns the outcome at

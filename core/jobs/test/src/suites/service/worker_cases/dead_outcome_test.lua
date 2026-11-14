@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- A job that ends dead reaches the function its worker declares in meta.job_dead
 -- through one outcome job committed with the dead transition.
 

@@ -140,15 +140,3 @@ entries:
       migration: wippy.migration:migration
       run_status: kickside.core.jobs:run_status
     method: migrate
-
-  - name: 26_identity_lookup
-    kind: function.lua
-    meta:
-      type: migration
-      target_db: ""
-      depends_on: [ns:wippy.migration]
-      timestamp: "2026-11-14T00:00:00Z"
-    source: file://26_identity_lookup.lua
-    imports:
-      migration: wippy.migration:migration
-    method: migrate

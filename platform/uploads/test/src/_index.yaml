@@ -1113,18 +1113,3 @@ entries:
     method: GET
     path: /uploads/{uuid}/artifacts/{artifact_id}/raw
     func: kickside.uploads.api:artifact_raw_handler
-  - name: processing_repair_migration_db
-    kind: db.sql.sqlite
-    file: ":memory:"
-    pool: {max_open: 1, max_idle: 1}
-
-  - name: processing_repair_test
-    kind: function.lua
-    meta: {type: test, suite: uploads_processing_repair}
-    source: file://processing_repair_test.lua
-    modules: [sql, funcs]
-    imports:
-      test: wippy.test:test
-      upload_query_repo: kickside.uploads.persist:upload_query_repo
-      process_job: kickside.uploads.service:process_job_proc
-    method: run

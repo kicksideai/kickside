@@ -160,7 +160,7 @@ local function read_exact_jobs(db: Executor, ids: string[]): (table?, error?)
     local marks, values = selected.marks, selected.values
     if #values == 0 then return {}, nil end
     local rows, err = sql.builder.select(
-        "id", "thread_id", "owner_kind", "owner_id", "job_type", "status", "slot", DUE_COLUMN, "priority", "attempts",
+        "id", "thread_id", "owner_kind", "owner_id", "job_type", "payload", "status", "slot", DUE_COLUMN, "priority", "attempts",
         "max_attempts", "queue_tier", "idempotency_key", "last_error", "wake_enabled", "wake_control_pending", "execution_seq",
         "scheduled_at", "finished_at", "created_at", "updated_at"
     ):from("kickside_job")

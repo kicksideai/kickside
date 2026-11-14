@@ -86,8 +86,8 @@ end
 
 -- Settle an upload's processing outcome in one transaction: its storage state,
 -- callback jobs, thread event and, on success, the processing hooks. Inside the
--- processing job the same transaction completes the job's lease. Interrupted
--- processing requires the same intent snapshot and no live job. Returns false
+-- processing job the same transaction completes the job's lease. Dead
+-- outcomes require the same intent snapshot and dead job. Returns false
 -- when the upload is not the settling job's to settle.
 local function settle(job: any, upload: any, outcome: table, failed_processing: table?): (boolean, any?)
     local success = outcome.success == true
@@ -171,7 +171,7 @@ local function run(input: any): (any, any?)
     input = type(input) == "table" and input or {}
     local payload = type(input.payload) == "table" and input.payload or {}
     local job = job_info(input)
-    local upload_id = tostring(payload.upload_id or "")
+    local upload_id = tostring(type(payload) == "table" and payload.upload_id or "")
     if upload_id == "" then
         return nil, "missing upload_id"
     end
@@ -250,41 +250,22 @@ local function dead(input: any): (any, any?)
     if dead_job.status ~= job_types.JOB_STATE.DEAD then
         return nil, errors.new({ message = "job " .. job_id .. " is not dead", kind = errors.INVALID, retryable = false })
     end
-    local upload, upload_err = upload_query_repo.find_by_processing_job(tostring(dead_job.owner_id), job_id)
+    local payload = dead_job.payload
+    if type(payload) == "string" then
+        local decode_err
+        payload, decode_err = json.decode(payload)
+        if decode_err then return nil, decode_err end
+    end
+    local upload, upload_err = upload_query_repo.find_by_processing_job(tostring(dead_job.owner_id), job_id, tostring(type(payload) == "table" and payload.upload_id or ""))
     if upload_err then return nil, upload_err end
     if not upload then return { skipped = true, reason = "upload_not_held", job_id = job_id }, nil end
+    upload.dead_job_id = job_id
     local error_text = tostring(dead_job.last_error or "upload processing job ended dead")
     local settled, settle_err = settle({ thread_id = dead_job.thread_id }, upload,
         { success = false, error_text = error_text }, upload)
     if settle_err then return nil, settle_err end
     log:info("dead processing job settled", { upload_id = upload.uuid, job_id = job_id, settled = settled })
     return { upload_id = upload.uuid, job_id = job_id, settled = settled }, nil
-end
-
-local function repair_dead(limit: integer): (integer?, any?, boolean?)
-    local candidates, list_err, progress = upload_query_repo.list_dead_processing_jobs(limit)
-    if list_err then return nil, list_err end
-    local repaired = 0
-    for _, candidate in ipairs(candidates) do
-        local result, settle_err
-        if candidate.job_id ~= nil then
-            result, settle_err = dead({payload = {job_id = tostring(candidate.job_id)}})
-        else
-            local upload, read_err = upload_query_repo.get(candidate.upload_id)
-            if read_err and not errors.is(read_err, errors.NOT_FOUND) then return nil, read_err end
-            if upload then
-                local settled
-                settled, settle_err = settle({thread_id = upload_types.component_id_for_owner(upload.actor_id)}, upload,
-                    {success = false, error_text = "upload processing job is missing"}, upload)
-                result = {settled = settled}
-            end
-        end
-        if settle_err then return nil, settle_err end
-        if result and result.settled then repaired = repaired + 1 end
-    end
-    local cursor_err = upload_query_repo.advance_processing_repair_cursor(progress :: table)
-    if cursor_err then return nil, cursor_err end
-    return repaired, nil, progress.needs_continue
 end
 
 -- proc:// entry point. The monitored process transports one status value, with
@@ -299,4 +280,4 @@ local function main(input: any): table
     return {ok = true, output = result}
 end
 
-return { run = run, main = main, dead = dead, repair_dead = repair_dead, terminal_failure = terminal_failure }
+return { run = run, main = main, dead = dead, terminal_failure = terminal_failure }
