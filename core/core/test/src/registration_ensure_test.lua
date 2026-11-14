@@ -40,16 +40,16 @@ local function define_tests()
                 test.eq(ensured.cursor_id, registered.cursor_id)
                 test.eq(ensured.job_id, registered.job_id)
                 test.eq(ensured.created, false)
-                local after = assert(db:query("SELECT body,last_event_seq FROM kickside_projection WHERE id=$1", {registered.projection_id}))[1]
+                local after = assert(db:query("SELECT body,last_event_seq,declaration_revision,declaration_from_seq FROM kickside_projection WHERE id=$1", {registered.projection_id}))[1]
                 local refreshed = assert(json.decode(after.body))
                 test.eq(refreshed.events.input[2].type, "new.event")
                 test.eq(refreshed.worker_config.version, 2)
                 test.is_nil(refreshed.drop_notify)
                 test.eq(refreshed.stats.count, 4)
                 test.eq(refreshed.stats.nested.value, "retained")
-                test.eq(refreshed.declaration_status.revision, 2)
-                test.eq(refreshed.declaration_status.from_seq, 8)
-                test.is_nil(refreshed.declaration_status.reason)
+                test.eq(tonumber(after.declaration_revision), 2)
+                test.eq(tonumber(after.declaration_from_seq), 8)
+                test.is_nil(refreshed.declaration_status)
                 test.eq(tonumber(after.last_event_seq), 7)
                 local cursor = assert(db:query("SELECT last_seq,status,last_error,generation FROM kickside_projection_cursor WHERE id=$1",
                     {registered.cursor_id}))[1]

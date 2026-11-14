@@ -26,7 +26,7 @@ local function create(): string
 end
 local function state(id: string): any
     local db = assert(sql.get("app:db"))
-    local rows = assert(db:query([[SELECT p.id,p.body,p.updated_at,p.declaration_digest,c.id AS cursor_id,
+    local rows = assert(db:query([[SELECT p.id,p.body,p.updated_at,p.declaration_digest,p.declaration_revision,p.declaration_from_seq,c.id AS cursor_id,
         c.last_seq,c.generation,c.job_id,c.status FROM kickside_projection p
         JOIN kickside_projection_cursor c ON c.projection_id=p.id AND c.cursor_key='progress'
         WHERE p.thread_id=$1 AND p.kind=$2 AND p.projection_key='custom']], {lifecycle.thread_id(id), KIND}))
@@ -142,7 +142,7 @@ return {run = test.run_cases(function()
                 local refreshed = state(id)
                 test.eq(#refreshed.body.events.input, 2)
                 test.is_true(tonumber(refreshed.generation) > tonumber(before.generation))
-                test.eq(refreshed.body.declaration_status.from_seq, 3)
+                test.eq(tonumber(refreshed.declaration_from_seq), 3)
                 test.eq(tonumber(refreshed.last_seq), 2)
                 catch_up(id)
                 test.eq(tonumber(state(id).body.stats.count), 1)

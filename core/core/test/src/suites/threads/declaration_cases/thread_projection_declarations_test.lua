@@ -190,11 +190,12 @@ local function define_tests()
 
             local after_reg = projection_body_of(thread_id, "test.count") :: table
             test.eq(tonumber(after_reg.stats.count), 1)
-            test.eq(after_reg.declaration_status.from_seq, 2)
+            test.is_nil(after_reg.declaration_status)
             test.is_nil(after_reg.events)
             local listed, list_err = as_owner(LIST_PROJECTIONS, { thread_id = thread_id })
             test.is_nil(list_err)
             local last_seq = tonumber(listed.cursors[1].last_seq)
+            test.eq(tonumber(listed.projections[1].declaration_from_seq), 2)
             test.eq(last_seq, 1)
 
             -- private_context is byte-identical: no provisioning/registration path

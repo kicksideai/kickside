@@ -10,6 +10,10 @@ local channel = require("channel")
 local provision = require("provision")
 local prune = require("prune")
 local register = require("proj_register")
+local apply = require("apply")
+local claim = require("claim")
+local clock = require("clock")
+local time = require("time")
 
 local KIND = "test.declaration.refresh"
 local IMPL = "app:projection_declaration_refresh_kind"
@@ -35,7 +39,7 @@ end
 
 local function state(id: string): table
     local db = assert(sql.get("app:db"))
-    local rows = assert(db:query([[SELECT p.id,p.body,p.declaration_digest,p.updated_at,c.generation,c.last_seq,c.job_id
+    local rows = assert(db:query([[SELECT p.id,p.body,p.declaration_digest,p.updated_at,p.declaration_revision,p.declaration_from_seq,c.generation,c.last_seq,c.job_id
         FROM kickside_projection p JOIN kickside_projection_cursor c ON c.projection_id=p.id
         WHERE p.thread_id=$1 AND p.kind=$2]], {id, KIND}))
     assert(db:release())
@@ -91,6 +95,48 @@ return {run = test.run_cases(function()
             converge(scope)
         end)
         test.after_each(stop_pool)
+        test.it("keeps declaration diagnostics outside the worker fold body", function()
+            local threads, actor, scope, id = setup()
+            test.is_nil(state(id).body.declaration_status)
+            test.eq(tonumber(state(id).declaration_revision), 1)
+            test.eq(tonumber(state(id).declaration_from_seq), 1)
+        end)
+        for _, mode in ipairs({"body", "patch"}) do
+        test.it("keeps row-owned diagnostics when a worker returns a " .. mode, function()
+            local threads, actor, scope, id = setup(true)
+            assert(threads:append_event({thread_id = id, event = {type = "app:threads_keep", body = {}}}))
+            local params = {thread_id = id, kind = KIND, worker_ref = "func://app:test_count_worker",
+                worker_input_mode = "prefetch_events", events = {input = {{type = "app:threads_keep"}}}}
+            local registered = assert(threads:register_projection(params)).projection
+            params.ensure = true
+            params.events.input[2] = {type = "app:threads_skip"}
+            assert(threads:register_projection(params))
+            assert(threads:append_event({thread_id = id, event = {type = "app:threads_skip", body = {}}}))
+            local db = assert(sql.get("app:db"))
+            local dialect = assert(db:type())
+            local snapshot = assert(db:query([[SELECT c.*,p.body,p.kind FROM kickside_projection_cursor c
+                JOIN kickside_projection p ON p.id=c.projection_id WHERE c.id=$1]], {registered.cursor_id}))[1]
+            snapshot.body = assert(json.decode(snapshot.body))
+            local tx = assert(db:begin())
+            local token = uuid.v4()
+            local leased = assert(claim.lease_row(tx, dialect, registered.job_id, token,
+                clock.format(time.now():add("1m"), dialect), clock.now(dialect)))
+            assert(tx:commit())
+            assert(db:release())
+            local output = {}
+            output[mode] = {stats = {count = 1}, declaration_status = {revision = 999}}
+            assert(apply.advance("app:db", {id = registered.job_id, lease_token = token,
+                execution_seq = leased.execution_seq}, snapshot, 2, output))
+            local after = state(id)
+            test.eq(tonumber(after.declaration_revision), 2)
+            test.eq(tonumber(after.declaration_from_seq), 2)
+            test.eq(tonumber(after.last_seq), 2)
+            test.eq(tonumber(after.body.stats.count), 1)
+            local listed = assert(threads:list_projections({thread_id = id}))
+            test.eq(tonumber(listed.projections[1].declaration_revision), 2)
+            test.eq(tonumber(listed.projections[1].declaration_from_seq), 2)
+        end)
+        end
         test.it("hashes declarations independent of key order and fold state", function()
             local first = assert(register.declaration_digest({meta = {worker_ref = "func://app:test_count_worker", worker_input_mode = "prefetch_events"},
                 worker_config = {alpha = 1, nested = {left = 2, right = 3}}}))
@@ -138,7 +184,7 @@ return {run = test.run_cases(function()
                         {cutoff = "2100-01-01T00:00:00Z", max_total = 1})).deleted, 1)
                 else
                     before.body.declaration_status = nil
-                    assert(db:execute("UPDATE kickside_projection SET body=$1,declaration_digest=NULL WHERE id=$2",
+                    assert(db:execute("UPDATE kickside_projection SET body=$1,declaration_digest=NULL,declaration_revision=NULL,declaration_from_seq=NULL WHERE id=$2",
                         {assert(json.encode(before.body)), before.id}))
                 end
                 assert(db:release())
@@ -159,13 +205,14 @@ return {run = test.run_cases(function()
             test.eq(tonumber(refreshed.generation), assert(tonumber(before.generation)) + 1)
             test.eq(tonumber(refreshed.last_seq), 4)
             test.eq(tonumber(refreshed.body.stats.count), 2)
-            test.eq(refreshed.body.declaration_status.revision, 2)
-            test.eq(refreshed.body.declaration_status.from_seq, 5)
+            test.eq(tonumber(refreshed.declaration_revision), 2)
+            test.eq(tonumber(refreshed.declaration_from_seq), 5)
             local listed = assert(threads:list_projections({thread_id = id}))
             local listed_body = listed.projections[1].body
             if type(listed_body) == "string" then listed_body = assert(json.decode(listed_body)) end
-            test.eq(listed_body.declaration_status.from_seq, 5)
-            test.eq(listed_body.declaration_status.revision, 2)
+            test.eq(tonumber(listed.projections[1].declaration_from_seq), 5)
+            test.eq(tonumber(listed.projections[1].declaration_revision), 2)
+            test.is_nil(listed_body.declaration_status)
             assert(threads:append_event({thread_id = id, event = {type = "app:threads_skip", body = {}}}))
             start_pool()
             assert(threads:catch_up_projection({thread_id = id, kind = KIND, max_ticks = 5}))
@@ -173,7 +220,7 @@ return {run = test.run_cases(function()
             local after = state(id)
             test.eq(tonumber(after.last_seq), 5)
             test.eq(tonumber(after.body.stats.count), 3, "old skipped inputs stay skipped")
-            test.eq(after.body.declaration_status.from_seq, 5, "worker body preserves the marker")
+            test.eq(tonumber(after.declaration_from_seq), 5, "fold writes preserve projection metadata")
             test.eq(after.id, before.id)
             test.eq(after.job_id, before.job_id)
         end)
@@ -224,6 +271,8 @@ return {run = test.run_cases(function()
             test.eq(after.generation, before.generation)
             test.eq(after.last_seq, before.last_seq)
             test.eq(after.updated_at, before.updated_at)
+            test.eq(after.declaration_revision, before.declaration_revision)
+            test.eq(after.declaration_from_seq, before.declaration_from_seq)
             test.eq(assert(json.encode(after.body)), assert(json.encode(before.body)))
         end)
     end)

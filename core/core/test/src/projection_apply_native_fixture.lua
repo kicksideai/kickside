@@ -7,7 +7,6 @@ function M.reset(stage: string, source: any, mode: string)
     M.appends, M.deferred, M.wakes, M.completing = 0, 0, 0, nil
     M.published_after, M.wake_keys, M.cached_appends = 0, {}, 0
     M.thread_locked, M.cursor_before_thread = false, false
-    M.encoded_body = nil
 end
 function M.outcome(stage: string, value: any): (any, error?)
     if M.stage == stage then
@@ -22,7 +21,6 @@ function M.get(_id: any): (any, error?)
 end
 function M.now(_dialect: any): string return "2026-10-10 00:00:00.000000" end
 function M.encode(_body: any): (any, error?)
-    M.encoded_body = _body
     M.encodes = M.encodes + 1
     return M.outcome(M.encodes == 1 and "append_encode" or "body_encode", "{}")
 end

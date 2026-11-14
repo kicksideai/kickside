@@ -81,7 +81,10 @@ function M.builder.select(columns: string, ...: any): any
     local chain = {}
     local after, limit, digest_scan = 0, nil, false
     local projection = columns ~= "c.component_id AS component_id" or select("#", ...) > 0
-    function chain:from(value: string): any return self end
+    function chain:from(value: string): any
+        if value:find("declaration_digest", 1, true) then digest_scan = true end
+        return self
+    end
     function chain:join(value: string): any return self end
     function chain:left_join(value: string): any return self end
     function chain:where(value: string, argument: any?): any

@@ -238,6 +238,7 @@ function M.converge(opener_actor: any, opener_scope: any, continuation: table?):
             own_lifecycle = own_lifecycle and not lifecycle_log.is_exempt(tostring(kind.component_impl_id or kind.impl_id))
             local candidates: {any}? = nil
             local lifecycle_id = "NULL"
+            local lifecycle_threads: {string} = {}
             if own_lifecycle then
                 local page = sql.builder.select("c.component_id AS component_id"):from("kickside_components c")
                     :where("c.impl_id = ?", tostring(kind.component_impl_id or kind.impl_id))
@@ -248,7 +249,9 @@ function M.converge(opener_actor: any, opener_scope: any, continuation: table?):
                 candidates = rows
                 local cases: {string} = {}
                 for _, row in ipairs(rows) do
-                    cases[#cases + 1] = "WHEN " .. quoted(tostring(row.component_id)) .. " THEN " .. quoted(lifecycle_log.thread_id(tostring(row.component_id)))
+                    local thread = quoted(lifecycle_log.thread_id(tostring(row.component_id)))
+                    lifecycle_threads[#lifecycle_threads + 1] = thread
+                    cases[#cases + 1] = "WHEN " .. quoted(tostring(row.component_id)) .. " THEN " .. thread
                 end
                 if #cases > 0 then
                     lifecycle_id = "CASE c.component_id " .. table.concat(cases, " ") .. " END"
@@ -257,17 +260,15 @@ function M.converge(opener_actor: any, opener_scope: any, continuation: table?):
                     if dbtype == "postgres" then lifecycle_id = "CAST(" .. lifecycle_id .. " AS UUID)" end
                 end
             end
-            local scan = sql.builder.select("c.component_id AS component_id")
-                :from("kickside_components c")
-                :left_join("kickside_thread t ON t.id=c.component_id")
-                :where("c.impl_id = ?", tostring(kind.component_impl_id or kind.impl_id))
-            local predicates: {string} = {}
-            local args: {any} = {}
+            local base = "SELECT c.component_id FROM kickside_components c LEFT JOIN kickside_thread t ON t.id=c.component_id"
+            local owner = "c.impl_id=" .. quoted(tostring(kind.component_impl_id or kind.impl_id))
+            local queries: {string} = {}
             if type(kind.class) == "string" and kind.class ~= "" then
-                scan = scan:left_join("kickside_component_meta type_meta ON type_meta.component_id=c.component_id AND type_meta.key='type'")
-                    :left_join("kickside_component_meta class_meta ON class_meta.component_id=c.component_id AND class_meta.key='thread_class'")
-                predicates[#predicates + 1] = "(t.id IS NULL OR t.thread_class <> ? OR type_meta.value IS NULL OR type_meta.value <> 'thread' OR class_meta.value IS NULL OR class_meta.value <> t.thread_class)"
-                args[#args + 1] = kind.class
+                queries[#queries + 1] = base
+                    .. " LEFT JOIN kickside_component_meta type_meta ON type_meta.component_id=c.component_id AND type_meta.key='type'"
+                    .. " LEFT JOIN kickside_component_meta class_meta ON class_meta.component_id=c.component_id AND class_meta.key='thread_class'"
+                    .. " WHERE " .. owner .. " AND (t.id IS NULL OR t.thread_class <> " .. quoted(kind.class)
+                    .. " OR type_meta.value IS NULL OR type_meta.value <> 'thread' OR class_meta.value IS NULL OR class_meta.value <> t.thread_class)"
             end
             for pindex, decl in ipairs(kind.projections or {}) do
                 local own = decl.on == autoinit.PROJECTION_ON.LIFECYCLE and own_lifecycle
@@ -281,15 +282,26 @@ function M.converge(opener_actor: any, opener_scope: any, continuation: table?):
                     if digest_err then return finish(digest_err) end
                     local p, pc, j = "p" .. tostring(pindex), "pc" .. tostring(pindex), "j" .. tostring(pindex)
                     local thread_id = own and lifecycle_id or "t.id"
-                    scan = scan:left_join("kickside_projection " .. p .. " ON " .. p .. ".thread_id=" .. thread_id .. " AND " .. p .. ".kind=" .. quoted(decl.kind) .. " AND " .. p .. ".projection_key=" .. quoted(key))
-                        :left_join("kickside_projection_cursor " .. pc .. " ON " .. pc .. ".projection_id=" .. p .. ".id AND " .. pc .. ".cursor_key=" .. quoted(cursor_key))
-                        :left_join("kickside_job " .. j .. " ON " .. j .. ".id=" .. pc .. ".job_id")
-                    predicates[#predicates + 1] = "(" .. (own and "" or "t.id IS NOT NULL AND ") .. "(" .. p .. ".id IS NULL OR " .. p .. ".declaration_digest IS NULL OR " .. p .. ".declaration_digest <> ? OR " .. pc .. ".id IS NULL OR " .. j .. ".id IS NULL))"
-                    args[#args + 1] = digest
+                    queries[#queries + 1] = base
+                        .. " LEFT JOIN kickside_projection " .. p .. " ON " .. p .. ".thread_id=" .. thread_id .. " AND " .. p .. ".kind=" .. quoted(decl.kind) .. " AND " .. p .. ".projection_key=" .. quoted(key)
+                        .. " LEFT JOIN kickside_projection_cursor " .. pc .. " ON " .. pc .. ".projection_id=" .. p .. ".id AND " .. pc .. ".cursor_key=" .. quoted(cursor_key)
+                        .. " LEFT JOIN kickside_job " .. j .. " ON " .. j .. ".id=" .. pc .. ".job_id"
+                        .. " WHERE " .. owner .. " AND (" .. (own and "" or "t.id IS NOT NULL AND ")
+                        .. "(" .. p .. ".id IS NULL OR " .. pc .. ".id IS NULL OR " .. j .. ".id IS NULL))"
+                    local thread_filter = own and (" AND " .. p .. ".thread_id IN ("
+                        .. (#lifecycle_threads > 0 and table.concat(lifecycle_threads, ",") or "NULL") .. ")") or ""
+                    for _, range in ipairs({"IS NULL", "< " .. quoted(digest), "> " .. quoted(digest)}) do
+                        queries[#queries + 1] = "SELECT c.component_id FROM kickside_projection " .. p
+                            .. " CROSS JOIN kickside_components c WHERE " .. p .. ".kind=" .. quoted(decl.kind)
+                            .. " AND " .. p .. ".projection_key=" .. quoted(key)
+                            .. " AND " .. p .. ".declaration_digest " .. range .. thread_filter
+                            .. " AND " .. owner .. " AND " .. p .. ".thread_id=" .. (own and lifecycle_id or "c.component_id")
+                    end
                 end
             end
-            if #predicates > 0 then
-                scan = scan:where("(" .. table.concat(predicates, " OR ") .. ")", table.unpack(args))
+            if #queries > 0 then
+                local scan = sql.builder.select("DISTINCT c.component_id AS component_id")
+                    :from("(" .. table.concat(queries, " UNION ALL ") .. ") c")
                 if candidates then
                     if #candidates > 0 then scan = scan:where("c.component_id <= ?", tostring(candidates[#candidates].component_id))
                     else scan = scan:where("1=0") end

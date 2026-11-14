@@ -46,7 +46,7 @@ function reader.list_projections(db_or_tx: Executor, thread_id: string, limit: i
     local page_limit = limit or 200
     local query = sql.builder.select(
         "id", "thread_id", "kind", "projection_key", "body", "state",
-        "last_event_seq", "actor_id",
+        "last_event_seq", "declaration_revision", "declaration_from_seq", "actor_id",
         "CASE WHEN actor_id IS NOT NULL AND actor_id <> '' AND actor_context IS NOT NULL AND actor_context <> '' THEN 1 ELSE 0 END AS has_execution_identity",
         "created_at", "updated_at"
     )
@@ -73,7 +73,7 @@ end
 function reader.get_projection(db_or_tx: Executor, thread_id: string, projection_id: string): (table?, error?)
     local rows, err = sql.builder.select(
         "id", "thread_id", "kind", "projection_key", "body", "state",
-        "last_event_seq", "created_at", "updated_at"
+        "last_event_seq", "declaration_revision", "declaration_from_seq", "created_at", "updated_at"
     )
         :from("kickside_projection")
         :where(sql.builder.eq({ id = projection_id, thread_id = thread_id }))
@@ -142,7 +142,7 @@ function reader.find_projection_cursor(db_or_tx: Executor, thread_id: string, pa
     if projection_key == "" then projection_key = types.KEY_DEFAULT end
     if cursor_key == "" then cursor_key = types.KEY_DEFAULT end
     local rows, err = sql.builder.select(
-        "p.id AS projection_id", "p.body", "p.state", "p.last_event_seq", "p.actor_id",
+        "p.id AS projection_id", "p.body", "p.state", "p.last_event_seq", "p.declaration_revision", "p.declaration_from_seq", "p.actor_id",
         "p.created_at AS projection_created_at", "p.updated_at AS projection_updated_at",
         "CASE WHEN p.actor_id IS NOT NULL AND p.actor_id <> '' AND p.actor_context IS NOT NULL AND p.actor_context <> '' THEN 1 ELSE 0 END AS has_execution_identity",
         "c.id AS cursor_id", "c.thread_id", "c.cursor_key", "c.generation", "c.last_seq", "c.status",
@@ -165,7 +165,8 @@ function reader.find_projection_cursor(db_or_tx: Executor, thread_id: string, pa
     return { thread_id = thread_id,
         projection = { id = row.projection_id, thread_id = row.thread_id, kind = row.kind,
             projection_key = row.projection_key, body = row.body, state = row.state,
-            last_event_seq = row.last_event_seq, actor_id = row.actor_id,
+            last_event_seq = row.last_event_seq, declaration_revision = row.declaration_revision,
+            declaration_from_seq = row.declaration_from_seq, actor_id = row.actor_id,
             has_execution_identity = row.has_execution_identity,
             created_at = row.projection_created_at, updated_at = row.projection_updated_at },
         cursor = { id = row.cursor_id, projection_id = row.projection_id, thread_id = row.thread_id,

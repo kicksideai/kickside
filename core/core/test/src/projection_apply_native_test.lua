@@ -54,22 +54,6 @@ local function native(first: integer, last: integer)
     end
 end
 local function outcomes()
-    for _, mode in ipairs({"body", "patch"}) do
-        test.it("keeps the declaration marker when the worker returns a " .. mode, function()
-            fixture.reset("", nil, "advance")
-            local status = {revision = 2, from_seq = 5}
-            local output = {}
-            output[mode] = {count = 3, declaration_status = {revision = 999}}
-            local value, err = apply.advance("app:db", {id = "job", lease_token = "token", execution_seq = 1},
-                {id = "cursor", thread_id = "thread", projection_id = "projection", generation = 1,
-                    last_seq = 0, body = {declaration_status = status}}, 1, output)
-            test.is_nil(err)
-            test.not_nil(value)
-            test.eq(fixture.encoded_body.declaration_status.revision, 2)
-            test.eq(fixture.encoded_body.declaration_status.from_seq, 5)
-        end)
-    end
-
     test.it("defers output demand until all appends and prelocks the completing job", function()
         fixture.reset("", nil, "advance")
         local value, err = apply.advance("app:db", {id = "job", lease_token = "token", execution_seq = 1},

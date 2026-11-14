@@ -320,7 +320,6 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
 
     local digest, digest_err = writer.declaration_digest(body)
     if digest_err then return nil, digest_err end
-    body.declaration_status = {revision = 1, from_seq = start_seq + 1}
     local body_json, body_encode_err = json.encode(body)
     if body_encode_err then return nil, errors.wrap(body_encode_err, "failed to encode projection body") end
     if not body_json then
@@ -330,7 +329,8 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
     local projection_id: string
     local created_projection = false
     local declaration_changed = false
-    local projection_rows, projection_query_err = sql.builder.select("id", "body", "declaration_digest")
+    local revision = 1
+    local projection_rows, projection_query_err = sql.builder.select("id", "body", "declaration_digest", "declaration_revision")
         :from("kickside_projection")
         :where(sql.builder.eq({ thread_id = thread_id, kind = kind, projection_key = projection_key }))
         :limit(1)
@@ -342,19 +342,18 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
 
     if #projection_rows > 0 then
         projection_id = tostring(projection_rows[1].id)
+        local prior_revision = projection_rows[1].declaration_revision
+        if prior_revision ~= nil then revision = tonumber(prior_revision) end
+        if revision == nil or revision < 1 or revision ~= math.floor(revision) then
+            return fail("projection declaration revision is invalid", errors.INTERNAL)
+        end
         local body_to_write = body_json
         if not reset then
             local merged, decode_err = persisted_json.decode_table(projection_rows[1].body, "kickside_projection.body")
             if decode_err then return nil, errors.wrap(decode_err, "failed to decode existing projection body") end
             declaration_changed = not writer.declaration_matches(merged :: table, body :: table)
             if declaration_changed then
-                local prior = type(merged.declaration_status) == "table" and merged.declaration_status or nil
-                local revision = prior and tonumber(prior.revision) or 1
-                if revision == nil or revision < 1 or revision ~= math.floor(revision) then
-                    return fail("projection declaration revision is invalid", errors.INTERNAL)
-                end
                 refresh_from = event_count
-                merged.declaration_status = {revision = revision + 1, from_seq = event_count + 1}
             end
             apply_declaration_fields(merged :: table, body)
             local merged_json, merged_err = json.encode(merged)
@@ -369,6 +368,10 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
                 :set("updated_at", now)
             if params.ensure ~= true then
                 projection_update = projection_update:set("actor_id", actor_id_col):set("actor_context", actor_context_col)
+            end
+            if reset or declaration_changed then
+                projection_update = projection_update:set("declaration_revision", revision + 1)
+                    :set("declaration_from_seq", (refresh_from or start_seq) + 1)
             end
             if reset then
                 -- reset rewinds the projection to start_seq and marks it pending so
@@ -403,6 +406,8 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
                 projection_key = projection_key,
                 body = body_json,
                 declaration_digest = digest,
+                declaration_revision = 1,
+                declaration_from_seq = start_seq + 1,
                 state = core_types.PROJECTION_STATE.PENDING,
                 last_event_seq = start_seq,
                 actor_id = actor_id_col,
