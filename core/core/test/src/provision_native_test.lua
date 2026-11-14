@@ -129,6 +129,60 @@ return {run = test.run_cases(function()
             test.eq(fixture.grants, 1)
             test.eq(fixture.releases, 1)
         end)
+        for _, count in ipairs({1, 257, 1024, 10000}) do
+            test.it("checks unchanged declaration digests without reading bodies/" .. tostring(count), function()
+                fixture.reset("", nil)
+                fixture.unchanged_count = count
+                local summary, err = provision.converge({}, {})
+                test.is_nil(err)
+                test.eq(summary.checked, 0)
+                test.eq(summary.healed, 0)
+                test.eq(fixture.calls, 0)
+                test.eq(fixture.queries, 2)
+                test.eq(fixture.max_page, 0)
+            end)
+        end
+        test.it("continues ten thousand changed declarations in bounded turns", function()
+            fixture.reset("", nil)
+            fixture.changed_count = 10000
+            local continuation, total, turns = nil, 0, 0
+            repeat
+                local before = fixture.calls
+                local summary, err = provision.converge({}, {}, continuation)
+                test.is_nil(err)
+                test.is_true(fixture.calls - before <= 256)
+                test.eq(summary.healed, fixture.calls - before)
+                total = total + summary.healed
+                turns = turns + 1
+                continuation = summary.continuation
+            until not continuation
+            test.eq(total, 10000)
+            test.eq(turns, 40)
+            test.eq(fixture.queries, 80)
+            test.eq(fixture.max_page, 256)
+        end)
+        for _, changed in ipairs({false, true}) do
+            test.it("bounds ten thousand lifecycle digest checks/" .. tostring(changed), function()
+                fixture.reset("", nil)
+                fixture.lifecycle = true
+                if changed then fixture.changed_count = 10000 else fixture.unchanged_count = 10000 end
+                local continuation, total, turns = nil, 0, 0
+                repeat
+                    local before, queries, wakes = fixture.calls, fixture.queries, fixture.wakes
+                    local summary, err = provision.converge({}, {}, continuation)
+                    test.is_nil(err)
+                    test.is_true(fixture.calls - before <= 256)
+                    test.eq(fixture.queries - queries, 3)
+                    test.eq(fixture.wakes - wakes, changed and 1 or 0, "committed repairs notify before the page returns")
+                    total = total + summary.healed
+                    turns = turns + 1
+                    continuation = summary.continuation
+                until not continuation
+                test.eq(total, changed and 10000 or 0)
+                test.eq(turns, 40)
+                test.eq(fixture.max_page, 256)
+            end)
+        end
         test.it("valid convergence de-duplicates the divergence set", function()
             fixture.reset("", nil)
             local summary, err = provision.converge({}, {})

@@ -80,6 +80,17 @@ return {run = test.run_cases(function()
                 end
             end)
         end
+        test.it("continues declaration batches without repeating boot provisioning", function()
+            fixture.reset("", nil)
+            fixture.batch_count = 3
+            local out = boot.main(nil)
+            test.is_true(out.ok)
+            test.eq(fixture.calls.converge, 3)
+            test.eq(fixture.calls.provision, 1)
+            test.eq(fixture.calls.actor, 1)
+            test.eq(fixture.calls.scope, 1)
+            test.eq(fixture.calls.migrations, 1)
+        end)
         test.it("healthy boot retains one count and graceful closure", function()
             fixture.reset("", nil); local out = boot.main(nil); test.is_true(out.ok); test.eq(out.count, 1)
             for _, step in ipairs({"events", "listen", "register", "migrations", "actor", "scope", "provision", "converge", "options"}) do test.eq(fixture.calls[step], 1) end

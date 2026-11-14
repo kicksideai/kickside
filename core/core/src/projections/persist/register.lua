@@ -9,6 +9,7 @@
 
 local sql = require("sql")
 local json = require("json")
+local canonical_json = require("canonical_json")
 local uuid = require("uuid")
 local clock = require("clock")
 local types = require("types")
@@ -94,6 +95,67 @@ local function same_declaration(a: any, b: any): boolean
     return true
 end
 
+function writer.declaration_body(params: table): (table?, error?)
+    local worker_ref = trim(params.worker_ref)
+    if worker_ref == "" then
+        return nil, (errors.new({ message = "worker_ref is required", kind = errors.INVALID }) :: error)
+    end
+    -- Runtime is part of worker_ref's canonical wire format, never a second
+    -- caller-controlled routing decision.
+    local worker_runtime
+    if string.sub(worker_ref, 1, #types.WORKER_SCHEME.PROC) == types.WORKER_SCHEME.PROC then
+        worker_runtime = types.WORKER_RUNTIME.PROC
+    elseif string.sub(worker_ref, 1, #types.WORKER_SCHEME.FUNC) == types.WORKER_SCHEME.FUNC then
+        worker_runtime = types.WORKER_RUNTIME.FUNC
+    else
+        return nil, (errors.new({ message = "worker_ref must use func:// or proc:// scheme", kind = errors.INVALID }) :: error)
+    end
+    local declared_runtime = trim(params.worker_runtime)
+    if declared_runtime ~= "" and declared_runtime ~= worker_runtime then
+        return nil, (errors.new({
+            message = "worker_runtime conflicts with worker_ref scheme: " .. declared_runtime .. " vs " .. worker_runtime,
+            kind = errors.INVALID,
+        }) :: error)
+    end
+    local worker_input_mode = trim(params.worker_input_mode)
+    if worker_input_mode == "" then
+        worker_input_mode = types.WORKER_INPUT_MODE_DEFAULT
+    end
+    if worker_input_mode ~= types.WORKER_INPUT_MODE.PREFETCH_EVENTS and worker_input_mode ~= types.WORKER_INPUT_MODE.CURSOR_ONLY then
+        return nil, (errors.new({ message = "worker_input_mode must be one of: prefetch_events, cursor_only", kind = errors.INVALID }) :: error)
+    end
+
+    local body = {
+        meta = {
+            worker_ref = worker_ref,
+            worker_runtime = worker_runtime,
+            worker_input_mode = worker_input_mode,
+        },
+    }
+    if type(params.worker_config) == "table" then
+        body.worker_config = params.worker_config
+    end
+    if type(params.events) == "table" then
+        body.events = params.events
+    end
+    -- drop_notify is a subscriber-declared teardown hook: { thread_id, type, body }.
+    -- When the thread this projection lives on is torn down, the threads slice appends
+    -- the declared typed event to thread_id so the subscriber surfaces the loss of its
+    -- source through its own read model. A declaration field, like worker_config.
+    if type(params.drop_notify) == "table" then
+        body.drop_notify = params.drop_notify
+    end
+    return body, nil
+end
+
+function writer.declaration_matches(stored: table, declared: table): boolean
+    return same_declaration(apply_declaration_fields({}, stored), apply_declaration_fields({}, declared))
+end
+
+function writer.declaration_digest(body: table): (string?, error?)
+    return canonical_json.hash(apply_declaration_fields({}, body))
+end
+
 local function bounded(value: any, name: string, min_value: integer,
     max_value: integer, fallback: integer): (integer?, error?)
     if value == nil then return fallback, nil end
@@ -131,13 +193,23 @@ local function identity_row_from_params(params: table): (any?, error?)
     }) :: error)
 end
 
+local function release_cursor_pin(tx: sql.Transaction, thread_id: string, cursor_id: string, generation: number): error?
+    local held, pin_err = retention_pin.read(tx, thread_id, "projection:" .. cursor_id)
+    if pin_err then return pin_err end
+    if not held then return nil end
+    local _, release_err = retention_pin.release_tx(tx, { thread_id = thread_id,
+        consumer_key = "projection:" .. cursor_id, expected_pin_generation = held.generation,
+        terminal_op_id = cursor_id .. ":correct:" .. tostring(generation) })
+    return release_err
+end
+
 -- register_projection_tx upserts a projection and its cursor within a caller-
 -- owned transaction. Validates params, derives runtime/defaults, reads the
 -- thread row, upserts the projection (merging the body's read-model on
 -- re-register unless reset=true), and upserts the cursor. No tx management:
 -- the caller begins and commits; on error the caller rolls back. Declaration
--- convergence passes ensure=true to refresh declarations while preserving the
--- fold and cursor state. A changed declaration fences previously loaded workers.
+-- convergence passes ensure=true. Changed declarations preserve the fold and
+-- advance to the refresh head, fencing previously loaded workers.
 function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thread_id: string, params: table): (RegisterResult?, error?)
     if type(params) ~= "table" then
         return nil, (errors.new({ message = "projection registration params must be an object", kind = errors.INVALID }) :: error)
@@ -157,34 +229,11 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
         return nil, (errors.new({ message = "kind is too long (max " .. tostring(types.KIND_MAX_LEN) .. ")", kind = errors.INVALID }) :: error)
     end
 
-    local worker_ref = trim(params.worker_ref)
-    if worker_ref == "" then
-        return nil, (errors.new({ message = "worker_ref is required", kind = errors.INVALID }) :: error)
-    end
-    -- Runtime is part of worker_ref's canonical wire format, never a second
-    -- caller-controlled routing decision.
-    local worker_runtime
-    if string.sub(worker_ref, 1, #types.WORKER_SCHEME.PROC) == types.WORKER_SCHEME.PROC then
-        worker_runtime = types.WORKER_RUNTIME.PROC
-    elseif string.sub(worker_ref, 1, #types.WORKER_SCHEME.FUNC) == types.WORKER_SCHEME.FUNC then
-        worker_runtime = types.WORKER_RUNTIME.FUNC
-    else
-        return nil, (errors.new({ message = "worker_ref must use func:// or proc:// scheme", kind = errors.INVALID }) :: error)
-    end
-    local declared_runtime = trim(params.worker_runtime)
-    if declared_runtime ~= "" and declared_runtime ~= worker_runtime then
-        return nil, (errors.new({
-            message = "worker_runtime conflicts with worker_ref scheme: " .. declared_runtime .. " vs " .. worker_runtime,
-            kind = errors.INVALID,
-        }) :: error)
-    end
-    local worker_input_mode = trim(params.worker_input_mode)
-    if worker_input_mode == "" then
-        worker_input_mode = types.WORKER_INPUT_MODE_DEFAULT
-    end
-    if worker_input_mode ~= types.WORKER_INPUT_MODE.PREFETCH_EVENTS and worker_input_mode ~= types.WORKER_INPUT_MODE.CURSOR_ONLY then
-        return nil, (errors.new({ message = "worker_input_mode must be one of: prefetch_events, cursor_only", kind = errors.INVALID }) :: error)
-    end
+    local body, declaration_err = writer.declaration_body(params)
+    if declaration_err then return nil, declaration_err end
+    local worker_ref = body.meta.worker_ref
+    local worker_runtime = body.meta.worker_runtime
+    local worker_input_mode = body.meta.worker_input_mode
 
     local projection_key = trim(params.projection_key)
     if projection_key == "" then
@@ -212,6 +261,7 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
         return nil, (errors.new({ message = "debounce_idle_ms requires debounce_max_ms", kind = errors.INVALID }) :: error)
     end
     local reset = params.reset == true
+    local refresh_from: number? = nil
 
     local now = now_string(dbtype)
     local lock = dbtype == sql.type.SQLITE and "" or "FOR UPDATE"
@@ -268,26 +318,8 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
         actor_context_col = (id_row :: any).actor_context :: string?
     end
 
-    local body = {
-        meta = {
-            worker_ref = worker_ref,
-            worker_runtime = worker_runtime,
-            worker_input_mode = worker_input_mode,
-        },
-    }
-    if type(params.worker_config) == "table" then
-        body.worker_config = params.worker_config
-    end
-    if type(params.events) == "table" then
-        body.events = params.events
-    end
-    -- drop_notify is a subscriber-declared teardown hook: { thread_id, type, body }.
-    -- When the thread this projection lives on is torn down, the threads slice appends
-    -- the declared typed event to thread_id so the subscriber surfaces the loss of its
-    -- source through its own read model. A declaration field, like worker_config.
-    if type(params.drop_notify) == "table" then
-        body.drop_notify = params.drop_notify
-    end
+    local digest, digest_err = writer.declaration_digest(body)
+    if digest_err then return nil, digest_err end
     local body_json, body_encode_err = json.encode(body)
     if body_encode_err then return nil, errors.wrap(body_encode_err, "failed to encode projection body") end
     if not body_json then
@@ -297,7 +329,8 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
     local projection_id: string
     local created_projection = false
     local declaration_changed = false
-    local projection_rows, projection_query_err = sql.builder.select("id", "body")
+    local revision = 1
+    local projection_rows, projection_query_err = sql.builder.select("id", "body", "declaration_digest", "declaration_revision")
         :from("kickside_projection")
         :where(sql.builder.eq({ thread_id = thread_id, kind = kind, projection_key = projection_key }))
         :limit(1)
@@ -309,50 +342,57 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
 
     if #projection_rows > 0 then
         projection_id = tostring(projection_rows[1].id)
-        -- Preserve the fold read-model that lives alongside the declaration in the
-        -- body. The worker folds its accumulated public state (counters, status)
-        -- into top-level body keys; only meta / worker_config / events are declaration fields. A re-register (binding hot-reload,
-        -- ensure_thread convergence) refreshes just those declaration fields and
-        -- keeps every other key, so a re-registration never drops the read-model.
-        -- reset is the explicit rebuild: it replaces the whole body and rewinds the
-        -- cursor so the fold reconstructs the read-model from start_seq.
+        local prior_revision = projection_rows[1].declaration_revision
+        if prior_revision ~= nil then revision = tonumber(prior_revision) end
+        if revision == nil or revision < 1 or revision ~= math.floor(revision) then
+            return fail("projection declaration revision is invalid", errors.INTERNAL)
+        end
         local body_to_write = body_json
         if not reset then
             local merged, decode_err = persisted_json.decode_table(projection_rows[1].body, "kickside_projection.body")
             if decode_err then return nil, errors.wrap(decode_err, "failed to decode existing projection body") end
-            local stored_declaration = apply_declaration_fields({}, merged :: table)
-            declaration_changed = not same_declaration(stored_declaration, apply_declaration_fields({}, body))
+            declaration_changed = not writer.declaration_matches(merged :: table, body :: table)
+            if declaration_changed then
+                refresh_from = event_count
+            end
             apply_declaration_fields(merged :: table, body)
             local merged_json, merged_err = json.encode(merged)
             if merged_err then return nil, errors.wrap(merged_err, "failed to encode merged projection body") end
-            if not merged_json then
-                return nil, response_error("merged_body", "merged projection body encoder returns no result")
-            end
-            body_to_write = merged_json :: string
+            if not merged_json then return nil, response_error("merged_body") end
+            body_to_write = merged_json
         end
         if params.ensure ~= true or declaration_changed then
             local projection_update = sql.builder.update("kickside_projection")
                 :set("body", body_to_write)
+                :set("declaration_digest", digest)
                 :set("updated_at", now)
             if params.ensure ~= true then
                 projection_update = projection_update:set("actor_id", actor_id_col):set("actor_context", actor_context_col)
+            end
+            if reset or declaration_changed then
+                projection_update = projection_update:set("declaration_revision", revision + 1)
+                    :set("declaration_from_seq", (refresh_from or start_seq) + 1)
             end
             if reset then
                 -- reset rewinds the projection to start_seq and marks it pending so
                 -- catch-up rebuilds it from scratch.
                 projection_update = projection_update:set("state", core_types.PROJECTION_STATE.PENDING):set("last_event_seq", start_seq)
             elseif declaration_changed then
-                -- INVALID records a fault in the PREVIOUS declaration (an unresolvable
-                -- worker_ref, an unsupported runtime). A new declaration retires that
-                -- verdict: the projection returns to pending and resumes from the seq it
-                -- already reached, so a corrected module upgrade heals without a replay.
                 projection_update = projection_update:set("state", core_types.PROJECTION_STATE.PENDING)
+                    :set("last_event_seq", refresh_from)
             end
             local updated, update_err = projection_update
                 :where(sql.builder.eq({ id = projection_id }))
                 :run_with(tx):exec()
             local _, proof_err = sql_boundary.exact_row_count(updated, update_err,
                 "failed to update projection", "projection.update", 1, response_error)
+            if proof_err then return nil, proof_err end
+        elseif projection_rows[1].declaration_digest ~= digest then
+            local updated, update_err = sql.builder.update("kickside_projection")
+                :set("declaration_digest", digest):where(sql.builder.eq({id = projection_id}))
+                :run_with(tx):exec()
+            local _, proof_err = sql_boundary.exact_row_count(updated, update_err,
+                "failed to store declaration digest", "projection.digest", 1, response_error)
             if proof_err then return nil, proof_err end
         end
     else
@@ -365,6 +405,9 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
                 kind = kind,
                 projection_key = projection_key,
                 body = body_json,
+                declaration_digest = digest,
+                declaration_revision = 1,
+                declaration_from_seq = start_seq + 1,
                 state = core_types.PROJECTION_STATE.PENDING,
                 last_event_seq = start_seq,
                 actor_id = actor_id_col,
@@ -385,8 +428,27 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
     end
 
     if declaration_changed then
+        local cursors, cursors_err = sql.builder.select("id", "generation", "job_id")
+            :from("kickside_projection_cursor"):where(sql.builder.eq({projection_id = projection_id}))
+            :run_with(tx):query()
+        cursors, cursors_err = sql_boundary.rows(cursors, cursors_err,
+            "failed to load refreshed cursors", "cursor.refresh_rows", response_error)
+        if cursors_err then return nil, cursors_err end
+        for _, cursor in ipairs(cursors :: table[]) do
+            local prior_generation = tonumber(cursor.generation)
+            if type(cursor.id) ~= "string" or cursor.id == "" or prior_generation == nil then
+                return nil, response_error("cursor.refresh_row")
+            end
+            local pin_err = release_cursor_pin(tx, thread_id, cursor.id, prior_generation)
+            if pin_err then return nil, pin_err end
+            if type(cursor.job_id) == "string" and cursor.job_id ~= "" then
+                local _, wake_err = jobs_wake.wake_job(tx, cursor.job_id, {control = true}, dbtype)
+                if wake_err then return nil, wake_err end
+            end
+        end
         local fenced, fence_err = sql.builder.update("kickside_projection_cursor")
             :set("generation", sql.builder.expr("generation + 1")):set("updated_at", now)
+            :set("last_seq", refresh_from or start_seq):set("status", "active"):set("last_error", nil)
             :where(sql.builder.eq({ projection_id = projection_id })):run_with(tx):exec()
         if fence_err then return nil, errors.wrap(fence_err, "failed to fence refreshed projection") end
         local _, proof_err = sql_boundary.number_value(type(fenced) == "table" and fenced.rows_affected or nil,
@@ -404,7 +466,7 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
         "failed to load cursor", "cursor.rows", 0, 1, response_error)
     if cursor_query_err then return nil, cursor_query_err end
     if not cursor_rows then return nil, response_error("cursor.rows") end
-    local cursor_head = start_seq
+    local cursor_head = refresh_from or start_seq
     if #cursor_rows > 0 then
         cursor_id = tostring(cursor_rows[1].id)
         cursor_head = reset and start_seq or tonumber(cursor_rows[1].last_seq)
@@ -413,34 +475,33 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
         local prior_generation = tonumber(cursor_rows[1].generation)
         if prior_generation == nil then return fail("projection cursor generation is missing", errors.INTERNAL) end
         generation = prior_generation
-        if params.ensure ~= true then
-            local held, pin_err = retention_pin.read(tx, thread_id, "projection:" .. cursor_id)
-            if pin_err then return nil, pin_err end
-            if held then
-                local _, release_err = retention_pin.release_tx(tx, { thread_id = thread_id,
-                    consumer_key = "projection:" .. cursor_id, expected_pin_generation = held.generation,
-                    terminal_op_id = cursor_id .. ":correct:" .. tostring(prior_generation) })
-                if release_err then return nil, release_err end
+        if params.ensure ~= true or declaration_changed then
+            if not declaration_changed then
+                local pin_err = release_cursor_pin(tx, thread_id, cursor_id, prior_generation)
+                if pin_err then return nil, pin_err end
             end
             generation = prior_generation + (declaration_changed and 0 or 1)
-            local updated, update_err = sql.builder.update("kickside_projection_cursor")
+            local cursor_update = sql.builder.update("kickside_projection_cursor")
                 :set("last_seq", cursor_head):set("status", "active")
                 :set("generation", generation):set("last_error", nil)
-                :set("actor_id", actor_id_col)
-                :set("execution_identity_json", actor_context_col)
-                :set("debounce_idle_ms", debounce_idle_ms):set("debounce_max_ms", debounce_max_ms)
                 :set("updated_at", now)
+            if params.ensure ~= true then
+                cursor_update = cursor_update:set("actor_id", actor_id_col)
+                    :set("execution_identity_json", actor_context_col)
+                    :set("debounce_idle_ms", debounce_idle_ms):set("debounce_max_ms", debounce_max_ms)
+            end
+            local updated, update_err = cursor_update
                 :where(sql.builder.eq({ id = cursor_id })):run_with(tx):exec()
             local _, proof_err = sql_boundary.exact_row_count(updated, update_err,
                 "failed to update cursor", "cursor.update", 1, response_error)
             if proof_err then return nil, proof_err end
         end
     else
-        if start_seq < pruned_seq then return fail("projection registration would replay pruned history", errors.CONFLICT) end
+        if cursor_head < pruned_seq then return fail("projection registration would replay pruned history", errors.CONFLICT) end
         cursor_id = uuid.v7()
         local inserted, insert_err = sql.builder.insert("kickside_projection_cursor")
             :set_map({ id = cursor_id, projection_id = projection_id, thread_id = thread_id,
-                cursor_key = cursor_key, generation = 1, last_seq = start_seq,
+                cursor_key = cursor_key, generation = 1, last_seq = cursor_head,
                 status = "active", debounce_idle_ms = debounce_idle_ms,
                 debounce_max_ms = debounce_max_ms, actor_id = actor_id_col,
                 execution_identity_json = actor_context_col,
@@ -469,7 +530,7 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
     local _, link_proof_err = sql_boundary.exact_row_count(linked, link_err,
         "failed to link projection slot", "cursor.link", 1, response_error)
     if link_proof_err then return nil, link_proof_err end
-    if params.ensure ~= true and cursor_rows and cursor_rows[1] and (cursor_head < event_count or reset) then
+    if not declaration_changed and (params.ensure ~= true or reset) and cursor_rows and cursor_rows[1] and (cursor_head < event_count or reset) then
         local _, wake_err = jobs_wake.wake_job(tx, job_id, { control = true }, dbtype)
         if wake_err then return nil, wake_err end
     end

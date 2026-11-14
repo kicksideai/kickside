@@ -628,6 +628,7 @@ entries:
       test: wippy.test:test
       provision: kickside.core.threads:provision
       autoinit: kickside.component:autoinit
+      component_lifecycle_log: kickside.core.threads.persist:lifecycle
 
   - name: provision_kind_read_deny
     kind: security.policy
@@ -727,6 +728,28 @@ entries:
         methods:
           get_status: kickside.core.threads:thread_status
 
+  # A system kind that seeds itself from its own lifecycle: the declared
+  # lifecycle projection consumes the component's created event.
+  - name: provision_seeded_test_decl
+    kind: contract.binding
+    meta:
+      title: Test Seeded System Component
+      class:
+        - test_seeded
+      provision:
+        scope: system
+      projections:
+        - kind: test.seed
+          on: lifecycle
+          worker_ref: "func://app:test_count_worker"
+          events:
+            input:
+              - type: kickside.component.events:created
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
   - name: provision_test
     kind: function.lua
     meta:
@@ -751,6 +774,7 @@ entries:
       test: wippy.test:test
       provision: kickside.core.threads:provision
       autoinit: kickside.component:autoinit
+      component_lifecycle_log: kickside.core.threads.persist:lifecycle
 
   - name: dep.wippy.bootloader
     version: "*"
@@ -896,7 +920,10 @@ entries:
       core_db: kickside.core:db
       execution_identity: kickside.execution:execution_identity
       proj_types: kickside.core.projections:types
+      proj_register: kickside.core.projections.persist:register
       component_identity: kickside.core.threads:component_identity
+      component_lifecycle_log: kickside.core.threads.persist:lifecycle
+      component_lifecycle: kickside.core.lifecycle:component_lifecycle_impl
 
   - name: thread_provision_race_test
     kind: function.lua
@@ -1249,6 +1276,7 @@ entries:
     source: file://src_link/projections/persist/register.lua
     modules: [sql, json]
     imports:
+      canonical_json: kickside.contract:canonical_json
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       committed_error: kickside.contract:committed_error
       uuid: app:projection_uuid_fixture
@@ -2725,7 +2753,10 @@ entries:
       component_identity: app:provision_native_identity_adapter
       execution_identity: app:provision_native_execution_adapter
       core_db: kickside.core:db
+      component_lifecycle_log: kickside.core.threads.persist:lifecycle
+      component_lifecycle: app:provision_native_lifecycle_adapter
       proj_types: kickside.core.projections:types
+      proj_register: kickside.core.projections.persist:register
       component_envelope: kickside.component:envelope
       error_envelope: kickside.contract:error_envelope
 
@@ -2763,6 +2794,8 @@ entries:
     kind: library.lua
     source: file://projection_register_native_fixture.lua
     modules: [sql, json]
+    imports:
+      canonical_json: kickside.contract:canonical_json
 
   - name: projection_register_native_sql_adapter
     kind: library.lua
@@ -2782,6 +2815,7 @@ entries:
     source: file://projection_register_native_source.lua
     modules: [uuid]
     imports:
+      canonical_json: kickside.contract:canonical_json
       sql: app:projection_register_native_sql_adapter
       json: app:projection_register_native_json_adapter
       clock: kickside.core.jobs:clock
@@ -4326,6 +4360,101 @@ entries:
       claim: kickside.core.jobs.persist:claim
       lifecycle: kickside.core.jobs.persist:lifecycle
       completion: kickside.core.jobs.service:worker_completion
+
+  - name: projection_declaration_refresh_kind
+    kind: contract.binding
+    meta:
+      class: [test.declaration.refresh]
+      thread: {class: test.declaration.refresh}
+      projections:
+        - kind: test.declaration.refresh
+          worker_ref: func://app:test_count_worker
+          input_mode: prefetch_events
+          events:
+            input:
+              - {type: app:threads_keep}
+              - {type: app:threads_skip}
+      events:
+        input:
+          - {type: app:threads_keep}
+          - {type: app:threads_skip}
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  - name: projection_declaration_convergence_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_core
+    source: file://projection_declaration_convergence_test.lua
+    method: run
+    modules: [sql, uuid, json, security, contract, process, channel, time]
+    imports:
+      test: wippy.test:test
+      provision: kickside.core.threads:provision
+      prune: kickside.core.retention:prune
+      apply: kickside.core.projections:apply
+      claim: kickside.core.jobs.persist:claim
+      clock: kickside.core.jobs:clock
+      proj_register: kickside.core.projections.persist:register
+
+  - name: projection_declaration_manual_kind
+    kind: contract.binding
+    meta:
+      class: [test.declaration.manual]
+      thread: {class: test.declaration.manual}
+      events:
+        input:
+          - {type: app:threads_keep}
+          - {type: app:threads_skip}
+        output:
+          - {type: app:threads_note}
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  - name: lifecycle_convergence_kind
+    kind: contract.binding
+    meta:
+      class: [test.lifecycle.converge]
+      projections:
+        - on: lifecycle
+          kind: test.lifecycle.converge
+          projection_key: custom
+          cursor_key: progress
+          worker_ref: func://app:test_count_worker
+          input_mode: prefetch_events
+          events:
+            input:
+              - {type: 'kickside.component.events:created'}
+              - {type: 'kickside.component.events:updated'}
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: kickside.core.threads:thread_status
+
+  - name: lifecycle_convergence_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_core}
+    source: file://lifecycle_convergence_test.lua
+    method: run
+    modules: [sql, uuid, json, security, contract, process, channel, time]
+    imports:
+      test: wippy.test:test
+      provision: kickside.core.threads:provision
+      lifecycle: kickside.core.threads.persist:lifecycle
+      register: kickside.core.projections.persist:register
+      prune: kickside.core.retention:prune
+      writer: kickside.core.projections.persist:writer
+
+  - name: provision_native_lifecycle_adapter
+    kind: library.lua
+    source: file://provision_native_lifecycle_adapter.lua
+    imports:
+      fixture: app:provision_native_fixture
 
   - name: retention_migration_timed_source
     kind: library.lua

@@ -196,6 +196,21 @@ function M.deleted(args: any): (any?, error?)
     return handle(lifecycle_log.KIND.DELETED, args)
 end
 
+-- converge_own registers the component's own lifecycle projections (`on: lifecycle`)
+-- on its lifecycle thread, the registration every lifecycle event runs, for a
+-- component whose declared lifecycle projection is absent since its last event.
+-- Registration is an ensure: surviving projections and cursors keep their progress.
+-- Returns the lifecycle thread id, or nil for a component exempt from one.
+function M.converge_own(tx: sql.Transaction, dbtype: string, component_id: string, impl_id: string): (string?, error?)
+    if lifecycle_log.is_exempt(impl_id) then return nil, nil end
+    local lifecycle_thread_id, ensure_err = lifecycle_log.ensure_tx(tx, component_id, impl_id)
+    if ensure_err or not lifecycle_thread_id then return nil, ensure_err end
+    local attach_err = attach_lifecycle_projections({ tx = tx, dbtype = dbtype,
+        component_id = component_id, impl_id = impl_id }, lifecycle_thread_id :: string, false)
+    if attach_err then return nil, attach_err end
+    return lifecycle_thread_id, nil
+end
+
 -- Lifecycle appends and projection attachment publish durable wake demand in
 -- the component transaction; the committed caller notifies the job worker pool.
 function M.committed(): (any?, error?)

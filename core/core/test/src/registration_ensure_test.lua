@@ -9,7 +9,7 @@ local writer = require("writer")
 local function define_tests()
     test.describe("projection declaration convergence", function()
         for _, status in ipairs({"active", "paused", "invalid"}) do
-            test.it("refreshes an ensured declaration and preserves its fold and " .. status .. " cursor", function()
+            test.it("refreshes an ensured declaration forward from an " .. status .. " cursor", function()
                 local db = assert(sql.get("app:db"))
                 local id = uuid.v7()
                 assert(db:execute([[INSERT INTO kickside_thread
@@ -40,25 +40,36 @@ local function define_tests()
                 test.eq(ensured.cursor_id, registered.cursor_id)
                 test.eq(ensured.job_id, registered.job_id)
                 test.eq(ensured.created, false)
-                local after = assert(db:query("SELECT body,last_event_seq FROM kickside_projection WHERE id=$1", {registered.projection_id}))[1]
+                local after = assert(db:query("SELECT body,last_event_seq,declaration_revision,declaration_from_seq FROM kickside_projection WHERE id=$1", {registered.projection_id}))[1]
                 local refreshed = assert(json.decode(after.body))
                 test.eq(refreshed.events.input[2].type, "new.event")
                 test.eq(refreshed.worker_config.version, 2)
                 test.is_nil(refreshed.drop_notify)
                 test.eq(refreshed.stats.count, 4)
                 test.eq(refreshed.stats.nested.value, "retained")
-                test.eq(tonumber(after.last_event_seq), 4)
+                test.eq(tonumber(after.declaration_revision), 2)
+                test.eq(tonumber(after.declaration_from_seq), 8)
+                test.is_nil(refreshed.declaration_status)
+                test.eq(tonumber(after.last_event_seq), 7)
                 local cursor = assert(db:query("SELECT last_seq,status,last_error,generation FROM kickside_projection_cursor WHERE id=$1",
                     {registered.cursor_id}))[1]
-                test.eq(tonumber(cursor.last_seq), 4)
-                test.eq(cursor.status, status)
-                test.eq(cursor.last_error, "retained error")
+                test.eq(tonumber(cursor.last_seq), 7)
+                test.eq(cursor.status, "active")
+                test.is_nil(cursor.last_error)
                 test.eq(tonumber(cursor.generation), registered.generation + 1, "old worker snapshots cannot overwrite the refreshed declaration")
-                local sibling_cursor = assert(db:query("SELECT generation FROM kickside_projection_cursor WHERE id=$1", {sibling.cursor_id}))[1]
+                local sibling_cursor = assert(db:query("SELECT generation,last_seq,status,last_error FROM kickside_projection_cursor WHERE id=$1", {sibling.cursor_id}))[1]
                 test.eq(tonumber(sibling_cursor.generation), sibling.generation + 1, "all cursors share the refreshed declaration")
+                test.eq(tonumber(sibling_cursor.last_seq), 7)
+                test.eq(sibling_cursor.status, "active")
+                test.is_nil(sibling_cursor.last_error)
+                assert(db:execute("UPDATE kickside_projection_cursor SET status=$1,last_error='retained error' WHERE id=$2", {status, registered.cursor_id}))
                 local repeated, repeat_err = writer.register_projection(db, id, params)
                 test.is_nil(repeat_err)
                 test.eq(repeated.generation, ensured.generation, "an unchanged ensure does not fence a current worker")
+                local unchanged = assert(db:query("SELECT status,last_error,last_seq FROM kickside_projection_cursor WHERE id=$1", {registered.cursor_id}))[1]
+                test.eq(unchanged.status, status)
+                test.eq(unchanged.last_error, "retained error")
+                test.eq(tonumber(unchanged.last_seq), 7)
                 params.events = nil
                 local unfiltered, unfilter_err = writer.register_projection(db, id, params)
                 test.is_nil(unfilter_err)

@@ -129,8 +129,8 @@ end
 -- thread row under the component id and applies the declared projections/retention.
 -- converge_thread makes a component's real thread state match its kind's
 -- declaration: absent thread → full create (declaration applied by the writer);
--- present thread → register missing projections, cursors and
--- Jobs slots without changing surviving cursor progress or generations. Called
+-- present thread → register missing projections, cursors and Jobs slots, and
+-- refresh changed declarations through projection registration. Called
 -- by explicit ensure on first touch and by provision.converge at boot/install.
 function M.converge_thread(args: any): (any?, error?)
     args = type(args) == "table" and args or {}

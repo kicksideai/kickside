@@ -173,9 +173,9 @@ local function define_tests()
                 { registered.job_id }).n), 1)
             test.is_nil(read(db, "SELECT scheduled_at FROM kickside_job WHERE id=$1", { registered.job_id }).scheduled_at)
 
-            -- A corrected declaration re-registers the cursor active and wakes it.
+            -- An explicit reset of the corrected declaration replays the failed range.
             local _, fix_err = writer.register_projection(db, thread_id, {
-                kind = "failing-deterministic", worker_ref = "func://app:test_count_worker",
+                kind = "failing-deterministic", worker_ref = "func://app:test_count_worker", reset = true,
                 worker_input_mode = "prefetch_events", system_identity = true,
             })
             test.is_nil(fix_err)

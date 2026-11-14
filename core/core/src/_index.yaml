@@ -40,6 +40,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.core.migrations:14_inherited_retention
         path: .meta.target_db
+      - entry: kickside.core.migrations:15_projection_declaration_digest
+        path: .meta.target_db
       - entry: kickside.core:db_config
         path: .meta.db_id
 
