@@ -645,7 +645,9 @@ local function define_tests()
                 local queued = assert(process_worker.enqueue_upload_job(upload, true))
                 local db = assert(sql.get("app:db"))
                 local leased = admit_job(db, queued.job_id, 1)
-                local input = assert(worker_dispatch.build_worker_input(leased))
+                local input, _, input_err = worker_dispatch.build_worker_input(leased)
+                test.is_nil(input_err, tostring(input_err))
+                test.not_nil(input)
                 local heartbeat, calls = jobs.heartbeat, 0
                 local unavailable = errors.new({message = "progress notification unavailable", kind = errors.UNAVAILABLE,
                     retryable = true, details = {code = "progress_notification_unavailable"}})
