@@ -61,6 +61,7 @@ entries:
     source: file://upload_record_repo.lua
     modules: [json, time, sql]
     imports:
+      upload_query_repo: kickside.uploads.persist:upload_query_repo
       artifact_content_repo: kickside.uploads.persist:artifact_content_repo
       uploads_resources: kickside.uploads.binding:uploads_resources
       persisted_json: kickside.contract:persisted_json

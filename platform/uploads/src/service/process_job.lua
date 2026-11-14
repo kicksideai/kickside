@@ -88,10 +88,10 @@ end
 
 -- Settle an upload's processing outcome in one transaction: its storage state,
 -- callback jobs, thread event and, on success, the processing hooks. Inside the
--- processing job the same transaction completes the job's lease; the outcome of
--- a dead processing job (dead_job_id) settles only the upload that job still
--- owns. Returns false when the upload is not the settling job's to settle.
-local function settle(job: any, upload: any, outcome: table, dead_job_id: string?): (boolean, any?)
+-- processing job the same transaction completes the job's lease. Interrupted
+-- processing requires the same intent snapshot and no live job. Returns false
+-- when the upload is not the settling job's to settle.
+local function settle(job: any, upload: any, outcome: table, failed_processing: table?): (boolean, any?)
     local success = outcome.success == true
     local prepared_hooks
     if success then
@@ -117,7 +117,7 @@ local function settle(job: any, upload: any, outcome: table, dead_job_id: string
         return false, err
     end
     local settled, state_err = upload_record_repo.settle_storage_tx(tx, upload.uuid,
-        success and "completed" or "failed", dead_job_id)
+        success and "completed" or "failed", failed_processing)
     if state_err then return abort(state_err) end
     if not settled then return abort(nil) end
     local callback_ok, callback_err = pipeline_lib.invoke_upload_token(upload, success,
@@ -133,7 +133,7 @@ local function settle(job: any, upload: any, outcome: table, dead_job_id: string
     end
     local thread_id = tostring(job.thread_id or "")
     local completing: string? = nil
-    if dead_job_id == nil then completing = tostring(job.id) end
+    if failed_processing == nil then completing = tostring(job.id) end
     local _, append_err = threads_writer.append_system_tx(tx, dbtype, thread_id, { event }, completing)
     if append_err then return abort(append_err) end
     if success then
@@ -142,7 +142,7 @@ local function settle(job: any, upload: any, outcome: table, dead_job_id: string
             return abort(hook_err or errors.new({message="Processing extension did not acknowledge completion",kind=errors.INTERNAL,retryable=true}))
         end
     end
-    if dead_job_id == nil then
+    if failed_processing == nil then
         local _, complete_err = jobs.complete_tx(tx, tostring(job.id), {
             token = job.lease_token, execution_seq = job.execution_seq,
         }, {})
@@ -258,22 +258,34 @@ local function dead(input: any): (any, any?)
     if not upload then return { skipped = true, reason = "upload_not_held", job_id = job_id }, nil end
     local error_text = tostring(dead_job.last_error or "upload processing job ended dead")
     local settled, settle_err = settle({ thread_id = dead_job.thread_id }, upload,
-        { success = false, error_text = error_text }, job_id)
+        { success = false, error_text = error_text }, upload)
     if settle_err then return nil, settle_err end
     log:info("dead processing job settled", { upload_id = upload.uuid, job_id = job_id, settled = settled })
     return { upload_id = upload.uuid, job_id = job_id, settled = settled }, nil
 end
 
 local function repair_dead(limit: integer): (integer?, any?, boolean?)
-    local ids, list_err = upload_query_repo.list_dead_processing_jobs(limit)
+    local candidates, list_err = upload_query_repo.list_dead_processing_jobs(limit)
     if list_err then return nil, list_err end
     local repaired = 0
-    for _, id in ipairs(ids) do
-        local result, settle_err = dead({payload = {job_id = id}})
+    for _, candidate in ipairs(candidates) do
+        local result, settle_err
+        if candidate.job_id ~= nil then
+            result, settle_err = dead({payload = {job_id = tostring(candidate.job_id)}})
+        else
+            local upload, read_err = upload_query_repo.get(candidate.upload_id)
+            if read_err and not errors.is(read_err, errors.NOT_FOUND) then return nil, read_err end
+            if upload then
+                local settled
+                settled, settle_err = settle({thread_id = upload_types.component_id_for_owner(upload.actor_id)}, upload,
+                    {success = false, error_text = "upload processing job is missing"}, upload)
+                result = {settled = settled}
+            end
+        end
         if settle_err then return nil, settle_err end
-        if result.settled then repaired = repaired + 1 end
+        if result and result.settled then repaired = repaired + 1 end
     end
-    return repaired, nil, #ids == limit
+    return repaired, nil, #candidates == limit
 end
 
 -- proc:// entry point. The monitored process transports one status value, with

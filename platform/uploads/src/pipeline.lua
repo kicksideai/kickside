@@ -386,8 +386,12 @@ function pipeline_lib.invoke_upload_token(upload, success, error_msg, tx: any?, 
     for _, token in ipairs(callback_tokens(upload.metadata)) do
         local ok, err = enqueue_upload_token_once(upload, token, success, error_msg, tx, dbtype)
         if not ok then
-            first_err = first_err or err or errors.new({ message = "failed to enqueue upload callback",
+            local failure = err or errors.new({ message = "failed to enqueue upload callback",
                 kind = errors.INTERNAL, retryable = true, details = { error_kind = "infrastructure" } })
+            if first_err == nil or (type(first_err) == "userdata" and not first_err:retryable()
+                    and (type(failure) ~= "userdata" or failure:retryable())) then
+                first_err = failure
+            end
             log:warn("upload token callback enqueue failed", {
                 upload_id = upload.uuid,
                 error = tostring(err),

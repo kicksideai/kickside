@@ -7,9 +7,25 @@ local trim = require("text_trim").trim
 
 local upload_query_repo = {}
 
+local function canonical_job(upload: string): string
+    return "'7:uploads' || CAST(length(" .. upload .. "uuid) AS TEXT) || ':' || " .. upload .. "uuid || '7:process'"
+end
+
 local function intentless_job(upload: string): string
-    return upload .. "processing_intent_state IS NULL AND j.job_identity='7:uploads' || CAST(length("
-        .. upload .. "uuid) AS TEXT) || ':' || " .. upload .. "uuid || '7:process'"
+    return upload .. "processing_intent_state IS NULL AND j.job_identity=" .. canonical_job(upload)
+end
+
+-- The pointer fences current intents; the canonical identity also fences live
+-- work created before intents exist. A missing terminal row is not live work.
+function upload_query_repo.interrupted_processing_condition(upload: string): string
+    local jobs = "SELECT 1 FROM kickside_job j WHERE j.owner_kind='user' AND j.owner_id=" .. upload .. "actor_id"
+        .. " AND j.job_type='kickside.uploads.service:process_job_proc'"
+        .. " AND (CAST(j.id AS TEXT)=" .. upload .. "processing_job_id OR j.job_identity="
+        .. canonical_job(upload) .. ")"
+    return "(" .. upload .. "processing_intent_state='acknowledged' OR ("
+        .. upload .. "processing_intent_state IS NULL AND (EXISTS (" .. jobs .. ") OR EXISTS ("
+        .. "SELECT 1 FROM kickside_upload_read_model r WHERE r.upload_id=" .. upload .. "uuid AND r.status='processing'))))"
+        .. " AND NOT EXISTS (" .. jobs .. " AND j.status<>'dead')"
 end
 
 local function select_upload_columns()
@@ -140,18 +156,17 @@ function upload_query_repo.list_dead_processing_jobs(limit: integer): (table?, a
     local db, err = resources.get_db()
     if err then return nil, err end
     local rows, read_err = db:query([[
-        SELECT j.id FROM kickside_uploads u JOIN kickside_job j ON j.owner_kind='user' AND j.owner_id=u.actor_id
+        SELECT u.uuid AS upload_id, j.id AS job_id FROM kickside_uploads u
+        LEFT JOIN kickside_job j ON j.owner_kind='user' AND j.owner_id=u.actor_id
           AND ((u.processing_intent_state='acknowledged' AND CAST(j.id AS TEXT)=u.processing_job_id)
             OR (]] .. intentless_job("u.") .. [[))
-        WHERE u.storage_state='uploaded' AND j.status='dead'
-          AND j.job_type='kickside.uploads.service:process_job_proc'
+          AND j.job_type='kickside.uploads.service:process_job_proc' AND j.status='dead'
+        WHERE u.storage_state='uploaded' AND ]] .. upload_query_repo.interrupted_processing_condition("u.") .. [[
         ORDER BY u.created_at,u.uuid,j.id DESC LIMIT $1
     ]], {limit})
     db:release()
     if read_err then return nil, read_err end
-    local ids = {}
-    for _, row in ipairs(rows) do ids[#ids + 1] = tostring(row.id) end
-    return ids, nil
+    return rows, nil
 end
 
 -- Intent is committed on the upload record before enqueue. The jobs enqueue
