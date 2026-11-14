@@ -82,6 +82,8 @@ entries:
       comment: HTTP router the connection admin endpoints attach to. Must enforce auth + endpoint_firewall.
       description: HTTP router the connection admin endpoints attach to. Must enforce auth + endpoint_firewall.
     targets:
+      - entry: kickside.connection.api:get_connection.endpoint
+        path: .meta.router
       - entry: kickside.connection.api:list_connections.endpoint
         path: .meta.router
       - entry: kickside.connection.api:create_connection.endpoint

@@ -1,0 +1,127 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: '1.0'
+namespace: app
+entries:
+- name: secret_missing_key_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: component_secret_missing_key
+  source: file://secret_missing_key_test.lua
+  method: run
+  modules:
+  - sql
+  - uuid
+  - json
+  - time
+  imports:
+    test: wippy.test:test
+    reader: kickside.component.persist:component_reader
+    component: kickside.component:component
+    context_ops: kickside.component.persist:context_ops
+- name: secret_test_storage
+  kind: env.storage.static
+  values:
+    KEY: ''
+- name: secret_test_key
+  kind: env.variable
+  variable: KEY
+  storage: app:secret_test_storage
+- name: secret_kind
+  kind: contract.binding
+  meta:
+    secret_fields:
+    - path:
+      - api_key
+      type: string
+  contracts:
+  - contract: kickside.contract:component
+    methods:
+      get_status: app:secret_kind_status
+- name: secret_kind_status
+  kind: function.lua
+  source: return {run = function() return {success = true} end}
+  method: run
+- name: dep.wippy.test
+  kind: ns.dependency
+  component: wippy/test
+  version: '*'
+- name: db
+  kind: db.sql.sqlite
+  foreign_keys: true
+  meta:
+    comment: In-memory database for component tests
+  file: ${sqlite_path}
+- name: env_storage
+  kind: env.storage.file
+  meta:
+    type: envstorage
+  file_path: ./.wippy/test.env
+  auto_create: true
+- name: processes
+  kind: process.host
+  lifecycle:
+    auto_start: true
+- name: gateway
+  kind: http.service
+  meta:
+    comment: Test HTTP server for the share endpoints.
+  addr: :0
+  lifecycle:
+    auto_start: true
+- name: api
+  kind: http.router
+  meta:
+    comment: Test API router (app:api) the share endpoints attach to.
+    server: gateway
+  prefix: /api
+- name: test_scope_policy
+  kind: security.policy
+  meta:
+    comment: Permissive scope for component tests (grants db access to the test actor;
+      component access itself stays grant-based)
+  groups:
+  - component_test
+  policy:
+    resources: '*'
+    actions: '*'
+    effect: allow
+- name: dep.wippy.bootloader
+  version: '*'
+  kind: ns.dependency
+  meta:
+    comment: Bootloader configuration for testing
+  component: wippy/bootloader
+  parameters:
+  - name: wippy.bootloader:application_host
+    value: app:processes
+  - name: wippy.bootloader:env_storage
+    value: app:env_storage
+- name: dep.kickside.component
+  version: '*'
+  kind: ns.dependency
+  meta:
+    comment: Component module mounted as a root so mandatory host requirements are
+      exercised.
+  component: kickside/component
+  parameters:
+  - name: kickside.component:target_db
+    value: app:db
+  - name: kickside.component:api_router
+    value: app:api
+- name: dep.wippy.migration
+  version: '*'
+  kind: ns.dependency
+  component: wippy/migration
+  parameters:
+  - name: wippy.migration:app_db
+    value: app:db
+- name: dep.kickside.jobs
+  kind: ns.dependency
+  component: kickside/jobs
+  version: '*'
+  parameters:
+  - name: kickside.core.jobs:target_db
+    value: app:db
+  - name: kickside.core.jobs:process_host
+    value: app:processes

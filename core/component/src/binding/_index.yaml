@@ -2,6 +2,22 @@ version: "1.0"
 namespace: kickside.component.binding
 
 entries:
+  - name: get_secrets_func
+    kind: function.lua
+    meta: {private: true, comment: Server-side credential read; requires component access and owning-kind authority.}
+    source: file://../secrets_read.lua
+    method: secrets
+    modules: [security]
+    security:
+      policies: [kickside.component:kind_declaration_call, kickside.component:secrets_codec_access]
+    imports:
+      secrets_document: kickside.component:secrets_document
+      component_reader: kickside.component.persist:component_reader
+      component_types: kickside.component:types
+      envelope: kickside.component:envelope
+      access_policy: kickside.component:access_policy
+      context_policy: kickside.component:context_policy
+      secret_fields: kickside.component:secret_fields
   # kickside.component.binding:component_service_impl
   - name: component_service_impl
     kind: contract.binding
@@ -16,6 +32,7 @@ entries:
         default: true
         methods:
           delete: kickside.component.binding:delete_component_func
+          get_secrets: kickside.component.binding:get_secrets_func
           get_access_context: kickside.component.binding:get_access_context_func
           get_access_context_by_meta: kickside.component.binding:get_access_context_by_meta_func
           get: kickside.component.binding:get_component_func
@@ -80,6 +97,8 @@ entries:
   # kickside.component.binding:get_access_context_by_meta_func
   - name: get_access_context_by_meta_func
     kind: function.lua
+    security:
+      policies: [kickside.component:kind_declaration_call]
     meta:
       comment: Get component access context by metadata filters
       tags:
@@ -88,10 +107,12 @@ entries:
         - metadata
     source: file://../context.lua
     modules:
+      - funcs
       - sql
       - security
       - contract
     imports:
+      secret_fields: kickside.component:secret_fields
       error_envelope: kickside.contract:error_envelope
       envelope: kickside.component:envelope
       component_reader: kickside.component.persist:component_reader
@@ -104,6 +125,8 @@ entries:
   # kickside.component.binding:get_access_context_func
   - name: get_access_context_func
     kind: function.lua
+    security:
+      policies: [kickside.component:kind_declaration_call]
     meta:
       comment: Get component access context for execution
       tags:
@@ -111,11 +134,13 @@ entries:
         - execution
     source: file://../context.lua
     modules:
+      - funcs
       - sql
       - security
       - contract
       - json
     imports:
+      secret_fields: kickside.component:secret_fields
       error_envelope: kickside.contract:error_envelope
       envelope: kickside.component:envelope
       component_reader: kickside.component.persist:component_reader
@@ -163,6 +188,8 @@ entries:
   # kickside.component.binding:query_components_func
   - name: query_components_func
     kind: function.lua
+    security:
+      policies: [kickside.component:kind_declaration_call]
     meta:
       comment: Access-filtered component read-port (query)
       tags:
@@ -171,10 +198,12 @@ entries:
         - query
     source: file://../context.lua
     modules:
+      - funcs
       - sql
       - security
       - contract
     imports:
+      secret_fields: kickside.component:secret_fields
       error_envelope: kickside.contract:error_envelope
       envelope: kickside.component:envelope
       read_port: kickside.component.persist:read_port
@@ -205,7 +234,7 @@ entries:
   - name: register_component_func
     kind: function.lua
     security:
-      policies: [kickside.component:kind_declaration_call]
+      policies: [kickside.component:kind_declaration_call, kickside.component:secrets_codec_access]
     meta:
       comment: Register a new component implementation
       tags:
@@ -229,6 +258,8 @@ entries:
   # kickside.component.binding:export_component_func
   - name: export_component_func
     kind: function.lua
+    security:
+      policies: [kickside.component:kind_declaration_call]
     meta:
       comment: export_component — build the portable shell envelope (ADMIN-gated, secret-free, data-free)
       tags:
@@ -245,13 +276,14 @@ entries:
       component_reader: kickside.component.persist:component_reader
       component_ops: kickside.component.persist:component_ops
       base_portable: kickside.component.portability:base_portable
+      secret_fields: kickside.component:secret_fields
     method: handle
 
   # kickside.component.binding:import_component_func
   - name: import_component_func
     kind: function.lua
     security:
-      policies: [kickside.component:kind_declaration_call]
+      policies: [kickside.component:kind_declaration_call, kickside.component:secrets_codec_access]
     meta:
       comment: import_component — reconstruct a shell from a portable envelope, owned by the actor (register + rollback owned upstream)
       tags:
@@ -272,7 +304,7 @@ entries:
   - name: update_component_func
     kind: function.lua
     security:
-      policies: [kickside.component:kind_declaration_call]
+      policies: [kickside.component:kind_declaration_call, kickside.component:secrets_codec_access]
     meta:
       comment: Update component private context
       tags:

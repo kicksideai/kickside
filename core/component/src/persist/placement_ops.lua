@@ -4,6 +4,7 @@ local security = require("security")
 local time = require("time")
 local uuid = require("uuid")
 local json = require("json")
+local secrets_document = require("secrets_document")
 local meta_ops = require("meta_ops")
 local placement = require("placement")
 local component_types = require("component_types")
@@ -105,7 +106,10 @@ local function create_component(tx: Executor, db: Executor, command: component_t
             initial_identity.credential_id, initial_identity.link_id)
         context._execution_identity = initial_identity
     end
-    local private_context, enc_err = encode_context(context)
+    local incarnation = uuid.v4()
+    local visible, secret_write, prepare_err = secrets_document.prepare(component_id, payload.impl_id, context, nil, nil, incarnation)
+    if prepare_err then return nil, prepare_err end
+    local private_context, enc_err = encode_context(visible)
     if enc_err then
         return nil, enc_err
     end
@@ -151,6 +155,7 @@ local function create_component(tx: Executor, db: Executor, command: component_t
     local component_row: { [string]: any } = {
         component_id = component_id,
         impl_id = payload.impl_id,
+        secrets_incarnation = incarnation,
         private_context = private_context,
         parent_id = parent_id,
         position = position,
@@ -158,6 +163,10 @@ local function create_component(tx: Executor, db: Executor, command: component_t
         created_at = now_ts,
         updated_at = now_ts,
     }
+    if secret_write then
+        component_row.encrypted_secrets = secret_write.encrypted
+        component_row.secrets_generation = secret_write.generation
+    end
     if initial_hash ~= nil then component_row.identity_hash = initial_hash end
     local inserted, err = sql.builder.insert(component_types.TABLES.COMPONENTS)
         :set_map(component_row)

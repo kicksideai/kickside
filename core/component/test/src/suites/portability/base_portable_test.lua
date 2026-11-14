@@ -9,6 +9,19 @@ local CONN_CRED = { fields = { { key = "api_key" } } }
 
 local function define_tests()
     test.describe("base_portable domain", function()
+        test.it("strips declared secret paths independently of credential forms on export and import", function()
+            local paths = {{path = {"auth", "runtime_token"}, type = "string"}}
+            local envelope = base.build_envelope({private_context = {auth = {runtime_token = {set = true}, region = "eu"}},
+                portable_schema = {context = true}, secret_fields = paths})
+            test.is_nil(envelope.context.auth.runtime_token)
+            test.eq(envelope.context.auth.region, "eu")
+            local imported, err = base.resolve_context({context = true}, nil,
+                {context = {auth = {runtime_token = "untrusted-export-secret", region = "eu"}}}, nil, nil, paths)
+            test.is_nil(err)
+            test.is_nil(imported.auth.runtime_token)
+            test.eq(imported.auth.region, "eu")
+        end)
+
         test.it("extracts credential keys", function()
             local keys = base.credential_keys({ fields = { { key = "api_key" }, { key = "site_url" }, { bad = 1 } } })
             test.eq(#keys, 2)

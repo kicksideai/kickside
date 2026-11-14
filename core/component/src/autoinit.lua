@@ -18,24 +18,41 @@ local registry = require("registry")
 local crypto = require("crypto")
 local funcs = require("funcs")
 local security = require("security")
+local types = require("component_types")
 
 local M = {}
 
 -- Kind declarations are module policy, independent of the requesting scope.
-function M.read_kind(impl_id: string): (any?, error?)
-    local entry, err = registry.get(impl_id)
+function M.read_kind(impl_id: string?): (unknown?, error?)
+    local snapshot, snapshot_err = registry.snapshot()
+    if snapshot_err then return nil, snapshot_err end
+    if impl_id == nil then
+        local entries, find_err = snapshot:find({[".kind"] = "contract.binding"})
+        if find_err then return nil, find_err end
+        local kinds: {types.SecretKind} = {}
+        for _, entry in ipairs(entries or {}) do
+            if entry.meta and entry.meta.secret_fields ~= nil then
+                kinds[#kinds + 1] = {id = tostring(entry.id), meta = {
+                    secret_fields = entry.meta.secret_fields,
+                    credential_schema = entry.meta.credential_schema}}
+            end
+        end
+        return {kinds = kinds, version = tostring(snapshot:version():id())}, nil
+    end
+    local entry, err = snapshot:get(impl_id)
     if err then return nil, err end
     if not entry then return nil end
     local meta = entry.meta or {}
     return {meta = {mutation = meta.mutation, projections = meta.projections,
-        thread = meta.thread, retention = meta.retention}}, nil
+        thread = meta.thread, retention = meta.retention,
+        secret_fields = meta.secret_fields, credential_schema = meta.credential_schema}}, nil
 end
 
 function M.kind_for_impl(impl_id: string): (any?, error?)
     return funcs.call("kickside.component:kind_declaration", impl_id)
 end
 
-function M.kind_declaration(impl_id: string): (any?, error?)
+function M.kind_declaration(impl_id: string?): (unknown?, error?)
     local policy, policy_err = security.policy("kickside.component:kind_read")
     if policy_err then return nil, policy_err end
     local call_policy, call_err = security.policy("kickside.component:kind_read_call")

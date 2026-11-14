@@ -14,6 +14,8 @@
 --   * component_ref slots resolve strictly through the coordinator's id_map; an
 --     unresolved reference errors rather than persisting a dead/foreign id.
 
+type SecretField = {path: {string}, type: string}
+
 local M = {}
 
 local function invalid(message: string): error
@@ -74,9 +76,12 @@ end
 
 -- Remove the value at a "/a/b/c" pointer if present. No-op on a missing/scalar path.
 local function delete_path(t: any, path: any)
-    if type(t) ~= "table" or type(path) ~= "string" or path == "" then return end
-    local parts: { string } = {}
-    for seg in string.gmatch(path, "[^/]+") do parts[#parts + 1] = seg end
+    if type(t) ~= "table" then return end
+    local parts: {string} = {}
+    if type(path) == "table" then parts = path :: {string}
+    elseif type(path) == "string" then
+        for seg in string.gmatch(path, "[^/]+") do parts[#parts + 1] = seg end
+    else return end
     if #parts == 0 then return end
     local node: any = t
     for i = 1, #parts - 1 do
@@ -89,7 +94,7 @@ end
 -- The portable subset of private_context per portable_schema.context (true = every
 -- key; { keys } = only those; absent = nothing), deep-copied and recursively stripped
 -- of credential keys at every level.
-function M.portable_context(private_context: any, portable_schema: any, cred_keys: { string }): { [string]: any }
+function M.portable_context(private_context: any, portable_schema: any, cred_keys: { string }, secret_fields: {SecretField}?): { [string]: any }
     if type(private_context) ~= "table" then return {} end
     local cred: { [string]: boolean } = {}
     for _, k in ipairs(cred_keys) do cred[k] = true end
@@ -108,6 +113,7 @@ function M.portable_context(private_context: any, portable_schema: any, cred_key
         end
     end
     local cleaned = deep_clean(picked, cred) :: { [string]: any }
+    for _, field in ipairs(secret_fields or {}) do delete_path(cleaned, field.path) end
     -- Declared references travel ONLY as slots (re-bound on import), never as raw
     -- context, so a dead/foreign source id can never persist.
     if type(portable_schema) == "table" and type((portable_schema :: any).refs) == "table" then
@@ -170,7 +176,7 @@ function M.build_envelope(opts: any): { [string]: any }
         source_component_id = (opts :: any).source_component_id,
         impl_id = (opts :: any).impl_id,
         meta = M.portable_meta((opts :: any).meta, (opts :: any).portable_schema),
-        context = M.portable_context((opts :: any).private_context, (opts :: any).portable_schema, cred_keys),
+        context = M.portable_context((opts :: any).private_context, (opts :: any).portable_schema, cred_keys, (opts :: any).secret_fields),
         slots = M.slots((opts :: any).portable_schema, cred_keys),
     }
 end
@@ -214,10 +220,10 @@ end
 -- blob's own slot claims. The envelope context is re-filtered through the trusted
 -- allowlist; slot_values fill the trusted slots; component_ref slots resolve strictly
 -- through id_map.components. Returns (context, nil) or (nil, err).
-function M.resolve_context(portable_schema: any, credential_schema: any, envelope: any, slot_values: any, id_map: any): (any, error?)
+function M.resolve_context(portable_schema: any, credential_schema: any, envelope: any, slot_values: any, id_map: any, secret_fields: {SecretField}?): (any, error?)
     local cred_keys = M.credential_keys(credential_schema)
     local env_ctx: any = type(envelope) == "table" and (envelope :: any).context or nil
-    local ctx = M.portable_context(env_ctx, portable_schema, cred_keys)
+    local ctx = M.portable_context(env_ctx, portable_schema, cred_keys, secret_fields)
 
     local declared: { [string]: any } = {}
     for _, s in ipairs(M.slots(portable_schema, cred_keys)) do declared[(s :: any).key] = s end

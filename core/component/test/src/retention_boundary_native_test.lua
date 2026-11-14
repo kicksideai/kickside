@@ -3,6 +3,41 @@ local retention = require("retention")
 local fixture = require("fixture")
 return {run = test.run_cases(function()
     test.describe("native component retention boundaries", function()
+        test.it("surfaces migration errors after existing retention work", function()
+            local source = errors.new({kind = errors.UNAVAILABLE, message = "migration dependency unavailable"})
+            fixture.reset("migration", source)
+            local result = retention.run()
+            test.is_false(result.success)
+            test.eq(result.error:kind(), errors.UNAVAILABLE)
+            test.eq(result.deleted, 5)
+            test.eq(result.audits.published, 7)
+            test.is_true(result.needs_continue)
+            test.eq(#result.blocked, 2)
+            test.eq(fixture.pending_calls, 1)
+            test.eq(fixture.reap_calls, 1)
+            test.eq(fixture.audit_calls, 1)
+            test.eq(fixture.migration_calls, 1)
+        end)
+        test.it("reports invalid migration rows with counts only", function()
+            fixture.reset("", nil)
+            fixture.invalid = 3
+            local result = retention.run()
+            test.is_true(result.success)
+            test.not_nil(fixture.warning)
+            test.eq(fixture.warning.invalid, 3)
+            local count = 0
+            for _ in pairs(fixture.warning) do count = count + 1 end
+            test.eq(count, 1)
+        end)
+        test.it("continues bounded secret conversion on the existing sweep", function()
+            fixture.reset("", nil)
+            fixture.pending_continue, fixture.reap_continue = false, false
+            fixture.migration_continue = true
+            local result = retention.run()
+            test.is_true(result.success)
+            test.eq(result.secret_migration.converted, 2)
+            test.is_true(result.needs_continue)
+        end)
         for _, stage in ipairs({"pending", "reap", "audit"}) do
             for _, kind in ipairs({errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.PERMISSION_DENIED,
                 errors.UNAVAILABLE, errors.INTERNAL, errors.CANCELED, errors.CONFLICT, errors.TIMEOUT, errors.RATE_LIMITED, errors.UNKNOWN}) do

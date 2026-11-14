@@ -1,6 +1,8 @@
 local M: any = {}
 function M.reset(stage, source)
     M.stage, M.source = stage, source
+    M.migration_calls, M.migration_continue = 0, false
+    M.invalid, M.warning = 0, nil
     M.pending_calls, M.reap_calls, M.audit_calls = 0, 0, 0
     M.pending_continue,M.reap_continue,M.audit_continue,M.audit_deadline = true,true,false,nil
 end
@@ -18,5 +20,10 @@ function M.audit()
     M.audit_calls = M.audit_calls + 1
     if M.stage == "audit" then return nil, M.source end
     return {published = 7, pruned = 11,needs_continue=M.audit_continue,deadline_ms=M.audit_deadline}, nil
+end
+function M.migrate()
+    M.migration_calls = M.migration_calls + 1
+    if M.stage == "migration" then return nil, M.source end
+    return {converted = 2, invalid = M.invalid, needs_continue = M.migration_continue}, nil
 end
 return M

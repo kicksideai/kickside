@@ -6,6 +6,7 @@ local ops = require("component_ops")
 local base = require("base_portable")
 local envelope = require("envelope")
 local context_policy = require("context_policy")
+local secret_fields = require("secret_fields")
 
 -- export_component: emit the portable shell envelope for one component. ADMIN-gated.
 -- Carries the safe metadata subset + the portable private_context (secrets stripped,
@@ -55,6 +56,10 @@ local function handle(req)
         return envelope.fail("Component not found or insufficient access (ADMIN required)", errors.PERMISSION_DENIED)
     end
 
+    local masked, paths, mask_err = secret_fields.external(comp.impl_id, comp.private_context or {}, comp.secret_fields)
+    if mask_err then return envelope.from_error(mask_err) end
+    comp.private_context, comp.secret_fields = masked, paths
+
     local impl_id = comp.impl_id
     if type(impl_id) ~= "string" or impl_id == "" then
         return envelope.internal("component has no impl_id")
@@ -92,6 +97,7 @@ local function handle(req)
         private_context = portable_context,
         portable_schema = portable_schema,
         credential_schema = credential_schema,
+        secret_fields = comp.secret_fields,
     })
 
     local shell, enc_err = json.encode(shell_envelope)

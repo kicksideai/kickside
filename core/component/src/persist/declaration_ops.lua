@@ -115,8 +115,9 @@ function M.write_declaration_tx(tx: any, input: any): (any?, error?)
         or type(input.declaration) ~= "table" then
         return nil, failure("validated declaration command is required", errors.INVALID)
     end
-    local stored, err = context_ops.lock_and_read_tx(tx, input.component_id :: string)
+    local stored, err, _, row = context_ops.lock_and_read_tx(tx, input.component_id :: string)
     if err then return nil, err end
+    if not row then return nil, failure("component not found", errors.NOT_FOUND) end
     local prior, fence_err = declaration_fence.read(tx, input.component_id, input.automation_id)
     if fence_err then return nil, fence_err end
     if prior then
@@ -130,7 +131,7 @@ function M.write_declaration_tx(tx: any, input: any): (any?, error?)
             return { component_id = input.component_id, changes_made = false, generation = generation }, nil
         end
     end
-    stored._portable_input = input.declaration
+    local patch = {_portable_input = input.declaration}
     if input.state ~= nil then
         if type(input.state) ~= "table" then return nil, failure("declaration state must be an object", errors.INVALID, "declaration") end
         for key, value in pairs(input.state) do
@@ -138,10 +139,10 @@ function M.write_declaration_tx(tx: any, input: any): (any?, error?)
                 or key == "_portable_input" or key == "_execution_identity" or key == "_rollback" then
                 return nil, failure("declaration state contains a reserved field: " .. tostring(key), errors.INVALID, "declaration")
             end
-            stored[key] = value
+            patch[key] = value
         end
     end
-    local result, write_err = context_ops.write_context_tx(tx, input.component_id :: string, stored)
+    local result, write_err = context_ops.write_context_tx(tx, row, stored, patch)
     if write_err then return nil, write_err end
     if input.public_meta ~= nil then
         if type(input.public_meta) ~= "table" then

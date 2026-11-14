@@ -1,5 +1,6 @@
 local http = require("http")
 local json = require("json")
+local envelope = require("envelope")
 local component = require("component")
 local http_errors = require("http_errors")
 local update_policy = require("update_policy")
@@ -28,9 +29,8 @@ local function handler()
         return
     end
 
-    -- Require WRITE access before any mutation. Credential/private_context
-    -- rotation is intentionally not exposed here; provider-specific reauth or
-    -- recreate flows own that boundary.
+    -- Component WRITE authority covers metadata and declared credential changes.
+    -- Generic private-context replacement remains outside this HTTP surface.
     local _, access_err = component.validate_access(component_id, component.ACCESS.WRITE)
     if access_err then
         local status = http_errors.classify(access_err)
@@ -60,7 +60,26 @@ local function handler()
         return
     end
 
-    if fields and next(fields) ~= nil then
+    if body.secrets ~= nil then
+        local service, service_err = component.get_service()
+        if service_err or not service then
+            res:set_status(http.STATUS.INTERNAL_ERROR)
+            res:write_json({success = false, error = tostring(service_err or "component service unavailable")})
+            return
+        end
+        local commands = {{type = "PATCH_CONTEXT", payload = {patch = {}, secret_changes = body.secrets}}}
+        if fields and next(fields) ~= nil then
+            commands[#commands + 1] = {type = "SET_META", payload = {fields = fields}}
+        end
+        local result, write_err = service:update({component_id = component_id, commands = commands,
+            expected_revision = body.expected_revision})
+        if write_err or not result or result.success ~= true then
+            local failure = write_err or envelope.error_of(result, "update")
+            res:set_status((http_errors.classify(failure)))
+            res:write_json({success = false, error = tostring(failure or "credential update failed")})
+            return
+        end
+    elseif fields and next(fields) ~= nil then
         local ok, err = component.set_meta(component_id, fields)
         if not ok then
             res:set_status((http_errors.classify(err)))

@@ -6,6 +6,171 @@ namespace: app
 # from publish (see wippy.yaml exclude: app:**).
 
 entries:
+  - name: secret_declaration_cache_test
+    kind: function.lua
+    source: file://secret_declaration_cache_test.lua
+    method: run
+    meta: {type: test, suite: component_secret_declaration_cache}
+    imports:
+      test: wippy.test:test
+      secret_fields: app:secret_fields_native
+      fixture: app:secret_declaration_fixture
+  - name: secret_declaration_fixture
+    kind: library.lua
+    source: file://secret_declaration_fixture.lua
+    imports: {component_types: 'kickside.component:types'}
+  - name: secret_declaration_registry
+    kind: library.lua
+    source: file://secret_declaration_registry.lua
+    imports: {fixture: 'app:secret_declaration_fixture'}
+  - name: secret_fields_native
+    kind: library.lua
+    source: file://secret_fields_native.lua
+    modules: [funcs]
+    imports:
+      registry: app:secret_declaration_registry
+      autoinit: app:secret_declaration_fixture
+      component_types: kickside.component:types
+  - name: secret_direct_reader
+    kind: function.lua
+    source: file://secret_direct_reader.lua
+    method: read
+    imports: {component: 'kickside.component:component'}
+  - name: secret_direct_writer
+    kind: function.lua
+    source: file://secret_direct_writer.lua
+    method: write
+    modules: [sql, json]
+    imports:
+      component_types: kickside.component:types
+      context_ops: kickside.component.persist:context_ops
+      error_envelope: kickside.contract:error_envelope
+  - name: secret_direct_caller
+    kind: security.policy
+    policy:
+      actions: [funcs.call, registry.get, db.get]
+      resources: [app:secret_direct_reader, app:secret_direct_writer, kickside.component:db_config, app:db]
+      effect: allow
+  - name: secret_authority_test
+    kind: function.lua
+    meta: {type: test, suite: component_secret_authority}
+    source: file://secret_authority_test.lua
+    method: run
+    modules: [funcs, security, sql, uuid, json]
+    imports: {test: 'wippy.test:test'}
+  - name: secret_caller_access
+    kind: security.policy
+    policy:
+      actions: [funcs.call, registry.get, db.get]
+      resources: [kickside.component.binding:get_secrets_func, kickside.component.binding:get_access_context_func,
+        kickside.component.binding:get_access_context_by_meta_func, kickside.component.binding:query_components_func,
+        kickside.component.binding:export_component_func, kickside.component.binding:import_component_func,
+        kickside.component:db_config, kickside.component:policy, 'app:db', 'app:secret_kind']
+      effect: allow
+  - name: secret_system_caller
+    kind: security.policy
+    policy:
+      actions: [funcs.call, registry.get, db.get]
+      resources: [kickside.component.system:read_private_context, kickside.component:retention, kickside.component:db_config, "app:db"]
+      effect: allow
+  - name: secret_surface_listing
+    kind: security.policy
+    policy:
+      actions: list_all
+      resources: ['kickside.component:components']
+      effect: allow
+  - name: secret_own_kind
+    kind: security.policy
+    policy:
+      actions: component.secrets.read
+      resources: ['app:secret_kind']
+      effect: allow
+  - name: secret_cipher_errors_test
+    kind: function.lua
+    meta: {type: test, suite: component_secret_envelopes}
+    source: file://secret_cipher_errors_test.lua
+    method: run
+    modules: [funcs, uuid, sql]
+    imports:
+      context_ops: kickside.component.persist:context_ops
+      test: wippy.test:test
+      cipher: kickside.contract:secret_cipher
+      document: kickside.component:secrets_document
+  - name: retention_boundary_migration
+    kind: library.lua
+    source: file://retention_boundary_migration.lua
+    imports:
+      fixture: app:retention_boundary_fixture
+  - name: secret_migration_test
+    kind: function.lua
+    meta: {type: test, suite: component_secret_migration}
+    source: file://secret_migration_test.lua
+    method: run
+    modules: [sql, uuid, json, time, funcs, security]
+    imports:
+      reader: kickside.component.persist:component_reader
+      test: wippy.test:test
+      context_ops: kickside.component.persist:context_ops
+      secrets_migration: kickside.component.persist:secrets_migration
+      component: kickside.component:component
+  - name: secret_test_storage
+    kind: env.storage.static
+    values:
+      KEY: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+  - name: secret_test_key
+    kind: env.variable
+    variable: KEY
+    storage: app:secret_test_storage
+  - name: empty_secret_kind
+    kind: contract.binding
+    meta: {secret_fields: []}
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: app:secret_kind_status}
+  - name: secret_kind
+    kind: contract.binding
+    meta:
+      secret_fields: [{path: [api_key], type: string}]
+      portable_schema: {context: true}
+      credential_schema: {fields: [{key: api_key, type: password}]}
+    contracts:
+      - contract: kickside.contract:component
+        methods:
+          get_status: app:secret_kind_status
+  - name: evolving_secret_kind
+    kind: contract.binding
+    meta:
+      secret_fields: [{path: [api_key], type: string}, {path: [auth, password], type: string}]
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: "app:secret_kind_status"}
+  - name: secret_kind_status
+    kind: function.lua
+    source: 'local ctx = require("ctx"); return {run = function() return {success = true, credential_present = ctx.get("api_key") == "component-storage-credential-sentinel"} end}'
+    modules: [ctx]
+    method: run
+  - name: secret_storage_test
+    kind: function.lua
+    meta: {type: test, suite: component_secret_storage}
+    source: file://secret_storage_test.lua
+    method: run
+    modules: [sql, uuid, time, json]
+    imports:
+      placement: kickside.component.persist:placement_ops
+      deletion: kickside.component.persist:delete_ops
+      reader: kickside.component.persist:component_reader
+      test: wippy.test:test
+      context_ops: kickside.component.persist:context_ops
+      component: kickside.component:component
+  - name: secret_fields_test
+    kind: function.lua
+    meta: {type: test, suite: component_secret_fields}
+    source: file://secret_fields_test.lua
+    method: run
+    modules: [json]
+    imports:
+      test: wippy.test:test
+      secret_fields: kickside.component:secret_fields
   - name: system_exists_test
     kind: function.lua
     meta: {type: test, suite: component_system_read}
@@ -619,8 +784,9 @@ entries:
   - name: service_open_native_context
     kind: library.lua
     source: file://service_open_native_context.lua
-    modules: [security, sql]
+    modules: [funcs, security, sql]
     imports:
+      secret_fields: kickside.component:secret_fields
       error_envelope: kickside.contract:error_envelope
       contract: app:service_open_native_contract
       component_types: kickside.component:types
@@ -1390,10 +1556,12 @@ entries:
     kind: library.lua
     source: file://system_delete_source.lua
     modules:
+    - funcs
     - contract
     - security
     - sql
     imports:
+      system_query: kickside.component:system_query
       error_envelope: kickside.contract:error_envelope
       envelope: kickside.component:envelope
       component_reader: app:system_delete_reader
@@ -1441,9 +1609,11 @@ entries:
     kind: library.lua
     source: file://singleton_emit_source.lua
     modules:
+    - funcs
     - security
     - sql
     imports:
+      system_query: kickside.component:system_query
       error_envelope: kickside.contract:error_envelope
       envelope: kickside.component:envelope
       component_reader: kickside.component.persist:component_reader
@@ -1481,8 +1651,10 @@ entries:
     kind: library.lua
     source: file://context_binding_source.lua
     modules:
+    - funcs
     - sql
     imports:
+      secret_fields: kickside.component:secret_fields
       error_envelope: kickside.contract:error_envelope
       component_types: kickside.component:types
       component_reader: kickside.component.persist:component_reader
@@ -1759,6 +1931,7 @@ entries:
     kind: library.lua
     source: file://portable_json_source.lua
     imports:
+      secret_fields: kickside.component:secret_fields
       json: app:portable_json_json
       security: app:portable_json_security
       registry: app:portable_json_registry
@@ -2032,10 +2205,16 @@ entries:
     imports:
       fixture: app:retention_boundary_fixture
 
+  - name: retention_boundary_logger
+    kind: library.lua
+    source: 'local fixture = require("fixture"); return {named = function() return {warn = function(_, _, fields) fixture.warning = fields end} end}'
+    imports: {fixture: 'app:retention_boundary_fixture'}
   - name: retention_boundary_source
     kind: library.lua
     source: file://retention_boundary_source.lua
     imports:
+      logger: app:retention_boundary_logger
+      secrets_migration: app:retention_boundary_migration
       component_command: kickside.component:component_command
       pending_delete: app:retention_boundary_pending
       teardown: app:retention_boundary_teardown
@@ -2188,6 +2367,8 @@ entries:
     modules: [time, security]
     imports:
       kind_authority: kickside.component:kind_authority
+      secrets_document: kickside.component:secrets_document
+      secret_fields: kickside.component:secret_fields
       sql: app:context_storage_native_sql
       json: app:context_storage_native_json
       meta_ops: app:context_storage_native_fixture
@@ -2284,6 +2465,8 @@ entries:
     modules: [sql, time, json]
     imports:
       kind_authority: kickside.component:kind_authority
+      secrets_document: kickside.component:secrets_document
+      secret_fields: kickside.component:secret_fields
       security: app:identity_prepare_native_security
       execution_identity: app:identity_prepare_native_identity
       access_subjects: app:identity_prepare_native_subjects
@@ -2320,6 +2503,8 @@ entries:
     modules: [time]
     imports:
       kind_authority: kickside.component:kind_authority
+      secrets_document: kickside.component:secrets_document
+      secret_fields: kickside.component:secret_fields
       sql: app:context_storage_native_sql
       json: app:context_storage_native_json
       security: app:identity_prepare_native_security
@@ -2373,8 +2558,10 @@ entries:
   - name: reader_native_source
     kind: library.lua
     source: file://reader_native_source.lua
-    modules: [uuid]
+    modules: [uuid, security]
     imports:
+      secret_fields: kickside.component:secret_fields
+      secrets_document: kickside.component:secrets_document
       persisted_json: kickside.contract:persisted_json
       error_envelope: kickside.contract:error_envelope
       sql: app:reader_native_sql
@@ -2858,6 +3045,7 @@ entries:
     modules: [time, uuid]
     imports:
       kind_authority: kickside.component:kind_authority
+      secrets_document: kickside.component:secrets_document
       sql: app:placement_writer_sql
       json: app:placement_writer_json
       security: app:placement_writer_security
@@ -2907,7 +3095,9 @@ entries:
   - name: context_access_source
     kind: library.lua
     source: file://context_access_source.lua
+    modules: [funcs]
     imports:
+      secret_fields: kickside.component:secret_fields
       component_types: kickside.component:types
       security: app:context_access_security
       access_policy: app:context_access_access_policy

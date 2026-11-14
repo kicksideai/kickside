@@ -2,6 +2,17 @@ version: "1.0"
 namespace: kickside.component.persist
 
 entries:
+  - name: secrets_migration
+    kind: library.lua
+    source: file://secrets_migration.lua
+    modules: [sql, json]
+    imports:
+      component_types: kickside.component:types
+      secret_fields: kickside.component:secret_fields
+      secrets_document: kickside.component:secrets_document
+      meta_ops: kickside.component.persist:meta_ops
+      persisted_json: kickside.contract:persisted_json
+      error_envelope: kickside.contract:error_envelope
   - name: implementation_access
     kind: library.lua
     source: file://implementation_access.lua
@@ -90,9 +101,12 @@ entries:
         - reader
     source: file://component_reader.lua
     modules:
+      - security
       - sql
       - uuid
     imports:
+      secret_fields: kickside.component:secret_fields
+      secrets_document: kickside.component:secrets_document
       persisted_json: kickside.contract:persisted_json
       error_envelope: kickside.contract:error_envelope
       component_query: kickside.component.persist:component_query
@@ -164,6 +178,8 @@ entries:
     modules: [sql, time, json, security]
     imports:
       kind_authority: kickside.component:kind_authority
+      secret_fields: kickside.component:secret_fields
+      secrets_document: kickside.component:secrets_document
       meta_ops: kickside.component.persist:meta_ops
       component_types: kickside.component:types
       context_policy: kickside.component:context_policy
@@ -280,6 +296,7 @@ entries:
     modules: [sql, time, uuid, json, security]
     imports:
       kind_authority: kickside.component:kind_authority
+      secrets_document: kickside.component:secrets_document
       placement_rules: kickside.component:placement_rules
       component_types: kickside.component:types
       placement: kickside.component.persist:placement

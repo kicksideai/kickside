@@ -15,6 +15,8 @@ entries:
     source: file://autoinit.lua
     method: read_kind
     modules: [registry, crypto, funcs, security]
+    imports:
+      component_types: kickside.component:types
 
   - name: kind_read
     kind: security.policy
@@ -38,6 +40,8 @@ entries:
     source: file://autoinit.lua
     method: kind_declaration
     modules: [registry, crypto, funcs, security]
+    imports:
+      component_types: kickside.component:types
     security:
       policies: [kickside.component:kind_read_access]
 
@@ -57,11 +61,54 @@ entries:
       resources: [kickside.component:kind_read, kickside.component:kind_read_call, kickside.component:read_kind, custom, security]
       effect: allow
 
+  - name: system_query
+    kind: library.lua
+    source: file://system_query.lua
+    imports:
+      secrets_document: kickside.component:secrets_document
+      component_reader: kickside.component.persist:component_reader
+      component_types: kickside.component:types
+  - name: encryption_key
+    kind: ns.requirement
+    default: ENCRYPTION_KEY
+    meta: {value_kind: env.variable, comment: Installation encryption key; changes take effect on restart.}
+    targets:
+      - {entry: kickside.component.env:encryption_key, path: .default}
+      - {entry: kickside.component:secrets_key_access, path: '.policy.resources +='}
+  - name: secrets_document
+    kind: library.lua
+    source: file://secrets_document.lua
+    modules: [funcs, base64, json, security, uuid]
+    imports:
+      secret_fields: kickside.component:secret_fields
+      component_types: kickside.component:types
+  - name: secrets_key_access
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      resources: [kickside.component.env:encryption_key]
+      actions: env.get
+      effect: allow
+  - name: secrets_codec_access
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      resources: [kickside.component.system:seal_secrets, kickside.component.system:open_secrets]
+      actions: funcs.call
+      effect: allow
+  - name: secret_fields
+    kind: library.lua
+    source: file://secret_fields.lua
+    modules: [registry, funcs]
+    imports:
+      autoinit: kickside.component:autoinit
+      component_types: kickside.component:types
   - name: delete_children
     kind: library.lua
     source: file://delete_children.lua
     modules: [time]
     imports:
+      system_query: kickside.component:system_query
       component_reader: kickside.component.persist:component_reader
       component_types: kickside.component:types
       context_policy: kickside.component:context_policy
@@ -78,6 +125,8 @@ entries:
     kind: library.lua
     source: file://placement_rules.lua
     modules: [registry]
+    imports:
+      secret_fields: kickside.component:secret_fields
 
   - name: placement_validation
     kind: function.lua
@@ -87,6 +136,8 @@ entries:
     source: file://placement_rules.lua
     method: run
     modules: [registry]
+    imports:
+      secret_fields: kickside.component:secret_fields
 
   - name: policy
     kind: registry.entry
@@ -122,14 +173,24 @@ entries:
       comment: Retry durable primary-thread reaps after component deletion.
     source: file://retention.lua
     method: run
+    modules: [logger]
     security:
       actor: { id: system:kickside.component.retention }
-      policies: [kickside.component:retention_db_access, kickside.component:deletion_jobs_policy, kickside.component:deletion_worker_lookup, kickside.component:kind_declaration_call]
+      policies: [kickside.component:retention_config_access, kickside.component:kind_declaration_call, kickside.component:secrets_codec_access, kickside.component:retention_db_access, kickside.component:deletion_jobs_policy, kickside.component:deletion_worker_lookup]
     imports:
+      secrets_migration: kickside.component.persist:secrets_migration
       component_command: kickside.component:component_command
       teardown: kickside.component.persist:teardown
       pending_delete: kickside.component.persist:pending_delete
       audit_retention: kickside.component.persist:audit_retention
+
+  - name: retention_config_access
+    kind: security.policy
+    meta: {private: true, service_only: true}
+    policy:
+      resources: [kickside.component:policy, kickside.component:db_config]
+      actions: registry.get
+      effect: allow
 
   - name: retention_db_access
     kind: security.policy
@@ -171,6 +232,8 @@ entries:
       - entry: kickside.component.migrations:12_thread_reap
         path: .meta.target_db
       - entry: kickside.component.migrations:13_unique_component_meta
+        path: .meta.target_db
+      - entry: kickside.component.migrations:16_component_secrets
         path: .meta.target_db
       - entry: kickside.component.migrations:15_delete_intent
         path: .meta.target_db
@@ -220,12 +283,14 @@ entries:
         - access
     source: file://component.lua
     modules:
+      - funcs
       - contract
       - security
       - sql
     imports:
       error_envelope: kickside.contract:error_envelope
       envelope: kickside.component:envelope
+      system_query: kickside.component:system_query
       component_reader: kickside.component.persist:component_reader
       component_types: kickside.component:types
       access_policy: kickside.component:access_policy
@@ -254,10 +319,12 @@ entries:
   - name: context_policy
     kind: library.lua
     source: file://context.lua
-    modules: [security, contract, sql]
+    modules: [security, contract, sql, funcs]
     imports:
+      secret_fields: kickside.component:secret_fields
       error_envelope: kickside.contract:error_envelope
       component_types: kickside.component:types
+      system_query: kickside.component:system_query
       component_reader: kickside.component.persist:component_reader
       access_policy: kickside.component:access_policy
       envelope: kickside.component:envelope
@@ -379,6 +446,8 @@ entries:
       - crypto
       - funcs
       - security
+    imports:
+      component_types: kickside.component:types
 
   - name: component_lifecycle
     kind: library.lua

@@ -6,8 +6,10 @@ VIS    := public
 .PHONY: publish lint test
 lint:
 	cd test && wippy lint $(WIPPY_LINT_ARGS)
+	cd test-key-errors && wippy lint $(WIPPY_LINT_ARGS)
 test:
 	cd test && wippy test $(WIPPY_TEST_ARGS)
+	cd test-key-errors && wippy test $(WIPPY_TEST_ARGS)
 publish:
 	@echo "Releases use GitHub Release Please (.github/workflows/release.yml)." >&2
 	@exit 1
@@ -15,3 +17,4 @@ publish:
 .PHONY: lockrefresh
 lockrefresh:
 	cd test && wippy update $(WIPPY_UPDATE_ARGS)
+	cd test-key-errors && wippy update $(WIPPY_UPDATE_ARGS)

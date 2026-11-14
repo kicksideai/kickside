@@ -2,6 +2,23 @@ version: "1.0"
 namespace: kickside.connection.api
 
 entries:
+  - name: get_connection
+    kind: function.lua
+    source: file://get_connection.lua
+    method: handler
+    modules: [http]
+    imports:
+      component: kickside.component:component
+      envelope: kickside.component:envelope
+      secret_fields: kickside.component:secret_fields
+      component_types: kickside.component:types
+      http_errors: kickside.contract:http_errors
+  - name: get_connection.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: get_connection
+    path: /connections/{id}
   - name: query_params
     kind: library.lua
     meta:
@@ -109,6 +126,7 @@ entries:
     source: file://update_connection.lua
     modules: [http, json]
     imports:
+      envelope: kickside.component:envelope
       http_errors: kickside.contract:http_errors
       component: kickside.component:component
       update_policy: kickside.connection.api:update_policy

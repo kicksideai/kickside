@@ -6,6 +6,8 @@ local sql = require("sql")
 local kind_authority = require("kind_authority")
 local time = require("time")
 local json = require("json")
+local secrets_document = require("secrets_document")
+local secret_fields = require("secret_fields")
 local security = require("security")
 local component_types = require("component_types")
 local context_policy = require("context_policy")
@@ -35,21 +37,21 @@ local function encode(value: any): (string?, error?)
     return encoded, nil
 end
 
-local function lock_and_read(tx: any, component_id: string): ({ [string]: any }?, error?, integer?, string?)
+local function lock_and_read(tx: any, component_id: string): ({ [string]: any }?, error?, integer?, component_types.SecretRow?)
     local lock_err = meta_ops.lock_component_tx(tx, component_id)
     if lock_err then return nil, lock_err end
-    local rows, read_err = sql.builder.select("private_context", "context_revision", "impl_id"):from(TABLE)
+    local rows, read_err = sql.builder.select("component_id", "impl_id", "private_context", "context_revision", "encrypted_secrets", "secrets_generation", "secrets_incarnation"):from(TABLE)
         :where("component_id = ?", component_id):limit(1):run_with(tx):query()
     if read_err then return nil, errors.wrap(read_err, "failed to read private context") end
     if not rows or not rows[1] then return nil, failure("component not found", errors.NOT_FOUND) end
     local raw = rows[1].private_context
-    if type(raw) == "table" then return raw :: { [string]: any }, nil, tonumber(rows[1].context_revision) :: integer, rows[1].impl_id :: string end
+    if type(raw) == "table" then return raw :: { [string]: any }, nil, tonumber(rows[1].context_revision) :: integer, rows[1] :: component_types.SecretRow end
     local decoded, decode_err = json.decode(type(raw) == "string" and raw ~= "" and raw or "{}")
     if decode_err then return nil, errors.wrap(decode_err, "stored private context is invalid") end
     if type(decoded) ~= "table" then
         return nil, failure("stored private context is invalid", errors.INTERNAL)
     end
-    return decoded :: { [string]: any }, nil, tonumber(rows[1].context_revision) :: integer, rows[1].impl_id :: string
+    return decoded :: { [string]: any }, nil, tonumber(rows[1].context_revision) :: integer, rows[1] :: component_types.SecretRow
 end
 
 -- Read a component's current context_revision within the transaction; nil when the
@@ -82,17 +84,62 @@ function M.check_context_revision(tx: any, component_id: string, expected: integ
     return nil
 end
 
-local function write(tx: any, component_id: string, context: { [string]: any }): (component_types.CommandResult?, error?)
+local function write(tx: any, component_id: string, context: { [string]: any }, secrets: component_types.SecretWrite?): (component_types.CommandResult?, error?)
     local encoded, enc_err = encode(context)
     if enc_err then return nil, enc_err end
-    local result, err = sql.builder.update(TABLE)
+    local statement = sql.builder.update(TABLE)
         :set("private_context", encoded)
         :set("context_revision", sql.builder.expr("context_revision + 1"))
         :set("updated_at", time.now():utc():format_rfc3339())
-        :where("component_id = ?", component_id):run_with(tx):exec()
+        :where("component_id = ?", component_id)
+    if secrets then statement = statement:set("encrypted_secrets", secrets.encrypted or sql.as.null()):set("secrets_generation", secrets.generation):set("secrets_incarnation", secrets.incarnation) end
+    local result, err = statement:run_with(tx):exec()
     if err then return nil, errors.wrap(err, "failed to write private context") end
     if result.rows_affected == 0 then return nil, failure("component not found", errors.NOT_FOUND) end
     return { component_id = component_id, changes_made = true }, nil
+end
+
+-- Internal state writers supply the already locked row and a patch. This keeps
+-- their single statement while applying the same declared-secret partition as
+-- public context writes.
+local function write_context(tx: any, row: component_types.SecretRow, stored: component_types.JsonMap,
+    patch: component_types.JsonMap): (component_types.CommandResult?, error?)
+    local runtime_only = true
+    for key in pairs(patch) do
+        if not context_policy.is_runtime_owned(key) then runtime_only = false; break end
+    end
+    if runtime_only then
+        local updated, patch_err = secret_fields.patch({}, stored, patch)
+        if patch_err then return nil, patch_err end
+        return write(tx, row.component_id, updated :: component_types.JsonMap)
+    end
+    local declarations, declaration_err = secrets_document.write_paths(row.impl_id, row.encrypted_secrets, row.secrets_generation, row.secrets_incarnation)
+    if declaration_err then return nil, declaration_err end
+    declarations = declarations :: {component_types.SecretField}
+    local touches_secret = row.encrypted_secrets == nil and #declarations > 0
+    for _, declaration in ipairs(declarations) do
+        if patch[declaration.path[1]] ~= nil then touches_secret = true; break end
+    end
+    if not touches_secret then
+        local visible, patch_err = secret_fields.patch(declarations, stored, patch)
+        if patch_err then return nil, patch_err end
+        return write(tx, row.component_id, visible :: component_types.JsonMap)
+    end
+    local context = stored
+    if row.encrypted_secrets ~= nil then
+        local secrets, decrypt_err = secrets_document.decode(row.component_id, row.encrypted_secrets, row.secrets_generation, row.secrets_incarnation)
+        if decrypt_err then return nil, decrypt_err end
+        local stored_paths, paths_err = secrets_document.paths(row.encrypted_secrets, row.secrets_generation, row.secrets_incarnation)
+        if paths_err then return nil, paths_err end
+        local merge_err: error?
+        context, merge_err = secret_fields.merge(stored_paths :: component_types.SecretField[], context, secrets :: component_types.JsonMap)
+        if merge_err then return nil, merge_err end
+    end
+    local updated, patch_err = secret_fields.patch(declarations, context, patch)
+    if patch_err then return nil, patch_err end
+    local visible, secrets, prepare_err = secrets_document.prepare(row.component_id, row.impl_id, updated :: component_types.JsonMap, row.encrypted_secrets, row.secrets_generation, row.secrets_incarnation)
+    if prepare_err then return nil, prepare_err end
+    return write(tx, row.component_id, visible, secrets)
 end
 
 function M.set_context(tx: any, payload: any): (component_types.CommandResult?, error?)
@@ -102,11 +149,20 @@ function M.set_context(tx: any, payload: any): (component_types.CommandResult?, 
     local incoming = payload.private_context or {}
     local invalid = context_policy.validate_public(incoming, payload.delete_keys)
     if invalid then return nil, invalid end
-    local stored, read_err, _, impl_id = lock_and_read(tx, payload.component_id)
+    local stored, read_err, _, row = lock_and_read(tx, payload.component_id)
     if read_err then return nil, read_err end
-    local kind_err = kind_authority.check(impl_id :: string, "update")
+    stored = stored :: component_types.JsonMap
+    row = row :: component_types.SecretRow
+    local kind_err = kind_authority.check(row.impl_id, "update")
     if kind_err then return nil, kind_err end
-    return write(tx, payload.component_id, context_policy.preserve_runtime_keys(stored, incoming))
+    if row.encrypted_secrets ~= nil then
+        local _, authenticate_err = secrets_document.decode(row.component_id, row.encrypted_secrets, row.secrets_generation, row.secrets_incarnation)
+        if authenticate_err then return nil, authenticate_err end
+    end
+    local context = context_policy.preserve_runtime_keys(stored, incoming)
+    local visible, secrets, prepare_err = secrets_document.prepare(row.component_id, row.impl_id, context, row.encrypted_secrets, row.secrets_generation, row.secrets_incarnation)
+    if prepare_err then return nil, prepare_err end
+    return write(tx, row.component_id, visible, secrets)
 end
 
 function M.patch_context(tx: any, payload: any): (component_types.CommandResult?, error?)
@@ -115,15 +171,44 @@ function M.patch_context(tx: any, payload: any): (component_types.CommandResult?
     end
     local invalid = context_policy.validate_public(payload.patch, payload.delete_keys)
     if invalid then return nil, invalid end
-    local stored, read_err, _, impl_id = lock_and_read(tx, payload.component_id)
+    local stored, read_err, _, row = lock_and_read(tx, payload.component_id)
     if read_err then return nil, read_err end
-    local kind_err = kind_authority.check(impl_id :: string, "update")
+    stored = stored :: component_types.JsonMap
+    row = row :: component_types.SecretRow
+    local kind_err = kind_authority.check(row.impl_id, "update")
     if kind_err then return nil, kind_err end
-    for key, value in pairs(payload.patch) do stored[key] = value end
-    if type(payload.delete_keys) == "table" then
-        for _, key in ipairs(payload.delete_keys) do stored[key] = nil end
+    local declarations, declaration_err = secrets_document.write_paths(row.impl_id, row.encrypted_secrets, row.secrets_generation, row.secrets_incarnation)
+    if declaration_err then return nil, declaration_err end
+    declarations = declarations :: {component_types.SecretField}
+    local touches_secret = payload.secret_changes ~= nil or #declarations > 0
+        and (row.encrypted_secrets == nil or not secret_fields.complete(declarations, stored))
+    for _, declaration in ipairs(declarations) do
+        if payload.patch[declaration.path[1]] ~= nil then touches_secret = true end
+        for _, key in ipairs(payload.delete_keys or {}) do
+            if key == declaration.path[1] then touches_secret = true end
+        end
     end
-    return write(tx, payload.component_id, stored :: { [string]: any })
+    if touches_secret and row.encrypted_secrets ~= nil then
+        local secrets, decrypt_err = secrets_document.decode(row.component_id, row.encrypted_secrets, row.secrets_generation, row.secrets_incarnation)
+        if decrypt_err then return nil, decrypt_err end
+        local stored_paths, paths_err = secrets_document.paths(row.encrypted_secrets, row.secrets_generation, row.secrets_incarnation)
+        if paths_err then return nil, paths_err end
+        stored, read_err = secret_fields.merge(stored_paths :: component_types.SecretField[], stored, secrets :: component_types.JsonMap)
+        if read_err then return nil, read_err end
+    end
+    stored, read_err = secret_fields.patch(declarations, stored, payload.patch, payload.delete_keys)
+    if read_err then return nil, read_err end
+    if payload.secret_changes ~= nil then
+        local changed, change_err = secret_fields.apply(declarations, stored, payload.secret_changes)
+        if change_err then return nil, change_err end
+        stored = changed :: component_types.JsonMap
+    end
+    if touches_secret then
+        local visible, secrets, prepare_err = secrets_document.prepare(row.component_id, row.impl_id, stored, row.encrypted_secrets, row.secrets_generation, row.secrets_incarnation)
+        if prepare_err then return nil, prepare_err end
+        return write(tx, row.component_id, visible, secrets)
+    end
+    return write(tx, row.component_id, stored)
 end
 
 local identity = require("identity_ops")
@@ -426,7 +511,7 @@ end
 
 -- The locked context read and write the component's runtime-key writers share.
 M.lock_and_read_tx = lock_and_read
-M.write_context_tx = write
+M.write_context_tx = write_context
 
 -- The identity state read, identity write and audit row the adoption writer
 -- shares with the SET path.

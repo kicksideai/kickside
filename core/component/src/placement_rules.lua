@@ -1,4 +1,5 @@
 local registry = require("registry")
+local secret_fields = require("secret_fields")
 
 type Rule = { parents: { string }, fixed: boolean }
 local M = {}
@@ -73,6 +74,11 @@ function M.run(): (any?, error?)
     local entries, find_err = registry.find({ [".kind"] = "contract.binding" })
     if find_err then return nil, find_err end
     for _, entry in ipairs(entries or {}) do
+        local raw = entry.meta and entry.meta.secret_fields
+        if raw ~= nil then
+            local secret_err = secret_fields.validate(raw, entry.meta.credential_schema)
+            if secret_err then return nil, secret_err end
+        end
         local _, validation_err = M.validate_binding(entry)
         if validation_err then return nil, validation_err end
     end
