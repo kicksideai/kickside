@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: kickside.core.jobs.maintenance_actors
+
+entries:
+  - name: kickside_jobs
+    kind: registry.entry
+    meta:
+      type: kickside.execution.maintenance_actor
+      actor_id: system:kickside.jobs

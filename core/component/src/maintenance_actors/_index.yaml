@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: kickside.component.maintenance_actors
+
+entries:
+  - name: kickside_component_retention
+    kind: registry.entry
+    meta:
+      type: kickside.execution.maintenance_actor
+      actor_id: system:kickside.component.retention

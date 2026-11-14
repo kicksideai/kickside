@@ -1,8 +1,19 @@
 local sql = require("sql")
 local uuid = require("uuid")
+local eligibility = require("eligibility")
 
 local listing = {}
 type Executor = sql.DB | sql.Transaction
+
+local DUE_COLUMN = "CASE WHEN " .. eligibility.due("CURRENT_TIMESTAMP") .. " THEN TRUE ELSE FALSE END AS due"
+
+local function job_rows(rows: table[]): table[]
+    for _, row in ipairs(rows) do
+        row.slot = row.slot == true or row.slot == 1
+        row.due = row.due == true or row.due == 1
+    end
+    return rows
+end
 
 local function response_error(field: string): error
     return errors.new({message = "job listing response is invalid", kind = errors.INTERNAL,
@@ -26,7 +37,7 @@ local function scoped_query(dbtype: string, collection: string, thread_ids: stri
         "id", "job_id", "owner_id AS thread_id", "job_type", "attempt_no", "worker_pid",
         "status", "started_at", "finished_at", "duration_ms", "error_text", "created_at",
     } or {
-        "id", "owner_id AS thread_id", "owner_kind", "owner_id", "job_type", "status", "priority", "attempts",
+        "id", "owner_id AS thread_id", "owner_kind", "owner_id", "job_type", "status", "slot", DUE_COLUMN, "priority", "attempts",
         "max_attempts", "queue_tier", "idempotency_key", "last_error", "wake_enabled", "wake_control_pending", "execution_seq",
         "scheduled_at", "finished_at", "created_at", "updated_at",
     }
@@ -97,6 +108,7 @@ local function read(db: Executor, collection: string, thread_ids: string[], filt
     if read_err then return nil, read_err end
     local more = #rows > limit
     if more then table.remove(rows) end
+    if collection == "jobs" then job_rows(rows) end
     return rows, nil, more
 end
 
@@ -148,7 +160,7 @@ local function read_exact_jobs(db: Executor, ids: string[]): (table?, error?)
     local marks, values = selected.marks, selected.values
     if #values == 0 then return {}, nil end
     local rows, err = sql.builder.select(
-        "id", "thread_id", "owner_kind", "owner_id", "job_type", "status", "priority", "attempts",
+        "id", "thread_id", "owner_kind", "owner_id", "job_type", "status", "slot", DUE_COLUMN, "priority", "attempts",
         "max_attempts", "queue_tier", "idempotency_key", "last_error", "wake_enabled", "wake_control_pending", "execution_seq",
         "scheduled_at", "finished_at", "created_at", "updated_at"
     ):from("kickside_job")
@@ -156,7 +168,7 @@ local function read_exact_jobs(db: Executor, ids: string[]): (table?, error?)
         :run_with(db):query()
     local read_err = rows_error(rows, err, "failed to read jobs", "job.rows")
     if read_err then return nil, read_err end
-    return rows, nil
+    return job_rows(rows), nil
 end
 
 function listing.get_jobs(db: Executor, ids: string[]): (table?, error?)

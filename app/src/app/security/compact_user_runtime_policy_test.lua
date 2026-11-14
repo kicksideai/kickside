@@ -1,11 +1,18 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
 local registry = require("registry")
 local security = require("security")
 local json = require("json")
 local coverage = require("policy_coverage")
 local errors = require("errors")
+local funcs = require("funcs")
+local execution = require("execution_identity")
+local projection = require("scope_projection")
 
 local LEGACY = assert(json.decode([==[{"app.security:user.self_service":{"resources":["kickside.users.api:me.endpoint","kickside.users.api:update_me.endpoint","kickside.users.api:logout.endpoint","kickside.users.api:get_profile.endpoint","kickside.users.api:put_profile.endpoint"],"actions":"access","effect":"allow"},"app.security:user.profile_runtime":{"resources":["kickside.users.profile:*","kickside.users:profile_view"],"actions":["registry.get","registry.find","contract.get","contract.open","contract.call","contract.implementations","contract.security","funcs.call","funcs.security"],"effect":"allow"},"app.security:user.profile_env":{"resources":"kickside.users.env:database_resource","actions":"env.get","effect":"allow"},"app.security:user.app_shell_access":{"resources":["app.api.websocket:ws_endpoint.endpoint","userspace.dataflow.api:*","wippy.session.api:*"],"actions":"access","effect":"allow"},"app.security:user.view_registry_access":{"resources":["wippy.views.api:list_pages.endpoint","wippy.views.api:list_components.endpoint","wippy.views.api:find_by_tag.endpoint","wippy.views.api:render.endpoint","wippy.views.api:public_url.endpoint","wippy.views.api:list_routes.endpoint"],"actions":"access","effect":"allow"},"app.security:user.dataflow_state_view":{"resources":"page:userspace.dataflow.session.views:state","actions":"view","effect":"allow"},"app.security:user.dataflow_state_template":{"resources":"userspace.dataflow.session.views:templates","actions":"template.get","effect":"allow"},"app.security:user.dataflow_view_origin":{"resources":"userspace.dataflow.env:web_host_origin","actions":"env.get","effect":"allow"},"app.security:user.events_bus_access":{"resources":["keeper.events:bus"],"actions":"pg.open","effect":"allow"},"app.security:user.runtime_data_access":{"resources":["app:db","app:uploads","kickside.models:cache","app:cache"],"actions":["db.get","fs.get","store.get","store.info","store.key.get","store.key.list","store.key.set","store.key.delete","store.key.has"],"effect":"allow"},"app.security:user.runtime_registry_read":{"resources":["userspace.dataflow:*","userspace.dataflow.*","wippy.views:*","wippy.session:*","wippy.session.*","wippy.agent:*","wippy.agent.*","wippy.llm:*","wippy.llm.*","app.api.websocket:*","app.env:*"],"actions":["registry.get","registry.find"],"effect":"allow","conditions":[{"field":"resource","operator":"nin","value":["kickside.hub.instruments:recommender","kickside.hub.instruments:requirement_resolver"]}]},"app.security:user.navigation_registry":{"resources":["app.ui:*"],"actions":["registry.get","registry.find"],"effect":"allow"},"app.security:user.default_membership_registry":{"resources":["app.composition:default_member_enrollment","app.composition:core_member_enrollment"],"actions":["registry.get","registry.find"],"effect":"allow"},"app.security:user.documentation_registry":{"resources":["app:definition","app:documentation","app:documentation.*"],"actions":["registry.get","registry.find"],"effect":"allow"},"app.security:user.documentation_tool":{"resources":["app:documentation"],"actions":["funcs.call","funcs.security"],"effect":"allow"},"app.security:user.identity_resolution":{"resources":["kickside.users:scope_resolver_binding","kickside.users.binding:scope_resolver_func"],"actions":["contract.get","contract.open","funcs.call"],"effect":"allow"},"app.security:user.runtime_contracts":{"resources":["chestor.workspace:file_reap_stage","userspace.dataflow:*","userspace.dataflow.*","wippy.session:*","wippy.session.*","wippy.agent:*","wippy.agent.*","wippy.llm:*","wippy.llm.*","security"],"actions":["contract.get","contract.open","contract.call","contract.implementations","contract.security","funcs.call","funcs.security"],"effect":"allow"},"app.security:user.runtime_contract_methods":{"resources":"*","actions":["contract.call"],"effect":"allow"},"app.security:user.runtime_contract_context":{"resources":["context"],"actions":["contract.context"],"effect":"allow"},"app.security:user.runtime_function_context":{"resources":["context"],"actions":["funcs.context"],"effect":"allow"},"app.security:user.runtime_actor_delegation":{"resources":["system:knowledge.injection"],"actions":["security.actor.create"],"effect":"allow"},"app.security:user.runtime_process_context":{"resources":["context","security"],"actions":["process.context","process.security"],"effect":"allow"},"app.security:user.runtime_process_notifications":{"resources":["*"],"actions":["process.send"],"effect":"allow"},"app.security:user.runtime_session_spawn":{"resources":["wippy.session.process:plugin","wippy.session.process:session"],"actions":["process.spawn","process.spawn.monitored","process.spawn.linked"],"effect":"allow"},"app.security:user.runtime_session_access":{"resources":["session:*"],"actions":["read","write"],"effect":"allow"},"app.security:user.runtime_session_registry":{"resources":["session.*"],"actions":["process.registry.register","process.registry.unregister"],"effect":"allow"},"app.security:user.runtime_oauth_spawn":{"resources":["kickside.oauth.service:connection_negotiator"],"actions":["process.spawn"],"effect":"allow"},"app.security:user.runtime_process_host":{"resources":["app:processes"],"actions":["process.host"],"effect":"allow"},"app.security:user.runtime_oauth_registry":{"resources":["kickside.oauth.service:connection_negotiator:*"],"actions":["process.registry.register.consistent","process.registry.unregister.consistent"],"effect":"allow"},"app.security:user.runtime_env_read":{"resources":["PUBLIC_API_URL","ENCRYPTION_KEY","KICKSIDE_COMPONENT_DB_ID","KICKSIDE_THREAD_HYDRATION_DB_ID","KICKSIDE_THREADS_DB_ID","KICKSIDE_CORE_JOB_DB_ID","KICKSIDE_PROJECTION_DB_ID","KICKSIDE_PROJECTION_PROC_HOST","wippy.session.env:*","wippy.llm.openai:*","wippy.llm.openai_compat:*","wippy.llm.claude:*","wippy.llm.google.env:*","wippy.llm.bedrock:*","OPENAI_API_KEY","OPENAI_BASE_URL","OPENAI_ORGANIZATION","OPENAI_TIMEOUT","OPENAI_COMPAT_API_KEY","OPENAI_COMPAT_BASE_URL","OPENAI_COMPAT_ORGANIZATION","OPENAI_COMPAT_TIMEOUT","ANTHROPIC_API_KEY","ANTHROPIC_API_VERSION","ANTHROPIC_BASE_URL","ANTHROPIC_TIMEOUT","GEMINI_API_KEY","GOOGLE_CREDENTIALS","GOOGLE_CLOUD_PROJECT","AWS_ACCESS_KEY_ID","AWS_SECRET_ACCESS_KEY","AWS_SESSION_TOKEN","AWS_REGION","AWS_DEFAULT_REGION","AWS_CONTAINER_CREDENTIALS_FULL_URI","AWS_CONTAINER_CREDENTIALS_RELATIVE_URI","AWS_CONTAINER_AUTHORIZATION_TOKEN","BEDROCK_BASE_URL","BEDROCK_TIMEOUT","OPENROUTER_API_KEY","TOGETHER_API_KEY","GROQ_API_KEY","FIREWORKS_API_KEY","MISTRAL_API_KEY","DEEPINFRA_API_KEY","XAI_API_KEY","CEREBRAS_API_KEY","kickside.users.env:baseline_group_id","kickside.users.env:default_group_id","kickside.users.env:admin_group_id","kickside.users.env:database_resource","APP_CACHE"],"actions":["env.get"],"effect":"allow"},"app.security:user.runtime_http_client":{"resources":["https://*","http://*"],"actions":["http_client.request"],"effect":"allow"},"app.security:user.runtime_http_private_ip":{"resources":"*","actions":["http_client.private_ip"],"effect":"allow"},"app.security:user.runtime_dataflow_registry":{"resources":["dataflow.*"],"actions":["process.registry.register","process.registry.unregister"],"effect":"allow","conditions":[{"field":"resource","operator":"matches","value":"^dataflow[.][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"}]},"app.security:user.runtime_dataflow_node_spawn":{"resources":["userspace.dataflow.node.agent:node","userspace.dataflow.node.cycle:cycle","userspace.dataflow.node.func:node","userspace.dataflow.node.parallel:parallel","userspace.dataflow.node.signal:node","userspace.dataflow.node.state:state"],"actions":["process.spawn","process.spawn.monitored","process.spawn.linked"],"effect":"allow"}}]==]))
+
+-- Actor creation was revoked; only the remaining legacy grants are preserved.
+LEGACY["app.security:user.runtime_actor_delegation"] = nil
 
 local RETIRED = {
     ["app.security:user.self_service"] = true,
@@ -28,7 +35,46 @@ local RETIRED = {
 
 return {run = test.run_cases(function()
     test.describe("compact application runtime grants", function()
-        test.it("preserves every legacy policy rule and every effective decision with fewer group grants", function()
+        test.before_all(function() test.not_nil((projection.reconcile())) end)
+        test.it("removes the obsolete actor creation policy from the composed member grants", function()
+            local entry, err = registry.get("app.security:user.runtime_actor_delegation")
+            test.is_nil(entry)
+            test.is_true(errors.is(err, errors.NOT_FOUND), tostring(err))
+        end)
+
+        test.it("does not grant members creation of system actors", function()
+            local actor = assert(security.new_actor("actor-creation-member", {}))
+            for _, group in ipairs({"app.security:user", "app.security:members", "kickside.security.groups:members"}) do
+                local scope = assert(execution.scope_from_groups({"app.security:user", group}))
+                for _, id in ipairs({"system:knowledge.injection", "system:lifecycle", "system:arbitrary", "system:*"}) do
+                    test.eq(scope:evaluate(actor, "security.actor.create", id), "undefined", group .. " " .. id)
+                end
+                -- Check every effective resource pattern as well, so a new
+                -- actor name or wildcard grant cannot evade the named probes.
+                for _, policy in ipairs(scope:policies()) do
+                    local rule = assert(registry.get(policy:id())).data.policy
+                    local resources = type(rule.resources) == "table" and rule.resources or {rule.resources}
+                    for _, resource in ipairs(resources) do
+                        test.eq(scope:evaluate(actor, "security.actor.create", resource), "undefined",
+                            group .. " " .. resource)
+                    end
+                end
+            end
+        end)
+
+        test.it("refuses system actor creation inside a member-run frame", function()
+            local actor = assert(security.new_actor("actor-creation-member", {}))
+            local scope = assert(execution.scope_from_groups({"app.security:user", "app.security:members"},
+                {"app.security:system_actor_probe_call"}))
+            local executor = assert(funcs.new()):with_actor(actor):with_scope(scope)
+            local result, err = executor:call("app.security:system_actor_probe", {id = "system:knowledge.injection"})
+            test.is_nil(err, tostring(err))
+            test.eq(result.caller, "actor-creation-member")
+            test.is_false(result.created)
+            test.is_true(result.refused)
+        end)
+
+        test.it("preserves every retained legacy policy rule and effective decision with fewer group grants", function()
             local previous, current, before_rules, after_rules = {}, {}, {}, {}
             local actions, resources = {}, { ["unrelated:item"] = true,
                 ["kickside.hub.instruments:recommender"] = true,

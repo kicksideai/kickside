@@ -1603,7 +1603,9 @@ entries:
     kind: library.lua
     source: file://listing_native_source.lua
     modules: [uuid]
-    imports: {sql: app:listing_native_sql_adapter}
+    imports:
+      sql: app:listing_native_sql_adapter
+      eligibility: kickside.core.jobs.persist:eligibility
 
   - name: listing_native_test_dependencies_1
     kind: function.lua

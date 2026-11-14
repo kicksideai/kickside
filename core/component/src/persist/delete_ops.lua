@@ -63,8 +63,8 @@ local function reroot_child_page(tx: Executor, db: Executor, parent_id: string, 
     return false, nil
 end
 
--- Acceptance requires authority for the parent only. Marked children already
--- have their own authorized intent; accepting the parent does not retry them.
+-- Teardown admits affected kinds before accepting a re-root intent. Marked
+-- children already have their own delete intent; accepting the parent does not retry them.
 type ChildReader = { query: (string, ...unknown) -> ({ table }?, error?) }
 local function validate_delete_tx(tx: Executor | ChildReader, payload: any): ({ { component_id: string, path: string? } }?, error?)
     payload = type(payload) == "table" and payload or {}

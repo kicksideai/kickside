@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.8](https://github.com/kicksideai/kickside/compare/settings-v0.3.7...settings-v0.3.8) (2026-11-13)
+
+
+### Features
+
+* **uploads:** add an opt-in setting to OCR every document page ([#452](https://github.com/kicksideai/kickside/issues/452)) ([b778945](https://github.com/kicksideai/kickside/commit/b77894576ddeb3bd8b6cf23496a42d978f50f9e6))
+
 ## [0.3.7](https://github.com/kicksideai/kickside/compare/settings-v0.3.6...settings-v0.3.7) (2026-11-08)
 
 

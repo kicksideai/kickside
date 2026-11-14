@@ -32,12 +32,10 @@ M.KIND = { USER = "user", GROUP = "group", SERVICE = "service" }
 M.DELEGATE_ACTION = "security.actor.delegate"
 
 -- Reserved actor-key spellings (IDENTITY-1 §1): groups and services carry a
--- kind prefix; framework maintenance actors carry the system prefix and are
--- never selectable principals. Every key is spelled and read through the owner.
+-- kind prefix; framework maintenance actors have explicitly declared keys and
+-- are never selectable principals. Every key is spelled and read through the owner.
 local GROUP_KEY_PREFIX = "principal:group:"
 local SERVICE_KEY_PREFIX = "principal:service:"
-local MAINTENANCE_KEY_PREFIX = "system:"
-
 -- Deferred execution (a projection tick, a job round): the trusted owner entry
 -- that loads a stored identity resolves it under its own worker frame. The frame
 -- must hold this action on the owner entry id; the Users resolver then checks
@@ -230,8 +228,10 @@ end
 -- is_maintenance_key(actor_id) -> boolean. Framework maintenance actors keep
 -- their service identity outside the user-facing lifecycle.
 function M.is_maintenance_key(actor_id: any): boolean
-    return type(actor_id) == "string"
-        and actor_id:sub(1, #MAINTENANCE_KEY_PREFIX) == MAINTENANCE_KEY_PREFIX
+    if type(actor_id) ~= "string" or actor_id:sub(1, 7) ~= "system:" then return false end
+    local allowed, read_err = production_funcs.call("kickside.execution:maintenance_actor", actor_id)
+    if read_err then error(read_err) end
+    return allowed == true
 end
 
 -- principal_of_key(actor_id) -> (Principal?, err?). The inverse of actor_key:

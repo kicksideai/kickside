@@ -15,8 +15,8 @@ jobs:
     outputs:
       app_created: ${{ steps.release.outputs['app--release_created'] }}
       app_version: ${{ steps.release.outputs['app--version'] }}
-      app_tag: ${{ steps.release.outputs['app--tag_name'] }}
       released_paths: ${{ steps.release.outputs.paths_released }}
+      released_commit: ${{ steps.release-commit.outputs.released_commit }}
     permissions:
       contents: write
       issues: write
@@ -29,6 +29,17 @@ jobs:
         token: ${{ github.token }}
         config-file: release-please-config.json
         manifest-file: .release-please-manifest.json
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      if: steps.release.outputs.paths_released != '' && steps.release.outputs.paths_released != '[]'
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Resolve released commit
+      id: release-commit
+      if: steps.release.outputs.paths_released != '' && steps.release.outputs.paths_released != '[]'
+      env:
+        RELEASE_OUTPUTS_JSON: ${{ toJSON(steps.release.outputs) }}
+      run: python3 scripts/resolve-release-commit.py --repository .
     # Events from GITHUB_TOKEN do not start workflows, so start CI on the release PR branch.
     - name: Run CI on the release PR
       if: ${{ steps.release.outputs.prs_created == 'true' }}
@@ -50,6 +61,7 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
+        ref: ${{ needs.release-please.outputs.released_commit }}
         fetch-depth: 0
         persist-credentials: false
     - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
@@ -78,7 +90,7 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       with:
-        ref: ${{ needs.release-please.outputs.app_tag }}
+        ref: ${{ needs.release-please.outputs.released_commit }}
         persist-credentials: false
     - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
       with:

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.78](https://github.com/kicksideai/kickside/compare/jobs-v0.1.77...jobs-v0.1.78) (2026-11-13)
+
+
+### Bug Fixes
+
+* **execution:** declare maintenance actors exactly and authorize thread completion ([#459](https://github.com/kicksideai/kickside/issues/459)) ([c86999c](https://github.com/kicksideai/kickside/commit/c86999c76f99724bd7eab62924dcb3d931f3bee8))
+
+## [0.1.77](https://github.com/kicksideai/kickside/compare/jobs-v0.1.76...jobs-v0.1.77) (2026-11-13)
+
+
+### Bug Fixes
+
+* **jobs:** distinguish idle slots from due work on reads ([#454](https://github.com/kicksideai/kickside/issues/454)) ([26a3b89](https://github.com/kicksideai/kickside/commit/26a3b89cf66a721607ae29c30068f4ef626b27a1))
+
 ## [0.1.76](https://github.com/kicksideai/kickside/compare/jobs-v0.1.75...jobs-v0.1.76) (2026-11-10)
 
 

@@ -5,6 +5,7 @@ function M.executor(): any
     function db:release() M.releases = M.releases + 1 end
     function db:query()
         M.calls = M.calls + 1
+        if M.route == "stored_grants" then return M.rows, nil end
         if M.route == "healthy" then return {}, nil end
         if M.route ~= "grant_insert" and M.route ~= "email_upsert" and M.route ~= "email_delete" then return nil, M.source end
         return {{access_id = "grant", subject_id = "user@example.test", component_id = "component", source_component_id = "component", access_mask = 1, inherited = 0, created_at = "2026-10-10T00:00:00Z"}}, nil

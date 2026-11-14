@@ -5,6 +5,12 @@ local boundary = require("sql_boundary")
 
 local M = {}
 
+-- Schedule eligibility is independent of available dispatch capacity.
+function M.due(now: string, row: string?): string
+    local prefix = row and row .. "." or ""
+    return prefix .. "status='pending' AND " .. prefix .. "scheduled_at <= " .. now
+end
+
 -- SQL grouping must use the target identity, just as dispatch does, without
 -- rewriting stored worker references. Both supported schemes have seven bytes.
 local function worker_target(row: string?, dbtype: string): string
@@ -83,8 +89,8 @@ function M.pending(db: sql.DB, dbtype: string, at: string?, snapshot: table, job
         local rows, read_err = db:query(prefix .. " SELECT " .. target .. [[ AS worker_ref,
                    MIN(capacity_group) AS admitted_min, MAX(capacity_group) AS admitted_max,
                    MAX(CASE WHEN concurrency_key IS NULL OR concurrency_key='' THEN 1 ELSE 0 END) AS invalid_key
-            FROM kickside_job WHERE status='pending' AND scheduled_at <= ]] .. now .. [[
-              AND ]] .. target .. " IN (SELECT worker_ref FROM capacity_workers)" .. scope .. " GROUP BY " .. target, read_params)
+            FROM kickside_job WHERE ]] .. M.due(now) .. " AND " .. target
+              .. " IN (SELECT worker_ref FROM capacity_workers)" .. scope .. " GROUP BY " .. target, read_params)
         rows, read_err = boundary.bounded_rows(rows, read_err, "backlog capacity lookup failed",
             "backlog.workers", 0, #workers, response_error)
         if read_err then return nil, read_err end
@@ -161,7 +167,7 @@ function M.due_backlog(db: sql.DB, dbtype: string, grace_seconds: integer, at: s
         or "j.scheduled_at <= datetime(" .. now .. ", '-' || " .. grace .. " || ' seconds') || substr(" .. now .. ", 20)"
     local rows, err = db:query(pending.prefix .. "SELECT COUNT(*) AS n, " .. age .. " AS age_ms,"
         .. " COALESCE(SUM(CASE WHEN " .. overdue .. " THEN 1 ELSE 0 END),0) AS overdue"
-        .. " FROM kickside_job j" .. pending.joins .. " WHERE j.status='pending' AND j.scheduled_at <= " .. now .. " AND " .. pending.allowed, params)
+        .. " FROM kickside_job j" .. pending.joins .. " WHERE " .. M.due(now, "j") .. " AND " .. pending.allowed, params)
     rows, err = boundary.bounded_rows(rows, err, "due backlog query failed", "backlog", 1, 1, response_error)
     if err then return nil, err end
     local row = rows[1]
