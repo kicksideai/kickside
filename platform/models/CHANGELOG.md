@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.78](https://github.com/kicksideai/kickside/compare/models-v0.1.77...models-v0.1.78) (2026-11-15)
+
+
+### Bug Fixes
+
+* **models:** preserve capability overrides while refreshing discovery ([#472](https://github.com/kicksideai/kickside/issues/472)) ([d0a989b](https://github.com/kicksideai/kickside/commit/d0a989b454430e15064e1603765fe69f7a9640c6))
+* **models:** preserve credentials while keeping token quantities ([#473](https://github.com/kicksideai/kickside/issues/473)) ([0f9c7ec](https://github.com/kicksideai/kickside/commit/0f9c7ecb9cf3a35917073e858cc07a216046c447))
+
 ## [0.1.77](https://github.com/kicksideai/kickside/compare/models-v0.1.76...models-v0.1.77) (2026-11-13)
 
 

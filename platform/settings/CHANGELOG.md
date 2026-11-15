@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.9](https://github.com/kicksideai/kickside/compare/settings-v0.3.8...settings-v0.3.9) (2026-11-15)
+
+
+### Bug Fixes
+
+* **settings:** wake retention after committed revisions ([#493](https://github.com/kicksideai/kickside/issues/493)) ([15160d6](https://github.com/kicksideai/kickside/commit/15160d6fc41589e6706087561bbac4ecfc70e5e0))
+
 ## [0.3.8](https://github.com/kicksideai/kickside/compare/settings-v0.3.7...settings-v0.3.8) (2026-11-13)
 
 

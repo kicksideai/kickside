@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.18](https://github.com/kicksideai/kickside/compare/core-v0.3.17...core-v0.3.18) (2026-11-15)
+
+
+### Bug Fixes
+
+* **core:** retain readable policy data during hot updates ([#491](https://github.com/kicksideai/kickside/issues/491)) ([06f2ef2](https://github.com/kicksideai/kickside/commit/06f2ef20290781f6ebe13bb0a9eb3eecb4130368))
+
 ## [0.3.17](https://github.com/kicksideai/kickside/compare/core-v0.3.16...core-v0.3.17) (2026-11-14)
 
 
