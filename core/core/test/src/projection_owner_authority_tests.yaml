@@ -1,0 +1,172 @@
+version: "1.0"
+namespace: app
+entries:
+- name: projection_owner_authority_test
+  kind: function.lua
+  meta: {type: test, suite: projection_owner_authority}
+  source: file://projection_owner_authority_test.lua
+  method: run
+  modules: [sql, uuid, security, contract, json, funcs]
+  imports:
+    execution_identity: kickside.execution:execution_identity
+    identity_ops: kickside.component.persist:identity_ops
+    worker: kickside.core.projections.persist:worker
+    provision: kickside.core.threads:provision
+    threads_writer: kickside.core.threads.persist:writer
+    teardown: kickside.component.persist:teardown
+    jobs_wake: kickside.core.jobs.persist:wake
+    fixture: kickside.core.threads:contract_fixture
+    writer: kickside.core.projections.persist:writer
+    component_lifecycle: kickside.core.lifecycle:component_lifecycle_impl
+    callback_invoke: app:projection_owner_callback_invoke
+    callback_fixture: app:projection_owner_callback_fixture
+    test: wippy.test:test
+    lifecycle: kickside.core.threads.persist:lifecycle
+    invoke: kickside.core.projections:invoke
+    projection_claim: app:projection_claim
+    apply: kickside.core.projections:apply
+
+- name: projection_owner_callback_fixture
+  kind: library.lua
+  source: file://projection_owner_callback_fixture.lua
+- name: projection_owner_callback_apply
+  kind: library.lua
+  source: file://projection_owner_callback_apply.lua
+  modules: [sql]
+  imports:
+    apply: kickside.core.projections:apply
+    fixture: app:projection_owner_callback_fixture
+- name: projection_owner_callback_invoke
+  kind: library.lua
+  source: file://src_link/projections/invoke.lua
+  modules: [sql, json, time]
+  imports:
+    clock: kickside.core.jobs:clock
+    core_db: kickside.core:db
+    worker: kickside.core.projections.persist:worker
+    owner_identity: kickside.core.threads:owner_identity
+    access_subjects: kickside.component.persist:access_subjects
+    projection_policy: kickside.core.projections:policy_config
+    apply: app:projection_owner_callback_apply
+    trace_context: kickside.execution:trace
+    jobs: kickside.core.jobs:jobs
+    execution_identity: kickside.execution:execution_identity
+    job_types: kickside.core.jobs:types
+    error_envelope: kickside.contract:error_envelope
+- name: projection_owner_callback_kind
+  kind: contract.binding
+  meta:
+    class: [owner_callback]
+    projections:
+    - kind: test.owner_seed
+      on: lifecycle
+      worker_ref: func://app:projection_owner_callback_worker
+      input_mode: prefetch_events
+      events:
+        input: [{type: kickside.component.events:created}]
+  contracts:
+  - contract: kickside.contract:component
+    methods: {get_status: kickside.core.threads:thread_status}
+- name: projection_owner_callback_worker
+  kind: function.lua
+  source: file://projection_owner_callback_worker.lua
+  method: run
+  modules: [sql, security]
+  meta:
+    type: projection.worker
+    post_commit_ref: func://app:projection_owner_callback_notify
+- name: projection_owner_callback_notify
+  kind: function.lua
+  source: file://projection_owner_callback_worker.lua
+  method: after_commit
+  modules: [sql, security]
+  meta: {type: projection.worker}
+
+- name: projection_owner_set_identity
+  kind: function.lua
+  source: file://projection_owner_set_identity.lua
+  method: run
+  imports:
+    component: kickside.component:component
+- name: projection_owner_proc_kind
+  kind: contract.binding
+  meta:
+    class: [projection_owner_proc]
+    projections:
+    - kind: test.owner_seed
+      on: lifecycle
+      worker_ref: proc://app:projection_owner_proc_worker
+      input_mode: prefetch_events
+  contracts:
+  - contract: kickside.contract:component
+    methods: {get_status: kickside.core.threads:thread_status}
+- name: projection_owner_proc_worker
+  kind: process.lua
+  source: file://projection_owner_proc_worker.lua
+  method: run
+  modules: [security]
+  meta: {type: projection.worker}
+- name: projection_owner_deny_actor
+  kind: security.policy
+  policy:
+    resources: '*'
+    actions: [security.actor.create]
+    effect: deny
+
+- name: projection_owner_full_kind
+  kind: contract.binding
+  meta:
+    class: [projection_owner_full]
+    thread: {class: projection.owner}
+    events:
+      input: [{type: app:threads_cv_trigger}]
+    projections:
+    - kind: test.owner_seed
+      on: lifecycle
+      worker_ref: func://app:projection_owner_probe_worker
+      input_mode: prefetch_events
+      events:
+        input: [{type: kickside.component.events:created}]
+    - kind: test.owner_thread
+      worker_ref: func://app:projection_owner_probe_worker
+      input_mode: prefetch_events
+  contracts:
+  - contract: kickside.contract:component
+    methods: {get_status: kickside.core.threads:thread_status}
+- name: projection_owner_probe_worker
+  kind: function.lua
+  source: file://projection_owner_proc_worker.lua
+  method: run
+  modules: [security]
+  meta: {type: projection.worker}
+
+- name: projection_owner_directory_groups
+  kind: function.lua
+  source: file://scope_resolver_stub.lua
+  method: groups
+  modules: [security, sql, json]
+  imports:
+    execution_identity: kickside.execution:execution_identity
+- name: projection_owner_directory
+  kind: contract.binding
+  contracts:
+  - contract: kickside.contract:directory
+    default: true
+    methods:
+      groups: app:projection_owner_directory_groups
+      search: app:scope_resolver_stub
+      resolve: app:scope_resolver_stub
+      exists: app:scope_resolver_stub
+
+- name: projection_owner_delete_kind
+  kind: contract.binding
+  meta:
+    class: [projection_owner_delete]
+    projections:
+    - kind: test.owner_seed
+      on: lifecycle
+      worker_ref: func://app:projection_owner_probe_worker
+      input_mode: prefetch_events
+  contracts:
+  - contract: kickside.contract:component
+    methods: {get_status: kickside.core.threads:thread_status}

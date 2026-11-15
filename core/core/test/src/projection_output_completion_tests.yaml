@@ -9,6 +9,7 @@ entries:
     method: run
     modules: [sql, uuid, json, channel, time]
     imports:
+      fixture: kickside.core.threads:contract_fixture
       test: wippy.test:test
       writer: kickside.core.projections.persist:writer
       apply: kickside.core.projections:apply

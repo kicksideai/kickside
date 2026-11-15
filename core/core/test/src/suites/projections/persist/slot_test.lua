@@ -5,17 +5,15 @@ local json = require("json")
 local writer = require("writer")
 local apply = require("apply")
 local invoke = require("invoke")
-local claim = require("claim")
+local projection_claim = require("projection_claim")
 local job_lifecycle_cancel = require("job_lifecycle_cancel")
 
-local function claim_batch(limit: integer): (table[]?, error?)
+local function claim_slot(job_id: string): (table?, error?)
     local db, db_err = sql.get("app:db")
     if db_err or not db then return nil, db_err end
-    local dbtype, type_err = db:type()
-    if type_err then db:release(); return nil, type_err end
-    local rows, claim_err = claim.claim_batch(db, tostring(dbtype), limit, nil, nil)
+    local job = projection_claim.claim(db, job_id)
     local _, release_err = db:release()
-    return rows, claim_err or release_err
+    return job, release_err
 end
 
 local function define_tests()
@@ -34,11 +32,8 @@ local function define_tests()
                 })
                 test.is_nil(register_err)
                 db:release()
-                local batch, claim_err = claim_batch(16)
-                test.is_nil(claim_err)
-                local job: table? = nil
-                for _, row in ipairs(batch) do if row.id == registered.job_id then job = row end end
-                if not job then error("projection slot is not claimed") end
+                local job, claim_err = claim_slot(registered.job_id)
+                test.is_nil(claim_err); test.not_nil(job)
                 db = assert(sql.get("app:db"))
                 local _, wake_err = db:execute("UPDATE kickside_job SET wake_demand_at=created_at WHERE id=$1", { job.id })
                 test.is_nil(wake_err)
@@ -265,13 +260,8 @@ local function define_tests()
             local _, close_err = (db :: sql.DB):release()
             test.is_nil(close_err)
 
-            local claimed, claim_err = claim_batch(16)
-            test.is_nil(claim_err)
-            local selected: table? = nil
-            for _, row in ipairs(claimed :: table[]) do
-                if row.id == job_id then selected = row end
-            end
-            test.not_nil(selected)
+            local selected, claim_err = claim_slot(job_id)
+            test.is_nil(claim_err); test.not_nil(selected)
             local lease = { token = (selected :: table).lease_token,
                 execution_seq = (selected :: table).execution_seq }
             local result, advance_err = invoke.run({
@@ -318,11 +308,8 @@ local function define_tests()
             local _, close_err = (db :: sql.DB):release()
             test.is_nil(close_err)
 
-            local claimed, claim_err = claim_batch(16)
-            test.is_nil(claim_err)
-            local selected: table? = nil
-            for _, row in ipairs(claimed :: table[]) do if row.id == job_id then selected = row end end
-            test.not_nil(selected)
+            local selected, claim_err = claim_slot(job_id)
+            test.is_nil(claim_err); test.not_nil(selected)
             local lease = { token = (selected :: table).lease_token,
                 execution_seq = (selected :: table).execution_seq }
             local attempt = {
@@ -370,13 +357,8 @@ local function define_tests()
             test.is_nil(register_err)
             local _, close_err = (db :: sql.DB):release()
             test.is_nil(close_err)
-            local claimed, claim_err = claim_batch(16)
-            test.is_nil(claim_err)
-            local selected: table? = nil
-            for _, row in ipairs(claimed :: table[]) do
-                if row.id == (registered :: table).job_id then selected = row end
-            end
-            test.not_nil(selected)
+            local selected, claim_err = claim_slot((registered :: table).job_id)
+            test.is_nil(claim_err); test.not_nil(selected)
             local lease = { token = (selected :: table).lease_token,
                 execution_seq = (selected :: table).execution_seq }
             local result, advance_err = invoke.run({

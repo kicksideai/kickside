@@ -7,11 +7,11 @@ modules:
     - name: kickside/contract
       version: 0.0.0
     - name: kickside/core
-      version: 0.0.0
+      version: 0.3.18
     - name: kickside/execution
       version: 0.0.0
     - name: kickside/jobs
-      version: 0.1.61
+      version: 0.1.78
     - name: kickside/realtime-dispatch
       version: 0.0.0
     - name: kickside/settings

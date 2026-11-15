@@ -49,32 +49,49 @@ function M.purge_slot(params: table): (integer?, error?)
         return nil, (errors.new({ message = "purge_slot requires namespace, scope and key",
             kind = errors.INVALID, retryable = false }) :: error)
     end
-    for _, field in ipairs({ "namespace", "scope", "key" }) do
-        local value = p[field]
-        if type(value) ~= "string" or value == "" then
+    local identity = p.job_identity
+    if identity ~= nil then
+        if type(identity) ~= "string" or identity == "" or p.namespace ~= nil or p.scope ~= nil or p.key ~= nil then
+            return nil, errors.new({message = "purge_slot requires a job_identity or namespace, scope and key",
+                kind = errors.INVALID, retryable = false})
+        end
+    else
+        for _, field in ipairs({ "namespace", "scope", "key" }) do
+            local value = p[field]
+            if type(value) ~= "string" or value == "" then
+                return nil, (errors.new({ message = "purge_slot requires namespace, scope and key",
+                    kind = errors.INVALID, retryable = false }) :: error)
+            end
+        end
+        local namespace = p.namespace
+        local scope = p.scope
+        local key = p.key
+        if type(namespace) ~= "string" or type(scope) ~= "string" or type(key) ~= "string" then
             return nil, (errors.new({ message = "purge_slot requires namespace, scope and key",
                 kind = errors.INVALID, retryable = false }) :: error)
         end
+        local identity_params: lifecycle.IdentityParams = {
+            job_identity = {
+                namespace = namespace,
+                scope = scope,
+                key = key,
+            },
+        }
+        local encoded, identity_err = lifecycle.identity_parts(identity_params, "")
+        if identity_err then return nil, identity_err end
+        if not encoded then
+            return nil, (errors.new({ message = "slot owner identity could not be encoded",
+                kind = errors.INTERNAL, retryable = false }) :: error)
+        end
+        identity = encoded
     end
-    local namespace = p.namespace
-    local scope = p.scope
-    local key = p.key
-    if type(namespace) ~= "string" or type(scope) ~= "string" or type(key) ~= "string" then
-        return nil, (errors.new({ message = "purge_slot requires namespace, scope and key",
-            kind = errors.INVALID, retryable = false }) :: error)
-    end
-    local identity_params: lifecycle.IdentityParams = {
-        job_identity = {
-            namespace = namespace,
-            scope = scope,
-            key = key,
-        },
-    }
-    local identity, identity_err = lifecycle.identity_parts(identity_params, "")
-    if identity_err then return nil, identity_err end
-    if not identity then
-        return nil, (errors.new({ message = "slot owner identity could not be encoded",
-            kind = errors.INTERNAL, retryable = false }) :: error)
+    local owner = p.owner_locator
+    if p.job_identity ~= nil or owner ~= nil then
+        if type(owner) ~= "table" or type(owner.kind) ~= "string" or owner.kind == ""
+            or type(owner.id) ~= "string" or owner.id == "" then
+            return nil, errors.new({message = "slot purge owner_locator requires kind and id",
+                kind = errors.INVALID, retryable = false})
+        end
     end
     return with_db(function(db: sql.DB, dbtype: string): (any?, error?)
         local tx, begin_err = sql_boundary.begin(db, "slot owner purge begin failed", "transaction", response_error)
@@ -88,6 +105,10 @@ function M.purge_slot(params: table): (integer?, error?)
             local commit_err = commit(tx)
             if commit_err then return nil, commit_err end
             return 0, nil
+        end
+        if owner and (rows[1].owner_kind ~= owner.kind or rows[1].owner_id ~= owner.id) then
+            return nil, sql_boundary.rollback(tx, errors.new({message = "slot belongs to another owner",
+                kind = errors.PERMISSION_DENIED, retryable = false}), "slot purge rollback failed")
         end
         local job_id = rows[1].id
         if rows[1].owner_kind == "thread" then

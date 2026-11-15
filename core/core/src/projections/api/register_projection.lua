@@ -28,7 +28,7 @@ local M = {}
 function M.register(thread_id: string, data: any): (integer, { [string]: any })
     if type(thread_id) ~= "string" or thread_id == "" then return math.floor(http.STATUS.BAD_REQUEST), {success = false, error = "thread id is required"} end
     if type(data) ~= "table" then return math.floor(http.STATUS.BAD_REQUEST), {success = false, error = "request body is required"} end
-    for _, field in ipairs({ "execution_identity", "execution_identity_row", "system_identity" }) do
+    for _, field in ipairs({ "execution_identity", "execution_identity_row", "system_identity", "maintenance_owner" }) do
         if data[field] ~= nil then
             local refused = errors.new({ message = field .. " is server-derived and cannot be supplied",
                 kind = errors.INVALID, retryable = false, details = { error_kind = "declaration" } })

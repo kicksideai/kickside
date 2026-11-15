@@ -94,11 +94,10 @@ function M.register_projection(args: any): (any?, error?)
     local register_args: { [string]: any } = {}
     for key, value in pairs(args :: table) do register_args[key] = value end
     register_args.worker_ref = (validated :: any).worker_ref
-    register_args.execution_identity_row = nil
     register_args.execution_identity = nil
-    register_args.system_identity = nil
     register_args.execution_identity_row = identity.row
     register_args.system_identity = identity.system == true
+    register_args.maintenance_owner = identity.owner
 
     local result, register_err = proj_writer.register_projection(_db, args.thread_id :: string, register_args)
     register_err = release(_db, register_err, register_err == nil and result ~= nil)

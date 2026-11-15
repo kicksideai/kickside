@@ -34,6 +34,7 @@ local retention = require("retention")
 local thread_access = require("thread_access")
 local projection_read = require("projection_read")
 local retention_read = require("retention_read")
+local retention_repo = require("retention_repo")
 local function exercise(adapter, dep_name, failure, status, db_failure)
     local runtime, _, captured = context('{}')
     local released = 0
@@ -73,6 +74,20 @@ return test.run_cases(function()
                 test.eq(message, tostring(failure))
             end)
         end
+        test.it("returns the shared default when a thread has no stored policy", function()
+            local runtime, _, captured = context('{}')
+            local releases = 0
+            retention_read.new({http = runtime,
+                sql = {get = function() return {release = function() releases = releases + 1; return true end} end},
+                thread_access = {READ = 1, gate_thread_access = function() return true end},
+                repo = {find_by_thread = function() return nil, nil end, normalize = retention_repo.normalize},
+            }).handler()
+            test.eq(releases, 1)
+            test.is_true(captured.body.success)
+            test.is_true(captured.body.is_default)
+            test.eq(captured.body.policy.event_hot_retention_days, 30)
+        end)
+
         test.it("renders plain strings without calling error methods", function()
             exercise(projection, "writer", "not_found", 500)
             exercise(retention, "repo", "bad_request", 500)

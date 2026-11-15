@@ -97,7 +97,7 @@ entries:
     meta:
       comment: In-process implementation for component CRUD lifecycle; appends canonical events and attaches declared lifecycle projections in the caller's transaction.
     source: file://component_lifecycle.lua
-    modules: [uuid, process, sql]
+    modules: [uuid, process, sql, security]
     imports:
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       autoinit: kickside.component:autoinit
@@ -107,7 +107,10 @@ entries:
       threads_env: kickside.core.threads:env
       threads_thread_row: kickside.core.threads.persist:thread_row
       component_meta: kickside.component.persist:meta_ops
+      component_context: kickside.component.persist:context_ops
+      component_types: kickside.component:types
       execution_identity: kickside.execution:execution_identity
+      owner_identity: kickside.core.threads:owner_identity
 
   - name: component_lifecycle
     kind: function.lua
@@ -115,7 +118,7 @@ entries:
       comment: Binding for kickside.component:lifecycle; appends canonical component lifecycle events and attaches declared lifecycle projections.
     source: file://component_lifecycle.lua
     method: created
-    modules: [uuid, process, sql]
+    modules: [uuid, process, sql, security]
     imports:
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       autoinit: kickside.component:autoinit
@@ -125,7 +128,10 @@ entries:
       threads_env: kickside.core.threads:env
       threads_thread_row: kickside.core.threads.persist:thread_row
       component_meta: kickside.component.persist:meta_ops
+      component_context: kickside.component.persist:context_ops
+      component_types: kickside.component:types
       execution_identity: kickside.execution:execution_identity
+      owner_identity: kickside.core.threads:owner_identity
 
   - name: component_lifecycle.updated
     kind: function.lua
@@ -133,7 +139,7 @@ entries:
       comment: kickside.component:lifecycle updated method.
     source: file://component_lifecycle.lua
     method: updated
-    modules: [uuid, process, sql]
+    modules: [uuid, process, sql, security]
     imports:
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       autoinit: kickside.component:autoinit
@@ -143,7 +149,10 @@ entries:
       threads_env: kickside.core.threads:env
       threads_thread_row: kickside.core.threads.persist:thread_row
       component_meta: kickside.component.persist:meta_ops
+      component_context: kickside.component.persist:context_ops
+      component_types: kickside.component:types
       execution_identity: kickside.execution:execution_identity
+      owner_identity: kickside.core.threads:owner_identity
 
   - name: component_lifecycle.deleted
     kind: function.lua
@@ -151,7 +160,7 @@ entries:
       comment: kickside.component:lifecycle deleted method.
     source: file://component_lifecycle.lua
     method: deleted
-    modules: [uuid, process, sql]
+    modules: [uuid, process, sql, security]
     imports:
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       autoinit: kickside.component:autoinit
@@ -161,7 +170,10 @@ entries:
       threads_env: kickside.core.threads:env
       threads_thread_row: kickside.core.threads.persist:thread_row
       component_meta: kickside.component.persist:meta_ops
+      component_context: kickside.component.persist:context_ops
+      component_types: kickside.component:types
       execution_identity: kickside.execution:execution_identity
+      owner_identity: kickside.core.threads:owner_identity
 
   - name: component_lifecycle_binding
     kind: contract.binding

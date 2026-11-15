@@ -14,6 +14,8 @@ local jobs = require("jobs")
 local execution_identity = require("execution_identity")
 local job_types = require("job_types")
 local error_envelope = require("error_envelope")
+local owner_identity = require("owner_identity")
+local access_subjects = require("access_subjects")
 
 local M = {}
 
@@ -55,14 +57,49 @@ local function event_types(body: table): { string }?
     return #out > 0 and out or nil
 end
 
-local function snapshot(db: sql.DB, cursor_id: string, job_id: string): (table?, error?)
-    local rows, err = db:query([[SELECT c.id,c.projection_id,c.thread_id,c.cursor_key,c.last_seq,
+-- Compose the canonical effective-access query into the existing owner read.
+-- Maintenance frames carry only their user-typed actor subject, without groups
+-- or path restrictions. Values remain fresh for every invocation.
+local maintenance_access, maintenance_args = access_subjects.effective_mask_query(
+    {{subject_type = "user", subject_id = "owner"}}, "component")
+local references = {component = "o.component_id", owner = "m.value", user = "'user'"}
+maintenance_access = maintenance_access:gsub("%$(%d+)", function(index: string): string
+    return references[maintenance_args[tonumber(index) :: number]] :: string
+end)
+local MAINTENANCE_ACCESS = "COALESCE((" .. maintenance_access .. "),0)"
+
+local function snapshot_statement(dialect: string): string
+    local component_key = "COALESCE(NULLIF(t.component_id,''),t.attrs ->> 'component_id')"
+    local stored_identity = "CASE WHEN json_valid(o.private_context) THEN o.private_context -> '$._execution_identity' END"
+    local readable = "CASE WHEN json_valid(o.private_context) THEN json_type(o.private_context) IN ('object','array') ELSE 0 END"
+    if dialect == sql.type.POSTGRES then
+        component_key = "CAST(" .. component_key .. " AS UUID)"
+        stored_identity = "(o.private_context -> '_execution_identity')::text"
+        readable = "jsonb_typeof(o.private_context) IN ('object','array')"
+    end
+    return [[SELECT c.id,c.projection_id,c.thread_id,c.cursor_key,c.last_seq,
         c.generation,c.status,c.job_id,c.debounce_idle_ms,c.debounce_max_ms,
-        c.actor_id,c.execution_identity_json,p.kind,p.body,t.event_count
+        c.actor_id,c.execution_identity_json,p.kind,p.body,p.projection_key,t.event_count,
+        p.actor_id AS projection_actor_id,p.actor_context AS projection_actor_context,
+        t.component_id AS thread_component_id,t.attrs AS thread_attrs,
+        o.component_id AS owner_component_id,o.impl_id AS owner_impl_id,
+        o.identity_generation AS owner_identity_generation,m.value AS owner_key,]] .. stored_identity .. [[ AS owner_execution_identity,
+        ]] .. readable .. [[ AS owner_context_readable,CASE WHEN ]] .. stored_identity
+        .. [[ IS NULL THEN ]] .. MAINTENANCE_ACCESS .. [[ END AS maintenance_access_mask
         FROM kickside_projection_cursor c
         JOIN kickside_projection p ON p.id=c.projection_id
         JOIN kickside_thread t ON t.id=c.thread_id
-        WHERE c.id=$1]], { cursor_id })
+        LEFT JOIN kickside_components o ON o.component_id=]] .. component_key .. [[
+        LEFT JOIN kickside_component_meta m ON m.component_id=o.component_id AND m.key='owner'
+        WHERE c.id=$1 ]]
+end
+local POSTGRES_SNAPSHOT = snapshot_statement(sql.type.POSTGRES)
+local SQLITE_SNAPSHOT = snapshot_statement(sql.type.SQLITE)
+
+local function snapshot(db: sql.DB, cursor_id: string, job_id: string): (table?, error?)
+    local dialect, dialect_err = db:type()
+    if dialect_err then return nil, dialect_err end
+    local rows, err = db:query(dialect == sql.type.POSTGRES and POSTGRES_SNAPSHOT or SQLITE_SNAPSHOT, {cursor_id})
     if err then return nil, errors.wrap(err, "projection snapshot failed") end
     if type(rows) ~= "table" then return nil, response_error("snapshot.rows") end
     local row = rows[1]
@@ -70,16 +107,25 @@ local function snapshot(db: sql.DB, cursor_id: string, job_id: string): (table?,
     if tostring(row.job_id or "") ~= job_id then
         return nil, (errors.new({ message = "projection cursor slot mismatch", kind = errors.CONFLICT }) :: error)
     end
-    if row.execution_identity_json ~= nil then
-        local identity, identity_err = execution_identity.from_row(row.actor_id, row.execution_identity_json)
-        if identity_err then return nil, identity_err end
-        if type(identity) ~= "table" then return nil, response_error("execution_identity") end
-    elseif row.actor_id ~= nil then
-        return nil, (errors.new({ message = "projection cursor execution identity is missing", kind = errors.INVALID }) :: error)
-    end
     local body, body_err = body_from(row.body)
     if body_err then return nil, body_err end
     row.body = body
+    local authority, authority_err = owner_identity.from_snapshot(row)
+    if authority_err then
+        row.authority_error = authority_err
+    else
+        row.component_authority = authority
+        if not authority then
+            if row.execution_identity_json ~= nil then
+                local identity, identity_err = execution_identity.from_row(row.actor_id, row.execution_identity_json)
+                if identity_err then return nil, identity_err end
+                if type(identity) ~= "table" then return nil, response_error("execution_identity") end
+                row.identity = identity
+            elseif row.actor_id ~= nil then
+                return nil, errors.new({message = "projection cursor has no trusted execution identity", kind = errors.INVALID})
+            end
+        end
+    end
     return row, nil
 end
 M.snapshot = snapshot
@@ -174,6 +220,14 @@ function M.run(input: any): (table?, error?)
     local row, row_err = snapshot(db, cursor_id, job.id)
     if row_err then return nil, release(db, row_err) end
     local current = row :: table
+    if current.authority_error and current.status == "active" then
+        local release_err = release(db, nil)
+        if release_err then return nil, release_err end
+        local deterministic = job_types.is_deterministic_kind(current.authority_error:kind())
+        local result, fail_err = apply.fail(db_id, job, current, current.authority_error, deterministic)
+        if result or fail_err then return result, fail_err end
+        return nil, current.authority_error
+    end
     local head = tonumber(current.event_count)
     local last = tonumber(current.last_seq)
     if head == nil or last == nil then
@@ -201,13 +255,15 @@ function M.run(input: any): (table?, error?)
         local parsed, parse_err = worker.parse(ref, true)
         if parse_err then return nil, release(db, parse_err) end
         if type(parsed) ~= "table" then return nil, release(db, response_error("worker.reference")) end
-        local system_identity = current.actor_id == nil and current.execution_identity_json == nil
+        local system_identity = current.execution_identity_json == nil
         local binding, binding_err = worker.validate(parsed, system_identity)
         if binding_err then return nil, release(db, binding_err) end
         if type(binding) ~= "table" then return nil, release(db, response_error("worker.binding")) end
         binding.actor_id = current.actor_id
         binding.actor_context = current.execution_identity_json
         binding.system_identity = system_identity
+        binding.component_authority = current.component_authority
+        binding.maintenance_access_mask = current.maintenance_access_mask
         local post_err: error? = nil
         post_commit, post_err = worker.post_commit_binding(binding)
         if post_err then return nil, release(db, post_err) end
@@ -236,27 +292,34 @@ function M.run(input: any): (table?, error?)
             -- before invoking either a function or a monitored process.
             local release_err = release(db, nil)
             if release_err then return nil, release_err end
+            local execution_frame: table? = nil
             if binding.worker_runtime == "proc" then
                 local host, host_err = apply.process_host()
                 if host_err then return nil, host_err end
                 if type(host) ~= "string" or host == "" then return nil, response_error("process_host") end
-                output, row_err = worker.run_proc_supervised(binding, work_input, {
+                output, row_err, execution_frame = worker.run_proc_supervised(binding, work_input, {
                     proc_host = host,
                 })
             else
-                output, row_err = worker.run(binding, work_input)
+                output, row_err, execution_frame = worker.run(binding, work_input)
             end
             if row_err then
                 -- Only the worker's own failure is the projection's outcome;
                 -- binding and identity failures stay with Jobs.
                 local details = (row_err :: error):details()
-                if type(details) ~= "table" or details.reason ~= worker.WORKER_FAILED then return nil, row_err end
+                if type(details) ~= "table" or details.reason ~= worker.WORKER_FAILED then
+                    if current.component_authority and job_types.is_deterministic_kind(row_err:kind()) then
+                        return apply.fail(db_id, job, current, row_err, true)
+                    end
+                    return nil, row_err
+                end
                 local deterministic = job_types.is_deterministic_kind((row_err :: error):kind())
                 local failed, fail_err = apply.fail(db_id, job, current, row_err :: error, deterministic)
                 if fail_err then return nil, fail_err end
                 if failed then return failed, nil end
                 return nil, row_err
             end
+            current.execution_frame = execution_frame
             db = nil
         end
     end
@@ -266,17 +329,61 @@ function M.run(input: any): (table?, error?)
     end
     if type(output) ~= "table" then return nil, response_error("worker.output") end
     local result, apply_err = apply.advance(db_id, job, current, seen_last, output)
-    if apply_err then return nil, apply_err end
+    if apply_err then
+        if current.component_authority and job_types.is_deterministic_kind(apply_err:kind()) then
+            return apply.fail(db_id, job, current, apply_err, true)
+        end
+        return nil, apply_err
+    end
     if type(result) ~= "table" then return nil, response_error("advance") end
     -- Match apply's cursor/retention notifications: successful durable commit
     -- first. Release the pool handle before a callback may use the same DB,
     -- especially SQLite's single connection. Stale and empty folds never notify.
     if not result.stale and post_commit and committed_input
         and tonumber(result.last_seq) and tonumber(result.last_seq) > last then
+        if current.component_authority then
+            local callback_db, callback_open_err = sql.get(db_id)
+            if callback_open_err then return nil, callback_open_err end
+            if not callback_db then return nil, response_error("callback.database") end
+            local rows, fresh_err = callback_db:query([[SELECT c.generation,c.status,c.last_seq,c.job_id,
+                o.identity_generation AS owner_identity_generation
+                FROM kickside_projection_cursor c
+                LEFT JOIN kickside_components o ON o.component_id=$1
+                WHERE c.id=$2]],
+                {current.component_authority.component_id, cursor_id})
+            fresh_err = release(callback_db, fresh_err)
+            if fresh_err then return nil, fresh_err end
+            if type(rows) ~= "table" then return nil, response_error("callback.rows") end
+            local fresh = rows[1]
+            if not fresh or tonumber(fresh.owner_identity_generation) ~= current.component_authority.generation
+                or tonumber(fresh.generation) ~= tonumber(current.generation) or fresh.status ~= "active"
+                or fresh.job_id ~= job.id or tonumber(fresh.last_seq) ~= tonumber(result.last_seq) then
+                result.stale = true
+                return result, nil
+            end
+            local declared, declaration_err = owner_identity.check_declaration(current.component_authority.declaration)
+            if declaration_err or not declared then
+                local failed_snapshot: table = {}
+                for key, value in pairs(current) do failed_snapshot[key] = value end
+                failed_snapshot.last_seq = result.last_seq
+                return apply.fail(db_id, job, failed_snapshot, declaration_err or errors.new({
+                    kind = errors.PERMISSION_DENIED, retryable = false,
+                    message = "component projection declaration is removed before its callback",
+                    details = {code = "projection_owner_declaration_changed"}}), true, result.completion)
+            end
+        end
         committed_input.projection.body = output.body or current.body
         committed_input.range.to_seq = result.last_seq
-        local _, post_err = worker.run(post_commit, committed_input)
-        if post_err then return nil, post_err end
+        local _, post_err = worker.run(post_commit, committed_input, current.execution_frame)
+        if post_err then
+            if current.component_authority and job_types.is_deterministic_kind(post_err:kind()) then
+                local failed_snapshot: table = {}
+                for key, value in pairs(current) do failed_snapshot[key] = value end
+                failed_snapshot.last_seq = result.last_seq
+                return apply.fail(db_id, job, failed_snapshot, post_err, true, result.completion)
+            end
+            return nil, post_err
+        end
     end
     return result, nil
 end

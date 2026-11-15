@@ -31,9 +31,9 @@ function M.updated(payload: table): error?
     return result_error("updated", result, call_err)
 end
 
-function M.deleted(payload: table): error?
+function M.deleted(payload: table): (error?, table?)
     local result, call_err = lifecycle_impl.deleted(payload)
-    return result_error("deleted", result, call_err)
+    return result_error("deleted", result, call_err), result
 end
 
 -- Called once after a transaction that recorded lifecycle events commits, so

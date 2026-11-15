@@ -613,6 +613,33 @@ function M.resolve(identity: any, opts: any?): (any?, error?)
         actor = actor, scope = scope, scope_name = scope_name, meta = meta }, nil
 end
 
+-- maintenance_frame(actor_id) -> ({actor, scope}?, err?). The frame of deferred
+-- work owned by a framework maintenance actor (a framework-created component's
+-- recorded owner): that actor under the caller's own scope, so the work acts as
+-- its owner with the authority of the frame that runs it. The actor-create grant
+-- on the key decides which frames may run work as that maintenance actor.
+function M.maintenance_frame(actor_id: any): (any?, error?)
+    if not M.is_maintenance_key(actor_id) then
+        return nil, failure("deferred work owner is not a framework maintenance actor",
+            errors.INVALID, "declaration", false)
+    end
+    local key = actor_id :: string
+    if security.can(CREATE_ACTION, key) ~= true then
+        return nil, failure("actor creation is not granted for " .. key, errors.PERMISSION_DENIED, "access", false)
+    end
+    local actor, actor_err = security.new_actor(key, { system = true })
+    if actor_err or not actor then
+        return nil, failure("could not build actor " .. key .. ": " .. tostring(actor_err),
+            errors.PERMISSION_DENIED, "subject", false, actor_err)
+    end
+    local scope, scope_err = security.scope()
+    if scope_err or not scope then
+        return nil, failure("security scope is unavailable: " .. tostring(scope_err),
+            errors.UNAVAILABLE, "infrastructure", true, scope_err)
+    end
+    return { actor = actor, scope = scope }, nil
+end
+
 -- bind(identity, opts?) -> (funcs_builder?, err?). One scoped builder; each
 -- grant step is checked separately so a removed grant is a typed denial,
 -- never a nil dereference or a service restart loop.

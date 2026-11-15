@@ -12,7 +12,7 @@ entries:
       type: security.policy_binding
       surface: kickside.core.lifecycle.boot
       intent: system_lifecycle_runtime
-      comment: The boot provisioner may mint the system:lifecycle actor; nothing else.
+      comment: Framework processes may mint the system:lifecycle actor - the boot provisioner, and projection ticks running the projections of components it owns.
     groups:
       - wippy.security:process
     policy:

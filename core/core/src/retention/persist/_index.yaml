@@ -18,4 +18,5 @@ entries:
     imports:
       clock: kickside.core.jobs:clock
       ret_consts: kickside.core.retention:consts
+      retention_policy: kickside.core:policy_config
       retention_notifier: kickside.core.retention:notifier

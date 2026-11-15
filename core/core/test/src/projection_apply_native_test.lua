@@ -54,6 +54,22 @@ local function native(first: integer, last: integer)
     end
 end
 local function outcomes()
+    test.it("retains returned-write admission through the apply round", function()
+        fixture.reset("", nil, "advance")
+        fixture.checks = {{component_id = "other", generation = 2}}
+        local result, err = call("advance")
+        test.is_nil(err); test.eq(result.last_seq, 1)
+        test.is_true(fixture.thread_locked); test.eq(fixture.mask_queries, 0)
+        test.eq(fixture.access_mask, 0, "revocation commits during the lock wait")
+        test.eq(fixture.executions, 2); test.eq(fixture.appends, 1); test.eq(fixture.rollbacks, 0)
+    end)
+    test.it("discards a returned write whose destination authority changes while locking", function()
+        fixture.reset("", nil, "advance")
+        fixture.checks = {{component_id = "other", subjects = {}, required_mask = 2, generation = 1}}
+        local result, err = call("advance")
+        test.is_nil(err); test.is_true(result.stale)
+        test.eq(fixture.mask_queries, 0); test.eq(fixture.executions, 0); test.eq(fixture.appends, 0)
+    end)
     test.it("defers output demand until all appends and prelocks the completing job", function()
         fixture.reset("", nil, "advance")
         local value, err = apply.advance("app:db", {id = "job", lease_token = "token", execution_seq = 1},
@@ -69,6 +85,20 @@ local function outcomes()
         test.eq(#fixture.wake_keys, 2)
         test.eq(fixture.wakes, 1)
         test.eq(fixture.completing, "job")
+    end)
+    test.it("appends each returned destination once while preserving its event order", function()
+        fixture.reset("", nil, "advance")
+        local value, err = apply.advance("app:db", {id = "job", lease_token = "token", execution_seq = 1},
+            {id = "cursor", thread_id = "thread", projection_id = "projection", generation = 1, last_seq = 0, body = {}}, 1,
+            {append_events = {{thread_id = "other", event = {type = "first", body_json = "{}"}},
+                {thread_id = "another", event = {type = "between", body_json = "{}"}},
+                {thread_id = "other", events = {{type = "second", body_json = "{}"}, {type = "third", body_json = "{}"}}}}})
+        test.is_nil(err); test.not_nil(value); test.eq(fixture.appends, 2)
+        test.eq(fixture.append_batches[1].thread_id, "other")
+        local events = fixture.append_batches[1].events
+        test.eq(#events, 3); test.eq(events[1].type, "first"); test.eq(events[2].type, "second"); test.eq(events[3].type, "third")
+        test.eq(fixture.append_batches[2].events[1].type, "between")
+        test.eq(fixture.wakes, 1); test.eq(#fixture.wake_keys, 2)
     end)
     test.it("locks the source thread before recording a failure", function()
         fixture.reset("", nil, "fail")

@@ -4,8 +4,8 @@ local fixture = require("fixture")
 local function exercise(route, subject_id: string?)
     local db = fixture.executor()
     local command: any = {payload = {component_id = "component", subject_type = "user", subject_id = "user", access_mask = 1}}
-    if route == "grant_update" or route == "grant_insert" then return access.grant_access(db, db, command) end
-    if route == "revoke" then return access.revoke_access(db, db, command) end
+    if route == "grant_update" or route == "grant_insert" or route == "grant_lock" then return access.grant_access(db, db, command) end
+    if route == "revoke" or route == "revoke_lock" then return access.revoke_access(db, db, command) end
     if route == "effective" then return access.check_user_access(db, "user", "component", 1, {{subject_type = "user", subject_id = "user"}}, nil, true) end
     if route == "admin" then return access.apply_subtree_access(db, db, "component", subject_id or "user", 1, true, "user") end
     if route == "list" or route == "database" then return access.list_access("component") end
@@ -38,7 +38,7 @@ return {run = test.run_cases(function()
                 test.eq(fixture.calls, 1, "the last-admin guard must refuse before placement or writes")
             end)
         end
-        for _, route in ipairs({"grant_update", "grant_insert", "revoke", "effective", "admin", "list", "reaching", "owner", "emails", "email_upsert", "email_delete", "database"}) do
+        for _, route in ipairs({"grant_update", "grant_insert", "grant_lock", "revoke_lock", "revoke", "effective", "admin", "list", "reaching", "owner", "emails", "email_upsert", "email_delete", "database"}) do
             for _, kind in ipairs({errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.PERMISSION_DENIED,
                 errors.UNAVAILABLE, errors.INTERNAL, errors.CANCELED, errors.CONFLICT, errors.TIMEOUT, errors.RATE_LIMITED, errors.UNKNOWN}) do
                 for _, options in ipairs({{}, {retryable = false}, {retryable = true}}) do

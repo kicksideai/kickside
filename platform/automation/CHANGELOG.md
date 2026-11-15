@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.27](https://github.com/kicksideai/kickside/compare/automation-v0.2.26...automation-v0.2.27) (2026-11-14)
+
+
+### Features
+
+* owner job listing and atomic automation reconfiguration ([#486](https://github.com/kicksideai/kickside/issues/486)) ([351f914](https://github.com/kicksideai/kickside/commit/351f914b54886ea28cbf24a1de7d6473e5385d2d))
+
 ## [0.2.26](https://github.com/kicksideai/kickside/compare/automation-v0.2.25...automation-v0.2.26) (2026-11-13)
 
 

@@ -67,6 +67,9 @@ local function verify_command(input: any, verify: any): (any?, error?)
         or receipt.declaration_hash ~= input.declaration_hash
         or type(receipt.operator_id) ~= "string" or receipt.operator_id == ""
         or type(receipt.execution_subject_id) ~= "string" or receipt.execution_subject_id == ""
+        or (receipt.expected_revision ~= nil and (type(receipt.expected_revision) ~= "number"
+            or receipt.expected_revision < 0 or receipt.expected_revision == math.huge
+            or receipt.expected_revision ~= math.floor(receipt.expected_revision)))
         or type(receipt.declaration) ~= "table"
         or (receipt.state ~= nil and type(receipt.state) ~= "table")
         or (receipt.public_meta ~= nil and type(receipt.public_meta) ~= "table")
@@ -129,6 +132,10 @@ function M.write_declaration_tx(tx: any, input: any): (any?, error?)
         if generation == input.generation then
             return { component_id = input.component_id, changes_made = false, generation = generation }, nil
         end
+    end
+    if input.expected_revision ~= nil then
+        local revision_err = context_ops.check_context_revision(tx, input.component_id, input.expected_revision :: integer)
+        if revision_err then return nil, revision_err end
     end
     stored._portable_input = input.declaration
     if input.state ~= nil then

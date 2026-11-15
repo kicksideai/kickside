@@ -24,3 +24,10 @@ profiles:
       "app:db:options.sslmode": disable
       "app:db:pool.max_open": 16
       "app:db:pool.max_idle": 8
+      "app:ownership_upgrade_db:kind": db.sql.postgres
+      "app:ownership_upgrade_db:host": "${pg_host}"
+      "app:ownership_upgrade_db:port": "${pg_port}"
+      "app:ownership_upgrade_db:database": "${pg_database}_upgrade"
+      "app:ownership_upgrade_db:username": "${pg_username}"
+      "app:ownership_upgrade_db:password": "${pg_password}"
+      "app:ownership_upgrade_db:options.sslmode": disable

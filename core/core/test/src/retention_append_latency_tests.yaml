@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: app
+entries:
+  - name: retention_append_latency_test
+    kind: function.lua
+    source: file://retention_append_latency_test.lua
+    method: run
+    meta: {type: test, suite: kickside_core, timeout: 600s}
+    modules: [time, channel, json]
+    imports:
+      test: wippy.test:test
+      fixture: app:prune_scaffold
+      sweeper: kickside.core.retention:sweeper
+      append: kickside.core.threads.persist:append
+      prune: kickside.core.retention:prune

@@ -1,5 +1,9 @@
 local M: any = {}
 function M.reset(route, source) M.route, M.source, M.calls, M.releases = route, source, 0, 0 end
+function M.lock_component_tx()
+    if M.route == "grant_lock" or M.route == "revoke_lock" then return M.source end
+    return nil
+end
 function M.executor(): any
     local db: any = {}
     function db:release() M.releases = M.releases + 1 end

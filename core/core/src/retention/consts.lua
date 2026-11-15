@@ -13,10 +13,10 @@ M.ARCHIVE_MODE = {
     HARD_DELETE = "hard_delete",
 }
 
--- Enforced defaults mirror the schema column DEFAULTs. Policy upsert refuses
--- supplied windows below DAYS_MIN and uses these defaults for omitted values.
+-- Schema and runtime share the baseline event window. Registry policy may
+-- override it; per-thread rows remain explicit overrides.
 M.DEFAULTS = {
-    event_hot_retention_days = 90,
+    event_hot_retention_days = 30,
     archive_mode = "tombstone_only",
     enabled = true,
 }

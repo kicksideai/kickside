@@ -19,4 +19,4 @@ local function builder(operation)
     end
     return q
 end
-return {as = sql.as, builder = {insert = function(...) return builder("insert") end, update = function(...) return builder("update") end}}
+return {as = sql.as, builder = {expr = sql.builder.expr, insert = function(...) return builder("insert") end, update = function(...) return builder("update") end}}

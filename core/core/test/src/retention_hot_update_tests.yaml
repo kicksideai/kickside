@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: app
+entries:
+  - name: published_retention_policy
+    kind: library.lua
+    meta: {comment: Archived core-v0.3.15 policy reader for hot-update compatibility.}
+    source: file://published_retention_policy.lua
+    modules: [registry, time]
+    imports:
+      row_size: kickside.core:row_size
+  - name: retention_hot_update_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_core, group: Core Retention}
+    source: file://retention_hot_update_test.lua
+    method: run
+    modules: [registry, process, channel, time]
+    imports:
+      test: wippy.test:test
+      fixture: app:prune_scaffold
+      notifier: kickside.core.retention:notifier
+      published_reader: app:published_retention_policy

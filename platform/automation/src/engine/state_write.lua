@@ -41,7 +41,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
     -- current execution identity its subject. A main_source re-declares the main
     -- drive's source with the declaration.
     local function apply_declaration(component_id: string, input: Map, main_source: Map?,
-        state: Map?, public_meta: Map?, enabled: boolean?): (Map?, any)
+        state: Map?, public_meta: Map?, enabled: boolean?, expected_revision: integer?): (Map?, any)
         local security_mod = dependencies.security :: any
         local actor = security_mod.actor()
         local operator_id = actor and actor:id() or nil
@@ -86,6 +86,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
             enabled = enabled,
             writer = "kickside.automation:declaration_writer_apply",
             writer_args = {},
+            expected_revision = expected_revision,
         })
     end
 
@@ -231,6 +232,11 @@ function part.attach(M: any, dependencies: any, P: any): ()
         local input_err = validate_install_input((entry.meta or {}).inputs, input)
         if input_err then return nil, input_err end
 
+        local expected: any = nil
+        if type(opts) == "table" then expected = (opts :: Map).expected_revision end
+        if expected ~= nil and (type(expected) ~= "number" or expected < 0 or expected == math.huge or expected ~= math.floor(expected)) then
+            return nil, (errors.new({message = "expected_revision must be a non-negative integer", kind = errors.INVALID}) :: error)
+        end
         local source = type(opts) == "table" and (opts :: Map).source or nil
         if source ~= nil then
             local source_err = declaration_mod.validate_source(source)
@@ -270,7 +276,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
                 end
             end
         end
-        local applied, apply_err = apply_declaration(component_id, input :: Map, source, state, public_meta, enabled)
+        local applied, apply_err = apply_declaration(component_id, input :: Map, source, state, public_meta, enabled, expected :: integer?)
         if apply_err or not applied then return nil, apply_err end
         return { success = true, id = component_id, generation = (applied :: Map).generation }, nil
     end

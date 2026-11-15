@@ -3,8 +3,11 @@ local job_types = require("job_types")
 local M = {stage = "", source = nil, calls = 0, exits = 0, decodes = 0}
 function M.reset(stage: string, source: any)
     M.stage, M.source = stage, source
+    M.serial = (M.serial or 0) + 1
+    M.gets = 0
     M.calls, M.exits, M.decodes = 0, 0, 0
     M.actors, M.scopes, M.configures = 0, 0, 0
+    M.frames, M.resolves, M.revision = 0, 0, tostring(M.serial)
 end
 function M.call(_target: string, _input: table): (any, error?)
     M.calls = M.calls + 1
@@ -17,6 +20,13 @@ function M.decode(value: string): (any, error?)
     return json.decode(value)
 end
 function M.get(_target: string): (any, error?)
+    M.gets=(M.gets or 0)+1
+    if M.stage == "admission" then
+        if _target == "app:worker_policy" then
+            return {kind="security.policy",meta={service_only=true},groups={}},nil
+        end
+        return {kind="function.lua",meta={type="projection.worker"},security={policies={"app:worker_policy"}}},nil
+    end
     return {kind = (M.stage == "exit" or M.stage == "transport" or M.stage == "direct_exit" or M.stage == "payload") and "process.lua" or "function.lua", meta = {type = "projection.worker"}}, nil
 end
 function M.run(_hooks: any, options: any): (any, error?)
@@ -50,5 +60,17 @@ function M.new(): any
     return builder
 end
 function M.from_row(_id: any, _context: any): (any, error?) return {component_id = "root"}, nil end
-function M.resolve(_identity: any, _options: any): (any, error?) return {actor = {}, scope = {}}, nil end
+function M.resolve(_identity: any, _options: any): (any, error?)
+    M.resolves = M.resolves + 1
+    return {actor = {}, scope = {}}, nil
+end
+function M.current_version(): (any, error?)
+    if M.stage == "revision" or M.stage == "version" then return nil, M.source end
+    return {id = function() return M.revision end}, nil
+end
+function M.maintenance_frame(id: string): (any, error?)
+    M.frames = M.frames + 1
+    if M.stage == "maintenance" then return nil, M.source end
+    return {actor = {id = function() return id end, meta = function() return {system = true} end}, scope = {}}, nil
+end
 return M

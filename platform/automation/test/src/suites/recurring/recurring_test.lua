@@ -101,6 +101,63 @@ return { run = test.run_cases(function()
             test.is_nil(type_err, tostring(type_err))
             test.is_true(#found.type.controls >= 3)
         end)
+        test.it("atomically accepts matching revisions, refuses stale edits and preserves omitted revision behavior", function()
+            local id = create()
+            local function revision()
+                return assert(tonumber(h.query("SELECT context_revision FROM kickside_components WHERE component_id=$1", {id})[1].context_revision))
+            end
+            local initial = revision()
+            local function edit(title, expected)
+                return env.caller:call("kickside.automation.recurring.fixture:access_probe", {
+                    operation = "reconfigure", id = id, input = {title = title},
+                    options = expected ~= nil and {expected_revision = expected} or nil})
+            end
+            local matched, err = edit("matching", initial)
+            test.is_nil(err, tostring(err))
+            test.is_true(matched.result.success)
+            test.eq(revision(), initial + 1)
+            local stale, stale_err = edit("stale", initial)
+            test.is_nil(stale)
+            test.is_true(errors.is(stale_err, errors.CONFLICT), tostring(stale_err))
+            test.eq(revision(), initial + 1)
+            test.eq(component.get_private_context(id)._portable_input.title, "matching")
+            local omitted, omitted_err = edit("omitted")
+            test.is_nil(omitted_err, tostring(omitted_err))
+            test.is_true(omitted.result.success)
+            test.eq(revision(), initial + 2)
+        end)
+        test.it("allows only one concurrent reconfiguration from the same revision", function()
+            local id = create()
+            local baseline = assert(tonumber(h.query("SELECT context_revision FROM kickside_components WHERE component_id=$1", {id})[1].context_revision))
+            local results = channel.new(2)
+            local ready, start = channel.new(2), channel.new(2)
+            for _, title in ipairs({"first contender", "second contender"}) do
+                coroutine.spawn(function()
+                    ready:send(true)
+                    start:receive()
+                    local result, err = env.caller:call("kickside.automation.recurring.fixture:access_probe", {
+                        operation = "reconfigure", id = id, input = {title = title}, options = {expected_revision = baseline}})
+                    results:send({result = result, err = err, title = title})
+                end)
+            end
+            ready:receive(); ready:receive()
+            start:send(true); start:send(true)
+            local successes, conflicts, winner = 0, 0, nil
+            for _ = 1, 2 do
+                local answer = results:receive()
+                if answer.err then
+                    test.is_true(errors.is(answer.err, errors.CONFLICT), tostring(answer.err))
+                    conflicts = conflicts + 1
+                else
+                    test.is_true(answer.result.result.success)
+                    successes, winner = successes + 1, answer.title
+                end
+            end
+            test.eq(successes, 1)
+            test.eq(conflicts, 1)
+            test.eq(component.get_private_context(id)._portable_input.title, winner)
+            test.eq(tonumber(h.query("SELECT context_revision FROM kickside_components WHERE component_id=$1", {id})[1].context_revision), baseline + 1)
+        end)
         test.it("validates incomplete published commands on the server without changing tasks", function()
             local before = call({ action = "list" }).count
             local schedule = { type = "interval", expression = "1h" }

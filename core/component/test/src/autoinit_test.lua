@@ -22,6 +22,12 @@ local function define_tests()
             test.is_nil(optional_err)
         end)
 
+        test.it("returns a missing kind read error instead of an absent projection declaration", function()
+            local declared, err = autoinit.projections_for_impl("missing:projection_kind")
+            test.eq(#declared, 0); test.not_nil(err)
+            test.is_true(errors.is(err, errors.NOT_FOUND))
+        end)
+
         local function find_decl(class)
             for _, d in ipairs(autoinit.declarations()) do
                 if d.class == class then return d end

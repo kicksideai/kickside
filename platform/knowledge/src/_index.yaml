@@ -2,6 +2,7 @@ version: "1.0"
 namespace: kickside.knowledge
 
 entries:
+
   - name: dep.kickside.models
     version: '*'
     kind: ns.dependency
@@ -18,6 +19,7 @@ entries:
   # discover this control-plane contract and depend on Knowledge, while Knowledge
   # discovers installed engines through registry metadata. Adding kb10 here would
   # both make an optional engine mandatory and create a dependency cycle.
+
   - name: dep.kickside.component
     version: '>=0.3.12'
     kind: ns.dependency
@@ -89,6 +91,7 @@ entries:
   # api_router, which must enforce auth + endpoint_firewall — the handlers do
   # no authentication of their own; per-KB access is enforced by the component
   # service via component.validate_access.
+
   - name: api_router
     kind: ns.requirement
     default: app:api
@@ -129,6 +132,7 @@ entries:
   # ─── Knowledge page UI (self-served web component) ───────────────────
   # The page web component renders the KB list + create/browse/delete over the
   # knowledge HTTP API; it ships and serves its own built bundle.
+
   - name: ui_server
     kind: ns.requirement
     default: app:gateway
@@ -184,6 +188,7 @@ entries:
   # KB config web component (wc-kb-picker), used by traits and the embed sink.
   # Traits select many kb_ids; a sink field schema declaring kb_id selects one
   # durable destination. Own bundle (picker.js), served with the surface.
+
   - name: kb_picker_view
     kind: registry.entry
     meta:
@@ -203,6 +208,7 @@ entries:
   # Full create dialog (kx-kb-create-dialog): engine picker + name/config +
   # Create/Cancel, mounted by the workspace "+" -> Knowledge Base action. Wraps
   # KbDialog in create mode; own bundle (kb_create.js), same static mount.
+
   - name: kb_create_view
     kind: registry.entry
     meta:
@@ -248,6 +254,7 @@ entries:
   # Module-owned nav entry: installing this module adds the Knowledge surface to
   # the nav; uninstalling removes it. The host bundle renders route_name
   # "knowledge" by mounting the kickside-knowledge web component by tag.
+
   - name: nav_item
     kind: registry.entry
     meta:
@@ -280,6 +287,7 @@ entries:
   # ids and declared read-model projections from registry.find(meta.type =
   # kickside.kb_engine) entries, so adding/removing an engine needs no central
   # code edit.
+
   - name: engines
     kind: library.lua
     source: file://engines.lua
@@ -297,6 +305,7 @@ entries:
   # engine's data model. kb10 provides the default binding; future engines bind
   # this contract shape and declare their binding ids in the kb_engine registry.
   # Every method takes a single DTO and returns (result, error).
+
   - name: kb_store_lifecycle
     kind: contract.definition
     meta:
@@ -364,6 +373,7 @@ entries:
   # binding id as maintenance_binding on the kickside.kb_engine descriptor.
   # The control plane only schedules durable work and reads its status; it never
   # performs a long-running rewrite in an agent tool call.
+
   - name: maintainable
     kind: contract.definition
     meta:
@@ -408,6 +418,7 @@ entries:
     source: file://util.lua
 
   # ─── Knowledge base registry (templates/admin UI facade) ─────────────
+
   - name: knowledge_bases
     kind: contract.definition
     meta:
@@ -474,3 +485,20 @@ entries:
           - definition: |
               { "type": "array", "items": { "type": "object" } }
             format: application/schema+json
+
+  - name: upload_token_call
+    kind: security.policy
+    policy:
+      resources:
+        - kickside.uploads.persist:token_pack
+        - kickside.uploads.persist:token_unpack
+      actions: [funcs.call, funcs.security]
+      effect: allow
+
+  - name: models_reload_call
+    kind: security.policy
+    policy:
+      resources:
+        - kickside.models.persist:reload_profiles
+      actions: [funcs.call, funcs.security]
+      effect: allow

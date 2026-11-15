@@ -96,7 +96,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
     -- names use this only for reconfigure; external calls always enter the
     -- reserved generic action route first.
     local function invoke_kind_action(component_id: string, method_name: string, args: any,
-        action: automation_types.AutomationAction): (any?, any)
+        action: automation_types.AutomationAction, options: Map?): (any?, any)
         local component = dependencies.component :: automation_types.ComponentModule
         local action_contract = trim(action.contract)
         if action_contract == "" then
@@ -109,6 +109,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
         if type(fn) ~= "function" then
             return nil, errors.new({ message = "method '" .. method_name .. "' could not be resolved on instance", kind = errors.INVALID })
         end
+        if options ~= nil then return fn(instance, args, options) end
         return fn(instance, args)
     end
 
@@ -133,16 +134,25 @@ function part.attach(M: any, dependencies: any, P: any): ()
         if not action then return nil, errors.new({ message = "automation type has no reconfigure action", kind = errors.INVALID }) end
         local a: Map = type(args) == "table" and args or {}
         if type(a.declaration) ~= "table" then return nil, errors.new({ message = "declaration is required", kind = errors.INVALID }) end
-        return invoke_kind_action(component_id, "reconfigure", a.declaration, action)
+        local expected = a.expected_revision
+        if expected ~= nil and (type(expected) ~= "number" or expected < 0 or expected == math.huge or expected ~= math.floor(expected)) then
+            return nil, errors.new({message = "expected_revision must be a non-negative integer", kind = errors.INVALID})
+        end
+        return invoke_kind_action(component_id, "reconfigure", a.declaration, action,
+            expected ~= nil and {expected_revision = expected} or nil)
     end
 
-    -- HTTP and action calls share the frozen generic `{declaration}` route.
-    function M.reconfigure(component_id: string, input: any): (automation_types.CallActionResult?, error?)
+    -- HTTP and action calls share the generic declaration and optional revision route.
+    function M.reconfigure(component_id: string, input: any, options: Map?): (automation_types.CallActionResult?, error?)
         if type(component_id) ~= "string" or component_id == "" then
             return nil, errors.new({kind = errors.INVALID, retryable = false, message = "id is required",
                 details = {code = "automation_id_required", field = "id"}})
         end
-        return M.call_action(component_id, "reconfigure", { declaration = type(input) == "table" and input or {} })
+        if options ~= nil and type(options) ~= "table" then
+            return nil, (errors.new({message = "reconfigure options must be a table", kind = errors.INVALID}) :: error)
+        end
+        return M.call_action(component_id, "reconfigure", { declaration = type(input) == "table" and input or {},
+            expected_revision = options and options.expected_revision })
     end
 
     -- uninstall: delete the umbrella component; its deletable callback fences

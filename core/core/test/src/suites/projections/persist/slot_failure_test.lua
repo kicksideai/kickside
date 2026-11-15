@@ -4,7 +4,7 @@ local uuid = require("uuid")
 local json = require("json")
 local writer = require("writer")
 local invoke = require("invoke")
-local claim = require("claim")
+local projection_claim = require("projection_claim")
 local job_lifecycle = require("job_lifecycle")
 local jobs = require("jobs")
 
@@ -33,19 +33,12 @@ local function append_event(db: sql.DB, thread_id: string, seq: integer)
     assert(tx:commit())
 end
 
--- Make this slot due and claim it the way slot_test does.
+-- Make the requested slot due and claim it through the shared fixture.
 local function claim_slot(job_id: string): table
     local db = assert(sql.get("app:db"))
-    local dbtype = tostring(db:type())
-    local _, due_err = db:execute("UPDATE kickside_job SET scheduled_at=created_at WHERE id=$1 AND status='pending'", { job_id })
-    if due_err then error("slot due update failed: " .. tostring(due_err)) end
-    local batch, claim_err = claim.claim_batch(db, dbtype, 16, nil, nil)
-    db:release()
-    if claim_err then error("claim failed: " .. tostring(claim_err)) end
-    for _, row in ipairs(batch or {}) do
-        if row.id == job_id then return row end
-    end
-    error("projection slot is not claimed")
+    local job = projection_claim.claim(db, job_id)
+    test.is_nil(select(2, db:release()))
+    return job
 end
 
 local function input_for(job: table, cursor_id: string): table
@@ -173,9 +166,9 @@ local function define_tests()
                 { registered.job_id }).n), 1)
             test.is_nil(read(db, "SELECT scheduled_at FROM kickside_job WHERE id=$1", { registered.job_id }).scheduled_at)
 
-            -- A corrected declaration re-registers the cursor active and wakes it.
+            -- An explicit reset of the corrected declaration replays the failed range.
             local _, fix_err = writer.register_projection(db, thread_id, {
-                kind = "failing-deterministic", worker_ref = "func://app:test_count_worker",
+                kind = "failing-deterministic", worker_ref = "func://app:test_count_worker", reset = true,
                 worker_input_mode = "prefetch_events", system_identity = true,
             })
             test.is_nil(fix_err)

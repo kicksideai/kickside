@@ -1,12 +1,14 @@
 local sql = require("sql")
 local json = require("json")
+local canonical_json = require("canonical_json")
 local M = {stage = "", source = nil, dbtype = "", existing = false,
     queries = 0, writes = 0, encodes = 0, begins = 0, commits = 0, rollbacks = 0, notifications = 0}
 function M.reset(dbtype: string, stage: string, source: any, existing: boolean)
     M.dbtype, M.stage, M.source, M.existing = dbtype, stage, source, existing
     M.rollback_source, M.effect_id, M.proof_stage, M.proof = nil, nil, nil, nil
     M.body = '{"meta":{"worker_ref":"func://app:test_count_worker","worker_runtime":"func","worker_input_mode":"cursor_only"}}'
-    M.retention_notifications = 0
+    M.digest = assert(canonical_json.hash(assert(json.decode(M.body))))
+    M.retention_notifications, M.wakes = 0, 0
     M.enqueue_value = "job"
     M.queries, M.writes, M.encodes, M.begins, M.commits, M.rollbacks, M.notifications = 0, 0, 0, 0, 0, 0, 0
 end
@@ -16,7 +18,7 @@ local function query(): (any, error?)
     if M.stage == "query_" .. tostring(M.queries) then return nil, M.source end
     if M.queries == 1 then return {{id = "thread", event_count = 0, max_pruned_seq = 0}}, nil end
     if not M.existing then return {}, nil end
-    if M.queries == 2 then return {{id = "projection", body = M.body}}, nil end
+    if M.queries == 2 then return {{id = "projection", body = M.body, declaration_digest = M.digest}}, nil end
     return {{id = "cursor", last_seq = 0, generation = 1, job_id = "job"}}, nil
 end
 local function exec(): (any, error?)
@@ -90,6 +92,10 @@ end
 function M.nudge_workers(...: any): (any, error?)
     M.notifications = M.notifications + 1
     return completion("nudge", 0)
+end
+function M.wake_job(...: any): (any, error?)
+    M.wakes = M.wakes + 1
+    return completion("wake", {})
 end
 function M.notify(...: any): (any, error?)
     M.retention_notifications = M.retention_notifications + 1

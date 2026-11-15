@@ -332,6 +332,19 @@ function jobs.list_jobs(thread_ids: string[], filters: table?, limit: integer?, 
     return list_history("jobs", thread_ids, filters, limit, after)
 end
 
+-- Internal owner API: the caller authorizes its resource before enumerating its jobs.
+function jobs.list_owner_jobs(owner: table, filters: table?, limit: integer?, after: table?): (table[]?, error?, boolean?)
+    local owner_err = enqueue.owner_locator_error({owner_locator = owner})
+    if owner_err then return nil, owner_err end
+    local result, err = with_db(function(db: sql.DB, _dbtype: string): (table?, error?)
+        local rows, read_err, more = lifecycle.list_owner_jobs(db, owner, filters, limit or 100, after)
+        if read_err then return nil, read_err end
+        return {rows = rows, has_more = more}, nil
+    end)
+    if err or not result then return nil, err end
+    return result.rows :: table[], nil, result.has_more :: boolean
+end
+
 function jobs.list_job_runs(thread_ids: string[], filters: table?, limit: integer?, after: table?): (table[]?, error?, boolean?)
     return list_history("runs", thread_ids, filters, limit, after)
 end

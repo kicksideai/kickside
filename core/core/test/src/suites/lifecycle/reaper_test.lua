@@ -15,6 +15,7 @@ local component = require("component")
 local provision = require("provision")
 local lifecycle_consts = require("lifecycle_consts")
 local projection_worker = require("projection_worker")
+local projection_invoke = require("projection_invoke")
 local framework_events = require("framework_events")
 
 local COMPONENT_SERVICE = "kickside.component:component_service"
@@ -230,15 +231,18 @@ local function define_tests()
             local thread_id = lifecycle_thread_id()
             local db, db_err = sql.get("app:db")
             if db_err or not db then error(tostring(db_err)) end
-            local rows, query_err = db:query([[SELECT p.body, c.actor_id, c.execution_identity_json
+            local rows, query_err = db:query([[SELECT p.body, c.id, c.job_id, c.actor_id, c.execution_identity_json
                 FROM kickside_projection p
                 JOIN kickside_projection_cursor c ON c.projection_id = p.id
                 WHERE p.thread_id=$1 AND p.kind='lifecycle.reap']], { thread_id })
-            db:release()
             test.is_nil(query_err, tostring(query_err))
+            local snapshot, snapshot_err = projection_invoke.snapshot(db, rows[1].id, rows[1].job_id)
+            db:release()
+            test.is_nil(snapshot_err); test.is_nil(snapshot.authority_error)
+            test.not_nil(snapshot.component_authority)
             test.not_nil(rows)
             test.eq(#rows, 1, "the system lifecycle declaration must register one reaper")
-            test.is_nil(rows[1].actor_id)
+            test.eq(tostring(rows[1].actor_id), lifecycle_consts.SYSTEM_ACTOR, "the reaper runs as the lifecycle component's owner")
             test.is_nil(rows[1].execution_identity_json)
             test.is_true(tostring(rows[1].body):find("kickside.core.lifecycle:reaper", 1, true) ~= nil)
 
@@ -246,6 +250,8 @@ local function define_tests()
             test.is_nil(parse_err)
             local system_binding = binding :: any
             system_binding.system_identity = true
+            system_binding.actor_id = rows[1].actor_id
+            system_binding.component_authority = snapshot.component_authority
             local system_actor = security.new_actor(lifecycle_consts.SYSTEM_ACTOR,
                 { system = true, groups = { "system", "lifecycle" } })
             local process_scope, scope_err = security.named_scope(lifecycle_consts.SYSTEM_SCOPE)

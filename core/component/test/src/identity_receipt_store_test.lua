@@ -55,6 +55,19 @@ return {run = test.run_cases(function()
             test.eq(receipt.execution_identity.credential_id, "credential-1")
         end)
 
+        test.it("keeps the selection receipt when the authority generation advances without a selection", function()
+            local id = seed(legacy_context())
+            local handle = db()
+            assert(handle:execute("UPDATE kickside_components SET identity_generation=3 WHERE component_id=$1", {id}))
+            assert(handle:execute([[INSERT INTO kickside_execution_identity_audit
+                (component_id,identity_generation,request_id,record_json,created_at)
+                VALUES ($1,1,'selection','{}','2026-01-01T00:00:00Z')]], {id}))
+            assert(handle:release())
+            local receipt, err = identity.get_identity_receipt(id)
+            test.is_nil(err); test.eq(receipt.identity_generation, 3)
+            test.eq(receipt.identity_selected_at, "2026-01-01T00:00:00Z")
+        end)
+
         for _, raw in ipairs({"{}", "[]", '{"_execution_identity":12}', '{"_execution_identity":"user-1"}',
             '{"_execution_identity":false}'}) do
             test.it("refuses a missing identity/" .. raw, function()

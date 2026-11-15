@@ -6,6 +6,8 @@ local writer = require("threads_writer")
 local drop_notify = require("threads_drop_notify")
 local jobs = require("jobs")
 local jobs_wake = require("jobs_wake")
+local cursor_waiters = require("cursor_waiters")
+local error_envelope = require("error_envelope")
 
 local M = {}
 local PAGE = 100
@@ -100,7 +102,7 @@ local function body(tx: any, dbtype: string, id: string, page_seq: integer,
         return nil, internal("marked thread state unavailable", thread_err or "missing result")
     end
     if not thread_rows[1] then
-        return { pending = false, discarded = {}, notified = {} }, nil
+        return { pending = false, discarded = {}, notified = {}, removed_cursors = {} }, nil
     end
     local thread = thread_rows[1]
     if thread.teardown_fence_done ~= true and thread.teardown_fence_done ~= 1 then
@@ -124,6 +126,7 @@ local function body(tx: any, dbtype: string, id: string, page_seq: integer,
 
     local remaining = PAGE
     local notified: { string } = {}
+    local removed_cursors: { string } = {}
     for _, spec in ipairs(SPECS) do
         local rows, read_err = page(tx, spec, id, remaining + 1)
         if read_err then return nil, read_err end
@@ -145,6 +148,9 @@ local function body(tx: any, dbtype: string, id: string, page_seq: integer,
             end
             local delete_err = erase(tx, spec, id, selected, size)
             if delete_err then return nil, delete_err end
+            if spec[1] == "kickside_projection_cursor" then
+                for i = 1, size do removed_cursors[#removed_cursors + 1] = tostring(selected[i].row_key) end
+            end
             local prior = counts[spec[1]]
             if prior ~= nil and (type(prior) ~= "number" or prior < 0) then
                 return nil, internal("thread teardown row count corrupt", spec[1])
@@ -179,7 +185,7 @@ local function body(tx: any, dbtype: string, id: string, page_seq: integer,
                 local _, wake_err = jobs_wake.wake_multi(tx, wake_keys, dbtype)
                 if wake_err then return nil, wake_err end
             end
-            return { pending = true, discarded = counts, notified = notified }, nil
+            return { pending = true, discarded = counts, notified = notified, removed_cursors = removed_cursors }, nil
         end
     end
 
@@ -192,13 +198,13 @@ local function body(tx: any, dbtype: string, id: string, page_seq: integer,
     if jobs_page.done ~= true then
         local stamp_err = persist_counts(tx, id, counts, page_seq + 1)
         if stamp_err then return nil, stamp_err end
-        return { pending = true, discarded = counts, notified = notified }, nil
+        return { pending = true, discarded = counts, notified = notified, removed_cursors = removed_cursors }, nil
     end
     local result, delete_err = tx:execute("DELETE FROM kickside_thread WHERE id=$1", { id })
     if delete_err or not result or tonumber(result.rows_affected) ~= 1 then
         return nil, internal("thread final delete failed", delete_err or "missing row proof")
     end
-    return { pending = false, discarded = counts, notified = notified }, nil
+    return { pending = false, discarded = counts, notified = notified, removed_cursors = removed_cursors }, nil
 end
 
 function M.run(db: any, id: string): (any?, error?)
@@ -239,9 +245,16 @@ function M.run(db: any, id: string): (any?, error?)
     if run_err then tx:rollback(); return nil, run_err end
     local _, commit_err = tx:commit()
     if commit_err then return nil, internal("thread cascade commit failed", commit_err) end
+    local removed_err: error? = nil
+    for _, cursor_id in ipairs((result :: any).removed_cursors) do
+        removed_err = error_envelope.cleanup(function(): (any, error?)
+            return cursor_waiters.notify_cursor(cursor_id, nil, "removed")
+        end, removed_err, "thread cursor removal notification failed")
+    end
     local _, ack_err = jobs.ack_thread_cleanup_page(id, page_seq :: integer,
         (result :: any).pending ~= true)
     if ack_err then return nil, ack_err end
+    if removed_err then return nil, removed_err end
     if (result :: any).pending then return nil, pending((result :: any).discarded) end
     return result, nil
 end

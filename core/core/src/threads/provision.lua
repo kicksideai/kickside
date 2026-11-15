@@ -23,12 +23,16 @@ local autoinit = require("autoinit")
 local retention_repo = require("retention_repo")
 local core_db = require("core_db")
 local proj_types = require("proj_types")
+local proj_register = require("proj_register")
 local execution_identity = require("execution_identity")
 local component_identity = require("component_identity")
+local owner_identity = require("owner_identity")
 local component_envelope = require("component_envelope")
 local error_envelope = require("error_envelope")
 local lifecycle_log = require("component_lifecycle_log")
 local component_lifecycle = require("component_lifecycle")
+local jobs_wake = require("jobs_wake")
+local job_types = require("job_types")
 
 local M = {}
 
@@ -103,28 +107,24 @@ local function materialize(threads: any, actor: any, scope: any, scope_key: stri
     -- first create. Provisioning does not carry a second projection-registration
     -- path; reruns only converge access + retention.
 
-    -- Retention / vacuum policy for the component's thread (idempotent upsert).
-    -- ALWAYS create a policy so every provisioned thread is governed by a sane
-    -- default window (the retention-defaults rule); a declaration may tighten the
-    -- event window, an omitted one falls to consts.DEFAULTS. Without this a thread
-    -- with no declared retention would carry no policy row and never be swept.
-    local rdb, rdb_err = sql.get(core_db.id())
-    if rdb_err then return nil, (errors.wrap(rdb_err, "provision retention database unavailable") :: error) end
-    if not rdb then return nil, missing_result("get") end
+    -- An absent window inherits the live Core policy; only declarations store an override.
     local r = decl.retention
-    local windows: { [string]: any } = {}
     if type(r) == "table" and type(r.event_days) == "number" then
-        windows.event_hot_retention_days = r.event_days
-    end
-    local _, retention_err = retention_repo.upsert(rdb, component_id :: string, windows)
-    local _, release_err = rdb:release()
-    if release_err then
-        if retention_err then
-            return nil, error_envelope.wrap_secondary(release_err, retention_err, "provision retention database release failed")
+        local rdb, rdb_err = sql.get(core_db.id())
+        if rdb_err then return nil, (errors.wrap(rdb_err, "provision retention database unavailable") :: error) end
+        if not rdb then return nil, missing_result("get") end
+        local _, retention_err = retention_repo.upsert(rdb, component_id :: string, {
+            event_hot_retention_days = r.event_days,
+        })
+        local _, release_err = rdb:release()
+        if release_err then
+            if retention_err then
+                return nil, error_envelope.wrap_secondary(release_err, retention_err, "provision retention database release failed")
+            end
+            return nil, (errors.wrap(release_err, "provision retention database release failed") :: error)
         end
-        return nil, (errors.wrap(release_err, "provision retention database release failed") :: error)
+        if retention_err then return nil, retention_err end
     end
-    if retention_err then return nil, retention_err end
 
     -- Declared additional grants (e.g. admin READ, user WRITE-only on a system thread).
     local grant_err = apply_grants(actor, scope, component_id :: string, (decl.grants or {}) :: { any })
@@ -182,133 +182,32 @@ local function converge_executor(component_id: string, opener_actor: any, opener
     return scoped, nil
 end
 
--- converge makes every component of a declaring kind match its declaration: a
--- missing thread row is recreated (thread-declaring kinds), a missing declared
--- projection or cursor is registered (any kind declaring projections) on the
--- thread it is declared on: the component's thread, or for `on: lifecycle` the
--- component's lifecycle thread. A `child.lifecycle` projection belongs to each
--- child's lifecycle thread and is registered by that child's lifecycle events.
--- Declared state thereby survives anything — a partial
--- delete, a lost row, a module uninstall/reinstall — because the next service
--- start reasserts the declaration. Boot runs it on service start and after
--- each install's migrations are applied. Each component converges under its own
--- stored execution identity (converge_executor), so projections keep running as
--- whoever owns them and the opener's framework frame never stands in for a user.
--- Components already matching their declaration are not touched at all.
-function M.converge(opener_actor: any, opener_scope: any): ({ [string]: any }, error?)
-    local summary: { [string]: any } = { checked = 0, healed = 0, skipped = {} }
-    local function skip(component_id: string, impl_id: string, cause: error)
-        (summary.skipped :: { any })[#(summary.skipped :: { any }) + 1] =
-            {component_id = component_id, impl_id = impl_id, reason = cause:message(), error = error_envelope.encode(cause)}
-    end
-
+-- Each maintenance turn repairs at most 256 divergent components using declaration
+-- digests and visits at most 256 lifecycle components. The continuation is a
+-- keyset position, never an accumulated work list.
+function M.converge(opener_actor: any, opener_scope: any, continuation: table?): ({ [string]: any }, error?)
+    local summary: { [string]: any } = {checked = 0, healed = 0, skipped = {}}
     local db, db_err = sql.get(core_db.id())
-    if db_err then return summary, (errors.wrap(db_err, "converge: db unavailable") :: error) end
+    if db_err then return summary, errors.wrap(db_err, "converge: db unavailable") end
     if not db then return summary, missing_result("get") end
-    local _db = db :: sql.DB
-
-    local function on_thread(decl: { [string]: any }): boolean
-        return decl.on == nil or decl.on == "" or decl.on == autoinit.PROJECTION_ON.THREAD
+    local lifecycle_healed = false
+    local maintenance_owners: {[string]: boolean} = {}
+    local function finish(cause: error?): ({ [string]: any }, error?)
+        if lifecycle_healed then
+            local _, wake_err = component_lifecycle.committed()
+            if wake_err then
+                cause = cause and error_envelope.wrap_secondary(wake_err, cause, "converge: job worker wake failed")
+                    or errors.wrap(wake_err, "converge: job worker wake failed")
+            end
+        end
+        local _, release_err = db:release()
+        if release_err and cause then return summary, error_envelope.wrap_secondary(release_err, cause, "converge: database release failed") end
+        return summary, release_err and errors.wrap(release_err, "converge: database release failed") or cause
     end
-
-    -- One divergence set per declaring kind: components missing their thread row,
-    -- plus components missing declared projections on their thread.
-    local function divergent_components(kind: { [string]: any }): ({ [string]: boolean }, error?)
-        local ids: { [string]: boolean } = {}
-        -- A missing thread is recreatable only for a kind that declares its
-        -- primary-thread class; projection-only kinds get their threads from
-        -- other flows, so their scan covers projections alone.
-        if type(kind.class) == "string" and kind.class ~= "" then
-            local divergent_threads, thread_err = sql.builder
-                .select("c.component_id AS component_id")
-                :from("kickside_components c")
-                :left_join("kickside_thread t ON t.id = c.component_id")
-                :left_join("kickside_component_meta type_meta ON type_meta.component_id = c.component_id AND type_meta.key = 'type'")
-                :left_join("kickside_component_meta class_meta ON class_meta.component_id = c.component_id AND class_meta.key = 'thread_class'")
-                :where("(t.id IS NULL OR t.thread_class <> ? OR type_meta.value IS NULL OR type_meta.value <> 'thread' OR class_meta.value IS NULL OR class_meta.value <> t.thread_class)", tostring(kind.class))
-                :where("c.impl_id = ?", tostring(kind.component_impl_id or kind.impl_id))
-                :run_with(_db):query()
-            if thread_err then
-                return ids, (errors.wrap(thread_err, "converge: thread scan failed") :: error)
-            end
-            for _, row in ipairs((divergent_threads or {}) :: { any }) do
-                ids[tostring((row :: { [string]: any }).component_id)] = true
-            end
-        end
-        for _, projection in ipairs((kind.projections or {}) :: { any }) do
-            local decl = projection :: { [string]: any }
-            if on_thread(decl) then
-                -- An omitted declared key stores as the projections default — the scan
-                -- must compare against what register actually wrote.
-                local declared_key = decl.projection_key
-                if type(declared_key) ~= "string" or declared_key == "" then
-                    declared_key = proj_types.KEY_DEFAULT
-                end
-                local escaped_kind = tostring(decl.kind):gsub("'", "''")
-                local escaped_key = tostring(declared_key):gsub("'", "''")
-                local cursor_key = type(decl.cursor_key) == "string" and decl.cursor_key ~= "" and decl.cursor_key or proj_types.KEY_DEFAULT
-                local escaped_cursor = cursor_key:gsub("'", "''")
-                local missing_rows, proj_err = sql.builder
-                    .select("c.component_id AS component_id")
-                    :from("kickside_components c")
-                    :join("kickside_thread t ON t.id = c.component_id")
-                    :left_join("kickside_projection p ON p.thread_id = t.id AND p.kind = '" .. escaped_kind .. "' AND p.projection_key = '" .. escaped_key .. "'")
-                    :left_join("kickside_projection_cursor pc ON pc.projection_id=p.id AND pc.cursor_key='" .. escaped_cursor .. "'")
-                    :left_join("kickside_job j ON j.id=pc.job_id")
-                    :where("(p.id IS NULL OR pc.id IS NULL OR j.id IS NULL)")
-                    :where("c.impl_id = ?", tostring(kind.component_impl_id or kind.impl_id))
-                    :run_with(_db):query()
-                if proj_err then
-                    return ids, (errors.wrap(proj_err, "converge: projection scan failed") :: error)
-                end
-                for _, row in ipairs((missing_rows or {}) :: { any }) do
-                    ids[tostring((row :: { [string]: any }).component_id)] = true
-                end
-            end
-        end
-        return ids, nil
-    end
-
-    -- Components of a kind missing one of its own lifecycle projections
-    -- (`on: lifecycle`) on their lifecycle thread: projection row, cursor or job.
-    local function lifecycle_divergent(kind: { [string]: any }): ({ string }, error?)
-        local own: { { [string]: any } } = {}
-        for _, projection in ipairs((kind.projections or {}) :: { any }) do
-            local decl = projection :: { [string]: any }
-            if decl.on == autoinit.PROJECTION_ON.LIFECYCLE then own[#own + 1] = decl end
-        end
-        if #own == 0 or lifecycle_log.is_exempt(tostring(kind.component_impl_id or kind.impl_id)) then return {}, nil end
-        local components, list_err = sql.builder.select("component_id"):from("kickside_components")
-            :where("impl_id = ?", tostring(kind.component_impl_id or kind.impl_id))
-            :run_with(_db):query()
-        if list_err then return {}, (errors.wrap(list_err, "converge: lifecycle component scan failed") :: error) end
-        local out: { string } = {}
-        for _, row in ipairs((components or {}) :: { any }) do
-            local component_id = tostring((row :: { [string]: any }).component_id)
-            local thread_id = lifecycle_log.thread_id(component_id)
-            for _, decl in ipairs(own) do
-                local key = type(decl.projection_key) == "string" and decl.projection_key ~= "" and decl.projection_key or proj_types.KEY_DEFAULT
-                local cursor_key = type(decl.cursor_key) == "string" and decl.cursor_key ~= "" and decl.cursor_key or proj_types.KEY_DEFAULT
-                local present, proj_err = _db:query([[SELECT p.id FROM kickside_projection p
-                    JOIN kickside_projection_cursor pc ON pc.projection_id = p.id
-                    JOIN kickside_job j ON j.id = pc.job_id
-                    WHERE p.thread_id = $1 AND p.kind = $2 AND p.projection_key = $3 AND pc.cursor_key = $4]],
-                    { thread_id, tostring(decl.kind), key, cursor_key })
-                if proj_err then return {}, (errors.wrap(proj_err, "converge: lifecycle projection scan failed") :: error) end
-                if #((present or {}) :: { any }) == 0 then
-                    out[#out + 1] = component_id
-                    break
-                end
-            end
-        end
-        return out, nil
-    end
-
-    -- Registers a component's own lifecycle projections in one transaction.
     local function converge_lifecycle(component_id: string, impl_id: string): error?
-        local dbtype, type_err = _db:type()
+        local dbtype, type_err = db:type()
         if type_err then return type_err end
-        local tx, begin_err = _db:begin()
+        local tx, begin_err = db:begin()
         if begin_err then return begin_err end
         if not tx then return missing_result("begin") end
         local _, own_err = component_lifecycle.converge_own(tx, tostring(dbtype), component_id, impl_id)
@@ -318,63 +217,222 @@ function M.converge(opener_actor: any, opener_scope: any): ({ [string]: any }, e
             return own_err
         end
         local _, commit_err = tx:commit()
+        if not commit_err then lifecycle_healed = true end
         return commit_err
     end
-
-    local lifecycle_healed = false
-    local function scan_failed(scan_err: error): ({ [string]: any }, error?)
-        local _, release_err = _db:release()
-        if release_err then
-            return summary, error_envelope.wrap_secondary(release_err, scan_err, "converge: database release failed")
+    -- At-head legacy cursors need a control wake to record their identity
+    -- failure through the same fenced failure path as runnable cursors.
+    local function wake_owner_failures(component_id: string, kind: table): error?
+        local filters: {string} = {}
+        local args: {any} = {}
+        for _, declaration in ipairs(kind.projections or {}) do
+            local on = declaration.on or autoinit.PROJECTION_ON.THREAD
+            if on == autoinit.PROJECTION_ON.LIFECYCLE or on == autoinit.PROJECTION_ON.THREAD then
+                local offset = #args
+                args[#args + 1] = on == autoinit.PROJECTION_ON.LIFECYCLE and lifecycle_log.thread_id(component_id) or component_id
+                args[#args + 1] = declaration.kind
+                args[#args + 1] = declaration.projection_key or proj_types.KEY_DEFAULT
+                filters[#filters + 1] = "(p.thread_id=$" .. tostring(offset + 1) .. " AND p.kind=$" .. tostring(offset + 2)
+                    .. " AND p.projection_key=$" .. tostring(offset + 3) .. ")"
+            end
         end
-        return summary, scan_err
+        if #filters == 0 then return nil end
+        local cursors, read_err = db:query([[SELECT c.job_id FROM kickside_projection p
+            JOIN kickside_projection_cursor c ON c.projection_id=p.id WHERE c.status='active' AND c.job_id IS NOT NULL AND (]]
+            .. table.concat(filters, " OR ") .. ")", args)
+        if read_err then return read_err end
+        if type(cursors) ~= "table" then return missing_result("owner_failure_cursors") end
+        local dbtype, type_err = db:type()
+        if type_err then return type_err end
+        for _, cursor in ipairs(cursors) do
+            local _, wake_err = jobs_wake.wake_job(db, cursor.job_id, {control = true}, tostring(dbtype))
+            if wake_err then return wake_err end
+        end
+        if #cursors > 0 then lifecycle_healed = true end
+        return nil
     end
-
-    for _, kind in ipairs(autoinit.declared_kinds()) do
-        local k = kind :: { [string]: any }
-        local divergent, scan_err = divergent_components(k)
-        if scan_err then return scan_failed(scan_err) end
-        for component_id, _ in pairs(divergent) do
-            summary.checked = summary.checked + 1
-            local executor, exec_err = converge_executor(component_id, opener_actor, opener_scope)
-            if exec_err or not executor then
-                local cause = exec_err or missing_result("executor")
-                skip(component_id, tostring(k.impl_id), errors.wrap(cause, "converge identity unavailable"))
-            else
-                local _, converge_err = (executor :: any)
-                    :call(CONVERGE_THREAD_FN, {
-                        component_id = component_id,
-                        impl_id = k.impl_id,
-                        thread_class = k.class,
-                    })
-                if converge_err then
-                    skip(component_id, tostring(k.impl_id), errors.wrap(converge_err, "converge_thread failed"))
-                else
-                    summary.healed = summary.healed + 1
+    local function quoted(value: string): string return "'" .. value:gsub("'", "''") .. "'" end
+    local kinds = autoinit.declared_kinds()
+    table.sort(kinds, function(a, b) return a.impl_id < b.impl_id end)
+    local first = continuation and continuation.kind_index or 1
+    local after = continuation and continuation.after or nil
+    local remaining = 256
+    for index = first, #kinds do
+        local kind = kinds[index]
+        local existing, existing_err = sql.builder.select("c.component_id AS component_id")
+            :from("kickside_components c"):where("c.impl_id = ?", tostring(kind.component_impl_id or kind.impl_id))
+            :limit(1):run_with(db):query()
+        if existing_err then return finish(errors.wrap(existing_err, "converge: component scan failed")) end
+        if type(existing) ~= "table" then return finish(missing_result("components")) end
+        if #existing > 0 then
+            local own_lifecycle, on_thread = false, type(kind.class) == "string" and kind.class ~= ""
+            local owner_projections = false
+            for _, decl in ipairs(kind.projections or {}) do
+                if decl.on == autoinit.PROJECTION_ON.LIFECYCLE then own_lifecycle = true; owner_projections = true end
+                if decl.on == nil or decl.on == "" or decl.on == autoinit.PROJECTION_ON.THREAD then
+                    on_thread = true; owner_projections = true
                 end
             end
-        end
-        local lifecycle_ids, lifecycle_err = lifecycle_divergent(k)
-        if lifecycle_err then return scan_failed(lifecycle_err) end
-        for _, component_id in ipairs(lifecycle_ids) do
-            summary.checked = summary.checked + 1
-            local heal_err = converge_lifecycle(component_id, tostring(k.impl_id))
-            if heal_err then
-                skip(component_id, tostring(k.impl_id), errors.wrap(heal_err, "converge lifecycle projections failed"))
-            else
-                summary.healed = summary.healed + 1
-                lifecycle_healed = true
+            own_lifecycle = own_lifecycle and not lifecycle_log.is_exempt(tostring(kind.component_impl_id or kind.impl_id))
+            local candidates: {any}? = nil
+            local lifecycle_id = "NULL"
+            local lifecycle_threads: {string} = {}
+            if owner_projections then
+                local page = sql.builder.select("c.component_id AS component_id"):from("kickside_components c")
+                    :where("c.impl_id = ?", tostring(kind.component_impl_id or kind.impl_id))
+                if after then page = page:where("c.component_id > ?", after) end
+                local rows, page_err = page:order_by("c.component_id ASC"):limit(remaining):run_with(db):query()
+                if page_err then return finish(errors.wrap(page_err, "converge: lifecycle page failed")) end
+                if type(rows) ~= "table" then return finish(missing_result("lifecycle_page")) end
+                candidates = rows
+                local cases: {string} = {}
+                for _, row in ipairs(own_lifecycle and rows or {}) do
+                    local thread = quoted(lifecycle_log.thread_id(tostring(row.component_id)))
+                    lifecycle_threads[#lifecycle_threads + 1] = thread
+                    cases[#cases + 1] = "WHEN " .. quoted(tostring(row.component_id)) .. " THEN " .. thread
+                end
+                if #cases > 0 then
+                    lifecycle_id = "CASE c.component_id " .. table.concat(cases, " ") .. " END"
+                    local dbtype, type_err = db:type()
+                    if type_err then return finish(type_err) end
+                    if dbtype == "postgres" then lifecycle_id = "CAST(" .. lifecycle_id .. " AS UUID)" end
+                end
+            end
+            local base = "SELECT c.component_id FROM kickside_components c LEFT JOIN kickside_thread t ON t.id=c.component_id"
+            local owner = "c.impl_id=" .. quoted(tostring(kind.component_impl_id or kind.impl_id))
+            local queries: {string} = {}
+            local identity_queries: {string} = {}
+            local declaration_failure: error? = nil
+            local dbtype, dbtype_err = db:type()
+            if dbtype_err then return finish(dbtype_err) end
+            if type(kind.class) == "string" and kind.class ~= "" then
+                queries[#queries + 1] = base
+                    .. " LEFT JOIN kickside_component_meta type_meta ON type_meta.component_id=c.component_id AND type_meta.key='type'"
+                    .. " LEFT JOIN kickside_component_meta class_meta ON class_meta.component_id=c.component_id AND class_meta.key='thread_class'"
+                    .. " WHERE " .. owner .. " AND (t.id IS NULL OR t.thread_class <> " .. quoted(kind.class)
+                    .. " OR type_meta.value IS NULL OR type_meta.value <> 'thread' OR class_meta.value IS NULL OR class_meta.value <> t.thread_class)"
+            end
+            for pindex, decl in ipairs(kind.projections or {}) do
+                local own = decl.on == autoinit.PROJECTION_ON.LIFECYCLE and own_lifecycle
+                if own or decl.on == nil or decl.on == "" or decl.on == autoinit.PROJECTION_ON.THREAD then
+                    local key = type(decl.projection_key) == "string" and decl.projection_key ~= "" and decl.projection_key or proj_types.KEY_DEFAULT
+                    local cursor_key = type(decl.cursor_key) == "string" and decl.cursor_key ~= "" and decl.cursor_key or proj_types.KEY_DEFAULT
+                    local expected, declaration_err = proj_register.declaration_body({worker_ref = decl.worker_ref,
+                        worker_input_mode = decl.input_mode, worker_config = decl.worker_config, events = decl.events, drop_notify = decl.drop_notify})
+                    if declaration_err then
+                        if not job_types.is_deterministic_kind(declaration_err:kind()) then return finish(declaration_err) end
+                        declaration_failure = declaration_err
+                        break
+                    end
+                    local digest, digest_err = proj_register.declaration_digest(expected)
+                    if digest_err then return finish(digest_err) end
+                    local p, pc, j = "p" .. tostring(pindex), "pc" .. tostring(pindex), "j" .. tostring(pindex)
+                    local thread_id = own and lifecycle_id or "t.id"
+                    queries[#queries + 1] = base
+                        .. " LEFT JOIN kickside_projection " .. p .. " ON " .. p .. ".thread_id=" .. thread_id .. " AND " .. p .. ".kind=" .. quoted(decl.kind) .. " AND " .. p .. ".projection_key=" .. quoted(key)
+                        .. " LEFT JOIN kickside_projection_cursor " .. pc .. " ON " .. pc .. ".projection_id=" .. p .. ".id AND " .. pc .. ".cursor_key=" .. quoted(cursor_key)
+                        .. " LEFT JOIN kickside_job " .. j .. " ON " .. j .. ".id=" .. pc .. ".job_id"
+                        .. " WHERE " .. owner .. " AND (" .. (own and "" or "t.id IS NOT NULL AND ")
+                        .. "(" .. p .. ".id IS NULL OR " .. pc .. ".id IS NULL OR " .. j .. ".id IS NULL))"
+                    if candidates and #candidates > 0 then
+                        local selected: {string} = {}
+                        for _, candidate in ipairs(candidates) do selected[#selected + 1] = quoted(tostring(candidate.component_id)) end
+                        local legacy = dbtype == "postgres" and "(c.private_context -> '_execution_identity')::text"
+                            or "CASE WHEN json_valid(c.private_context) THEN c.private_context -> '$._execution_identity' END"
+                        identity_queries[#identity_queries + 1] = "SELECT c.component_id,c.identity_hash,m.value AS owner_key,"
+                            .. " CASE WHEN c.identity_hash IS NULL AND (" .. p .. ".actor_context IS NOT NULL OR " .. pc
+                            .. ".execution_identity_json IS NOT NULL OR " .. pc .. ".status='invalid') THEN " .. legacy .. " END AS legacy_identity,"
+                            .. p .. ".actor_id AS projection_actor," .. p .. ".actor_context AS projection_context,"
+                            .. pc .. ".actor_id AS cursor_actor," .. pc .. ".execution_identity_json AS cursor_context FROM kickside_components c"
+                            .. " JOIN kickside_projection " .. p .. " ON " .. p .. ".thread_id=" .. (own and lifecycle_id or "c.component_id")
+                            .. " AND " .. p .. ".kind=" .. quoted(decl.kind) .. " AND " .. p .. ".projection_key=" .. quoted(key)
+                            .. " JOIN kickside_projection_cursor " .. pc .. " ON " .. pc .. ".projection_id=" .. p .. ".id"
+                            .. " LEFT JOIN kickside_component_meta m ON m.component_id=c.component_id AND m.key='owner'"
+                            .. " WHERE c.component_id IN (" .. table.concat(selected, ",") .. ")"
+                    end
+                    local thread_filter = own and (" AND " .. p .. ".thread_id IN ("
+                        .. (#lifecycle_threads > 0 and table.concat(lifecycle_threads, ",") or "NULL") .. ")") or ""
+                    for _, range in ipairs({"IS NULL", "< " .. quoted(digest), "> " .. quoted(digest)}) do
+                        queries[#queries + 1] = "SELECT c.component_id FROM kickside_projection " .. p
+                            .. " CROSS JOIN kickside_components c WHERE " .. p .. ".kind=" .. quoted(decl.kind)
+                            .. " AND " .. p .. ".projection_key=" .. quoted(key)
+                            .. " AND " .. p .. ".declaration_digest " .. range .. thread_filter
+                            .. " AND " .. owner .. " AND " .. p .. ".thread_id=" .. (own and lifecycle_id or "c.component_id")
+                    end
+                end
+            end
+            if #queries > 0 or declaration_failure then
+                local rows: {table} = candidates or {}
+                if not declaration_failure then
+                    local scan = sql.builder.select("DISTINCT c.component_id AS component_id")
+                        :from("(" .. table.concat(queries, " UNION ALL ") .. ") c")
+                    if candidates then
+                        if #candidates > 0 then scan = scan:where("c.component_id <= ?", tostring(candidates[#candidates].component_id))
+                        else scan = scan:where("1=0") end
+                    end
+                    if after then scan = scan:where("c.component_id > ?", after) end
+                    local scan_err: error?
+                    rows, scan_err = scan:order_by("c.component_id ASC"):limit(remaining):run_with(db):query()
+                    if scan_err then return finish(errors.wrap(scan_err, "converge: declaration scan failed")) end
+                    if type(rows) ~= "table" then return finish(missing_result("scan")) end
+                    if #identity_queries > 0 then
+                        local bindings, binding_err = db:query(table.concat(identity_queries, " UNION ALL "), {})
+                        if binding_err then return finish(errors.wrap(binding_err, "converge: projection identity scan failed")) end
+                        if type(bindings) ~= "table" then return finish(missing_result("identity_scan")) end
+                        local divergent: {[string]: boolean} = {}
+                        for _, row in ipairs(rows) do divergent[tostring(row.component_id)] = true end
+                        for _, binding in ipairs(bindings) do
+                            if not owner_identity.binding_matches(binding.identity_hash, binding.owner_key, binding.legacy_identity,
+                                binding.projection_actor, binding.projection_context, maintenance_owners)
+                                or not owner_identity.binding_matches(binding.identity_hash, binding.owner_key, binding.legacy_identity,
+                                    binding.cursor_actor, binding.cursor_context, maintenance_owners) then
+                                divergent[tostring(binding.component_id)] = true
+                            end
+                        end
+                        rows = {}
+                        for id in pairs(divergent) do rows[#rows + 1] = {component_id = id} end
+                        table.sort(rows, function(a, b) return a.component_id < b.component_id end)
+                    end
+                end
+                for _, row in ipairs(rows) do
+                    local component_id = tostring(row.component_id)
+                    summary.checked = summary.checked + 1
+                    local cause: error? = declaration_failure
+                    if not cause and on_thread then
+                        local executor, exec_err = converge_executor(component_id, opener_actor, opener_scope)
+                        if exec_err or not executor then
+                            cause = errors.wrap(exec_err or missing_result("executor"), "converge identity unavailable")
+                        else
+                            local _, converge_err = executor:call(CONVERGE_THREAD_FN, {component_id = component_id,
+                                impl_id = kind.impl_id, thread_class = kind.class})
+                            if converge_err then cause = errors.wrap(converge_err, "converge_thread failed") end
+                        end
+                    end
+                    if not cause and own_lifecycle then
+                        cause = converge_lifecycle(component_id, tostring(kind.impl_id))
+                    end
+                    if cause then
+                        if job_types.is_deterministic_kind(cause:kind()) then
+                            local wake_err = wake_owner_failures(component_id, kind)
+                            if wake_err then return finish(wake_err) end
+                        end
+                        summary.skipped[#summary.skipped + 1] = {component_id = component_id, impl_id = kind.impl_id,
+                            reason = cause:message(), error = error_envelope.encode(cause)}
+                    else
+                        summary.healed = summary.healed + 1
+                    end
+                end
+                local visited = candidates or rows
+                if #visited == remaining then
+                    summary.continuation = {kind_index = index, after = tostring(visited[#visited].component_id)}
+                    return finish(nil)
+                end
+                remaining = remaining - #visited
             end
         end
+        after = nil
     end
-    if lifecycle_healed then
-        local _, nudge_err = component_lifecycle.committed()
-        if nudge_err then return scan_failed(errors.wrap(nudge_err, "converge: job worker wake failed")) end
-    end
-
-    local _, release_err = _db:release()
-    if release_err then return summary, (errors.wrap(release_err, "converge: database release failed") :: error) end
-    return summary, nil
+    return finish(nil)
 end
 
 -- ensure_user materializes every user-scope declaration for the actor. Two owners

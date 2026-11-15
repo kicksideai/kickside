@@ -63,8 +63,8 @@ local function add_events(thread_id: string, seqs: { integer }, age_days: number
     end
 end
 
-local function add_bulk_events(thread_id: string, count: integer): ()
-    local created_at = ts(-10)
+local function add_bulk_events(thread_id: string, count: integer, age_days: number?): ()
+    local created_at = ts(-(age_days or 10))
     if dialect() == sql.type.POSTGRES then
         exec([[INSERT INTO kickside_event (id,thread_id,type,role,body,seq,created_at)
             SELECT md5($1::text || ':' || n::text)::uuid,$2::uuid,'test.bulk','user','{}',n,$3

@@ -96,6 +96,9 @@ end
 -- The automation caller reserves its command, validates operator and subject,
 -- lowers new-source pins, then invokes this as its framework system actor.
 -- `verify` reads that durable command outside this module's component tx.
+-- Its receipt may include expected_revision: the context revision is checked
+-- under the component row lock before any declaration, state, meta or fence write.
+-- An already-applied command replays successfully even after its revision advanced.
 function M.apply_declaration(input: any, verify: any): (any?, error?)
     local token, prepare_err = ops.prepare_declaration(input, verify)
     if prepare_err then return nil, prepare_err end

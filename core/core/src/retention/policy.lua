@@ -3,6 +3,7 @@
 local registry = require("registry")
 local time = require("time")
 local row_size = require("row_size")
+local consts = require("ret_consts")
 
 local M = {}
 M.ENTRY = "kickside.core:policy"
@@ -57,7 +58,9 @@ function M.resolve(meta: any): (table?, error?)
     local sweep = type(meta) == "table" and meta.sweep or nil
     if type(retention) ~= "table" then return nil, invalid("retention must be an object") end
     if type(sweep) ~= "table" then return nil, invalid("sweep must be an object") end
-    local events_ms, events_err = duration_ms(retention.events, "retention.events", 36500)
+    local event_window = retention.events
+    if event_window == nil then event_window = tostring(consts.DEFAULTS.event_hot_retention_days) .. "d" end
+    local events_ms, events_err = duration_ms(event_window, "retention.events", 36500)
     if events_err then return nil, events_err end
     local receipts_ms, receipts_err = duration_ms(retention.receipts_orphan,
         "retention.receipts_orphan", 36500)
@@ -107,6 +110,7 @@ function M.policy(): (table?, error?)
     cached_version, cached_policy = id, resolved
     return policy_copy(resolved), nil
 end
+
 
 -- check_row(scope, bytes, operation) applies limits.max_row_bytes to one row.
 function M.check_row(scope: string, bytes: integer, operation: string): error?

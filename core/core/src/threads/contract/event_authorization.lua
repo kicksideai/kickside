@@ -184,7 +184,7 @@ local function declaration_for(impl_id: string): (Declaration?, error?)
 end
 
 local function validate_declared_event(declaration: Declaration, event_type: string, user_append: boolean,
-    thread_class: string?): (string?, error?)
+    thread_class: string?): (string?, error?, boolean?)
     if type(event_type) ~= "string" or event_type == "" then
         return nil, (errors.new({ message = "event type is required", kind = errors.INVALID }) :: error)
     end
@@ -218,7 +218,7 @@ local function validate_declared_event(declaration: Declaration, event_type: str
     if user_append and is_output and outputs[event_type] == true and not producer then
         return nil, denied_event(event_type, "output event requires framework maintenance authority")
     end
-    return is_output and "output" or "input", nil
+    return is_output and "output" or "input", nil, producer
 end
 
 local function authority(): (boolean?, error?)
@@ -275,71 +275,97 @@ function M.normalize_writes(writes: any): error?
 end
 
 -- Component owns the access decision; the stored kind owns event declarations.
-function M.validate_event_types(db: sql.DB, writes: { table }, _user_append: boolean?): (boolean, error?)
-    local shape_err = M.normalize_writes(writes)
-    if shape_err then return false, shape_err end
-    local user_append, authority_err = authority()
-    if authority_err then return false, authority_err end
+local function validate_normalized_event_types(db: sql.DB, writes: {table}, user_append: boolean, component_owned: boolean?): (boolean, error?, {[string]: boolean}?, {[string]: table}?)
     local output_only = true
+    local access_required: {[string]: boolean} = {}
+    local destinations: {[string]: table} = {}
     for _, write in ipairs(writes) do
-        local rows, thread_err = db:query("SELECT id,component_id,thread_class FROM kickside_thread WHERE id=$1", { write.thread_id })
-        if thread_err then return false, registry_failure("thread lookup failed", thread_err) end
-        local thread = rows and rows[1]
-        if not thread then return false, (errors.new({ message = "thread not found", kind = errors.NOT_FOUND }) :: error) end
-        local component_id = trim(thread.component_id)
-        if component_id == "" then return false, (errors.new({ message = "thread component not found", kind = errors.NOT_FOUND }) :: error) end
-        if component_id ~= write.thread_id then return false, invalid("primary thread id differs from component id") end
-        local components, component_err = component_client.list_system({
-            component_ids = { component_id }, include = { meta = false }, limit = 1,
-        })
-        if component_err then return false, component_err end
-        if not components or not components[1] then
-            return false, (errors.new({ message = "thread component not found", kind = errors.NOT_FOUND }) :: error)
+        local destination = destinations[write.thread_id]
+        if not destination then
+            local rows, thread_err = db:query([[SELECT t.id,t.component_id,t.thread_class,c.impl_id,c.identity_generation
+                FROM kickside_thread t LEFT JOIN kickside_components c ON c.component_id=t.id WHERE t.id=$1]], { write.thread_id })
+            if thread_err then return false, registry_failure("thread lookup failed", thread_err) end
+            local thread = rows and rows[1]
+            if not thread then return false, (errors.new({ message = "thread not found", kind = errors.NOT_FOUND }) :: error) end
+            local component_id = trim(thread.component_id)
+            if component_id == "" then return false, (errors.new({ message = "thread component not found", kind = errors.NOT_FOUND }) :: error) end
+            if component_id ~= write.thread_id then return false, invalid("primary thread id differs from component id") end
+            if type(thread.impl_id) ~= "string" or thread.impl_id == "" then
+                return false, (errors.new({ message = "thread component not found", kind = errors.NOT_FOUND }) :: error)
+            end
+            local declared, declared_err = declaration_for(thread.impl_id)
+            if declared_err or not declared then return false, declared_err end
+            destination = {declaration = declared, thread_class = thread.thread_class, events = {}, generation = tonumber(thread.identity_generation)}
+            destinations[write.thread_id] = destination
         end
-        local impl_id = tostring(components[1].impl_id or "")
         local producer_write = true
-        local declaration: Declaration? = nil
         for _, event in ipairs(write.events) do
             local timestamp_err = validate_user_timestamp(event, user_append == true)
             if timestamp_err then return false, timestamp_err end
-            if not declaration then
-                local declared, declared_err = declaration_for(impl_id)
-                if declared_err or not declared then return false, declared_err end
-                declaration = declared
+            local admitted = destination.events[event.type]
+            if not admitted then
+                local direction, declaration_err, producer = validate_declared_event(destination.declaration, event.type,
+                    user_append == true, destination.thread_class)
+                if declaration_err then return false, declaration_err end
+                admitted = {direction = direction, producer = direction == "output" and producer == true}
+                destination.events[event.type] = admitted
             end
-            local direction, declaration_err = validate_declared_event(declaration :: Declaration, event.type, user_append == true, thread.thread_class)
-            if declaration_err then return false, declaration_err end
-            if direction ~= "output" or security.can("threads.output.publish", event.type) ~= true then producer_write = false end
-            if user_append and direction == "input" then
+            if not admitted.producer then producer_write = false end
+            if user_append and admitted.direction == "input" then
                 local authorship_err = validate_input_authorship(event)
                 if authorship_err then return false, authorship_err end
             end
         end
         if not producer_write then
             output_only = false
-            if user_append then
-                local _, access_err = component_client.validate_access(component_id, (core_types.ACCESS.WRITE :: integer))
-                if access_err then return false, access_err end
-            end
+        end
+        if ((component_owned == true and not user_append) or (user_append and not producer_write)) and not access_required[write.thread_id] then
+            access_required[write.thread_id] = true
+            local _, access_err = component_client.validate_access(write.thread_id, (core_types.ACCESS.WRITE :: integer))
+            if access_err then return false, access_err end
         end
     end
-    return user_append == false or output_only, nil
+    return user_append == false or output_only, nil, access_required, destinations
+end
+
+function M.validate_event_types(db: sql.DB, writes: {table}, _user_append: boolean?): (boolean, error?, {[string]: boolean}?)
+    local shape_err = M.normalize_writes(writes)
+    if shape_err then return false, shape_err end
+    local user_append, authority_err = authority()
+    if authority_err then return false, authority_err end
+    local result, err, access_required = validate_normalized_event_types(db, writes, user_append == true)
+    return result, err, access_required
 end
 
 -- Internal actor-bound projection admission, using the same contract authorizer.
 function M.authorize_writes(args: any): (table?, error?)
     local writes = type(args) == "table" and args.writes or nil
-    local shape_err = M.normalize_writes(writes)
-    if shape_err then return nil, shape_err end
-    local _, authority_err = authority()
+    local owner = type(args) == "table" and args.component_authority or nil
+    if type(writes) ~= "table" or #writes > 0 or owner == nil then
+        local shape_err = M.normalize_writes(writes)
+        if shape_err then return nil, shape_err end
+    end
+    local user_append, authority_err = authority()
     if authority_err then return nil, authority_err end
-    local db, db_err = common.open_db()
-    if db_err then return nil, db_err end
-    local _, authorize_err = M.validate_event_types(db, writes)
-    local _, release_err = db:release()
-    if authorize_err then return nil, authorize_err end
-    if release_err then return nil, registry_failure("authorization database release failed", release_err) end
-    return { writes = writes }, nil
+    local checks: {table} = {}
+    if #writes > 0 then
+        local db, db_err = common.open_db()
+        if db_err then return nil, db_err end
+        local _, authorize_err, access_required, destinations = validate_normalized_event_types(db, writes, user_append == true, owner ~= nil)
+        local _, release_err = db:release()
+        if authorize_err then return nil, authorize_err end
+        if release_err then return nil, registry_failure("authorization database release failed", release_err) end
+        local checked: {[string]: boolean} = {}
+        for _, write in ipairs(writes) do
+            if access_required[write.thread_id] and not checked[write.thread_id] then
+                checked[write.thread_id] = true
+                local generation = destinations[write.thread_id].generation
+                if generation == nil then return nil, response_error("destination.generation") end
+                checks[#checks + 1] = {component_id = write.thread_id, generation = generation}
+            end
+        end
+    end
+    return {writes = writes, checks = checks}, nil
 end
 
 -- Primary-thread emit must authorize a declared output before it lazily creates
@@ -379,9 +405,9 @@ function M.authorize_primary_emit(args: any): (any?, error?)
     end
     local declaration, declared_err = declaration_for(impl_id)
     if declared_err or not declaration then return nil, declared_err end
-    local direction, declaration_err = validate_declared_event(declaration, event.type, user_append == true, thread_class)
+    local direction, declaration_err, admitted_producer = validate_declared_event(declaration, event.type, user_append == true, thread_class)
     if declaration_err then return nil, declaration_err end
-    local producer = direction == "output" and security.can("threads.output.publish", event.type) == true
+    local producer = direction == "output" and admitted_producer == true
     if exists and user_append and not producer then
         local _, access_err = component_client.validate_access(component_id, (core_types.ACCESS.WRITE :: integer))
         if access_err then return nil, access_err end

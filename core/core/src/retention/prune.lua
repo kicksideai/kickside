@@ -56,22 +56,24 @@ local function scalar(tx: sql.Transaction, statement: string, params: { any }, w
     return row and int_of(row.value) or nil, nil
 end
 
-local PREFIX_SQL = [[WITH floors AS (
+-- Bound the age check to the same indexed window as the delete. Searching
+-- for the first fresh event across the whole thread holds the append lock
+-- for work proportional to the backlog, even when only a few rows are deleted.
+local PREFIX_SQL = [[WITH batch AS (
+    SELECT seq, created_at FROM kickside_event WHERE thread_id = $1 AND seq > $2
+    ORDER BY seq LIMIT $3
+), floors AS (
     SELECT MIN(value) AS bound FROM (
         SELECT MIN(cursor_seq) AS value FROM kickside_retention_pin WHERE thread_id = $1
         UNION ALL
         SELECT MIN(last_seq) AS value FROM kickside_projection_cursor
             WHERE thread_id = $1 AND status <> 'invalid'
         UNION ALL
-        SELECT MIN(seq) - 1 AS value FROM kickside_event
-            WHERE thread_id = $1 AND seq > $2 AND created_at >= $3
+        SELECT MIN(seq) - 1 AS value FROM batch WHERE created_at >= $4
     ) limits
 ), top AS (
-    SELECT MAX(seq) AS value FROM (
-        SELECT seq FROM kickside_event WHERE thread_id = $1 AND seq > $2
-            AND seq <= COALESCE((SELECT bound FROM floors), 2147483647)
-        ORDER BY seq LIMIT $4
-    ) batch
+    SELECT MAX(seq) AS value FROM batch
+        WHERE seq <= COALESCE((SELECT bound FROM floors), 2147483647)
 )]]
 
 -- prune_tx prunes one batch of the thread on the caller's transaction.
@@ -109,7 +111,7 @@ function prune.prune_tx(tx: sql.Transaction, thread_id: string, opts: {
     -- floor made small batches hold the append lock longer than the deletes.
     -- Keep first-occurrence placeholder order numeric: SQLite assigns bind
     -- slots by first appearance, while PostgreSQL uses the explicit numbers.
-    local params: { any } = { thread_id, max_pruned, opts.cutoff, batch }
+    local params: { any } = { thread_id, max_pruned, batch, opts.cutoff }
     if tostring(dbtype) == sql.type.POSTGRES then
         -- Keep eligibility, physical deletion and boundary advancement in one
         -- server statement while the thread lock is held.

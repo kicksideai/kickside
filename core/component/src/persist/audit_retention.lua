@@ -66,9 +66,12 @@ local function prune_one(db: any, id: string, cutoff: string, limit: integer): (
         if rollback_err then return nil, rollback_err end
         return 0, nil
     end
+    local selection = "COALESCE((SELECT MAX(h.identity_generation) FROM " .. AUDIT
+        .. " h JOIN kickside_components c ON c.component_id=h.component_id"
+        .. " WHERE h.component_id=$1 AND h.identity_generation<=c.identity_generation),-1)"
     local rows, read_err = tx:query("SELECT identity_generation FROM " .. AUDIT
         .. " WHERE component_id=$1 AND published_at IS NOT NULL AND created_at<=$2"
-        .. " AND identity_generation<>(SELECT identity_generation FROM kickside_components WHERE component_id=$1)"
+        .. " AND identity_generation<>" .. selection
         .. " ORDER BY identity_generation LIMIT $3", { id, cutoff, limit })
     if read_err or type(rows) ~= "table" then
         return nil, error_envelope.cleanup(function(): (any, error?) return tx:rollback() end,
@@ -84,7 +87,7 @@ local function prune_one(db: any, id: string, cutoff: string, limit: integer): (
         end
         local deleted, delete_err = tx:execute("DELETE FROM " .. AUDIT
             .. " WHERE component_id=$1 AND created_at<=$2 AND published_at IS NOT NULL"
-            .. " AND identity_generation<>(SELECT identity_generation FROM kickside_components WHERE component_id=$1)"
+            .. " AND identity_generation<>" .. selection
             .. " AND identity_generation IN (" .. table.concat(marks, ",") .. ")", params)
         local removed, remove_err = affected(deleted, delete_err, "identity audit prune delete failed")
         if remove_err or removed ~= count then
@@ -112,7 +115,9 @@ function M.run(limit: integer): (any?, error?)
     local cutoff = time.now():utc():add(-p.history_days * 24 * time.HOUR):format_rfc3339()
     local owners, owners_err = db:query("SELECT a.component_id FROM " .. AUDIT .. " a"
         .. " JOIN kickside_components c ON c.component_id=a.component_id"
-        .. " WHERE a.published_at IS NOT NULL AND a.created_at<=$1 AND a.identity_generation<>c.identity_generation"
+        .. " WHERE a.published_at IS NOT NULL AND a.created_at<=$1 AND a.identity_generation<>COALESCE("
+        .. "(SELECT MAX(h.identity_generation) FROM " .. AUDIT .. " h"
+        .. " WHERE h.component_id=c.component_id AND h.identity_generation<=c.identity_generation),-1)"
         .. " ORDER BY a.created_at,a.component_id,a.identity_generation LIMIT $2",
         { cutoff, limit })
     if owners_err or type(owners) ~= "table" then

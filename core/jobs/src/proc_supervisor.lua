@@ -50,20 +50,25 @@ function M.claim_singleton(name: string, events_ch: any, dependencies: any?): (b
         if claimed then return true, false, nil end
         if owner then
             local monitored, monitor_err = proc.monitor(tostring(owner))
-            if monitor_err then return false, false, monitor_err end
-            if not monitored then
-                return false, false, (errors.new({ kind = errors.UNAVAILABLE, retryable = true,
-                    message = "singleton owner monitor returns no acknowledgement: " .. name }) :: error)
-            end
-            while true do
-                local selected = select.select({ events_ch:case_receive() })
-                local event = selected.value
-                if selected.ok == false then return false, true, nil, nil end
-                if type(event) == "table" and (event.kind == proc.event.CANCEL or event.kind == proc.event.OUTDATED) then
-                    return false, true, nil, event.kind :: string
+            if monitor_err then
+                if not errors.is(monitor_err, errors.NOT_FOUND) then return false, false, monitor_err end
+                -- The observed owner exits before monitor admission. Claim the
+                -- name as on its EXIT notification; there is no owner to await.
+            else
+                if not monitored then
+                    return false, false, (errors.new({ kind = errors.UNAVAILABLE, retryable = true,
+                        message = "singleton owner monitor returns no acknowledgement: " .. name }) :: error)
                 end
-                if type(event) == "table" and tostring(event.from) == tostring(owner)
-                    and (event.kind == proc.event.EXIT or event.kind == proc.event.LINK_DOWN) then break end
+                while true do
+                    local selected = select.select({ events_ch:case_receive() })
+                    local event = selected.value
+                    if selected.ok == false then return false, true, nil, nil end
+                    if type(event) == "table" and (event.kind == proc.event.CANCEL or event.kind == proc.event.OUTDATED) then
+                        return false, true, nil, event.kind :: string
+                    end
+                    if type(event) == "table" and tostring(event.from) == tostring(owner)
+                        and (event.kind == proc.event.EXIT or event.kind == proc.event.LINK_DOWN) then break end
+                end
             end
         end
     end

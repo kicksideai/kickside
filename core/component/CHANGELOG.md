@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.3.20](https://github.com/kicksideai/kickside/compare/component-v0.3.19...component-v0.3.20) (2026-11-14)
+
+
+### Features
+
+* owner job listing and atomic automation reconfiguration ([#486](https://github.com/kicksideai/kickside/issues/486)) ([351f914](https://github.com/kicksideai/kickside/commit/351f914b54886ea28cbf24a1de7d6473e5385d2d))
+
+
+### Bug Fixes
+
+* **component:** separate kind mutation admission from placement ([#487](https://github.com/kicksideai/kickside/issues/487)) ([67f6d7c](https://github.com/kicksideai/kickside/commit/67f6d7cc041510677129434e5a81a73878c4271d))
+
+## [0.3.19](https://github.com/kicksideai/kickside/compare/component-v0.3.18...component-v0.3.19) (2026-11-14)
+
+
+### Bug Fixes
+
+* **component:** preserve undeclared kinds and deduplicate tree admission ([#463](https://github.com/kicksideai/kickside/issues/463)) ([d3b83b8](https://github.com/kicksideai/kickside/commit/d3b83b82445464c5da3777522ea5a340622367a5))
+
 ## [0.3.18](https://github.com/kicksideai/kickside/compare/component-v0.3.17...component-v0.3.18) (2026-11-13)
 
 

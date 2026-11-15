@@ -2,7 +2,7 @@
 version: "1.0"
 namespace: kickside.test
 
-# Writer fixtures use installed kinds; an absent kind is a mutation refusal.
+# Writer fixtures use installed component kinds.
 entries:
   - name: canonical
     kind: contract.binding

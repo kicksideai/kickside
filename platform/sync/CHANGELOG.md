@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.97](https://github.com/kicksideai/kickside/compare/sync-v0.1.96...sync-v0.1.97) (2026-11-14)
+
+
+### Features
+
+* owner job listing and atomic automation reconfiguration ([#486](https://github.com/kicksideai/kickside/issues/486)) ([351f914](https://github.com/kicksideai/kickside/commit/351f914b54886ea28cbf24a1de7d6473e5385d2d))
+
 ## [0.1.96](https://github.com/kicksideai/kickside/compare/sync-v0.1.95...sync-v0.1.96) (2026-11-09)
 
 

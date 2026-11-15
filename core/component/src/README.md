@@ -38,15 +38,15 @@ ambient registry access.
 A component kind binding declares `meta.mutation: open` or `closed`. An absent
 value means open, preserving creation and updates for installed kinds without a
 migration. Closed kinds require `component.kind.create` for creation and
-`component.kind.update` for context, public metadata, and placement writes, with
-the exact implementation binding ID as the permission resource. Every changed
-placement requires admission for that component's kind, including descendant path
-rewrites and children re-rooted by deletion. Delete acceptance checks all affected
-kinds in the requesting frame before committing intent; maintenance consumes that
-accepted intent. Placement parents and directly moved components cannot lie
-under an accepted delete mark, including while re-root pages retain their direct
-parent continuation pointer. Reordering without a path change does not move
-descendants. Object access still applies. Import shares registration's creation check. Owning modules grant
+`component.kind.update` for context and public metadata writes, with the exact
+implementation binding ID as the permission resource. Placement uses ordinary
+Component access and placement rules, independent of kind mutation admission.
+This includes moving or reordering a closed-kind component, rewriting descendant
+paths when an ancestor moves, and re-rooting children on `reparent_root` deletion.
+Placement parents and directly moved components cannot lie under an accepted
+delete mark, including while re-root pages retain their direct parent continuation
+pointer. Reordering without a path change does not move descendants. Import
+shares registration's creation check. Owning modules grant
 these exact actions/resources only to their admission function entries through
 `security.policies`; member scopes receive no kind mutation grants from Component.
 The mode is read through Component's own declaration scope; its mutation,
@@ -54,11 +54,10 @@ deletion worker and retention entries hold an exact `funcs.call` grant on the pr
 `kickside.component:kind_declaration` reader. Admission does not depend on member
 policies, and these attached grants do not let callers invoke the reader from
 their own code. Caller registry visibility does not select the mode. Admission
-then evaluates the exact kind grant in the requesting frame. A missing kind declaration refuses mutation with
-`component_kind_unknown`; an absent mode on an existing entry remains open.
+then evaluates the exact kind grant in the requesting frame. A missing kind declaration and an absent mode remain open.
 An invalid mode refuses mutation. Module-owned metadata floors, execution identity,
 sharing, and internal declaration commands retain their separate authority.
-`closed` governs create, context, public metadata and placement, not deletion.
+`closed` governs create, context and public metadata.
 Deletion remains governed by DELETE access and the kind's teardown.
 Kind admission has no actor-ID exemption. Framework creation (including verified
 declaration installs), imports and public updates of closed kinds require the
@@ -118,3 +117,10 @@ The parent remains untouched; successfully deleted children stay deleted if
 later cleanup fails. Pending or running jobs retain historical errors without
 stopping the wait; terminal dead or cancelled jobs stop deletion.
 No child is reparented. Callers delete the parent only after this function succeeds.
+
+Automation's verified `apply_declaration` receipt may supply an optional
+`expected_revision` for the Component context subject. The declaration writer
+checks it under the component row lock, in the same transaction as declaration,
+state, public metadata and fence updates. A stale revision returns the native
+nonretryable `CONFLICT`; an already-applied command replays its receipt before
+this check. Omitting the field preserves unconditional declaration writes.

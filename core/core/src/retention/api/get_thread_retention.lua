@@ -7,7 +7,6 @@ local sql = require("sql")
 
 local core_db = require("core_db")
 local repo = require("repo")
-local consts = require("ret_consts")
 local thread_access = require("thread_access")
 local release_error = thread_access.release_error
 local error_response = thread_access.error_response
@@ -62,7 +61,13 @@ local function handler(): ()
         return
     end
 
-    res:write_json({ success = true, policy = consts.DEFAULTS, is_default = true })
+    local defaults, defaults_err = repo.normalize()
+    if defaults_err then
+        local status, payload = error_response(defaults_err, tostring(defaults_err))
+        res:set_status(status); res:write_json(payload)
+        return
+    end
+    res:write_json({ success = true, policy = defaults, is_default = true })
 end
 
 return { handler = handler }

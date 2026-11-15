@@ -1227,6 +1227,7 @@ entries:
     - uuid
     - time
     imports:
+      meta_ops: app:access_cause_fixture
       component_types: kickside.component:types
       access_subjects: kickside.component.persist:access_subjects
       access_policy: kickside.component:access_policy

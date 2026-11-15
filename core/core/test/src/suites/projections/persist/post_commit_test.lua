@@ -4,7 +4,7 @@ local sql = require("sql")
 local uuid = require("uuid")
 local writer = require("writer")
 local invoke = require("invoke")
-local claim = require("claim")
+local projection_claim = require("projection_claim")
 
 local function run_case(mode: string)
     local db = assert(sql.get("app:db"))
@@ -28,17 +28,8 @@ local function run_case(mode: string)
         assert(db:execute("UPDATE kickside_projection_cursor SET last_seq=1 WHERE id=$1", { registered.cursor_id }))
         assert(db:execute("UPDATE kickside_projection SET last_event_seq=1 WHERE id=$1", { registered.projection_id }))
     end
-    local dbtype = db:type()
+    local job = projection_claim.claim(db, registered.job_id)
     db:release()
-    local claim_db = assert(sql.get("app:db"))
-    local claimed, claim_err = claim.claim_batch(claim_db, tostring(dbtype), 16, nil, nil)
-    claim_db:release()
-    test.is_nil(claim_err)
-    local job: any = nil
-    for _, row in ipairs(claimed or {}) do
-        if row.id == registered.job_id then job = row end
-    end
-    test.not_nil(job)
     if mode == "lease" then job.lease_token = "wrong-token" end
     local result, advance_err = invoke.run({ job = job, payload = { cursor_id = registered.cursor_id } })
     if mode == "lease" or mode == "fail" then test.not_nil(advance_err)

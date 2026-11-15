@@ -164,6 +164,8 @@ entries:
       threads_drop_notify: kickside.core.threads.persist:drop_notify
       jobs_wake: kickside.core.jobs.persist:wake
       jobs: kickside.core.jobs:jobs
+      cursor_waiters: kickside.core.threads:cursor_waiters
+      error_envelope: kickside.contract:error_envelope
 
   - name: lifecycle
     kind: library.lua

@@ -284,9 +284,10 @@ end
 -- with no impl_id, or a kind that declares none, yields {} (a plain thread, no read
 -- model). Covers every kind uniformly -- provisioned (inbox) and on-demand (skills,
 -- research, schemas) -- since they all carry their declaration on their own binding.
-function M.projections_for_impl(impl_id: string): { ProjectionBinding }
+function M.projections_for_impl(impl_id: string): ({ ProjectionBinding }, error?)
     if type(impl_id) ~= "string" or impl_id == "" then return {} end
-    local entry = M.kind_for_impl(impl_id)
+    local entry, lookup_err = M.kind_for_impl(impl_id)
+    if lookup_err then return {}, lookup_err end
     if not entry then return {} end
     local meta = (type((entry :: any).meta) == "table" and (entry :: any).meta or {}) :: { [string]: any }
     if type(meta.projections) ~= "table" then return {} end

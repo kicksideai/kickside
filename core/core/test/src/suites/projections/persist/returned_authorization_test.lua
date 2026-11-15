@@ -3,7 +3,7 @@ local sql = require("sql")
 local uuid = require("uuid")
 local fixture = require("fixture")
 local invoke = require("invoke")
-local claim = require("claim")
+local projection_claim = require("projection_claim")
 local contract = require("contract")
 local security = require("security")
 
@@ -64,11 +64,7 @@ local function define_tests()
                 local rows, read_err = db:query("SELECT id,job_id FROM kickside_projection_cursor WHERE thread_id=$1", { source })
                 test.is_nil(read_err)
                 test.eq(#rows, 1)
-                local jobs, claim_err = claim.claim_batch(db, tostring(db:type()), 16, nil, nil)
-                test.is_nil(claim_err)
-                local selected = nil
-                for _, job in ipairs(jobs) do if job.id == rows[1].job_id then selected = job end end
-                test.not_nil(selected)
+                local selected = projection_claim.claim(db, rows[1].job_id)
                 if case.subject_status then
                     local _, state_err = db:execute("INSERT INTO kickside_component_meta (meta_id,component_id,key,value) VALUES ($1,$2,$3,$4)",
                         { uuid.v4(), source, "core_test.principal_state", case.subject_status })

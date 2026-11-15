@@ -41,6 +41,7 @@ M.ADOPT_ACTION = "component.adopt"
 -- Component meta is public render/read-model state. Private config, credentials,
 -- and deferred execution identity live in private_context or owner tables.
 M.FORBIDDEN_PUBLIC_META_KEYS = {
+    owner = true,
     config = true,
     private_context = true,
     context = true,

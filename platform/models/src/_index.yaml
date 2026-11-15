@@ -29,6 +29,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.models.migrations:02_discovered_capabilities
         path: .meta.target_db
+      - entry: kickside.models.migrations:03_capability_ownership
+        path: .meta.target_db
       - entry: kickside.models:db_config
         path: .meta.db_id
 

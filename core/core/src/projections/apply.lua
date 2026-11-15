@@ -13,6 +13,8 @@ local retention_notifier = require("retention_notifier")
 local retention_pin = require("retention_pin")
 local execution_identity = require("execution_identity")
 local error_envelope = require("error_envelope")
+local worker = require("worker")
+local funcs = require("funcs")
 
 local M = {}
 
@@ -79,6 +81,7 @@ local function append_writes(output: table, source_id: string, body: table): (ta
     if output.append_events == nil then return {}, nil end
     if not dense_array(output.append_events) then return nil, invalid("append_events must be a dense array") end
     local writes: table[] = {}
+    local by_thread: {[string]: table} = {}
     local types = input_type_set(body)
     for i, write in ipairs(output.append_events) do
         if type(write) ~= "table" or type(write.thread_id) ~= "string" or write.thread_id == "" then
@@ -86,7 +89,13 @@ local function append_writes(output: table, source_id: string, body: table): (ta
         end
         local raw = type(write.events) == "table" and write.events or (type(write.event) == "table" and { write.event } or nil)
         if not dense_array(raw) or #raw == 0 then return nil, invalid("append_events[" .. tostring(i) .. "] needs a dense events array") end
-        local events: table[] = {}
+        local destination = by_thread[write.thread_id]
+        if not destination then
+            destination = {thread_id = write.thread_id, events = {}}
+            by_thread[write.thread_id] = destination
+            writes[#writes + 1] = destination
+        end
+        local events: table[] = destination.events
         for j, event in ipairs(raw) do
             if type(event) ~= "table" or type(event.type) ~= "string" or event.type == "" then
                 return nil, invalid("append_events[" .. tostring(i) .. "].events[" .. tostring(j) .. "] needs type")
@@ -108,7 +117,6 @@ local function append_writes(output: table, source_id: string, body: table): (ta
             copy.body = nil
             events[#events + 1] = copy
         end
-        writes[#writes + 1] = { thread_id = write.thread_id, events = events }
     end
     return writes, nil
 end
@@ -137,7 +145,7 @@ local function completion(tx: sql.Transaction, job: table, opts: table): (table?
     return done, nil
 end
 
-local function advance_tx(db: sql.DB, job: table, snapshot: table, prefetched_last: number, output: table, writes: table[]): (table?, error?)
+local function advance_tx(db: sql.DB, job: table, snapshot: table, prefetched_last: number, output: table, writes: table[], checks: table[], authorization_error: error?): (table?, error?)
     local raw_type, type_err = db:type()
     if type_err then return nil, errors.wrap(type_err, "projection dialect unavailable") end
     if type(raw_type) ~= "string" or raw_type == "" then return nil, response_error("database.type") end
@@ -151,23 +159,38 @@ local function advance_tx(db: sql.DB, job: table, snapshot: table, prefetched_la
     local function abort(err: error): (nil, error)
         return nil, rollback(tx, err)
     end
-    local locked_threads, lock_err = threads_writer.lock_thread_rows_tx(tx, dbtype, ids)
+    local authority = snapshot.component_authority
+    local owner_stale = false
+    local component_ids: {string} = {}
+    local seen_components: {[string]: boolean} = {}
+    local function include_component(id: string)
+        if not seen_components[id] then seen_components[id] = true; component_ids[#component_ids + 1] = id end
+    end
+    if authority then include_component(authority.component_id) end
+    for _, check in ipairs(checks) do include_component(check.component_id) end
+    local locked_threads, lock_err, component_rows, rows = threads_writer.lock_thread_rows_tx(tx, dbtype, ids, component_ids, snapshot.id)
     if lock_err then return abort(lock_err) end
+    if authority then
+        local owner = component_rows and component_rows[authority.component_id]
+        owner_stale = owner == nil or tonumber(owner.identity_generation) ~= authority.generation
+    end
+    for _, check in ipairs(checks) do
+        if check.generation ~= nil then
+            local component = component_rows and component_rows[check.component_id]
+            if not component or tonumber(component.identity_generation) ~= check.generation then owner_stale = true end
+        end
+    end
     if type(locked_threads) ~= "table" then return abort(response_error("locked_threads")) end
     local source_thread = locked_threads[tostring(snapshot.thread_id)]
     local current_head = tonumber(source_thread and source_thread.event_count)
     if current_head == nil then return abort(response_error("thread.head")) end
-    local suffix = dbtype == sql.type.POSTGRES and " FOR UPDATE" or ""
-    local rows, cursor_err = tx:query([[SELECT generation,last_seq,status,job_id FROM kickside_projection_cursor
-        WHERE id=$1]] .. suffix, { snapshot.id })
-    if cursor_err then return abort(errors.wrap(cursor_err, "projection fence read failed")) end
     if type(rows) ~= "table" then return abort(response_error("cursor.rows")) end
     local cursor = rows[1]
     if not cursor then return abort(errors.new({message = "projection cursor removed", kind = errors.NOT_FOUND, retryable = false})) end
     if tostring(cursor.job_id or "") ~= tostring(job.id) then
         return abort(errors.new({message = "projection slot changed", kind = errors.CONFLICT, retryable = false}))
     end
-    if cursor.status ~= "active" or tonumber(cursor.generation) ~= tonumber(snapshot.generation)
+    if owner_stale or cursor.status ~= "active" or tonumber(cursor.generation) ~= tonumber(snapshot.generation)
         or tonumber(cursor.last_seq) ~= tonumber(snapshot.last_seq) then
         local options: table = { rearm = clock.now(dbtype) }
         if cursor.status ~= "active" then options = { record = { status = "parked" } } end
@@ -180,6 +203,7 @@ local function advance_tx(db: sql.DB, job: table, snapshot: table, prefetched_la
         return { self_completed = true, completion = done, stale = true }, nil
     end
 
+    if authorization_error then return abort(authorization_error) end
     local prior = tonumber(snapshot.last_seq)
     if prior == nil then return abort(response_error("cursor.last_seq")) end
     local last = prefetched_last
@@ -252,7 +276,7 @@ end
 -- corrected declaration re-registers it. An infrastructure failure keeps the
 -- cursor active with its last_error and returns to Jobs, which retries the
 -- slot. Returns the self-completion of a deterministic failure, else nil.
-function M.fail(db_id: string, job: table, snapshot: table, failure: error, deterministic: boolean): (table?, error?)
+function M.fail(db_id: string, job: table, snapshot: table, failure: error, deterministic: boolean, completed: table?): (table?, error?)
     local db, db_err = sql.get(db_id)
     if db_err then return nil, errors.wrap(db_err, "projection failure DB unavailable") end
     if type(db) ~= "table" and type(db) ~= "userdata" then return nil, response_error("database") end
@@ -261,6 +285,9 @@ function M.fail(db_id: string, job: table, snapshot: table, failure: error, dete
     if type(raw_type) ~= "string" or raw_type == "" then return nil, release(db, response_error("database.type")) end
     local dbtype = raw_type :: string
     local message = tostring(failure)
+    if completed and (completed.job_id ~= job.id or tonumber(completed.execution_seq) ~= tonumber(job.execution_seq)) then
+        return nil, release(db, invalid("post-commit failure requires its completed execution"))
+    end
     local tx, begin_err = db:begin()
     if begin_err then return nil, release(db, errors.wrap(begin_err, "projection failure begin failed")) end
     if type(tx) ~= "table" and type(tx) ~= "userdata" then return nil, release(db, response_error("transaction")) end
@@ -301,9 +328,15 @@ function M.fail(db_id: string, job: table, snapshot: table, failure: error, dete
             { now, snapshot.projection_id })
         local state_write_err = write_error(state, state_err, "projection invalidation failed", "projection.invalidate")
         if state_write_err then return abort(state_write_err) end
-        local done, done_err = completion(tx, job, { park = true, record = { status = "failed", error = message }, demand_satisfied = true })
-        if done_err then return abort(done_err) end
-        result = { self_completed = true, completion = done, invalid = true }
+        local done = completed
+        if not done then
+            local done_err: error?
+            done, done_err = completion(tx, job, {park = true, record = {status = "failed", error = message}, demand_satisfied = true})
+            if done_err then return abort(done_err) end
+        end
+        result = {self_completed = true, completion = done, invalid = true}
+    elseif completed then
+        result = {self_completed = true, completion = completed, stale = true}
     end
     local _, commit_err = tx:commit()
     local finish_err = release(db, commit_err and errors.wrap(commit_err, "projection failure commit failed") or nil)
@@ -315,29 +348,75 @@ function M.fail(db_id: string, job: table, snapshot: table, failure: error, dete
     return result, nil
 end
 
--- Resolve returned writes live before taking an apply connection. Actor-bound
--- authorization re-enters Component and Threads, including SQLite's single pool.
+-- Authorize returned destinations under the admitted frame before taking an
+-- apply connection; actor-bound calls re-enter SQLite's single pool.
 function M.advance(db_id: string, job: table, snapshot: table, prefetched_last: number, output: table): (table?, error?)
     local writes, write_err = append_writes(output, tostring(snapshot.thread_id), snapshot.body)
     if write_err then return nil, write_err end
-    if #writes > 0 and (snapshot.actor_id ~= nil or snapshot.execution_identity_json ~= nil) then
-        local identity, identity_err = execution_identity.from_row(snapshot.actor_id, snapshot.execution_identity_json)
-        if identity_err then return nil, identity_err end
-        if type(identity) ~= "table" then return nil, response_error("execution_identity") end
-        local admitted, admission_err = execution_identity.run_as(identity,
-            "kickside.core.threads:authorize_projection_writes", { writes = writes }, {
-                deferred_owner = "kickside.core.projections:tick", execution_root = identity.component_id,
-            })
+    local checks: table[] = {}
+    local authorization_error: error? = nil
+    if snapshot.component_authority then
+        local frame = snapshot.execution_frame
+        local actor, scope, resolve_err: any = nil, nil, nil
+        if frame then
+            actor, scope = frame.actor, frame.scope
+        else
+            -- Direct internal callers establish admission here. Invoked workers
+            -- carry their admitted frame for the duration of this round.
+            actor, scope, resolve_err = worker.admit_binding_identity({actor_id = snapshot.actor_id,
+                actor_context = snapshot.execution_identity_json, component_authority = snapshot.component_authority})
+        end
+        authorization_error = resolve_err
+        if not authorization_error and #writes > 0 then
+            local executor: any = frame and frame.executor
+            if not executor then
+                local builder_err: error? = nil
+                executor, builder_err = funcs.new()
+                if builder_err then authorization_error = builder_err
+                elseif not executor then authorization_error = response_error("authorization.executor") end
+                if not authorization_error then
+                    executor, authorization_error = executor:with_actor(actor)
+                    if not authorization_error and not executor then authorization_error = response_error("authorization.actor") end
+                end
+                if not authorization_error then
+                    executor, authorization_error = executor:with_scope(scope)
+                    if not authorization_error and not executor then authorization_error = response_error("authorization.scope") end
+                end
+            end
+            if not authorization_error then
+                local admitted, admission_err = executor:call("kickside.core.threads:authorize_projection_writes",
+                    {writes = writes, component_authority = snapshot.component_authority})
+                authorization_error = admission_err
+                if not authorization_error then
+                    if type(admitted) ~= "table" or type(admitted.writes) ~= "table" or type(admitted.checks) ~= "table" then
+                        authorization_error = response_error("admitted.writes")
+                    else writes, checks = admitted.writes, admitted.checks end
+                end
+            end
+        end
+    elseif #writes > 0 then
+        local admitted, admission_err: any = nil, nil
+        if snapshot.execution_identity_json ~= nil then
+            local identity, identity_err = execution_identity.from_row(snapshot.actor_id, snapshot.execution_identity_json)
+            if identity_err then return nil, identity_err end
+            if type(identity) ~= "table" then return nil, response_error("execution_identity") end
+            admitted, admission_err = execution_identity.run_as(identity,
+                "kickside.core.threads:authorize_projection_writes", {writes = writes}, {
+                    deferred_owner = "kickside.core.projections:tick", execution_root = identity.component_id,
+                })
+        else
+            admitted, admission_err = funcs.call("kickside.core.threads:authorize_projection_writes", {writes = writes})
+        end
         if admission_err then return nil, admission_err end
-        if type(admitted) ~= "table" or type(admitted.writes) ~= "table" then
+        if type(admitted) ~= "table" or type(admitted.writes) ~= "table" or type(admitted.checks) ~= "table" then
             return nil, response_error("admitted.writes")
         end
-        writes = admitted.writes
+        writes, checks = admitted.writes, admitted.checks
     end
     local db, db_err = sql.get(db_id)
     if db_err then return nil, errors.wrap(db_err, "projection apply DB unavailable") end
     if type(db) ~= "table" and type(db) ~= "userdata" then return nil, response_error("database") end
-    local result, apply_err = advance_tx(db, job, snapshot, prefetched_last, output, writes)
+    local result, apply_err = advance_tx(db, job, snapshot, prefetched_last, output, writes, checks, authorization_error)
     local finish_err = release(db, apply_err)
     if finish_err then return nil, finish_err end
     return result, nil

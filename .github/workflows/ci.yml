@@ -796,6 +796,8 @@ jobs:
             database="ci_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}_0"
             createdb "$database"
             databases+=("$database")
+            createdb "${database}_upgrade"
+            databases+=("${database}_upgrade")
             wippy lint --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433
             wippy test --profile postgres --set "vars.pg_database=${databases[0]}" --set vars.pg_host=127.0.0.1 --set vars.pg_port=5433 2>&1 | tee .wippy-test.log
             LC_ALL=C sed -E 's/\x1B\[[0-?]*[ -/]*[@-~]//g' .wippy-test.log > .wippy-test.clean.log
@@ -1752,8 +1754,8 @@ jobs:
         hub-url: https://hub.wippy.ai
     - name: Test missing and incomplete application bundles
       run: node --test app/scripts/check-app-bundle.test.mjs
-    - name: Test release artifact ordering and recovery
-      run: python3 -m unittest discover -s tests -p test_release_modules.py
+    - name: Test release commit resolution, artifact ordering and recovery
+      run: python3 -m unittest discover -s tests -p 'test_release_*.py'
     - name: Build, validate and pack the application frontend
       run: |
         set -euo pipefail

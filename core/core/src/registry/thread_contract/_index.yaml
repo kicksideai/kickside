@@ -100,6 +100,16 @@ entries:
         output_schemas:
           - format: application/schema+json
             definition: "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"events\": { \"type\": \"array\", \"items\": { \"type\": \"object\" } },\n    \"max_pruned_seq\": { \"type\": \"integer\", \"minimum\": 0 },\n    \"next_seq\": { \"type\": \"integer\", \"minimum\": 0 },\n    \"source_gap\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"max_pruned_seq\": { \"type\": \"integer\", \"minimum\": 1 },\n        \"earliest_seq\": { \"type\": \"integer\", \"minimum\": 2 }\n      },\n      \"required\": [\"max_pruned_seq\", \"earliest_seq\"]\n    }\n  },\n  \"required\": [\"events\", \"max_pruned_seq\", \"next_seq\"]\n}\n"
+      - name: retire_subjects
+        description: Retire 1–100 distinct exact subjects of permanently purged, nonreusable entity identities. The owner must durably fence all future and in-flight writes before calling; retirement resets their versions to zero. Requires threads.subjects.retire on the thread class, not user WRITE. Atomic, idempotent; events and head unchanged. Never use for live entities or event expiry alone.
+        input_schemas:
+          - format: application/schema+json
+            definition: |
+              {"type":"object","properties":{"thread_id":{"type":"string","minLength":1},"subjects":{"type":"array","minItems":1,"maxItems":100,"uniqueItems":true,"items":{"type":"string","minLength":1,"maxLength":256}}},"required":["thread_id","subjects"]}
+        output_schemas:
+          - format: application/schema+json
+            definition: |
+              {"type":"object","properties":{"thread_id":{"type":"string"},"retired":{"type":"integer","minimum":0,"maximum":100}},"required":["thread_id","retired"]}
       - name: prune_boundary
         description: Return a thread's highest pruned event sequence and no event content. The caller's scope must hold threads.prune_boundary.read on the thread's class; a missing thread is NOT_FOUND.
         input_schemas:

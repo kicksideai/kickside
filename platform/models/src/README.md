@@ -11,7 +11,9 @@ This module has two layers:
 Registry is only for shipped adapters/defaults, provider editor web components,
 and safe presets. User-added endpoints, credentials, discovered models, and
 class/capability edits are stored in the database and served through the same
-model APIs.
+model APIs. Discovery refreshes inferred capabilities with administrator
+additions and removals applied; `PUT /models/cards` accepts
+`reset_capabilities: ["vision"]` to return capabilities to discovery; legacy cards retain every stored capability as a positive override and establish negative overrides for omissions from the first complete discovery, after which overrides can be reset.
 
 The shipped class vocabulary is intentionally small: `fast`, `nano`,
 `balanced`, `premium`, and `embed`. Discovered provider models do not
@@ -81,7 +83,7 @@ cards hold call defaults such as `reasoning_model_request`,
 `thinking_effort`, or `temperature` in provider options. For
 OpenAI-compatible profiles, `test_model` is non-secret profile config used only
 by the connection-test probe; API keys remain in encrypted profile secrets or
-`*_env` references.
+`*_env` references. Card and profile filtering preserve the exact `headers` name and existing credential substrings (`secret`, `token`, `api_key`/`api-key`/`apikey`, `authorization`, `password`, `credential`), except token-quantity names containing the plural word `tokens` or singular `token` immediately followed by `budget`, `limit`, `count`, `usage`, `cost`, `rate`, `length`, `window`, `quota` or `size` after word normalization and no other credential substring; profile `*_env` references remain public and declared provider-secret keys retain their exact spelling for config/secret separation.
 
 Retry is provider-level transport policy: `retry.attempts` is the number of
 transient failures to retry after the initial request, and optional

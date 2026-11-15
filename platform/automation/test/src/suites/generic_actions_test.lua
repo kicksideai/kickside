@@ -200,6 +200,7 @@ local function define_tests(): ()
             local binding = entry({ "reconfigure" }, true)
             local opens = 0
             local received: any = nil
+            local received_options: any = nil
             local engine = harness.new({
                 registry = { find = function() return { binding }, nil end },
                 component = {
@@ -210,7 +211,8 @@ local function define_tests(): ()
                     open = function(_id: string, _access: integer, contract: string): (any, any)
                         opens = opens + 1
                         test.eq(contract, "test:kind_iface")
-                        return { reconfigure = function(_self: any, declaration: any): (any, any)
+                        return { reconfigure = function(_self: any, declaration: any, options: any): (any, any)
+                            received_options = options
                             received = declaration
                             return { success = true }, nil
                         end }, nil
@@ -229,6 +231,24 @@ local function define_tests(): ()
             test.is_true(via_http.result.success)
             test.eq(received.title, "two")
             test.eq(opens, 2)
+            test.is_nil(received_options)
+            local guarded, guarded_err = engine.reconfigure("auto-1", {title = "three"}, {expected_revision = 7})
+            test.is_nil(guarded_err, tostring(guarded_err))
+            test.is_true(guarded.result.success)
+            test.eq((received_options :: any).expected_revision, 7)
+            test.is_nil(received.expected_revision)
+            local action, err = engine.call_action("auto-1", "reconfigure", {
+                declaration = {title = "four"}, expected_revision = 8})
+            test.is_nil(err, tostring(err))
+            test.is_true(action.result.success)
+            test.eq((received_options :: any).expected_revision, 8)
+            for _, invalid in ipairs({-1, 1.5, "7", math.huge}) do
+                local before = opens
+                local refused, invalid_err = engine.reconfigure("auto-1", {title = "invalid"}, {expected_revision = invalid})
+                test.is_nil(refused)
+                test.is_true(errors.is(invalid_err, errors.INVALID), tostring(invalid_err))
+                test.eq(opens, before)
+            end
         end)
     end)
 end

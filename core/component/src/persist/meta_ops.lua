@@ -12,7 +12,7 @@ local component_types = require("component_types")
 local error_envelope = require("error_envelope")
 type Executor = sql.DB | sql.Transaction
 
-local function validate_public_meta_key(key: any): (error?, string?)
+local function validate_public_meta_storage_key(key: any): error?
     if type(key) ~= "string" or key == "" then
         return (errors.new({ message = "component public metadata key must be a non-empty string", kind = errors.INVALID }) :: error)
     end
@@ -23,6 +23,12 @@ local function validate_public_meta_key(key: any): (error?, string?)
             kind = errors.INVALID,
         }) :: error)
     end
+    return nil
+end
+
+local function validate_public_meta_key(key: any): (error?, string?)
+    local storage_err = validate_public_meta_storage_key(key)
+    if storage_err then return storage_err end
     local owners, owner_err = registry.find({[".kind"] = "registry.entry",
         ["meta.type"] = "kickside.component.owned_meta_key", ["meta.key"] = key})
     if owner_err then return owner_err end
@@ -280,6 +286,8 @@ local function raise_meta_floor(tx: Executor, component_id: string, key: string,
             message = "metadata floor requires a nonnegative finite integer",
             details = {code = "component_meta_floor_invalid"}}) :: error)
     end
+    local key_err = validate_public_meta_storage_key(key)
+    if key_err then return nil, key_err end
     local lock_err = lock_component_tx(tx, component_id)
     if lock_err then return nil, lock_err end
     local metadata, read_err = public_meta_tx(tx, component_id)

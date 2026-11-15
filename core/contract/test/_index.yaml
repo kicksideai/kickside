@@ -2,6 +2,51 @@ version: "1.0"
 namespace: app
 
 entries:
+  - name: secret_cipher_test
+    kind: function.lua
+    meta: {type: test, suite: secret_cipher}
+    source: file://secret_cipher_test.lua
+    method: run
+    modules: [crypto, base64, funcs, security]
+    imports:
+      test: wippy.test:test
+      secret_cipher: kickside.contract:secret_cipher
+
+  - name: env_storage
+    kind: env.storage.static
+    values:
+      KEY: abababababababababababababababababababababababababababababababab
+
+  - name: encryption_key
+    kind: env.variable
+    storage: app:env_storage
+    variable: KEY
+
+  - name: secret_cipher_key_owner
+    kind: function.lua
+    source: file://secret_cipher_key_owner.lua
+    method: load
+    imports: {secret_cipher: kickside.contract:secret_cipher}
+    security: {policies: [app:secret_cipher_key_read]}
+
+  - name: secret_cipher_key_denied
+    kind: function.lua
+    source: file://secret_cipher_key_denied.lua
+    method: load
+    imports: {secret_cipher: kickside.contract:secret_cipher}
+
+  - name: secret_cipher_key_read
+    kind: security.policy
+    policy: {actions: [env.get], resources: [app:encryption_key], effect: allow}
+
+  - name: secret_cipher_owner_call
+    kind: security.policy
+    policy: {actions: [funcs.call], resources: [app:secret_cipher_key_owner], effect: allow}
+
+  - name: secret_cipher_denied_call
+    kind: security.policy
+    policy: {actions: [funcs.call], resources: [app:secret_cipher_key_denied], effect: allow}
+
   - name: writable_sink_test
     kind: function.lua
     meta: { type: test, suite: kickside_contract }

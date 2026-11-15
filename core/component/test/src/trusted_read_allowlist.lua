@@ -82,6 +82,11 @@ M.ALLOW = {
         },
     },
     ["core/core/src/threads/component_identity.lua"] = {
+        component_owner_record = {
+            count = 1,
+            why = "declared projection authority reads the reserved owner record through the trusted component boundary",
+            entry = "kickside.core.threads:component_identity",
+        },
         get_private_context = {
             count = 1,
             why = "owner loader for a component's stored execution identity: declared thread projections and converge run under it",
@@ -222,8 +227,8 @@ M.ALLOW = {
     },
     ["core/core/src/threads/contract/event_authorization.lua"] = {
         list_system = {
-            count = 2,
-            why = "append and primary-emit authorization use the stored kind after canonical component WRITE; first-touch reads existence before registration",
+            count = 1,
+            why = "primary-emit authorization reads existence and the stored kind before first-touch registration",
             entry = "kickside.core.threads:append_event_method",
         },
         component_owner_record = {

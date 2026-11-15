@@ -18,7 +18,7 @@ local function continue_page(id: string, err: any): any?
         notification_error = err:details().notification_error}
 end
 
-local function wait_for_children(id: string, notification_error: any?): (any?, error?)
+local function wait_for_dependency(id: string, notification_error: any?): (any?, error?)
     local policy, policy_err = jobs_policy.resolve()
     if policy_err then return nil, policy_err end
     return {success = true, component_id = id, deleted = false,
@@ -48,7 +48,7 @@ function M.run(input: any): (any?, error?)
     if intent_err then return nil, intent_err end
     local ready, readiness_err = teardown.deletion_ready(id, intent.child_policy)
     if readiness_err then return nil, readiness_err end
-    if not ready then return wait_for_children(id) end
+    if not ready then return wait_for_dependency(id) end
     local context, context_err = persisted_json.decode_table(row.private_context, "component.private_context")
     if context_err then return nil, context_err end
     local declared, cleaned, cleanup_err, cleanup_result = teardown.run_deletable({impl_id = row.impl_id, private_context = context},
@@ -65,8 +65,8 @@ function M.run(input: any): (any?, error?)
             {notification_error = result.notification_error})
     end
     if step then
-        if step == "pending" and type(unregister_err) == "userdata" and unregister_err:details().wait_for == "children" then
-            return wait_for_children(id, unregister_err:details().notification_error)
+        if step == "pending" and type(unregister_err) == "userdata" and (unregister_err:details().wait_for == "children" or unregister_err:details().wait_for == "lifecycle") then
+            return wait_for_dependency(id, unregister_err:details().notification_error)
         end
         if step == "pending" or step == "purge" then
             local continued = continue_page(id, unregister_err)

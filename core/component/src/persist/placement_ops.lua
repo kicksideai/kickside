@@ -57,6 +57,19 @@ local function create_component(tx: Executor, db: Executor, command: component_t
                 details = { error_kind = "subject" },
             }) :: error)
         end
+        local actor, actor_err = security.actor()
+        if actor_err then return nil, actor_err end
+        local creator: any = nil
+        if actor then
+            local id_err: error?
+            creator, id_err = actor:id()
+            if id_err then return nil, id_err end
+        end
+        if creator ~= payload.actor_id then
+            return nil, errors.new({kind = errors.PERMISSION_DENIED, retryable = false,
+                message = "maintenance ownership requires the authenticated creator",
+                details = {code = "component_maintenance_creator_mismatch", error_kind = "subject"}})
+        end
     end
 
     local kind_err = kind_authority.check(payload.impl_id :: string, "create")
@@ -287,9 +300,6 @@ local function set_placement(tx: Executor, db: Executor, command: component_type
         return nil, (errors.new({ message = "component not found", kind = errors.NOT_FOUND }) :: error)
     end
 
-    local kind_err = kind_authority.check(node.impl_id :: string, "update")
-    if kind_err then return nil, kind_err end
-
     -- Determine the target parent.
     local new_parent_id = node.parent_id
     if payload.has_parent_arg then
@@ -356,20 +366,19 @@ local function set_placement(tx: Executor, db: Executor, command: component_type
         local derr
         descendants, derr = placement.descendants(tx, component_id)
         if derr then return nil, derr end
-        for _, descendant in ipairs(descendants or {}) do
-            local admission_err = kind_authority.check(descendant.impl_id :: string, "update")
-            if admission_err then return nil, admission_err end
-        end
     end
     local now_ts = time.now():utc():format_rfc3339()
 
-    local _, uerr = sql.builder.update(component_types.TABLES.COMPONENTS)
+    local update = sql.builder.update(component_types.TABLES.COMPONENTS)
         :set("parent_id", new_parent_id)
         :set("position", new_position)
         :set("path", new_path)
         :set("updated_at", now_ts)
         :where("component_id = ?", component_id)
-        :run_with(tx):exec()
+    if new_path ~= old_path then
+        update = update:set("identity_generation", sql.builder.expr("identity_generation + 1"))
+    end
+    local _, uerr = update:run_with(tx):exec()
     if uerr then
         return nil, errors.wrap(uerr, "failed to update placement")
     end
@@ -380,6 +389,7 @@ local function set_placement(tx: Executor, db: Executor, command: component_type
         local d_new = new_path .. tostring(d.path):sub(#tostring(old_path) + 1)
         local _, dperr = sql.builder.update(component_types.TABLES.COMPONENTS)
             :set("path", d_new)
+            :set("identity_generation", sql.builder.expr("identity_generation + 1"))
             :where("component_id = ?", d.component_id)
             :run_with(tx):exec()
         if dperr then

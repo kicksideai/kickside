@@ -10,6 +10,7 @@ local uuid = require("uuid")
 local security = require("security")
 local contract = require("contract")
 local provision = require("provision")
+local projection_claim = require("projection_claim")
 local autoinit = require("autoinit")
 local channel = require("channel")
 local process = require("process")
@@ -193,7 +194,7 @@ local function define_tests()
             local stored = sql.builder.select("thread_class"):from("kickside_thread")
                 :where(sql.builder.eq({ id = component_id })):run_with(d):query()
             test.eq(tostring(stored[1].thread_class), "test.converge.thread")
-            test.eq(count(d, "kickside_retention_policy", "thread_id", component_id), 1)
+            test.eq(count(d, "kickside_retention_policy", "thread_id", component_id), 0)
             local grants = d:query([[SELECT subject_id,subject_type,access_mask,inherited
                 FROM kickside_component_access WHERE component_id=$1 ORDER BY access_id]], { component_id })
             for _, key in ipairs({ "type", "thread_class" }) do
@@ -279,6 +280,9 @@ local function define_tests()
             test.not_nil(appended)
 
             local before_db = db()
+            local _, policy_err = before_db:execute([[INSERT INTO kickside_retention_policy
+                (id,thread_id,event_hot_retention_days) VALUES($1,$2,45)]], {uuid.v7(),component_id})
+            test.is_nil(policy_err)
             local thread_before = before_db:query([[SELECT id,thread_class,state,event_count,attrs,updated_at
                 FROM kickside_thread WHERE id=$1]], { component_id })[1]
             local retention_before = before_db:query([[SELECT thread_id,event_hot_retention_days,archive_mode,enabled
@@ -539,6 +543,42 @@ local function define_tests()
             repaired:release()
         end)
 
+        test.it("convergence repairs legacy owner copies while preserving progress and fencing every cursor", function()
+            local owner = security.new_actor("upgrade-owner-" .. uuid.v4(), {security_groups = {}})
+            local component_id = uuid.v4()
+            local svc = (contract.get("kickside.component:component_service") :: any):with_actor(owner):with_scope(scope()):open()
+            local registered = svc:register({component_id = component_id, impl_id = "app:converge_test_decl"})
+            test.is_true(registered.success)
+            local threads = (contract.get("kickside.core:threads") :: any):with_actor(owner):with_scope(scope()):open()
+            test.is_nil(select(2, threads:ensure_thread({component_id = component_id, impl_id = "app:converge_test_decl"})))
+            test.is_nil(select(2, threads:append_event({thread_id = component_id, event = {type = "app:threads_cv_trigger", body = {}}})))
+            local d = db()
+            local before = assert(d:query([[SELECT p.id,p.body,c.id AS cursor_id,c.generation,c.job_id FROM kickside_projection p
+                JOIN kickside_projection_cursor c ON c.projection_id=p.id WHERE p.thread_id=$1]], {component_id}))[1]
+            local body = assert(json.decode(before.body)); body.accumulated = 7
+            test.is_nil(select(2, d:execute("UPDATE kickside_projection SET actor_id=NULL,actor_context=NULL,body=$1 WHERE id=$2",
+                {assert(json.encode(body)), before.id})))
+            test.is_nil(select(2, d:execute("UPDATE kickside_projection_cursor SET actor_id=NULL,execution_identity_json=NULL,last_seq=1 WHERE id=$1", {before.cursor_id})))
+            d:release()
+            local _, err = provision.converge(security.new_actor("system:lifecycle", {system = true}), scope())
+            test.is_nil(err)
+            d = db()
+            local after = assert(d:query([[SELECT p.actor_id,p.actor_context,p.body,c.actor_id AS cursor_actor,
+                c.execution_identity_json,c.generation,c.last_seq,c.job_id FROM kickside_projection p
+                JOIN kickside_projection_cursor c ON c.projection_id=p.id WHERE c.id=$1]], {before.cursor_id}))[1]
+            d:release()
+            test.eq(after.actor_id, owner:id()); test.eq(after.cursor_actor, owner:id())
+            test.eq(after.actor_context, after.execution_identity_json)
+            test.eq(tonumber(after.generation), (tonumber(before.generation) :: number) + 1)
+            test.eq(tonumber(after.last_seq), 1); test.eq(after.job_id, before.job_id)
+            test.eq(assert(json.decode(after.body)).accumulated, 7)
+            test.is_nil(select(2, provision.converge(security.new_actor("system:lifecycle", {system = true}), scope())))
+            d = db()
+            local repeated = assert(d:query("SELECT generation FROM kickside_projection_cursor WHERE id=$1", {before.cursor_id}))[1]
+            d:release()
+            test.eq(tonumber(repeated.generation), tonumber(after.generation))
+        end)
+
         test.it("converge registers a declared projection missing from a live thread", function()
             local owner_id = "cv-proj-" .. uuid.v4():sub(1, 8)
             local owner = security.new_actor(owner_id, { security_groups = {} })
@@ -645,7 +685,7 @@ local function define_tests()
             test.is_true(refused)
         end)
 
-        test.it("converge heals a system-owned component's projection under the explicit system identity", function()
+        test.it("converge heals a system-owned component's projection under its owning maintenance actor", function()
             local sys_actor = security.new_actor("system:lifecycle", { system = true, security_groups = {} })
             local cid = autoinit.component_id(autoinit.SYSTEM_SCOPE_KEY, "test_sys")
             local _, sys_err = provision.ensure_system(sys_actor, scope())
@@ -667,9 +707,10 @@ local function define_tests()
             local rows = sql.builder.select("actor_id", "actor_context"):from("kickside_projection")
                 :where(sql.builder.eq({ thread_id = cid, kind = "test.reap" })):run_with(d2):query()
             test.is_true(rows ~= nil and #rows >= 1)
-            -- A framework-owned component's projection carries the explicit system
-            -- identity: no captured row, so it runs in the runner's framework frame.
-            test.is_nil(rows[1].actor_id)
+            -- A framework-owned component's projection carries the framework system
+            -- identity owned by its recorded maintenance actor: no captured row, and
+            -- it runs as that actor.
+            test.eq(tostring(rows[1].actor_id), "system:lifecycle")
             test.is_nil(rows[1].actor_context)
             d2:release()
         end)
@@ -691,8 +732,9 @@ local function define_tests()
                 :run_with(d):query()
             test.is_true(projection_rows ~= nil and #projection_rows >= 1)
             -- The framework-created singleton carries no execution identity, so its
-            -- declared projection runs under the explicit system identity.
-            test.is_nil(projection_rows[1].actor_id)
+            -- declared projection runs under the framework system identity owned by
+            -- the actor that provisioned it.
+            test.eq(tostring(projection_rows[1].actor_id), "system:lifecycle")
             test.is_nil(projection_rows[1].actor_context)
 
             -- Declared grants landed as direct access rows: admin READ (1), user WRITE (2),
@@ -773,8 +815,102 @@ local function define_tests()
                 WHERE p.thread_id=$1 AND p.kind=$2]], { thread_id, "test.seed" }))
             test.eq(#rows, 1, "the lifecycle projection is registered again")
             test.not_nil(rows[1].job_id)
-            test.is_nil(rows[1].actor_id)
+            test.eq(tostring(rows[1].actor_id), "system:lifecycle")
             d2:release()
+        end)
+
+        -- Runs the Jobs pool until the component's lifecycle projection of kind
+        -- reaches its lifecycle thread head or becomes invalid, and returns the
+        -- projection's identity, body, cursor position and recorded failure.
+        local function fold_lifecycle_projection(component_id: string, kind: string): table
+            local thread_id = lifecycle.thread_id(component_id)
+            local d = db()
+            local owned = assert(d:query([[SELECT c.job_id FROM kickside_projection p
+                JOIN kickside_projection_cursor c ON c.projection_id=p.id
+                WHERE p.thread_id=$1 AND p.kind=$2]], {thread_id, kind}))[1]
+            test.not_nil(owned)
+            -- Pending jobs can retain an earlier worker interruption.
+            assert(d:execute("UPDATE kickside_job SET last_error='previous worker attempt interrupted' WHERE id=$1 AND status='pending'", {owned.job_id}))
+            projection_claim.prepare(d, owned.job_id)
+            d:release()
+            local events = process.events()
+            local pid, spawn_err = process.spawn_monitored("kickside.core.jobs.service:worker", "app:processes")
+            if spawn_err or not pid then error("projection Jobs pool failed to start: " .. tostring(spawn_err)) end
+            local deadline = time.now():add(20 * time.SECOND)
+            local observed: table? = nil
+            while true do
+                local d = db()
+                local rows = assert(d:query([[SELECT p.actor_id, p.body, c.last_seq, c.last_error, c.status AS cursor_status,
+                        j.last_error AS job_error, t.event_count
+                    FROM kickside_projection p
+                    JOIN kickside_projection_cursor c ON c.projection_id=p.id
+                    JOIN kickside_thread t ON t.id=p.thread_id
+                    LEFT JOIN kickside_job j ON j.id=c.job_id
+                    WHERE p.thread_id=$1 AND p.kind=$2]], { thread_id, kind }))
+                d:release()
+                local row = rows[1]
+                if row == nil then error("lifecycle projection " .. kind .. " is not registered") end
+                if ((tonumber(row.last_seq) or 0) >= (tonumber(row.event_count) or 0)
+                    and row.last_error == nil and row.job_error == nil) or row.cursor_status == "invalid" then
+                    observed = row
+                    break
+                end
+                if not time.now():before(deadline) then
+                    observed = row
+                    break
+                end
+                time.sleep("20ms")
+            end
+            local _, cancel_err = process.cancel(tostring(pid))
+            if cancel_err then error("projection Jobs pool cancellation failed: " .. tostring(cancel_err)) end
+            while true do
+                local event = events:receive()
+                if type(event) == "table" and tostring(event.from) == tostring(pid) and event.kind == process.event.EXIT then
+                    break
+                end
+            end
+            local result = observed :: table
+            result.body = json.decode(tostring(result.body))
+            return result
+        end
+
+        local function private_context_of(component_id: string): table
+            local d = db()
+            local rows = assert(d:query("SELECT private_context FROM kickside_components WHERE component_id=$1",
+                { component_id }))
+            d:release()
+            return assert(json.decode(tostring(rows[1].private_context)))
+        end
+
+        test.it("a system component's lifecycle projection seeds it as the owning lifecycle actor", function()
+            local sys_actor = security.new_actor("system:lifecycle", { system = true, security_groups = {} })
+            local cid = autoinit.component_id(autoinit.SYSTEM_SCOPE_KEY, "test_owner_seeded")
+            local _, ensure_err = provision.ensure_system(sys_actor, scope())
+            test.is_nil(ensure_err)
+
+            local folded = fold_lifecycle_projection(cid, "test.owner_seed")
+            test.is_nil(folded.job_error, tostring(folded.job_error))
+            test.is_nil(folded.last_error, tostring(folded.last_error))
+            test.eq(tostring(folded.actor_id), "system:lifecycle")
+            test.eq(folded.body.seeded_by, "system:lifecycle")
+            test.eq(folded.body.seeded, cid)
+            test.eq(private_context_of(cid).seeded, true)
+        end)
+
+        test.it("a user component's lifecycle projection seeds it as the owning user", function()
+            local owner_id = "seed-owner-" .. uuid.v7()
+            local owner = security.new_actor(owner_id, { security_groups = {} })
+            local _, ensure_err = provision.ensure_user(owner, scope(), owner_id)
+            test.is_nil(ensure_err)
+            local cid = autoinit.component_id(owner_id, "test_user_seeded")
+
+            local folded = fold_lifecycle_projection(cid, "test.owner_seed")
+            test.is_nil(folded.job_error, tostring(folded.job_error))
+            test.is_nil(folded.last_error, tostring(folded.last_error))
+            test.eq(tostring(folded.actor_id), owner_id)
+            test.eq(folded.body.seeded_by, owner_id)
+            test.eq(folded.body.seeded, cid)
+            test.eq(private_context_of(cid).seeded, true)
         end)
 
         test.it("exposes committed projection bodies without history or cursor controls", function()

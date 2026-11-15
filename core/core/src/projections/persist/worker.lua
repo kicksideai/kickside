@@ -7,6 +7,10 @@
 -- errors are returned as values; nothing is raised.
 
 local sql = require("sql")
+local component_access = require("component_access")
+local core_db = require("core_db")
+local access_subjects = require("access_subjects")
+local core_types = require("core_types")
 local json = require("json")
 local persisted_json = require("persisted_json")
 local funcs = require("funcs")
@@ -139,10 +143,10 @@ function worker.parse(raw: string?, required: boolean?): (Binding?, error?)
     return { worker_ref = canonical, worker_runtime = runtime, target_id = target_id }, nil
 end
 
--- A projection may invoke only an explicitly declared worker without a private
--- or configured security frame. Recheck on dispatch as registry declarations
--- can change after a cursor was registered.
-function worker.validate(binding: table, system_identity: boolean?): (Binding?, error?)
+-- A projection retains its stored principal. A declared worker may add only
+-- service-only policies; member scopes and actor overrides remain inadmissible.
+-- Admission is immutable within a registry revision.
+local function validate_declaration(binding: table, system_identity: boolean?): (Binding?, error?)
     local target_id = tostring(binding.target_id)
     local declared_runtime = tostring(binding.worker_runtime)
     local entry, entry_err = registry.get(target_id)
@@ -168,8 +172,32 @@ function worker.validate(binding: table, system_identity: boolean?): (Binding?, 
             kind = errors.INVALID }) :: error)
     end
     local configured_security = entry_field(entry, "security")
-    if (meta.private == true and system_identity ~= true)
-        or (type(configured_security) == "table" and next(configured_security) ~= nil) then
+    local scoped = false
+    if type(configured_security) == "table" then
+        for field, policies in pairs(configured_security) do
+            if field ~= "policies" or type(policies) ~= "table" then
+                scoped = true
+                break
+            end
+            for index, id in pairs(policies) do
+                if type(index) ~= "number" or index < 1 or index > #policies
+                    or index ~= math.floor(index) or type(id) ~= "string" then
+                    scoped = true
+                    break
+                end
+                local policy, policy_err = registry.get(id)
+                if policy_err then return nil, policy_err end
+                local policy_meta = entry_field(policy, "meta")
+                local groups = entry_field(policy, "groups")
+                if entry_kind(policy) ~= "security.policy" or type(policy_meta) ~= "table"
+                    or policy_meta.service_only ~= true or (groups ~= nil and (type(groups) ~= "table" or next(groups) ~= nil)) then
+                    scoped = true
+                    break
+                end
+            end
+        end
+    end
+    if (meta.private == true and system_identity ~= true) or scoped then
         return nil, (errors.new({ message = "private or scoped projection worker is not allowed: " .. target_id,
             kind = errors.PERMISSION_DENIED }) :: error)
     end
@@ -178,6 +206,33 @@ function worker.validate(binding: table, system_identity: boolean?): (Binding?, 
     end
 
     return { worker_ref = scheme_for(expected) .. target_id, worker_runtime = expected, target_id = target_id }, nil
+end
+
+local admitted_version: string? = nil
+local admitted_bindings: {[string]: table} = {}
+
+function worker.validate(binding: table, system_identity: boolean?): (Binding?, error?)
+    local version, version_err = registry.current_version()
+    if version_err then return nil, version_err end
+    if not version then
+        return nil, errors.new({kind = errors.INTERNAL, message = "projection registry version unavailable",
+            retryable = false})
+    end
+    local revision = tostring(version:id())
+    if admitted_version ~= revision then
+        admitted_version, admitted_bindings = revision, {}
+    end
+    local key = tostring(binding.worker_runtime) .. "://" .. tostring(binding.target_id)
+        .. (system_identity == true and "/system" or "/member")
+    local admitted = admitted_bindings[key]
+    if not admitted then
+        local value, err = validate_declaration(binding, system_identity)
+        if err or not value then return nil, err end
+        admitted = value
+        admitted_bindings[key] = admitted
+    end
+    return {worker_ref = admitted.worker_ref, worker_runtime = admitted.worker_runtime,
+        target_id = admitted.target_id}, nil
 end
 
 -- Optional notification worker is declared on the fold worker, never supplied
@@ -204,6 +259,7 @@ function worker.post_commit_binding(binding: table): (table?, error?)
     admitted.actor_id = binding.actor_id
     admitted.actor_context = binding.actor_context
     admitted.system_identity = binding.system_identity
+    admitted.component_authority = binding.component_authority
     return admitted, nil
 end
 
@@ -280,23 +336,103 @@ worker.TICK_OWNER = "kickside.core.projections:tick"
 -- every projection invocation resolves), so the worker runs as the principal
 -- that registered it under that principal's current authority. A stored row
 -- that is not valid v2 or no longer resolves returns its typed error unchanged;
--- nothing falls back to the runner. A binding with no stored identity is a
--- system projection and runs in the runner's own framework context. Returns
--- (actor?, scope?, err?).
-local function resolve_binding_identity(binding: table): (any, any, error?)
+-- nothing falls back to the runner. A maintenance owner (a key with no identity
+-- context) runs as that framework actor under the runner's scope. A binding with
+-- no stored identity is a system projection and runs in the runner's own
+-- framework context. Returns (actor?, scope?, err?).
+-- One worker-local frame. Ownership and placement share identity_generation;
+-- registry publication invalidates maintenance actor declarations and grants.
+local maintenance_cache: table? = nil
+
+local function resolve_binding_identity(binding: table): (any, any, error?, table?, table?)
     if type(binding.actor_id) ~= "string" or (binding.actor_id :: string) == "" then
         return nil, nil, nil
     end
-    local identity, row_err = execution_identity.from_row(binding.actor_id, binding.actor_context)
-    if row_err or not identity then return nil, nil, row_err end
+    if binding.actor_context == nil then
+        local authority = binding.component_authority
+        if type(authority) ~= "table" or authority.maintenance_owner ~= binding.actor_id
+            or type(authority.component_id) ~= "string" or type(authority.generation) ~= "number" then
+            return nil, nil, errors.new({kind = errors.PERMISSION_DENIED, retryable = false,
+                message = "maintenance projection has no trusted component binding",
+                details = {code = "projection_maintenance_binding_missing", error_kind = "subject"}})
+        end
+        local version, version_err = registry.current_version()
+        if version_err then return nil, nil, version_err end
+        if not version then
+            return nil, nil, errors.new({kind = errors.UNAVAILABLE,
+                message = "projection maintenance registry revision is unavailable"})
+        end
+        local revision = tostring(version:id())
+        local cached = maintenance_cache
+        if cached and cached.component_id == authority.component_id and cached.owner == binding.actor_id
+            and cached.generation == authority.generation and cached.revision == revision then
+            return cached.frame.actor, cached.frame.scope, nil, cached.frame.access, cached.frame
+        end
+        maintenance_cache = nil
+        local frame, frame_err = execution_identity.maintenance_frame(binding.actor_id)
+        if frame_err or not frame then return nil, nil, frame_err end
+        local subjects, prefixes, subjects_err = access_subjects.for_actor(frame.actor)
+        if subjects_err then return nil, nil, subjects_err end
+        frame.access = {subjects = subjects, prefixes = prefixes}
+        maintenance_cache = {component_id = authority.component_id, owner = binding.actor_id,
+            generation = authority.generation, revision = revision, frame = frame}
+        return (frame :: any).actor, (frame :: any).scope, nil, frame.access, frame
+    end
+    local identity = binding.component_authority and binding.component_authority.identity
+    if not identity then
+        local row_err: error?
+        identity, row_err = execution_identity.from_row(binding.actor_id, binding.actor_context)
+        if row_err or not identity then return nil, nil, row_err end
+    end
     local resolved, resolve_err = execution_identity.resolve(identity, {
         deferred_owner = worker.TICK_OWNER,
-        execution_root = (identity :: any).component_id,
+        execution_root = binding.component_authority and binding.component_authority.component_id or (identity :: any).component_id,
     })
     if resolve_err or not resolved then return nil, nil, resolve_err end
-    return (resolved :: any).actor, (resolved :: any).scope, nil
+    return (resolved :: any).actor, (resolved :: any).scope, nil, nil, resolved
 end
 worker.resolve_binding_identity = resolve_binding_identity
+
+local function admit_binding_identity(binding: table, admitted_frame: table?): (any, any, error?, table?, table?)
+    local actor, scope, err, access, frame = resolve_binding_identity(binding)
+    if err then return nil, nil, err end
+    local authority = binding.component_authority
+    -- A callback may reuse this invocation's admitted maintenance frame only
+    -- after its fresh generation fence. Resolution above checks the cache key,
+    -- including registry revision; v2 authority always resolves live.
+    if authority and not (authority.maintenance_owner and frame and frame == admitted_frame) then
+        if not access then
+            local subjects, prefixes, subjects_err = access_subjects.for_actor(actor)
+            if subjects_err then return nil, nil, subjects_err end
+            access = {subjects = subjects, prefixes = prefixes}
+        end
+        local allowed: boolean? = nil
+        local access_err: error? = nil
+        if authority.maintenance_owner and binding.maintenance_access_mask ~= nil then
+            local mask = math.tointeger(tonumber(binding.maintenance_access_mask))
+            local required = core_types.ACCESS.READ | core_types.ACCESS.WRITE
+            allowed = mask ~= nil and (mask & required) == required
+        else
+            local db, db_err = sql.get(core_db.id())
+            if db_err then return nil, nil, db_err end
+            if not db then return nil, nil, errors.new({kind = errors.UNAVAILABLE, message = "component authority database unavailable"}) end
+            allowed, access_err = component_access.check_user_access(db, actor:id(), authority.component_id,
+                core_types.ACCESS.READ | core_types.ACCESS.WRITE, access.subjects, access.prefixes, true, true)
+            access_err = error_envelope.cleanup(function(): (any, error?) return db:release() end,
+                access_err, "release projection owner admission database")
+            if access_err then return nil, nil, access_err end
+        end
+        if not allowed then
+            return nil, nil, errors.new({kind = errors.PERMISSION_DENIED, retryable = false,
+                message = "projection owner no longer has component access",
+                details = {code = "projection_component_access_denied", error_kind = "access"}})
+        end
+    end
+    if frame then frame.access = access end
+    return actor, scope, nil, access, frame
+end
+
+worker.admit_binding_identity = admit_binding_identity
 
 local function executor_response(field: string, value: any, cause: error?): (any, error?)
     if cause then return nil, errors.wrap(cause, "projection worker executor " .. field .. " refused") end
@@ -313,7 +449,7 @@ end
 -- run_proc_supervised so their execution is bounded and terminable. A proc binding
 -- reaching this path is a wiring fault, surfaced as a hard error rather than run
 -- unsupervised.
-function worker.run(binding: table, worker_input: table): (table?, error?)
+function worker.run(binding: table, worker_input: table, admitted_frame: table?): (table?, error?, table?)
     local target_id = tostring(binding.target_id)
     local runtime = tostring(binding.worker_runtime)
     local worker_ref = tostring(binding.worker_ref)
@@ -328,28 +464,34 @@ function worker.run(binding: table, worker_input: table): (table?, error?)
     local validated, validate_err = worker.validate(binding, binding.system_identity == true)
     if validate_err or not validated then return nil, validate_err end
 
-    local actor, scope, ident_err = resolve_binding_identity(binding)
+    local actor, scope, ident_err, access, frame = admit_binding_identity(binding, admitted_frame)
     if ident_err then
         return nil, ident_err
     end
 
-    local executor: any = funcs.new()
-    local executor_err: error? = nil
-    if actor then
-        executor, executor_err = executor_response("actor", executor:with_actor(actor))
+    local executor: any = frame and frame.executor
+    if not executor then
+        executor = funcs.new()
+        local executor_err: error? = nil
+        if actor then
+            executor, executor_err = executor_response("actor", executor:with_actor(actor))
+            if executor_err then return nil, executor_err end
+            executor, executor_err = executor_response("scope", executor:with_scope(scope))
+            if executor_err then return nil, executor_err end
+        end
+        executor, executor_err = executor_response("options", executor:with_options({retry = {max_attempts = 1}}))
         if executor_err then return nil, executor_err end
-        executor, executor_err = executor_response("scope", executor:with_scope(scope))
-        if executor_err then return nil, executor_err end
+        if frame then frame.executor = executor end
     end
-    executor, executor_err = executor_response("options", executor:with_options({retry = {max_attempts = 1}}))
-    if executor_err then return nil, executor_err end
     local result, run_err = executor:call(target_id, worker_input)
 
     if run_err then
         return nil, error_envelope.wrap(run_err, "projection worker failed (" .. worker_ref .. ")",
             {reason = worker.WORKER_FAILED})
     end
-    return normalize_result(result)
+    local output, normalize_err = normalize_result(result)
+    if normalize_err then return nil, normalize_err end
+    return output, nil, frame or (actor and {actor = actor, scope = scope, access = access} or nil)
 end
 
 local function interpret_proc_exit(result: any): (table?, error?)
@@ -414,7 +556,7 @@ type SupervisedOpts = {
 -- in-flight embed/LLM call — and dispatch records the failure for retry.
 -- max_execution_ms bounds the entire execution, including a progressing worker. On
 -- a clean exit the child's return value is normalized to the worker's table output.
-function worker.run_proc_supervised(binding: table, worker_input: table, opts: SupervisedOpts?): (table?, error?)
+function worker.run_proc_supervised(binding: table, worker_input: table, opts: SupervisedOpts?): (table?, error?, table?)
     local options = type(opts) == "table" and (opts :: SupervisedOpts) or ({} :: SupervisedOpts)
     local worker_ref = tostring(binding.worker_ref)
     if tostring(binding.worker_runtime) ~= types.WORKER_RUNTIME.PROC then
@@ -427,7 +569,7 @@ function worker.run_proc_supervised(binding: table, worker_input: table, opts: S
     if host == "" then
         return nil, (errors.new({ message = "proc:// projection worker requires a process host", kind = errors.INVALID }) :: error)
     end
-    local actor, scope, ident_err = resolve_binding_identity(binding)
+    local actor, scope, ident_err, access, frame = admit_binding_identity(binding)
     if ident_err then
         return nil, ident_err
     end
@@ -479,7 +621,7 @@ function worker.run_proc_supervised(binding: table, worker_input: table, opts: S
     if run_err then
         return nil, run_err
     end
-    return output, nil
+    return output, nil, frame or (actor and {actor = actor, scope = scope, access = access} or nil)
 end
 
 return worker

@@ -8,6 +8,8 @@ logmanager:
 override:
   "kickside.core.jobs.service:worker.service:lifecycle.auto_start": false
   "kickside.core.retention.service:sweeper.service:lifecycle.auto_start": false
+  # These suites drive convergence transactions directly.
+  "kickside.core.lifecycle:boot.service:lifecycle.auto_start": false
   # A killed reservation owner can close the last SQLite connection; a file
   # keeps committed counters and schema available to its restarted process.
   "app:db:file": "${sqlite_path}"
@@ -70,3 +72,6 @@ profiles:
       "app:sql_transient_second:options.sslmode": "disable"
       "app:sql_transient_second:pool.max_open": 1
       "app:sql_transient_second:pool.max_idle": 1
+
+registry:
+  dispatch_internal_kinds: [registry.entry, ns.requirement, ns.dependency, ns.definition, security.scope]

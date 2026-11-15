@@ -21,6 +21,10 @@ entries:
       - process
       - time
     imports:
+      access_subjects: kickside.component.persist:access_subjects
+      core_types: kickside.core:types
+      component_access: kickside.component.persist:access_ops
+      core_db: kickside.core:db
       types: kickside.core.projections:types
       execution_identity: kickside.execution:execution_identity
       trace_context: kickside.execution:trace
@@ -58,6 +62,7 @@ entries:
       persisted_json: kickside.contract:persisted_json
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       committed_error: kickside.contract:committed_error
+      canonical_json: kickside.contract:canonical_json
 
   - name: writer
     kind: library.lua

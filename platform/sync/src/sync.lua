@@ -250,7 +250,7 @@ end
 -- declaration command. The destination and reconcile choice are fixed at install:
 -- the engine holds the installed reconcile mode as the reconcile drive and
 -- refuses a declaration that adds or drops it.
-function M.reconfigure(args: any): (Map?, any)
+function M.reconfigure(args: any, options: Map?): (Map?, any)
     local input = type(args) == "table" and (args :: Map) or {}
     local id = trim(ctx.get("component_id"))
     if id == "" then return nil, invalid("component_id not in scope") end
@@ -271,6 +271,7 @@ function M.reconfigure(args: any): (Map?, any)
     meta.title = s.title
     local applied, apply_err = automations_lib.update_portable_input(id, declaration, {
         source = p.source,
+        expected_revision = options and options.expected_revision,
         enabled = s.enabled,
         state = { title = s.title, source = s.source, sink = s.sink,
             transform = s.transform, output_schema = s.output_schema, enabled = s.enabled,

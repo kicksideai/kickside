@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.8](https://github.com/kicksideai/kickside/compare/contract-v0.3.7...contract-v0.3.8) (2026-11-15)
+
+
+### Bug Fixes
+
+* **contract:** share authenticated secret encryption ([#453](https://github.com/kicksideai/kickside/issues/453)) ([74a4e8e](https://github.com/kicksideai/kickside/commit/74a4e8ea9368797763beaa3b876a8f1b490cd253))
+
 ## [0.3.7](https://github.com/kicksideai/kickside/compare/contract-v0.3.6...contract-v0.3.7) (2026-11-12)
 
 

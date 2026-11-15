@@ -126,6 +126,31 @@ local function define_tests()
             test.is_nil(err)
             test.eq(d.trace[5], "monitor:owner")
         end)
+        test.it("claims after the observed owner exits before monitor admission", function()
+            local exists = errors.new({kind = errors.ALREADY_EXISTS, message = "owned"})
+            local d = driver({{err = exists}, {ok = true}}, {{pid = "departed"}}, {})
+            d.process.monitor = function(pid)
+                d.trace[#d.trace + 1] = "monitor:" .. pid
+                return nil, errors.new({kind = errors.NOT_FOUND, message = "pid not registered"})
+            end
+            local claimed, cancelled, err = proc_supervisor.claim_singleton("test:singleton", d.source, d)
+            test.is_nil(err); test.is_true(claimed); test.is_false(cancelled)
+            test.eq(#d.trace, 4); test.eq(d.trace[4], "register:test:singleton")
+        end)
+        test.it("propagates every other monitor failure without another claim", function()
+            for _, kind in ipairs({errors.ALREADY_EXISTS, errors.INVALID, errors.PERMISSION_DENIED,
+                errors.UNAVAILABLE, errors.INTERNAL, errors.CANCELED, errors.CONFLICT,
+                errors.TIMEOUT, errors.RATE_LIMITED, errors.UNKNOWN}) do
+                local source = errors.new({kind = kind, message = "monitor refused", details = {code = "monitor_failure"}})
+                local d = driver({{err = errors.new({kind = errors.ALREADY_EXISTS, message = "owned"})}}, {{pid = "owner"}}, {})
+                d.process.monitor = function(pid)
+                    d.trace[#d.trace + 1] = "monitor:" .. pid
+                    return nil, source
+                end
+                local claimed, cancelled, err = proc_supervisor.claim_singleton("test:singleton", d.source, d)
+                test.is_false(claimed); test.is_false(cancelled); test.eq(err, source); test.eq(#d.trace, 3)
+            end
+        end)
         test.it("reports cancellation and version replacement as clean standby outcomes", function()
             test.eq(type(proc_supervisor.claim_singleton), "function")
             for _, kind in ipairs({ process.event.CANCEL, process.event.OUTDATED }) do

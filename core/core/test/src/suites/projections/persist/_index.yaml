@@ -13,7 +13,7 @@ entries:
       test: wippy.test:test
       writer: kickside.core.projections.persist:writer
       apply: kickside.core.projections:apply
-      claim: kickside.core.jobs.persist:claim
+      projection_claim: app:projection_claim
       cancellation: kickside.core.jobs.persist:lifecycle_cancel
       prune_scaffold: app:prune_scaffold
   - name: returned_authorization_test
@@ -25,7 +25,7 @@ entries:
       test: wippy.test:test
       fixture: kickside.core.threads:contract_fixture
       invoke: kickside.core.projections:invoke
-      claim: kickside.core.jobs.persist:claim
+      projection_claim: app:projection_claim
     method: run
   - name: post_commit_test
     kind: function.lua
@@ -35,7 +35,7 @@ entries:
     imports:
       writer: kickside.core.projections.persist:writer
       invoke: kickside.core.projections:invoke
-      claim: kickside.core.jobs.persist:claim
+      projection_claim: app:projection_claim
       test: wippy.test:test
     method: run
   - name: slot_test
@@ -49,7 +49,7 @@ entries:
       writer: kickside.core.projections.persist:writer
       apply: kickside.core.projections:apply
       invoke: kickside.core.projections:invoke
-      claim: kickside.core.jobs.persist:claim
+      projection_claim: app:projection_claim
       job_lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
       test: wippy.test:test
     method: run
@@ -119,7 +119,7 @@ entries:
     imports:
       writer: kickside.core.projections.persist:writer
       invoke: kickside.core.projections:invoke
-      claim: kickside.core.jobs.persist:claim
+      projection_claim: app:projection_claim
       job_lifecycle: kickside.core.jobs.persist:lifecycle
       jobs: kickside.core.jobs:jobs
       test: wippy.test:test
@@ -155,7 +155,7 @@ entries:
       test: wippy.test:test
       writer: kickside.core.projections.persist:writer
       apply: kickside.core.projections:apply
-      claim: kickside.core.jobs.persist:claim
+      projection_claim: app:projection_claim
       invoke: kickside.core.projections:invoke
       pin: kickside.core.retention:pin
       prune: kickside.core.retention:prune

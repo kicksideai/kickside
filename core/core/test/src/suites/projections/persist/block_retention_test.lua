@@ -4,7 +4,7 @@ local sql = require("sql")
 local uuid = require("uuid")
 local writer = require("writer")
 local apply = require("apply")
-local claim = require("claim")
+local projection_claim = require("projection_claim")
 local invoke = require("invoke")
 local pin = require("pin")
 local prune = require("prune")
@@ -41,12 +41,7 @@ local function fixture(): (string, table)
 end
 local function block(thread: string, registered: table): table
     local db = assert(sql.get("app:db"))
-    execute(db, "UPDATE kickside_job SET scheduled_at=created_at WHERE id=$1", { registered.job_id })
-    local batch, err = claim.claim_batch(db, tostring(db:type()), 16, nil, nil)
-    if err then error(tostring(err)) end
-    local job: table? = nil
-    for _, row in ipairs(batch) do if row.id == registered.job_id then job = row end end
-    if not job then error("slot is not claimed") end
+    local job = projection_claim.claim(db, registered.job_id)
     local snapshot = query(db, "SELECT * FROM kickside_projection_cursor WHERE id=$1", { registered.cursor_id })[1]
     db:release()
     local result, failure = apply.fail("app:db", job, snapshot,
@@ -76,13 +71,8 @@ return test.run_cases(function()
             registration(db, thread)
             test.is_nil(select(1, pin.read(db, thread, "projection:" .. registered.cursor_id)))
             test.eq(sweep(db, thread).deleted, 0, "the corrected cursor protects the same input")
-            execute(db, "UPDATE kickside_job SET scheduled_at=created_at WHERE id=$1", { registered.job_id })
-            local jobs, claim_err = claim.claim_batch(db, tostring(db:type()), 16, nil, nil)
-            test.is_nil(claim_err)
+            local job = projection_claim.claim(db, registered.job_id)
             db:release()
-            local job: table? = nil
-            for _, row in ipairs(jobs) do if row.id == registered.job_id then job = row end end
-            test.not_nil(job)
             local folded, fold_err = invoke.run({job = job, payload = {cursor_id = registered.cursor_id}})
             test.is_nil(fold_err)
             test.eq(folded.last_seq, 3)

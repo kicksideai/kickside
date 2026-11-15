@@ -63,17 +63,48 @@ local function explicit_list(value: any, fallback: { string }): { string }
     return out
 end
 
+local TOKEN_QUANTITIES = {
+    budget = true,
+    limit = true,
+    count = true,
+    usage = true,
+    cost = true,
+    rate = true,
+    length = true,
+    window = true,
+    quota = true,
+    size = true,
+}
+
+local function key_words(key: any): string
+    -- Preserve acronym and camel-case boundaries before folding case.
+    return tostring(key or ""):gsub("(%u)(%u%l)", "%1_%2"):gsub("(%l)(%u)", "%1_%2")
+        :lower():gsub("[^%a]+", "_"):gsub("^_", ""):gsub("_$", "")
+end
+
 local function sensitive_key(key: any): boolean
     local k = tostring(key or ""):lower()
-    return k == "headers"
+    if k == "headers"
         or k:find("secret", 1, true) ~= nil
-        or k:find("token", 1, true) ~= nil
         or k:find("api_key", 1, true) ~= nil
         or k:find("api-key", 1, true) ~= nil
         or k:find("apikey", 1, true) ~= nil
         or k:find("authorization", 1, true) ~= nil
         or k:find("password", 1, true) ~= nil
-        or k:find("credential", 1, true) ~= nil
+        or k:find("credential", 1, true) ~= nil then
+        return true
+    end
+    if not k:find("token", 1, true) then return false end
+    -- Token quantities are public only when no other credential marker exists.
+    local words = key_words(key)
+    local previous = ""
+    for word in words:gmatch("%a+") do
+        if word == "tokens" or (previous == "token" and TOKEN_QUANTITIES[word]) then
+            return false
+        end
+        previous = word
+    end
+    return true
 end
 
 local function env_ref_key(key: any): boolean
@@ -397,6 +428,7 @@ local function clean_profile_input(input: any, existing: any?): (any?, string?)
 end
 
 
+M.table_has = table_has
 M.decode_json = decode_json
 M.normalize_list = normalize_list
 M.explicit_list = explicit_list

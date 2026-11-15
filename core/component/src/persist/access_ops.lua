@@ -15,6 +15,7 @@ local component_types = require("component_types")
 local access_policy = require("access_policy")
 local execution_identity = require("execution_identity")
 local implementation_access = require("implementation_access")
+local meta_ops = require("meta_ops")
 
 type Executor = sql.DB | sql.Transaction
 type Subject = { subject_type: string, subject_id: string }
@@ -50,6 +51,8 @@ local function grant_access(tx: Executor, _db: Executor, command: component_type
     local access_mask, mask_err = access_policy.normalize_access_mask(payload.access_mask)
     if mask_err then return nil, mask_err end
 
+    local lock_err = meta_ops.lock_component_tx(tx, payload.component_id)
+    if lock_err then return nil, lock_err end
     local _, err = sql.builder.insert(component_types.TABLES.ACCESS)
         :set_map({
             access_id = uuid.v7(),
@@ -82,6 +85,8 @@ local function revoke_access(tx: Executor, _db: Executor, command: component_typ
     local subject, subject_err = payload_subject(payload)
     if subject_err or not subject then return nil, subject_err end
 
+    local lock_err = meta_ops.lock_component_tx(tx, payload.component_id)
+    if lock_err then return nil, lock_err end
     local result, err = sql.builder.delete(component_types.TABLES.ACCESS)
         :where("component_id = ?", payload.component_id)
         :where("subject_type = ?", subject.subject_type)

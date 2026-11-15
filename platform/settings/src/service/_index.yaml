@@ -23,6 +23,7 @@ entries:
       settings_cache: kickside.settings:settings_cache
       settings_writer: kickside.settings.persist:settings_writer
       settings_changes: kickside.settings:settings_changes
+      retention_notifier: kickside.core.retention:notifier
 
   - name: keeper.service
     kind: process.service

@@ -1,6 +1,6 @@
 local M = {}
 local stored = {marker = "kept"}
-function M.reset(stage: string, source: error?) M.stage, M.source, M.validations, M.rows = stage, source, 0, 0 end
+function M.reset(stage: string, source: error?) M.maintenance_checks = 0; M.declarations = 0; M.revision = tostring({}); M.stage, M.source, M.validations, M.rows = stage, source, 0, 0 end
 function M.context(...)
     if M.stage == "read" then return nil, M.source end
     if M.stage == "missing_context" then return nil, nil end
@@ -8,6 +8,7 @@ function M.context(...)
     if M.stage == "absent" then return {}, nil end
     return {_execution_identity = stored}, nil
 end
+function M.owner(...) return nil, nil end
 function M.validate(...)
     M.validations = M.validations + 1
     if M.stage == "validate" then return false, M.source end
@@ -21,5 +22,15 @@ function M.to_row(...)
     if M.stage == "missing_row" then return nil, nil end
     if M.stage == "scalar_row" then return "opaque", nil end
     return {actor_id = "actor", marker = "kept"}, nil
+end
+function M.current_version(): (any, error?)
+    if M.stage == "declaration_revision" then return nil, M.source end
+    return {id = function() return M.revision end}, nil
+end
+M.PROJECTION_ON = {THREAD = "thread", LIFECYCLE = "lifecycle", CHILD_LIFECYCLE = "child.lifecycle"}
+function M.projections_for_impl(_id: string): (table, error?)
+    M.declarations = M.declarations + 1
+    if M.stage == "declaration_lookup" then return {}, M.source end
+    return {{kind = "fold", worker_ref = "func://app:worker"}}, nil
 end
 return M

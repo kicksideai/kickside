@@ -450,3 +450,12 @@ entries:
       # Stable bundle name (index.js) — without revalidation browsers cache it
       # hard and never pick up rebuilds.
       cache: "no-cache"
+
+  - name: upload_token_call
+    kind: security.policy
+    policy:
+      resources:
+        - kickside.uploads.persist:token_pack
+        - kickside.uploads.persist:token_unpack
+      actions: [funcs.call, funcs.security]
+      effect: allow

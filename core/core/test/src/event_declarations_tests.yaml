@@ -12,6 +12,8 @@ entries:
   - uuid
   - json
   imports:
+    owner_identity: kickside.core.threads:owner_identity
+    access_subjects: kickside.component.persist:access_subjects
     threads_writer: kickside.core.threads.persist:writer
     component_client: app:event_declarations_component
     core_types: kickside.core:types

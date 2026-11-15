@@ -364,19 +364,51 @@ To seed a provisioned component (default configuration, a first domain event),
 declare a projection with `on: lifecycle` on the kind. The component's
 creation appends `kickside.component.events:created` to its lifecycle thread
 and registers the projection there in the same transaction, so the worker runs
-once the component exists, under the framework system identity, as a durable
-projection job with the engine's retry and failure reporting. A system-scope
-component is created by the lifecycle boot after every bootloader has run, so
-a bootloader cannot seed it; its lifecycle projection can.
+once the component exists, as a durable projection job with the engine's retry
+and failure reporting. A system-scope component is created by the lifecycle
+boot after every bootloader has run, so a bootloader cannot seed it; its
+lifecycle projection can.
 
 ```yaml
       projections:
         - kind: example.config.seed
           on: lifecycle
           worker_ref: "func://example.config:seed"
+          input_mode: prefetch_events
           events:
             input:
               - type: kickside.component.events:created
+```
+
+The worker runs as the component's owner: the identity stored on a user
+component, or for a system-scope component the framework actor that provisioned
+it (`system:lifecycle`). It reaches the component through the ordinary access
+path with the owner's full access. The worker entry is a `projection.worker`
+and imports `component: kickside.component:component`:
+
+```lua
+local component = require("component")
+
+local CREATED = "kickside.component.events:created"
+
+local function run(input)
+    for _, event in ipairs(input.events or {}) do
+        if event.type == CREATED then
+            local component_id = event.body.component_id
+            local context, read_err = component.get_context(component_id, component.ACCESS.ADMIN)
+            if read_err then return nil, read_err end
+            if context.config == nil then
+                local _, write_err = component.update(component_id, {
+                    { type = "PATCH_CONTEXT", payload = { patch = { config = { mode = "default" } } } },
+                })
+                if write_err then return nil, write_err end
+            end
+        end
+    end
+    return { last_seq = input.range.to_seq }
+end
+
+return { run = run }
 ```
 
 The boot convergence (`provision.converge`, on start and after each install's

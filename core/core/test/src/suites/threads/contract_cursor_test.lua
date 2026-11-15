@@ -293,6 +293,37 @@ local function define_tests()
             test.eq(removed.projection_id, reg.projection_id)
         end)
 
+        test.it("thread teardown wakes a cursor waiter with removed", function()
+            local created = as_owner(CREATE, { thread_class = "ct_teardown_wait_" .. suffix })
+            local reg, rerr = as_owner(REGISTER_PROJECTION, {
+                thread_id = created.thread_id,
+                kind = "count",
+                worker_ref = "func://" .. TEST_WORKER,
+            })
+            test.is_nil(rerr)
+            local db = assert(sql.get(DB))
+            local rows, read_err = db:query("SELECT id FROM kickside_projection_cursor WHERE projection_id=$1",
+                { reg.projection_id })
+            db:release()
+            test.is_nil(read_err)
+            test.eq(#rows, 1)
+            local waiter, begin_err = cursor_waiters.begin_wait(tostring(rows[1].id), 1000, 10000)
+            test.is_nil(begin_err)
+
+            local removed, remove_err = as_owner(DELETE, { thread_id = created.thread_id })
+            test.is_nil(remove_err)
+            test.is_true(removed.in_progress)
+            local finished, finish_err = deletion_worker.run(created.component_id)
+            test.is_nil(finish_err, tostring(finish_err))
+            test.is_true(finished.deleted)
+
+            local notice, timed_out, wait_err = cursor_waiters.wait_until_reached(waiter :: table)
+            cursor_waiters.close_wait(waiter :: table)
+            test.is_nil(wait_err)
+            test.is_false(timed_out)
+            test.eq(notice.status, "removed")
+        end)
+
         test.it("register_projection validates worker_ref before writing", function()
             local created = as_owner(CREATE, { thread_class = "ct_proj_validate_" .. suffix })
             local thread_id = created.thread_id

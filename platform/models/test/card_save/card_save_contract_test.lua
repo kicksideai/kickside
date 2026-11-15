@@ -178,11 +178,11 @@ local function define_tests()
     test.describe("Saving options on a registry card", function()
         test.it("layers saved options over the registry options, saved value winning per key", function()
             scenario({ "ckc-merge" }, function()
-                save({ name = "ckc-merge", options = { reasoning_effort = "high", added_key = 5 } })
+                save({ name = "ckc-merge", options = { reasoning_effort = "high", added_option = 5 } })
 
                 local opts = resolved("ckc-merge").providers[1].options
                 test.eq(opts.reasoning_effort, "high", "saved value must win")
-                test.eq(opts.added_key, 5, "saved-only key missing")
+                test.eq(opts.added_option, 5, "saved-only key missing")
                 test.eq(opts.registry_only, "keep", "registry-only key must remain")
                 test.eq(opts.auth_token, "registry-secret", "registry-only secret key must remain")
 
@@ -195,7 +195,7 @@ local function define_tests()
 
         test.it("does not let a second save without options drop the registry-only keys", function()
             scenario({ "ckc-merge" }, function()
-                save({ name = "ckc-merge", options = { added_key = 5 } })
+                save({ name = "ckc-merge", options = { added_option = 5 } })
                 save({ name = "ckc-merge", priority = 9 })
                 local opts = resolved("ckc-merge").providers[1].options
                 test.eq(opts.registry_only, "keep", "registry-only key lost on second save")
@@ -356,13 +356,13 @@ local function define_tests()
                         name = "ckc-profile",
                         provider_profile_id = "ckc-profile-link",
                         class = { "ckc-profile-new" },
-                        options = { api_key = "typed-secret", added_key = 7 },
+                        options = { api_key = "typed-secret", added_option = 7 },
                     })
                     local row = list_row("ckc-profile")
                     test.not_nil(row)
                     test.eq(row.provider_profile_id, "ckc-profile-link", "provider_profile_id missing from listed registry card")
                     test.not_nil(row.options, "options missing from listed registry card")
-                    test.eq(row.options.added_key, 7)
+                    test.eq(row.options.added_option, 7)
                     test.eq(row.options.reasoning_effort, "low", "listed options must include the registry options")
                     test.is_nil(row.options.api_key, "sensitive key must be scrubbed from the listing")
 
@@ -370,7 +370,7 @@ local function define_tests()
                     save({ name = "ckc-profile", priority = 3 })
                     local again = list_row("ckc-profile")
                     test.eq(again.provider_profile_id, "ckc-profile-link", "profile link lost on a later save")
-                    test.eq(again.options.added_key, 7, "saved option lost on a later save")
+                    test.eq(again.options.added_option, 7, "saved option lost on a later save")
                     test.eq(again.options.reasoning_effort, "low")
                 end)
                 models_repo.delete_card("ckc-profile")
@@ -381,12 +381,12 @@ local function define_tests()
 
         test.it("scrubs sensitive keys that a save typed into the options", function()
             scenario({ "ckc-merge" }, function()
-                save({ name = "ckc-merge", options = { api_key = "typed-secret", added_key = 1 } })
+                save({ name = "ckc-merge", options = { api_key = "typed-secret", added_option = 1 } })
                 local row = list_row("ckc-merge")
                 test.not_nil(row)
                 test.is_nil(row.options.api_key)
                 test.is_nil(row.options.auth_token)
-                test.eq(row.options.added_key, 1)
+                test.eq(row.options.added_option, 1)
                 test.is_nil(resolved("ckc-merge").providers[1].options.api_key, "typed secret must not be stored")
             end)
         end)

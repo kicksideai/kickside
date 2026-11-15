@@ -4,7 +4,7 @@ local uuid = require("uuid")
 local channel = require("channel")
 local writer = require("writer")
 local apply = require("apply")
-local claim = require("claim")
+local projection_claim = require("projection_claim")
 local cancellation = require("cancellation")
 local prune_scaffold = require("prune_scaffold")
 
@@ -19,10 +19,7 @@ local function define_tests()
             local registered = assert(writer.register_projection(db, thread_id, {
                 kind = "failure-removal", worker_ref = "func://app:test_count_worker", system_identity = true,
             }))
-            local batch = assert(claim.claim_batch(db, dialect, 16, nil, nil))
-            local job: table? = nil
-            for _, row in ipairs(batch) do if row.id == registered.job_id then job = row end end
-            assert(job, "projection slot is not claimed")
+            local job = projection_claim.claim(db, registered.job_id)
             local snapshots = assert(db:query("SELECT * FROM kickside_projection_cursor WHERE id=$1", {registered.cursor_id}))
             local done = channel.new(1)
             local previous = writer._modules.job_lifecycle_cancel

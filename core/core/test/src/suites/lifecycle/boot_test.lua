@@ -41,7 +41,7 @@ local function define_startup_tests()
                     .. "    local selected = channel.select({release:case_receive(), time.after('10s'):case_receive()})\n"
                     .. "    assert(selected.channel == release, 'initial convergence barrier is not released')\n"
                     .. "    process.unlisten(release)\n"
-                local blocked, count = source:gsub("    local converged, converge_err = provision.converge%(actor, scope%)", function(line)
+                local blocked, count = source:gsub("    local converged, converge_err = provision.converge%(actor, scope, continuation%)", function(line)
                     return barrier .. line
                 end, 1)
                 test.eq(count, 1, "the barrier holds the first convergence open")
@@ -98,7 +98,7 @@ end
 
 local function define_tests()
     test.describe("lifecycle boot convergence", function()
-        local original, subscription, logs, boot_pid, trigger_name, postgres
+        local original, subscription, logs, boot_pid, trigger_name, postgres, notifications
         local await_boot: (any, string, string) -> boolean
         local function drop_refusal()
             if not trigger_name then return end
@@ -121,6 +121,20 @@ local function define_tests()
                 test.is_nil(restore_err)
                 original = nil
                 await_boot(logs, boot_pid :: string, "system lifecycle resident")
+            end
+            if boot_pid then
+                test.is_nil(select(2, process.cancel(boot_pid)))
+                local deadline = time.after("10s")
+                while true do
+                    local selected = channel.select({notifications:case_receive(), deadline:case_receive()})
+                    test.eq(selected.channel, notifications, "the owned boot does not stop")
+                    if selected.channel ~= notifications then error("owned boot cleanup times out") end
+                    if tostring(selected.value.from) == boot_pid and selected.value.kind == process.event.EXIT then
+                        test.is_nil(selected.value.result.error)
+                        break
+                    end
+                end
+                boot_pid = nil
             end
             if subscription then
                 local _, close_err = subscription:close()
@@ -221,7 +235,10 @@ local function define_tests()
         test.before_each(function()
             subscription = assert(events.subscribe("logs", "logs.entry"))
             logs = subscription:channel()
-            boot_pid = service_pid()
+            notifications = process.events()
+            boot_pid = tostring(assert(process.spawn_monitored("kickside.core.lifecycle:boot_process", "app:processes")))
+            test.is_false(await_boot(logs, boot_pid, "system lifecycle resident"), "owned boot initializes")
+            test.eq(service_pid(), boot_pid)
             local entry = assert(registry.get("kickside.core.lifecycle:boot_process"))
             local changes = assert(registry.snapshot()):changes()
             entry.meta.comment = tostring(entry.meta.comment or "") .. " startup upgrade " .. uuid.v7()

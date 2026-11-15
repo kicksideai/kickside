@@ -47,8 +47,44 @@ return {run = test.run_cases(function()
             local allowed, err = api.validate_event_types(fixture.database(), {{thread_id = fixture.ID, events = events}})
             test.is_true(allowed); test.is_nil(err)
             test.eq(fixture.lookups_by_id["guard:component"], 1)
-            test.eq(fixture.lookups_by_id["guard:event"], 5)
+            test.eq(fixture.lookups_by_id["guard:event"], 1)
         end)
+        test.it("authorizes a destination once across repeated writes in a batch", function()
+            fixture.reset("", nil)
+            local writes = {}
+            for index = 1, 5 do
+                writes[index] = {thread_id = fixture.ID, events = {{type = "guard:input", body = {marker = index}}}}
+            end
+            local allowed, err = api.validate_event_types(fixture.database(), writes)
+            test.is_false(allowed); test.is_nil(err)
+            test.eq(fixture.reads, 1); test.eq(fixture.access_checks, 1)
+            test.eq(fixture.lookups_by_id["guard:component"], 1)
+            test.eq(fixture.lookups_by_id["guard:input"], 1)
+            -- A later batch revalidates access and declarations.
+            api.validate_event_types(fixture.database(), writes)
+            test.eq(fixture.reads, 2); test.eq(fixture.access_checks, 2)
+        end)
+        test.it("evaluates one producer capability per destination and event type", function()
+            fixture.reset("", nil)
+            local writes = {}
+            for index = 1, 5 do
+                writes[index] = {thread_id = fixture.ID, events = {{type = "guard:event", body = {marker = index}}}}
+            end
+            local allowed, err = api.validate_event_types(fixture.database(), writes)
+            test.is_true(allowed); test.is_nil(err)
+            test.eq(fixture.producer_checks, 1)
+        end)
+        for _, maintenance in ipairs({false, true}) do
+            test.it("preserves producer admission for component-owned writes/" .. tostring(maintenance), function()
+                fixture.reset("", nil); fixture.maintenance = maintenance
+                local result, err = api.authorize_writes({component_authority = {component_id = fixture.ID},
+                    writes = {{thread_id = fixture.ID, events = {{type = "guard:event", body = {}}}}}})
+                test.is_nil(err); test.not_nil(result)
+                test.eq(fixture.access_checks, maintenance and 1 or 0)
+                test.eq(#result.checks, maintenance and 1 or 0)
+                test.eq(fixture.producer_checks, 1)
+            end)
+        end
         for _, stage in ipairs({"absent_kind", "absent_event"}) do
             test.it("undeclared input keeps its invalid classification/" .. stage, function()
                 fixture.reset(stage, nil); local allowed, err = call(); test.is_false(allowed); test.not_nil(err); test.eq(err:kind(), errors.INVALID)

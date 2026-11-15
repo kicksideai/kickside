@@ -58,7 +58,7 @@ A component kind declares lifecycle projections with `meta.projections[].on: lif
 | --- | --- |
 | [`kickside.core:source_delete_fence`](src/_index.yaml) | `fence` |
 | [`kickside.core:read_models`](src/registry/read_models/_index.yaml) | `get` |
-| [`kickside.core:threads`](src/registry/thread_contract/_index.yaml) | `create`, `ensure_thread`, `emit`, `purge`, `find`, `upsert`, `update`, `delete`, `list`, `list_events`, `prune_boundary`, `find_event_by_external`, `append_events`, `append_event`, `list_children`, `list_edges`, `list_classes`, `register_projection`, `list_projections`, `get_projection_cursor`, `catch_up_projection`, `pause_projection`, `resume_projection`, `remove_projection` |
+| [`kickside.core:threads`](src/registry/thread_contract/_index.yaml) | `create`, `ensure_thread`, `emit`, `purge`, `find`, `upsert`, `update`, `delete`, `list`, `list_events`, `prune_boundary`, `retire_subjects`, `find_event_by_external`, `append_events`, `append_event`, `list_children`, `list_edges`, `list_classes`, `register_projection`, `list_projections`, `get_projection_cursor`, `catch_up_projection`, `pause_projection`, `resume_projection`, `remove_projection` |
 
 ### Host requirements
 
@@ -98,6 +98,35 @@ and trusted audit writes retain their existing internal completion authority.
 Known: a permission change during a request is not coordinated with completion;
 normal authorization applies at each checked boundary.
 
+
+## SPEC: Subject retirement
+
+Subject versions survive event expiry and pruning. A live entity may outlast its
+last retained event; age alone never retires a subject.
+
+An entity owner calls `kickside.core:threads.retire_subjects({thread_id = id,
+subjects = {"i:<purged-id>", "c:<purged-comment-id>"}})` only after permanently
+purging and durably fencing those identities from future commands, retries,
+queued work, imports, restores and ID reuse, including draining or rejecting
+in-flight writers. Grant the calling owner function `threads.subjects.retire` on
+its exact thread class; ordinary component WRITE does not authorize retirement.
+Core authorizes the class under the thread row lock shared with append/teardown.
+
+Each call accepts 1–100 distinct exact subject names (normal subject validation),
+deletes by the existing `(thread_id, subject)` primary key in one transaction,
+and returns `{thread_id, retired}` (the number actually deleted). The owner pages
+its existing purge work, retries the same page after ambiguous completion, and
+records completion before dropping its durable cleanup address. Missing subjects
+are harmless; missing threads return NOT_FOUND and deleting threads CONFLICT.
+There is no implicit continuation or Core background task. Events, thread head,
+prune boundary, projections and wake state do not change.
+
+A retired subject reads as zero. Positive stale expectations fail in Core; stale
+zero expectations and unguarded writes are excluded by the owner's permanent
+identity fence. The API cannot validate another module's entity lifecycle.
+Reusable IDs must keep their subject rows or adopt a fresh nonreusable subject
+per incarnation and fence the old incarnation. Retained duplicate events still
+return their original identity/version without a new write.
 
 ## License
 

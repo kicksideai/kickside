@@ -150,7 +150,8 @@ local function get_identity_receipt(component_id: string): (any?, error?)
         .. " LEFT JOIN kickside_component_declaration_fence f ON f.component_id = c.component_id"
         .. " AND f.automation_id = $1"
         .. " LEFT JOIN kickside_execution_identity_audit a ON a.component_id = c.component_id"
-        .. " AND a.identity_generation = c.identity_generation WHERE c.component_id = $2", { component_id, component_id }) end
+        .. " AND a.identity_generation = (SELECT MAX(h.identity_generation) FROM kickside_execution_identity_audit h"
+        .. " WHERE h.component_id=c.component_id AND h.identity_generation<=c.identity_generation) WHERE c.component_id = $2", { component_id, component_id }) end
     local final_err = release_db(db, read_err)
     if final_err then
         return nil, dependency_error(final_err, "identity receipt read failed", true)

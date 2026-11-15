@@ -62,11 +62,7 @@ end
 -- (nil, err) with the native dependency error. Raises are never caught here:
 -- an unexpected raise propagates instead of widening or silently
 -- narrowing access.
-local function actor_snapshot(): ({ actor_id: string?, meta: any }?, error?)
-    local actor, actor_err = security_module().actor()
-    if actor_err then
-        return nil, snapshot_failure(actor_err)
-    end
+local function snapshot_actor(actor: any): ({actor_id: string?, meta: any}?, error?)
     if actor == nil then
         return { actor_id = nil, meta = nil }, nil
     end
@@ -82,6 +78,12 @@ local function actor_snapshot(): ({ actor_id: string?, meta: any }?, error?)
         return nil, snapshot_failure(meta_err)
     end
     return { actor_id = raw_id, meta = meta }, nil
+end
+
+local function actor_snapshot(): ({actor_id: string?, meta: any}?, error?)
+    local actor, actor_err = security_module().actor()
+    if actor_err then return nil, snapshot_failure(actor_err) end
+    return snapshot_actor(actor)
 end
 
 type Subject = { subject_type: string, subject_id: string }
@@ -105,6 +107,15 @@ local function own_subject(actor_id: string): Subject
     return { subject_type = component_types.SUBJECT_TYPES.USER, subject_id = actor_id }
 end
 
+local function expand_subjects(subjects: {Subject}, actor: any): {Subject}
+    local own = subjects[1]
+    if own.subject_type == component_types.SUBJECT_TYPES.USER and actor and actor.actor_id == own.subject_id
+        and type(actor.meta) == "table" then
+        append_groups(subjects, {}, actor.meta.security_groups)
+    end
+    return subjects
+end
+
 -- Resolve the typed grant subjects for actor_id: its own pair, plus its login
 -- groups when it is a user and the current actor. Returns (subjects, err): a
 -- snapshot fault keeps the unprivileged subjects and carries the typed error,
@@ -124,15 +135,7 @@ function M.resolve(actor_id: any): ({ Subject }, error?)
     if snapshot_err then
         return subjects, snapshot_err
     end
-    if not actor or actor.actor_id ~= actor_id then
-        return subjects, nil
-    end
-    local meta = actor.meta
-    if type(meta) ~= "table" then
-        return subjects, nil
-    end
-    append_groups(subjects, {}, meta.security_groups)
-    return subjects, nil
+    return expand_subjects(subjects, actor), nil
 end
 
 local DIRECTORY_CONTRACT = "kickside.contract:directory"
@@ -241,6 +244,29 @@ function M.numbered(text: string): string
     return out
 end
 
+local function filter_prefixes(actor: any): {string}?
+    local meta = actor.meta
+    if type(meta) ~= "table" then
+        return nil
+    end
+
+    local filter = meta.access_filter
+    if type(filter) ~= "table" then
+        return nil
+    end
+
+    local prefixes: { string } = {}
+    local raw = filter.prefixes
+    if type(raw) == "table" then
+        for _, p in ipairs(raw) do
+            if type(p) == "string" and p ~= "" then
+                prefixes[#prefixes + 1] = p
+            end
+        end
+    end
+    return prefixes
+end
+
 -- Resolve the access-narrowing filter for user_id, if the current actor carries one.
 -- Returns the list of path prefixes the actor is confined to, or nil when there is no
 -- narrowing (the normal case -- a logged-in user over their own tree). Like groups,
@@ -264,26 +290,30 @@ function M.access_filter(user_id: any): ({ string }?, error?)
         return nil, nil
     end
 
-    local meta = actor.meta
-    if type(meta) ~= "table" then
-        return nil, nil
-    end
+    return filter_prefixes(actor), nil
+end
 
-    local filter = meta.access_filter
-    if type(filter) ~= "table" then
-        return nil, nil
-    end
+-- Deferred owners already hold a resolved security actor. Read that frame once;
+-- the ambient dispatcher contributes neither groups nor path restrictions.
+function M.for_actor(actor: any): ({Subject}, {string}?, error?)
+    local snapshot, err = snapshot_actor(actor)
+    if err then return {}, nil, err end
+    if not snapshot or snapshot.actor_id == nil then return {}, nil, nil end
+    return expand_subjects({own_subject(snapshot.actor_id)}, snapshot), filter_prefixes(snapshot), nil
+end
 
-    local prefixes: { string } = {}
-    local raw = filter.prefixes
-    if type(raw) == "table" then
-        for _, p in ipairs(raw) do
-            if type(p) == "string" and p ~= "" then
-                prefixes[#prefixes + 1] = p
-            end
-        end
+-- Canonical live authorization already returns the principal actor metadata.
+-- Expand it through the same subject/filter path without minting another actor.
+function M.for_authority(authorized: table): ({Subject}, {string}?, error?)
+    local principal, err = execution_identity.check_principal(authorized.principal, "principal")
+    if err then return {}, nil, err end
+    if authorized.actor_id ~= execution_identity.actor_key(principal) or type(authorized.meta) ~= "table" then
+        return {}, nil, errors.new({kind = errors.PERMISSION_DENIED, retryable = false,
+            message = "live authorization has no matching actor metadata"})
     end
-    return prefixes, nil
+    local snapshot = {actor_id = authorized.actor_id, meta = authorized.meta}
+    local subject = {subject_type = principal.kind, subject_id = principal.id}
+    return expand_subjects({subject}, snapshot), filter_prefixes(snapshot), nil
 end
 
 -- Build a parameterized "?,?,..." placeholder string for a subject list.

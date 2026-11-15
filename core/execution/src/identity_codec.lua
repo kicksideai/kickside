@@ -123,4 +123,23 @@ return function(M: any, failure: any)
             captured_at = id.captured_at,
         }, nil
     end
+    -- Both values have already passed validate/from_row at their read boundary.
+    function M.identities_equal(left: ExecutionIdentity, right: ExecutionIdentity): boolean
+        return M.same_principal(left.principal, right.principal)
+            and M.same_principal(left.authorized_by, right.authorized_by)
+            and left.component_id == right.component_id and left.captured_at == right.captured_at
+            and left.credential_id == right.credential_id and left.link_id == right.link_id
+    end
+
+    -- Compare materialized copies without treating JSON formatting as a rebind.
+    function M.rows_equal(actor: any, context: any, other_actor: any, other_context: any): boolean
+        if actor ~= other_actor then return false end
+        if context == other_context then return true end
+        local left, left_err = M.from_row(actor, context)
+        if left_err or not left then return false end
+        local right, right_err = M.from_row(other_actor, other_context)
+        if right_err or not right then return false end
+        return M.identities_equal(left, right)
+    end
+
 end

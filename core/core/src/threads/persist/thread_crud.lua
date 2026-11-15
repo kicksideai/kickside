@@ -63,7 +63,7 @@ local function declaration_response(field: string): error
         details = {code = "thread_declaration_response", field = field}})
 end
 
--- identity: { row?, system?, error? } from the contract's declared_identity.
+-- identity: { row?, system?, owner?, error? } from the contract's declared_identity.
 local function register_declared_projection(db: DB, thread_id: string, p: table, identity: { [string]: any }): error?
     local params = {
         kind = p.kind,
@@ -77,7 +77,9 @@ local function register_declared_projection(db: DB, thread_id: string, p: table,
         events = p.events,
         execution_identity_row = identity.row,
         system_identity = identity.system == true,
+        maintenance_owner = identity.owner,
         ensure = true,
+        component_id = thread_id,
     }
     -- Validate existing cursor identities, then refresh through the registration
     -- transaction that serializes on the thread row.
@@ -344,16 +346,14 @@ local function complete_thread(db: DB, thread_id: string, params: table, actor_i
     if access_err then return nil, access_err end
     local declaration_impl_id: string? = normalize.trim(params.impl_id) ~= "" and (params.impl_id :: string) or nil
 
-    local retention_input: { [string]: any } = {}
     if declaration_impl_id then
         local declared = autoinit.retention_for_impl(declaration_impl_id :: string)
         if declared and type(declared.event_days) == "number" then
-            retention_input.event_hot_retention_days = declared.event_days
+            local _, retention_err = retention_repo.upsert(db, thread_id, {
+                event_hot_retention_days = declared.event_days,
+            })
+            if retention_err then return nil, retention_err end
         end
-    end
-    local _, retention_err = retention_repo.upsert(db, thread_id, retention_input)
-    if retention_err then
-        return nil, retention_err
     end
 
     local rows, rows_err = db:query("SELECT * FROM kickside_thread WHERE id = $1", { thread_id })

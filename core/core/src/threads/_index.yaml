@@ -151,9 +151,25 @@ entries:
     meta:
       comment: Owner loader for a component's stored execution identity (trusted component tier).
     source: file://component_identity.lua
+    modules: [sql]
     imports:
+      core_db: kickside.core:db
+      owner_identity: kickside.core.threads:owner_identity
       error_envelope: kickside.contract:error_envelope
       component_client: kickside.component:component
+      execution_identity: kickside.execution:execution_identity
+
+  - name: owner_identity
+    kind: library.lua
+    meta:
+      comment: Derives the execution identity a component's declared projections run under from its owner record.
+    source: file://owner_identity.lua
+    modules: [json, registry]
+    imports:
+      component_identity_ops: kickside.component.persist:identity_ops
+      autoinit: kickside.component:autoinit
+      lifecycle_log: kickside.core.threads.persist:lifecycle
+      error_envelope: kickside.contract:error_envelope
       execution_identity: kickside.execution:execution_identity
 
   - name: notify
@@ -229,6 +245,9 @@ entries:
       - funcs
       - sql
     imports:
+      owner_identity: kickside.core.threads:owner_identity
+      jobs_wake: kickside.core.jobs.persist:wake
+      job_types: kickside.core.jobs:types
       component_envelope: kickside.component:envelope
       error_envelope: kickside.contract:error_envelope
       autoinit: kickside.component:autoinit
@@ -236,6 +255,7 @@ entries:
       core_db: kickside.core:db
       execution_identity: kickside.execution:execution_identity
       proj_types: kickside.core.projections:types
+      proj_register: kickside.core.projections.persist:register
       component_identity: kickside.core.threads:component_identity
       component_lifecycle_log: kickside.core.threads.persist:lifecycle
       component_lifecycle: kickside.core.lifecycle:component_lifecycle_impl
@@ -334,8 +354,8 @@ entries:
     source: file://contract/common.lua
     modules: [sql, security]
     imports:
-      error_envelope: kickside.contract:error_envelope
       component_identity: kickside.core.threads:component_identity
+      owner_identity: kickside.core.threads:owner_identity
       execution_identity: kickside.execution:execution_identity
       threads_env: kickside.core.threads:env
       threads_notify: kickside.core.threads:notify
@@ -380,13 +400,13 @@ entries:
     source: file://contract/event_authorization.lua
     modules: [sql, security, registry, uuid, json]
     imports:
+      execution_identity: kickside.execution:execution_identity
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       error_envelope: kickside.contract:error_envelope
       threads_writer: kickside.core.threads.persist:writer
       component_client: kickside.component:component
       core_types: kickside.core:types
       contract_common: kickside.core.threads:contract_common
-
   - name: contract_events
     kind: library.lua
     meta:
@@ -940,13 +960,13 @@ entries:
     method: authorize_writes
     modules: [sql, security, registry, uuid, json]
     imports:
+      execution_identity: kickside.execution:execution_identity
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       error_envelope: kickside.contract:error_envelope
       threads_writer: kickside.core.threads.persist:writer
       component_client: kickside.component:component
       core_types: kickside.core:types
       contract_common: kickside.core.threads:contract_common
-
   - name: job_history
     kind: library.lua
     source: file://contract/job_history.lua
@@ -971,3 +991,17 @@ entries:
       threads_thread_crud: kickside.core.threads.persist:thread_crud
       threads_reader: kickside.core.threads.persist:reader
       threads_component: kickside.core.threads:component
+
+  - name: retire_subjects_method
+    kind: function.lua
+    meta:
+      comment: Owner-only bounded subject retirement for permanently fenced purged entity identities.
+    source: file://contract/subjects.lua
+    method: retire_subjects
+    modules: [sql, security]
+    imports:
+      contract_common: kickside.core.threads:contract_common
+      subjects: kickside.core.threads.persist:subjects
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      error_envelope: kickside.contract:error_envelope
+      committed_error: kickside.contract:committed_error

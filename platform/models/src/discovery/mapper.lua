@@ -21,6 +21,7 @@ local DISCOVERED_METADATA_FIELDS = {
     "outputTokenLimit",
     "max_output_tokens",
     "capabilities",
+    "capability",
     "supported_parameters",
     "supportedParameters",
     "supports_reasoning",
@@ -156,6 +157,11 @@ function M.infer_capabilities(model_id: string, item: any): { string }
     end
     if #out == 0 then common.add_unique(out, "generate") end
     return out
+end
+
+function M.capabilities(adapter: any?, model_id: string, item: any, profile: any): { string }
+    if adapter and adapter.capabilities then return adapter.capabilities(model_id, item, profile) end
+    return M.infer_capabilities(model_id, item)
 end
 
 function M.infer_classes(model_id: string, capabilities: { string }, item: any): { string }

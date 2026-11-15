@@ -105,8 +105,9 @@ return {run = test.run_cases(function()
                 write({["lease.timeout"] = "10s", ["lease.heartbeat"] = "100ms"})
                 id = assert(lifecycle.enqueue_job(shared, dialect, {
                     job_identity = {namespace = "policy", scope = "heartbeat", key = "process"},
-                    job_type = "test.heartbeat.snapshot", payload = {}, owner_locator = {kind = "test", id = "heartbeat"}}))
-                local job = assert(claim.claim_batch(shared, dialect, 1, nil, nil, nil, {"test.heartbeat.snapshot"}))[1]
+                    job_type = "test.heartbeat.snapshot", payload = {}, parked = true,
+                    owner_locator = {kind = "test", id = "heartbeat"}}))
+                local job = assert(fixture.lease_own(shared, dialect, id))
                 test.eq(job.id, id)
                 before = assert(shared:query("SELECT heartbeat_at FROM kickside_job WHERE id=$1", {id}))[1].heartbeat_at
                 write({["lease.timeout"] = "120s", ["lease.heartbeat"] = "30s"})

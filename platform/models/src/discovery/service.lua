@@ -39,8 +39,7 @@ function M.discover(profile_id: string): (any?, any?)
         local provider_id = tostring(profile.provider_id)
         local provider_model = adapter.model_id and adapter.model_id(item) or mapper.provider_model_id(item)
         if provider_model then
-            local capabilities = adapter.capabilities and adapter.capabilities(provider_model, item, profile)
-                or mapper.infer_capabilities(provider_model, item)
+            local capabilities = mapper.capabilities(adapter, provider_model, item, profile)
             local classes = mapper.infer_classes(provider_model, capabilities, item)
             local name = mapper.public_name(profile.id, provider_model)
             local existing = existing_cards[name]
@@ -92,7 +91,7 @@ function M.discover(profile_id: string): (any?, any?)
                 metadata = metadata,
             }
             if not existing then card_input.enabled = enabled end
-            local card, save_err = models_repo.upsert_card(card_input)
+            local card, save_err = models_repo.upsert_card(card_input, nil, capabilities)
             if save_err then return nil, save_err end
             table.insert(saved, card)
         end

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.11](https://github.com/kicksideai/kickside/compare/channel-v0.2.10...channel-v0.2.11) (2026-11-15)
+
+
+### Bug Fixes
+
+* admit service-owned projection resource policies ([#477](https://github.com/kicksideai/kickside/issues/477)) ([78023d9](https://github.com/kicksideai/kickside/commit/78023d9b6d22dd666cd79e91b28bc2a726dc9226))
+
 ## [0.2.10](https://github.com/kicksideai/kickside/compare/channel-v0.2.9...channel-v0.2.10) (2026-11-13)
 
 

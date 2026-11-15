@@ -7,8 +7,24 @@ entries:
 - name: component_identity_errors_source
   kind: library.lua
   source: file://component_identity_errors_source.lua
+  modules: [sql]
   imports:
+    core_db: kickside.core:db
+    owner_identity: app:component_identity_errors_owner_identity
     component_client: app:component_identity_errors_component
+    execution_identity: app:component_identity_errors_execution
+    error_envelope: kickside.contract:error_envelope
+- name: component_identity_errors_owner_identity
+  kind: library.lua
+  source: file://src_link/threads/owner_identity.lua
+  modules: [json]
+  imports:
+    lifecycle_log: kickside.core.threads.persist:lifecycle
+    autoinit: app:component_identity_errors_declarations
+    registry: app:component_identity_errors_registry
+    access_subjects: kickside.component.persist:access_subjects
+    core_types: kickside.core:types
+    component_identity_ops: kickside.component.persist:identity_ops
     execution_identity: app:component_identity_errors_execution
     error_envelope: kickside.contract:error_envelope
 - name: component_identity_errors_common_source
@@ -19,6 +35,7 @@ entries:
   - security
   imports:
     component_identity: app:component_identity_errors_source
+    owner_identity: app:component_identity_errors_owner_identity
     execution_identity: app:component_identity_errors_execution
     threads_env: kickside.core.threads:env
     threads_notify: kickside.core.threads:notify
@@ -37,6 +54,8 @@ entries:
     common: app:component_identity_errors_common_source
     canonical_json: kickside.contract:canonical_json
     execution: kickside.execution:execution_identity
+    owner_identity: kickside.core.threads:owner_identity
+    counted_owner_identity: app:component_identity_errors_owner_identity
 - name: component_identity_errors_component
   kind: library.lua
   source: file://component_identity_errors_component.lua
@@ -48,3 +67,13 @@ entries:
   imports:
     fixture: app:component_identity_errors_fixture
     execution: kickside.execution:execution_identity
+- name: component_identity_errors_declarations
+  kind: library.lua
+  source: file://component_identity_errors_declarations.lua
+  imports:
+    fixture: app:component_identity_errors_fixture
+- name: component_identity_errors_registry
+  kind: library.lua
+  source: file://component_identity_errors_declarations.lua
+  imports:
+    fixture: app:component_identity_errors_fixture
