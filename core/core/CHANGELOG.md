@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.19](https://github.com/kicksideai/kickside/compare/core-v0.3.18...core-v0.3.19) (2026-11-15)
+
+
+### Bug Fixes
+
+* admit service-owned projection resource policies ([#477](https://github.com/kicksideai/kickside/issues/477)) ([78023d9](https://github.com/kicksideai/kickside/commit/78023d9b6d22dd666cd79e91b28bc2a726dc9226))
+* **core:** notify cursor waiters when thread teardown removes cursors ([#495](https://github.com/kicksideai/kickside/issues/495)) ([95f63c4](https://github.com/kicksideai/kickside/commit/95f63c4b5b681aac090d713ac0e8601cd6c8c409))
+
 ## [0.3.18](https://github.com/kicksideai/kickside/compare/core-v0.3.17...core-v0.3.18) (2026-11-15)
 
 

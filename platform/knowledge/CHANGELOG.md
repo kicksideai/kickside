@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.86](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.85...knowledge-v0.1.86) (2026-11-15)
+
+
+### Bug Fixes
+
+* admit service-owned projection resource policies ([#477](https://github.com/kicksideai/kickside/issues/477)) ([78023d9](https://github.com/kicksideai/kickside/commit/78023d9b6d22dd666cd79e91b28bc2a726dc9226))
+
 ## [0.1.85](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.84...knowledge-v0.1.85) (2026-11-12)
 
 
