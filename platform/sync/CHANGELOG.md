@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.98](https://github.com/kicksideai/kickside/compare/sync-v0.1.97...sync-v0.1.98) (2026-11-16)
+
+
+### Bug Fixes
+
+* preserve web component host contracts and eager bundles ([8bfd86d](https://github.com/kicksideai/kickside/commit/8bfd86dded87eea2c40294be136af1a66ab25765))
+* preserve web component host contracts and eager bundles ([b68bfa0](https://github.com/kicksideai/kickside/commit/b68bfa020b6f8ba97a0c37c9b5a955030617d37a))
+
 ## [0.1.97](https://github.com/kicksideai/kickside/compare/sync-v0.1.96...sync-v0.1.97) (2026-11-14)
 
 

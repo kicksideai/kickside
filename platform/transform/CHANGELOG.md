@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.54](https://github.com/kicksideai/kickside/compare/transform-v0.1.53...transform-v0.1.54) (2026-11-16)
+
+
+### Bug Fixes
+
+* hold loaded height in lazy loaders ([8e09a71](https://github.com/kicksideai/kickside/commit/8e09a7183e0522fbcc3d554827e523557083268f))
+* preserve web component host contracts and eager bundles ([8bfd86d](https://github.com/kicksideai/kickside/commit/8bfd86dded87eea2c40294be136af1a66ab25765))
+* preserve web component host contracts and eager bundles ([b68bfa0](https://github.com/kicksideai/kickside/commit/b68bfa020b6f8ba97a0c37c9b5a955030617d37a))
+
 ## [0.1.53](https://github.com/kicksideai/kickside/compare/transform-v0.1.52...transform-v0.1.53) (2026-11-09)
 
 

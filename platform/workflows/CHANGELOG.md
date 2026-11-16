@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.16](https://github.com/kicksideai/kickside/compare/workflows-v0.2.15...workflows-v0.2.16) (2026-11-16)
+
+
+### Features
+
+* **workflows:** preserve selected Start correlation in terminal events ([#510](https://github.com/kicksideai/kickside/issues/510)) ([fee4bb1](https://github.com/kicksideai/kickside/commit/fee4bb1f97840aa21c4056cc43807b6f489393b4))
+
+
+### Bug Fixes
+
+* preserve web component host contracts and eager bundles ([8bfd86d](https://github.com/kicksideai/kickside/commit/8bfd86dded87eea2c40294be136af1a66ab25765))
+* preserve web component host contracts and eager bundles ([b68bfa0](https://github.com/kicksideai/kickside/commit/b68bfa020b6f8ba97a0c37c9b5a955030617d37a))
+
 ## [0.2.15](https://github.com/kicksideai/kickside/compare/workflows-v0.2.14...workflows-v0.2.15) (2026-11-13)
 
 

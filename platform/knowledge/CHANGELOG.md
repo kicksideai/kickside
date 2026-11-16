@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.87](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.86...knowledge-v0.1.87) (2026-11-16)
+
+
+### Bug Fixes
+
+* preserve web component host contracts and eager bundles ([8bfd86d](https://github.com/kicksideai/kickside/commit/8bfd86dded87eea2c40294be136af1a66ab25765))
+
 ## [0.1.86](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.85...knowledge-v0.1.86) (2026-11-15)
 
 

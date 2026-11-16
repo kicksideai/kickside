@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.42](https://github.com/kicksideai/kickside/compare/kickside-v0.2.41...kickside-v0.2.42) (2026-11-16)
+
+
+### Bug Fixes
+
+* preserve web component host contracts and eager bundles ([8bfd86d](https://github.com/kicksideai/kickside/commit/8bfd86dded87eea2c40294be136af1a66ab25765))
+* preserve web component host contracts and eager bundles ([b68bfa0](https://github.com/kicksideai/kickside/commit/b68bfa020b6f8ba97a0c37c9b5a955030617d37a))
+
 ## [0.2.41](https://github.com/kicksideai/kickside/compare/kickside-v0.2.40...kickside-v0.2.41) (2026-11-13)
 
 

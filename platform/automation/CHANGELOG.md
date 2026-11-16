@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.29](https://github.com/kicksideai/kickside/compare/automation-v0.2.28...automation-v0.2.29) (2026-11-16)
+
+
+### Bug Fixes
+
+* preserve web component host contracts and eager bundles ([8bfd86d](https://github.com/kicksideai/kickside/commit/8bfd86dded87eea2c40294be136af1a66ab25765))
+
 ## [0.2.28](https://github.com/kicksideai/kickside/compare/automation-v0.2.27...automation-v0.2.28) (2026-11-16)
 
 

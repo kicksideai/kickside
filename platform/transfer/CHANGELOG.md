@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.36](https://github.com/kicksideai/kickside/compare/transfer-v0.1.35...transfer-v0.1.36) (2026-11-16)
+
+
+### Bug Fixes
+
+* preserve web component host contracts and eager bundles ([8bfd86d](https://github.com/kicksideai/kickside/commit/8bfd86dded87eea2c40294be136af1a66ab25765))
+* preserve web component host contracts and eager bundles ([b68bfa0](https://github.com/kicksideai/kickside/commit/b68bfa020b6f8ba97a0c37c9b5a955030617d37a))
+
 ## [0.1.35](https://github.com/kicksideai/kickside/compare/transfer-v0.1.34...transfer-v0.1.35) (2026-11-09)
 
 

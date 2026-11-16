@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.12](https://github.com/kicksideai/kickside/compare/channel-v0.2.11...channel-v0.2.12) (2026-11-16)
+
+
+### Bug Fixes
+
+* preserve web component host contracts and eager bundles ([8bfd86d](https://github.com/kicksideai/kickside/commit/8bfd86dded87eea2c40294be136af1a66ab25765))
+
 ## [0.2.11](https://github.com/kicksideai/kickside/compare/channel-v0.2.10...channel-v0.2.11) (2026-11-15)
 
 

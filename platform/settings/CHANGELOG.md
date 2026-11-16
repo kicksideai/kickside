@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.10](https://github.com/kicksideai/kickside/compare/settings-v0.3.9...settings-v0.3.10) (2026-11-16)
+
+
+### Bug Fixes
+
+* preserve web component host contracts and eager bundles ([8bfd86d](https://github.com/kicksideai/kickside/commit/8bfd86dded87eea2c40294be136af1a66ab25765))
+
 ## [0.3.9](https://github.com/kicksideai/kickside/compare/settings-v0.3.8...settings-v0.3.9) (2026-11-15)
 
 

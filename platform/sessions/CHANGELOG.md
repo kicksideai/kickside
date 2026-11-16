@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.43](https://github.com/kicksideai/kickside/compare/sessions-v0.1.42...sessions-v0.1.43) (2026-11-16)
+
+
+### Bug Fixes
+
+* preserve web component host contracts and eager bundles ([8bfd86d](https://github.com/kicksideai/kickside/commit/8bfd86dded87eea2c40294be136af1a66ab25765))
+* preserve web component host contracts and eager bundles ([b68bfa0](https://github.com/kicksideai/kickside/commit/b68bfa020b6f8ba97a0c37c9b5a955030617d37a))
+
+
+### Performance Improvements
+
+* load web component implementations on demand ([5c92725](https://github.com/kicksideai/kickside/commit/5c927252e8a4ed971a4c02cec57820896e1114a8))
+
 ## [0.1.42](https://github.com/kicksideai/kickside/compare/sessions-v0.1.41...sessions-v0.1.42) (2026-10-28)
 
 

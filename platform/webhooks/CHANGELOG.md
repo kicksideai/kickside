@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.46](https://github.com/kicksideai/kickside/compare/webhooks-v0.1.45...webhooks-v0.1.46) (2026-11-16)
+
+
+### Bug Fixes
+
+* preserve web component host contracts and eager bundles ([8bfd86d](https://github.com/kicksideai/kickside/commit/8bfd86dded87eea2c40294be136af1a66ab25765))
+* preserve web component host contracts and eager bundles ([b68bfa0](https://github.com/kicksideai/kickside/commit/b68bfa020b6f8ba97a0c37c9b5a955030617d37a))
+
 ## [0.1.45](https://github.com/kicksideai/kickside/compare/webhooks-v0.1.44...webhooks-v0.1.45) (2026-11-12)
 
 
