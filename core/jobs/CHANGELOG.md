@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.81](https://github.com/kicksideai/kickside/compare/jobs-v0.1.80...jobs-v0.1.81) (2026-11-16)
+
+
+### Bug Fixes
+
+* **jobs:** bound operator health reads with existing indexes ([#478](https://github.com/kicksideai/kickside/issues/478)) ([f806c8c](https://github.com/kicksideai/kickside/commit/f806c8c02cacd2b1d3a1b679a187909c9a47aab7))
+
 ## [0.1.80](https://github.com/kicksideai/kickside/compare/jobs-v0.1.79...jobs-v0.1.80) (2026-11-14)
 
 

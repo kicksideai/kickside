@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.44](https://github.com/kicksideai/kickside/compare/blocks-v0.1.43...blocks-v0.1.44) (2026-11-16)
+
+
+### Bug Fixes
+
+* **blocks:** preserve connected tool input with fixed arguments ([#503](https://github.com/kicksideai/kickside/issues/503)) ([7bf864c](https://github.com/kicksideai/kickside/commit/7bf864c0b0698b383efe4c0d6e07022a48f1e8aa))
+
 ## [0.1.43](https://github.com/kicksideai/kickside/compare/blocks-v0.1.42...blocks-v0.1.43) (2026-10-29)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.20](https://github.com/kicksideai/kickside/compare/core-v0.3.19...core-v0.3.20) (2026-11-16)
+
+
+### Bug Fixes
+
+* **core:** bound retention age checks to deletion window ([#494](https://github.com/kicksideai/kickside/issues/494)) ([cd50fb7](https://github.com/kicksideai/kickside/commit/cd50fb735bc7dc26f427fc8933a390462d09d633))
+
 ## [0.3.19](https://github.com/kicksideai/kickside/compare/core-v0.3.18...core-v0.3.19) (2026-11-15)
 
 
