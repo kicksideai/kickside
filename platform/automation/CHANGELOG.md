@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.30](https://github.com/kicksideai/kickside/compare/automation-v0.2.29...automation-v0.2.30) (2026-11-17)
+
+
+### Bug Fixes
+
+* **automation:** preserve inherited roots in selected installs ([#528](https://github.com/kicksideai/kickside/issues/528)) ([febfb40](https://github.com/kicksideai/kickside/commit/febfb407e3cd178f1b69fbd431e7828bd3e84879))
+* **automation:** refuse deletion while launched runs are active ([#531](https://github.com/kicksideai/kickside/issues/531)) ([37d10c6](https://github.com/kicksideai/kickside/commit/37d10c6fdbbf13123c73a5b0ec7cd3ced83460a2))
+
 ## [0.2.29](https://github.com/kicksideai/kickside/compare/automation-v0.2.28...automation-v0.2.29) (2026-11-16)
 
 

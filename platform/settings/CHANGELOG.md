@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.11](https://github.com/kicksideai/kickside/compare/settings-v0.3.10...settings-v0.3.11) (2026-11-17)
+
+
+### Bug Fixes
+
+* **settings:** name controls and confirm retention reductions ([#519](https://github.com/kicksideai/kickside/issues/519)) ([4874748](https://github.com/kicksideai/kickside/commit/4874748ccffa07c45aff0522699970a0ed6f0397))
+
 ## [0.3.10](https://github.com/kicksideai/kickside/compare/settings-v0.3.9...settings-v0.3.10) (2026-11-16)
 
 

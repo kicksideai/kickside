@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.99](https://github.com/kicksideai/kickside/compare/sync-v0.1.98...sync-v0.1.99) (2026-11-17)
+
+
+### Bug Fixes
+
+* **automation:** refuse deletion while launched runs are active ([#531](https://github.com/kicksideai/kickside/issues/531)) ([37d10c6](https://github.com/kicksideai/kickside/commit/37d10c6fdbbf13123c73a5b0ec7cd3ced83460a2))
+* **sync:** expose pure preparation for selected installs ([#521](https://github.com/kicksideai/kickside/issues/521)) ([201b9f1](https://github.com/kicksideai/kickside/commit/201b9f15e50e19962fa223c194d9f13d8335d97c))
+
 ## [0.1.98](https://github.com/kicksideai/kickside/compare/sync-v0.1.97...sync-v0.1.98) (2026-11-16)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.21](https://github.com/kicksideai/kickside/compare/core-v0.3.20...core-v0.3.21) (2026-11-17)
+
+
+### Bug Fixes
+
+* **core:** expose projection failures and restore active slot wakes ([#505](https://github.com/kicksideai/kickside/issues/505)) ([e44a75f](https://github.com/kicksideai/kickside/commit/e44a75f6edcbde07a5f4e9ed21aa1bc56b77baba))
+* **core:** isolate owner singleton roots and preserve delegation ([#515](https://github.com/kicksideai/kickside/issues/515)) ([21d1cce](https://github.com/kicksideai/kickside/commit/21d1cce619fcfe273037250fe56a1dad9d80ced2))
+
 ## [0.3.20](https://github.com/kicksideai/kickside/compare/core-v0.3.19...core-v0.3.20) (2026-11-16)
 
 

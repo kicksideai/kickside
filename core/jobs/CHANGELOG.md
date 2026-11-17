@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.82](https://github.com/kicksideai/kickside/compare/jobs-v0.1.81...jobs-v0.1.82) (2026-11-17)
+
+
+### Bug Fixes
+
+* **core:** expose projection failures and restore active slot wakes ([#505](https://github.com/kicksideai/kickside/issues/505)) ([e44a75f](https://github.com/kicksideai/kickside/commit/e44a75f6edcbde07a5f4e9ed21aa1bc56b77baba))
+* **jobs:** bound worker deadline lookups through existing indexes ([#520](https://github.com/kicksideai/kickside/issues/520)) ([85f689a](https://github.com/kicksideai/kickside/commit/85f689a65446f8ecd99091394711a261d071b98c))
+* **jobs:** use runtime time for deadlines and due reads ([#514](https://github.com/kicksideai/kickside/issues/514)) ([9be2140](https://github.com/kicksideai/kickside/commit/9be214064d586735b4bb0dd1580c03c7088c15e0))
+
 ## [0.1.81](https://github.com/kicksideai/kickside/compare/jobs-v0.1.80...jobs-v0.1.81) (2026-11-16)
 
 

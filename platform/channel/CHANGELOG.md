@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.13](https://github.com/kicksideai/kickside/compare/channel-v0.2.12...channel-v0.2.13) (2026-11-17)
+
+
+### Bug Fixes
+
+* **automation:** refuse deletion while launched runs are active ([#531](https://github.com/kicksideai/kickside/issues/531)) ([37d10c6](https://github.com/kicksideai/kickside/commit/37d10c6fdbbf13123c73a5b0ec7cd3ced83460a2))
+
 ## [0.2.12](https://github.com/kicksideai/kickside/compare/channel-v0.2.11...channel-v0.2.12) (2026-11-16)
 
 

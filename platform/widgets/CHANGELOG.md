@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.64](https://github.com/kicksideai/kickside/compare/widgets-v0.1.63...widgets-v0.1.64) (2026-11-17)
+
+
+### Bug Fixes
+
+* **settings:** name controls and confirm retention reductions ([#519](https://github.com/kicksideai/kickside/issues/519)) ([4874748](https://github.com/kicksideai/kickside/commit/4874748ccffa07c45aff0522699970a0ed6f0397))
+
 ## [0.1.63](https://github.com/kicksideai/kickside/compare/widgets-v0.1.62...widgets-v0.1.63) (2026-11-16)
 
 

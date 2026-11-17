@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.17](https://github.com/kicksideai/kickside/compare/workflows-v0.2.16...workflows-v0.2.17) (2026-11-17)
+
+
+### Features
+
+* **workflows:** deliver typed run completion callbacks ([#524](https://github.com/kicksideai/kickside/issues/524)) ([bea3c9a](https://github.com/kicksideai/kickside/commit/bea3c9a700ade32ab2d8be436b77b3245ebdbfb2))
+
+
+### Bug Fixes
+
+* **automation:** refuse deletion while launched runs are active ([#531](https://github.com/kicksideai/kickside/issues/531)) ([37d10c6](https://github.com/kicksideai/kickside/commit/37d10c6fdbbf13123c73a5b0ec7cd3ced83460a2))
+* **workflows:** refuse deletion while runs are active ([#512](https://github.com/kicksideai/kickside/issues/512)) ([b7a3e69](https://github.com/kicksideai/kickside/commit/b7a3e694fcb01cb0cad38d098189fc501ccc4b25))
+
 ## [0.2.16](https://github.com/kicksideai/kickside/compare/workflows-v0.2.15...workflows-v0.2.16) (2026-11-16)
 
 
