@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.65](https://github.com/kicksideai/kickside/compare/widgets-v0.1.64...widgets-v0.1.65) (2026-11-19)
+
+
+### Features
+
+* **sessions:** land the chat drawer on main ([#511](https://github.com/kicksideai/kickside/issues/511)) ([264341f](https://github.com/kicksideai/kickside/commit/264341f54b9015566c5c14a76e621d13afa90c79))
+
 ## [0.1.64](https://github.com/kicksideai/kickside/compare/widgets-v0.1.63...widgets-v0.1.64) (2026-11-17)
 
 

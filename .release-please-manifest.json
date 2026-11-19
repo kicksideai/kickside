@@ -22,7 +22,7 @@
   "platform/renderers": "0.1.40",
   "platform/security": "0.2.30",
   "platform/self-reflection": "0.1.25",
-  "platform/sessions": "0.1.43",
+  "platform/sessions": "0.1.44",
   "platform/settings": "0.3.12",
   "platform/skills": "0.1.51",
   "platform/sync": "0.1.100",
@@ -33,7 +33,7 @@
   "platform/uploads": "0.3.26",
   "platform/users": "0.2.25",
   "platform/webhooks": "0.1.47",
-  "platform/widgets": "0.1.64",
+  "platform/widgets": "0.1.65",
   "platform/workflows": "0.2.19",
-  "app": "0.2.45"
+  "app": "0.2.46"
 }

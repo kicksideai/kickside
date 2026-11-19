@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.46](https://github.com/kicksideai/kickside/compare/kickside-v0.2.45...kickside-v0.2.46) (2026-11-19)
+
+
+### Features
+
+* **sessions:** land the chat drawer on main ([#511](https://github.com/kicksideai/kickside/issues/511)) ([264341f](https://github.com/kicksideai/kickside/commit/264341f54b9015566c5c14a76e621d13afa90c79))
+
+
+### Bug Fixes
+
+* **core:** converge declared lifecycle projections ([#466](https://github.com/kicksideai/kickside/issues/466)) ([ebc59f8](https://github.com/kicksideai/kickside/commit/ebc59f83121a6c2a412e6d359ee1ca655d3264b7))
+
 ## [0.2.45](https://github.com/kicksideai/kickside/compare/kickside-v0.2.44...kickside-v0.2.45) (2026-11-19)
 
 
