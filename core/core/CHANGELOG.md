@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.32](https://github.com/kicksideai/kickside/compare/core-v0.3.31...core-v0.3.32) (2026-11-19)
+
+
+### Bug Fixes
+
+* **core:** reprovision threads after completed cleanup ([#625](https://github.com/kicksideai/kickside/issues/625)) ([8d50a1f](https://github.com/kicksideai/kickside/commit/8d50a1f0e173191c078eab4007da2fbbdf857d3e))
+
 ## [0.3.31](https://github.com/kicksideai/kickside/compare/core-v0.3.30...core-v0.3.31) (2026-11-19)
 
 
