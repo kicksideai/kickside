@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.30](https://github.com/kicksideai/kickside/compare/security-v0.2.29...security-v0.2.30) (2026-11-19)
+
+
+### Bug Fixes
+
+* **security:** list declared permissions in the role picker ([#558](https://github.com/kicksideai/kickside/issues/558)) ([b768118](https://github.com/kicksideai/kickside/commit/b7681183c3fe087165dbb9638b4a565ed0eb3e61))
+
 ## [0.2.29](https://github.com/kicksideai/kickside/compare/security-v0.2.28...security-v0.2.29) (2026-11-16)
 
 

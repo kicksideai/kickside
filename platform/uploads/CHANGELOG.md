@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.24](https://github.com/kicksideai/kickside/compare/uploads-v0.3.23...uploads-v0.3.24) (2026-11-19)
+
+
+### Bug Fixes
+
+* **uploads:** erase owner data without provisioning a user thread ([#573](https://github.com/kicksideai/kickside/issues/573)) ([33ae247](https://github.com/kicksideai/kickside/commit/33ae2472229d007c25e4620aca17b537766dbd67))
+
 ## [0.3.23](https://github.com/kicksideai/kickside/compare/uploads-v0.3.22...uploads-v0.3.23) (2026-11-19)
 
 

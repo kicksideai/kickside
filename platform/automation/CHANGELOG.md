@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.33](https://github.com/kicksideai/kickside/compare/automation-v0.2.32...automation-v0.2.33) (2026-11-19)
+
+
+### Bug Fixes
+
+* **automation:** pull new events while an item waits for redelivery ([#562](https://github.com/kicksideai/kickside/issues/562)) ([212a2df](https://github.com/kicksideai/kickside/commit/212a2df202eeadaf920b769d318770e40937fb6e))
+
 ## [0.2.32](https://github.com/kicksideai/kickside/compare/automation-v0.2.31...automation-v0.2.32) (2026-11-19)
 
 

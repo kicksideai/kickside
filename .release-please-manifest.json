@@ -1,11 +1,11 @@
 {
   "core/component": "0.3.24",
-  "core/contract": "0.3.10",
+  "core/contract": "0.3.11",
   "core/core": "0.3.24",
-  "core/execution": "0.2.9",
+  "core/execution": "0.2.10",
   "core/jobs": "0.1.85",
   "platform/agents": "0.2.21",
-  "platform/automation": "0.2.32",
+  "platform/automation": "0.2.33",
   "platform/blocks": "0.1.45",
   "platform/channel": "0.2.15",
   "platform/connection": "0.5.10",
@@ -20,7 +20,7 @@
   "platform/realtime": "0.1.32",
   "core/realtime-dispatch": "0.1.1",
   "platform/renderers": "0.1.39",
-  "platform/security": "0.2.29",
+  "platform/security": "0.2.30",
   "platform/self-reflection": "0.1.25",
   "platform/sessions": "0.1.43",
   "platform/settings": "0.3.12",
@@ -30,10 +30,10 @@
   "platform/transform": "0.1.55",
   "platform/ui": "0.2.14",
   "platform/ui-kit": "1.7.2",
-  "platform/uploads": "0.3.23",
+  "platform/uploads": "0.3.24",
   "platform/users": "0.2.25",
   "platform/webhooks": "0.1.47",
   "platform/widgets": "0.1.64",
   "platform/workflows": "0.2.19",
-  "app": "0.2.44"
+  "app": "0.2.45"
 }
