@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.2.48](https://github.com/kicksideai/kickside/compare/kickside-v0.2.47...kickside-v0.2.48) (2026-11-19)
+
+
+### Features
+
+* **knowledge:** deliver completed uploads through Data Sync ([#662](https://github.com/kicksideai/kickside/issues/662)) ([a8d8d20](https://github.com/kicksideai/kickside/commit/a8d8d2019deba231c4d7a1f304b071ba303cd955))
+
+
+### Bug Fixes
+
+* **app:** require Core thread lifecycle recovery ([#703](https://github.com/kicksideai/kickside/issues/703)) ([18b9174](https://github.com/kicksideai/kickside/commit/18b91748a11101130071fd18181207cee04ac170))
+* **core:** enforce binding-declared event read access ([#305](https://github.com/kicksideai/kickside/issues/305)) ([8a53ce5](https://github.com/kicksideai/kickside/commit/8a53ce5030a515ea98552ce34e30417bd18f7a9a))
+* **core:** wait for a committed projection sequence ([e590e5c](https://github.com/kicksideai/kickside/commit/e590e5cac690061421217aaf15519e8ac1df95bc))
+* **kickside:** clarify the Facade upgrade prerequisite ([#668](https://github.com/kicksideai/kickside/issues/668)) ([bd35945](https://github.com/kicksideai/kickside/commit/bd35945009a1d434fa8cbb4769d39840ae51b8d8))
+
 ## [0.2.47](https://github.com/kicksideai/kickside/compare/kickside-v0.2.46...kickside-v0.2.47) (2026-11-19)
 
 
