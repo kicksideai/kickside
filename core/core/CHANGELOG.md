@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.37](https://github.com/kicksideai/kickside/compare/core-v0.3.36...core-v0.3.37) (2026-11-19)
+
+
+### Bug Fixes
+
+* **core:** wait for system component provisioning at startup ([ecf12e5](https://github.com/kicksideai/kickside/commit/ecf12e5c61d83e7eb414978faae7a8aa1f6afd27))
+
 ## [0.3.36](https://github.com/kicksideai/kickside/compare/core-v0.3.35...core-v0.3.36) (2026-11-19)
 
 
