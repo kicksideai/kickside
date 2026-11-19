@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.35](https://github.com/kicksideai/kickside/compare/automation-v0.2.34...automation-v0.2.35) (2026-11-19)
+
+
+### Bug Fixes
+
+* **automation:** show a refused delete inside the confirm dialog ([#676](https://github.com/kicksideai/kickside/issues/676)) ([84fc7b3](https://github.com/kicksideai/kickside/commit/84fc7b3599e853e06da1e9825d1101f462d7f4ba))
+
 ## [0.2.34](https://github.com/kicksideai/kickside/compare/automation-v0.2.33...automation-v0.2.34) (2026-11-19)
 
 
