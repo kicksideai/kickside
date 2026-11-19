@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.29](https://github.com/kicksideai/kickside/compare/uploads-v0.3.28...uploads-v0.3.29) (2026-11-19)
+
+
+### Bug Fixes
+
+* **uploads:** reject invalid multipart completion tokens ([#659](https://github.com/kicksideai/kickside/issues/659)) ([61a1e2d](https://github.com/kicksideai/kickside/commit/61a1e2d8328e0a60cb99bf11c200241414dab742))
+
 ## [0.3.28](https://github.com/kicksideai/kickside/compare/uploads-v0.3.27...uploads-v0.3.28) (2026-11-19)
 
 
