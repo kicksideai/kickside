@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.25](https://github.com/kicksideai/kickside/compare/core-v0.3.24...core-v0.3.25) (2026-11-19)
+
+
+### Features
+
+* **core:** checkpoint supervised projections under the Jobs lease ([#585](https://github.com/kicksideai/kickside/issues/585)) ([f6a586b](https://github.com/kicksideai/kickside/commit/f6a586b2bc5841078e076c4ef1fedd2e45d28af3))
+* **core:** expose bounded pending source work from projection cursors ([#589](https://github.com/kicksideai/kickside/issues/589)) ([de1698a](https://github.com/kicksideai/kickside/commit/de1698a2d01e6d4b044bfd73930c540c3e42c177))
+
+
+### Bug Fixes
+
+* **core:** require the Jobs checkpoint lease API ([#592](https://github.com/kicksideai/kickside/issues/592)) ([49c7e08](https://github.com/kicksideai/kickside/commit/49c7e08bf3bca7604f899f9365951585567ba0f2))
+* **core:** validate checkpoint position and writer types ([#594](https://github.com/kicksideai/kickside/issues/594)) ([cf0c736](https://github.com/kicksideai/kickside/commit/cf0c736152f7f8403c04bc413f06f35b99bd7ee0))
+
 ## [0.3.24](https://github.com/kicksideai/kickside/compare/core-v0.3.23...core-v0.3.24) (2026-11-19)
 
 

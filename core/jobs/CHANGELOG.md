@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.87](https://github.com/kicksideai/kickside/compare/jobs-v0.1.86...jobs-v0.1.87) (2026-11-19)
+
+
+### Features
+
+* **core:** checkpoint supervised projections under the Jobs lease ([#585](https://github.com/kicksideai/kickside/issues/585)) ([f6a586b](https://github.com/kicksideai/kickside/commit/f6a586b2bc5841078e076c4ef1fedd2e45d28af3))
+
 ## [0.1.86](https://github.com/kicksideai/kickside/compare/jobs-v0.1.85...jobs-v0.1.86) (2026-11-19)
 
 

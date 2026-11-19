@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.91](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.90...knowledge-v0.1.91) (2026-11-19)
+
+
+### Features
+
+* **core:** expose bounded pending source work from projection cursors ([#589](https://github.com/kicksideai/kickside/issues/589)) ([de1698a](https://github.com/kicksideai/kickside/commit/de1698a2d01e6d4b044bfd73930c540c3e42c177))
+
 ## [0.1.90](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.89...knowledge-v0.1.90) (2026-11-19)
 
 
