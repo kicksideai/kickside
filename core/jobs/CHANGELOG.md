@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.94](https://github.com/kicksideai/kickside/compare/jobs-v0.1.93...jobs-v0.1.94) (2026-11-19)
+
+
+### Bug Fixes
+
+* **jobs:** bound completed fence expiry inspection ([#646](https://github.com/kicksideai/kickside/issues/646)) ([7548fcb](https://github.com/kicksideai/kickside/commit/7548fcbf7bd9e9109bf26705612aca2ee5e88df7))
+* **jobs:** retire empty thread fences after slot purge ([#645](https://github.com/kicksideai/kickside/issues/645)) ([1f84bcf](https://github.com/kicksideai/kickside/commit/1f84bcfc15c11b6b3c36b9f09fd7fd98bdca1ddd))
+
 ## [0.1.93](https://github.com/kicksideai/kickside/compare/jobs-v0.1.92...jobs-v0.1.93) (2026-11-19)
 
 
