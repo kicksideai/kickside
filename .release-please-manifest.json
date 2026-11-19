@@ -3,7 +3,7 @@
   "core/contract": "0.3.11",
   "core/core": "0.3.32",
   "core/execution": "0.2.10",
-  "core/jobs": "0.1.94",
+  "core/jobs": "0.1.95",
   "platform/agents": "0.2.22",
   "platform/automation": "0.2.34",
   "platform/blocks": "0.1.45",

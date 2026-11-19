@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.95](https://github.com/kicksideai/kickside/compare/jobs-v0.1.94...jobs-v0.1.95) (2026-11-19)
+
+
+### Bug Fixes
+
+* **jobs:** recover singleton handoff after owner exit ([#657](https://github.com/kicksideai/kickside/issues/657)) ([b00a6ce](https://github.com/kicksideai/kickside/commit/b00a6ce35099d7f4e8b5aa9ba5c402dfd6a2c357))
+
 ## [0.1.94](https://github.com/kicksideai/kickside/compare/jobs-v0.1.93...jobs-v0.1.94) (2026-11-19)
 
 
