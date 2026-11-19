@@ -266,7 +266,7 @@ function worker.admit_declared_checkpoint(binding: table, cursor: table): (Bindi
         return nil, errors.new({kind = errors.PERMISSION_DENIED, retryable = false,
             message = "private checkpoint worker does not match its cursor"})
     end
-    local err = checkpoint_declaration.check(cursor)
+    local err = checkpoint_declaration.check(cursor, revision)
     if err then return nil, err end
     local admitted, admit_err = validate(binding, false, revision)
     if not admitted then return nil, admit_err end

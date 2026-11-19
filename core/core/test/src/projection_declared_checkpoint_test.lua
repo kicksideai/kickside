@@ -119,7 +119,7 @@ return {run = test.run_cases(function()
                         test.eq(output.actor_id, f.owner)
                     else
                         test.is_true(result.invalid, tostring(after.last_error))
-                        test.contains(after.last_error, case.refusal)
+                        test.contains(after.last_error, assert(case.refusal))
                         test.eq(tonumber(after.last_seq), 0)
                         test.eq(#effects, 0)
                         test.eq(#outputs, 0)

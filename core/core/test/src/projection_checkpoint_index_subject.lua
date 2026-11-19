@@ -1,0 +1,1 @@
+../../src/projections/persist/checkpoint_declaration.lua

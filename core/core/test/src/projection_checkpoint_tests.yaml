@@ -76,6 +76,38 @@ entries:
       projections: kickside.core.projections.persist:writer
       test: wippy.test:test
 
+  - name: checkpoint_declaration_index_fixture
+    kind: library.lua
+    source: file://projection_checkpoint_index_fixture.lua
+
+  - name: checkpoint_declaration_index_component
+    kind: library.lua
+    source: file://projection_checkpoint_index_component.lua
+    imports:
+      fixture: app:checkpoint_declaration_index_fixture
+
+  - name: checkpoint_declaration_index_subject
+    kind: library.lua
+    source: file://projection_checkpoint_index_subject.lua
+    imports:
+      autoinit: app:checkpoint_declaration_index_fixture
+      component: app:checkpoint_declaration_index_component
+      execution_identity: kickside.execution:execution_identity
+      register: kickside.core.projections.persist:register
+      text_trim: kickside.contract:text_trim
+
+  - name: checkpoint_declaration_index_test
+    kind: function.lua
+    meta: {type: test, suite: core_declared_checkpoint}
+    source: file://projection_checkpoint_index_test.lua
+    method: run
+    imports:
+      declaration: app:checkpoint_declaration_index_subject
+      execution_identity: kickside.execution:execution_identity
+      fixture: app:checkpoint_declaration_index_fixture
+      register: kickside.core.projections.persist:register
+      test: wippy.test:test
+
   - name: checkpoint_scheduler_test
     kind: function.lua
     meta: {type: test, suite: core_checkpoint_scheduler, timeout: 60s}
