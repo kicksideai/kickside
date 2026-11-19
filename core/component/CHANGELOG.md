@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.25](https://github.com/kicksideai/kickside/compare/component-v0.3.24...component-v0.3.25) (2026-11-19)
+
+
+### Bug Fixes
+
+* **component:** supply thread read access prerequisites ([#670](https://github.com/kicksideai/kickside/issues/670)) ([35e6725](https://github.com/kicksideai/kickside/commit/35e6725b83e684567bc4e1d7375713dafafab317))
+
 ## [0.3.24](https://github.com/kicksideai/kickside/compare/component-v0.3.23...component-v0.3.24) (2026-11-19)
 
 
