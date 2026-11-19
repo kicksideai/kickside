@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.92](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.91...knowledge-v0.1.92) (2026-11-19)
+
+
+### Bug Fixes
+
+* **knowledge:** guide QueryKB callers to discover accessible IDs ([#601](https://github.com/kicksideai/kickside/issues/601)) ([420fe7b](https://github.com/kicksideai/kickside/commit/420fe7b26555adc711a43c58d851975d6ce9260e))
+
 ## [0.1.91](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.90...knowledge-v0.1.91) (2026-11-19)
 
 
