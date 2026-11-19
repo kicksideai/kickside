@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.86](https://github.com/kicksideai/kickside/compare/models-v0.1.85...models-v0.1.86) (2026-11-19)
+
+
+### Features
+
+* **models:** export and import provider profiles and model cards ([#482](https://github.com/kicksideai/kickside/issues/482)) ([1d05230](https://github.com/kicksideai/kickside/commit/1d0523074a5a6b3e8e19ab331a4a613e2e960f82))
+
 ## [0.1.85](https://github.com/kicksideai/kickside/compare/models-v0.1.84...models-v0.1.85) (2026-11-19)
 
 
