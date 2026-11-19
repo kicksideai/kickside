@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.31](https://github.com/kicksideai/kickside/compare/uploads-v0.3.30...uploads-v0.3.31) (2026-11-19)
+
+
+### Features
+
+* **uploads:** admit versioned provider attachments ([#695](https://github.com/kicksideai/kickside/issues/695)) ([4b3bbdc](https://github.com/kicksideai/kickside/commit/4b3bbdc98afa9a787e69a0ad194d9869a4455f62))
+
 ## [0.3.30](https://github.com/kicksideai/kickside/compare/uploads-v0.3.29...uploads-v0.3.30) (2026-11-19)
 
 
