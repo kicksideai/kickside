@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.10](https://github.com/kicksideai/kickside/compare/contract-v0.3.9...contract-v0.3.10) (2026-11-19)
+
+
+### Bug Fixes
+
+* **security:** declare infrastructure grants nonassignable ([#583](https://github.com/kicksideai/kickside/issues/583)) ([2df1d32](https://github.com/kicksideai/kickside/commit/2df1d32d3cdad285b1c854f3ca0c7d99e6624be9))
+
 ## [0.3.9](https://github.com/kicksideai/kickside/compare/contract-v0.3.8...contract-v0.3.9) (2026-11-19)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.24](https://github.com/kicksideai/kickside/compare/core-v0.3.23...core-v0.3.24) (2026-11-19)
+
+
+### Bug Fixes
+
+* preserve text with long internal whitespace ([#563](https://github.com/kicksideai/kickside/issues/563)) ([80ea34c](https://github.com/kicksideai/kickside/commit/80ea34cd57e9bd053d2874c2f7c98625db05c2f7))
+
 ## [0.3.23](https://github.com/kicksideai/kickside/compare/core-v0.3.22...core-v0.3.23) (2026-11-19)
 
 

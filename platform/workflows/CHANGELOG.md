@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.19](https://github.com/kicksideai/kickside/compare/workflows-v0.2.18...workflows-v0.2.19) (2026-11-19)
+
+
+### Bug Fixes
+
+* preserve text with long internal whitespace ([#563](https://github.com/kicksideai/kickside/issues/563)) ([80ea34c](https://github.com/kicksideai/kickside/commit/80ea34cd57e9bd053d2874c2f7c98625db05c2f7))
+
 ## [0.2.18](https://github.com/kicksideai/kickside/compare/workflows-v0.2.17...workflows-v0.2.18) (2026-11-19)
 
 

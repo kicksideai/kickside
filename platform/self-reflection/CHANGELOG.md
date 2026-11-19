@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.25](https://github.com/kicksideai/kickside/compare/self-reflection-v0.1.24...self-reflection-v0.1.25) (2026-11-19)
+
+
+### Bug Fixes
+
+* preserve text with long internal whitespace ([#563](https://github.com/kicksideai/kickside/issues/563)) ([80ea34c](https://github.com/kicksideai/kickside/commit/80ea34cd57e9bd053d2874c2f7c98625db05c2f7))
+
 ## 0.1.22 (2026-10-08)
 
 - fix: preserve native result bounds and refresh selected model limits (528dd0e0b)

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.10](https://github.com/kicksideai/kickside/compare/connection-v0.5.9...connection-v0.5.10) (2026-11-19)
+
+
+### Bug Fixes
+
+* preserve text with long internal whitespace ([#563](https://github.com/kicksideai/kickside/issues/563)) ([80ea34c](https://github.com/kicksideai/kickside/commit/80ea34cd57e9bd053d2874c2f7c98625db05c2f7))
+
 ## [0.5.9](https://github.com/kicksideai/kickside/compare/connection-v0.5.8...connection-v0.5.9) (2026-11-19)
 
 

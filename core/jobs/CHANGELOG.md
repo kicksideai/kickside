@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.85](https://github.com/kicksideai/kickside/compare/jobs-v0.1.84...jobs-v0.1.85) (2026-11-19)
+
+
+### Features
+
+* **jobs:** allow demand to advance optional rearm deadlines ([#561](https://github.com/kicksideai/kickside/issues/561)) ([5bdfdbf](https://github.com/kicksideai/kickside/commit/5bdfdbf630afbc77405b42702a0d32908d67f137))
+
+
+### Bug Fixes
+
+* preserve text with long internal whitespace ([#563](https://github.com/kicksideai/kickside/issues/563)) ([80ea34c](https://github.com/kicksideai/kickside/commit/80ea34cd57e9bd053d2874c2f7c98625db05c2f7))
+
 ## [0.1.84](https://github.com/kicksideai/kickside/compare/jobs-v0.1.83...jobs-v0.1.84) (2026-11-19)
 
 

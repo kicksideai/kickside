@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.84](https://github.com/kicksideai/kickside/compare/models-v0.1.83...models-v0.1.84) (2026-11-19)
+
+
+### Bug Fixes
+
+* **models:** require a positive provider timeout ([20f1981](https://github.com/kicksideai/kickside/commit/20f19816ebc40063cebb2f652157c3f13a72136c))
+* **models:** retain valid provider timeouts and immediate retries ([#571](https://github.com/kicksideai/kickside/issues/571)) ([20f1981](https://github.com/kicksideai/kickside/commit/20f19816ebc40063cebb2f652157c3f13a72136c))
+* **models:** retain working provider timeouts and immediate retries ([551884c](https://github.com/kicksideai/kickside/commit/551884ca859faceb034a985d2642f5049731a79b))
+* preserve text with long internal whitespace ([#563](https://github.com/kicksideai/kickside/issues/563)) ([80ea34c](https://github.com/kicksideai/kickside/commit/80ea34cd57e9bd053d2874c2f7c98625db05c2f7))
+
 ## [0.1.83](https://github.com/kicksideai/kickside/compare/models-v0.1.82...models-v0.1.83) (2026-11-19)
 
 
