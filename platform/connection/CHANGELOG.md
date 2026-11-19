@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.11](https://github.com/kicksideai/kickside/compare/connection-v0.5.10...connection-v0.5.11) (2026-11-19)
+
+
+### Bug Fixes
+
+* **connection:** require Component support for encrypted credentials ([#663](https://github.com/kicksideai/kickside/issues/663)) ([d572abf](https://github.com/kicksideai/kickside/commit/d572abf378208172a75c8aa757dcb1d6c7ae125d))
+
 ## [0.5.10](https://github.com/kicksideai/kickside/compare/connection-v0.5.9...connection-v0.5.10) (2026-11-19)
 
 
