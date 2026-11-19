@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.27](https://github.com/kicksideai/kickside/compare/uploads-v0.3.26...uploads-v0.3.27) (2026-11-19)
+
+
+### Bug Fixes
+
+* **jobs:** deliver terminal outcomes and preserve upload retry ([#474](https://github.com/kicksideai/kickside/issues/474)) ([d1e19d1](https://github.com/kicksideai/kickside/commit/d1e19d1666c659f61779c87e2e02f5a65782106d))
+* **uploads:** require terminal outcome recovery dependencies ([#626](https://github.com/kicksideai/kickside/issues/626)) ([a53e39a](https://github.com/kicksideai/kickside/commit/a53e39ad5c8613dc45db69ba0e8d822c6846571c))
+
 ## [0.3.26](https://github.com/kicksideai/kickside/compare/uploads-v0.3.25...uploads-v0.3.26) (2026-11-19)
 
 
