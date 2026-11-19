@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.3](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.2...ui-kit-v1.7.3) (2026-11-19)
+
+
+### Bug Fixes
+
+* **ui-kit:** keep shared error messages legible in dark mode ([#593](https://github.com/kicksideai/kickside/issues/593)) ([9ff15d0](https://github.com/kicksideai/kickside/commit/9ff15d02976fa41540679750f8322f18cbdda38a))
+
 ## [1.7.2](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.1...ui-kit-v1.7.2) (2026-11-13)
 
 
