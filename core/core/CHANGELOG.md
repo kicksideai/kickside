@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.28](https://github.com/kicksideai/kickside/compare/core-v0.3.27...core-v0.3.28) (2026-11-19)
+
+
+### Bug Fixes
+
+* **core:** admit private checkpoints from their installed declarations ([#606](https://github.com/kicksideai/kickside/issues/606)) ([e541a15](https://github.com/kicksideai/kickside/commit/e541a1586a0f60f2706d2d4e901d6169c70a62e8))
+
+
+### Performance Improvements
+
+* **core:** index private checkpoint declarations by owner ([#607](https://github.com/kicksideai/kickside/issues/607)) ([c70b0fd](https://github.com/kicksideai/kickside/commit/c70b0fdfc668f246c70cea32c0c3f848e25bd804))
+
 ## [0.3.27](https://github.com/kicksideai/kickside/compare/core-v0.3.26...core-v0.3.27) (2026-11-19)
 
 
