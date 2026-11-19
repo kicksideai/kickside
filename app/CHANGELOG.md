@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.47](https://github.com/kicksideai/kickside/compare/kickside-v0.2.46...kickside-v0.2.47) (2026-11-19)
+
+
+### Bug Fixes
+
+* **app:** require Keeper and Hub fixes for upgrades ([#651](https://github.com/kicksideai/kickside/issues/651)) ([9d508a2](https://github.com/kicksideai/kickside/commit/9d508a2842dae0e9113f22ee4fdd9710125644f4))
+* **release:** select verified archive publication per release ([#605](https://github.com/kicksideai/kickside/issues/605)) ([10d2f2f](https://github.com/kicksideai/kickside/commit/10d2f2f1b68fde1967c8cd9920830ab0c1a532a1))
+
 ## [0.2.46](https://github.com/kicksideai/kickside/compare/kickside-v0.2.45...kickside-v0.2.46) (2026-11-19)
 
 
