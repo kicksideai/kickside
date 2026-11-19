@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.49](https://github.com/kicksideai/kickside/compare/kickside-v0.2.48...kickside-v0.2.49) (2026-11-19)
+
+
+### Features
+
+* **knowledge:** admit versioned Drive attachment deliveries ([#669](https://github.com/kicksideai/kickside/issues/669)) ([cdc2589](https://github.com/kicksideai/kickside/commit/cdc25898a5c888d4304daf58578d9dd91f4f149d))
+
 ## [0.2.48](https://github.com/kicksideai/kickside/compare/kickside-v0.2.47...kickside-v0.2.48) (2026-11-19)
 
 
