@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.90](https://github.com/kicksideai/kickside/compare/jobs-v0.1.89...jobs-v0.1.90) (2026-11-19)
+
+
+### Bug Fixes
+
+* **jobs:** deliver terminal outcomes and preserve upload retry ([#474](https://github.com/kicksideai/kickside/issues/474)) ([d1e19d1](https://github.com/kicksideai/kickside/commit/d1e19d1666c659f61779c87e2e02f5a65782106d))
+
 ## [0.1.89](https://github.com/kicksideai/kickside/compare/jobs-v0.1.88...jobs-v0.1.89) (2026-11-19)
 
 
