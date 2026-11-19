@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.50](https://github.com/kicksideai/kickside/compare/kickside-v0.2.49...kickside-v0.2.50) (2026-11-19)
+
+
+### Bug Fixes
+
+* **app:** use locked dependencies for release builds ([#713](https://github.com/kicksideai/kickside/issues/713)) ([44aa3be](https://github.com/kicksideai/kickside/commit/44aa3be7d588d93d0b9a6a1d4c9aa0d044fba5e5))
+
 ## [0.2.49](https://github.com/kicksideai/kickside/compare/kickside-v0.2.48...kickside-v0.2.49) (2026-11-19)
 
 
