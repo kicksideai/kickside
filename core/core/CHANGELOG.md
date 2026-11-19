@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.27](https://github.com/kicksideai/kickside/compare/core-v0.3.26...core-v0.3.27) (2026-11-19)
+
+
+### Bug Fixes
+
+* **core:** resume marked thread deletion after a missing Jobs page ([d0951cf](https://github.com/kicksideai/kickside/commit/d0951cf04a397e8e3bb6d16bc9a9593931cc56e0))
+* **core:** resume marked thread deletion after a missing Jobs page ([c85392b](https://github.com/kicksideai/kickside/commit/c85392bd5c1c08177650f8dce692eccffd30de59))
+
 ## [0.3.26](https://github.com/kicksideai/kickside/compare/core-v0.3.25...core-v0.3.26) (2026-11-19)
 
 
