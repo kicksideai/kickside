@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.30](https://github.com/kicksideai/kickside/compare/core-v0.3.29...core-v0.3.30) (2026-11-19)
+
+
+### Features
+
+* **core:** converge settled projection workers in place ([#615](https://github.com/kicksideai/kickside/issues/615)) ([b6ebc09](https://github.com/kicksideai/kickside/commit/b6ebc09a1a4885e65da978ddeb79e350b974365a))
+
 ## [0.3.29](https://github.com/kicksideai/kickside/compare/core-v0.3.28...core-v0.3.29) (2026-11-19)
 
 
