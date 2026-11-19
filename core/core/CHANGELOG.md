@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.29](https://github.com/kicksideai/kickside/compare/core-v0.3.28...core-v0.3.29) (2026-11-19)
+
+
+### Features
+
+* **core:** look up the latest retained external event ([#611](https://github.com/kicksideai/kickside/issues/611)) ([679d4bc](https://github.com/kicksideai/kickside/commit/679d4bcb90bdf4c062e97c7c4c3df25e0eed1e4b))
+
 ## [0.3.28](https://github.com/kicksideai/kickside/compare/core-v0.3.27...core-v0.3.28) (2026-11-19)
 
 
