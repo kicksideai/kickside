@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.19](https://github.com/kicksideai/kickside/compare/agents-v0.2.18...agents-v0.2.19) (2026-11-19)
+
+
+### Bug Fixes
+
+* **agents:** keep HTML artifact validation bounded to the prefix ([#568](https://github.com/kicksideai/kickside/issues/568)) ([2a3e46f](https://github.com/kicksideai/kickside/commit/2a3e46f915d2b203fb2c37f0def08ab9b6341238))
+* **agents:** serve Web Host agent and tool details ([#577](https://github.com/kicksideai/kickside/issues/577)) ([ccbdcfe](https://github.com/kicksideai/kickside/commit/ccbdcfeafeaca5e7b3436caffe6bf5687500ca5d))
+
 ## [0.2.18](https://github.com/kicksideai/kickside/compare/agents-v0.2.17...agents-v0.2.18) (2026-11-16)
 
 

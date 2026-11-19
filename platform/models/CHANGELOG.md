@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.81](https://github.com/kicksideai/kickside/compare/models-v0.1.80...models-v0.1.81) (2026-11-19)
+
+
+### Bug Fixes
+
+* keep secret operations in owning module frames ([#483](https://github.com/kicksideai/kickside/issues/483)) ([47f4f8a](https://github.com/kicksideai/kickside/commit/47f4f8af2dba69d4b8e818ab78530ec6fad12be9))
+* **models:** honor the provider timeout for plain chat ([#556](https://github.com/kicksideai/kickside/issues/556)) ([5a7518f](https://github.com/kicksideai/kickside/commit/5a7518f5ff44adc17498c4ea66961f8c2bed80ec))
+* **models:** keep discovered models usable without token limits ([#541](https://github.com/kicksideai/kickside/issues/541)) ([39e40c2](https://github.com/kicksideai/kickside/commit/39e40c234eeeb9f94607ae7cfba85e8360d5b472))
+* **models:** resolve configured models for members ([#395](https://github.com/kicksideai/kickside/issues/395)) ([b79e54f](https://github.com/kicksideai/kickside/commit/b79e54fa105fcf18794e8c4d989f55ddf4a7b376))
+
 ## [0.1.80](https://github.com/kicksideai/kickside/compare/models-v0.1.79...models-v0.1.80) (2026-11-16)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.18](https://github.com/kicksideai/kickside/compare/workflows-v0.2.17...workflows-v0.2.18) (2026-11-19)
+
+
+### Bug Fixes
+
+* **workflows:** fill the page and center loading and empty states ([#534](https://github.com/kicksideai/kickside/issues/534)) ([429c252](https://github.com/kicksideai/kickside/commit/429c252f59315b199b8699fd52b2b01e2f105289))
+
 ## [0.2.17](https://github.com/kicksideai/kickside/compare/workflows-v0.2.16...workflows-v0.2.17) (2026-11-17)
 
 

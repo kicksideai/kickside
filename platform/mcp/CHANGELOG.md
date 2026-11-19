@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.13](https://github.com/kicksideai/kickside/compare/mcp-v0.2.12...mcp-v0.2.13) (2026-11-19)
+
+
+### Bug Fixes
+
+* keep secret operations in owning module frames ([#483](https://github.com/kicksideai/kickside/issues/483)) ([47f4f8a](https://github.com/kicksideai/kickside/commit/47f4f8af2dba69d4b8e818ab78530ec6fad12be9))
+* **mcp:** return structured content for declared outputs ([#542](https://github.com/kicksideai/kickside/issues/542)) ([3d7c4df](https://github.com/kicksideai/kickside/commit/3d7c4df8399d20387a018f5d4960d4ba6a4bfbdb))
+
 ## [0.2.12](https://github.com/kicksideai/kickside/compare/mcp-v0.2.11...mcp-v0.2.12) (2026-11-16)
 
 

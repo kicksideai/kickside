@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.23](https://github.com/kicksideai/kickside/compare/component-v0.3.22...component-v0.3.23) (2026-11-19)
+
+
+### Bug Fixes
+
+* **component:** encrypt declared credentials and mask external reads ([#469](https://github.com/kicksideai/kickside/issues/469)) ([03389bf](https://github.com/kicksideai/kickside/commit/03389bf0bdb5b5092883a061f40fed55ca78db37))
+* **component:** forward include.placement in list_system ([#522](https://github.com/kicksideai/kickside/issues/522)) ([7439f19](https://github.com/kicksideai/kickside/commit/7439f1998037966e7175330e9d061cd86138bc99))
+* **component:** resolve an existing id before locking the parent on create ([#533](https://github.com/kicksideai/kickside/issues/533)) ([ebb14ef](https://github.com/kicksideai/kickside/commit/ebb14ef6cb0d39f3b702bcccf9013e72fd1525df))
+
 ## [0.3.22](https://github.com/kicksideai/kickside/compare/component-v0.3.21...component-v0.3.22) (2026-11-17)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.43](https://github.com/kicksideai/kickside/compare/kickside-v0.2.42...kickside-v0.2.43) (2026-11-19)
+
+
+### Bug Fixes
+
+* **app:** share Host Vue and Iconify with web components ([9d382e7](https://github.com/kicksideai/kickside/commit/9d382e7e9ef7d088f2027e662dc9a9db656e729f))
+
 ## [0.2.42](https://github.com/kicksideai/kickside/compare/kickside-v0.2.41...kickside-v0.2.42) (2026-11-16)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.9](https://github.com/kicksideai/kickside/compare/contract-v0.3.8...contract-v0.3.9) (2026-11-19)
+
+
+### Bug Fixes
+
+* **contract:** trim text without pattern backtracking ([#578](https://github.com/kicksideai/kickside/issues/578)) ([991fbc9](https://github.com/kicksideai/kickside/commit/991fbc94471a080e33715003eb195330c7e03147))
+
 ## [0.3.8](https://github.com/kicksideai/kickside/compare/contract-v0.3.7...contract-v0.3.8) (2026-11-15)
 
 

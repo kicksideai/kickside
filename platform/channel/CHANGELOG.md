@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.14](https://github.com/kicksideai/kickside/compare/channel-v0.2.13...channel-v0.2.14) (2026-11-19)
+
+
+### Bug Fixes
+
+* **channel:** accept messages and replies with long whitespace ([#569](https://github.com/kicksideai/kickside/issues/569)) ([9ec475c](https://github.com/kicksideai/kickside/commit/9ec475cd54a327c2c98b324291a4812b73725b79))
+
 ## [0.2.13](https://github.com/kicksideai/kickside/compare/channel-v0.2.12...channel-v0.2.13) (2026-11-17)
 
 

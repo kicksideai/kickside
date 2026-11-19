@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.12](https://github.com/kicksideai/kickside/compare/settings-v0.3.11...settings-v0.3.12) (2026-11-19)
+
+
+### Bug Fixes
+
+* keep secret operations in owning module frames ([#483](https://github.com/kicksideai/kickside/issues/483)) ([47f4f8a](https://github.com/kicksideai/kickside/commit/47f4f8af2dba69d4b8e818ab78530ec6fad12be9))
+
 ## [0.3.11](https://github.com/kicksideai/kickside/compare/settings-v0.3.10...settings-v0.3.11) (2026-11-17)
 
 

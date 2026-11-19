@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.9](https://github.com/kicksideai/kickside/compare/connection-v0.5.8...connection-v0.5.9) (2026-11-19)
+
+
+### Bug Fixes
+
+* **component:** encrypt declared credentials and mask external reads ([#469](https://github.com/kicksideai/kickside/issues/469)) ([03389bf](https://github.com/kicksideai/kickside/commit/03389bf0bdb5b5092883a061f40fed55ca78db37))
+
 ## [0.5.8](https://github.com/kicksideai/kickside/compare/connection-v0.5.7...connection-v0.5.8) (2026-11-16)
 
 

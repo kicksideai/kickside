@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.21](https://github.com/kicksideai/kickside/compare/uploads-v0.3.20...uploads-v0.3.21) (2026-11-19)
+
+
+### Bug Fixes
+
+* keep secret operations in owning module frames ([#483](https://github.com/kicksideai/kickside/issues/483)) ([47f4f8a](https://github.com/kicksideai/kickside/commit/47f4f8af2dba69d4b8e818ab78530ec6fad12be9))
+* **uploads:** bound and sanitize renderer diagnostics ([#502](https://github.com/kicksideai/kickside/issues/502)) ([e398270](https://github.com/kicksideai/kickside/commit/e398270a01f3d93c22a06dd57934231e275a144a))
+* **uploads:** preserve artifact read causes ([#560](https://github.com/kicksideai/kickside/issues/560)) ([098314c](https://github.com/kicksideai/kickside/commit/098314c777b2a18964f4a40cde0722e0f80f6188))
+* **uploads:** project a retried upload's new processing attempt ([#507](https://github.com/kicksideai/kickside/issues/507)) ([c0a5d29](https://github.com/kicksideai/kickside/commit/c0a5d2986e0bd3c5049494ee5690cca587646b72))
+
 ## [0.3.20](https://github.com/kicksideai/kickside/compare/uploads-v0.3.19...uploads-v0.3.20) (2026-11-16)
 
 
