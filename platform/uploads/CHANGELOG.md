@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.26](https://github.com/kicksideai/kickside/compare/uploads-v0.3.25...uploads-v0.3.26) (2026-11-19)
+
+
+### Bug Fixes
+
+* **uploads:** show filenames and reasons for request failures ([#555](https://github.com/kicksideai/kickside/issues/555)) ([ff314c8](https://github.com/kicksideai/kickside/commit/ff314c85467fcb86242dfa4ab9f49e53abeabbe5))
+* **uploads:** surface every request failure with its file and reason ([#565](https://github.com/kicksideai/kickside/issues/565)) ([6a2ea3c](https://github.com/kicksideai/kickside/commit/6a2ea3c10428dfe3b201bfc1a2be0e50f2eed7d4))
+
 ## [0.3.25](https://github.com/kicksideai/kickside/compare/uploads-v0.3.24...uploads-v0.3.25) (2026-11-19)
 
 

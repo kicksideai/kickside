@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.26](https://github.com/kicksideai/kickside/compare/core-v0.3.25...core-v0.3.26) (2026-11-19)
+
+
+### Bug Fixes
+
+* **core:** commit thread teardown pages atomically ([#576](https://github.com/kicksideai/kickside/issues/576)) ([5f934f0](https://github.com/kicksideai/kickside/commit/5f934f05dc51d165db195168d75fe350ad701492))
+* **core:** converge declared lifecycle projections ([#466](https://github.com/kicksideai/kickside/issues/466)) ([ebc59f8](https://github.com/kicksideai/kickside/commit/ebc59f83121a6c2a412e6d359ee1ca655d3264b7))
+
 ## [0.3.25](https://github.com/kicksideai/kickside/compare/core-v0.3.24...core-v0.3.25) (2026-11-19)
 
 

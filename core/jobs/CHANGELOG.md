@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.88](https://github.com/kicksideai/kickside/compare/jobs-v0.1.87...jobs-v0.1.88) (2026-11-19)
+
+
+### Features
+
+* **jobs:** retain job history per job type ([#530](https://github.com/kicksideai/kickside/issues/530)) ([bd6e9e7](https://github.com/kicksideai/kickside/commit/bd6e9e7ccc8bb54b0db3b33225e1864e6f9835a8))
+
+
+### Bug Fixes
+
+* **core:** commit thread teardown pages atomically ([#576](https://github.com/kicksideai/kickside/issues/576)) ([5f934f0](https://github.com/kicksideai/kickside/commit/5f934f05dc51d165db195168d75fe350ad701492))
+
 ## [0.1.87](https://github.com/kicksideai/kickside/compare/jobs-v0.1.86...jobs-v0.1.87) (2026-11-19)
 
 
