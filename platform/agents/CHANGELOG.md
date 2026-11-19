@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.22](https://github.com/kicksideai/kickside/compare/agents-v0.2.21...agents-v0.2.22) (2026-11-19)
+
+
+### Bug Fixes
+
+* **agents:** match capability query words when a phrase misses ([#652](https://github.com/kicksideai/kickside/issues/652)) ([04a6135](https://github.com/kicksideai/kickside/commit/04a6135e3df35fff80fc784ad679c690ff1c99f2))
+
 ## [0.2.21](https://github.com/kicksideai/kickside/compare/agents-v0.2.20...agents-v0.2.21) (2026-11-19)
 
 
