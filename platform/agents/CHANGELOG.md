@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.20](https://github.com/kicksideai/kickside/compare/agents-v0.2.19...agents-v0.2.20) (2026-11-19)
+
+
+### Bug Fixes
+
+* **agents:** fit the default output budget to the selected model ([#572](https://github.com/kicksideai/kickside/issues/572)) ([428571c](https://github.com/kicksideai/kickside/commit/428571c9104a19aad80e36ba6dcce37fe5f78fc9))
+
 ## [0.2.19](https://github.com/kicksideai/kickside/compare/agents-v0.2.18...agents-v0.2.19) (2026-11-19)
 
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.83](https://github.com/kicksideai/kickside/compare/models-v0.1.82...models-v0.1.83) (2026-11-19)
+
+
+### Bug Fixes
+
+* **models:** distinguish unreadable class assignments ([20b2960](https://github.com/kicksideai/kickside/commit/20b2960e592ee7682ac217ce6b52eba6e1591535))
+* **models:** distinguish unreadable class assignments ([bdcbc62](https://github.com/kicksideai/kickside/commit/bdcbc62d374c2623b303c0039caf9d44aa9b30ea))
+* **models:** type unassigned class resolution errors ([6b525ce](https://github.com/kicksideai/kickside/commit/6b525ceac41885d6e8ab9558510bfe971a26b71f))
+
 ## [0.1.82](https://github.com/kicksideai/kickside/compare/models-v0.1.81...models-v0.1.82) (2026-11-19)
 
 
