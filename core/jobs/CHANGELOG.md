@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.89](https://github.com/kicksideai/kickside/compare/jobs-v0.1.88...jobs-v0.1.89) (2026-11-19)
+
+
+### Features
+
+* **jobs:** enforce opt-in execution progress deadlines ([#596](https://github.com/kicksideai/kickside/issues/596)) ([7f8f7fa](https://github.com/kicksideai/kickside/commit/7f8f7fa8eeb10a1fe0bc2c797efb1eb56c4a0074))
+
 ## [0.1.88](https://github.com/kicksideai/kickside/compare/jobs-v0.1.87...jobs-v0.1.88) (2026-11-19)
 
 
