@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.96](https://github.com/kicksideai/kickside/compare/jobs-v0.1.95...jobs-v0.1.96) (2026-11-19)
+
+
+### Bug Fixes
+
+* **jobs:** keep expired leases scheduled for reclaim ([#671](https://github.com/kicksideai/kickside/issues/671)) ([e4d61ac](https://github.com/kicksideai/kickside/commit/e4d61acdc75d65ec283f3d30ee9de2884132fd1e))
+
 ## [0.1.95](https://github.com/kicksideai/kickside/compare/jobs-v0.1.94...jobs-v0.1.95) (2026-11-19)
 
 
