@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.36](https://github.com/kicksideai/kickside/compare/automation-v0.2.35...automation-v0.2.36) (2026-11-19)
+
+
+### Bug Fixes
+
+* **automation:** resume pending writable effects without spending delivery attempts ([#684](https://github.com/kicksideai/kickside/issues/684)) ([10e71ab](https://github.com/kicksideai/kickside/commit/10e71abf8ea8ae2e5ec3d43286edfe126b5f8760))
+
 ## [0.2.35](https://github.com/kicksideai/kickside/compare/automation-v0.2.34...automation-v0.2.35) (2026-11-19)
 
 
