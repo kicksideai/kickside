@@ -1,7 +1,7 @@
 {
   "core/component": "0.3.25",
   "core/contract": "0.3.12",
-  "core/core": "0.3.35",
+  "core/core": "0.3.36",
   "core/execution": "0.2.10",
   "core/jobs": "0.1.96",
   "platform/agents": "0.2.22",
