@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.28](https://github.com/kicksideai/kickside/compare/uploads-v0.3.27...uploads-v0.3.28) (2026-11-19)
+
+
+### Features
+
+* **uploads:** enable progress deadlines for reporting pipelines ([#475](https://github.com/kicksideai/kickside/issues/475)) ([4ef4dbb](https://github.com/kicksideai/kickside/commit/4ef4dbb1f0aa21baa34d85a7005b5deeb6e427b6))
+
+
+### Bug Fixes
+
+* **uploads:** bound PostgreSQL checkpoint page reads ([#636](https://github.com/kicksideai/kickside/issues/636)) ([78a4ecc](https://github.com/kicksideai/kickside/commit/78a4ecc2ef8378b9676f60498122df0eba6ff481))
+
 ## [0.3.27](https://github.com/kicksideai/kickside/compare/uploads-v0.3.26...uploads-v0.3.27) (2026-11-19)
 
 
