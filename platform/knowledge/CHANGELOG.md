@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.98](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.97...knowledge-v0.1.98) (2026-11-19)
+
+
+### Features
+
+* **knowledge:** admit versioned Drive attachment deliveries ([#669](https://github.com/kicksideai/kickside/issues/669)) ([cdc2589](https://github.com/kicksideai/kickside/commit/cdc25898a5c888d4304daf58578d9dd91f4f149d))
+
 ## [0.1.97](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.96...knowledge-v0.1.97) (2026-11-19)
 
 
