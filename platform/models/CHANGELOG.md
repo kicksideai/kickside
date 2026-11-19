@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.85](https://github.com/kicksideai/kickside/compare/models-v0.1.84...models-v0.1.85) (2026-11-19)
+
+
+### Bug Fixes
+
+* **models:** preserve native sampling capabilities on saved profiles ([#587](https://github.com/kicksideai/kickside/issues/587)) ([9d00e73](https://github.com/kicksideai/kickside/commit/9d00e73c36c310e69242c0f3c60c7cc93f0b10a8))
+
 ## [0.1.84](https://github.com/kicksideai/kickside/compare/models-v0.1.83...models-v0.1.84) (2026-11-19)
 
 

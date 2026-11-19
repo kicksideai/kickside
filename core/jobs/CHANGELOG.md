@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.86](https://github.com/kicksideai/kickside/compare/jobs-v0.1.85...jobs-v0.1.86) (2026-11-19)
+
+
+### Bug Fixes
+
+* **jobs:** bound thread cleanup and serialize run links ([#574](https://github.com/kicksideai/kickside/issues/574)) ([36390d3](https://github.com/kicksideai/kickside/commit/36390d30d730cbf98070cea7ac631c0ad953766e))
+
 ## [0.1.85](https://github.com/kicksideai/kickside/compare/jobs-v0.1.84...jobs-v0.1.85) (2026-11-19)
 
 

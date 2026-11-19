@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.90](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.89...knowledge-v0.1.90) (2026-11-19)
+
+
+### Bug Fixes
+
+* **uploads:** keep TSV and text source uploads readable ([#554](https://github.com/kicksideai/kickside/issues/554)) ([3f265fa](https://github.com/kicksideai/kickside/commit/3f265fa80cd738eac07a037cbaebd7860549d9c1))
+
 ## [0.1.89](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.88...knowledge-v0.1.89) (2026-11-19)
 
 

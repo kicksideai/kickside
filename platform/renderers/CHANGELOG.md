@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.40](https://github.com/kicksideai/kickside/compare/renderers-v0.1.39...renderers-v0.1.40) (2026-11-19)
+
+
+### Bug Fixes
+
+* **uploads:** keep TSV and text source uploads readable ([#554](https://github.com/kicksideai/kickside/issues/554)) ([3f265fa](https://github.com/kicksideai/kickside/commit/3f265fa80cd738eac07a037cbaebd7860549d9c1))
+
 ## [0.1.39](https://github.com/kicksideai/kickside/compare/renderers-v0.1.38...renderers-v0.1.39) (2026-11-16)
 
 
