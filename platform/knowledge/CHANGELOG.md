@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.97](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.96...knowledge-v0.1.97) (2026-11-19)
+
+
+### Bug Fixes
+
+* **knowledge:** return explicit AskKB answer outcomes ([#688](https://github.com/kicksideai/kickside/issues/688)) ([6d47698](https://github.com/kicksideai/kickside/commit/6d47698f16057fa64c3180516f4b53fff6fb4e3c))
+
 ## [0.1.96](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.95...knowledge-v0.1.96) (2026-11-19)
 
 
