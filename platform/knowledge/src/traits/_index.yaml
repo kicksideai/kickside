@@ -174,7 +174,9 @@ entries:
       To store a file the user uploaded (e.g. one they dropped into the chat),
       pass its upload id as upload_id instead of content — the file's primary
       markdown/text artifact is ingested for you. Otherwise pass the text as content.
-      If multiple KBs are configured, specify which one to target with kb_id.
+      Omit kb_id when exactly one KB is configured. When several are configured,
+      pass the exact ID of the selected KB. With no configured KBs, use the ID
+      returned by FindKnowledgeBases.
     tools:
       - kickside.knowledge.traits:kb_embed_tool
 
@@ -192,7 +194,12 @@ entries:
           - state.write
       title: Embed to Knowledge Base
       llm_alias: EmbedToKB
-      llm_description: "Queue content into a configured knowledge base. Either pass text as content, OR pass upload_id to ingest the file's primary markdown/text artifact. Failures return no result and a typed tool error with a clear message."
+      llm_description: >-
+        Queue content into a knowledge base. Omit kb_id when exactly one KB is
+        configured. When several are configured, pass the exact selected KB ID.
+        With no configured KBs, use the ID returned by FindKnowledgeBases. Pass
+        upload_id to ingest the file's primary markdown/text artifact or pass
+        text as content. Failures return no result and a typed tool error.
       input_schema: |
         {
           "type": "object",
@@ -200,7 +207,7 @@ entries:
             "content": { "type": "string", "description": "Text content to embed. Omit when ingesting an uploaded file via upload_id." },
             "upload_id": { "type": "string", "description": "Id of a file the user already uploaded (e.g. dropped into chat). Ingests that file's primary markdown/text artifact; takes precedence over content." },
             "title": { "type": "string", "description": "Title for the content" },
-            "kb_id": { "type": "string", "description": "Target KB ID; required when multiple KBs are configured" },
+            "kb_id": { "type": "string", "description": "Omit when one KB is configured. Pass the exact selected KB ID when several are configured, or the discovered KB ID when none are configured." },
             "content_type": { "type": "string", "description": "MIME type (default: text/plain)" },
             "external_id": { "type": "string", "description": "Stable external content id for idempotent replacement" },
             "external_version": { "type": "string", "description": "Optional source version for this content" },
@@ -456,8 +463,10 @@ entries:
 
       To add an attachment, uploaded file, or text to a knowledge base,
       activate Knowledge Base Writer (`kickside.knowledge.traits:kb_writer`)
-      with Capabilities if needed. Call `EmbedToKB` with the target `kb_id`
-      and the file's `upload_id` or the text as `content`.
+      with Capabilities if needed, using the target's exact component ID in
+      `kb_ids`. Call `EmbedToKB` with the file's `upload_id` or text as
+      `content`. Omit `kb_id` when one KB is bound to the Writer. If several
+      are bound, pass the exact ID of the selected KB.
 
       Call `list_kb_engines` before creating a
       knowledge base. Pass the returned `kb_type` (for example `document`),
@@ -573,7 +582,8 @@ entries:
         Discover installed knowledge engines and list, create, reuse, delete,
         resummarize, or re-embed knowledge bases through the Knowledge-owned
         registry. To add a file or text to a base, activate Knowledge Base
-        Writer with Capabilities and use EmbedToKB.
+        Writer with Capabilities and use EmbedToKB. Omit kb_id when one KB is
+        bound. If several are bound, pass the exact selected KB ID.
         resummarize_knowledge_base and reembed_knowledge_base schedule the run on
         the knowledge engine and answer a receipt with job_id rather than
         waiting (a whole knowledge base takes minutes to hours; resummarize

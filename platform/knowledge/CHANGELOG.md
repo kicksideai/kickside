@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.95](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.94...knowledge-v0.1.95) (2026-11-19)
+
+
+### Bug Fixes
+
+* **knowledge:** use the single bound target for document ingestion ([#641](https://github.com/kicksideai/kickside/issues/641)) ([5792715](https://github.com/kicksideai/kickside/commit/5792715483f232da2e95f8cabafce790cb82be96))
+
 ## [0.1.94](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.93...knowledge-v0.1.94) (2026-11-19)
 
 

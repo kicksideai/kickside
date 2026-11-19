@@ -76,7 +76,11 @@ local function resolve_kb_id(args: any, context: any): (string?, error?)
     local explicit = trim(args.kb_id)
     if explicit ~= "" then
         if kb_ids and #kb_ids > 0 and not contains_kb_id(kb_ids, explicit) then
-            return nil, errors.new({ kind = errors.INVALID, message = "kb_id not in configured knowledge bases" })
+            local message = "kb_id not in configured knowledge bases"
+            if #kb_ids == 1 then
+                message = message .. ". Omit kb_id to use the single configured knowledge base."
+            end
+            return nil, errors.new({ kind = errors.INVALID, message = message })
         end
         return explicit, nil
     end
