@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.87](https://github.com/kicksideai/kickside/compare/models-v0.1.86...models-v0.1.87) (2026-11-19)
+
+
+### Bug Fixes
+
+* **models:** preserve empty JSON objects when redacting provider replies ([#701](https://github.com/kicksideai/kickside/issues/701)) ([bdf561d](https://github.com/kicksideai/kickside/commit/bdf561d796629d466b7924f027190d8c41622233))
+
 ## [0.1.86](https://github.com/kicksideai/kickside/compare/models-v0.1.85...models-v0.1.86) (2026-11-19)
 
 
