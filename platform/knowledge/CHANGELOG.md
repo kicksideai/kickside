@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.96](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.95...knowledge-v0.1.96) (2026-11-19)
+
+
+### Features
+
+* **knowledge:** deliver completed uploads through Data Sync ([#662](https://github.com/kicksideai/kickside/issues/662)) ([a8d8d20](https://github.com/kicksideai/kickside/commit/a8d8d2019deba231c4d7a1f304b071ba303cd955))
+
 ## [0.1.95](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.94...knowledge-v0.1.95) (2026-11-19)
 
 
