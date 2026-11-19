@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.37](https://github.com/kicksideai/kickside/compare/automation-v0.2.36...automation-v0.2.37) (2026-11-19)
+
+
+### Bug Fixes
+
+* **automation:** honor delays during key enumeration ([#694](https://github.com/kicksideai/kickside/issues/694)) ([8cd23d0](https://github.com/kicksideai/kickside/commit/8cd23d08f69dd4b0835825787cee77fc0d554b65))
+
 ## [0.2.36](https://github.com/kicksideai/kickside/compare/automation-v0.2.35...automation-v0.2.36) (2026-11-19)
 
 
