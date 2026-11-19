@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.82](https://github.com/kicksideai/kickside/compare/models-v0.1.81...models-v0.1.82) (2026-11-19)
+
+
+### Bug Fixes
+
+* **models:** probe first-party OpenAI generation through Responses ([#559](https://github.com/kicksideai/kickside/issues/559)) ([2e3eea9](https://github.com/kicksideai/kickside/commit/2e3eea93c4eddae321e27f8b34f87ae9d28e2ca8))
+
 ## [0.1.81](https://github.com/kicksideai/kickside/compare/models-v0.1.80...models-v0.1.81) (2026-11-19)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.24](https://github.com/kicksideai/kickside/compare/component-v0.3.23...component-v0.3.24) (2026-11-19)
+
+
+### Bug Fixes
+
+* **models:** probe first-party OpenAI generation through Responses ([#559](https://github.com/kicksideai/kickside/issues/559)) ([2e3eea9](https://github.com/kicksideai/kickside/commit/2e3eea93c4eddae321e27f8b34f87ae9d28e2ca8))
+
 ## [0.3.23](https://github.com/kicksideai/kickside/compare/component-v0.3.22...component-v0.3.23) (2026-11-19)
 
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.88](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.87...knowledge-v0.1.88) (2026-11-19)
+
+
+### Bug Fixes
+
+* **knowledge:** validate selected document deletes at admission ([8a153a9](https://github.com/kicksideai/kickside/commit/8a153a95cf35acc294f6242d87f931b0ae7800d3))
+* **knowledge:** validate selected document deletes at admission ([4d912ec](https://github.com/kicksideai/kickside/commit/4d912ecfed4b7287af0ea614ed3afc9ea723ba24))
+
 ## [0.1.87](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.86...knowledge-v0.1.87) (2026-11-16)
 
 

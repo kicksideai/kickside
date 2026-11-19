@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.84](https://github.com/kicksideai/kickside/compare/jobs-v0.1.83...jobs-v0.1.84) (2026-11-19)
+
+
+### Bug Fixes
+
+* **jobs:** prune workers by lease liveness ([#525](https://github.com/kicksideai/kickside/issues/525)) ([5108208](https://github.com/kicksideai/kickside/commit/5108208556e4085cf25734a5f8d0eb24b76ca383))
+* **models:** probe first-party OpenAI generation through Responses ([#559](https://github.com/kicksideai/kickside/issues/559)) ([2e3eea9](https://github.com/kicksideai/kickside/commit/2e3eea93c4eddae321e27f8b34f87ae9d28e2ca8))
+
 ## [0.1.83](https://github.com/kicksideai/kickside/compare/jobs-v0.1.82...jobs-v0.1.83) (2026-11-19)
 
 

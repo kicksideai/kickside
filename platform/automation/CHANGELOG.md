@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.31](https://github.com/kicksideai/kickside/compare/automation-v0.2.30...automation-v0.2.31) (2026-11-19)
+
+
+### Bug Fixes
+
+* **automation:** preserve internal whitespace when renaming ([#570](https://github.com/kicksideai/kickside/issues/570)) ([632d306](https://github.com/kicksideai/kickside/commit/632d306dad314d318210a84e9712c3b8e701423a))
+
 ## [0.2.30](https://github.com/kicksideai/kickside/compare/automation-v0.2.29...automation-v0.2.30) (2026-11-17)
 
 

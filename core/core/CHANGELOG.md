@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.23](https://github.com/kicksideai/kickside/compare/core-v0.3.22...core-v0.3.23) (2026-11-19)
+
+
+### Bug Fixes
+
+* **core:** expose projection attempt state to workers ([#550](https://github.com/kicksideai/kickside/issues/550)) ([87fa84d](https://github.com/kicksideai/kickside/commit/87fa84d40c2fc78d434844033d70d8df996d3e24))
+
 ## [0.3.22](https://github.com/kicksideai/kickside/compare/core-v0.3.21...core-v0.3.22) (2026-11-19)
 
 
