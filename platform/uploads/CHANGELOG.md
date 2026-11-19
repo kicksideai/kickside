@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.30](https://github.com/kicksideai/kickside/compare/uploads-v0.3.29...uploads-v0.3.30) (2026-11-19)
+
+
+### Bug Fixes
+
+* **uploads:** log upload creation persistence failures ([#687](https://github.com/kicksideai/kickside/issues/687)) ([17538f6](https://github.com/kicksideai/kickside/commit/17538f6fd6848a9d18f26c878788038f12c68f45))
+
 ## [0.3.29](https://github.com/kicksideai/kickside/compare/uploads-v0.3.28...uploads-v0.3.29) (2026-11-19)
 
 
