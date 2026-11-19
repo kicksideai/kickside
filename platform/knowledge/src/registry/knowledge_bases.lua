@@ -373,7 +373,7 @@ function M.list(args: any): ({ kb_types.ComponentRow }?, error?)
     local meta_filter: { [string]: string } = { class = KB_CLASS }
     if is_str(args.kb_type) then meta_filter.kb_type = args.kb_type :: string end
 
-    local result, err = svc:list({ filters = { meta = meta_filter } })
+    local result, err = svc:list({ filters = { meta = meta_filter, access_mask = component.ACCESS.READ } })
     if err then return nil, errors.wrap(err, "list_components") end
     if not result or not result.success then
         return nil, errors.new({ kind = errors.INTERNAL, message = "list_components returned " .. tostring(result and result.error or "no result") })

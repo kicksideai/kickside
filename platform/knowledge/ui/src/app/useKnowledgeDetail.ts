@@ -2,7 +2,7 @@ import { computed, nextTick, onBeforeUnmount, ref, watch, type ComputedRef, type
 import { api, loadByTagName } from '@wippy-fe/proxy'
 import { subscribeComponentMeta, type ComponentMetaEvent } from '@kickside/ui-kit/componentRealtime'
 import { errMsg } from '@kickside/ui-kit/errMsg'
-import { KNOWLEDGE_META_FIELD_TYPES } from './meta'
+import { KNOWLEDGE_META_FIELD_TYPES, applyStoreStats } from './meta'
 import type { Engine, KbDetail, KnowledgeBase, ViewMode } from './knowledge.types.ts'
 import type { Events } from '../constants.ts'
 
@@ -124,8 +124,10 @@ export function useKnowledgeDetail({ detail, detailUnsub, kbs, engines, engineFo
     try {
       const { data } = await api.get(`/api/v1/knowledge/${id}`)
       if (!isActiveDetail(seq, id)) return
-      if (data?.success) detail.value = { ...detail.value, ...data } as KbDetail
-      else detailError.value = data?.error || 'could not load knowledge base'
+      if (data?.success) {
+        const snapshot = { ...detail.value, ...data } as KbDetail
+        detail.value = data.stats_from_store ? applyStoreStats(snapshot, data) : snapshot
+      } else detailError.value = data?.error || 'could not load knowledge base'
     } catch (e) {
       if (!isActiveDetail(seq, id)) return
       detailError.value = errMsg(e, 'could not load knowledge base')
@@ -148,8 +150,10 @@ export function useKnowledgeDetail({ detail, detailUnsub, kbs, engines, engineFo
     try {
       const { data } = await api.get(`/api/v1/knowledge/${id}`)
       if (!isActiveDetail(seq, id)) return
-      if (data?.success) detail.value = { ...detail.value, ...data } as KbDetail
-      else detailError.value = data?.error || 'could not load knowledge base'
+      if (data?.success) {
+        const snapshot = { ...detail.value, ...data } as KbDetail
+        detail.value = data.stats_from_store ? applyStoreStats(snapshot, data) : snapshot
+      } else detailError.value = data?.error || 'could not load knowledge base'
     } catch (e) {
       if (!isActiveDetail(seq, id)) return
       detailError.value = errMsg(e, 'could not load knowledge base')

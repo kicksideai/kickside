@@ -52,6 +52,68 @@ local function store_key(engine: any): string
     return trim(engine.store_contract) .. "|" .. trim(engine.store_binding)
 end
 
+-- The read callers own component READ authorization and page selection.
+-- A false entry means an opted-in component has no store snapshot yet.
+function M.stats_available(engine: any): boolean
+    return type(engine) == "table" and engine.store_stats_batch == true
+        and trim(engine.store_contract) ~= "" and trim(engine.store_binding) ~= ""
+end
+
+local MAX_STATS_BATCH = 2000
+
+M.STATS_FIELDS = {
+    "document_count", "failed_count", "node_count", "edge_count", "embedding_count",
+    "concept_count", "chunk_count", "summary_count", "claim_count",
+}
+
+function M.page_stats(components: {any}, engine_for: (any) -> any): (any, error?)
+    local groups: {[string]: any} = {}
+    local stats: {[string]: any} = {}
+    for _, row in ipairs(components) do
+        local engine = engine_for(row)
+        if M.stats_available(engine) then
+            local id = row.component_id
+            stats[id] = false
+            if not row.deleting_at then
+                local key = store_key(engine)
+                local group = groups[key]
+                if not group then
+                    group = {engine = engine, ids = {}}
+                    groups[key] = group
+                end
+                group.ids[#group.ids + 1] = id
+            end
+        end
+    end
+
+    for _, group in pairs(groups) do
+        local store, open_err = M.open_engine_store(group.engine)
+        if open_err or not store then
+            return nil, open_err or errors.new({kind = errors.UNAVAILABLE, message = "Knowledge store unavailable"})
+        end
+        for start = 1, #group.ids, MAX_STATS_BATCH do
+            local ids, expected = {}, {}
+            for index = start, math.min(#group.ids, start + MAX_STATS_BATCH - 1) do
+                local id = group.ids[index]
+                ids[#ids + 1], expected[id] = id, true
+            end
+            local batch, read_err = store:get_store({component_ids = ids})
+            if read_err then return nil, read_err end
+            if type(batch) ~= "table" or type(batch.stores) ~= "table" then
+                return nil, errors.new({kind = errors.INTERNAL, message = "invalid Knowledge store statistics response"})
+            end
+            for _, row in ipairs(batch.stores) do
+                if type(row) ~= "table" or expected[row.component_id] ~= true or type(row.stats) ~= "table" then
+                    return nil, errors.new({kind = errors.INTERNAL, message = "invalid Knowledge store statistics row"})
+                end
+                stats[row.component_id] = row.stats
+                expected[row.component_id] = nil
+            end
+        end
+    end
+    return stats
+end
+
 -- Resolve a KB component to the engine-owned store lifecycle instance + store row.
 -- API handlers validate component access before calling into store readers;
 -- background workers already run under the frozen projection actor and must not

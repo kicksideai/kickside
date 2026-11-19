@@ -109,6 +109,7 @@ local function shape(entry: any): (any, string?)
         config_maintenance = m.config_maintenance,
         store_contract = m.store_contract,
         store_binding = m.store_binding,
+        store_stats_batch = m.store_stats_batch == true,
         is_default = m.default == true,
         is_graph = m.is_graph == true,
         accepts_files = m.accepts_files == true,

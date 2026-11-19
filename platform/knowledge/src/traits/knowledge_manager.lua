@@ -75,18 +75,60 @@ local function list_knowledge_bases(args: any): any
     local query = lower(args.q)
     local matched: { any } = {}
     for _, row in ipairs(rows or {}) do
-        if matches(row, query) then
-            local meta = type(row.meta) == "table" and row.meta or {}
-            matched[#matched + 1] = kb_render.selected({
-                component_id = row.component_id,
-                name = row.label or meta.title,
-                kb_type = row.kb_type or meta.kb_type,
-                status = row.status or meta.status,
-            }, row, fields :: { [string]: boolean })
-        end
+        if matches(row, query) then matched[#matched + 1] = row end
     end
     local page, next_cursor = keyset.page(matched, keyset.field("component_id"), limit :: integer, cursor)
-    return { knowledge_bases = page, next_cursor = next_cursor }
+    local selected_fields = fields :: { [string]: boolean }
+    local needs_stats = selected_fields.meta == true
+    for _, field in ipairs(stores.STATS_FIELDS) do
+        if selected_fields[field] then needs_stats = true end
+    end
+
+    local stats: any = {}
+    if needs_stats and #page > 0 then
+        local list, engine_err = engines.list()
+        if engine_err then return nil, engine_err end
+        local by_type: {[string]: any} = {}
+        local by_impl: {[string]: any} = {}
+        for _, engine in ipairs(list or {}) do
+            by_type[engine.kb_type] = engine
+            if not by_impl[engine.impl_id] then by_impl[engine.impl_id] = engine end
+        end
+        local stats_err
+        stats, stats_err = stores.page_stats(page, function(row: any)
+            local meta = type(row.meta) == "table" and row.meta or {}
+            local typed = type(meta.kb_type) == "string" and by_type[meta.kb_type]
+            if typed and typed.impl_id == row.impl_id then return typed end
+            return by_impl[row.impl_id]
+        end)
+        if stats_err then return nil, errors.wrap(stats_err, "read Knowledge store statistics") end
+    end
+
+    local summaries = {}
+    for _, row in ipairs(page) do
+        local meta = type(row.meta) == "table" and row.meta or {}
+        local summary = kb_render.selected({
+            component_id = row.component_id,
+            name = row.label or meta.title,
+            kb_type = row.kb_type or meta.kb_type,
+            status = row.status or meta.status,
+        }, row, selected_fields)
+        local owned = stats[row.component_id]
+        if owned ~= nil then
+            local public_meta = {}
+            if selected_fields.meta then
+                for field, value in pairs(meta) do public_meta[field] = value end
+            end
+            for _, field in ipairs(stores.STATS_FIELDS) do
+                local value = owned and (tonumber(owned[field]) or 0) or nil
+                if selected_fields[field] then summary[field] = value end
+                if selected_fields.meta then public_meta[field] = value end
+            end
+            if selected_fields.meta then summary.meta = public_meta end
+        end
+        summaries[#summaries + 1] = summary
+    end
+    return { knowledge_bases = summaries, next_cursor = next_cursor }
 end
 
 local function upsert_knowledge_base(args: any): any

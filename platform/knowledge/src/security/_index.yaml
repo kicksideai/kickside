@@ -2,6 +2,16 @@ version: "1.0"
 namespace: kickside.knowledge.security
 
 entries:
+  - name: authorized_store_stats
+    kind: security.policy
+    meta:
+      private: true
+      comment: Attached only to Knowledge reads that authorize component READ before asking the store owner for statistics.
+    policy:
+      resources: kickside.knowledge:kb_store_lifecycle
+      actions: knowledge.store.stats
+      effect: allow
+
   - name: knowledge_endpoint_access
     kind: security.policy
     meta:

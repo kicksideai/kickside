@@ -10,6 +10,7 @@ local function new(dependencies: any?): any
     local http = deps.http or http
     local security = deps.security or security
     local component = deps.component or component
+    local stores = deps.stores or stores
 
 local function handler()
     local res = http.response()
@@ -69,7 +70,7 @@ local function handler()
     if type(kb_type) == "string" and kb_type ~= "" then
         engine = engines.resolve(kb_type)
     end
-    if not engine then
+    if not engine or (engine.impl_id and engine.impl_id ~= comp.impl_id) then
         engine, _ = engines.by_impl(comp.impl_id)
         if engine and (type(kb_type) ~= "string" or kb_type == "") then
             kb_type = engine.kb_type
@@ -77,17 +78,32 @@ local function handler()
     end
 
     local config = nil
-    local statistics = meta
+    local owned = stores.stats_available(engine)
+    local statistics: any = meta
+    if owned then statistics = nil end
     local store_contract = engine and type(engine.store_contract) == "string" and engine.store_contract or ""
     if store_contract ~= "" then
-        local kb_store = stores.open_engine_store(engine)
+        local kb_store, open_err = stores.open_engine_store(engine)
         local store_row = nil
-        local store_err = nil
+        local store_err = open_err
+        local want_stats = owned and not comp.deleting_at
         if kb_store then
-            store_row, store_err = kb_store:get_store({ component_id = kb_id })
+            store_row, store_err = kb_store:get_store({component_id = kb_id, stats = want_stats and true or nil})
+        end
+        if want_stats and (open_err or (store_err and not errors.is(store_err, errors.NOT_FOUND))) then
+            res:set_status(http_errors.classify(store_err))
+            res:write_json({success = false, error = "Knowledge store statistics unavailable"})
+            return
         end
         if not store_err and store_row then
-            statistics = type(store_row.stats) == "table" and store_row.stats or meta
+            if want_stats and type(store_row.stats) ~= "table" then
+                res:set_status(http.STATUS.INTERNAL_ERROR)
+                res:write_json({success = false, error = "invalid Knowledge store statistics response"})
+                return
+            end
+            if want_stats or not owned then
+                statistics = type(store_row.stats) == "table" and store_row.stats or meta
+            end
             embedding_model = store_row.embedding_model or embedding_model
             config = store_row.config
             kb_type = store_row.kb_type or kb_type
@@ -102,10 +118,10 @@ local function handler()
     -- Badge + stat labels are declared by the resolved engine (meta.ui), not a
     -- per-type map; the engine library formats the selected statistics.
     local badge = engine and engine.badge or nil
-    local stat_items = engines.format_stats(statistics, engine and engine.stats_spec)
+    local stat_items = statistics and engines.format_stats(statistics, engine and engine.stats_spec) or nil
 
     res:set_status(http.STATUS.OK)
-    res:write_json({
+    local response: any = {
         success = true,
         id = kb_id,
         deleting_at = comp.deleting_at,
@@ -118,21 +134,20 @@ local function handler()
         updated_at = comp.updated_at,
         embedding_model = embedding_model,
         config = config,
-        node_count = tonumber(statistics.node_count) or 0,
-        edge_count = tonumber(statistics.edge_count) or 0,
-        embedding_count = tonumber(statistics.embedding_count) or 0,
-        document_count = tonumber(statistics.document_count) or 0,
-        concept_count = tonumber(statistics.concept_count) or 0,
-        chunk_count = tonumber(statistics.chunk_count) or 0,
-        summary_count = tonumber(statistics.summary_count) or 0,
-        claim_count = tonumber(statistics.claim_count) or 0,
         auto_summary = auto_summary,
         auto_description = auto_description,
         kb_type = kb_type,
         enrichment_agent_id = enrichment_agent_id,
         badge = badge,
         stat_items = stat_items,
-    })
+        stats_from_store = owned and true or nil,
+    }
+    if statistics then
+        for _, field in ipairs(stores.STATS_FIELDS) do
+            if owned or field ~= "failed_count" then response[field] = tonumber(statistics[field]) or 0 end
+        end
+    end
+    res:write_json(response)
 end
 
 return { handler = handler }

@@ -81,6 +81,32 @@ it('patches known libraries and their open detail without fetching the catalog',
   expect(api.get).not.toHaveBeenCalled()
 })
 
+it('coalesces store statistics notifications and refreshes the authorized snapshot', async () => {
+  const { controller, detail } = catalog()
+  vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, items: [
+    { id: 'first', name: 'First library', kb_type: 'records', stats_from_store: true, document_count: 5 },
+    { id: 'second', name: 'Second library', kb_type: 'records', stats_from_store: true, document_count: 6 },
+  ] } } as never)
+  await controller.load()
+  detail.value = { ...controller.kbs.value[0] }
+  vi.mocked(api.get).mockClear()
+  vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, items: [
+    { id: 'first', stats_from_store: true, document_count: 8 },
+    { id: 'second', stats_from_store: true },
+  ] } } as never)
+
+  receive({ event: 'component.meta.changed', component_id: 'first', meta: { title: 'Renamed library', document_count: '97' } })
+  receive({ event: 'component.meta.changed', component_id: 'first', meta: { document_count: '96' } })
+  receive({ event: 'component.meta.changed', component_id: 'second', meta: { document_count: '98' } })
+
+  expect(detail.value).toMatchObject({ name: 'Renamed library', document_count: 5 })
+  await flushPromises()
+  expect(api.get).toHaveBeenCalledExactlyOnceWith('/api/v1/knowledge/list?ids=first,second')
+  expect(controller.kbs.value[0]).toMatchObject({ name: 'Renamed library', document_count: 8 })
+  expect(controller.kbs.value[1]?.document_count).toBeUndefined()
+  expect(detail.value?.document_count).toBe(8)
+})
+
 it('discovers the first library when the mounted catalog is empty', async () => {
   vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, items: [] } } as never)
   const { controller } = catalog()

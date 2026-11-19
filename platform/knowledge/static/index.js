@@ -17,7 +17,7 @@ class e extends o {
   static get vueConfig() {
     return {
       lazyConfig: p(
-        () => import("./lazy-mount-B5H7osXw.js").then((t) => t.mountConfig),
+        () => import("./lazy-mount-D3Vaint0.js").then((t) => t.mountConfig),
         "Could not load Knowledge. Reload the page to try again.",
         n
       )

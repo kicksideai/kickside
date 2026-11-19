@@ -1,6 +1,7 @@
 local test = require("test")
 local adapter = require("adapter")
 local http = require("http")
+local stores = require("stores")
 
 local function rows(count)
     local source = {}
@@ -49,6 +50,7 @@ local function fixture(source, options)
             list = function()
                 if options.engine_error then return nil, options.engine_error end
                 if options.no_engines then return {}, nil end
+                if options.engines then return options.engines, nil end
                 return { { impl_id = "fixture:kb", kb_type = "document", stats_spec = {} } }, nil
             end,
             format_stats = function() return {} end,
@@ -132,6 +134,48 @@ local function define_tests()
             test.eq(body.count, 205)
             local _, broad = catalog.reads()
             test.eq(broad, 0)
+        end)
+        test.it("reads only the visible page once per named binding and preserves complete snapshots", function()
+            local source = rows(8)
+            local a = {impl_id = "fixture:kb", kb_type = "document",
+                store_contract = "fixture:contract", store_binding = "fixture:a", store_stats_batch = true}
+            local b = {impl_id = "fixture:kb", kb_type = "other",
+                store_contract = "fixture:contract", store_binding = "fixture:b", store_stats_batch = true}
+            local older = {impl_id = "fixture:kb", kb_type = "older",
+                store_contract = "fixture:contract", store_binding = "fixture:old"}
+            source[3].meta.kb_type = "other"
+            source[4].meta.kb_type = "older"
+            source[5].deleting_at = "marked"
+            for _, row in ipairs(source) do row.meta.document_count = 97 end
+            local calls = {}
+            local saved = stores.open_engine_store
+            stores.open_engine_store = function(engine)
+                return {get_store = function(_, args)
+                    local binding = engine.store_binding
+                    test.is_nil(calls[binding])
+                    calls[binding] = table.concat(args.component_ids, ",")
+                    local found = {}
+                    if binding == "fixture:a" then found = {{component_id = "kb-0008", stats = {}}}
+                    else found = {{component_id = "kb-0006", stats = {document_count = 3}}} end
+                    return {stores = found}
+                end}
+            end
+            local ok, status, body = pcall(function()
+                return fixture(source, {engines = {a, b, older}}).call({q = "KB", limit = "5"})
+            end)
+            stores.open_engine_store = saved
+            if not ok then error(status) end
+            test.eq(status, 200)
+            test.eq(calls["fixture:a"], "kb-0008,kb-0007")
+            test.eq(calls["fixture:b"], "kb-0006")
+            test.is_nil(calls["fixture:old"])
+            test.eq(body.items[1].document_count, 0)
+            test.is_true(body.items[1].stats_from_store)
+            test.is_nil(body.items[2].document_count)
+            test.eq(body.items[3].document_count, 3)
+            test.eq(body.items[4].document_count, 97)
+            test.is_nil(body.items[5].document_count)
+            test.eq(body.items[5].deleting_at, "marked")
         end)
         test.it("does not publish a partial catalog after a later-page failure", function()
             local failure = errors.new({ kind = errors.UNAVAILABLE, message = "component store unavailable" })

@@ -454,6 +454,11 @@ entries:
     prompt: |
       You can manage knowledge bases with the **Knowledge** tool.
 
+      To add an attachment, uploaded file, or text to a knowledge base,
+      activate Knowledge Base Writer (`kickside.knowledge.traits:kb_writer`)
+      with Capabilities if needed. Call `EmbedToKB` with the target `kb_id`
+      and the file's `upload_id` or the text as `content`.
+
       Call `list_kb_engines` before creating a
       knowledge base. Pass the returned `kb_type` (for example `document`),
       never the engine registry `id`, to `upsert_knowledge_base`. Use
@@ -486,6 +491,8 @@ entries:
 
   - name: knowledge_manager_tool
     kind: function.lua
+    security:
+      policies: [kickside.knowledge.security:authorized_store_stats]
     meta:
       type: tool
       title: Knowledge
@@ -562,7 +569,17 @@ entries:
           "description": "The action's record. Failures return no result and a typed tool error with a clear message; a registry refusal returns success false with its error."
         }
       llm_alias: Knowledge
-      llm_description: "Discover installed knowledge engines and list, create, reuse, delete, resummarize, or re-embed knowledge bases through the Knowledge-owned registry. resummarize_knowledge_base and reembed_knowledge_base schedule the run on the knowledge engine and answer a receipt with job_id rather than waiting (a whole knowledge base takes minutes to hours; resummarize also costs model calls); knowledge_base_maintenance reports the latest run of each type and whether it is still in flight. Failures return no result and a typed tool error with a clear message."
+      llm_description: >-
+        Discover installed knowledge engines and list, create, reuse, delete,
+        resummarize, or re-embed knowledge bases through the Knowledge-owned
+        registry. To add a file or text to a base, activate Knowledge Base
+        Writer with Capabilities and use EmbedToKB.
+        resummarize_knowledge_base and reembed_knowledge_base schedule the run on
+        the knowledge engine and answer a receipt with job_id rather than
+        waiting (a whole knowledge base takes minutes to hours; resummarize
+        also costs model calls); knowledge_base_maintenance reports the latest
+        run of each type and whether it is still in flight. Failures return no
+        result and a typed tool error with a clear message.
     source: file://knowledge_manager.lua
     method: handler
     modules: [contract, security]

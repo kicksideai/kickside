@@ -16,9 +16,16 @@ export interface KnowledgeBase extends ComponentDeletionState {
   auto_summary?: string
   auto_description?: string
   stat_items?: StatItem[]
+  stats_from_store?: boolean
   document_count?: number
   embedding_count?: number
   claim_count?: number
+  failed_count?: number
+  node_count?: number
+  edge_count?: number
+  concept_count?: number
+  chunk_count?: number
+  summary_count?: number
 }
 
 export interface KbDetail extends KnowledgeBase { embedding_model?: string }

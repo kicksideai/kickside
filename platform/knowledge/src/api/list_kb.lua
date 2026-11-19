@@ -4,6 +4,7 @@ local http = require("http")
 local security = require("security")
 local component = require("component")
 local engines = require("engines")
+local stores = require("stores")
 local query_params = require("query_params")
 local listing_page = require("listing_page")
 local http_errors = require("http_errors")
@@ -16,15 +17,15 @@ local function new(dependencies: any?): any
     local security = deps.security or security
     local component = deps.component or component
     local engines = deps.engines or engines
+    local stores = deps.stores or stores
 
 -- The list view routes a KB to its engine's store reader by its store_contract
 -- — discovered from the engine registry, never by naming an engine.
 local function engine_for_component(comp: any, by_type: any, by_impl: any): any
     local meta = type(comp.meta) == "table" and comp.meta or {}
     local kb_type = meta.kb_type
-    if type(kb_type) == "string" and kb_type ~= "" and by_type[kb_type] then
-        return by_type[kb_type]
-    end
+    local typed = type(kb_type) == "string" and by_type[kb_type]
+    if typed and typed.impl_id == comp.impl_id then return typed end
     return by_impl[comp.impl_id]
 end
 
@@ -47,8 +48,8 @@ local function handler()
     -- Async multi-select params: `ids` resolves selected chips (returns only
     -- those, ignoring q/limit), `q` is a case-insensitive name/description
     -- substring filter, `limit` caps the rows. With none present the list
-    -- returns up to 2000 rows with continuation. Filtering happens
-    -- before the per-KB store reads so a 1200-KB list never opens 1200 stores.
+    -- returns up to 2000 rows with continuation. Filter and page before
+    -- reading statistics from the engine's named store binding.
     local q_param = req:query("q")
     local q: string? = (type(q_param) == "string" and q_param ~= "") and string.lower(q_param) or nil
     local ids_param = req:query("ids")
@@ -56,7 +57,7 @@ local function handler()
     if type(ids_param) == "string" and ids_param ~= "" then
         want_ids = {}
         for id in string.gmatch(ids_param, "([^,]+)") do
-            local trimmed = trim(id)
+            local trimmed = id:match("^%s*(.-)%s*$")
             if trimmed ~= "" then want_ids[trimmed] = true end
         end
     end
@@ -110,6 +111,14 @@ local function handler()
         return
     end
     local components = result.components
+    local stats, stats_err = stores.page_stats(components, function(comp: any)
+        return engine_for_component(comp, engine_by_type, engine_by_impl)
+    end)
+    if stats_err then
+        res:set_status(http_errors.classify(stats_err))
+        res:write_json({success = false, error = "Knowledge store statistics unavailable"})
+        return
+    end
 
     local items = {}
     for _, comp in ipairs(components) do
@@ -118,19 +127,12 @@ local function handler()
         local component_engine = engine_for_component(comp, engine_by_type, engine_by_impl)
         local kb_type = meta.kb_type or (component_engine and component_engine.kb_type)
 
-        -- Badge and stat labels are declared by the engine (meta.ui), not a
-        -- per-type map; the engine library formats stat_items from public meta.
-        local engine = engine_by_type[kb_type] or component_engine
-        local badge = engine and engine.badge or nil
+        local badge = component_engine and component_engine.badge or nil
+        local owned = stats[cid]
+        local statistics = owned
+        if owned == nil then statistics = meta end
 
-        local stat_items = engines.format_stats(meta, engine and engine.stats_spec)
-        -- Numeric projections for the page header rollup (sum across KBs),
-        -- read straight off public meta so no stat_items text is re-parsed.
-        local doc_count_raw = tonumber(meta.document_count) or 0
-        local embed_count_raw = tonumber(meta.embedding_count) or 0
-        local claims_count_raw = tonumber(meta.claim_count) or 0
-
-        table.insert(items, {
+        local item: any = {
             id = cid,
             deleting_at = comp.deleting_at,
             deletion_job_id = comp.deletion_job_id,
@@ -142,16 +144,21 @@ local function handler()
             auto_summary = meta.auto_summary,
             kb_type = kb_type,
             badge = badge,
-            stat_items = stat_items,
-            -- Top-level numeric counts so the page header rollup can sum
-            -- them without re-parsing stat_items text. Claim-oriented engines
-            -- report claims; document/graph engines report docs and embeddings.
-            document_count = doc_count_raw,
-            embedding_count = embed_count_raw,
-            claim_count = claims_count_raw,
+            stats_from_store = owned ~= nil and true or nil,
+            stat_items = statistics and engines.format_stats(statistics, component_engine and component_engine.stats_spec) or nil,
             created_at = comp.created_at,
             updated_at = comp.updated_at,
-        })
+        }
+        if statistics then
+            if owned ~= nil then
+                for _, field in ipairs(stores.STATS_FIELDS) do item[field] = tonumber(statistics[field]) or 0 end
+            else
+                item.document_count = tonumber(meta.document_count) or 0
+                item.embedding_count = tonumber(meta.embedding_count) or 0
+                item.claim_count = tonumber(meta.claim_count) or 0
+            end
+        end
+        items[#items + 1] = item
     end
 
     local _, progress_err = deletion_progress.enrich(items)

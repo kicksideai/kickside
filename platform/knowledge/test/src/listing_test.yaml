@@ -10,3 +10,4 @@ entries:
     imports:
       test: wippy.test:test
       adapter: kickside.knowledge.api:list_kb
+      stores: kickside.knowledge:stores

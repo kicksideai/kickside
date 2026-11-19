@@ -3,7 +3,7 @@ import { api, on } from '@wippy-fe/proxy'
 import { componentMetaEvent, type ComponentMetaEvent } from '@kickside/ui-kit/componentRealtime'
 import { errMsg } from '@kickside/ui-kit/errMsg'
 import { latestRequest } from '@kickside/ui-kit/latestRequest'
-import { KNOWLEDGE_META_FIELD_TYPES, KNOWLEDGE_COUNT_KEYS } from './meta'
+import { KNOWLEDGE_META_FIELD_TYPES, KNOWLEDGE_COUNT_KEYS, STORE_STAT_KEYS, applyStoreStats } from './meta'
 import type { EmbeddingModel, Engine, KbDetail, KnowledgeBase, StatItem, StatSpec } from './knowledge.types.ts'
 
 const ENGINE_NOTICE = 'No knowledge engine installed. Install a KB engine to create and browse knowledge bases.'
@@ -25,6 +25,9 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
   const beginCatalogLoad = latestRequest()
   let discoveryLoading = false
   let discoveryPending = false
+  let catalogLoadVersion = 0
+  let storeStatsLoading = false
+  const storeStatsPending = new Set<string>()
 
   const filtered = computed(() => {
     const q = query.value.trim().toLowerCase()
@@ -46,6 +49,7 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
   async function load(): Promise<boolean> {
     if (!catalogActive) return false
     const current = beginCatalogLoad()
+    catalogLoadVersion++
     loading.value = true
     error.value = ''
     notice.value = ''
@@ -76,6 +80,7 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
       if (current()) {
         loading.value = false
         if (catalogActive && discoveryPending && !discoveryLoading) void refreshDiscoveredCatalog()
+        if (storeStatsPending.size) void refreshStoreStats()
       }
     }
   }
@@ -198,11 +203,12 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
     if (typeof meta.auto_summary === 'string') patch.auto_summary = meta.auto_summary
     if (typeof meta.auto_description === 'string') patch.auto_description = meta.auto_description
     if (typeof meta.kb_type === 'string') patch.kb_type = meta.kb_type
-    Object.assign(patch, statsPatch(row, meta, patch.kb_type || row.kb_type))
+    if (!row.stats_from_store) Object.assign(patch, statsPatch(row, meta, patch.kb_type || row.kb_type))
 
     const next = { ...row, ...patch }
     for (const key of deleted) {
       const mapped = key === 'title' ? 'name' : key
+      if (row.stats_from_store && STORE_STAT_KEYS.some(key => key === mapped)) continue
       delete (next as Record<string, unknown>)[mapped]
     }
     return next
@@ -213,15 +219,58 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
   function applyComponentMetaEvent(id: string, payload: ComponentMetaEvent) {
     const meta = metaObject(payload.meta) || {}
     const deleted = payload.deleted || []
+    const current = kbs.value.find(k => k.id === id && k.stats_from_store) || (detail.value?.id === id ? detail.value : undefined)
+    if (current?.stats_from_store && (STORE_STAT_KEYS.some(key => hasOwn(meta, key) || deleted.includes(key))
+      || hasStatKey(meta, engineFor(current.kb_type || '')?.stats_spec))) {
+      storeStatsPending.add(id)
+      void refreshStoreStats()
+    }
     kbs.value = kbs.value.map(k => k.id === id ? applyMetaToKb(k, meta, deleted) : k)
     if (detail.value?.id === id) {
       detail.value = applyMetaToKb(detail.value, meta, deleted) as KbDetail
     }
   }
 
+  async function refreshStoreStats() {
+    if (storeStatsLoading || loading.value || !catalogActive || !storeStatsPending.size) return
+    storeStatsLoading = true
+    try {
+      // The page-wide relay and detail subscription can deliver the same event.
+      // Gather both callbacks, then refresh only those IDs through READ.
+      await Promise.resolve()
+      while (catalogActive && !loading.value && storeStatsPending.size) {
+        const ids = [...storeStatsPending].slice(0, 100)
+        for (const id of ids) storeStatsPending.delete(id)
+        const version = catalogLoadVersion
+        const { data } = await api.get(`/api/v1/knowledge/list?ids=${ids.map(encodeURIComponent).join(',')}`)
+        if (!catalogActive) return
+        if (version !== catalogLoadVersion) {
+          for (const id of ids) storeStatsPending.add(id)
+          continue
+        }
+        if (!data?.success) continue
+        const latest = new Map<string, KnowledgeBase>(
+          ((data.items || []) as KnowledgeBase[]).map(row => [row.id, row]),
+        )
+        const requested = new Set(ids)
+        kbs.value = kbs.value.map(row => row.stats_from_store && requested.has(row.id)
+          ? applyStoreStats(row, latest.get(row.id)) : row)
+        if (detail.value?.stats_from_store && requested.has(detail.value.id)) {
+          detail.value = applyStoreStats(detail.value, latest.get(detail.value.id))
+        }
+      }
+    } catch {
+      // A later notification or normal page read can refresh a temporarily unavailable store.
+    } finally {
+      storeStatsLoading = false
+      if (storeStatsPending.size) void refreshStoreStats()
+    }
+  }
+
   function clearComponentSubscriptions() {
     catalogActive = false
     discoveryPending = false
+    storeStatsPending.clear()
     componentUnsub?.()
     detailUnsub.value?.()
     detailUnsub.value = null

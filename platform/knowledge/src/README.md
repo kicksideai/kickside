@@ -79,10 +79,15 @@ binding), UI tags, stats labels, and default config there. The knowledge control
 create, read/list, query, delete, and source projection from that descriptor
 instead of branching on engine names.
 
-Detail responses use the store row's `stats` object for both `stat_items` and
-numeric counters, reusing the configuration lookup. Stores that omit `stats`
-retain their public metadata counts. Lists read the owner-maintained public
-projections.
+Engines may set `store_stats_batch: true` on a descriptor with a named store
+binding. The existing `get_store` operation then returns a complete `stats`
+object with the detail row when asked for `stats = true`, and statistics alone
+for the authorized page of `component_ids`. REST and Knowledge tool lists
+group that page by binding. A present empty snapshot yields zero counts.
+Stores that have not opted in retain the existing public metadata fallback.
+For an opted-in component still awaiting a store, the read returns its identity
+while leaving the statistics absent. The catalog uses metadata notifications
+to refresh the authorized snapshot for the affected IDs.
 
 Engines that support durable content ingestion declare source projections in
 the descriptor. Those workers materialize canonical KB content events into the
