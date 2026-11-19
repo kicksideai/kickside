@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.34](https://github.com/kicksideai/kickside/compare/automation-v0.2.33...automation-v0.2.34) (2026-11-19)
+
+
+### Bug Fixes
+
+* **automation:** distinguish reconciliation deletes after an item returns ([#655](https://github.com/kicksideai/kickside/issues/655)) ([c658539](https://github.com/kicksideai/kickside/commit/c65853959f51d6b7cb2f0c7b9e4bd901def0b67d))
+
 ## [0.2.33](https://github.com/kicksideai/kickside/compare/automation-v0.2.32...automation-v0.2.33) (2026-11-19)
 
 
