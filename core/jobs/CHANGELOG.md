@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.91](https://github.com/kicksideai/kickside/compare/jobs-v0.1.90...jobs-v0.1.91) (2026-11-19)
+
+
+### Bug Fixes
+
+* **jobs:** guard replacement thread cleanup sequences ([#624](https://github.com/kicksideai/kickside/issues/624)) ([8e715ed](https://github.com/kicksideai/kickside/commit/8e715ede1a265bab118732f658719c146871e0d3))
+
 ## [0.1.90](https://github.com/kicksideai/kickside/compare/jobs-v0.1.89...jobs-v0.1.90) (2026-11-19)
 
 
