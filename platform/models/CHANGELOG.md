@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.89](https://github.com/kicksideai/kickside/compare/models-v0.1.88...models-v0.1.89) (2026-11-20)
+
+
+### Features
+
+* **models:** add the model cards contract on the shared card write path ([39ee5ed](https://github.com/kicksideai/kickside/commit/39ee5edf263fb7d9c7d46881bb3936b77f651cd3))
+
 ## [0.1.88](https://github.com/kicksideai/kickside/compare/models-v0.1.87...models-v0.1.88) (2026-11-20)
 
 
