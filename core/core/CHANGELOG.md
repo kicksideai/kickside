@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.38](https://github.com/kicksideai/kickside/compare/core-v0.3.37...core-v0.3.38) (2026-11-20)
+
+
+### Bug Fixes
+
+* **core:** fence private checkpoints against owner identity changes ([#748](https://github.com/kicksideai/kickside/issues/748)) ([c959762](https://github.com/kicksideai/kickside/commit/c959762a7125982201d3acec01fe856f84a3e447))
+
 ## [0.3.37](https://github.com/kicksideai/kickside/compare/core-v0.3.36...core-v0.3.37) (2026-11-19)
 
 
