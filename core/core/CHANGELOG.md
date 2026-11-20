@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.44](https://github.com/kicksideai/kickside/compare/core-v0.3.43...core-v0.3.44) (2026-11-20)
+
+
+### Bug Fixes
+
+* **core:** preserve declaration drift for retained cursors ([#791](https://github.com/kicksideai/kickside/issues/791)) ([764ba43](https://github.com/kicksideai/kickside/commit/764ba431afe6f3be3241f02dbd9007ad30ea8d29))
+
 ## [0.3.43](https://github.com/kicksideai/kickside/compare/core-v0.3.42...core-v0.3.43) (2026-11-20)
 
 
