@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.21](https://github.com/kicksideai/kickside/compare/workflows-v0.2.20...workflows-v0.2.21) (2026-11-20)
+
+
+### Features
+
+* show the current Workflow failure in Automation status ([#772](https://github.com/kicksideai/kickside/issues/772)) ([61d1ed9](https://github.com/kicksideai/kickside/commit/61d1ed965ba413b47853d81566633134b67b7a50))
+
 ## [0.2.20](https://github.com/kicksideai/kickside/compare/workflows-v0.2.19...workflows-v0.2.20) (2026-11-20)
 
 
