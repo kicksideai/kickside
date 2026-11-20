@@ -41,6 +41,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.core.jobs.migrations:30_retention_by_type
         path: .meta.target_db
+      - entry: kickside.core.jobs.migrations:31_legacy_thread_cascades
+        path: .meta.target_db
       - entry: kickside.core.jobs.migrations:25_retention_order
         path: .meta.target_db
       - entry: kickside.core.jobs.migrations:24_lease_policy

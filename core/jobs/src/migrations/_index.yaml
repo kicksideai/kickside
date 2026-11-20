@@ -192,3 +192,16 @@ entries:
       migration: wippy.migration:migration
       run_status: kickside.core.jobs:run_status
     method: migrate
+
+  - name: 31_legacy_thread_cascades
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: Removes historical PostgreSQL cascades now owned by bounded Jobs thread cleanup.
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-11-20T00:00:31Z"
+    source: file://31_legacy_thread_cascades.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
