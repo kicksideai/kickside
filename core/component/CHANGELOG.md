@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.27](https://github.com/kicksideai/kickside/compare/component-v0.3.26...component-v0.3.27) (2026-11-20)
+
+
+### Features
+
+* **component:** register children under declared parent custody ([#742](https://github.com/kicksideai/kickside/issues/742)) ([140f195](https://github.com/kicksideai/kickside/commit/140f195999286d4a282b3c0fb26e98822d9fa4d0))
+
 ## [0.3.26](https://github.com/kicksideai/kickside/compare/component-v0.3.25...component-v0.3.26) (2026-11-19)
 
 
