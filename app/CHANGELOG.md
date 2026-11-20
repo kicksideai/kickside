@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.53](https://github.com/kicksideai/kickside/compare/kickside-v0.2.52...kickside-v0.2.53) (2026-11-20)
+
+
+### Features
+
+* configure new chat appearance (EE2-2867) ([#735](https://github.com/kicksideai/kickside/issues/735)) ([7c070b2](https://github.com/kicksideai/kickside/commit/7c070b269e74339831ae25c34faa5a43631b423a))
+
+
+### Bug Fixes
+
+* **app:** require released chat appearance and session inventory packages ([#740](https://github.com/kicksideai/kickside/issues/740)) ([21ba733](https://github.com/kicksideai/kickside/commit/21ba7330e40bef414e72af0279096f04cd5ef420))
+* **app:** require Sync with unchanged snapshot suppression ([515bee7](https://github.com/kicksideai/kickside/commit/515bee7801bb785b2af82b9fec1d253806099137))
+* **sessions:** update session and artifact inventory in real time (EE2-2887) ([#648](https://github.com/kicksideai/kickside/issues/648)) ([217f852](https://github.com/kicksideai/kickside/commit/217f8521daacab32432f3a55ee7a38887559ec00))
+
 ## [0.2.52](https://github.com/kicksideai/kickside/compare/kickside-v0.2.51...kickside-v0.2.52) (2026-11-20)
 
 
