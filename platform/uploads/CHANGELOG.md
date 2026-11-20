@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.32](https://github.com/kicksideai/kickside/compare/uploads-v0.3.31...uploads-v0.3.32) (2026-11-20)
+
+
+### Bug Fixes
+
+* **uploads:** redact private locators from public content errors ([9087736](https://github.com/kicksideai/kickside/commit/9087736b8f06fbfee0c35a7f82051f229ba71dbc))
+
 ## [0.3.31](https://github.com/kicksideai/kickside/compare/uploads-v0.3.30...uploads-v0.3.31) (2026-11-19)
 
 
