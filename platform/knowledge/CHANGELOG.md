@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.101](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.100...knowledge-v0.1.101) (2026-11-20)
+
+
+### Bug Fixes
+
+* **knowledge:** serialize empty detail settings as an object ([#721](https://github.com/kicksideai/kickside/issues/721)) ([cf56023](https://github.com/kicksideai/kickside/commit/cf56023f20e6aa1c4e09063fabccf6c66b5b3a2a))
+
 ## [0.1.100](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.99...knowledge-v0.1.100) (2026-11-20)
 
 
