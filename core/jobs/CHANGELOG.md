@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.98](https://github.com/kicksideai/kickside/compare/jobs-v0.1.97...jobs-v0.1.98) (2026-11-20)
+
+
+### Bug Fixes
+
+* **jobs:** bound wake fanout retention scans ([#792](https://github.com/kicksideai/kickside/issues/792)) ([96d28c9](https://github.com/kicksideai/kickside/commit/96d28c96a1b162c86eb8790d74e6480cda367943))
+
 ## [0.1.97](https://github.com/kicksideai/kickside/compare/jobs-v0.1.96...jobs-v0.1.97) (2026-11-20)
 
 
