@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.27](https://github.com/kicksideai/kickside/compare/users-v0.2.26...users-v0.2.27) (2026-11-20)
+
+
+### Bug Fixes
+
+* **users:** keep Share usable in narrow dialogs ([eaa4040](https://github.com/kicksideai/kickside/commit/eaa404054d08055acf0453ddd264c4fc5d132f07))
+
 ## [0.2.26](https://github.com/kicksideai/kickside/compare/users-v0.2.25...users-v0.2.26) (2026-11-20)
 
 

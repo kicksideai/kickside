@@ -31,9 +31,9 @@
   "platform/ui": "0.2.15",
   "platform/ui-kit": "1.7.3",
   "platform/uploads": "0.3.31",
-  "platform/users": "0.2.26",
+  "platform/users": "0.2.27",
   "platform/webhooks": "0.1.47",
   "platform/widgets": "0.1.65",
   "platform/workflows": "0.2.19",
-  "app": "0.2.50"
+  "app": "0.2.51"
 }

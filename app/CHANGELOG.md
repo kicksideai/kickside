@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.51](https://github.com/kicksideai/kickside/compare/kickside-v0.2.50...kickside-v0.2.51) (2026-11-20)
+
+
+### Bug Fixes
+
+* **users:** keep Share usable in narrow dialogs ([eaa4040](https://github.com/kicksideai/kickside/commit/eaa404054d08055acf0453ddd264c4fc5d132f07))
+
 ## [0.2.50](https://github.com/kicksideai/kickside/compare/kickside-v0.2.49...kickside-v0.2.50) (2026-11-19)
 
 
