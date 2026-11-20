@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.28](https://github.com/kicksideai/kickside/compare/users-v0.2.27...users-v0.2.28) (2026-11-20)
+
+
+### Bug Fixes
+
+* **users:** retry execution when policy groups are unavailable ([#759](https://github.com/kicksideai/kickside/issues/759)) ([fc11ad1](https://github.com/kicksideai/kickside/commit/fc11ad14b11f629904d08943bfb9af139c8a6388))
+
 ## [0.2.27](https://github.com/kicksideai/kickside/compare/users-v0.2.26...users-v0.2.27) (2026-11-20)
 
 
