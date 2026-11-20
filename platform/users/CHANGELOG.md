@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.26](https://github.com/kicksideai/kickside/compare/users-v0.2.25...users-v0.2.26) (2026-11-20)
+
+
+### Bug Fixes
+
+* **users:** confirm before revoking shared access ([#719](https://github.com/kicksideai/kickside/issues/719)) ([3d49ac8](https://github.com/kicksideai/kickside/commit/3d49ac820497b7e45692dce67287657f02c09deb))
+
 ## [0.2.25](https://github.com/kicksideai/kickside/compare/users-v0.2.24...users-v0.2.25) (2026-11-19)
 
 
