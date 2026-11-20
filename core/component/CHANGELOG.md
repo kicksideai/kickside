@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.29](https://github.com/kicksideai/kickside/compare/component-v0.3.28...component-v0.3.29) (2026-11-20)
+
+
+### Bug Fixes
+
+* **component:** scope metadata matches before aggregating access ([a34f1c6](https://github.com/kicksideai/kickside/commit/a34f1c60446458a4d1fafa3c339ac60221f50ee0))
+
 ## [0.3.28](https://github.com/kicksideai/kickside/compare/component-v0.3.27...component-v0.3.28) (2026-11-20)
 
 
