@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.100](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.99...knowledge-v0.1.100) (2026-11-20)
+
+
+### Features
+
+* **knowledge:** show Drive sync controls and file failures ([#708](https://github.com/kicksideai/kickside/issues/708)) ([7aaa36f](https://github.com/kicksideai/kickside/commit/7aaa36f2cc51776983600f15be98450fde03f8b3))
+
 ## [0.1.99](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.98...knowledge-v0.1.99) (2026-11-20)
 
 
