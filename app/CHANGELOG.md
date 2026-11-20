@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.54](https://github.com/kicksideai/kickside/compare/kickside-v0.2.53...kickside-v0.2.54) (2026-11-20)
+
+
+### Bug Fixes
+
+* **app:** require released core and platform package floors ([#753](https://github.com/kicksideai/kickside/issues/753)) ([c5a014c](https://github.com/kicksideai/kickside/commit/c5a014c1b289a36a8af6771bbb3660f01eb38b6e))
+
 ## [0.2.53](https://github.com/kicksideai/kickside/compare/kickside-v0.2.52...kickside-v0.2.53) (2026-11-20)
 
 
