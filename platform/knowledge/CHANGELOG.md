@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.103](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.102...knowledge-v0.1.103) (2026-11-20)
+
+
+### Bug Fixes
+
+* **knowledge:** preserve upload content errors ([#757](https://github.com/kicksideai/kickside/issues/757)) ([a64ef8b](https://github.com/kicksideai/kickside/commit/a64ef8bfab44d23cae9f60bb46280a42d59753f8))
+
 ## [0.1.102](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.101...knowledge-v0.1.102) (2026-11-20)
 
 
