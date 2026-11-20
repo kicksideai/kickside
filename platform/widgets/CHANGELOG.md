@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.66](https://github.com/kicksideai/kickside/compare/widgets-v0.1.65...widgets-v0.1.66) (2026-11-20)
+
+
+### Features
+
+* configure new chat appearance (EE2-2867) ([#735](https://github.com/kicksideai/kickside/issues/735)) ([7c070b2](https://github.com/kicksideai/kickside/commit/7c070b269e74339831ae25c34faa5a43631b423a))
+
 ## [0.1.65](https://github.com/kicksideai/kickside/compare/widgets-v0.1.64...widgets-v0.1.65) (2026-11-19)
 
 

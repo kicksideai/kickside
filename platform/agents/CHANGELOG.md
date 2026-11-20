@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.23](https://github.com/kicksideai/kickside/compare/agents-v0.2.22...agents-v0.2.23) (2026-11-20)
+
+
+### Features
+
+* configure new chat appearance (EE2-2867) ([#735](https://github.com/kicksideai/kickside/issues/735)) ([7c070b2](https://github.com/kicksideai/kickside/commit/7c070b269e74339831ae25c34faa5a43631b423a))
+
+
+### Bug Fixes
+
+* **sessions:** update session and artifact inventory in real time (EE2-2887) ([#648](https://github.com/kicksideai/kickside/issues/648)) ([217f852](https://github.com/kicksideai/kickside/commit/217f8521daacab32432f3a55ee7a38887559ec00))
+
 ## [0.2.22](https://github.com/kicksideai/kickside/compare/agents-v0.2.21...agents-v0.2.22) (2026-11-19)
 
 
