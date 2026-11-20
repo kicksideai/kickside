@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.43](https://github.com/kicksideai/kickside/compare/core-v0.3.42...core-v0.3.43) (2026-11-20)
+
+
+### Bug Fixes
+
+* **core:** type the projection revision check target ([#786](https://github.com/kicksideai/kickside/issues/786)) ([bff9f28](https://github.com/kicksideai/kickside/commit/bff9f287fd0306696efbb3a29b3fd33b2718c1e9))
+
 ## [0.3.42](https://github.com/kicksideai/kickside/compare/core-v0.3.41...core-v0.3.42) (2026-11-20)
 
 
