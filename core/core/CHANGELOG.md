@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.42](https://github.com/kicksideai/kickside/compare/core-v0.3.41...core-v0.3.42) (2026-11-20)
+
+
+### Bug Fixes
+
+* **core:** run declared component projections with scoped worker permissions ([#784](https://github.com/kicksideai/kickside/issues/784)) ([63e15e3](https://github.com/kicksideai/kickside/commit/63e15e388de55743ae778e6d82b048bec9fd76d9))
+
 ## [0.3.41](https://github.com/kicksideai/kickside/compare/core-v0.3.40...core-v0.3.41) (2026-11-20)
 
 
