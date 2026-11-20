@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.39](https://github.com/kicksideai/kickside/compare/automation-v0.2.38...automation-v0.2.39) (2026-11-20)
+
+
+### Features
+
+* **automation:** show Workflow outcomes alongside delivery history ([#766](https://github.com/kicksideai/kickside/issues/766)) ([6ff9c68](https://github.com/kicksideai/kickside/commit/6ff9c6847503bc2b32fd3b435b9cdd2164cf7290))
+
 ## [0.2.38](https://github.com/kicksideai/kickside/compare/automation-v0.2.37...automation-v0.2.38) (2026-11-20)
 
 
