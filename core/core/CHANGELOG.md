@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.41](https://github.com/kicksideai/kickside/compare/core-v0.3.40...core-v0.3.41) (2026-11-20)
+
+
+### Bug Fixes
+
+* **core:** preserve active filtered projections across Keeper updates ([#780](https://github.com/kicksideai/kickside/issues/780)) ([dc3775c](https://github.com/kicksideai/kickside/commit/dc3775c677512e733fb154e7ab42917253520509))
+
 ## [0.3.40](https://github.com/kicksideai/kickside/compare/core-v0.3.39...core-v0.3.40) (2026-11-20)
 
 
