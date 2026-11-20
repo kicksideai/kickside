@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.102](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.101...knowledge-v0.1.102) (2026-11-20)
+
+
+### Bug Fixes
+
+* **knowledge:** clarify the management tool description ([#744](https://github.com/kicksideai/kickside/issues/744)) ([c2cbff0](https://github.com/kicksideai/kickside/commit/c2cbff0bb3729087ec393f8f22b2c676d8fd4579))
+
 ## [0.1.101](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.100...knowledge-v0.1.101) (2026-11-20)
 
 
