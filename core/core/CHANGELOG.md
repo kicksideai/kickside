@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.40](https://github.com/kicksideai/kickside/compare/core-v0.3.39...core-v0.3.40) (2026-11-20)
+
+
+### Features
+
+* **core:** checkpoint filtered projection ranges across cursor resets ([#768](https://github.com/kicksideai/kickside/issues/768)) ([d2ae1d8](https://github.com/kicksideai/kickside/commit/d2ae1d89668d4d2de7c493f3313fad512267da2d))
+
 ## [0.3.39](https://github.com/kicksideai/kickside/compare/core-v0.3.38...core-v0.3.39) (2026-11-20)
 
 
