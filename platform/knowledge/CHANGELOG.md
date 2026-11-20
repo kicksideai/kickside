@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.99](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.98...knowledge-v0.1.99) (2026-11-20)
+
+
+### Features
+
+* **knowledge:** link Google Drive folders in settings ([#700](https://github.com/kicksideai/kickside/issues/700)) ([6091b02](https://github.com/kicksideai/kickside/commit/6091b029add2fba495e857267415106cdcf02427))
+
+
+### Bug Fixes
+
+* **knowledge:** require reconcile delay support for Drive folder linking ([#714](https://github.com/kicksideai/kickside/issues/714)) ([cdab213](https://github.com/kicksideai/kickside/commit/cdab2138e6bd2b46d1b10be6d1dc7a8117b35c3e))
+
 ## [0.1.98](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.97...knowledge-v0.1.98) (2026-11-19)
 
 
