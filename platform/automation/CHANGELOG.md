@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.38](https://github.com/kicksideai/kickside/compare/automation-v0.2.37...automation-v0.2.38) (2026-11-20)
+
+
+### Bug Fixes
+
+* **automation:** return not found for missing public state ([#749](https://github.com/kicksideai/kickside/issues/749)) ([7419152](https://github.com/kicksideai/kickside/commit/741915284bb2f8e5cf0e5b9ee1d1c0bcae2b6cea))
+
 ## [0.2.37](https://github.com/kicksideai/kickside/compare/automation-v0.2.36...automation-v0.2.37) (2026-11-19)
 
 
