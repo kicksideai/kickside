@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.28](https://github.com/kicksideai/kickside/compare/component-v0.3.27...component-v0.3.28) (2026-11-20)
+
+
+### Features
+
+* **component:** register declared root plugin attachments under custody ([#746](https://github.com/kicksideai/kickside/issues/746)) ([7b48593](https://github.com/kicksideai/kickside/commit/7b4859308cb2e209a5c154acaae095f64e15ea5c))
+
 ## [0.3.27](https://github.com/kicksideai/kickside/compare/component-v0.3.26...component-v0.3.27) (2026-11-20)
 
 
