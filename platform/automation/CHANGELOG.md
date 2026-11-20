@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.41](https://github.com/kicksideai/kickside/compare/automation-v0.2.40...automation-v0.2.41) (2026-11-20)
+
+
+### Bug Fixes
+
+* **automation:** finalize source changes before pin release ([#775](https://github.com/kicksideai/kickside/issues/775)) ([cef40db](https://github.com/kicksideai/kickside/commit/cef40db171ee1bd889f6a00e2da9872cab1c752b))
+* **automation:** retain event receipt expiry after source changes ([#774](https://github.com/kicksideai/kickside/issues/774)) ([14a3244](https://github.com/kicksideai/kickside/commit/14a3244dac31448dcb0ae8bec0a5747091402bc4))
+* **automation:** type the optional Workflow status reader ([#776](https://github.com/kicksideai/kickside/issues/776)) ([2816dd7](https://github.com/kicksideai/kickside/commit/2816dd78f4bfd206e3ec256bfdbd3679be3b0cf8))
+
 ## [0.2.40](https://github.com/kicksideai/kickside/compare/automation-v0.2.39...automation-v0.2.40) (2026-11-20)
 
 
