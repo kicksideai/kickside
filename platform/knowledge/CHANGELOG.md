@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.104](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.103...knowledge-v0.1.104) (2026-11-20)
+
+
+### Bug Fixes
+
+* **knowledge:** preserve EmbedToKB upload errors ([6eeb255](https://github.com/kicksideai/kickside/commit/6eeb255e8935fd9deaa4b3ab8de58ca443329483))
+* **knowledge:** require Uploads with safe content errors ([92c64e4](https://github.com/kicksideai/kickside/commit/92c64e44b718de32b2bbfe7b53e62c5bc6703ef3))
+
 ## [0.1.103](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.102...knowledge-v0.1.103) (2026-11-20)
 
 
