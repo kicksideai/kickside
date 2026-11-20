@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.39](https://github.com/kicksideai/kickside/compare/core-v0.3.38...core-v0.3.39) (2026-11-20)
+
+
+### Performance Improvements
+
+* **core:** preserve projection body when a scan returns no events ([#755](https://github.com/kicksideai/kickside/issues/755)) ([9a2bc65](https://github.com/kicksideai/kickside/commit/9a2bc65fb8281bf958f6093ce0e263032f7f1996))
+
 ## [0.3.38](https://github.com/kicksideai/kickside/compare/core-v0.3.37...core-v0.3.38) (2026-11-20)
 
 
