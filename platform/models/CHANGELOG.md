@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.88](https://github.com/kicksideai/kickside/compare/models-v0.1.87...models-v0.1.88) (2026-11-20)
+
+
+### Bug Fixes
+
+* **models:** keep credentials out of card pricing ([c1b1e1f](https://github.com/kicksideai/kickside/commit/c1b1e1fb4e5158fdebb577615e159771e07d8ee8))
+
 ## [0.1.87](https://github.com/kicksideai/kickside/compare/models-v0.1.86...models-v0.1.87) (2026-11-19)
 
 
