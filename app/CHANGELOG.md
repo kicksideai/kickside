@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.52](https://github.com/kicksideai/kickside/compare/kickside-v0.2.51...kickside-v0.2.52) (2026-11-20)
+
+
+### Bug Fixes
+
+* **app:** share the Web Host PrimeVue runtime in the shell ([#733](https://github.com/kicksideai/kickside/issues/733)) ([aa27b1f](https://github.com/kicksideai/kickside/commit/aa27b1f031ff9d1c2dc95644786db9d2bc3057b2))
+
 ## [0.2.51](https://github.com/kicksideai/kickside/compare/kickside-v0.2.50...kickside-v0.2.51) (2026-11-20)
 
 
