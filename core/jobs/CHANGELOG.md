@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.97](https://github.com/kicksideai/kickside/compare/jobs-v0.1.96...jobs-v0.1.97) (2026-11-20)
+
+
+### Bug Fixes
+
+* **jobs:** remove legacy thread foreign key cascades ([#789](https://github.com/kicksideai/kickside/issues/789)) ([b839854](https://github.com/kicksideai/kickside/commit/b839854dc37a4eb77937cd8c8246f94a0f9250a6))
+
 ## [0.1.96](https://github.com/kicksideai/kickside/compare/jobs-v0.1.95...jobs-v0.1.96) (2026-11-19)
 
 
