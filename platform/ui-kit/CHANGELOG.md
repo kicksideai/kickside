@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.5](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.4...ui-kit-v1.7.5) (2026-11-21)
+
+
+### Features
+
+* **ui-kit:** share settings rails and disclosure ([#808](https://github.com/kicksideai/kickside/issues/808)) ([839e4f4](https://github.com/kicksideai/kickside/commit/839e4f486b8f2113a1528a7726f0e4222ffa99ae))
+
 ## [1.7.4](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.3...ui-kit-v1.7.4) (2026-11-20)
 
 
