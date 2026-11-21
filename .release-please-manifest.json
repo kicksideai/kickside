@@ -19,7 +19,7 @@
   "platform/oauth": "0.1.45",
   "platform/realtime": "0.1.32",
   "core/realtime-dispatch": "0.1.1",
-  "platform/renderers": "0.1.41",
+  "platform/renderers": "0.1.42",
   "platform/security": "0.2.30",
   "platform/self-reflection": "0.1.25",
   "platform/sessions": "0.1.45",

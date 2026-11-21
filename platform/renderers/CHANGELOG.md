@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.42](https://github.com/kicksideai/kickside/compare/renderers-v0.1.41...renderers-v0.1.42) (2026-11-21)
+
+
+### Bug Fixes
+
+* **renderers:** render DOCX text and links safely ([#811](https://github.com/kicksideai/kickside/issues/811)) ([085578f](https://github.com/kicksideai/kickside/commit/085578f40c1b1a0f4c600d136ee29e88cd80072b))
+
 ## [0.1.41](https://github.com/kicksideai/kickside/compare/renderers-v0.1.40...renderers-v0.1.41) (2026-11-21)
 
 
