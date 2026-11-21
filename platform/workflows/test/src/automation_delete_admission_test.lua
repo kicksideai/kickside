@@ -102,8 +102,9 @@ local function exercise(args)
     test.is_nil(install_err, tostring(install_err))
     local aid = installed.id
     if args.route == "cascade" then
-        local changed, meta_err = component.set_meta(aid, {owner="delete-owner:" .. aid})
-        test.is_nil(meta_err, tostring(meta_err)); test.is_true(changed)
+        -- Isolate the Automation from its workflow and Inbox fixtures in the owner's cascade.
+        execute("UPDATE kickside_component_meta SET value=$1 WHERE component_id=$2 AND key='owner'",
+            {"delete-owner:" .. aid, aid})
     end
     local rid, item
     if args.status then

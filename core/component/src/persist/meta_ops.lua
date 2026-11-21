@@ -12,20 +12,31 @@ local component_types = require("component_types")
 local error_envelope = require("error_envelope")
 type Executor = sql.DB | sql.Transaction
 
+local function validate_owner_key(lowered_key: string): error?
+    if lowered_key == component_types.OWNER_META_KEY then
+        return errors.new({kind = errors.INVALID, retryable = false,
+            message = "component owner is maintained by the component service",
+            details = {code = "component_meta_owner_required"}})
+    end
+    return nil
+end
+
 local function validate_public_meta_key(key: any): (error?, string?)
     if type(key) ~= "string" or key == "" then
         return (errors.new({ message = "component public metadata key must be a non-empty string", kind = errors.INVALID }) :: error)
     end
     local lowered = string.lower(key)
+    local owner_err = validate_owner_key(lowered)
+    if owner_err then return owner_err end
     if component_types.FORBIDDEN_PUBLIC_META_KEYS[lowered] then
         return (errors.new({
             message = "component public metadata cannot store private/config key: " .. key,
             kind = errors.INVALID,
         }) :: error)
     end
-    local owners, owner_err = registry.find({[".kind"] = "registry.entry",
+    local owners, read_err = registry.find({[".kind"] = "registry.entry",
         ["meta.type"] = "kickside.component.owned_meta_key", ["meta.key"] = key})
-    if owner_err then return owner_err end
+    if read_err then return read_err end
     if owners and #owners > 0 then
         if #owners ~= 1 then
             return errors.new({kind = errors.INVALID, message = "component metadata key has multiple owners: " .. key}), nil
@@ -280,6 +291,8 @@ local function raise_meta_floor(tx: Executor, component_id: string, key: string,
             message = "metadata floor requires a nonnegative finite integer",
             details = {code = "component_meta_floor_invalid"}}) :: error)
     end
+    local owner_err = validate_owner_key(string.lower(key))
+    if owner_err then return nil, owner_err end
     local lock_err = lock_component_tx(tx, component_id)
     if lock_err then return nil, lock_err end
     local metadata, read_err = public_meta_tx(tx, component_id)
