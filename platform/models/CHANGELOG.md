@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.90](https://github.com/kicksideai/kickside/compare/models-v0.1.89...models-v0.1.90) (2026-11-21)
+
+
+### Features
+
+* **models:** configure and expose provider icons ([#826](https://github.com/kicksideai/kickside/issues/826)) ([0a23151](https://github.com/kicksideai/kickside/commit/0a231515396758de2173ef207f8a7e28af4c0e3a))
+
 ## [0.1.89](https://github.com/kicksideai/kickside/compare/models-v0.1.88...models-v0.1.89) (2026-11-20)
 
 
