@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.100](https://github.com/kicksideai/kickside/compare/jobs-v0.1.99...jobs-v0.1.100) (2026-11-21)
+
+
+### Bug Fixes
+
+* **jobs:** adopt retained queues and interrupted thread cleanup ([#870](https://github.com/kicksideai/kickside/issues/870)) ([c6e9273](https://github.com/kicksideai/kickside/commit/c6e927307291d14b8b2c347b227c718332ae805f))
+
 ## [0.1.99](https://github.com/kicksideai/kickside/compare/jobs-v0.1.98...jobs-v0.1.99) (2026-11-21)
 
 
