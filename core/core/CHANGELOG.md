@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.45](https://github.com/kicksideai/kickside/compare/core-v0.3.44...core-v0.3.45) (2026-11-21)
+
+
+### Bug Fixes
+
+* **core:** preserve owned worker admission across retries ([#817](https://github.com/kicksideai/kickside/issues/817)) ([f09ea58](https://github.com/kicksideai/kickside/commit/f09ea5878bf0f1ae48bbf63b44681fa62501843f))
+* **core:** re-admit owned projections after a registry update ([#815](https://github.com/kicksideai/kickside/issues/815)) ([dc4328c](https://github.com/kicksideai/kickside/commit/dc4328c4b0c07a4caf281575479d517b714796bf))
+
 ## [0.3.44](https://github.com/kicksideai/kickside/compare/core-v0.3.43...core-v0.3.44) (2026-11-20)
 
 
