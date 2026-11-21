@@ -9,6 +9,8 @@ vi.mock('../composables/useWippy', () => ({
 }))
 vi.mock('@wippy-fe/proxy', () => ({ on: vi.fn() }))
 
+customElements.define('test-agent-editor', class extends HTMLElement {})
+
 const wrappers: ReturnType<typeof mount>[] = []
 afterEach(() => wrappers.splice(0).forEach(wrapper => wrapper.unmount()))
 

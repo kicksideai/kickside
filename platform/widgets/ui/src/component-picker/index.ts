@@ -1,19 +1,11 @@
-import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, lazyVueConfig } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import type { ComponentProps } from './types.ts'
 import type { Events } from './constants.ts'
-import { lazyControl } from '../lazy'
+
 import stylesText from './styles.css?inline'
 
-const ComponentPicker = lazyControl(
-  () => import('./app/ComponentPicker.vue'),
-  {
-    loading: 'Loading component picker…',
-    failed: 'Could not load the component picker. Reload the page to try again.',
-    iconOnly: true,
-  },
-  useEvents,
-)
+
 
 const PROPS_SCHEMA: WippyPropsSchema = {
   type: 'object',
@@ -40,7 +32,7 @@ class KicksideComponentPickerElement extends WippyVueElement<ComponentProps, Eve
   }
 
   static get vueConfig() {
-    return { rootComponent: ComponentPicker }
+    return lazyVueConfig(() => import('./app/ComponentPicker.vue').then(module => ({ rootComponent: module.default })), { surface: 'compact', loading: 'Loading component picker…', failed: 'Could not load the component picker. Reload the page to try again.', iconOnly: true, delay: 200, timeout: 30000 })
   }
 }
 

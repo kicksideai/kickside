@@ -6,7 +6,7 @@ import { hostExternals, wcRuntimeChunk } from '../../widgets/ui/wc-build'
 
 export default defineConfig({
   resolve: { alias: { '@widgets': resolve(__dirname, '../../widgets/ui/src') } },
-  plugins: [vue(), wippyComponentPlugin()],
+  plugins: [vue(), wippyComponentPlugin({ required: true, lazyEntries: ['index', 'onboard'] })],
   base: '',
   define: {
     'process.env.NODE_ENV': JSON.stringify('production'),

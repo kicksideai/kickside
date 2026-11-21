@@ -1,30 +1,23 @@
-import { u as t, W as o } from "./wc-runtime-Bmxpx-Ro.js";
-import { a as n } from "./lazy-ZWC1tvFC.js";
-import { s as r } from "./styles-CtbZvY-c.js";
-import "@iconify/vue";
-import { define as s } from "@wippy-fe/proxy";
-const i = n(
-  () => import("./Onboard-DduruBSy.js"),
-  { loading: "Loading the knowledge step…", failed: "Could not load the knowledge step. Reload the page to try again." },
-  t
-);
+import { W as o, l as n } from "./wc-runtime-CPT3aEO7.js";
+import { s as i } from "./styles-BmRm32vY.js";
+import { define as r } from "@wippy-fe/proxy";
 class e extends o {
   static get wippyConfig() {
     return {
       propsSchema: { type: "object", properties: {} },
       hostCssKeys: ["themeConfigUrl", "iframeCssUrl"],
-      inlineCss: r
+      inlineCss: i
     };
   }
   static get vueConfig() {
-    return { rootComponent: i };
+    return n(() => import("./Onboard-ByvwY2DX.js").then((t) => ({ rootComponent: t.default })), { surface: "compact", loading: "Loading the knowledge step…", failed: "Could not load the knowledge step. Reload the page to try again.", delay: 200, timeout: 3e4 });
   }
 }
-async function f() {
+async function m() {
   return e;
 }
-s(import.meta.url, e);
+r(import.meta.url, e);
 export {
-  f as webComponent
+  m as webComponent
 };
 //# sourceMappingURL=onboard.js.map

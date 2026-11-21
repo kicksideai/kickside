@@ -48,7 +48,7 @@ export default defineConfig({
         },
       },
     }),
-    wippyComponentPlugin({ required: true }),
+    wippyComponentPlugin({ required: true, lazyEntries: ['index', 'workflow_picker', 'workflow_embed', 'component_workflows'] }),
     {
       name: 'strip-generated-trailing-whitespace',
       enforce: 'post',

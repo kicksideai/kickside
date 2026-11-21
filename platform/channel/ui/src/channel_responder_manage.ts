@@ -1,14 +1,10 @@
-import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, lazyVueConfig } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
-import { lazyControl } from '@widgets/lazy'
+
 import stylesText from './styles.css?inline'
 
-const ChannelResponderManage = lazyControl(
-  () => import('./app/ChannelResponderManage.vue'),
-  { loading: 'Loading channel responder settings…', failed: 'Could not load the channel responder settings. Reload the page to try again.' },
-  useEvents,
-)
+
 
 interface Props { config?: unknown; value?: unknown }
 interface Events {
@@ -35,7 +31,7 @@ class KicksideChannelResponderManageElement extends WippyVueElement<Props, Event
   }
 
   static get vueConfig() {
-    return { rootComponent: ChannelResponderManage, plugins: [PrimeVuePlugin] }
+    return lazyVueConfig(() => import('./app/ChannelResponderManage.vue').then(module => ({ rootComponent: module.default, plugins: [PrimeVuePlugin] })), { surface: 'compact', loading: 'Loading channel responder settings…', failed: 'Could not load the channel responder settings. Reload the page to try again.', delay: 200, timeout: 30000 })
   }
 }
 

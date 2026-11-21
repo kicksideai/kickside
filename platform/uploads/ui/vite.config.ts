@@ -18,7 +18,7 @@ const cleanBundleBlankLines = {
 export default defineConfig({
   resolve: { alias: { '@widgets': resolve(__dirname, '../../widgets/ui/src') } },
   plugins: [vue({ template: { compilerOptions: { isCustomElement: (t) => t.startsWith('wc-') } } }),
-    wippyComponentPlugin(), cleanBundleBlankLines],
+    wippyComponentPlugin({ required: true, lazyEntries: ['index', 'settings'] }), cleanBundleBlankLines],
   // Lib builds don't auto-replace process.env; provide it so deps that read
   // NODE_ENV don't throw "process is not defined" in the browser/shadow DOM.
   define: {

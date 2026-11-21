@@ -1,13 +1,7 @@
-import { W as t, u as s } from "./wc-runtime-BOOCbdbY.js";
-import { l as i } from "./lazy-BTFbj8TG.js";
+import { W as i, l as s } from "./wc-runtime-Vcu3yWjv.js";
 import { s as o } from "./styles-Bly5VSV3.js";
-import "@iconify/vue";
 import { define as r } from "@wippy-fe/proxy";
-const n = i(
-  () => import("./MultiSelect-yLELDjO7.js"),
-  { loading: "Loading multiselect…", failed: "Could not load the multiselect. Reload the page to try again." },
-  s
-), l = {
+const n = {
   type: "object",
   properties: {
     source: { type: "string", default: "", description: "List endpoint the picker pages through: GET ?q=&limit=&cursor=&parent_id=, rows under response-key, next_cursor for the following page, optional boolean search declaring server-side search. ?ids=<csv> resolves preselected chips." },
@@ -28,23 +22,23 @@ const n = i(
     "response-key": { type: "string", default: "", description: "Field on the JSON response holding the rows array. Auto-detected (items/skills/traits/results/rows/data) when empty." }
   }
 };
-class e extends t {
+class e extends i {
   static get wippyConfig() {
     return {
-      propsSchema: l,
+      propsSchema: n,
       hostCssKeys: ["themeConfigUrl"],
       inlineCss: o
     };
   }
   static get vueConfig() {
-    return { rootComponent: n };
+    return s(() => import("./MultiSelect-C4a9FchX.js").then((t) => ({ rootComponent: t.default })), { surface: "compact", loading: "Loading multiselect…", failed: "Could not load the multiselect. Reload the page to try again.", delay: 200, timeout: 3e4 });
   }
 }
-async function m() {
+async function p() {
   return e;
 }
 r(import.meta.url, e);
 export {
-  m as webComponent
+  p as webComponent
 };
 //# sourceMappingURL=multiselect.js.map

@@ -1,31 +1,26 @@
-import { W as o, u as s } from "./wc-runtime-pqFrgqFa.js";
-import { s as i, a as r } from "./styles-CeBRcDSy.js";
+import { W as t, l as i } from "./wc-runtime-BQHcLGi8.js";
+import { s } from "./styles-DkVjMRNl.js";
 import { p as n } from "./package-CCTUAjDf.js";
-import "@iconify/vue";
-import { define as p } from "@wippy-fe/proxy";
-class e extends o {
+import { define as r } from "@wippy-fe/proxy";
+class e extends t {
   static get wippyConfig() {
     return {
       propsSchema: n.wippy.props,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: i
+      inlineCss: s
     };
   }
   static get vueConfig() {
     return {
-      lazyConfig: r(
-        () => import("./lazy-mount-9rnhhM-P.js").then((t) => t.mountConfig),
-        "Could not load the Webhooks page. Reload the page to try again.",
-        s
-      )
+      ...i(() => import("./lazy-mount-DRd6B8d1.js").then((o) => o.mountConfig), { surface: "page", loading: "Loading…", failed: "Could not load the Webhooks page. Reload the page to try again.", timeout: 3e4 })
     };
   }
 }
-async function C() {
+async function f() {
   return e;
 }
-p(import.meta.url, e);
+r(import.meta.url, e);
 export {
-  C as webComponent
+  f as webComponent
 };
 //# sourceMappingURL=index.js.map

@@ -1,6 +1,6 @@
-import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, lazyVueConfig } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
-import { lazyPage } from '@widgets/lazy'
+
 import type { ComponentProps, ProviderEditorProps } from './types.ts'
 import type { Events, ProviderEditorEvents } from './constants.ts'
 import { EDITOR_TAGS } from './providerTags.ts'
@@ -18,11 +18,7 @@ class KicksideModelsElement extends WippyVueElement<ComponentProps, Events> {
 
   static get vueConfig() {
     return {
-      lazyConfig: lazyPage(
-        () => import('./lazy-mount').then((module) => module.mountConfig),
-        'Could not load Models. Reload the page to try again.',
-        useEvents,
-      ),
+      ...lazyVueConfig(() => import('./lazy-mount').then((module) => module.mountConfig), { surface: 'page', loading: 'Loading…', failed: 'Could not load Models. Reload the page to try again.', timeout: 30000 }),
     }
   }
 }
@@ -50,11 +46,7 @@ function makeEditorElement(specKey: string) {
 
     static get vueConfig() {
       return {
-        lazyConfig: lazyPage(
-          () => import('./provider-editor-mount').then((module) => module.editorMountConfig(specKey)),
-          'Could not load the provider editor. Reload the page to try again.',
-          useEvents,
-        ),
+        ...lazyVueConfig(() => import('./provider-editor-mount').then((module) => module.editorMountConfig(specKey)), { surface: 'page', loading: 'Loading…', failed: 'Could not load the provider editor. Reload the page to try again.', timeout: 30000 }),
       }
     }
   }

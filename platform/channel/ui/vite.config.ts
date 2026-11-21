@@ -11,7 +11,7 @@ const entries = {
 
 export default defineConfig({
   resolve: { alias: { '@widgets': resolve(__dirname, '../../widgets/ui/src') } },
-  plugins: [vue(), wippyComponentPlugin()],
+  plugins: [vue(), wippyComponentPlugin({ required: true, lazyEntries: ['channel_responder_manage'] })],
   define: {
     'process.env.NODE_ENV': JSON.stringify('production'),
     'process.env': '{}',

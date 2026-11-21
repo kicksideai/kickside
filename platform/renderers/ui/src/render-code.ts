@@ -1,15 +1,11 @@
 // SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
-import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, lazyVueConfig } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
-import { lazyControl } from '@widgets/lazy'
+
 import stylesText from './styles.css?inline'
 
 // highlight.js is most of this viewer's weight, so the implementation loads on first mount.
-const RenderCode = lazyControl(
-  () => import('./app/RenderCode.vue'),
-  { loading: 'Loading the code viewer…', failed: 'Could not load the code viewer. Reload the page to try again.' },
-  useEvents,
-)
+
 
 // Reserved only while the implementation loads, so a loaded viewer keeps its own size.
 const hostCss = ':host > div:empty, :host > div:has(> [data-lazy-state]) { min-height: 96px; }'
@@ -35,7 +31,7 @@ class RenderCodeElement extends WippyVueElement<Props> {
       inlineCss: `${stylesText}\n${hostCss}`,
     }
   }
-  static get vueConfig() { return { rootComponent: RenderCode } }
+  static get vueConfig() { return lazyVueConfig(() => import('./app/RenderCode.vue').then(module => ({ rootComponent: module.default })), { surface: 'compact', loading: 'Loading the code viewer…', failed: 'Could not load the code viewer. Reload the page to try again.', delay: 200, timeout: 30000 }) }
 }
 
 export async function webComponent() { return RenderCodeElement }

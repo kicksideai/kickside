@@ -1,6 +1,5 @@
-import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, lazyVueConfig } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
-import { lazyPage } from '@widgets/lazy'
 import vfCore from '@vue-flow/core/dist/style.css?inline'
 import vfTheme from '@vue-flow/core/dist/theme-default.css?inline'
 import vfControls from '@vue-flow/controls/dist/style.css?inline'
@@ -48,13 +47,11 @@ class KicksideWorkflowBuilderElement extends WippyVueElement<Props, Events> {
   }
 
   static get vueConfig() {
-    return {
-      lazyConfig: lazyPage(
-        () => import('./lazy-mount').then((module) => module.mountConfig),
-        'Could not load the Workflow builder. Reload the page to try again.',
-        useEvents,
-      ),
-    }
+    return lazyVueConfig(() => import('./lazy-mount').then((module) => module.mountConfig), {
+      surface: 'page',
+      loading: 'Loading Workflows',
+      failed: 'Could not load the Workflow builder. Reload the page to try again.',
+    })
   }
 }
 

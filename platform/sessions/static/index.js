@@ -1,33 +1,28 @@
-import { W as s, m as o } from "./wc-runtime-enaNScz7.js";
-import { l as i } from "./lazy-DX8B4FNv.js";
-import { s as r } from "./styles-HhfABgzS.js";
+import { W as s, m as o } from "./wc-runtime-D-UdhneU.js";
+import { s as i } from "./styles-Dhq3lUU_.js";
 import { define as n } from "@wippy-fe/proxy";
-const a = { props: { type: "object", properties: { mode: { type: "string", default: "manager", description: "manager (default) or sidebar" }, "active-session-id": { type: "string", description: "Session currently rendered by the app-owned chat panel.", default: "" }, "artifacts-active": { type: "boolean", default: !1, description: "Whether the cross-session artifact gallery owns the adjacent workspace." } } } }, p = {
-  wippy: a
+const r = { props: { type: "object", properties: { mode: { type: "string", default: "manager", description: "manager (default) or sidebar" }, "active-session-id": { type: "string", description: "Session currently rendered by the app-owned chat panel.", default: "" }, "artifacts-active": { type: "boolean", default: !1, description: "Whether the cross-session artifact gallery owns the adjacent workspace." } } } }, a = {
+  wippy: r
 };
 class e extends s {
   static get wippyConfig() {
     return {
-      propsSchema: p.wippy.props,
+      propsSchema: a.wippy.props,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: r
+      inlineCss: i
     };
   }
   static get vueConfig() {
     return {
-      lazyConfig: i(
-        () => import("./index-mount-BeVqbSib.js").then((t) => t.mountConfig),
-        "Could not load the sessions list. Reload the page to try again.",
-        o
-      )
+      ...o(() => import("./index-mount-BZvtMgN4.js").then((t) => t.mountConfig), { surface: "page", loading: "Loading…", failed: "Could not load the sessions list. Reload the page to try again.", timeout: 3e4 })
     };
   }
 }
-async function y() {
+async function m() {
   return e;
 }
 n(import.meta.url, e);
 export {
-  y as webComponent
+  m as webComponent
 };
 //# sourceMappingURL=index.js.map

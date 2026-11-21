@@ -1,8 +1,7 @@
-import { u as f, W as y } from "./wc-runtime-56DLhE4T.js";
+import { u as f, W as y } from "./wc-runtime-4lROyJyk.js";
 import { defineComponent as k, ref as a, onMounted as g, openBlock as s, createElementBlock as r, createElementVNode as e, toDisplayString as l, Fragment as h, createTextVNode as _, createCommentVNode as c } from "vue";
 import { loadByTagName as b, api as w, define as C } from "@wippy-fe/proxy";
-import { s as E } from "./styles-DJi-TJey.js";
-import "@iconify/vue";
+import { s as E } from "./styles-Bjo2-V-d.js";
 const S = { class: "ks-about" }, x = {
   key: 0,
   class: "ks-loading"
@@ -87,11 +86,11 @@ class p extends y {
     return { rootComponent: M };
   }
 }
-async function j() {
+async function R() {
   return p;
 }
 C(import.meta.url, p);
 export {
-  j as webComponent
+  R as webComponent
 };
 //# sourceMappingURL=about.js.map

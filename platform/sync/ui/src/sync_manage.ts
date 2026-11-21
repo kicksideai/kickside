@@ -1,14 +1,10 @@
-import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, lazyVueConfig } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
-import { lazyControl } from '@widgets/lazy'
+
 import stylesText from './styles.css?inline'
 
-const SyncManage = lazyControl(
-  () => import('./app/SyncManage.vue'),
-  { loading: 'Loading data sync…', failed: 'Could not load the data sync. Reload the page to try again.' },
-  useEvents,
-)
+
 
 interface SyncManageProps { config?: unknown; value?: unknown }
 
@@ -37,7 +33,7 @@ class KicksideSyncManageElement extends WippyVueElement<SyncManageProps, SyncMan
   }
 
   static get vueConfig() {
-    return { rootComponent: SyncManage, plugins: [PrimeVuePlugin] }
+    return lazyVueConfig(() => import('./app/SyncManage.vue').then(module => ({ rootComponent: module.default, plugins: [PrimeVuePlugin] })), { surface: 'compact', loading: 'Loading data sync…', failed: 'Could not load the data sync. Reload the page to try again.', delay: 200, timeout: 30000 })
   }
 }
 

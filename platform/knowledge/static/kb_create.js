@@ -1,35 +1,29 @@
-import { W as t, P as o, u as n } from "./wc-runtime-Bmxpx-Ro.js";
-import { a as i } from "./lazy-ZWC1tvFC.js";
-import { s } from "./styles-CtbZvY-c.js";
-import "@iconify/vue";
-import { define as r } from "@wippy-fe/proxy";
-const a = i(
-  () => import("./KbCreate-wzgAD-1i.js"),
-  { loading: "Loading the new knowledge base dialog…", failed: "Could not load the new knowledge base dialog. Reload the page to try again." },
-  n
-), p = {
+import { W as o, l as n, P as i } from "./wc-runtime-CPT3aEO7.js";
+import { s } from "./styles-BmRm32vY.js";
+import { define as a } from "@wippy-fe/proxy";
+const r = {
   type: "object",
   properties: {
     "parent-id": { type: "string" }
   }
 };
-class e extends t {
+class e extends o {
   static get wippyConfig() {
     return {
-      propsSchema: p,
+      propsSchema: r,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
       inlineCss: s
     };
   }
   static get vueConfig() {
-    return { rootComponent: a, plugins: [o] };
+    return n(() => import("./KbCreate-BNMkotRw.js").then((t) => ({ rootComponent: t.default, plugins: [i] })), { surface: "compact", loading: "Loading the new knowledge base dialog…", failed: "Could not load the new knowledge base dialog. Reload the page to try again.", delay: 200, timeout: 3e4 });
   }
 }
-async function c() {
+async function d() {
   return e;
 }
-r(import.meta.url, e);
+a(import.meta.url, e);
 export {
-  c as webComponent
+  d as webComponent
 };
 //# sourceMappingURL=kb_create.js.map

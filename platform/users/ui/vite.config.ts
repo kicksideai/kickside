@@ -6,7 +6,7 @@ import { hostExternals, wcRuntimeChunk } from '../../widgets/ui/wc-build'
 
 export default defineConfig({
   resolve: { alias: { '@widgets': resolve(__dirname, '../../widgets/ui/src') } },
-  plugins: [vue(), wippyComponentPlugin()],
+  plugins: [vue(), wippyComponentPlugin({ required: true, lazyEntries: ['index', 'principal_picker', 'run_as_picker'] })],
   // Lib builds don't auto-replace process.env; provide it so deps that read
   // NODE_ENV don't throw "process is not defined" in the browser/shadow DOM.
   define: {

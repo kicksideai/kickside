@@ -44,12 +44,17 @@ const entry = computed<SurfaceEntry | null>(() => {
   return { key: surfaceIdentity(path, routeName, owningItem(path)), path, routeName }
 })
 
+const legacyAttachments = new Set<string>()
 const swap = useSwapBuffer<SurfaceEntry>({
   keyOf: value => value.key,
   buffers: 2,
   readyTimeoutMs: 8000,
-  onReadyTimeout: 'reveal',
-  onReadyTimeoutFired: slot => console.warn(`[kickside-surface] revealing ${slot.key} after readiness timeout`),
+  loaderDelayMs: 250,
+  loaderMinMs: 400,
+  revealWithLoader: true,
+  onReadyTimeout: slot => legacyAttachments.has(slot.key) ? 'reveal' : 'fail',
+  onReadyTimeoutFired: slot => console.warn(`[kickside-surface] ${slot.key} did not report readiness`),
+  onEvict: slot => legacyAttachments.delete(slot.key),
 })
 
 watch(entry, value => {
@@ -68,6 +73,11 @@ function interactive(slot: SwapSlot<SurfaceEntry>): boolean {
 function visible(slot: SwapSlot<SurfaceEntry>): boolean {
   return isSurfaceBufferVisible(slot, swap.slots.value, swap.topIndex.value)
 }
+
+function retry(slot: SwapSlot<SurfaceEntry>) {
+  legacyAttachments.delete(slot.key)
+  swap.clearError(slot.index)
+}
 </script>
 
 <template>
@@ -83,10 +93,11 @@ function visible(slot: SwapSlot<SurfaceEntry>): boolean {
       :aria-hidden="slot && !interactive(slot) ? 'true' : undefined"
     >
       <SurfaceHost
-        v-if="slot"
+        v-if="slot && !slot.error"
         :path="slot.entry.path"
         :route-name="slot.entry.routeName"
         :active="isSurfaceBufferActive(slot, swap.topIndex.value, props.presented)"
+        @attached="legacy => legacy ? legacyAttachments.add(slot.key) : legacyAttachments.delete(slot.key)"
         @ready="swap.markReady(slot.index, slot.key)"
         @error="swap.markFailed(slot.index, $event, slot.key)"
       />
@@ -95,8 +106,9 @@ function visible(slot: SwapSlot<SurfaceEntry>): boolean {
     <div v-if="swap.active.value?.error" class="surface-buffer__error" role="alert">
       <strong>Surface unavailable</strong>
       <span>{{ swap.active.value.error instanceof Error ? swap.active.value.error.message : 'The surface failed to load.' }}</span>
+      <button type="button" class="surface-buffer__retry" @click="retry(swap.active.value)">Retry</button>
     </div>
-    <div v-if="swap.showLoader.value" class="surface-buffer__loader" role="status" aria-live="polite">
+    <div v-if="swap.showLoader.value && !swap.active.value?.error" class="surface-buffer__loader" role="status" aria-live="polite">
       Loading…
     </div>
   </div>
@@ -104,11 +116,12 @@ function visible(slot: SwapSlot<SurfaceEntry>): boolean {
 
 <style scoped>
 .surface-buffers { position: relative; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; }
-.surface-buffer { position: absolute; inset: 0; min-width: 0; min-height: 0; overflow: auto; visibility: hidden; pointer-events: none; }
-.surface-buffer--visible { visibility: visible; }
+.surface-buffer { position: absolute; inset: 0; min-width: 0; min-height: 0; overflow: auto; visibility: hidden; opacity: 0; pointer-events: none; }
+.surface-buffer--visible { visibility: visible; opacity: 1; }
 .surface-buffer--top.surface-buffer--visible { pointer-events: auto; }
 .surface-buffer__loader, .surface-buffer__error { position: absolute; z-index: 2147480000; display: grid; place-content: center; gap: .5rem; inset: 0; text-align: center; }
 .surface-buffer__loader { pointer-events: none; background: color-mix(in srgb, var(--p-content-background) 25%, transparent); color: var(--p-text-muted-color); }
 .surface-buffer__error { padding: 1.5rem; background: var(--p-content-background); color: var(--p-text-muted-color); }
 .surface-buffer__error strong { color: var(--p-text-color); }
+.surface-buffer__retry { justify-self: center; padding: .375rem .75rem; border: 1px solid currentColor; border-radius: .375rem; }
 </style>
