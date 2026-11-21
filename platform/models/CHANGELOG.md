@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.91](https://github.com/kicksideai/kickside/compare/models-v0.1.90...models-v0.1.91) (2026-11-21)
+
+
+### Features
+
+* **models:** agent tools and a trait for model catalog cards ([#828](https://github.com/kicksideai/kickside/issues/828)) ([fdd15a2](https://github.com/kicksideai/kickside/commit/fdd15a2ba1ee9c4a1cea42db566740147f0ec407))
+
 ## [0.1.90](https://github.com/kicksideai/kickside/compare/models-v0.1.89...models-v0.1.90) (2026-11-21)
 
 
