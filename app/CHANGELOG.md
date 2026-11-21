@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.57](https://github.com/kicksideai/kickside/compare/kickside-v0.2.56...kickside-v0.2.57) (2026-11-21)
+
+
+### Bug Fixes
+
+* **app:** reserve Work command transitions for service policies ([7ed40b9](https://github.com/kicksideai/kickside/commit/7ed40b9e09daa436dac4f87780ceda995b55d832))
+
 ## [0.2.56](https://github.com/kicksideai/kickside/compare/kickside-v0.2.55...kickside-v0.2.56) (2026-11-21)
 
 
