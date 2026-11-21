@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.50](https://github.com/kicksideai/kickside/compare/core-v0.3.49...core-v0.3.50) (2026-11-21)
+
+
+### Bug Fixes
+
+* **core:** bridge historical thread and projection storage ([#859](https://github.com/kicksideai/kickside/issues/859)) ([005f1b5](https://github.com/kicksideai/kickside/commit/005f1b5c0602df110503fd86af2fbfe3dfa3674e))
+
 ## [0.3.49](https://github.com/kicksideai/kickside/compare/core-v0.3.48...core-v0.3.49) (2026-11-21)
 
 
