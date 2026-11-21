@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.49](https://github.com/kicksideai/kickside/compare/core-v0.3.48...core-v0.3.49) (2026-11-21)
+
+
+### Bug Fixes
+
+* **core:** publish registered filtered projections atomically ([b94fe22](https://github.com/kicksideai/kickside/commit/b94fe224f7388c476a15f033442ba238e014dd9c))
+
 ## [0.3.48](https://github.com/kicksideai/kickside/compare/core-v0.3.47...core-v0.3.48) (2026-11-21)
 
 
