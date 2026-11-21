@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.55](https://github.com/kicksideai/kickside/compare/kickside-v0.2.54...kickside-v0.2.55) (2026-11-21)
+
+
+### Bug Fixes
+
+* **app:** use the Facade-selected Host for login styles ([#813](https://github.com/kicksideai/kickside/issues/813)) ([6d5344e](https://github.com/kicksideai/kickside/commit/6d5344ef4faca2e1d730082cb28a03b16de73418))
+
 ## [0.2.54](https://github.com/kicksideai/kickside/compare/kickside-v0.2.53...kickside-v0.2.54) (2026-11-20)
 
 
