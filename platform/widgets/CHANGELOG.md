@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.67](https://github.com/kicksideai/kickside/compare/widgets-v0.1.66...widgets-v0.1.67) (2026-11-21)
+
+
+### Bug Fixes
+
+* **widgets:** let the model picker fill its form field ([#820](https://github.com/kicksideai/kickside/issues/820)) ([396b507](https://github.com/kicksideai/kickside/commit/396b50799f07539ad342d3bc10a396c670e55fd0))
+
 ## [0.1.66](https://github.com/kicksideai/kickside/compare/widgets-v0.1.65...widgets-v0.1.66) (2026-11-20)
 
 
