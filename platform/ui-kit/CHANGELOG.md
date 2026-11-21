@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.6](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.5...ui-kit-v1.7.6) (2026-11-21)
+
+
+### Bug Fixes
+
+* **ui-kit:** unify admin directory and settings chrome ([#878](https://github.com/kicksideai/kickside/issues/878)) ([6db2c75](https://github.com/kicksideai/kickside/commit/6db2c75193cf7bf211d97a009646f18547395232))
+
 ## [1.7.5](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.4...ui-kit-v1.7.5) (2026-11-21)
 
 
