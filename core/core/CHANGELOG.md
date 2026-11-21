@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.46](https://github.com/kicksideai/kickside/compare/core-v0.3.45...core-v0.3.46) (2026-11-21)
+
+
+### Features
+
+* **core:** expose a read-only lifecycle custody inventory ([#848](https://github.com/kicksideai/kickside/issues/848)) ([4a75f8e](https://github.com/kicksideai/kickside/commit/4a75f8ece580a8cff779f2270fac4545a55d4678))
+
 ## [0.3.45](https://github.com/kicksideai/kickside/compare/core-v0.3.44...core-v0.3.45) (2026-11-21)
 
 
