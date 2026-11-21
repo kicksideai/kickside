@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.68](https://github.com/kicksideai/kickside/compare/widgets-v0.1.67...widgets-v0.1.68) (2026-11-21)
+
+
+### Bug Fixes
+
+* **widgets:** keep model choices readable and responsive ([#822](https://github.com/kicksideai/kickside/issues/822)) ([cfb50b0](https://github.com/kicksideai/kickside/commit/cfb50b04222bd873b2dcc881ea0d2a3f52ccf38a))
+
 ## [0.1.67](https://github.com/kicksideai/kickside/compare/widgets-v0.1.66...widgets-v0.1.67) (2026-11-21)
 
 
