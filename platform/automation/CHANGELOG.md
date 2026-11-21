@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.42](https://github.com/kicksideai/kickside/compare/automation-v0.2.41...automation-v0.2.42) (2026-11-21)
+
+
+### Features
+
+* show Knowledge indexing outcomes in Drive activity ([2556f47](https://github.com/kicksideai/kickside/commit/2556f477d90b1b9b2f085de01e279640440e4f25))
+
 ## [0.2.41](https://github.com/kicksideai/kickside/compare/automation-v0.2.40...automation-v0.2.41) (2026-11-20)
 
 

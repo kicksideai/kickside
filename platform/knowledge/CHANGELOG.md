@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.106](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.105...knowledge-v0.1.106) (2026-11-21)
+
+
+### Features
+
+* show Knowledge indexing outcomes in Drive activity ([2556f47](https://github.com/kicksideai/kickside/commit/2556f477d90b1b9b2f085de01e279640440e4f25))
+
 ## [0.1.105](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.104...knowledge-v0.1.105) (2026-11-20)
 
 
