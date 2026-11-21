@@ -20,7 +20,7 @@ local function task_row(id, actor, access_mask)
         return nil, errors.new({ kind = errors.INVALID, message = "id is required" })
     end
     local rows, err = component.query({ component_ids = { id }, actor_id = actor:id(),
-        access_mask = access_mask, include = { meta = true } })
+        access_mask = access_mask, include = { meta = false, principal_owner = true } })
     if err then return nil, err end
     local row = rows and rows[1]
     if not row or row.impl_id ~= KIND then return nil, denied() end
@@ -33,8 +33,8 @@ local function get(id, row, actor)
     local status, status_err = automations.status(id, {})
     if status_err then return nil, status_err end
     local d = status.drives[1] or {}
-    return { id = id, owner_id = row.meta and row.meta.owner,
-        is_owner = row.meta and row.meta.owner == actor:id() or false, title = state.title, schedule = state.schedule, target = state.target,
+    return { id = id, owner_id = row.principal_owner,
+        is_owner = row.principal_owner == actor:id(), title = state.title, schedule = state.schedule, target = state.target,
         enabled = d.enabled, phase = d.phase, last_run_at = d.last_run_at, next_run_at = d.next_run_at,
         last_error = d.last_error or (status.delivery_failures or {}).last_error,
         failed_runs = (status.delivery_failures or {}).count or 0 }, nil
@@ -115,7 +115,7 @@ function M.handler(args)
             offset = position :: integer
         end
         local rows, err = component.query({ impl_ids = { KIND }, actor_id = actor:id(),
-            access_mask = component.ACCESS.READ, include = { meta = true },
+            access_mask = component.ACCESS.READ, include = { meta = false, principal_owner = true },
             order_by = { field = "created_at", direction = "DESC" }, limit = (limit :: integer) + 1, offset = offset })
         if err then return nil, err end
         local tasks = {}
@@ -155,7 +155,7 @@ function M.handler(args)
     end
     -- A WRITE-only grant can operate without receiving READ-only config/status.
     local readable, query_err = component.query({ component_ids = { a.id }, actor_id = actor:id(),
-        access_mask = component.ACCESS.READ, include = { meta = true } })
+        access_mask = component.ACCESS.READ, include = { meta = false, principal_owner = true } })
     if query_err then return nil, query_err end
     if not readable or not readable[1] then return { success = true, id = a.id }, nil end
     local task, err = get(a.id, readable[1], actor)

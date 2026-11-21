@@ -361,6 +361,8 @@ entries:
     - time
     - json
     imports:
+      custody: kickside.component.persist:custody
+      custody_cascade: kickside.component.persist:custody_cascade
       persisted_json: kickside.contract:persisted_json
       committed_error: kickside.contract:committed_error
       meta_service: kickside.component:meta_service

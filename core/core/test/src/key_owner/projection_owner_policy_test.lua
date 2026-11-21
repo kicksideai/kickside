@@ -54,8 +54,9 @@ return {owner=owner,probe=probe,run=test.run_cases(function()
             local row=assert(execution_identity.to_row({version=2,principal={kind="user",id=actor},
                 authorized_by={kind="user",id=actor},component_id=id,captured_at="2026-01-01T00:00:00Z"}))
             local db=assert(sql.get("app:db"))
-            assert(db:execute([[INSERT INTO kickside_components(component_id,impl_id,private_context,created_at,updated_at)
-                VALUES($1,'kickside.core:thread','{}',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)]],{id}))
+            assert(db:execute([[INSERT INTO kickside_components(component_id,impl_id,private_context,created_at,updated_at,secrets_incarnation,
+                owner_type,owner_kind,owner_id,custody_legacy)
+                VALUES($1,'kickside.core:thread','{}',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,$2,'principal','user',$3,0)]],{id,uuid.v4(),actor}))
             for key,value in pairs({["core_test.principal_state"]="active",["core_test.scope_name"]="app:projection_owner_scope"}) do
                 assert(db:execute([[INSERT INTO kickside_component_meta(meta_id,component_id,key,value,created_at,updated_at)
                     VALUES($1,$2,$3,$4,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)]],{uuid.v7(),id,key,value}))

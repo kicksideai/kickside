@@ -8,15 +8,28 @@ entries:
     source: file://deletion_jobs_test.lua
     method: run
     modules: [sql, uuid, security, contract, process, time, channel, funcs, registry]
-    imports: {test: 'wippy.test:test', deletion_worker: 'app:deletion_test_worker', component: 'kickside.component:component'}
+    imports: {test: 'wippy.test:test', deletion_worker: 'app:deletion_test_worker', component: 'kickside.component:component', child_registration: 'kickside.component.binding:child_registration'}
   - name: deletion_jobs_request
     kind: process.lua
     source: file://deletion_jobs_test.lua
     method: request
     modules: [sql, uuid, security, contract, process, time, channel, funcs, registry]
-    imports: {test: 'wippy.test:test', deletion_worker: 'app:deletion_test_worker', component: 'kickside.component:component'}
+    imports: {test: 'wippy.test:test', deletion_worker: 'app:deletion_test_worker', component: 'kickside.component:component', child_registration: 'kickside.component.binding:child_registration'}
+  - name: deletion_jobs_owned_child
+    kind: function.lua
+    source: file://deletion_jobs_test.lua
+    method: register_owned
+    modules: [sql, uuid, security, contract, process, time, channel, funcs, registry]
+    imports:
+      test: wippy.test:test
+      deletion_worker: app:deletion_test_worker
+      component: kickside.component:component
+      child_registration: kickside.component.binding:child_registration
   - name: deletion_jobs_binding
     kind: contract.binding
+    meta:
+      owned_child_producers:
+        app:deletion_jobs_binding: [app:deletion_jobs_owned_child]
     contracts:
       - contract: kickside.contract:component
         methods: {get_status: 'app:autoinit_test_status'}
@@ -30,7 +43,7 @@ entries:
   - name: deletion_test_worker
     kind: library.lua
     source: file://deletion_test_worker.lua
-    modules: [funcs, sql, time, uuid, process]
+    modules: [funcs, sql, time, uuid, process, json]
     imports:
       claim: kickside.core.jobs.persist:claim
       lifecycle: kickside.core.jobs.persist:lifecycle
@@ -45,6 +58,8 @@ entries:
     source: file://delete_worker_native_source.lua
     modules: [security, time]
     imports:
+      custody: kickside.component.persist:custody
+      custody_cascade: kickside.component.persist:custody_cascade
       jobs_policy: kickside.core.jobs.policy:runtime
       sql: app:system_delete_worker_sql
       component_types: kickside.component:types
@@ -61,6 +76,8 @@ entries:
     source: file://delete_worker_native_source.lua
     modules: [security, time]
     imports:
+      custody: kickside.component.persist:custody
+      custody_cascade: kickside.component.persist:custody_cascade
       jobs_policy: kickside.core.jobs.policy:runtime
       sql: app:gated_delete_worker_sql
       component_types: kickside.component:types

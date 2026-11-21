@@ -22,6 +22,11 @@ local function query(filter: component_types.QueryFilter?, secrets: boolean): (c
         if not selected then return nil, errors.new({kind = errors.INTERNAL, message = "component selector returned no reader"}) end
         reader = selected
     end
+    if f.principal_owner ~= nil then
+        local owned, owner_err = reader:with_principal_owner(f.principal_owner)
+        if owner_err or not owned then return nil, owner_err end
+        reader = owned
+    end
     if type(f.meta) == "table" then
         reader = reader:with_meta(f.meta)
     end
@@ -35,6 +40,7 @@ local function query(filter: component_types.QueryFilter?, secrets: boolean): (c
         local inc = f.include
         reader = reader:include_options({
             meta = inc.meta,
+            principal_owner = inc.principal_owner,
             private_context = inc.private_context,
             placement = inc.placement,
             secrets = secrets,

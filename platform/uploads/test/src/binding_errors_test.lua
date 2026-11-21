@@ -746,6 +746,32 @@ return {run = test.run_cases(function()
             test.is_true(retried.success)
             test.eq(retried.read_rows_deleted, 1)
         end)
+        test.it("refuses to fence an uploads component while its principal custody is unresolved", function()
+            local db = assert(sql.get("app:db"))
+            assert(db:execute([[UPDATE kickside_components SET owner_type='unresolved', owner_kind=NULL,
+                owner_id=NULL, custody_legacy=1 WHERE component_id=$1]], {owner_component}))
+            assert(db:release())
+
+            local service = assert(assert(contract.get("kickside.component:component_service"))
+                :with_actor(actor(owner)):with_scope(scope()):open())
+            local refused = assert(service:delete({component_id = owner_component}))
+            local provider = assert(open("kickside.contract:deletable", {component_id = owner_component}))
+            local cleanup = assert(provider:delete({}))
+
+            db = assert(sql.get("app:db"))
+            local row = assert(db:query("SELECT deleting_at FROM kickside_components WHERE component_id=$1", {owner_component}))[1]
+            local upload = assert(db:query("SELECT uuid FROM kickside_uploads WHERE uuid=$1", {uploads.normal}))[1]
+            assert(db:execute([[UPDATE kickside_components SET owner_type='principal',owner_kind='user',owner_id=$1
+                WHERE component_id=$2]], {owner, owner_component}))
+            assert(db:release())
+            test.not_nil(row)
+            test.is_nil(row.deleting_at)
+            test.not_nil(upload)
+            test.eq(refused.kind, errors.CONFLICT)
+            test.eq(refused.details.code, "custody_unresolved")
+            test.is_false(cleanup.success)
+            check(cleanup.error, errors.CONFLICT, "custody_unresolved")
+        end)
         test.it("delete is idempotent for an absent component owner", function()
             local provider = assert(open("kickside.contract:deletable", {component_id = uuid.v4()}))
             local value, err = provider:delete({})

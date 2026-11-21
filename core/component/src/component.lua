@@ -13,6 +13,7 @@ local component_types = require("component_types")
 local access_policy = require("access_policy")
 local ops = require("component_ops")
 local teardown = require("teardown")
+local custody = require("custody")
 local autoinit = require("autoinit")
 local envelope = require("envelope")
 local error_envelope = require("error_envelope")
@@ -311,7 +312,7 @@ end
 
 -- Trusted lifecycle callers enqueue the same deletion as the request path.
 -- An absent component succeeds; active work retains the cleanup_pending contract.
-local function system_delete(component_id: string, child_policy: string?): (boolean, error?)
+local function system_delete(component_id: string, child_policy: string?, expected: any?): (boolean, error?)
     if type(component_id) ~= "string" or component_id == "" then
         return false, (errors.new({ message = "component_id is required", kind = errors.INVALID }) :: error)
     end
@@ -328,7 +329,7 @@ local function system_delete(component_id: string, child_policy: string?): (bool
         return true, nil
     end
 
-    local preflight_ok, preflight_step, preflight_err = teardown.begin_delete(component_id, nil, child_policy)
+    local preflight_ok, preflight_step, preflight_err = teardown.begin_delete(component_id, nil, child_policy, nil, expected)
     if preflight_step == "absent" and type(preflight_err) == "userdata"
         and errors.is(preflight_err, errors.NOT_FOUND) then return true, nil end
     if not preflight_ok or preflight_err then
@@ -487,6 +488,7 @@ return {
     set_execution_identity = component_command.set_execution_identity,
     apply_declaration = component_command.apply_declaration,
     system_delete = system_delete,
+    list_lifecycle_dependants = custody.list,
     delete_children = delete_children.run,
     -- fence(tx, component_id, db_id) -> err?. The existence fence for a consumer's
     -- write to the backing data it keeps for a component. Call it first inside the

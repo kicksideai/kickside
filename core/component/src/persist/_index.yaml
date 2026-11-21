@@ -115,6 +115,7 @@ entries:
       - sql
       - uuid
     imports:
+      execution_identity: kickside.execution:execution_identity
       secret_fields: kickside.component:secret_fields
       secrets_document: kickside.component:secrets_document
       persisted_json: kickside.contract:persisted_json
@@ -321,6 +322,26 @@ entries:
       audit_policy: kickside.component.persist:audit_policy
       execution_identity: kickside.execution:execution_identity
 
+  - name: custody
+    kind: library.lua
+    source: file://custody.lua
+    modules: [sql, registry]
+    imports:
+      component_types: kickside.component:types
+      error_envelope: kickside.contract:error_envelope
+
+  - name: custody_cascade
+    kind: library.lua
+    source: file://custody_cascade.lua
+    modules: [sql, json]
+    imports:
+      custody: kickside.component.persist:custody
+      component_ops: kickside.component.persist:component_ops
+      persisted_json: kickside.contract:persisted_json
+      delete_admission: kickside.component:delete_admission
+      placement: kickside.component.persist:placement
+      error_envelope: kickside.contract:error_envelope
+
   - name: teardown
     kind: library.lua
     meta:
@@ -346,4 +367,6 @@ entries:
       component_ops: kickside.component.persist:component_ops
       placement: kickside.component.persist:placement
       component_lifecycle: kickside.component:component_lifecycle
+      custody: kickside.component.persist:custody
+      custody_cascade: kickside.component.persist:custody_cascade
       delete_admission: kickside.component:delete_admission

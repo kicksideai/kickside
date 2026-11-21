@@ -129,6 +129,13 @@ entries:
       framework_events: kickside.core.threads:contract_events
       claim: kickside.core.jobs.persist:claim
 
+  - name: reaper_register_child
+    kind: function.lua
+    source: file://reaper_register_child.lua
+    method: run
+    imports:
+      child_registration: kickside.component.binding:child_registration
+
   - name: component_lifecycle_test
     kind: function.lua
     meta:

@@ -5,7 +5,7 @@ modules:
     - name: kickside/automation
       version: 0.0.0
     - name: kickside/component
-      version: 0.3.12
+      version: 0.3.32
     - name: kickside/contract
       version: 0.3.4
     - name: kickside/core

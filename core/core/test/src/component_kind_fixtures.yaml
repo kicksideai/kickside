@@ -11,6 +11,24 @@ entries:
         methods: {get_status: kickside.core.threads:thread_status}
   - name: reap
     kind: contract.binding
+    meta:
+      owned_child_producers:
+        kickside.test:reap: [kickside.core.lifecycle:reaper_register_child]
+        kickside.core.lifecycle:reaper_retry_binding: [kickside.core.lifecycle:reaper_register_child]
+      root_attachment_producers:
+        test.custody.plugin: [kickside.core.lifecycle:reaper_register_child]
     contracts:
       - contract: kickside.contract:component
         methods: {get_status: kickside.core.threads:thread_status}
+
+  - name: custody_attachment
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: kickside.core.threads:thread_status}
+
+  - name: custody_plugin
+    kind: registry.entry
+    meta:
+      type: test.custody.plugin
+      attachment: kickside.test:custody_attachment

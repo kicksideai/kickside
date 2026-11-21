@@ -2,7 +2,7 @@ version: "1.0"
 namespace: kickside.uploads
 entries:
   - name: dep.kickside.component
-    version: '*'
+    version: '>=0.3.32'
     kind: ns.dependency
     meta:
       comment: Records and instances register as component shells and resolve access through the component service.

@@ -3,7 +3,7 @@ directories:
     src: .
 modules:
     - name: kickside/component
-      version: 0.0.0
+      version: 0.3.32
     - name: kickside/contract
       version: 0.0.0
     - name: kickside/core

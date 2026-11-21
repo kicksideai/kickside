@@ -19,6 +19,30 @@ Backed by the `kickside_components`, `kickside_component_meta`, and
 `kickside_component_access` tables. Depends on the `kickside.contract:*` base
 contracts (`component`, `deletable`).
 
+## Lifecycle custody (SPEC)
+
+Every new Component row has a protected owner. Ordinary registration and
+imports record the authenticated principal. An admitted owned-child or
+root-attachment registration records the custodian's Component ID,
+incarnation, and producer in the creation transaction. A root attachment
+keeps root placement. Placement still controls inherited grants.
+
+Principal adoption is the ownership write for an orphan with a principal
+owner. Metadata, placement, and execution-identity updates do not change
+custody. The public `owner` metadata is a display label. Authorization
+consumers can read `component_owner_record` or request
+`include.principal_owner` on an authorized query. The `principal_owner`
+query filter selects the protected principal by actor key.
+
+On upgrade the database assigns stable incarnations in resumable pages.
+Rows without explicit ownership proof remain unresolved for producer
+classification. A possible legacy custodian receives a
+`custody_unresolved` conflict before its deletion is fenced. A legacy
+root-attachment custodian requires proof covering historical attachment kinds,
+including kinds whose manifests have been removed. Typed principal reports
+retire their proven dependants and leave unclassified rows for upgrade proof.
+A marked attachment can still finish the job that already established its authority.
+
 ## Authority checks (SPEC)
 
 `validate_identity_authorizer_admin` and `validate_principal_access` check the
@@ -169,6 +193,20 @@ delete request again with DELETE access. Component schedules a new job with the
 originally accepted child policy and options. The Component retention sweep leaves terminal jobs
 in place. Follow the new job and verify the component
 has been removed when cleanup completes.
+
+Fresh components with verified lifecycle custody retire their owned children
+through the same delete request. One root job admits 24 direct children per
+transaction and stores progress with the existing deletion intent. Each child
+job completes its own custody work before running its teardown. Parent cleanup
+waits for the physical child rows to disappear. A terminal child failure keeps
+the parent fenced and surfaces through the parent job. An authorized retry
+resumes the original policy without repeating successful removals.
+
+Plain delete still refuses independent live placements at the boundary being
+admitted. Choose `child_policy=reparent_root` to preserve those components and
+reroot their placement. Each child is checked before its own fence. If a later
+branch refuses admission, the root retains its accepted intent and records the
+failure. Legacy custodians still require a verified upgrade disposition.
 
 ## Deleting placement dependents
 

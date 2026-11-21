@@ -6,7 +6,7 @@ local kinds = {errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.P
 local function invoke() return adoption.adopt_tx(fixture, fixture, "component", {kind = "user", id = "operator"}) end
 return {run = test.run_cases(function()
     test.describe("native adoption storage failures", function()
-        for _, stage in ipairs({"grants", "owner_update", "owner_insert", "encode"}) do
+        for _, stage in ipairs({"custody_read", "custody_write", "grants", "owner_update", "owner_insert", "encode"}) do
             for _, kind in ipairs(kinds) do
                 for _, policy in ipairs({{}, {retryable = false}, {retryable = true}}) do
                     test.it(stage .. "/" .. kind .. "/" .. tostring(policy.retryable), function()
@@ -33,11 +33,20 @@ return {run = test.run_cases(function()
             test.eq(err:kind(), errors.INTERNAL); test.is_false(err:retryable()); test.eq(err:details().error_kind, "infrastructure")
             test.eq(fixture.identity_writes, 0); test.eq(fixture.audits, 0)
         end)
+        for _, owner_type in ipairs({"component", "unresolved"}) do
+            test.it("refuses adoption from " .. owner_type .. " custody", function()
+                fixture.reset("", nil); fixture.custody_type = owner_type
+                local value, err = invoke()
+                test.is_nil(value); test.eq(err:kind(), errors.CONFLICT)
+                test.eq(fixture.grants + fixture.custody_writes + fixture.identity_writes, 0)
+            end)
+        end
         for _, missing in ipairs({false, true}) do
             test.it("healthy owner presence/" .. tostring(missing), function()
                 fixture.reset("", nil); fixture.owner_missing = missing
                 local result, err = invoke(); test.is_nil(err); test.eq(result.component_id, "component")
                 test.eq(result.adopted_by, "operator"); test.eq(result.identity_generation, 3); test.eq(#result.prior_access, 0)
+                test.eq(fixture.custody_writes, 1); test.eq(fixture.custody_actor, "operator")
                 test.eq(fixture.grants, 1); test.eq(fixture.owner_updates, 1); test.eq(fixture.owner_inserts, missing and 1 or 0)
                 test.eq(fixture.identity_writes, 1); test.eq(fixture.audits, 1)
             end)

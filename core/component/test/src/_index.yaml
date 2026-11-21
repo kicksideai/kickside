@@ -1406,6 +1406,8 @@ entries:
     - registry
     - time
     imports:
+      custody: kickside.component.persist:custody
+      custody_cascade: kickside.component.persist:custody_cascade
       kind_authority: kickside.component:kind_authority
       jobs: kickside.core.jobs:jobs
       error_envelope: kickside.contract:error_envelope
@@ -1488,6 +1490,8 @@ entries:
     - sql
     - time
     imports:
+      custody: kickside.component.persist:custody
+      custody_cascade: kickside.component.persist:custody_cascade
       kind_authority: kickside.component:kind_authority
       jobs: kickside.core.jobs:jobs
       error_envelope: kickside.contract:error_envelope
@@ -1619,6 +1623,8 @@ entries:
     - security
     - sql
     imports:
+      custody: kickside.component.persist:custody
+      custody_cascade: kickside.component.persist:custody_cascade
       system_query: kickside.component:system_query
       error_envelope: kickside.contract:error_envelope
       envelope: kickside.component:envelope
@@ -1671,6 +1677,8 @@ entries:
     - security
     - sql
     imports:
+      custody: kickside.component.persist:custody
+      custody_cascade: kickside.component.persist:custody_cascade
       system_query: kickside.component:system_query
       error_envelope: kickside.contract:error_envelope
       envelope: kickside.component:envelope
@@ -1840,6 +1848,8 @@ entries:
     - registry
     - time
     imports:
+      custody: kickside.component.persist:custody
+      custody_cascade: kickside.component.persist:custody_cascade
       kind_authority: kickside.component:kind_authority
       meta_service: app:deletion_notify_fixture
       persisted_json: kickside.contract:persisted_json
@@ -2619,6 +2629,7 @@ entries:
     source: file://reader_native_source.lua
     modules: [uuid, security]
     imports:
+      execution_identity: kickside.execution:execution_identity
       secret_fields: kickside.component:secret_fields
       secrets_document: kickside.component:secrets_document
       persisted_json: kickside.contract:persisted_json

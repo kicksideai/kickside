@@ -1,21 +1,17 @@
--- reaper: the lifecycle thread's projection worker. Each tick prefetches the new
--- deletion reports (kickside.lifecycle.events:principal.deleted / kickside.lifecycle.events:component.deleted) and, for every named owner,
--- deletes each component that owner still owns via the trusted component.system_delete
--- (which runs the impl's own deletable cleanup). Ownership is nested-safe: deleting a
--- component recurses into anything IT owns, so a single principal report tears the
--- whole owned subtree down to its leaves' backing data.
---
--- Idempotent + retriable: list_system shrinks as components go, system_delete no-ops on
--- an already-gone component, and the cursor only advances when the tick returns -- so a
--- failed tick safely re-runs the same window.
+-- The lifecycle projection retires the exact dependants named by a typed
+-- report. The cursor advances after physical retirement or after a historical
+-- report is preserved for custody review.
 
 local component = require("component")
+local custody = require("custody")
+local disposition = require("custody_disposition")
 local component_teardown = require("component_teardown")
 local consts = require("lifecycle_consts")
 local persisted_json = require("persisted_json")
 local registry = require("registry")
 local funcs = require("funcs")
 local security = require("security")
+local uuid = require("uuid")
 local execution_identity = require("execution_identity")
 local component_envelope = require("component_envelope")
 
@@ -37,31 +33,33 @@ end
 
 -- Delete children before their owning parent. If a page or child cleanup
 -- fails, the parent still names the unfinished subtree on the next tick.
-local function reap_owner(owner_id: string, depth: integer, budget: { remaining: integer, deleted: integer }): error?
+local function reap_owner(owner: any, depth: integer, budget: { remaining: integer, deleted: integer }, principal_root: any?): error?
     if depth > MAX_DEPTH then return cleanup_error("component ownership depth exceeds " .. tostring(MAX_DEPTH)) end
-    if type(owner_id) ~= "string" or owner_id == "" then return cleanup_error("component owner id is required") end
-    local limit = math.max(1, budget.remaining)
-    local rows, list_err = component.list_system({
-        meta = { [consts.OWNER_META_KEY] = owner_id }, include = { meta = false },
-        limit = limit, order_by = { field = "component_id", direction = "ASC" },
-    })
+    local rows, list_err = component.list_lifecycle_dependants(owner, math.max(1, budget.remaining))
     if list_err or type(rows) ~= "table" then return cleanup_error("component owner scan failed", list_err or "no rows result") end
     if budget.remaining == 0 and #rows > 0 then
-        return cleanup_error("component owner cleanup has another bounded page", owner_id)
+        return cleanup_error("component owner cleanup has another bounded page", owner.id)
     end
     local pending_error: error? = nil
     for _, row in ipairs(rows :: { any }) do
         local cid = (row :: any).component_id
         if type(cid) ~= "string" or cid == "" then return cleanup_error("component owner scan returned an invalid id") end
-        local child_err = reap_owner(cid :: string, depth + 1, budget)
+        local incarnation = row.secrets_incarnation
+        if type(incarnation) ~= "string" or incarnation == "" then
+            return cleanup_error("component owner scan returned an invalid incarnation")
+        end
+        local root = principal_root
+        if owner.type == "principal" then root = {id = cid, incarnation = incarnation, owner = owner} end
+        local child_err = reap_owner({type = "component", id = cid, incarnation = incarnation}, depth + 1, budget, root)
         if child_err then
             if not component_teardown.cleanup_pending(child_err) then return child_err end
             pending_error = pending_error or child_err
         else
             if budget.remaining == 0 then
-                return cleanup_error("component owner cleanup has another bounded page", owner_id)
+                return cleanup_error("component owner cleanup has another bounded page", owner.id)
             end
-            local ok, delete_err = component.system_delete(cid :: string, "reparent_root")
+            local ok, delete_err = component.system_delete(cid :: string, "reparent_root",
+                {owner = owner, incarnation = incarnation, principal_root = principal_root})
             if delete_err or ok ~= true then
                 if not component_teardown.cleanup_pending(delete_err) then
                     return cleanup_error("component owner delete failed for " .. cid, delete_err or "no deletion proof")
@@ -74,10 +72,9 @@ local function reap_owner(owner_id: string, depth: integer, budget: { remaining:
         end
     end
     if budget.remaining == 0 then
-        local more, more_err = component.list_system({ meta = { [consts.OWNER_META_KEY] = owner_id },
-            include = { meta = false }, limit = 1 })
+        local more, more_err = component.list_lifecycle_dependants(owner, 1)
         if more_err or type(more) ~= "table" then return cleanup_error("component owner continuation scan failed", more_err or "no rows result") end
-        if #more > 0 then return cleanup_error("component owner cleanup has another bounded page", owner_id) end
+        if #more > 0 then return cleanup_error("component owner cleanup has another bounded page", owner.id) end
     end
     return pending_error
 end
@@ -91,18 +88,19 @@ local function cleanup_target(entry: any): string
     return ""
 end
 
-local function run_principal_cleanups(owner_id: string): error?
-    if type(owner_id) ~= "string" or owner_id == "" then return nil end
+local function run_principal_cleanups(principal: any): error?
     local entries, find_err = registry.find({ ["meta.type"] = CLEANUP_META_TYPE })
     if find_err then
         return (errors.wrap(find_err, "principal cleanup discovery failed") :: error)
     end
     for _, entry in ipairs(entries or {}) do
         local target = cleanup_target(entry)
-        if target ~= "" then
+        local kind = entry.meta and entry.meta.principal_kind or "user"
+        if target ~= "" and kind == principal.kind then
             local result, call_err = funcs.call(target, {
-                principal_id = owner_id,
-                user_id = owner_id,
+                principal_id = principal.id,
+                principal_kind = principal.kind,
+                user_id = principal.kind == "user" and principal.id or nil,
             })
             if call_err then
                 return (errors.wrap(call_err, "principal cleanup failed (" .. target .. ")") :: error)
@@ -113,6 +111,27 @@ local function run_principal_cleanups(owner_id: string): error?
         end
     end
     return nil
+end
+
+local function reap_principal(ev: any, payload: any, subject_id: string, budget: any): error?
+    local recorded, record_err = disposition.exists(ev)
+    if record_err or recorded then return record_err end
+    if payload.principal_kind == nil then
+        return disposition.record(ev, subject_id, nil, "missing_principal_kind", nil)
+    end
+    local principal, principal_err = execution_identity.check_principal(
+        {kind = payload.principal_kind, id = subject_id}, "lifecycle event principal")
+    if principal_err then return principal_err end
+    if principal.kind == "user" then
+        local witness, witness_err = custody.review_witness(principal.id)
+        if witness_err then return witness_err end
+        if witness then
+            return disposition.record(ev, subject_id, principal.kind, "retained_unresolved_custody", witness)
+        end
+    end
+    local reap_err = reap_owner({type = "principal", kind = principal.kind, id = principal.id}, 0, budget)
+    if reap_err then return reap_err end
+    return run_principal_cleanups(principal)
 end
 
 -- run is the func:// projection worker entry. input.events holds the prefetched batch;
@@ -144,11 +163,18 @@ local function run(input: table): (table?, error?)
                 return nil, (errors.new({ message = "lifecycle event subject_id must be a non-empty string",
                     kind = errors.INVALID }) :: error)
             end
-            local reap_err = reap_owner(owner_id, 0, budget)
-            if reap_err then return nil, reap_err end
             if etype == consts.EVENT.PRINCIPAL_DELETED then
-                local cleanup_err = run_principal_cleanups(owner_id)
-                if cleanup_err then return nil, cleanup_err end
+                local reap_err = reap_principal(ev, payload, owner_id, budget)
+                if reap_err then return nil, reap_err end
+            elseif payload.incarnation == nil then
+                local store_err = disposition.record(ev, owner_id, nil, "missing_component_incarnation", nil)
+                if store_err then return nil, store_err end
+            else
+                if not uuid.validate(owner_id) or type(payload.incarnation) ~= "string" or not uuid.validate(payload.incarnation) then
+                    return nil, errors.new({message = "component report requires a component id and incarnation", kind = errors.INVALID})
+                end
+                local reap_err = reap_owner({type = "component", id = owner_id, incarnation = payload.incarnation}, 0, budget)
+                if reap_err then return nil, reap_err end
             end
         end
     end

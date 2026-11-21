@@ -24,7 +24,7 @@ M.TABLES = {
     ANCESTOR = "kickside_component_ancestor",
 }
 
--- Reserved metadata key recording a component's owner (the creating user).
+-- Public owner label. Lifecycle and authorization use the protected Component row.
 M.OWNER_META_KEY = "owner"
 
 -- A framework maintenance actor is never a principal (IDENTITY-1 §1), so it
@@ -191,6 +191,7 @@ type ComponentRow = {
     secret_fields: {SecretField}?,
     context_revision: integer?,
     meta: MetadataMap?,
+    principal_owner: string?,
     access_level: integer?,
     parent_id: string?,
     position: string?,
@@ -215,6 +216,7 @@ type AccessContextResult = {
 
 type QueryInclude = {
     meta: boolean?,
+    principal_owner: boolean?,
     private_context: boolean?,
     access: boolean?,
     placement: boolean?,
@@ -231,6 +233,7 @@ type QueryFilter = {
     impl_ids: string[]?,
     match_ids: string?,
     meta: MetadataMap | boolean?,
+    principal_owner: string?,
     text: string?,
     parent_id: string?,
     path_prefix: string?,

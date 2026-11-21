@@ -8,6 +8,8 @@ local http = require("http")
 local contract = require("contract")
 local registry = require("registry")
 local security = require("security")
+local autoinit = require("autoinit")
+local component = require("component")
 local logger = require("logger"):named("kickside.ui.nav")
 local nav = require("nav")
 local nav_providers = require("nav_providers")
@@ -19,10 +21,18 @@ local branding = require("branding")
 local SETTINGS_CONTRACT = ui_types.CONTRACT.SETTINGS
 local COMPONENT_SERVICE = ui_types.CONTRACT.COMPONENT
 local NAV_PROVIDER_CONTRACT = ui_types.CONTRACT.NAV_PROVIDER
--- kickside.component ACCESS.READ. Named here to keep the ui module decoupled from
--- the component runtime: badges read component meta through the published service
--- contract, not a hard link to the component implementation.
-local COMPONENT_READ = 1
+
+local function actor_singleton_id(impl_id: string, actor_id: string): string?
+    local entry = registry.get(impl_id)
+    if not entry or entry.kind ~= autoinit.BINDING_KIND then return nil end
+    local meta = entry.meta or {}
+    local provision = meta.provision
+    -- Autoinit defaults provisioned kinds to per-user scope.
+    if type(provision) ~= "table" or provision.scope == autoinit.SCOPE.SYSTEM then return nil end
+    local class = autoinit.first_class(meta.class)
+    if not class then return nil end
+    return component.singleton_component_id(actor_id, class)
+end
 
 -- Actor-scoped component read port, resolved from the component_service contract
 -- (the module boundary), mirroring how kickside.component opens it. Returns nil in
@@ -150,14 +160,11 @@ local function handler()
     end
 
     local result = nav.effective(cfg, collected.items, include_hidden, collected.categories)
-    -- Resolve declared badges against live component meta. The ui -> component READ
-    -- happens here (handler layer, via the service contract); nav.effective stays
-    -- pure. items and categories share item tables, so this fills both. The actor id
-    -- scopes each scope=actor badge to the actor's OWN component (an admin can READ
-    -- many users' components of the same impl_id, but badges only their own).
+    -- Resolve badges through the caller-scoped Component service. Items and
+    -- categories share item tables, so this fills both.
     local actor = security.actor()
     local actor_id = actor and tostring(actor:id()) or nil
-    nav_badges.resolve(result.items :: { any }, component_read_port(), COMPONENT_READ, actor_id)
+    nav_badges.resolve(result.items :: { any }, component_read_port(), component.ACCESS.READ, actor_id, actor_singleton_id)
     res:set_status(http.STATUS.OK)
     res:write_json({
         success = true,

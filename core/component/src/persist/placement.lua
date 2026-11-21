@@ -29,6 +29,7 @@ type Node = {
     parent_id: string?,
     position: string?,
     path: string?,
+    secrets_incarnation: string?,
 }
 
 -- lexorank alphabet: digits then lowercase letters, ordered by byte value.
@@ -141,7 +142,7 @@ end
 
 -- Read a component's stored parent_id, position, path within a tx.
 function M.read_node(tx: Executor, component_id: string, for_write: boolean?): (Node?, error?)
-    local query = sql.builder.select("component_id", "impl_id", "parent_id", "position", "path")
+    local query = sql.builder.select("component_id", "impl_id", "parent_id", "position", "path", "secrets_incarnation")
         :from(component_types.TABLES.COMPONENTS)
         :where("component_id = ?", component_id)
         :limit(1)

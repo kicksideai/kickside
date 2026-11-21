@@ -81,8 +81,9 @@ entries:
     meta:
       comment: Delete-site seam -- publish framework-owned lifecycle events to the lifecycle thread for an already-authorized principal/component deletion.
     source: file://report.lua
-    modules: [funcs, security]
+    modules: [funcs, security, uuid]
     imports:
+      execution_identity: kickside.execution:execution_identity
       lifecycle_consts: kickside.core.lifecycle:consts
       framework_events: kickside.core.threads:contract_events
 
@@ -111,7 +112,7 @@ entries:
       comment: Checks the lifecycle report capability and appends one lifecycle audit event through the canonical Threads append seam.
     source: file://report.lua
     method: publish_report
-    modules: [funcs, security]
+    modules: [funcs, security, uuid]
     security:
       policies:
         - kickside.core.lifecycle:report_publish_runtime
@@ -120,6 +121,7 @@ entries:
         - kickside.core.retention:notify_access
         - kickside.core.threads:emit_update_access
     imports:
+      execution_identity: kickside.execution:execution_identity
       lifecycle_consts: kickside.core.lifecycle:consts
       framework_events: kickside.core.threads:contract_events
 
@@ -223,6 +225,16 @@ entries:
     source: file://child_lifecycle_projection.lua
     method: run
 
+  - name: custody_disposition
+    kind: library.lua
+    meta: {private: true}
+    source: file://custody_disposition.lua
+    modules: [sql, time, uuid]
+    imports:
+      core_db: kickside.core:db
+      lifecycle_consts: kickside.core.lifecycle:consts
+      error_envelope: kickside.contract:error_envelope
+
   # ─── Reaper projection worker ────────────────────────────────────────
   - name: reaper
     kind: function.lua
@@ -230,12 +242,14 @@ entries:
       type: projection.worker
       private: true
       title: Lifecycle Reaper
-      comment: Projection worker over the lifecycle thread -- reaps every component a reported owner still owns via the trusted system delete, recursing into nested ownership.
+      comment: Projection worker over typed lifecycle reports; retires protected dependants through Component.
     source: file://reaper.lua
     method: run
-    modules: [registry, funcs, security]
+    modules: [registry, funcs, security, uuid]
     imports:
       component_teardown: kickside.component.persist:teardown
+      custody: kickside.component.persist:custody
+      custody_disposition: kickside.core.lifecycle:custody_disposition
       persisted_json: kickside.contract:persisted_json
       component_envelope: kickside.component:envelope
       component: kickside.component:component

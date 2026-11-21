@@ -183,3 +183,38 @@ entries:
       migration: wippy.migration:migration
       retained_grant_schema: kickside.component.migrations:retained_grant_schema
     method: migrate
+
+  - name: 19_custody_backfill
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ''
+      depends_on: [ns:wippy.migration, kickside.component.migrations:17_custody_schema, kickside.component.migrations:18_retained_grants]
+      timestamp: '2026-11-21T08:02:00Z'
+    source: file://19_custody_backfill.lua
+    modules: [json, uuid]
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: 20_custody_indexes
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ''
+      depends_on: [ns:wippy.migration, kickside.component.migrations:19_custody_backfill]
+      timestamp: '2026-11-21T08:00:03Z'
+    source: file://20_custody_indexes.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
+
+  - name: declared_custody_backfill
+    kind: library.lua
+    meta: {private: true}
+    source: file://declared_custody_backfill.lua
+    modules: [json]
+    imports:
+      component_types: kickside.component:types
+      execution_identity: kickside.execution:execution_identity
+      identity_ops: kickside.component.persist:identity_ops

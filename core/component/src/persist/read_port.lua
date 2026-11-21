@@ -103,6 +103,11 @@ function M.build(filter: component_types.QueryFilter?): (any, error?)
         end
         reader = selected
     end
+    if f.principal_owner ~= nil then
+        local owned, owner_err = reader:with_principal_owner(f.principal_owner)
+        if owner_err or not owned then return nil, owner_err end
+        reader = owned
+    end
     if type(f.meta) == "table" then
         reader = reader:with_meta(f.meta)
     end
@@ -129,6 +134,7 @@ function M.build(filter: component_types.QueryFilter?): (any, error?)
         -- The DTO exposes `access`; the reader's include flag is `access_level`.
         reader = reader:include_options({
             meta = inc.meta,
+            principal_owner = inc.principal_owner,
             private_context = inc.private_context,
             access_level = inc.access,
             placement = inc.placement,

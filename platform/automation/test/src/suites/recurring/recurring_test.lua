@@ -101,6 +101,61 @@ return { run = test.run_cases(function()
             test.is_nil(type_err, tostring(type_err))
             test.is_true(#found.type.controls >= 3)
         end)
+        test.it("resumes the custody migration and enrolls only a retained ordinary install with proof", function()
+            local retained, ambiguous = create(), create()
+            local function custody(id)
+                return assert(h.query([[SELECT owner_type,owner_kind,owner_id,secrets_incarnation,identity_hash
+                    FROM kickside_components WHERE component_id=$1]], {id})[1])
+            end
+            local before = assert(call({action = "get", id = retained})).task
+            local job_id = h.read_drive(retained, "main").job_id
+            local original = custody(retained)
+            h.exec([[UPDATE kickside_components SET owner_type='unresolved',owner_kind=NULL,owner_id=NULL,custody_legacy=1
+                WHERE component_id IN ($1,$2)]], {retained, ambiguous})
+            h.exec("DELETE FROM kickside_automation_op WHERE automation_id=$1 AND request_id=$2",
+                {ambiguous, "install:" .. ambiguous})
+            local unresolved = custody(ambiguous)
+            test.eq(custody(retained).owner_type, "unresolved")
+            test.eq(unresolved.owner_type, "unresolved")
+
+            -- Start after a committed page using the framework's saved cursor.
+            -- SQLite binds positional arguments in the order they appear.
+            local migration = "kickside.automation.migrations:22_recurring_task_custody"
+            local run_id = "recurring-custody-fixture:" .. uuid.v7()
+            h.exec("INSERT INTO _migration_progress(id,cursor) VALUES ($1,$2)",
+                {run_id, "00000000-0000-4000-8000-000000000001"})
+            local result, err = funcs.call(migration, {database_id = h.DB, id = run_id, direction = "up"})
+            local progress = h.query("SELECT id FROM _migration_progress WHERE id=$1", {run_id})
+            h.exec("DELETE FROM _migration_progress WHERE id=$1", {run_id})
+            h.exec("DELETE FROM _migrations WHERE id=$1", {run_id})
+            test.is_nil(err, tostring(err))
+            test.eq(result.status, "complete", tostring(result.error))
+            test.eq(#progress, 0)
+
+            local owner = custody(retained)
+            test.eq(owner.owner_type, "principal")
+            test.eq(owner.owner_kind, "user")
+            test.eq(owner.owner_id, env.owner)
+            test.eq(owner.secrets_incarnation, original.secrets_incarnation)
+            test.eq(owner.identity_hash, original.identity_hash)
+            local after = assert(call({action = "get", id = retained})).task
+            test.eq(after.owner_id, before.owner_id)
+            test.is_true(after.is_owner)
+            test.eq(after.schedule.expression, before.schedule.expression)
+            test.eq(after.next_run_at, before.next_run_at)
+            test.eq(h.read_drive(retained, "main").job_id, job_id)
+            local by_id = {}
+            for _, row in ipairs(assert(call({action = "list"})).tasks) do by_id[row.id] = row end
+            test.eq(by_id[retained].owner_id, env.owner)
+            test.is_true(by_id[retained].is_owner)
+            test.is_nil(by_id[ambiguous].owner_id)
+            test.is_false(by_id[ambiguous].is_owner)
+            local still_unresolved = custody(ambiguous)
+            test.eq(still_unresolved.owner_type, "unresolved")
+            test.is_nil(still_unresolved.owner_id)
+            test.eq(still_unresolved.secrets_incarnation, unresolved.secrets_incarnation)
+            test.eq(still_unresolved.identity_hash, unresolved.identity_hash)
+        end)
         test.it("atomically accepts matching revisions, refuses stale edits and preserves omitted revision behavior", function()
             local id = create()
             local function revision()

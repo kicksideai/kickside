@@ -25,6 +25,8 @@ local function position(raw: any, view: string, impl_id: string?): (table?, erro
     end
     if view == "components" then
         if type(token.after) ~= "string" or not uuid.validate(token.after) then return nil, invalid("invalid component cursor") end
+    elseif view == "dispositions" then
+        if not whole(token.after) then return nil, invalid("invalid disposition cursor") end
     elseif type(token.id) ~= "string" or not uuid.validate(token.id) or not whole(token.generation)
         or not whole(token.last_seq) or not whole(token.pruned) or not whole(token.head) or not whole(token.after)
         or token.after < math.max(token.last_seq, token.pruned) or token.after >= token.head then
@@ -119,11 +121,32 @@ local function reports(token: table?, limit: integer): (table?, error?)
     return result, nil
 end
 
+local function dispositions(token: table?, limit: integer): (table?, error?)
+    local auth_err = component.authorize()
+    if auth_err then return nil, auth_err end
+    local db, open_err = sql.get(core_db.id())
+    if open_err then return nil, open_err end
+    local rows, read_err = db:query([[SELECT event_seq AS seq,event_id,subject_id,principal_kind,reason,
+        witness_id,witness_incarnation,recorded_at FROM kickside_lifecycle_custody_disposition
+        WHERE thread_id=$1 AND event_seq>$2 ORDER BY event_seq LIMIT $3]],
+        {consts.thread_id(), token and token.after or 0, limit + 1})
+    local _, release_err = db:release()
+    if read_err or release_err then return nil, read_err or release_err end
+    if type(rows) ~= "table" then return nil, errors.new({kind = errors.INTERNAL, message = "lifecycle dispositions unavailable"}) end
+    local more = #rows > limit
+    if more then table.remove(rows) end
+    local page: table = {state = "observed", items = rows}
+    if more then page.next_position = {view = "dispositions", after = tonumber(rows[#rows].seq)} end
+    return page, nil
+end
+
 function M.read(args: table): (table?, error?)
     local view, limit = args.view, args.limit or 50
-    if view ~= "components" and view ~= "reports" then return nil, invalid("view must be components or reports") end
+    if view ~= "components" and view ~= "reports" and view ~= "dispositions" then
+        return nil, invalid("view must be components, reports or dispositions")
+    end
     if not whole(limit) or limit < 1 or limit > component.MAX_PAGE then return nil, invalid("limit must be between 1 and 100") end
-    if view == "reports" and args.impl_id ~= nil then return nil, invalid("reports use the instance lifecycle queue") end
+    if view ~= "components" and args.impl_id ~= nil then return nil, invalid("report views use the instance lifecycle queue") end
     local token, cursor_err = position(args.cursor, view, args.impl_id)
     if cursor_err then return nil, cursor_err end
     local result, read_err
@@ -133,8 +156,10 @@ function M.read(args: table): (table?, error?)
             result.next_position = {view = view, impl_id = args.impl_id, after = result.next_after}
             result.next_after = nil
         end
-    else
+    elseif view == "reports" then
         result, read_err = reports(token, limit :: integer)
+    else
+        result, read_err = dispositions(token, limit :: integer)
     end
     if read_err or not result then return nil, read_err end
     if result.next_position then

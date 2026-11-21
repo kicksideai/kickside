@@ -1303,12 +1303,14 @@ entries:
   - name: reaper_native_source
     kind: library.lua
     source: file://reaper_native_source.lua
-    modules: [security]
+    modules: [security, uuid]
     imports:
       component_teardown: kickside.component.persist:teardown
       persisted_json: kickside.contract:persisted_json
       component_envelope: kickside.component:envelope
       component: app:reaper_native_component_adapter
+      custody: kickside.component.persist:custody
+      custody_disposition: kickside.core.lifecycle:custody_disposition
       registry: app:reaper_native_registry_adapter
       funcs: app:reaper_native_funcs_adapter
       lifecycle_consts: kickside.core.lifecycle:consts

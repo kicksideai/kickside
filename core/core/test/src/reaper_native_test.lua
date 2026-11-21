@@ -8,7 +8,8 @@ local M = {}
 function M.probe(input)
     dependency.configure(input)
     local result, err = reaper.run({thread_id = consts.thread_id(), range = {to_seq = 42},
-        events = {{type = consts.EVENT.PRINCIPAL_DELETED, body = {subject_id = "owner"}}}})
+        events = {{type = consts.EVENT.PRINCIPAL_DELETED, id = "00000000-0000-4000-8000-000000000001", seq = 42,
+            body = {subject_id = "owner", principal_kind = "user"}}}})
     local calls = dependency.calls
     if input.stage == "scan" or input.stage == "delete" or input.stage == "continuation" then
         test.eq(calls.discovery, 0)

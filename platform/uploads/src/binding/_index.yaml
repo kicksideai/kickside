@@ -91,8 +91,23 @@ entries:
     modules: [ctx]
     imports:
       binding_errors: kickside.uploads.binding:binding_errors
-      component: kickside.component:component
+      delete_admission: kickside.uploads.binding:delete_admission
       upload_lib: kickside.uploads:uploads
+
+  - name: delete_admission
+    kind: library.lua
+    source: file://delete_admission.lua
+    imports:
+      binding_errors: kickside.uploads.binding:binding_errors
+      component_access: kickside.component.persist:access_ops
+
+  - name: delete_admission_library
+    kind: ns.requirement
+    meta: {value_kind: library.lua}
+    default: kickside.uploads.binding:delete_admission
+    targets:
+      - entry: kickside.component:delete_admission
+        path: .imports.uploads_delete_admission
 
   - name: storage_adapter_default
     kind: library.lua

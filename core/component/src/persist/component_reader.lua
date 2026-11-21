@@ -14,6 +14,7 @@ local component_query = require("component_query")
 local component_types = require("component_types")
 local implementation_access = require("implementation_access")
 local error_envelope = require("error_envelope")
+local execution_identity = require("execution_identity")
 
 -- A reader's immutable state: include flags and filters, compiled by
 -- component_query.
@@ -36,6 +37,7 @@ type ComponentResult = {
     secrets_incarnation: string?,
     context_revision: integer?,
     meta: { [string]: string }?,
+    principal_owner: string?,
     access_level: integer?,
     parent_id: string?,
     position: string?,
@@ -45,6 +47,7 @@ type ComponentResult = {
 -- Which extra columns/joins to populate.
 type IncludeOptions = {
     secrets: boolean?,
+    principal_owner: boolean?,
     meta: boolean?,
     private_context: boolean?,
     access_level: boolean?,
@@ -61,6 +64,7 @@ type Reader = ReaderState & {
     with_impl_ids: (Reader, ...any) -> Reader,
     with_id_match: (Reader, string) -> (Reader?, error?),
     with_meta: (Reader, { [string]: string }?) -> Reader,
+    with_principal_owner: (Reader, string) -> (Reader?, error?),
     with_text: (Reader, string) -> Reader,
     with_access_mask: (Reader, integer) -> Reader,
     with_parent: (Reader, string?) -> Reader,
@@ -188,6 +192,14 @@ function methods.with_meta(self: Reader, meta_filters: { [string]: string }?): R
     return setmetatable(new_instance, reader_mt) :: Reader
 end
 
+function methods.with_principal_owner(self: Reader, actor_id: string): (Reader?, error?)
+    local owner, err = execution_identity.principal_of_key(actor_id)
+    if err then return nil, err end
+    local new_instance = self:_copy()
+    new_instance._principal_owner = owner
+    return (new_instance :: Reader?), nil
+end
+
 -- Filter to components whose id, implementation id, or any metadata value
 -- contains text, case-insensitively.
 function methods.with_text(self: Reader, text: string): Reader
@@ -232,6 +244,7 @@ function methods.include_options(self: Reader, options: IncludeOptions): Reader
 
     local new_instance = self:_copy()
     if options.meta ~= nil then new_instance._include_meta = options.meta end
+    if options.principal_owner ~= nil then new_instance._include_principal_owner = options.principal_owner end
     if options.secrets ~= nil then new_instance._include_secrets = options.secrets end
     if options.private_context ~= nil then new_instance._include_private_context = options.private_context end
     if options.access_level ~= nil then new_instance._include_access_level = options.access_level end
@@ -339,6 +352,13 @@ function methods._finalize_row(self: Reader, component: ComponentResult): error?
         component.context_revision = tonumber(component.context_revision) :: integer
     end
     local raw = component :: any
+    if self._include_principal_owner and raw.owner_id ~= nil then
+        if raw.owner_kind ~= "maintenance" then
+            component.principal_owner = execution_identity.actor_key({kind = raw.owner_kind, id = raw.owner_id})
+        end
+        raw.owner_kind = nil
+        raw.owner_id = nil
+    end
     if raw.delete_intent ~= nil then
         local intent, intent_err = persisted_json.decode_table(raw.delete_intent, "component.delete_intent")
         if intent_err then return intent_err end

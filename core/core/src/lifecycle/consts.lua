@@ -16,7 +16,7 @@ M.SYSTEM_SCOPE = "wippy.security:process"
 -- The provisioned class/id of the singleton lifecycle component (one global instance).
 M.CLASS = "lifecycle"
 
--- Reserved component meta key recording an owner; list_system filters on it.
+-- Legacy display label used by the historical lifecycle binding repair.
 M.OWNER_META_KEY = "owner"
 
 -- Deletion report event types appended to the lifecycle thread.

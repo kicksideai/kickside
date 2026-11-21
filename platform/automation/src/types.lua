@@ -137,6 +137,7 @@ type ListTypesOptions = {
 }
 
 type ComponentRow = {
+    principal_owner: string?,
     component_id: string,
     deleting_at: string?,
     deletion_job_id: string?,

@@ -246,6 +246,10 @@ entries:
         path: .meta.target_db
       - entry: kickside.component.migrations:18_retained_grants
         path: .meta.target_db
+      - entry: kickside.component.migrations:19_custody_backfill
+        path: .meta.target_db
+      - entry: kickside.component.migrations:20_custody_indexes
+        path: .meta.target_db
       - entry: kickside.component.migrations:15_delete_intent
         path: .meta.target_db
       - entry: kickside.component:db_config
@@ -299,6 +303,7 @@ entries:
       - security
       - sql
     imports:
+      custody: kickside.component.persist:custody
       error_envelope: kickside.contract:error_envelope
       envelope: kickside.component:envelope
       system_query: kickside.component:system_query
@@ -564,11 +569,15 @@ entries:
       policies:
         - kickside.component:kind_declaration_call
         - kickside.component:retention_db_access
+        - kickside.component:deletion_jobs_policy
+        - kickside.component:deletion_worker_lookup
         - kickside.component:notification_contracts
         - kickside.component:notification_implementations
         - kickside.component:notification_methods
     modules: [sql, security, time]
     imports:
+      custody: kickside.component.persist:custody
+      custody_cascade: kickside.component.persist:custody_cascade
       jobs_policy: kickside.core.jobs.policy:runtime
       component_types: kickside.component:types
       persisted_json: kickside.contract:persisted_json

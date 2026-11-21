@@ -7,17 +7,17 @@ function M.configure(input)
     M.calls = {scan = 0, delete = 0, discovery = 0, dispatch = 0}
 end
 
-function M.list_system(request)
+function M.list_lifecycle_dependants(owner)
     M.calls.scan = M.calls.scan + 1
-    if request.meta.owner ~= "owner" then return {}, nil end
+    if owner.type ~= "principal" or owner.id ~= "owner" then return {}, nil end
     if M.input.stage == "scan" then return nil, M.source end
     if M.input.stage == "continuation" then
         if M.calls.delete == 50 then return nil, M.source end
         local rows = {}
-        for i = 1, 50 do rows[i] = {component_id = "child-" .. i} end
+        for i = 1, 50 do rows[i] = {component_id = "child-" .. i, secrets_incarnation = "instance"} end
         return rows, nil
     end
-    if M.input.stage == "delete" then return {{component_id = "child"}}, nil end
+    if M.input.stage == "delete" then return {{component_id = "child", secrets_incarnation = "instance"}}, nil end
     return {}, nil
 end
 

@@ -12,6 +12,12 @@ function M.result(stage, value)
     if M.stage == stage then return nil, M.source end
     return value, nil
 end
+local function component_rows()
+    if M.absent then return {} end
+    local row = {component_id = "component", impl_id = "fixture:implementation"}
+    if M.operation ~= "begin" then row.deleting_at = "marked" end
+    return {row}
+end
 function M.enqueue_tx() return M.result("enqueue", {id = "job"}) end
 function M.enroll_delete_tx() return M.result("enqueue", "job") end
 function M.nudge_workers() return M.result("nudge", 0) end
@@ -20,7 +26,7 @@ function M.db_id() return "fixture-db" end
 function M.sql_get()
     M.opens = M.opens + 1
     local db: any = {}
-    function db:query() return M.result("admission_read", {}) end
+    function db:query() return M.result("admission_read", component_rows()) end
     function db:begin() return M.result("begin", M.transaction()) end
     function db:release()
         M.releases = M.releases + 1
@@ -40,9 +46,7 @@ function M.transaction(): any
     end
     function tx:query()
         if M.absent then return {} end
-        local row = {}
-        if M.operation ~= "begin" then row.deleting_at = "marked" end
-        return M.result("fence", {row})
+        return M.result("fence", component_rows())
     end
     return tx
 end

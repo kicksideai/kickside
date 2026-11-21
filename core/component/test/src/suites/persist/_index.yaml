@@ -315,3 +315,11 @@ entries:
     modules: [sql, uuid, funcs]
     imports:
       test: wippy.test:test
+
+  - name: custody_migration_test
+    kind: function.lua
+    meta: {type: test, suite: component_custody_migration}
+    source: file://custody_migration_test.lua
+    method: run
+    modules: [sql, uuid, funcs]
+    imports: {test: 'wippy.test:test'}

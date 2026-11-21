@@ -191,7 +191,7 @@ M.DEFAULT_ORDER = 500
 -- Nav badge: an optional binding on a nav_item that surfaces a live component-meta
 -- field (e.g. inbox pending_count on the nav badge). `source` is the extension
 -- point — a future aggregate is a NEW source value, not a new code path. The badge
--- is resolved by nav_badges (a single access-filtered component.query) after the
+-- is resolved by nav_badges (batched, access-filtered component reads) after the
 -- pure nav merge; nav.effective only carries the declared, validated spec.
 M.BADGE = {
     SOURCE = { COMPONENT_META = "component_meta" },
@@ -339,11 +339,6 @@ M.CONTRACT = {
     REGISTRY_NAV_PROVIDER_BINDING = "kickside.ui:registry_nav_provider_binding",
 }
 
--- The component owner meta key (kickside.component OWNER_META_KEY). Named here to
--- keep the ui module decoupled from the component runtime: a scope=actor badge is
--- resolved against the actor's OWN component by matching this owner meta, so an
--- admin who can READ many users' components still badges only their own.
-M.COMPONENT_OWNER_META_KEY = "owner"
 
 -- A splash is a surface shown once. Modules declare a registry.entry
 -- with meta.type = SPLASH_TYPE and a meta.scope from SPLASH_SCOPE (default USER).

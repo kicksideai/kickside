@@ -2,8 +2,8 @@ version: "1.0"
 namespace: kickside.core
 entries:
   - name: dep.kickside.component
-    # Lifecycle inventory requires the bounded Component custody reader.
-    version: '>=0.3.31'
+    # The lifecycle reaper needs the typed custody reader and retirement fence.
+    version: '>=0.3.32'
     kind: ns.dependency
     meta:
       comment: Records and instances register as component shells and resolve access through the component service.

@@ -260,7 +260,6 @@ local function define_tests()
             { name = "list_children when the read fails", method = "list_children", hide = { COMPONENTS }, request = function(f) return { parent_id = f.parent } end, kind = errors.INTERNAL, native_sql = true },
             { name = "export when the read fails", method = "export", hide = { COMPONENTS }, request = function(f) return { component_id = f.portable } end, kind = errors.INTERNAL, native_sql = true },
             { name = "import when the registration fails", method = "import", hide = { COMPONENTS }, request = function() return { shell = shell(PORTABLE_IMPL) } end, kind = errors.INTERNAL, native_sql = true },
-            { name = "list_access when the owner read fails", method = "list_access", hide = { META }, request = function(f) return { component_id = f.cid } end, kind = errors.INTERNAL, native_sql = true },
             { name = "delete when the read fails", method = "delete", hide = { COMPONENTS }, request = function(f) return { component_id = f.cid } end, kind = errors.INTERNAL, native_sql = true },
             { name = "export when the envelope nests past the json depth bound", method = "export", request = function(f) return { component_id = f.too_deep } end, kind = errors.INTERNAL },
             { name = "delete when the lifecycle record fails", worker = true, method = "delete", request = function(f) return { component_id = f.failing_delete } end, kind = errors.INTERNAL },

@@ -27,6 +27,7 @@ type Allowlist = { [string]: CallerAllow } -- caller path -> methods
 -- `<qualifier>.<method>(` for each of these.
 M.METHODS = {
     "list_system",
+    "list_lifecycle_dependants",
     "open_private",
     "list_for_subject",
     "get_private_context",
@@ -248,11 +249,11 @@ M.ALLOW = {
             entry = "kickside.core.threads:append_event_method",
         },
     },
-    ["platform/uploads/src/binding/delete_uploads_func.lua"] = {
-        component_owner = {
+    ["platform/uploads/src/binding/delete_admission.lua"] = {
+        component_owner_record = {
             count = 1,
-            why = "the component deletable contract drains uploads owned by the deleted component's stored actor",
-            entry = "kickside.uploads:delete_uploads_func",
+            why = "deletion admission and the deletable callback resolve protected principal custody after Component authorizes the deletion",
+            entry = "kickside.uploads.binding:delete_admission",
         },
     },
     ["core/component/src/binding/list_access_func.lua"] = {
@@ -263,7 +264,7 @@ M.ALLOW = {
         },
     },
     ["core/core/src/lifecycle/reaper.lua"] = {
-        list_system = {
+        list_lifecycle_dependants = {
             count = 2,
             why = "the lifecycle reaper is the trusted teardown engine and enumerates owned components to delete",
             entry = "kickside.core.lifecycle:reaper",

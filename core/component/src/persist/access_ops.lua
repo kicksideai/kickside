@@ -339,23 +339,26 @@ local function principal_masks(principal: any, resource_ids: { string }): ({ [st
     end)
 end
 
--- Read a component's recorded owner (the OWNER_META_KEY metadata), or nil.
+-- Read the protected principal owner. Component custody grants no principal authority.
 local function component_owner_record(component_id: string?): (any?, error?)
     if not component_id or component_id == "" then
         return nil, nil
     end
     return with_db(function(db: sql.DB): (any, error?)
-        local rows, err = sql.builder.select("value")
-            :from(component_types.TABLES.META)
+        local rows, err = sql.builder.select("owner_type", "owner_kind", "owner_id")
+            :from(component_types.TABLES.COMPONENTS)
             :where("component_id = ?", component_id)
-            :where("key = ?", component_types.OWNER_META_KEY)
             :limit(1)
             :run_with(db):query()
         if err then return nil, internal("failed to read owner", err) end
         if rows and rows[1] then
-            local owner = tostring(rows[1].value)
-            local principal = execution_identity.principal_of_key(owner)
-            return { actor_id = owner, principal = principal }, nil
+            local owner = rows[1]
+            if owner.owner_type == "unresolved" then return {type = "unresolved"}, nil end
+            if owner.owner_type ~= "principal" then return nil, nil end
+            if owner.owner_kind == "maintenance" then return {actor_id = owner.owner_id}, nil end
+            local principal, principal_err = execution_identity.check_principal({kind = owner.owner_kind, id = owner.owner_id}, "custody owner")
+            if principal_err then return nil, principal_err end
+            return {actor_id = execution_identity.actor_key(principal), principal = principal}, nil
         end
         return nil, nil
     end)

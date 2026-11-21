@@ -14,6 +14,7 @@ entries:
         - kickside.uploads
       provision:
         scope: user
+      delete_admission: uploads_delete_admission
       retention:
         event_days: 7
       projections:

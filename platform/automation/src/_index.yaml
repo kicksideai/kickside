@@ -114,6 +114,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.automation.migrations:21_delivery_history_publication
         path: .meta.target_db
+      - entry: kickside.automation.migrations:22_recurring_task_custody
+        path: .meta.target_db
       - entry: kickside.automation:db_config
         path: .meta.db_id
 

@@ -277,6 +277,8 @@ entries:
       security: kickside.ui:nav_caller
       http: kickside.ui:nav_http
       contract: kickside.ui:nav_settings_failure
+      autoinit: kickside.component:autoinit
+      component: kickside.component:component
       nav: kickside.ui:nav
       nav_providers: kickside.ui:nav_providers
       nav_badges: kickside.ui:nav_badges

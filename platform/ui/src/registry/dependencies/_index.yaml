@@ -8,6 +8,13 @@ namespace: kickside.ui
 # navigation over the stable /nav endpoints.
 
 entries:
+  - name: dep.kickside.component
+    version: '>=0.3.32'
+    kind: ns.dependency
+    meta:
+      comment: Actor-scoped navigation badges use Component singleton addresses and protected principal queries.
+    component: kickside/component
+
   - name: dep.kickside.settings
     version: '*'
     kind: ns.dependency

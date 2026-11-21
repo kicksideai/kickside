@@ -18,10 +18,11 @@ local function rows_error(rows: any, err: error?, operation: string, field: stri
 end
 
 local function enroll_delete_tx(tx: sql.Transaction, dbtype: string, component_id: string, intent: any): (string?, error?)
+    local payload = {component_id = component_id, incarnation = intent.incarnation}
     local queued, enqueue_err = jobs.enqueue_tx(tx, dbtype, {
         namespace = "component", scope = component_id, key = "delete",
         owner_locator = {kind = "component", id = component_id},
-        job_type = "kickside.component:delete_worker", immutable_payload = {component_id = component_id},
+        job_type = "kickside.component:delete_worker", immutable_payload = payload,
     })
     if enqueue_err then return nil, enqueue_err end
     if type(queued) ~= "table" or type(queued.id) ~= "string" or queued.id == "" then
@@ -29,6 +30,10 @@ local function enroll_delete_tx(tx: sql.Transaction, dbtype: string, component_i
     end
     if intent.job_id ~= queued.id then
         intent.job_id = queued.id
+        if intent.custody then
+            intent.children_after = nil
+            intent.children_dispatched = nil
+        end
         local encoded, encode_err = json.encode(intent)
         if encode_err then return nil, encode_err end
         local updated, update_err = tx:execute("UPDATE kickside_components SET delete_intent=$1 WHERE component_id=$2", {encoded, component_id})

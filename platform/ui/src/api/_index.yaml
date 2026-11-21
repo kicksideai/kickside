@@ -11,6 +11,8 @@ entries:
     method: handler
     modules: [http, contract, registry, security, logger]
     imports:
+      autoinit: kickside.component:autoinit
+      component: kickside.component:component
       nav: kickside.ui:nav
       nav_providers: kickside.ui:nav_providers
       nav_badges: kickside.ui:nav_badges

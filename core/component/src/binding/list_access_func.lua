@@ -53,7 +53,7 @@ local function handle(request_dto)
     end
     if owner then
         for _, row in ipairs(access) do
-            row.owner = row.subject_id == owner
+            row.owner = row.subject_type == "user" and row.subject_id == owner
         end
     end
 

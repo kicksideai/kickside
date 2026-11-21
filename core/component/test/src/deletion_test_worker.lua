@@ -1,5 +1,6 @@
 -- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local funcs = require("funcs")
+local json = require("json")
 local sql = require("sql")
 local time = require("time")
 local uuid = require("uuid")
@@ -21,7 +22,7 @@ function M.run(id: string): (any?, error?)
     local run = assert(lifecycle.start_job_run(tx, dialect, job, tostring(process.pid()), leased.attempts))
     assert(tx:commit())
     assert(db:release())
-    local result, err = funcs.new():with_options({retry = {max_attempts = 1}}):call("kickside.component:delete_worker", {payload = {component_id = id}})
+    local result, err = funcs.new():with_options({retry = {max_attempts = 1}}):call("kickside.component:delete_worker", {job = {id = job.id}, payload = assert(json.decode(job.payload))})
     db = assert(sql.get("app:db"))
     local settle_err: error?
     if err then

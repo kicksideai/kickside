@@ -106,6 +106,15 @@ function M.adopt_tx(tx: any, db: any, component_id: string, adopter: Principal):
         return nil, failure("component is owned by its declaration owner " .. tostring(fence_owner),
             errors.CONFLICT, "access")
     end
+    local recorded, custody_err = tx:query("SELECT owner_type, deleting_at FROM " .. component_types.TABLES.COMPONENTS
+        .. " WHERE component_id=$1", {component_id})
+    if custody_err then return nil, error_envelope.wrap(custody_err, "failed to read custody", {error_kind = "infrastructure"}) end
+    if recorded[1] and recorded[1].deleting_at ~= nil then
+        return nil, failure("component is being deleted", errors.CONFLICT, "access")
+    end
+    if not recorded[1] or recorded[1].owner_type ~= "principal" then
+        return nil, failure("adoption requires a principal owner", errors.CONFLICT, "access")
+    end
     local prior, prior_err = reaching_grants_tx(tx, component_id)
     if prior_err or not prior then return nil, prior_err end
     local held = principal_held(prior :: { Grant })
@@ -126,6 +135,13 @@ function M.adopt_tx(tx: any, db: any, component_id: string, adopter: Principal):
     if grant_err then return nil, grant_err end
 
     local now_ts = execution_identity.utc_now()
+    local written, write_owner_err = tx:execute("UPDATE " .. component_types.TABLES.COMPONENTS
+        .. " SET owner_kind=$1,owner_id=$2 WHERE component_id=$3 AND owner_type='principal'",
+        {adopter.kind, adopter.id, component_id})
+    if write_owner_err then return nil, error_envelope.wrap(write_owner_err, "failed to write custody", {error_kind = "infrastructure"}) end
+    if not written or tonumber(written.rows_affected) ~= 1 then
+        return nil, failure("adoption ownership update returned no row proof", errors.INTERNAL, "infrastructure")
+    end
     local owner_err = record_owner_tx(tx, component_id, adopter.id, now_ts)
     if owner_err then return nil, owner_err end
 

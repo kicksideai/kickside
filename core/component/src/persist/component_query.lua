@@ -18,12 +18,14 @@ type ReaderState = {
     _impl_ids: string[]?,
     _match_ids: string?,
     _meta_filters: { [string]: string }?,
+    _principal_owner: {kind: string, id: string}?,
     _text: string?,
     _access_mask_filter: integer?,
     _parent_id: string?,
     _parent_is_null: boolean,
     _path_prefix: string?,
     _include_meta: boolean,
+    _include_principal_owner: boolean?,
     _include_private_context: boolean,
     _include_secrets: boolean?,
     _include_access_level: boolean,
@@ -201,6 +203,11 @@ local function apply_filters(state: ReaderState, query_builder: any, joined_meta
         query_builder = query_builder:where(sql.builder.expr("(" .. table.concat(clauses, join) .. ")", unpack(args)))
     end
 
+    if self._principal_owner then
+        query_builder = query_builder:where("c.owner_type = 'principal' AND c.owner_kind = ? AND c.owner_id = ? AND c.owner_incarnation IS NULL",
+            self._principal_owner.kind, self._principal_owner.id)
+    end
+
     if self._meta_filters then
         for key, value in pairs(self._meta_filters) do
             if key ~= joined_meta_key then
@@ -252,6 +259,10 @@ M.filtered_query = filtered_query
 function M.select(state: ReaderState): (any?, error?)
     local select_fields = { "c.component_id", "c.impl_id", "c.created_at", "c.updated_at", "c.deleting_at", "c.delete_intent" }
 
+    if state._include_principal_owner then
+        table.insert(select_fields, "CASE WHEN c.owner_type='principal' THEN c.owner_kind END AS owner_kind")
+        table.insert(select_fields, "CASE WHEN c.owner_type='principal' THEN c.owner_id END AS owner_id")
+    end
     if state._include_private_context then
         table.insert(select_fields, "c.private_context")
         table.insert(select_fields, "c.encrypted_secrets")

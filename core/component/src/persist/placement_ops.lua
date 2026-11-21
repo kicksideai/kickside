@@ -38,25 +38,25 @@ end
 
 -- A library runs inside the enclosing function. Derive the producer here from
 -- the runtime frame each time, including when installed callbacks call Component.
-local function admit_custody(tx: Executor, payload: table, custodian_id: string, custodian_kind: string, plugin_id: string?): error?
+local function admit_custody(tx: Executor, payload: table, custodian_id: string, custodian_kind: string, plugin_id: string?): (string?, error?)
     local denied = errors.new({kind = errors.PERMISSION_DENIED, message = "owned child registration is not authorized",
         details = {code = "component_owned_child_denied"}})
     local actor, actor_err = security.actor()
-    if actor_err then return actor_err end
-    if not actor then return denied end
+    if actor_err then return nil, actor_err end
+    if not actor then return nil, denied end
     local creator, creator_err = actor:id()
-    if creator_err then return creator_err end
-    if creator ~= payload.actor_id then return denied end
+    if creator_err then return nil, creator_err end
+    if creator ~= payload.actor_id then return nil, denied end
     local producer, origin_err = process.id()
-    if origin_err then return origin_err end
-    if not producer then return denied end
+    if origin_err then return nil, origin_err end
+    if not producer then return nil, denied end
     local allowed, permission_err = placement_rules.admits_owned_child(custodian_kind, payload.impl_id, producer, plugin_id)
-    if permission_err then return permission_err end
-    if allowed ~= true then return denied end
+    if permission_err then return nil, permission_err end
+    if allowed ~= true then return nil, denied end
     local writable, access_err = access_ops.check_user_access(tx, creator, custodian_id, component_types.ACCESS.WRITE)
-    if access_err then return access_err end
-    if not writable then return denied end
-    return nil
+    if access_err then return nil, access_err end
+    if not writable then return nil, denied end
+    return producer, nil
 end
 
 -- CREATE_COMPONENT payload: { component_id?, impl_id, private_context?,
@@ -71,11 +71,12 @@ local function create_component(tx: Executor, db: Executor, command: component_t
     if not payload.actor_id or payload.actor_id == "" then
         return nil, (errors.new({ message = "actor_id is required", kind = errors.INVALID }) :: error)
     end
-    if not execution_identity.is_valid_id(payload.actor_id)
-        and not execution_identity.is_maintenance_key(payload.actor_id) then
+    local maintenance = execution_identity.is_maintenance_key(payload.actor_id)
+    local principal = not maintenance and execution_identity.principal_of_key(payload.actor_id) or nil
+    if not maintenance and not principal then
         return nil, (errors.new({ message = "actor_id must be a canonical principal id", kind = errors.INVALID }) :: error)
     end
-    if execution_identity.is_maintenance_key(payload.actor_id) then
+    if maintenance then
         local allowed, permission_err = security.can(component_types.MAINTENANCE_OWN_ACTION, payload.impl_id)
         if permission_err then return nil, errors.wrap(permission_err, "failed to authorize maintenance ownership") end
         if allowed ~= true then
@@ -110,7 +111,7 @@ local function create_component(tx: Executor, db: Executor, command: component_t
     -- Only the authenticated creator or the verified install receipt supplies
     -- captured authority. Generic command payloads cannot select it.
     local initial_identity = captured_identity
-    if initial_identity == nil and execution_identity.is_valid_id(payload.actor_id) then
+    if initial_identity == nil and principal then
         local actor, actor_err = security.actor()
         if actor_err then return nil, actor_err end
         if actor and actor:id() == payload.actor_id then
@@ -121,12 +122,12 @@ local function create_component(tx: Executor, db: Executor, command: component_t
     end
     local now_ts = execution_identity.utc_now()
     local initial_hash: string? = nil
-    if execution_identity.is_valid_id(payload.actor_id) then
+    if principal then
         if initial_identity == nil then
             initial_identity = {
                 version = 2,
-                principal = { kind = "user", id = payload.actor_id },
-                authorized_by = { kind = "user", id = payload.actor_id },
+                principal = principal,
+                authorized_by = principal,
                 captured_at = now_ts,
             }
         end
@@ -167,6 +168,7 @@ local function create_component(tx: Executor, db: Executor, command: component_t
     local parent_id = payload.parent_id :: string?
     local parent_path: string? = nil
     local parent_kind = "root"
+    local parent_node: any = nil
     if parent_id ~= nil and parent_id ~= "" then
         local parent, perr = placement.read_node(tx, parent_id, true)
         if perr then
@@ -175,6 +177,7 @@ local function create_component(tx: Executor, db: Executor, command: component_t
         if not parent then
             return nil, (errors.new({ message = "parent component not found", kind = errors.NOT_FOUND }) :: error)
         end
+        parent_node = parent
         parent_path = parent.path
         parent_kind = parent.impl_id
     else
@@ -184,26 +187,35 @@ local function create_component(tx: Executor, db: Executor, command: component_t
     local placement_err = placement_rules.check(rule, payload.impl_id :: string, parent_kind, false)
     if placement_err then return nil, placement_err end
 
-    local recorded_owner = payload.actor_id
+    local custodian: any = nil
+    local plugin_id: string? = nil
     if payload.parent_custody == true then
-        if not parent_id then
+        if not parent_node then
             return nil, errors.new({kind = errors.INVALID, message = "owned child registration requires a parent"})
         end
-        local custody_err = admit_custody(tx, payload, parent_id, parent_kind, nil)
-        if custody_err then return nil, custody_err end
-        recorded_owner = parent_id
+        custodian = parent_node
     elseif payload.root_attachment ~= nil then
         local attachment = payload.root_attachment
         if parent_id or type(attachment) ~= "table" or type(attachment.custodian_id) ~= "string" or not uuid.validate(attachment.custodian_id)
             or type(attachment.plugin_id) ~= "string" or attachment.plugin_id == "" or not payload.component_id then
             return nil, errors.new({kind = errors.INVALID, message = "invalid root attachment association"})
         end
-        local custodian, lookup_err = placement.read_node(tx, attachment.custodian_id, true)
+        local lookup_err
+        custodian, lookup_err = placement.read_node(tx, attachment.custodian_id, true)
         if lookup_err then return nil, lookup_err end
         if not custodian then return nil, errors.new({kind = errors.NOT_FOUND, message = "attachment custodian not found"}) end
-        local custody_err = admit_custody(tx, payload, attachment.custodian_id, custodian.impl_id, attachment.plugin_id)
+        plugin_id = attachment.plugin_id
+    end
+
+    local producer: string? = nil
+    if custodian then
+        local custody_err
+        producer, custody_err = admit_custody(tx, payload, custodian.component_id, custodian.impl_id, plugin_id)
         if custody_err then return nil, custody_err end
-        recorded_owner = attachment.custodian_id
+        if not custodian.secrets_incarnation then
+            return nil, errors.new({kind = errors.CONFLICT, message = "custodian incarnation requires upgrade",
+                details = {code = "custody_unresolved"}})
+        end
     end
 
     local node_path = placement.build_path(db, component_id, parent_path)
@@ -222,6 +234,12 @@ local function create_component(tx: Executor, db: Executor, command: component_t
         component_id = component_id,
         impl_id = payload.impl_id,
         secrets_incarnation = incarnation,
+        owner_type = custodian and "component" or "principal",
+        owner_kind = not custodian and (principal and principal.kind or "maintenance") or nil,
+        owner_id = custodian and custodian.component_id or (principal and principal.id or payload.actor_id),
+        owner_incarnation = custodian and custodian.secrets_incarnation or nil,
+        owner_producer = producer,
+        custody_legacy = 0,
         private_context = private_context,
         parent_id = parent_id,
         position = position,
@@ -288,13 +306,13 @@ local function create_component(tx: Executor, db: Executor, command: component_t
         end
     end
 
-    -- Record custody in the same owner row used by sharing and lifecycle.
+    -- Keep owner metadata available as a public display field.
     local _, owner_err = sql.builder.insert(component_types.TABLES.META)
         :set_map({
             meta_id = uuid.v7(),
             component_id = component_id,
             key = component_types.OWNER_META_KEY,
-            value = recorded_owner,
+            value = custodian and custodian.component_id or payload.actor_id,
             created_at = now_ts,
             updated_at = now_ts,
         })
