@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.46](https://github.com/kicksideai/kickside/compare/sessions-v0.1.45...sessions-v0.1.46) (2026-11-21)
+
+
+### Bug Fixes
+
+* **sessions:** use the published danger token for error messages ([#866](https://github.com/kicksideai/kickside/issues/866)) ([43551e8](https://github.com/kicksideai/kickside/commit/43551e8c65352531035f0ab8124c95c5b5dedd9c))
+
 ## [0.1.45](https://github.com/kicksideai/kickside/compare/sessions-v0.1.44...sessions-v0.1.45) (2026-11-20)
 
 

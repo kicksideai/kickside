@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.70](https://github.com/kicksideai/kickside/compare/widgets-v0.1.69...widgets-v0.1.70) (2026-11-21)
+
+
+### Bug Fixes
+
+* **widgets:** declare the chat intro markdown dependencies ([#867](https://github.com/kicksideai/kickside/issues/867)) ([80fdd3d](https://github.com/kicksideai/kickside/commit/80fdd3d6416d3a3adf1e6137847a64ecafc2abca))
+
 ## [0.1.69](https://github.com/kicksideai/kickside/compare/widgets-v0.1.68...widgets-v0.1.69) (2026-11-21)
 
 
