@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.92](https://github.com/kicksideai/kickside/compare/models-v0.1.91...models-v0.1.92) (2026-11-21)
+
+
+### Bug Fixes
+
+* **app:** require the LLM fallback transport ([#839](https://github.com/kicksideai/kickside/issues/839)) ([106a415](https://github.com/kicksideai/kickside/commit/106a4154b21bb8a733e3454e3994330a1e7a291a))
+
 ## [0.1.91](https://github.com/kicksideai/kickside/compare/models-v0.1.90...models-v0.1.91) (2026-11-21)
 
 
