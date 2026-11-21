@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.14](https://github.com/kicksideai/kickside/compare/settings-v0.3.13...settings-v0.3.14) (2026-11-21)
+
+
+### Features
+
+* **ui-kit:** share settings rails and disclosure ([#808](https://github.com/kicksideai/kickside/issues/808)) ([839e4f4](https://github.com/kicksideai/kickside/commit/839e4f486b8f2113a1528a7726f0e4222ffa99ae))
+
 ## [0.3.13](https://github.com/kicksideai/kickside/compare/settings-v0.3.12...settings-v0.3.13) (2026-11-20)
 
 
