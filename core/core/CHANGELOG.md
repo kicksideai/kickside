@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.47](https://github.com/kicksideai/kickside/compare/core-v0.3.46...core-v0.3.47) (2026-11-21)
+
+
+### Features
+
+* **core:** support a second subject expectation on append ([#851](https://github.com/kicksideai/kickside/issues/851)) ([ed0ef69](https://github.com/kicksideai/kickside/commit/ed0ef691b4bb9c40d7641973a63985c387fb5614))
+
 ## [0.3.46](https://github.com/kicksideai/kickside/compare/core-v0.3.45...core-v0.3.46) (2026-11-21)
 
 
