@@ -112,11 +112,22 @@ entries:
       jobs: kickside.core.jobs:jobs
       slot: kickside.automation:slot
 
+  - name: 17_legacy_trigger_item_ledger
+    kind: function.lua
+    meta:
+      type: migration
+      comment: Brings historical migration 06 schemas forward before migration 18 indexes delivery_order.
+      depends_on: [ns:wippy.migration, kickside.automation.migrations:11_delivery_provenance]
+    source: file://17_legacy_trigger_item_ledger.lua
+    method: migration
+    imports:
+      migration: wippy.migration:migration
+
   - name: 18_ledger_eligibility
     kind: function.lua
     meta:
       type: migration
-      depends_on: [ns:wippy.migration, kickside.automation.migrations:11_delivery_provenance]
+      depends_on: [ns:wippy.migration, kickside.automation.migrations:17_legacy_trigger_item_ledger]
     source: file://18_ledger_eligibility.lua
     method: migration
     imports:
