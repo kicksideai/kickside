@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.41](https://github.com/kicksideai/kickside/compare/renderers-v0.1.40...renderers-v0.1.41) (2026-11-21)
+
+
+### Bug Fixes
+
+* **renderers:** render Word symbol bullets in portable fonts ([#804](https://github.com/kicksideai/kickside/issues/804)) ([b8b1704](https://github.com/kicksideai/kickside/commit/b8b17041062aff6db1dedcb7402e63dbdbc7494b))
+
 ## [0.1.40](https://github.com/kicksideai/kickside/compare/renderers-v0.1.39...renderers-v0.1.40) (2026-11-19)
 
 
