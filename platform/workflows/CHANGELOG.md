@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.22](https://github.com/kicksideai/kickside/compare/workflows-v0.2.21...workflows-v0.2.22) (2026-11-21)
+
+
+### Bug Fixes
+
+* **inbox:** send new reviews only to the Flow runner ([#869](https://github.com/kicksideai/kickside/issues/869)) ([69c8a47](https://github.com/kicksideai/kickside/commit/69c8a47927392b979a082d596d0991e71014def8))
+
 ## [0.2.21](https://github.com/kicksideai/kickside/compare/workflows-v0.2.20...workflows-v0.2.21) (2026-11-20)
 
 

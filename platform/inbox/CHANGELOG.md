@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.80](https://github.com/kicksideai/kickside/compare/inbox-v0.1.79...inbox-v0.1.80) (2026-11-21)
+
+
+### Bug Fixes
+
+* **inbox:** send new reviews only to the Flow runner ([#869](https://github.com/kicksideai/kickside/issues/869)) ([69c8a47](https://github.com/kicksideai/kickside/commit/69c8a47927392b979a082d596d0991e71014def8))
+
 ## [0.1.79](https://github.com/kicksideai/kickside/compare/inbox-v0.1.78...inbox-v0.1.79) (2026-11-16)
 
 

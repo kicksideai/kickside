@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.58](https://github.com/kicksideai/kickside/compare/kickside-v0.2.57...kickside-v0.2.58) (2026-11-21)
+
+
+### Bug Fixes
+
+* **inbox:** send new reviews only to the Flow runner ([#869](https://github.com/kicksideai/kickside/issues/869)) ([69c8a47](https://github.com/kicksideai/kickside/commit/69c8a47927392b979a082d596d0991e71014def8))
+
 ## [0.2.57](https://github.com/kicksideai/kickside/compare/kickside-v0.2.56...kickside-v0.2.57) (2026-11-21)
 
 
