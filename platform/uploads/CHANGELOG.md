@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.35](https://github.com/kicksideai/kickside/compare/uploads-v0.3.34...uploads-v0.3.35) (2026-11-21)
+
+
+### Bug Fixes
+
+* **uploads:** require the effective Doc2MD conversion limit ([#861](https://github.com/kicksideai/kickside/issues/861)) ([75cdc5d](https://github.com/kicksideai/kickside/commit/75cdc5d07f3dd1a4821b41bc333afd257f5d14fc))
+
 ## [0.3.34](https://github.com/kicksideai/kickside/compare/uploads-v0.3.33...uploads-v0.3.34) (2026-11-21)
 
 
