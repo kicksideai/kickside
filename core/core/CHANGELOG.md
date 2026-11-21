@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.51](https://github.com/kicksideai/kickside/compare/core-v0.3.50...core-v0.3.51) (2026-11-21)
+
+
+### Bug Fixes
+
+* **core:** forward the Jobs attempt number to checkpoint workers ([#887](https://github.com/kicksideai/kickside/issues/887)) ([5afbdb6](https://github.com/kicksideai/kickside/commit/5afbdb6edd0e9a934082c5ac5ae1332f39643652))
+* **core:** report committed projection invalidations ([#886](https://github.com/kicksideai/kickside/issues/886)) ([8757364](https://github.com/kicksideai/kickside/commit/8757364b5943c5a42037be44bece3ee2d7275c65))
+
 ## [0.3.50](https://github.com/kicksideai/kickside/compare/core-v0.3.49...core-v0.3.50) (2026-11-21)
 
 
