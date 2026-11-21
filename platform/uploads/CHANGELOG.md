@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.33](https://github.com/kicksideai/kickside/compare/uploads-v0.3.32...uploads-v0.3.33) (2026-11-21)
+
+
+### Bug Fixes
+
+* **uploads:** support component-owned file versions ([#836](https://github.com/kicksideai/kickside/issues/836)) ([ebc307c](https://github.com/kicksideai/kickside/commit/ebc307cbb5b45102260ec49bd8a6802871998eec))
+
 ## [0.3.32](https://github.com/kicksideai/kickside/compare/uploads-v0.3.31...uploads-v0.3.32) (2026-11-20)
 
 
