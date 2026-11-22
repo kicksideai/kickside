@@ -1,6 +1,6 @@
 organization: kickside
 module: contract
-version: 0.3.12
+version: 0.3.13
 type: library
 description: KickSide base contracts
 license: LicenseRef-KickSide-Community-1.0

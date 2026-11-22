@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.13](https://github.com/kicksideai/kickside/compare/contract-v0.3.12...contract-v0.3.13) (2026-11-22)
+
+
+### Bug Fixes
+
+* **contract:** share plugin schema resolution ([#936](https://github.com/kicksideai/kickside/issues/936)) ([a5d0741](https://github.com/kicksideai/kickside/commit/a5d07415aece4a41cc813f4ce5406727fb0a2704))
+
 ## [0.3.12](https://github.com/kicksideai/kickside/compare/contract-v0.3.11...contract-v0.3.12) (2026-11-19)
 
 
