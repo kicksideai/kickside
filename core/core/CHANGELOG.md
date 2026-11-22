@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.52](https://github.com/kicksideai/kickside/compare/core-v0.3.51...core-v0.3.52) (2026-11-22)
+
+
+### Bug Fixes
+
+* **core:** keep projection handoff cutoffs stable across aliases ([#890](https://github.com/kicksideai/kickside/issues/890)) ([d4a6a47](https://github.com/kicksideai/kickside/commit/d4a6a473d7f65240a0be33d2fbf98bdf2c6b1a6a))
+
 ## [0.3.51](https://github.com/kicksideai/kickside/compare/core-v0.3.50...core-v0.3.51) (2026-11-21)
 
 
