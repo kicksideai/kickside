@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.45](https://github.com/kicksideai/kickside/compare/automation-v0.2.44...automation-v0.2.45) (2026-11-22)
+
+
+### Bug Fixes
+
+* **automation:** report pending deliveries on retained pre-drive automations ([#929](https://github.com/kicksideai/kickside/issues/929)) ([671dcd7](https://github.com/kicksideai/kickside/commit/671dcd70ce53e1c3d39e089abf1677821cddd2cb))
+
 ## [0.2.44](https://github.com/kicksideai/kickside/compare/automation-v0.2.43...automation-v0.2.44) (2026-11-22)
 
 
