@@ -6,7 +6,7 @@
   "core/jobs": "0.1.101",
   "platform/agents": "0.2.24",
   "platform/automation": "0.2.42",
-  "platform/blocks": "0.1.45",
+  "platform/blocks": "0.1.46",
   "platform/channel": "0.2.15",
   "platform/connection": "0.5.12",
   "platform/dm": "0.1.32",
@@ -34,6 +34,6 @@
   "platform/users": "0.2.30",
   "platform/webhooks": "0.1.47",
   "platform/widgets": "0.1.70",
-  "platform/workflows": "0.2.22",
+  "platform/workflows": "0.2.23",
   "app": "0.2.59"
 }

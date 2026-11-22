@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.46](https://github.com/kicksideai/kickside/compare/blocks-v0.1.45...blocks-v0.1.46) (2026-11-22)
+
+
+### Bug Fixes
+
+* preserve the workflow arm in resume handoffs ([#914](https://github.com/kicksideai/kickside/issues/914)) ([4b09779](https://github.com/kicksideai/kickside/commit/4b097790959c2a43a50a80b2bd1cbc04ce898295))
+
 ## [0.1.45](https://github.com/kicksideai/kickside/compare/blocks-v0.1.44...blocks-v0.1.45) (2026-11-19)
 
 

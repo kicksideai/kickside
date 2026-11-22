@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.23](https://github.com/kicksideai/kickside/compare/workflows-v0.2.22...workflows-v0.2.23) (2026-11-22)
+
+
+### Bug Fixes
+
+* preserve the workflow arm in resume handoffs ([#914](https://github.com/kicksideai/kickside/issues/914)) ([4b09779](https://github.com/kicksideai/kickside/commit/4b097790959c2a43a50a80b2bd1cbc04ce898295))
+
 ## [0.2.22](https://github.com/kicksideai/kickside/compare/workflows-v0.2.21...workflows-v0.2.22) (2026-11-21)
 
 
