@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.7](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.6...ui-kit-v1.7.7) (2026-11-22)
+
+
+### Bug Fixes
+
+* **ui-kit:** align mobile settings rails and collapsed disclosures ([#900](https://github.com/kicksideai/kickside/issues/900)) ([de95118](https://github.com/kicksideai/kickside/commit/de951186ad7352bd211998f34224237cedf3dc6d))
+
 ## [1.7.6](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.5...ui-kit-v1.7.6) (2026-11-21)
 
 
