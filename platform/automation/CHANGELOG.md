@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.44](https://github.com/kicksideai/kickside/compare/automation-v0.2.43...automation-v0.2.44) (2026-11-22)
+
+
+### Bug Fixes
+
+* **automation:** expose delivery attempt generation ([#924](https://github.com/kicksideai/kickside/issues/924)) ([3398c08](https://github.com/kicksideai/kickside/commit/3398c08c5d50a8b7f5099c78d821f06d4a89b4d4))
+* **models:** preserve route options in the plain chat provider ([#916](https://github.com/kicksideai/kickside/issues/916)) ([3be9b20](https://github.com/kicksideai/kickside/commit/3be9b20354f26ea9161f369d380050bc7f0d9f9d))
+
 ## [0.2.43](https://github.com/kicksideai/kickside/compare/automation-v0.2.42...automation-v0.2.43) (2026-11-22)
 
 
