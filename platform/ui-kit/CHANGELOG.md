@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.8](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.7...ui-kit-v1.7.8) (2026-11-22)
+
+
+### Bug Fixes
+
+* **ui-kit:** make mobile settings rail highlights full width ([#910](https://github.com/kicksideai/kickside/issues/910)) ([dcc1d4e](https://github.com/kicksideai/kickside/commit/dcc1d4e97ee41e4718b888391c414b34f4eb7459))
+
 ## [1.7.7](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.6...ui-kit-v1.7.7) (2026-11-22)
 
 
