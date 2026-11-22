@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.59](https://github.com/kicksideai/kickside/compare/kickside-v0.2.58...kickside-v0.2.59) (2026-11-22)
+
+
+### Bug Fixes
+
+* **app:** preserve System admin routes and guard unsaved changes ([#904](https://github.com/kicksideai/kickside/issues/904)) ([9236833](https://github.com/kicksideai/kickside/commit/9236833392f1dea4373792a5139aed886667635a))
+
 ## [0.2.58](https://github.com/kicksideai/kickside/compare/kickside-v0.2.57...kickside-v0.2.58) (2026-11-21)
 
 
