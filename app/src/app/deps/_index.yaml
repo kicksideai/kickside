@@ -258,7 +258,7 @@ entries:
     - name: kickside.agents:ui_server
       value: app:gateway
 
-  - version: ">=0.2.38"
+  - version: ">=0.2.44"
     name: kickside_automation
     kind: ns.dependency
     meta: {}

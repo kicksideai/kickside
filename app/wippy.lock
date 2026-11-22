@@ -12,8 +12,8 @@ modules:
       version: 0.2.23
       hash: 805cea6cd5a3339f5519dc76b154301c41619060fde8a3b7d0a6a78c99952f55
     - name: kickside/automation
-      version: 0.2.38
-      hash: 304e293561b891b03dd29781647eb5ed765d4380792a14a67c3993046f630519
+      version: 0.2.44
+      hash: 79f31e0f0a8d7b672aecca8cf9adef7eb094fe29cd0ed7a7badf526e6bedd8a9
     - name: kickside/blocks
       version: 0.1.38
       hash: a62227aa2e735eef7a051e3daf0c66164d282d2d5b19c7d4d8d28b23f3965373
