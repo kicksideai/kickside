@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.33](https://github.com/kicksideai/kickside/compare/component-v0.3.32...component-v0.3.33) (2026-11-22)
+
+
+### Performance Improvements
+
+* **component:** skip converged credential migrations ([#902](https://github.com/kicksideai/kickside/issues/902)) ([d584cc3](https://github.com/kicksideai/kickside/commit/d584cc3bba77402757b2e96dda127e580103eab1))
+
 ## [0.3.32](https://github.com/kicksideai/kickside/compare/component-v0.3.31...component-v0.3.32) (2026-11-21)
 
 
