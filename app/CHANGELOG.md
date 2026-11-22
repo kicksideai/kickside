@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.61](https://github.com/kicksideai/kickside/compare/kickside-v0.2.60...kickside-v0.2.61) (2026-11-22)
+
+
+### Bug Fixes
+
+* **app:** update the delivery runtime dependency ([#931](https://github.com/kicksideai/kickside/issues/931)) ([a8277bd](https://github.com/kicksideai/kickside/commit/a8277bd8cf32a161c70133d650c0cd5cdf087f33))
+
 ## [0.2.60](https://github.com/kicksideai/kickside/compare/kickside-v0.2.59...kickside-v0.2.60) (2026-11-22)
 
 
