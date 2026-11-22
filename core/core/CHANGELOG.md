@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.53](https://github.com/kicksideai/kickside/compare/core-v0.3.52...core-v0.3.53) (2026-11-22)
+
+
+### Bug Fixes
+
+* **core:** convey the watchdog outcome to ordinary projection workers ([#893](https://github.com/kicksideai/kickside/issues/893)) ([44c3e6f](https://github.com/kicksideai/kickside/commit/44c3e6fdc7fa4a029cfb0fc43157295259b3af78))
+
 ## [0.3.52](https://github.com/kicksideai/kickside/compare/core-v0.3.51...core-v0.3.52) (2026-11-22)
 
 
