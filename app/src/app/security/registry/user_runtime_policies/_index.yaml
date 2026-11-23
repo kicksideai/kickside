@@ -168,7 +168,8 @@ entries:
     groups: [app.security:user]
     policy:
       resources:
-        - wippy.session_util.api:*
+        - wippy.session_util.api:agent_details.endpoint
+        - wippy.session_util.api:tools_by_name.endpoint
       actions: access
       effect: allow
 
