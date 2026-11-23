@@ -4,10 +4,6 @@ function M.complete_worker_tx(tx, id, lease, opts)
     return fixture.result("transition", {already_completed = fixture.already, status = "completed"})
 end
 function M.worker_settled_tx(tx, id, lease) return fixture.result("settled", fixture.settled) end
-function M.fail_job(db, job, dialect, message, classification)
-    local _, err = fixture.result("park", true)
-    return err
-end
 function M.fail_tx(tx, job, dialect, message, classification, retry_floor)
     fixture.retry_floor = retry_floor
     local _, err = fixture.result("failure", true)

@@ -183,7 +183,6 @@ entries:
       worker_fence: kickside.core.jobs.service:worker_fence
       worker_child: kickside.core.jobs.service:worker_child
       worker_completion: kickside.core.jobs.service:worker_completion
-      lease_release: kickside.core.jobs:lease_release
 
   - name: job_child
     kind: process.lua
@@ -208,7 +207,6 @@ entries:
       worker_fence: kickside.core.jobs.service:worker_fence
       worker_child: kickside.core.jobs.service:worker_child
       worker_completion: kickside.core.jobs.service:worker_completion
-      lease_release: kickside.core.jobs:lease_release
 
   - name: worker.service
     kind: process.service

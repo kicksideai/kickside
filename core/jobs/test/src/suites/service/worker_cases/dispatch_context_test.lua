@@ -89,10 +89,11 @@ local function define_tests()
         test.after_each(release_db)
         test.it("propagates a retained watchdog outcome across an attempt reset", function()
             local function descriptor(previous, attempts)
-                local input = assert(dispatch.build_worker_input({
+                local input, _, input_err = dispatch.build_worker_input({
                     id = "job-1", attempts = attempts, last_error = previous,
                     payload = '{"previous_execution_timed_out":true}',
-                }))
+                })
+                assert(input, input_err)
                 test.is_nil(input.job.last_error)
                 return input.job
             end

@@ -529,7 +529,7 @@ local function define_tests()
                     :where(sql.builder.eq({ id = job.id }))
                     :run_with(db):query()
                 test.eq(pending_row[1].lease_token, job.lease_token)
-                test.is_nil(pending_row[1].lease_until)
+                test.eq(pending_row[1].lease_until, job.lease_until)
                 test.eq(pending_row[1].last_error, job_types.TERMINATION_PENDING_PREFIX .. job.lease_token)
 
                 local complete_err = lifecycle.complete_job(db, job, dbtype)

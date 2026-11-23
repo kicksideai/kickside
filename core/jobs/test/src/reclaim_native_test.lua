@@ -9,7 +9,7 @@ local routes: {{name: string, stages: {string}}} = {
     {name = "confirmed", stages = {"begin", "lookup", "size", "update", "marker", "history", "finalize", "commit", "notify"}},
     {name = "one", stages = {"policy", "history", "size", "history_update"}},
     {name = "many", stages = {"policy", "begin", "lookup", "history", "size", "history_update", "commit"}},
-    {name = "finish", stages = {"policy", "begin", "size", "update", "marker", "history", "finalize", "commit"}},
+    {name = "finish", stages = {"policy", "begin", "size", "update", "marker", "history", "finalize", "commit", "notify"}},
 }
 local function dialect(): string
     local db, err = sql.get("app:db")

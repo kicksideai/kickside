@@ -441,7 +441,7 @@ function M.finish_cancellation(db: sql.DB, dbtype: string, execution: table): (b
         last_error = reason, finished_at = now,
     }, (policy :: any).max_row_bytes, "finish_cancellation")
     if size_err then return false, sql_boundary.rollback(tx, size_err, "cancel completion rollback failed") end
-    local result, update_err = sql.builder.update("kickside_job")
+    local returned, update_err = sql.builder.update("kickside_job")
         :set("status", job_types.JOB_STATE.CANCELLED)
         :set("lease_token", nil):set("lease_until", nil):set("heartbeat_at", nil)
         :set("last_error", reason)
@@ -449,11 +449,12 @@ function M.finish_cancellation(db: sql.DB, dbtype: string, execution: table): (b
         :where(sql.builder.eq({ id = id, status = job_types.JOB_STATE.RUNNING,
             lease_token = token, execution_seq = sequence, last_error = marker }))
         :where("heartbeat_at IS NULL")
-        :run_with(tx):exec()
-    local count, count_err = sql_boundary.single_row_count(result, update_err,
-        "cancel completion update failed", "update.count", response_error)
-    if count_err then return false, sql_boundary.rollback(tx, count_err, "cancel completion rollback failed") end
-    local changed = count == 1
+        :suffix("RETURNING owner_kind, owner_id")
+        :run_with(tx):query()
+    local rows, rows_err = sql_boundary.bounded_rows(returned, update_err,
+        "cancel completion update failed", "update.rows", 0, 1, response_error)
+    if rows_err then return false, sql_boundary.rollback(tx, rows_err, "cancel completion rollback failed") end
+    local changed = #rows == 1
     if changed then
         local marker_err = worker_marker.clear(tx, id)
         if marker_err then return false, sql_boundary.rollback(tx, marker_err, "cancel completion rollback failed") end
@@ -462,12 +463,16 @@ function M.finish_cancellation(db: sql.DB, dbtype: string, execution: table): (b
     end
     local _, commit_err = tx:commit()
     if commit_err then return false, errors.wrap(commit_err, "cancel completion commit failed") end
+    if changed then
+        return true, lease_release.notify(id, sequence, { kind = rows[1].owner_kind, id = rows[1].owner_id })
+    end
     return changed, nil
 end
 
 -- Deliver committed execution revocations to their token-qualified owners.
--- When no supervisor is registered, its register-before-read fence guarantees
--- that a late execution will fail validation, so the caller can settle now.
+-- When no supervisor is registered, a child that already started can still
+-- hold its registration. The termination fence prevents a late child from
+-- passing validation.
 function M.notify_cancellations(db: sql.DB, dbtype: string, executions: table[]): error?
     for _, execution in ipairs(executions) do
         local sequence = tonumber(execution.execution_seq)
@@ -476,8 +481,12 @@ function M.notify_cancellations(db: sql.DB, dbtype: string, executions: table[])
                 tostring(execution.token), sequence, "revoked", nil)
             if send_err then return send_err end
             if not sent then
-                local _, finish_err = M.finish_cancellation(db, dbtype, execution)
-                if finish_err then return finish_err end
+                local alive, alive_err = proc_supervisor.child_alive(tostring(execution.id), tostring(execution.token))
+                if alive_err then return alive_err end
+                if not alive then
+                    local _, finish_err = M.finish_cancellation(db, dbtype, execution)
+                    if finish_err then return finish_err end
+                end
             end
         end
     end

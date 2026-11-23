@@ -61,6 +61,21 @@ local function group(route: string)
                 fixture.reset(route, "", nil); local value, err = invoke(route)
                 test.is_nil(err); test.not_nil(value); test.eq(fixture.commits, 1); test.eq(fixture.rollbacks, 0)
             end)
+            if route == "enqueue" then
+                for _, stage in ipairs({"release", "nudge"}) do
+                    test.it("notifies both recipients when replacement " .. stage .. " fails", function()
+                        local cause = errors.new({kind = errors.UNAVAILABLE, message = "recipient unavailable"})
+                        fixture.reset(route, stage, cause)
+                        fixture.replaced_job_id = "predecessor"
+                        local value, err = invoke(route)
+                        test.is_nil(value)
+                        test.is_true(errors.is(err, errors.UNAVAILABLE))
+                        test.eq(fixture.commits, 1)
+                        test.eq(fixture.nudges, 1)
+                        test.eq(fixture.releases, 1)
+                    end)
+                end
+            end
         end)
     end)
 end
