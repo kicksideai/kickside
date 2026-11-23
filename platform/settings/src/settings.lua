@@ -73,7 +73,8 @@ function M.get(args: any): settings_types.GetResponse
     if not map then return { success = false, error = oerr } end
     local value, err = effective_value(def, map)
     if err then return { success = false, error = err } end
-    return { success = true, value = value }
+    local rec = map[tostring(def.namespace) .. "\0" .. tostring(def.key)]
+    return { success = true, value = value, revision = rec and rec.revision or 0 }
 end
 
 -- get_namespace({ namespace }) -> { success, values = { key = value } }.
@@ -100,23 +101,18 @@ function M.get_namespace(args: any): settings_types.NamespaceResponse
     return { success = true, values = values, overridden = overridden }
 end
 
--- set({ namespace, key, value }) -> { success, error? }. Delegates to
--- the canonical writer; never writes the DB or cache directly.
-function M.set(args: any): settings_types.BasicResponse
-    args = args or {}
-    local actor_id = current_actor_id()
-    if not actor_id then
-        return { success = false, error = "authenticated actor is required" }
+-- write_response maps a writer outcome to the contract envelope.
+local function write_response(ok: boolean, err: any, outcome: any): settings_types.WriteResponse
+    if outcome and outcome.conflict then
+        return { success = false, error = err, conflict = true, revision = outcome.revision }
     end
-    local auth_err = require_admin_write()
-    if auth_err then return { success = false, error = auth_err } end
-    local ok, err = writer.set(args.namespace, args.key, args.value, actor_id)
     if not ok then return { success = false, error = err } end
-    return { success = true }
+    return { success = true, revision = outcome and outcome.revision or nil }
 end
 
--- unset({ namespace, key }) -> { success, error? }. Reverts to the default.
-function M.unset(args: any): settings_types.BasicResponse
+-- set({ namespace, key, value, expected_revision? }) -> { success, revision, conflict?, error? }.
+-- Delegates to the canonical writer; never writes the DB or cache directly.
+function M.set(args: any): settings_types.WriteResponse
     args = args or {}
     local actor_id = current_actor_id()
     if not actor_id then
@@ -124,9 +120,20 @@ function M.unset(args: any): settings_types.BasicResponse
     end
     local auth_err = require_admin_write()
     if auth_err then return { success = false, error = auth_err } end
-    local ok, err = writer.clear(args.namespace, args.key, actor_id)
-    if not ok then return { success = false, error = err } end
-    return { success = true }
+    return write_response(writer.set(args.namespace, args.key, args.value, actor_id, args.expected_revision))
+end
+
+-- unset({ namespace, key, expected_revision? }) -> { success, revision, conflict?, error? }.
+-- Reverts to the default.
+function M.unset(args: any): settings_types.WriteResponse
+    args = args or {}
+    local actor_id = current_actor_id()
+    if not actor_id then
+        return { success = false, error = "authenticated actor is required" }
+    end
+    local auth_err = require_admin_write()
+    if auth_err then return { success = false, error = auth_err } end
+    return write_response(writer.clear(args.namespace, args.key, actor_id, args.expected_revision))
 end
 
 -- list({ namespace? }) -> { success, settings = [...] } merging declarations with

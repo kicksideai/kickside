@@ -46,18 +46,20 @@ type OverrideRecord = {
     value_type: string?,
     updated_by: string?,
     updated_at: any?,
+    revision: number?,
 }
 
 type OverrideMap = { [string]: OverrideRecord }
 
 type GetArgs = { namespace: string?, key: string? }
 type NamespaceArgs = { namespace: string? }
-type SetArgs = { namespace: string?, key: string?, value: SettingValue }
-type UnsetArgs = { namespace: string?, key: string? }
+type SetArgs = { namespace: string?, key: string?, value: SettingValue, expected_revision: number? }
+type UnsetArgs = { namespace: string?, key: string?, expected_revision: number? }
 type ListArgs = { namespace: string? }
 
 type BasicResponse = { success: boolean, error: string? }
-type GetResponse = { success: boolean, value: SettingValue?, error: string? }
+type WriteResponse = { success: boolean, revision: number?, conflict: boolean?, error: string? }
+type GetResponse = { success: boolean, value: SettingValue?, revision: number?, error: string? }
 type NamespaceResponse = { success: boolean, values: { [string]: SettingValue }?, overridden: { string }?, error: string? }
 
 type SettingListRow = {
@@ -88,7 +90,7 @@ type SettingListRow = {
 
 type ListResponse = { success: boolean, settings: { SettingListRow }?, error: string? }
 
-type UpdatedSetting = { namespace: string, key: string }
+type UpdatedSetting = { namespace: string, key: string, revision: number? }
 type PutResponse = { success: boolean, updated: { UpdatedSetting }?, error: string? }
 
 M.SettingValue = SettingValue
@@ -103,6 +105,7 @@ M.SetArgs = SetArgs
 M.UnsetArgs = UnsetArgs
 M.ListArgs = ListArgs
 M.BasicResponse = BasicResponse
+M.WriteResponse = WriteResponse
 M.GetResponse = GetResponse
 M.NamespaceResponse = NamespaceResponse
 M.SettingListRow = SettingListRow
