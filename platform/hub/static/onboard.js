@@ -10,7 +10,7 @@ class e extends t {
     };
   }
   static get vueConfig() {
-    return n(() => import("./OnboardRecommendations-BSCtc2H3.js").then((o) => ({ rootComponent: o.default, plugins: [i] })), { surface: "compact", loading: "Loading module recommendations…", failed: "Could not load module recommendations. Reload the page to try again.", delay: 200, timeout: 3e4 });
+    return n(() => import("./OnboardRecommendations-DbVlsTM8.js").then((o) => ({ rootComponent: o.default, plugins: [i] })), { surface: "compact", loading: "Loading module recommendations…", failed: "Could not load module recommendations. Reload the page to try again.", delay: 200, timeout: 3e4 });
   }
 }
 async function u() {
