@@ -251,15 +251,14 @@ function M.normalize_writes(writes: any): error?
                 if event_id_err then return event_id_err end
                 event.id = event_id
             end
-            if event.body_json ~= nil then
-                if type(event.body_json) ~= "string" then return invalid("event body_json must be JSON") end
-                local _, decode_err = json.decode(event.body_json)
-                if decode_err then return invalid("event body_json must be valid JSON") end
-            else
+            if event.body_json == nil then
                 local encoded, encode_err = json.encode(event.body or {})
                 if encode_err or not encoded then return invalid("event body must be JSON serializable") end
                 event.body_json = encoded
             end
+            if type(event.body_json) ~= "string" then return invalid("event body_json must be JSON") end
+            local _, decode_err = json.decode(event.body_json)
+            if decode_err then return invalid("event body_json must be valid JSON") end
         end
     end
     return nil
