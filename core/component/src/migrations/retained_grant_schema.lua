@@ -71,7 +71,7 @@ function M.postgres(tx, key, legacy)
         M.execute(tx, "ALTER TABLE " .. ACCESS .. " DROP CONSTRAINT " .. quote(name))
     end
     if not key.typed then
-        M.execute(tx, "ALTER TABLE " .. ACCESS .. " ADD UNIQUE (" .. TYPED .. ")")
+        M.execute(tx, "ALTER TABLE " .. ACCESS .. " ADD CONSTRAINT uq_kickside_component_access_subject UNIQUE (" .. TYPED .. ")")
     end
     if not legacy then return end
     M.execute(tx, "ALTER TABLE " .. ACCESS .. " ALTER COLUMN subject_type DROP DEFAULT,"
