@@ -43,7 +43,7 @@ entries:
         value: "1000"
 
   # app.deps:facade
-  - version: ">=0.6.53"
+  - version: ">=0.6.54"
     name: facade
     kind: ns.dependency
     meta: {}

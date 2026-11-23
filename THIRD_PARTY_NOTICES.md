@@ -695,49 +695,49 @@ Lockfiles: `platform/workflows/ui/package-lock.json`
 
 LICENSE: [License text](#license-text-0f844b1160603552a01662ac2999c14e5fb4df487e65619b9ed4406e43eb3c0b)
 
-### npm: @wippy-fe/layout@0.0.70
+### npm: @wippy-fe/layout@0.0.71
 
 License: UNLICENSED
 
 Lockfiles: `app/frontend/applications/main/package-lock.json`
 
-### npm: @wippy-fe/proxy@0.0.70
+### npm: @wippy-fe/proxy@0.0.71
 
 License: UNLICENSED
 
 Lockfiles: `app/frontend/applications/main/package-lock.json`
 
-### npm: @wippy-fe/router@0.0.70
+### npm: @wippy-fe/router@0.0.71
 
 License: UNLICENSED
 
 Lockfiles: `app/frontend/applications/main/package-lock.json`
 
-### npm: @wippy-fe/shared@0.0.70
+### npm: @wippy-fe/shared@0.0.71
 
 License: UNLICENSED
 
 Lockfiles: `app/frontend/applications/main/package-lock.json`
 
-### npm: @wippy-fe/theme@0.0.70
+### npm: @wippy-fe/theme@0.0.71
 
 License: UNLICENSED
 
 Lockfiles: `app/frontend/applications/main/package-lock.json`, `app/templates/plugin/ui/package-lock.json`, `platform/agents/ui/package-lock.json`, `platform/automation/ui/package-lock.json`, `platform/channel/ui/package-lock.json`, `platform/connection/ui/package-lock.json`, `platform/hub/ui/package-lock.json`, `platform/identity/ui/package-lock.json`, `platform/inbox/ui/package-lock.json`, `platform/knowledge/ui/package-lock.json`, `platform/mcp/ui/package-lock.json`, `platform/models/ui/package-lock.json`, `platform/renderers/ui/package-lock.json`, `platform/security/ui/package-lock.json`, `platform/sessions/ui/package-lock.json`, `platform/settings/ui/package-lock.json`, `platform/skills/ui/package-lock.json`, `platform/sync/ui/package-lock.json`, `platform/transfer/ui/package-lock.json`, `platform/transform/ui/package-lock.json`, `platform/ui/ui/package-lock.json`, `platform/uploads/ui/package-lock.json`, `platform/users/ui/package-lock.json`, `platform/webhooks/ui/package-lock.json`, `platform/widgets/ui/package-lock.json`, `platform/workflows/ui/package-lock.json`
 
-### npm: @wippy-fe/vue-utils@0.0.70
+### npm: @wippy-fe/vue-utils@0.0.71
 
 License: UNLICENSED
 
 Lockfiles: `app/frontend/applications/main/package-lock.json`
 
-### npm: @wippy-fe/webcomponent-core@0.0.70
+### npm: @wippy-fe/webcomponent-core@0.0.71
 
 License: UNLICENSED
 
 Lockfiles: `app/templates/plugin/ui/package-lock.json`, `platform/agents/ui/package-lock.json`, `platform/automation/ui/package-lock.json`, `platform/channel/ui/package-lock.json`, `platform/connection/ui/package-lock.json`, `platform/hub/ui/package-lock.json`, `platform/identity/ui/package-lock.json`, `platform/inbox/ui/package-lock.json`, `platform/knowledge/ui/package-lock.json`, `platform/mcp/ui/package-lock.json`, `platform/models/ui/package-lock.json`, `platform/renderers/ui/package-lock.json`, `platform/security/ui/package-lock.json`, `platform/sessions/ui/package-lock.json`, `platform/settings/ui/package-lock.json`, `platform/skills/ui/package-lock.json`, `platform/sync/ui/package-lock.json`, `platform/transfer/ui/package-lock.json`, `platform/transform/ui/package-lock.json`, `platform/ui/ui/package-lock.json`, `platform/uploads/ui/package-lock.json`, `platform/users/ui/package-lock.json`, `platform/webhooks/ui/package-lock.json`, `platform/widgets/ui/package-lock.json`, `platform/workflows/ui/package-lock.json`
 
-### npm: @wippy-fe/webcomponent-vue@0.0.70
+### npm: @wippy-fe/webcomponent-vue@0.0.71
 
 License: UNLICENSED
 

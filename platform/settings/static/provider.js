@@ -1,5 +1,5 @@
 import { W as o, l as i, P as n } from "./wc-runtime-4lROyJyk.js";
-import { s as r } from "./styles-Bjo2-V-d.js";
+import { s as r } from "./styles-BgZwUvJw.js";
 import { define as s } from "@wippy-fe/proxy";
 const p = { type: "object", properties: { config: { type: "object" } } };
 class e extends o {
