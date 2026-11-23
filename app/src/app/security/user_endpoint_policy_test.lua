@@ -45,6 +45,8 @@ local function define_tests()
                 test.eq(decision("app.security:members", "access", id), "allow", id)
                 test.eq(decision("app.security:stranger", "access", id), "undefined", id)
             end
+            -- Only the two exact endpoint ids: any other endpoint of the module stays closed.
+            test.eq(decision("app.security:members", "access", "wippy.session_util.api:other.endpoint"), "undefined")
             for _, action in ipairs({"contract.get", "contract.implementations"}) do
                 test.eq(decision("app.security:user", action, "wippy.session_util:catalog"), "allow", action)
                 test.eq(decision("app.security:stranger", action, "wippy.session_util:catalog"), "undefined", action)
