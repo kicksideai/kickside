@@ -63,8 +63,10 @@ local function cancel_in_tx(tx: sql.Transaction, dbtype: string, params: CancelP
     local marker = job_types.TERMINATION_PENDING_PREFIX .. tostring(row.lease_token or "")
     local size_err
     if running then
+        -- The marker revokes the lease. The existing deadline schedules
+        -- termination recheck if the supervisor cannot finish cancellation.
         size_err = row_bytes.check_update(tx, "kickside_job", tostring(row.id), {
-            lease_until = row_bytes.NULL, heartbeat_at = row_bytes.NULL, last_error = marker,
+            heartbeat_at = row_bytes.NULL, last_error = marker,
         }, (policy :: any).max_row_bytes, "cancel_running_job")
     else
         size_err = row_mutations.cancel(tx, tostring(row.id), "", "",
@@ -73,7 +75,7 @@ local function cancel_in_tx(tx: sql.Transaction, dbtype: string, params: CancelP
     if size_err then return false, size_err end
     local update = sql.builder.update("kickside_job")
     if running then
-        update = update:set("lease_until", nil):set("heartbeat_at", nil):set("last_error", marker)
+        update = update:set("heartbeat_at", nil):set("last_error", marker)
     else
         update = update:set("status", job_types.JOB_STATE.CANCELLED)
             :set("lease_token", nil):set("lease_until", nil):set("heartbeat_at", nil)

@@ -470,8 +470,9 @@ function M.finish_cancellation(db: sql.DB, dbtype: string, execution: table): (b
 end
 
 -- Deliver committed execution revocations to their token-qualified owners.
--- When no supervisor is registered, its register-before-read fence guarantees
--- that a late execution will fail validation, so the caller can settle now.
+-- When no supervisor is registered, a child that already started can still
+-- hold its registration. The termination fence prevents a late child from
+-- passing validation.
 function M.notify_cancellations(db: sql.DB, dbtype: string, executions: table[]): error?
     for _, execution in ipairs(executions) do
         local sequence = tonumber(execution.execution_seq)
@@ -480,8 +481,12 @@ function M.notify_cancellations(db: sql.DB, dbtype: string, executions: table[])
                 tostring(execution.token), sequence, "revoked", nil)
             if send_err then return send_err end
             if not sent then
-                local _, finish_err = M.finish_cancellation(db, dbtype, execution)
-                if finish_err then return finish_err end
+                local alive, alive_err = proc_supervisor.child_alive(tostring(execution.id), tostring(execution.token))
+                if alive_err then return alive_err end
+                if not alive then
+                    local _, finish_err = M.finish_cancellation(db, dbtype, execution)
+                    if finish_err then return finish_err end
+                end
             end
         end
     end
