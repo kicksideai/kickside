@@ -11,11 +11,11 @@ entries:
   - name: list_models
     kind: function.lua
     meta:
-      comment: "GET /models/list[?capability=generate|embed|<cap>] — models by capability (default generate) with title/provider/class/capabilities/dimensions."
+      comment: "GET /models/list[?capability=generate|embed|<cap>] — models by capability and the caller's Models setup access."
     source: file://list_models.lua
     security:
       policies: [kickside.models.catalog:catalog_read, kickside.models:reload_profiles_call, kickside.models.api:provider_presentation_read]
-    modules: [http]
+    modules: [http, security]
     imports:
       models: kickside.models.catalog:model_catalog
       provider_read_model: kickside.models.providers:provider_read_model
