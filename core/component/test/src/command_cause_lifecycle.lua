@@ -1,2 +1,2 @@
 local fixture = require("fixture")
-return {created = fixture.created, committed = fixture.committed}
+return {physical_streams = function() return false end, created = fixture.created, committed = fixture.committed}

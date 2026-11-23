@@ -26,7 +26,8 @@ end
 local function publish(limit: integer): (integer?, error?)
     local db, open_err = sql.get(component_types.db_id())
     if open_err or not db then return nil, failure("identity audit publication database unavailable", open_err) end
-    local rows, read_err = db:query("SELECT a.component_id,a.identity_generation,a.record_json,c.impl_id"
+    local rows, read_err = db:query("SELECT a.component_id,a.identity_generation,a.record_json,c.impl_id,a.request_id,"
+        .. " COALESCE(c.lifecycle_incarnation,'') AS lifecycle_incarnation,COALESCE(c.secrets_incarnation,'') AS component_incarnation"
         .. " FROM " .. AUDIT .. " a JOIN kickside_components c ON c.component_id=a.component_id"
         .. " WHERE a.published_at IS NULL ORDER BY a.created_at,a.component_id,a.identity_generation LIMIT $1", { limit })
     local scan_err: error? = nil
@@ -38,17 +39,23 @@ local function publish(limit: integer): (integer?, error?)
         local proof, publish_err = lifecycle.publish_audit({
             component_id = tostring(row.component_id), impl_id = tostring(row.impl_id),
             identity_generation = tonumber(row.identity_generation), record_json = tostring(row.record_json),
+            lifecycle_incarnation = row.lifecycle_incarnation,
+            component_incarnation = row.component_incarnation,
         })
         if publish_err or not proof then return nil, publish_err or failure("identity audit publisher returned no proof", row.component_id) end
-        local ack_db, ack_open_err = sql.get(component_types.db_id())
-        if ack_open_err or not ack_db then return nil, failure("identity audit acknowledgment database unavailable", ack_open_err) end
-        local result, ack_err = ack_db:execute("UPDATE " .. AUDIT .. " SET published_at=$1"
-            .. " WHERE component_id=$2 AND identity_generation=$3 AND published_at IS NULL",
-            { time.now():utc():format_rfc3339(), row.component_id, row.identity_generation })
-        local changed, proof_err = affected(result, ack_err, "identity audit publication acknowledgment failed")
-        proof_err = error_envelope.cleanup(function(): (any, error?) return ack_db:release() end, proof_err, "release audit acknowledgment database")
-        if proof_err then return nil, proof_err end
-        count = count + (changed :: integer)
+        if type(proof) ~= "table" or proof.obsolete ~= true then
+            local ack_db, ack_open_err = sql.get(component_types.db_id())
+            if ack_open_err or not ack_db then return nil, failure("identity audit acknowledgment database unavailable", ack_open_err) end
+            local result, ack_err = ack_db:execute("UPDATE " .. AUDIT .. " SET published_at=$1"
+                .. " WHERE component_id=$2 AND identity_generation=$3 AND request_id=$4 AND published_at IS NULL"
+                .. " AND EXISTS (SELECT 1 FROM kickside_components c WHERE c.component_id=$2"
+                .. " AND COALESCE(c.secrets_incarnation,'')=$5)",
+                { time.now():utc():format_rfc3339(), row.component_id, row.identity_generation, row.request_id, row.component_incarnation })
+            local changed, proof_err = affected(result, ack_err, "identity audit publication acknowledgment failed")
+            proof_err = error_envelope.cleanup(function(): (any, error?) return ack_db:release() end, proof_err, "release audit acknowledgment database")
+            if proof_err then return nil, proof_err end
+            count = count + (changed :: integer)
+        end
     end
     return count, nil
 end

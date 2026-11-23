@@ -319,7 +319,7 @@ entries:
     - name: kickside.connection:ui_server
       value: app:gateway
 
-  - version: ">=0.3.12"
+  - version: ">=0.3.13"
     name: kickside_contract
     kind: ns.dependency
     meta: {}

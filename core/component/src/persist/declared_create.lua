@@ -30,7 +30,7 @@ local function denied(message: string): error
 end
 
 -- create_tx(tx, db, token) -> ({ component_id, operator_id, impl_id, parent_id, meta, existing? }?, err?)
-function M.create_tx(tx: any, db: any, token: any): (any?, error?)
+function M.create_tx(tx: any, db: any, token: any, physical_lifecycle: boolean?): (any?, error?)
     local creation, take_err = declaration_ops.take_creation(token)
     if take_err or not creation then return nil, take_err end
     local input = (creation :: any).input
@@ -65,10 +65,11 @@ function M.create_tx(tx: any, db: any, token: any): (any?, error?)
     if receipt.public_meta ~= nil then
         for key, value in pairs(receipt.public_meta) do initial_meta[key] = value end
     end
-    local _, create_err = placement_ops.create_component(tx, db, {
+    local created, create_err = placement_ops.create_component(tx, db, {
         type = component_types.COMMAND_TYPES.CREATE_COMPONENT,
         payload = {
             component_id = input.component_id,
+            physical_lifecycle = physical_lifecycle,
             impl_id = input.impl_id,
             private_context = input.context,
             initial_meta = initial_meta,
@@ -76,7 +77,7 @@ function M.create_tx(tx: any, db: any, token: any): (any?, error?)
             parent_id = input.parent_id,
         },
     }, receipt.captured_identity)
-    if create_err then return nil, create_err end
+    if create_err or not created then return nil, create_err end
 
     -- Receipt metadata belongs to creation; the declaration writer handles later updates.
     receipt.public_meta = nil
@@ -92,6 +93,8 @@ function M.create_tx(tx: any, db: any, token: any): (any?, error?)
         impl_id = input.impl_id,
         parent_id = input.parent_id,
         meta = input.meta,
+        lifecycle_incarnation = created.lifecycle_incarnation,
+        component_incarnation = created.component_incarnation,
     }, nil
 end
 

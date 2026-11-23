@@ -114,6 +114,8 @@ local function handle(request_dto)
                 dbtype = tostring(dbtype_raw),
                 component_id = request_dto.component_id,
                 impl_id = tostring((summary :: any).impl_id),
+                lifecycle_incarnation = (summary :: any).lifecycle_incarnation,
+                component_incarnation = (summary :: any).secrets_incarnation,
                 parent_id = result.parent_id,
                 parent_impl_id = parent_impl_id,
                 previous_parent_id = result.previous_parent_id,

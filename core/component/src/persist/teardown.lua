@@ -390,7 +390,7 @@ function M.unregister(component_id: string, child_policy: string?): (any, string
     if lock_err or not locked or tonumber(locked.rows_affected) == nil then
         return nil, "delete", abort_transaction(db, tx, internal("component unregister lock failed", lock_err or "missing row proof"))
     end
-    local rows, fence_err = tx:query("SELECT deleting_at FROM kickside_components WHERE component_id=$1", { component_id })
+    local rows, fence_err = tx:query("SELECT deleting_at,lifecycle_incarnation,secrets_incarnation FROM kickside_components WHERE component_id=$1", { component_id })
     if fence_err or type(rows) ~= "table" then
         return nil, "delete", abort_transaction(db, tx, internal("component unregister fence read failed", fence_err or "missing result"))
     end
@@ -416,6 +416,8 @@ function M.unregister(component_id: string, child_policy: string?): (any, string
             dbtype = tostring(dbtype_raw),
             component_id = component_id,
             impl_id = tostring((summary :: any).impl_id),
+            lifecycle_incarnation = rows[1] and rows[1].lifecycle_incarnation,
+            component_incarnation = rows[1] and rows[1].secrets_incarnation,
             parent_id = (summary :: any).parent_id,
             parent_impl_id = parent_impl_id,
         })

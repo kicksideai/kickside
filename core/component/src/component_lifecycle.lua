@@ -8,6 +8,12 @@ local envelope = require("envelope")
 
 local M = {}
 
+-- Component can be upgraded first. An older host keeps creating the
+-- released legacy stream and must leave its routing marker unset.
+function M.physical_streams(): boolean
+    return lifecycle_impl.physical_streams == true
+end
+
 local function result_error(method: string, result: any, call_err: any): error?
     if call_err then
         if type(call_err) == "userdata" then

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, useId, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { jsonEqual } from '../../app/json-equal'
 
 const props = withDefaults(defineProps<{
@@ -7,10 +7,9 @@ const props = withDefaults(defineProps<{
   fallback?: unknown
   kind: 'object' | 'array'
   rows?: number
-  placeholder?: string
-}>(), { rows: 7, placeholder: '' })
+}>(), { rows: 7 })
 
-const emit = defineEmits<{ change: [value: Record<string, unknown> | unknown[]] }>()
+const emit = defineEmits<{ change: [value: Record<string, unknown> | unknown[]]; error: [message: string] }>()
 
 function emptyValue(): Record<string, unknown> | unknown[] {
   return props.kind === 'array' ? [] : {}
@@ -34,8 +33,6 @@ function format(value: unknown): string {
 }
 
 const text = ref(format(initialValue()))
-const error = ref('')
-const errorId = useId()
 let currentValue = initialValue()
 
 // A valid local edit is echoed back by the host as a new config object. Do not
@@ -46,7 +43,7 @@ watch(() => [props.value, props.fallback, props.kind], () => {
   if (jsonEqual(value, currentValue)) return
   currentValue = value
   text.value = format(value)
-  error.value = ''
+  emit('error', '')
 })
 
 function update(raw: string) {
@@ -55,14 +52,14 @@ function update(raw: string) {
   try {
     parsed = JSON.parse(raw)
   } catch {
-    error.value = 'That isn’t valid JSON. Check commas, quotes, and brackets.'
+    emit('error', 'That isn’t valid JSON. Check commas, quotes, and brackets.')
     return
   }
   if (!accepts(parsed)) {
-    error.value = `Enter a JSON ${props.kind}.`
+    emit('error', `Enter a JSON ${props.kind}.`)
     return
   }
-  error.value = ''
+  emit('error', '')
   if (jsonEqual(parsed, currentValue)) return
   currentValue = parsed
   emit('change', parsed)
@@ -72,14 +69,9 @@ function update(raw: string) {
 <template>
   <textarea
     class="sf-input sf-textarea sf-structured"
-    :class="error && 'is-invalid'"
     :rows="rows"
     :value="text"
-    :placeholder="placeholder"
-    :aria-invalid="error ? 'true' : undefined"
-    :aria-describedby="error ? errorId : undefined"
     spellcheck="false"
     @input="update(($event.target as HTMLTextAreaElement).value)"
   />
-  <span v-if="error" :id="errorId" class="sf-error" role="alert">{{ error }}</span>
 </template>

@@ -251,24 +251,21 @@ function M.normalize_writes(writes: any): error?
                 if event_id_err then return event_id_err end
                 event.id = event_id
             end
-            if event.body_json ~= nil then
-                if type(event.body_json) ~= "string" then return invalid("event body_json must be JSON") end
-                local _, decode_err = json.decode(event.body_json)
-                if decode_err then return invalid("event body_json must be valid JSON") end
-            else
+            if event.body_json == nil then
                 local encoded, encode_err = json.encode(event.body or {})
                 if encode_err or not encoded then return invalid("event body must be JSON serializable") end
                 event.body_json = encoded
             end
+            if type(event.body_json) ~= "string" then return invalid("event body_json must be JSON") end
+            local _, decode_err = json.decode(event.body_json)
+            if decode_err then return invalid("event body_json must be valid JSON") end
         end
     end
     return nil
 end
 
 -- Component owns the access decision; the stored kind owns event declarations.
-function M.validate_event_types(db: sql.DB, writes: { table }, _user_append: boolean?): (boolean, error?)
-    local shape_err = M.normalize_writes(writes)
-    if shape_err then return false, shape_err end
+local function authorize_normalized_writes(db: sql.DB, writes: { table }, check_member_write: boolean): (boolean, error?)
     local user_append, authority_err = authority()
     if authority_err then return false, authority_err end
     local output_only = true
@@ -308,13 +305,25 @@ function M.validate_event_types(db: sql.DB, writes: { table }, _user_append: boo
         end
         if not producer_write then
             output_only = false
-            if user_append then
+            if user_append and check_member_write then
                 local _, access_err = component_client.validate_access(component_id, (core_types.ACCESS.WRITE :: integer))
                 if access_err then return false, access_err end
             end
         end
     end
     return user_append == false or output_only, nil
+end
+
+function M.validate_event_types(db: sql.DB, writes: { table }): (boolean, error?)
+    local shape_err = M.normalize_writes(writes)
+    if shape_err then return false, shape_err end
+    return authorize_normalized_writes(db, writes, true)
+end
+
+-- The single-target writer checks WRITE immediately before opening its transaction.
+-- Multi-write admission checks each destination in request order before inspecting the next.
+function M.classify_normalized_append(db: sql.DB, writes: { table }): (boolean, error?)
+    return authorize_normalized_writes(db, writes, #writes ~= 1)
 end
 
 -- Internal actor-bound projection admission, using the same contract authorizer.
@@ -326,7 +335,7 @@ function M.authorize_writes(args: any): (table?, error?)
     if authority_err then return nil, authority_err end
     local db, db_err = common.open_db()
     if db_err then return nil, db_err end
-    local _, authorize_err = M.validate_event_types(db, writes)
+    local _, authorize_err = authorize_normalized_writes(db, writes, true)
     local _, release_err = db:release()
     if authorize_err then return nil, authorize_err end
     if release_err then return nil, registry_failure("authorization database release failed", release_err) end

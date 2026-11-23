@@ -71,6 +71,7 @@ entries:
       - sql
       - logger
     imports:
+      component_access: kickside.component:context_policy
       event_access: kickside.core.threads:event_access
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       error_envelope: kickside.contract:error_envelope

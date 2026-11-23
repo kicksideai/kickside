@@ -72,7 +72,7 @@ local function component_summary_tx(tx: Executor, component_id: string?): (any?,
     if not component_id or component_id == "" then
         return nil, (errors.new({ message = "component_id is required", kind = errors.INVALID }) :: error)
     end
-    local rows, err = sql.builder.select("component_id", "impl_id", "parent_id", "position", "path")
+    local rows, err = sql.builder.select("component_id", "impl_id", "parent_id", "position", "path", "lifecycle_incarnation", "secrets_incarnation")
         :from(component_types.TABLES.COMPONENTS)
         :where("component_id = ?", component_id)
         :limit(1)

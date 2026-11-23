@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.72](https://github.com/kicksideai/kickside/compare/widgets-v0.1.71...widgets-v0.1.72) (2026-11-23)
+
+
+### Bug Fixes
+
+* **widgets:** preserve schema picker keyboard focus ([#943](https://github.com/kicksideai/kickside/issues/943)) ([5256f0c](https://github.com/kicksideai/kickside/commit/5256f0c6130fc300ff3ec2fd3eed4fe770513e6b))
+
+## [0.1.71](https://github.com/kicksideai/kickside/compare/widgets-v0.1.70...widgets-v0.1.71) (2026-11-23)
+
+
+### Bug Fixes
+
+* **widgets:** expose schema form field validation ([#941](https://github.com/kicksideai/kickside/issues/941)) ([204871f](https://github.com/kicksideai/kickside/commit/204871faaad886a995db981a2e0e9ba86b1fc2b4))
+
 ## [0.1.70](https://github.com/kicksideai/kickside/compare/widgets-v0.1.69...widgets-v0.1.70) (2026-11-21)
 
 

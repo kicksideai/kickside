@@ -11,9 +11,15 @@ local function result(stage: string, healthy: any): (any, error?)
     if M.stage == "success_error_" .. stage then return healthy, M.source end
     return healthy, nil
 end
+function M.validate_access(id: string, mask: integer): (integer?, error?)
+    assert(id == "thread" and mask == 2)
+    return mask, nil
+end
 local tx = {}
 function tx:query(...): (any, error?)
     M.locks = M.locks + 1
+    if M.stage == "deleted_primary" then return {}, nil end
+    if M.stage == "rebound_primary" then return {{id = "thread", component_id = "other", event_count = 0}}, nil end
     return result("lock", {{id = "thread", event_count = 0}})
 end
 function tx:rollback(): (boolean?, error?)

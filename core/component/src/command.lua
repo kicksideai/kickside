@@ -139,7 +139,7 @@ function M.create_declared(input: any, verify: any): (any?, error?)
     local token, prepare_err = ops.prepare_creation(input, verify)
     if prepare_err then return nil, prepare_err end
     local result, err = M.with_component_tx(function(tx: sql.Transaction, db: sql.DB): (any?, error?)
-        local created, create_err = ops.create_declared_tx(tx, db, token)
+        local created, create_err = ops.create_declared_tx(tx, db, token, component_lifecycle.physical_streams())
         if create_err or not created then return nil, create_err end
         local c = created :: any
         if c.existing then
@@ -159,6 +159,8 @@ function M.create_declared(input: any, verify: any): (any?, error?)
             dbtype = tostring(dbtype),
             component_id = c.component_id,
             impl_id = c.impl_id,
+            lifecycle_incarnation = c.lifecycle_incarnation,
+            component_incarnation = c.component_incarnation,
             parent_id = c.parent_id,
             parent_impl_id = parent_impl_id,
             actor_id = c.operator_id,

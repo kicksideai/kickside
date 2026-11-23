@@ -1,7 +1,6 @@
 -- Thread event reads and the canonical append contract seam.
 
 local sql = require("sql")
-local json = require("json")
 local security = require("security")
 local registry = require("registry")
 local writer = require("threads_writer")
@@ -218,16 +217,8 @@ function M.find_event_by_external(args: any): (any?, error?)
     return { event = event }, nil
 end
 
-local function normalize_append_event(raw: table, index: integer): (table?, error?)
-    local body_json = raw.body_json
-    if type(body_json) ~= "string" or body_json == "" then
-        local encoded, encode_err = json.encode(raw.body or {})
-        if encode_err or not encoded then
-            return nil, (errors.new({ message = "events[" .. tostring(index) .. "].body must be JSON serializable", kind = errors.INVALID }) :: error)
-        end
-        body_json = encoded
-    end
-
+-- Copy only writer fields from events already checked by normalize_writes.
+local function writer_event(raw: table): table
     return {
         id = raw.id,
         subject = raw.subject,
@@ -235,35 +226,21 @@ local function normalize_append_event(raw: table, index: integer): (table?, erro
         type = raw.type,
         role = raw.role,
         body = raw.body,
-        body_json = body_json,
+        body_json = raw.body_json,
         content = raw.content,
         external = raw.external,
         trace_context = raw.trace_context,
         created_at = raw.created_at,
-    }, nil
+    }
 end
 
--- Normalize one thread batch into the writer shape.
-local function normalize_write(raw: any): (table?, error?)
-    local w = (type(raw) == "table" and raw or {}) :: { [string]: any }
-    if not is_str(w.thread_id) then
-        return nil, (errors.new({ message = "thread_id is required", kind = errors.INVALID }) :: error)
+local function writer_batch(write: table): table
+    local events: { table } = table.create(#write.events, 0)
+    for _, event in ipairs(write.events) do
+        table.insert(events, writer_event(event))
     end
-    if type(w.events) ~= "table" or #(w.events :: { any }) == 0 then
-        return nil, (errors.new({ message = "events array is required", kind = errors.INVALID }) :: error)
-    end
-    local events: { table } = table.create(#(w.events :: { any }), 0)
-    for index, raw_event in ipairs(w.events :: { any }) do
-        if type(raw_event) ~= "table" then
-            return nil, (errors.new({ message = "events[" .. tostring(index) .. "] must be an object", kind = errors.INVALID }) :: error)
-        end
-        local event, normalize_err = normalize_append_event(raw_event :: table, index)
-        if normalize_err then return nil, normalize_err end
-        table.insert(events, event :: table)
-    end
-    return { thread_id = w.thread_id :: string, events = events, expect = w.expect }, nil
+    return { thread_id = write.thread_id, events = events, expect = write.expect }
 end
-
 
 local function append_response(field: string): error
     return errors.new({kind = errors.INTERNAL, retryable = false,
@@ -338,21 +315,16 @@ function M.append_events(args: any): (any?, error?)
     end
     local writes: { table } = table.create(#raw_writes, 0)
     for _, raw in ipairs(raw_writes) do
-        local w, w_err = normalize_write(raw)
-        if w_err then return nil, w_err end
-        table.insert(writes, w :: table)
+        table.insert(writes, writer_batch(raw))
     end
 
-    local shape_err = event_authorization.normalize_writes(writes)
-    if shape_err then return nil, shape_err end
     local db, db_err = open_db()
     if db_err then return nil, db_err end
     local _db = db :: sql.DB
 
     local system_write = audit
     if not audit then
-        local maintenance, type_err = event_authorization.validate_event_types(
-            _db, writes, not common.is_maintenance_actor())
+        local maintenance, type_err = event_authorization.classify_normalized_append(_db, writes)
         if type_err then return nil, release_append_database(_db, type_err, false) end
         system_write = maintenance
     end

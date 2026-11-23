@@ -222,6 +222,7 @@ local function create_component(tx: Executor, db: Executor, command: component_t
         component_id = component_id,
         impl_id = payload.impl_id,
         secrets_incarnation = incarnation,
+        lifecycle_incarnation = payload.physical_lifecycle == true and incarnation or nil,
         private_context = private_context,
         parent_id = parent_id,
         position = position,
@@ -332,7 +333,8 @@ local function create_component(tx: Executor, db: Executor, command: component_t
         return nil, link_err
     end
 
-    return { component_id = component_id, changes_made = true }, nil
+    return { component_id = component_id, changes_made = true,
+        lifecycle_incarnation = component_row.lifecycle_incarnation, component_incarnation = incarnation }, nil
 end
 
 -- SET_PLACEMENT payload: { component_id, has_parent_arg, parent_id?, position? }.

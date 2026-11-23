@@ -1,4 +1,4 @@
-local M = {}
+local M = {physical_streams = false}
 
 local function unwired(_payload: any?): any
     return {

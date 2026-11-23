@@ -147,6 +147,7 @@ local function register(request_dto, owned_child: boolean?, root_attachment: tab
             type = ops.COMMAND_TYPES.CREATE_COMPONENT,
             payload = {
                 component_id = component_id,
+                physical_lifecycle = component_lifecycle.physical_streams(),
                 impl_id = request_dto.impl_id,
                 private_context = private_context,
                 initial_meta = meta,
@@ -191,6 +192,8 @@ local function register(request_dto, owned_child: boolean?, root_attachment: tab
             dbtype = tostring(dbtype_raw),
             component_id = component_id,
             impl_id = request_dto.impl_id,
+            lifecycle_incarnation = create_result.lifecycle_incarnation,
+            component_incarnation = create_result.component_incarnation,
             parent_id = parent_id,
             parent_impl_id = parent_impl_id,
             actor_id = user_id,

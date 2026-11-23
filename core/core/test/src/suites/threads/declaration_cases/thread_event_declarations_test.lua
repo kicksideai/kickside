@@ -621,6 +621,20 @@ local function define_tests()
             end
         end)
 
+        test.it("a serialized body with duplicate JSON keys rejects the entire append", function()
+            local id = uuid.v4()
+            local event_type = "kickside.test.threads:changed"
+            local _, create_err = as_owner(CREATE, { id = id, impl_id = "kickside.test.threads:thread_kind" })
+            test.is_nil(create_err)
+            local result, err = restricted_as_owner(APPEND_EVENTS, { thread_id = id, events = {
+                { type = event_type, body = { valid = true } },
+                { type = event_type, body = { [true] = "boolean key", ["true"] = "string key" } },
+            } })
+            test.is_nil(result)
+            test.is_true(errors.is(err, errors.INVALID), tostring(err))
+            test.eq(event_type_count(id, event_type), 0)
+        end)
+
         test.it("an owner confined to another subtree cannot append or lazily emit outputs", function()
             local existing, bare = uuid.v4(), uuid.v4()
             local _, create_err = as_owner(CREATE, { id = existing, impl_id = "kickside.test.threads:thread_kind" })

@@ -296,6 +296,8 @@ function M.set_meta(request_dto: { [string]: any }?)
                 dbtype = tostring(dbtype_raw),
                 component_id = component_id,
                 impl_id = tostring(summary.impl_id),
+                lifecycle_incarnation = summary.lifecycle_incarnation,
+                component_incarnation = summary.secrets_incarnation,
                 parent_id = summary.parent_id,
                 command_types = { "SET_META" },
             })

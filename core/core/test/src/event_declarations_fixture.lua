@@ -16,6 +16,7 @@ function M.get(id: string): (any, error?)
         or (M.stage == "output" and id == "guard:output") then return nil, M.source end
     if M.stage == "absent_kind" and id == "guard:component" then return nil, nil end
     if M.stage == "absent_event" and id == "guard:event" then return nil, nil end
+    if id == "guard:input" then return {meta = {type = "kickside.core.threads.event"}}, nil end
     if id == "guard:event" then
         return {meta = {type = "kickside.core.threads.event", output_kind = "guard:output"}}, nil
     end
@@ -23,7 +24,10 @@ function M.get(id: string): (any, error?)
         input = {{type = "guard:input"}}, output = id == "guard:output" and {{type = "guard:event", system_only = false}} or {}}}}, nil
 end
 function M.list_system(...): (any, error?) return {{impl_id = "guard:component"}}, nil end
-function M.validate_access(...): (any, error?) return true, nil end
+function M.validate_access(...): (any, error?)
+    if M.stage == "write_denied" then return 0, M.source end
+    return true, nil
+end
 function M.scope(): any return {} end
 function M.can(...): boolean return true end
 function M.actor_id(): string return "guard_actor" end

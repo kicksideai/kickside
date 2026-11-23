@@ -67,7 +67,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
-    "test": "vitest run --config vitest.control.config.ts"
+    "test": "vitest run"
   },
   "workspaces": [
     "./.wippy/npm/@*/*"

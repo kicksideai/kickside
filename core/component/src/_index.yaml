@@ -248,6 +248,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.component.migrations:19_secret_revision_index
         path: .meta.target_db
+      - entry: kickside.component.migrations:20_lifecycle_incarnation
+        path: .meta.target_db
       - entry: kickside.component.migrations:15_delete_intent
         path: .meta.target_db
       - entry: kickside.component:db_config

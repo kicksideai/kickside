@@ -36,6 +36,19 @@ return {run = test.run_cases(function()
                 end
             end
         end
+        test.it("standalone authorization and multi-write admission reject a denied first target", function()
+            local denied = errors.new({message = "WRITE denied", kind = errors.PERMISSION_DENIED})
+            local write = {thread_id = fixture.ID, events = {{type = "guard:input"}}}
+            fixture.reset("write_denied", denied)
+            local _, standalone_err = api.validate_event_types(fixture.database(), {write})
+            test.not_nil(standalone_err)
+            test.is_true(errors.is(standalone_err, errors.PERMISSION_DENIED))
+            fixture.reset("write_denied", denied)
+            local _, multi_err = api.classify_normalized_append(fixture.database(), {write, write})
+            test.not_nil(multi_err)
+            test.is_true(errors.is(multi_err, errors.PERMISSION_DENIED))
+            test.eq(fixture.reads, 1)
+        end)
         test.it("healthy declared producer keeps the authority result", function()
             fixture.reset("", nil); local allowed, err = call(); test.is_true(allowed); test.is_nil(err)
             test.eq(fixture.reads, 1); test.eq(fixture.lookups, 4)

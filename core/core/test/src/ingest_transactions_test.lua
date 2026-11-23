@@ -14,6 +14,23 @@ local function call(): (any, error?)
 end
 return {run = test.run_cases(function()
     test.describe("native event ingest transaction outcomes", function()
+        for _, case in ipairs({
+            {stage = "deleted_primary", kind = errors.NOT_FOUND, code = "thread_writer_not_found"},
+            {stage = "rebound_primary", kind = errors.INVALID, code = "thread_event_invalid"},
+        }) do
+            test.it("aborts before append if the primary binding changed/" .. case.stage, function()
+                fixture.reset(case.stage, nil, nil)
+                local value, err = api.ingest_multi(fixture.database(),
+                    {{thread_id = "thread", events = {{type = "guard"}}}}, nil, false, true)
+                test.is_nil(value)
+                test.not_nil(err)
+                test.eq(err:kind(), case.kind)
+                test.eq(err:details().code, case.code)
+                test.eq(fixture.appends, 0)
+                test.eq(fixture.wakes, 0)
+                test.eq(fixture.rollbacks, 1)
+            end)
+        end
         local kinds = {errors.NOT_FOUND, errors.ALREADY_EXISTS, errors.INVALID, errors.PERMISSION_DENIED,
             errors.UNAVAILABLE, errors.INTERNAL, errors.CANCELED, errors.CONFLICT, errors.TIMEOUT, errors.RATE_LIMITED, errors.UNKNOWN}
         for _, stage in ipairs({"begin", "lock", "append", "wake", "commit", "notify", "nudge"}) do

@@ -459,7 +459,7 @@ entries:
     meta:
       comment: kickside.core:threads event methods (list_events/find_event_by_external/append_events/append_event).
     source: file://contract/events.lua
-    modules: [sql, json, security, registry]
+    modules: [sql, security, registry]
     imports:
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       committed_error: kickside.contract:committed_error

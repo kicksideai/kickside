@@ -15,6 +15,7 @@ local jobs_wake = require("jobs_wake")
 local append = require("threads_append")
 local normalize = require("threads_normalize")
 local component = require("threads_component")
+local component_access = require("component_access")
 local masks = require("core_types")
 local retention_notifier = require("retention_notifier")
 
@@ -149,6 +150,7 @@ function writer.ingest_multi(db: DB, writes: { table }, actor_id: string?, syste
     for i, w in ipairs(writes) do ordered[i] = w end
     table.sort(ordered, function(a, b) return trim(a.thread_id) < trim(b.thread_id) end)
 
+    local member_primary = exposed and not system and #ordered == 1
     for _, w in ipairs(ordered) do
         if trim(w.thread_id) == "" then
             return nil, (errors.new({ message = "thread_id is required", kind = errors.INVALID, retryable = false, details = {code = "thread_ingest_thread_required"} }) :: error)
@@ -156,7 +158,10 @@ function writer.ingest_multi(db: DB, writes: { table }, actor_id: string?, syste
         if type(w.events) ~= "table" or #(w.events :: { table }) == 0 then
             return nil, (errors.new({ message = "events array is required", kind = errors.INVALID, retryable = false, details = {code = "thread_ingest_events_required"} }) :: error)
         end
-        if not system then
+        if member_primary then
+            local _, access_err = component_access.validate_access(w.thread_id, (masks.ACCESS.WRITE :: integer))
+            if access_err then return nil, access_err end
+        elseif not system then
             local _, gate_err = writer.gate_write(db, trim(w.thread_id), (masks.ACCESS.WRITE :: integer))
             if gate_err then return nil, gate_err end
         end
@@ -188,6 +193,16 @@ function writer.ingest_multi(db: DB, writes: { table }, actor_id: string?, syste
     local wake_keys: { string } = {}
     for _, w in ipairs(ordered) do
         local snapshot = snapshots[thread_key(dt, trim(w.thread_id))]
+        if member_primary then
+            if not snapshot then
+                return nil, rollback(transaction, errors.new({message = "thread not found", kind = errors.NOT_FOUND,
+                    retryable = false, details = {code = "thread_writer_not_found"}}))
+            end
+            if trim(snapshot.component_id) ~= trim(w.thread_id) then
+                return nil, rollback(transaction, errors.new({message = "primary thread id differs from component id",
+                    kind = errors.INVALID, retryable = false, details = {code = "thread_event_invalid"}}))
+            end
+        end
         local result, append_err = append.append_events_tx(transaction, trim(w.thread_id), (w.events :: { table }),
             {defer_wake = true, expect = w.expect, locked_thread = snapshot, check_receipts = exposed and not system})
         result, append_err = error_envelope.binding(result, append_err, nil, "append event ingest", "thread_writer_response")

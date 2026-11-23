@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.62](https://github.com/kicksideai/kickside/compare/kickside-v0.2.61...kickside-v0.2.62) (2026-11-22)
+
+
+### Bug Fixes
+
+* **app:** require the shared plugin schema resolver ([#939](https://github.com/kicksideai/kickside/issues/939)) ([138a227](https://github.com/kicksideai/kickside/commit/138a227d839405bcbc16236b26e694929352acef))
+
 ## [0.2.61](https://github.com/kicksideai/kickside/compare/kickside-v0.2.60...kickside-v0.2.61) (2026-11-22)
 
 

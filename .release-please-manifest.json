@@ -1,5 +1,5 @@
 {
-  "core/component": "0.3.33",
+  "core/component": "0.3.35",
   "core/contract": "0.3.13",
   "core/core": "0.3.54",
   "core/execution": "0.2.10",
@@ -33,7 +33,7 @@
   "platform/uploads": "0.3.36",
   "platform/users": "0.2.30",
   "platform/webhooks": "0.1.47",
-  "platform/widgets": "0.1.70",
+  "platform/widgets": "0.1.72",
   "platform/workflows": "0.2.23",
-  "app": "0.2.61"
+  "app": "0.2.62"
 }

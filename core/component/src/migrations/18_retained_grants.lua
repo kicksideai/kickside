@@ -42,25 +42,27 @@ local function upgrade(tx, pg)
         ON kickside_execution_identity_audit(created_at,component_id,identity_generation) WHERE published_at IS NOT NULL]])
     execute(tx, [[CREATE INDEX IF NOT EXISTS idx_component_pending_delete
         ON kickside_components(deleting_at,component_id) WHERE deleting_at IS NOT NULL]])
-    if not legacy then return end
-    if #query(tx, [[SELECT 1 FROM kickside_component_access WHERE inherited=0 AND subject_type='user'
-        AND (subject_id LIKE 'principal:group:%' OR subject_id LIKE 'principal:service:%') LIMIT 1]]) > 0 then
-        error("retained user grant uses a reserved group or service actor key")
+    if not legacy and #key.untyped == 0 then return end
+    if legacy then
+        if #query(tx, [[SELECT 1 FROM kickside_component_access WHERE inherited=0 AND subject_type='user'
+            AND (subject_id LIKE 'principal:group:%' OR subject_id LIKE 'principal:service:%') LIMIT 1]]) > 0 then
+            error("retained user grant uses a reserved group or service actor key")
+        end
+        restore_ancestry(tx, pg)
+        -- Historical agent IDs carry no proof of a user, group or service identity.
+        local id_type = pg and "UUID" or "TEXT"
+        execute(tx, "CREATE TABLE IF NOT EXISTS kickside_component_access_retired (access_id " .. id_type
+            .. " PRIMARY KEY,subject_type TEXT NOT NULL,subject_id TEXT NOT NULL,component_id " .. id_type
+            .. " NOT NULL,source_component_id TEXT NOT NULL,access_mask INTEGER NOT NULL,inherited INTEGER NOT NULL,"
+            .. "created_at TEXT NOT NULL,retired_at TEXT NOT NULL,reason TEXT NOT NULL)")
+        local fields = "access_id,subject_type,subject_id,component_id,source_component_id,access_mask,inherited,created_at"
+        local now = pg and [[to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"')]]
+            or "strftime('%Y-%m-%dT%H:%M:%SZ','now')"
+        execute(tx, "INSERT INTO kickside_component_access_retired(" .. fields .. ",retired_at,reason) SELECT "
+            .. fields .. "," .. now .. ",'legacy agent subject has no directory-proven principal' FROM kickside_component_access"
+            .. " WHERE inherited=0 AND subject_type='agent'")
     end
-    restore_ancestry(tx, pg)
-    -- Historical agent IDs carry no proof of a user, group or service identity.
-    local id_type = pg and "UUID" or "TEXT"
-    execute(tx, "CREATE TABLE IF NOT EXISTS kickside_component_access_retired (access_id " .. id_type
-        .. " PRIMARY KEY,subject_type TEXT NOT NULL,subject_id TEXT NOT NULL,component_id " .. id_type
-        .. " NOT NULL,source_component_id TEXT NOT NULL,access_mask INTEGER NOT NULL,inherited INTEGER NOT NULL,"
-        .. "created_at TEXT NOT NULL,retired_at TEXT NOT NULL,reason TEXT NOT NULL)")
-    local fields = "access_id,subject_type,subject_id,component_id,source_component_id,access_mask,inherited,created_at"
-    local now = pg and [[to_char(now() AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS"Z"')]]
-        or "strftime('%Y-%m-%dT%H:%M:%SZ','now')"
-    execute(tx, "INSERT INTO kickside_component_access_retired(" .. fields .. ",retired_at,reason) SELECT "
-        .. fields .. "," .. now .. ",'legacy agent subject has no directory-proven principal' FROM kickside_component_access"
-        .. " WHERE inherited=0 AND subject_type='agent'")
-    if pg then schema.postgres(tx, key) else schema.sqlite(tx, key) end
+    if pg then schema.postgres(tx, key, legacy) else schema.sqlite(tx, key, legacy) end
 end
 
 return require("migration").define(function()

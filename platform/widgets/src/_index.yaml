@@ -358,6 +358,26 @@ entries:
         config:
           type: object
           description: Current config values.
+        allow-unset:
+          type: boolean
+          default: false
+          description: Allow missing overrides to inherit from the host.
+        field-errors:
+          type: object
+          description: Server validation messages keyed by field.
+    events:
+      config-changed:
+        type: object
+        description: Edited config values.
+      validity-changed:
+        type: object
+        description: Current validity and validation messages keyed by field.
+        properties:
+          valid:
+            type: boolean
+          errors:
+            type: object
+        required: [valid, errors]
 
   - name: dep.kickside.contract
     kind: ns.dependency

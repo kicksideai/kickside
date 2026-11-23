@@ -45,6 +45,19 @@ commit regenerated tracked assets with the source.
 
 Reuse declared picker, form, and creation widgets from the installed view catalog. Pass their declared configuration and handle their emitted events. The owning server validates resource selection and authorization again on submission.
 
+### SPEC for schema form validation
+
+`wc-schema-form` renders field help and validation messages below the control.
+It emits `validity-changed` on mount and when field messages change. The event
+detail has `valid` and an `errors` object keyed by schema property. An invalid
+JSON or native input draft can change validity without emitting `config-changed`.
+
+Call `reportValidity()` before submitting. It returns false while the form loads
+or has field errors. It opens Advanced when needed and focuses the first invalid
+control in render order. Set `field-errors` to a JSON object to associate server
+messages with their fields. Clear those messages once they no longer apply.
+Set `allow-unset` when missing overrides can inherit host settings.
+
 ### SPEC: Model picker field context
 
 `wc-model-picker` accepts optional `label` and `description` text attributes.
