@@ -85,6 +85,31 @@ entries:
       - name: wippy.session:gc_interval
         value: 300s
 
+  # app.deps:session_util serves the Web Host chat routes GET /agents/details
+  # and GET /tools/by-name on app:api.
+  - version: ">=v0.0.1"
+    name: session_util
+    kind: ns.dependency
+    meta: {}
+    component: wippy/session-util
+    parameters:
+      - name: wippy.session_util:api_router
+        value: app:api
+
+  # app.deps:session_util_catalog keeps the KickSide rules on those routes:
+  # public registry agents and tools, and user agents under the caller's READ
+  # access. Both methods run as the caller.
+  - name: session_util_catalog
+    kind: contract.binding
+    meta:
+      comment: KickSide agent and tool lookup for the wippy/session-util chat routes.
+    contracts:
+      - contract: wippy.session_util:catalog
+        default: true
+        methods:
+          agent_details: kickside.agents.api:catalog_agent_details
+          tool_titles: kickside.agents.api:catalog_tool_titles
+
   # app.deps:terminal
   - version: ">=0.4.6"
     name: terminal

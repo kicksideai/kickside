@@ -121,30 +121,12 @@ local function describe_agent(identifier)
     return {id = entry.id, name = name, title = entry.meta.title or name, start_prompts = prompts}
 end
 
-local function details()
-    local req, res = http.request(), http.response()
-    if not req or not res then return end
-    res:set_header("Cache-Control", "no-store")
-    res:set_content_type(http.CONTENT.JSON)
-    if not security.actor() then
-        res:set_status(http.STATUS.UNAUTHORIZED)
-        res:write_json({success = false, error = "authentication required"})
-        return
-    end
-    local identifier = req:query("agent")
-    if type(identifier) ~= "string" or identifier == "" then
-        res:set_status(http.STATUS.BAD_REQUEST)
-        res:write_json({success = false, error = "Missing 'agent' query parameter"})
-        return
-    end
-    local agent = describe_agent(identifier)
-    if not agent then
-        res:set_status(http.STATUS.NOT_FOUND)
-        res:write_json({success = false, error = "Agent not found"})
-        return
-    end
-    res:set_status(http.STATUS.OK)
-    res:write_json({success = true, agent = agent})
+-- Catalog lookup for the chat's agent details route. It runs as the caller,
+-- so it keeps the public-agent and component READ rules; nil means no agent.
+local function catalog_agent_details(input)
+    local identifier = type(input) == "table" and input.agent or nil
+    if type(identifier) ~= "string" or identifier == "" then return nil end
+    return describe_agent(identifier)
 end
 
 local function handler()
@@ -183,7 +165,7 @@ end
 
 return {
     handler = handler,
-    details = details,
+    catalog_agent_details = catalog_agent_details,
     describe_agent = describe_agent,
     is_public_system_agent = is_public_system_agent,
     resolve_identifiers = resolve_identifiers,

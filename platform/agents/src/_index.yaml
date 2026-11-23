@@ -35,15 +35,11 @@ entries:
         path: .meta.router
       - entry: kickside.agents.api:agents_by_name.endpoint
         path: .meta.router
-      - entry: kickside.agents.api:agent_details.endpoint
-        path: .meta.router
       - entry: kickside.agents.api:list_traits.endpoint
         path: .meta.router
       - entry: kickside.agents.api:list_namespaces.endpoint
         path: .meta.router
       - entry: kickside.agents.api:list_tools.endpoint
-        path: .meta.router
-      - entry: kickside.agents.api:tools_by_name.endpoint
         path: .meta.router
       - entry: kickside.agents.api:list_memory_options.endpoint
         path: .meta.router

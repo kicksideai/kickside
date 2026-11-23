@@ -157,24 +157,17 @@ entries:
     func: agents_by_name
     path: /agents/by-name
 
-  - name: agent_details
+  - name: catalog_agent_details
     kind: function.lua
     meta:
-      comment: Resolves chat agent details and start prompts.
+      comment: Resolves chat agent details and start prompts for the caller (catalog method for the app's chat routes).
     source: file://get_agents_by_name.lua
     modules: [http, registry, security]
     imports:
       component: kickside.component:component
       agent_ref: kickside.agents:agent_ref
       agent_types: kickside.agents:types
-    method: details
-
-  - name: agent_details.endpoint
-    kind: http.endpoint
-    meta: {}
-    method: GET
-    func: agent_details
-    path: /agents/details
+    method: catalog_agent_details
 
   - name: list_traits
     kind: function.lua
@@ -234,10 +227,10 @@ entries:
     func: list_tools
     path: /agents/tools
 
-  - name: tools_by_name
+  - name: catalog_tool_titles
     kind: function.lua
     meta:
-      comment: Resolves tool titles for chat by tool name or registry id.
+      comment: Resolves public tool titles for chat by tool name or registry id (catalog method for the app's chat routes).
     source: file://list_tools.lua
     modules: [http, security, registry]
     imports:
@@ -247,14 +240,7 @@ entries:
       tool_visibility: kickside.agents.registry:tool_visibility
       tool_resolver: wippy.agent.discovery:tools
       canonical_json: kickside.contract:canonical_json
-    method: by_name
-
-  - name: tools_by_name.endpoint
-    kind: http.endpoint
-    meta: {}
-    method: GET
-    func: tools_by_name
-    path: /tools/by-name
+    method: catalog_tool_titles
 
   - name: list_memory_options
     kind: function.lua

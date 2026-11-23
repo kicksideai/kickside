@@ -33,6 +33,12 @@ local RETIRED = {
     ["app.security:user.runtime_dataflow_node_spawn"] = true,
 }
 
+local LATER_CAPABILITIES = {
+    ["app.security:user.usage_tracking"] = true,
+    ["app.security:user.session_util_routes"] = true,
+    ["app.security:user.session_util_catalog"] = true,
+}
+
 return {run = test.run_cases(function()
     test.describe("compact application runtime grants", function()
         test.before_all(function() test.not_nil((projection.reconcile())) end)
@@ -106,9 +112,10 @@ return {run = test.run_cases(function()
             end
             for _, entry in ipairs(assert(registry.find({[".kind"] = "security.policy"}))) do
                 -- This proof covers the compaction's original grants. Usage
-                -- tracking is a later capability with separate grant/denial tests.
+                -- tracking and the session-util chat routes are later
+                -- capabilities with separate grant/denial tests.
                 if tostring(entry.id):sub(1, 13) == "app.security:"
-                    and tostring(entry.id) ~= "app.security:user.usage_tracking" then
+                    and not LATER_CAPABILITIES[tostring(entry.id)] then
                     for _, group in ipairs(entry.data.groups or {}) do
                         if group == "app.security:user" then
                             current[#current + 1] = assert(security.policy(tostring(entry.id)))
