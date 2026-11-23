@@ -1866,6 +1866,7 @@ entries:
       lease_release: app:worker_completion_native_release
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       error_envelope: kickside.contract:error_envelope
+      canonical_json: kickside.contract:canonical_json
 
   - name: worker_completion_native_test
     kind: function.lua
