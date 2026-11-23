@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.72](https://github.com/kicksideai/kickside/compare/widgets-v0.1.71...widgets-v0.1.72) (2026-11-23)
+
+
+### Bug Fixes
+
+* **widgets:** preserve schema picker keyboard focus ([#943](https://github.com/kicksideai/kickside/issues/943)) ([5256f0c](https://github.com/kicksideai/kickside/commit/5256f0c6130fc300ff3ec2fd3eed4fe770513e6b))
+
 ## [0.1.71](https://github.com/kicksideai/kickside/compare/widgets-v0.1.70...widgets-v0.1.71) (2026-11-23)
 
 
