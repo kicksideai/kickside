@@ -3,7 +3,7 @@ import { a as s, s as i } from "./styles-DWmFMkWO.js";
 import "@iconify/vue";
 import { define as r } from "@wippy-fe/proxy";
 const a = s(
-  () => import("./OnboardRecommendations-Co8qwPPd.js"),
+  () => import("./OnboardRecommendations-TyHKWOcM.js"),
   { loading: "Loading module recommendations…", failed: "Could not load module recommendations. Reload the page to try again." },
   n
 );

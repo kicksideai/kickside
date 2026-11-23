@@ -2,7 +2,7 @@ import { ref as z, computed as R, defineComponent as st, onMounted as at, onBefo
 import { Icon as P } from "@iconify/vue";
 import { api as Oe } from "@wippy-fe/proxy";
 import { u as ct } from "./wc-runtime-Bo_8bBDp.js";
-import { A as ut, K as dt, C as mt, a as ee, g as de, m as Ce, b as ne, v as pt, D as ft, t as bt, q as vt, u as gt } from "./requiredSetup-CKaPvMvx.js";
+import { A as ut, K as dt, C as mt, a as ee, g as de, m as Ce, b as ne, v as pt, D as ft, t as bt, q as vt, u as gt } from "./requiredSetup-BI-hhUXu.js";
 const ht = () => ct();
 function yt({ hub: o, installed: l, installedCount: i, error: s, selectableCandidates: t, candidateKey: a, candidateById: m, queuedLabel: u, profileParameters: y, loadInstalled: f, apiMessage: S }) {
   const g = z([]), h = z(!1), M = z(0), O = z(0), Q = z([]), H = /* @__PURE__ */ new Map();
@@ -1254,4 +1254,4 @@ const Vt = { class: "obm" }, Ut = {
 export {
   ro as default
 };
-//# sourceMappingURL=OnboardRecommendations-Co8qwPPd.js.map
+//# sourceMappingURL=OnboardRecommendations-TyHKWOcM.js.map

@@ -20,3 +20,27 @@ describe('batch install planning', () => {
     expect(post).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('catalog discovery', () => {
+  const tagged = { full_name: 'kickside/sso', keywords: ['kickside'] }
+  const foreign = { full_name: 'acme/presenter', keywords: ['slides'] }
+  function browseApi() {
+    const get = vi.fn(async (_url: string, config?: { params?: Record<string, unknown> }) => {
+      const params = config?.params || {}
+      if (params.visibility === 'private') return { data: { success: true, items: [foreign], total: 1 } }
+      return { data: { success: true, items: params.q === 'kickside' ? [tagged, foreign] : [], total: 1 } }
+    })
+    return { get, hub: keeperHub({ get } as unknown as Api) }
+  }
+
+  it('lists readable private modules from other organizations with no extra request', async () => {
+    const scoped = browseApi()
+    expect((await scoped.hub.fetchAllByKeyword(['kickside', 'kickside-plugin'])).map(m => m.full_name))
+      .toEqual(['kickside/sso'])
+    const all = browseApi()
+    const rows = await all.hub.fetchAllByKeyword(['kickside', 'kickside-plugin'], 100, true)
+    expect(rows.map(m => [m.full_name, m.visibility])).toEqual([['kickside/sso', undefined], ['acme/presenter', 'private']])
+    expect(all.get).toHaveBeenCalledTimes(scoped.get.mock.calls.length)
+    expect(all.get).toHaveBeenCalledTimes(3)
+  })
+})

@@ -1,7 +1,7 @@
 import { s as Mt, B as Ct, l as Vo, a as At, b as Gt, f as mt, R as ao, L as Do, c as Me, v as Qt, d as hi, U as bi, I as mo, e as vi, r as Ro, g as gi, h as Bo, i as Ho, C as yi, j as ki, S as Uo, _ as wi, x as en, k as Si, z as jo, m as En, n as ln, T as rn, F as $i, M as ho, o as Ci, p as Ii, Y as _i, q as xi, t as Oi, D as Li, O as zi, $ as Ai, J as Mi, w as Jt, y as Ei, P as Pi } from "./wc-runtime-Bo_8bBDp.js";
 import { openBlock as a, createElementBlock as u, mergeProps as Z, createElementVNode as r, renderSlot as le, createTextVNode as A, toDisplayString as c, resolveComponent as Ae, resolveDirective as lo, withDirectives as Be, createBlock as be, resolveDynamicComponent as fn, withCtx as oe, createCommentVNode as h, normalizeClass as ae, computed as q, createVNode as m, Transition as No, Fragment as J, renderList as re, normalizeProps as Fi, createSlots as Ti, withModifiers as xn, defineComponent as on, ref as B, watch as qe, nextTick as mn, onBeforeUnmount as Ko, normalizeStyle as Kt, onUnmounted as ro, onMounted as uo, unref as o, useId as Vi, vModelText as On, vShow as un, vModelCheckbox as Di, isRef as zt, withKeys as Ri } from "vue";
 import { Icon as $ } from "@iconify/vue";
-import { m as hn, r as ht, a as Pn, b as tn, c as Fn, K as qt, d as bo, e as Ee, f as Nn, i as vo, g as go, h as Bi, j as Tn, s as Hi, k as Ui, l as ji, n as Ni, o as Ki, p as qo, q as nn, t as bn, u as Go, v as qi, w as Ln, x as fe, y as Gi, z as Wi, A as Zi, B as Yi, C as Xi, D as cn, E as vn, F as Vn, G as pn } from "./requiredSetup-CKaPvMvx.js";
+import { m as hn, r as ht, a as Pn, b as tn, c as Fn, K as qt, d as bo, e as Ee, f as Nn, i as vo, g as go, h as Bi, j as Tn, s as Hi, k as Ui, l as ji, n as Ni, o as Ki, p as qo, q as nn, t as bn, u as Go, v as qi, w as Ln, x as fe, y as Gi, z as Wi, A as Zi, B as Yi, C as Xi, D as cn, E as vn, F as Vn, G as pn } from "./requiredSetup-BI-hhUXu.js";
 import { api as co, loadByTagName as Wo, host as Zo, on as Ji } from "@wippy-fe/proxy";
 var Rn = {
   name: "SpinnerIcon",
@@ -6012,7 +6012,7 @@ function Hl() {
   async function _n() {
     I.value = !0, V.value = null;
     try {
-      ne.value = (await e.fetchAllByKeyword(Dl)).filter(qi);
+      ne.value = (await e.fetchAllByKeyword(Dl, 100, !0)).filter(qi);
     } catch (T) {
       ot("modules:catalog", T), T instanceof qt && (T.code === "UNAUTHORIZED" || T.code === "FORBIDDEN") ? b.value = !1 : V.value = Ee(T, `failed to load ${Eo} catalog`);
     } finally {
@@ -10161,4 +10161,4 @@ const yr = { class: "km-2p-head-icon" }, kr = { class: "km-2p-head-text" }, wr =
 export {
   ah as mountConfig
 };
-//# sourceMappingURL=lazy-mount-D6q6nXDj.js.map
+//# sourceMappingURL=lazy-mount-WsPGQZRz.js.map
