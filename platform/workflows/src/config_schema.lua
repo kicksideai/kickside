@@ -7,6 +7,8 @@ local M = {}
 type Map = { [string]: any }
 
 local MAX_DEPTH = 12
+local MAX_LISTED = 10
+local MAX_RENDERED_BYTES = 40
 local SUPPORTED_KEYS: { [string]: boolean } = {
     type = true, properties = true, required = true, items = true,
     additionalProperties = true, enum = true, const = true,
@@ -73,6 +75,34 @@ local function same_json(left: any, right: any, depth: number): boolean
     return true
 end
 
+local function render(value: any): string
+    local encoded, err = json.encode(value)
+    if err or type(encoded) ~= "string" then return tostring(value) end
+    if #encoded > MAX_RENDERED_BYTES then return (encoded :: string):sub(1, MAX_RENDERED_BYTES) .. "..." end
+    return encoded :: string
+end
+
+local function listed(items: { string }): string
+    local shown: { string } = {}
+    for i = 1, math.min(#items, MAX_LISTED) do shown[i] = items[i] end
+    if #items > MAX_LISTED then shown[#shown + 1] = "... " .. tostring(#items - MAX_LISTED) .. " more" end
+    return table.concat(shown, ", ")
+end
+
+local function allowed_values(values: { any }): string
+    local rendered: { string } = {}
+    for i, allowed in ipairs(values) do rendered[i] = render(allowed) end
+    return "[" .. listed(rendered) .. "]"
+end
+
+local function declared_properties(properties: Map): string
+    local names: { string } = {}
+    for key, _ in pairs(properties) do names[#names + 1] = tostring(key) end
+    table.sort(names)
+    if #names == 0 then return "none" end
+    return listed(names)
+end
+
 local validate_value: (any, any, string, boolean, number, ((any) -> boolean)?) -> string?
 
 validate_value = function(value: any, raw_schema: any, path: string, require_fields: boolean, depth: number, defer: ((any) -> boolean)?): string?
@@ -97,10 +127,12 @@ validate_value = function(value: any, raw_schema: any, path: string, require_fie
         for _, allowed in ipairs(schema.enum :: { any }) do
             if same_json(value, allowed, 1) then matched = true; break end
         end
-        if not matched then return path .. " must be one of the allowed values" end
+        if not matched then
+            return path .. " must be one of the allowed values " .. allowed_values(schema.enum :: { any }) .. ", got " .. render(value)
+        end
     end
     if schema.const ~= nil and not same_json(value, schema.const, 1) then
-        return path .. " must equal its declared constant"
+        return path .. " must equal its declared constant " .. render(schema.const) .. ", got " .. render(value)
     end
 
     if type(value) == "string" then
@@ -134,7 +166,7 @@ validate_value = function(value: any, raw_schema: any, path: string, require_fie
                 local err = validate_value(child, child_schema, path .. "." .. tostring(key), require_fields, depth + 1, defer)
                 if err then return err end
             elseif schema.additionalProperties == false then
-                return path .. "." .. tostring(key) .. " is not declared"
+                return path .. "." .. tostring(key) .. " is not declared; declared properties: " .. declared_properties(properties)
             elseif type(schema.additionalProperties) == "table" then
                 local err = validate_value(child, schema.additionalProperties, path .. "." .. tostring(key), require_fields, depth + 1, defer)
                 if err then return err end

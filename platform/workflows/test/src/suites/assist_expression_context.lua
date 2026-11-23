@@ -128,6 +128,31 @@ local function define_tests()
             end
         end)
 
+        test.it("names the offending value and the allowed set on an enum violation", function()
+            test.eq(
+                assist.validate_config({ prompt = "Review?", priority = "critical" }, review_schema),
+                'config.priority must be one of the allowed values ["low", "normal", "high", "urgent"], got "critical"'
+            )
+        end)
+
+        test.it("names the offending key and the declared properties on an undeclared key", function()
+            test.eq(
+                assist.validate_config({ prompt = "Review?", hidden_id = "component-1" }, review_schema),
+                "config.hidden_id is not declared; declared properties: approve_label, assignee, context, form, priority, prompt, reject_label"
+            )
+        end)
+
+        test.it("bounds the listed allowed values and the rendered offending value", function()
+            local values: { string } = {}
+            for i = 1, 14 do values[i] = "v" .. tostring(i) end
+            local schema: Map = { type = "object", properties = { mode = { type = "string", enum = values } } }
+            test.eq(
+                assist.validate_config({ mode = string.rep("x", 100) }, schema),
+                'config.mode must be one of the allowed values ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10", ... 4 more], got "'
+                    .. string.rep("x", 39) .. "..."
+            )
+        end)
+
         test.it("honors string constants, lengths, and additionalProperties schemas", function()
             local schema: Map = {
                 type = "object",
