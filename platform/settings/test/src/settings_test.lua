@@ -498,6 +498,32 @@ local function define_tests()
             if not restarted then error(restart_err, 0) end
         end
 
+        test.it("validates a conditional transition against its committed predecessor", function()
+            without_keeper(function()
+                local s = open_settings()
+                local key = "transition_flag"
+                local ok, err = pcall(function()
+                    local initial = assert(cache.read())
+                    local initial_revision = assert(cache.revision())
+                    local prior = s:set({ namespace = NS, key = key, value = false })
+                    test.eq(prior.success, true)
+                    local older = assert(cache.read())
+                    test.eq(cache.replace(initial, initial_revision), true)
+
+                    local accepted = s:set({ namespace = NS, key = key, value = true, expected_revision = prior.revision })
+                    test.eq(accepted.success, true)
+                    test.eq(cache.replace(older, prior.revision), true)
+
+                    local rejected = s:set({ namespace = NS, key = key, value = true, expected_revision = accepted.revision })
+                    test.eq(rejected.success, false)
+                    test.eq(rejected.error, "true requires a previous false value")
+                    test.eq(s:get({ namespace = NS, key = key }).revision, accepted.revision)
+                end)
+                s:unset({ namespace = NS, key = key })
+                if not ok then error(err, 0) end
+            end)
+        end)
+
         test.it("recovers every admin read from an empty cache without changing the revision", function()
             without_keeper(function()
                 local s = open_settings()

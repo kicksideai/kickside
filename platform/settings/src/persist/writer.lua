@@ -254,12 +254,14 @@ local function expectation(ns: any, key: any, expected: any): (Expectation?, any
     return { namespace = ns, key = key, revision = expected }, nil
 end
 
-local CONFLICT = "settings revision conflict"
+local function conflict(revision: number): (boolean, string, Outcome)
+    return false, "settings revision conflict", { conflict = true, revision = revision }
+end
 
 -- set validates the value against the declaration, upserts the override row, and
 -- updates the cache. Returns (false, error) on an unknown/non-editable key or a
 -- type mismatch. With expected_revision the write applies only while the override
--- stands at that revision (0 = none): otherwise it returns (false, CONFLICT,
+-- stands at that revision (0 = none): otherwise it returns (false, error,
 -- { conflict = true, revision = current }) and changes nothing. A write answers
 -- the revision of the override it stored.
 function M.set(ns: any, key: any, value: any, actor_id: any, expected_revision: any?): (boolean, any?, Outcome?)
@@ -278,11 +280,21 @@ function M.set(ns: any, key: any, value: any, actor_id: any, expected_revision: 
         if not reloaded then return false, rerr end
         map = reloaded
     end
+    local setting_id = combine(ns, key)
+    local prev_rec = map[setting_id]
+    if expect and def.validate_func and (prev_rec and prev_rec.revision or 0) ~= expect.revision then
+        -- The caller may have read on a node whose cache is ahead of ours.
+        -- Validate the transition from the revision the caller actually read.
+        local reloaded, rerr = M.reload()
+        if not reloaded then return false, rerr end
+        map = reloaded
+        prev_rec = map[setting_id]
+        local current = prev_rec and prev_rec.revision or 0
+        if current ~= expect.revision then return conflict(current) end
+    end
     local cached_revision = cache.revision()
 
-    -- Declarative on-change validation: the previous override value (nil = still
-    -- the declared default) is passed so a validate_func can compare transitions.
-    local prev_rec = map[combine(ns, key)]
+    -- Pass the previous effective value so a validate_func can compare transitions.
     if prev_rec and prev_rec.error then return false, prev_rec.error end
     local old_value = def.default
     if prev_rec ~= nil then old_value = (prev_rec :: any).value end
@@ -308,10 +320,10 @@ function M.set(ns: any, key: any, value: any, actor_id: any, expected_revision: 
                 revision = excluded.revision
         ]], { ns, key, stored, def.value_type, actor_id, now, new_revision }
     end, expect)
-    if current ~= nil then return false, CONFLICT, { conflict = true, revision = current } end
+    if current ~= nil then return conflict(current) end
     if xerr or not revision then return false, xerr end
 
-    map[combine(ns, key)] = {
+    map[setting_id] = {
         value = typed, value_type = def.value_type,
         updated_by = actor_id, updated_at = now, revision = revision,
     }
@@ -335,7 +347,7 @@ function M.clear(ns: any, key: any, actor_id: any, expected_revision: any?): (bo
     local revision, xerr, current = commit(function(): (string, { any })
         return "DELETE FROM kickside_settings WHERE namespace = $1 AND key = $2", { ns, key }
     end, expect)
-    if current ~= nil then return false, CONFLICT, { conflict = true, revision = current } end
+    if current ~= nil then return conflict(current) end
     if xerr or not revision then return false, xerr end
 
     map[combine(ns, key)] = nil
