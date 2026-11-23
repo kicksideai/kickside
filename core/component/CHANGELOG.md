@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.35](https://github.com/kicksideai/kickside/compare/component-v0.3.34...component-v0.3.35) (2026-11-23)
+
+
+### Bug Fixes
+
+* **component:** recognize retained grant keys by their columns ([#951](https://github.com/kicksideai/kickside/issues/951)) ([d53c908](https://github.com/kicksideai/kickside/commit/d53c908f7099000b92188c17a914bf114b77b5f0))
+
 ## [0.3.34](https://github.com/kicksideai/kickside/compare/component-v0.3.33...component-v0.3.34) (2026-11-22)
 
 
