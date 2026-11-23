@@ -6,6 +6,7 @@ import { useWippy } from '../composables/useWippy'
 import { useContributions, type Contribution } from '../composables/useContributions'
 import { isComponentTag } from '../composables/useSurfaces'
 import { resolveNavTarget } from '../router/path'
+import { cycleDialogTab } from './dialogFocus'
 
 // Commands are a UI contribution (meta.type ui.command) discovered through the
 // generic contributions seam. component_tag/hotkey/scope are kind-specific fields
@@ -29,9 +30,12 @@ const query = ref('')
 const selected = ref(0)
 const active = ref<Contribution | null>(null)
 const mountError = ref(false)
+const dialogRef = ref<HTMLDialogElement | null>(null)
 const searchRef = ref<HTMLInputElement | null>(null)
+const backRef = ref<HTMLButtonElement | null>(null)
 const hostRef = ref<HTMLElement | null>(null)
 let activeEl: HTMLElement | null = null
+let mountGeneration = 0
 
 const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform)
 
@@ -67,35 +71,52 @@ function matchChord(e: KeyboardEvent, chord: string): boolean {
 }
 
 function openPalette() {
+  teardownEl()
   open.value = true
   active.value = null
   mountError.value = false
   query.value = ''
   selected.value = 0
-  nextTick(() => searchRef.value?.focus())
+  void focusPanel()
 }
 
 function close() {
+  dialogRef.value?.close()
   teardownEl()
   open.value = false
   active.value = null
   query.value = ''
 }
 
+async function focusPanel() {
+  await nextTick()
+  const dialog = dialogRef.value
+  if (!dialog) return
+  // Native modality includes the tab order inside contributed shadow roots.
+  if (!dialog.open) dialog.showModal()
+  const target = active.value ? backRef.value : searchRef.value
+  target?.focus()
+}
+
 function invoke(cmd: Contribution | undefined) {
   if (!cmd) return
-  if (!isComponentTag(str(cmd.component_tag))) { mountError.value = true; active.value = cmd; open.value = true; return }
+  teardownEl()
   active.value = cmd
   open.value = true
-  mountError.value = false
-  nextTick(mountActive)
+  const tag = str(cmd.component_tag)
+  mountError.value = !isComponentTag(tag)
+  void focusPanel()
+  if (!mountError.value) {
+    const generation = mountGeneration
+    void nextTick(() => mountActive(cmd, tag, generation))
+  }
 }
 
 function back() {
   teardownEl()
   active.value = null
   mountError.value = false
-  nextTick(() => searchRef.value?.focus())
+  void focusPanel()
 }
 
 // ── Mount-by-tag driver (mirrors WcSurface) ─────────────────────────────
@@ -116,6 +137,7 @@ function onElResult(e: Event) {
 }
 
 function teardownEl() {
+  mountGeneration += 1
   if (activeEl) {
     activeEl.removeEventListener('navigate', onElNavigate)
     activeEl.removeEventListener('close', onElClose)
@@ -125,13 +147,12 @@ function teardownEl() {
   if (hostRef.value) hostRef.value.replaceChildren()
 }
 
-async function mountActive() {
-  const cmd = active.value
-  const tag = cmd ? str(cmd.component_tag) : ''
-  if (!cmd || !hostRef.value || !isComponentTag(tag)) return
-  teardownEl()
+async function mountActive(cmd: Contribution, tag: string, generation: number) {
+  const container = hostRef.value
+  if (!container || generation !== mountGeneration) return
   try {
     await wippy.loadByTagName(tag)
+    if (generation !== mountGeneration) return
     const el = document.createElement(tag)
     el.style.display = 'block'
     el.style.width = '100%'
@@ -140,15 +161,16 @@ async function mountActive() {
     el.addEventListener('navigate', onElNavigate)
     el.addEventListener('close', onElClose)
     el.addEventListener('result', onElResult)
-    hostRef.value.replaceChildren(el)
     activeEl = el
+    container.replaceChildren(el)
   } catch {
-    mountError.value = true
+    if (generation === mountGeneration) mountError.value = true
   }
 }
 
 // ── Keyboard ────────────────────────────────────────────────────────────
 function onGlobalKeydown(e: KeyboardEvent) {
+  if (e.defaultPrevented || (!open.value && document.querySelector('dialog:modal'))) return
   // mod+K is the always-on palette toggle.
   if (matchChord(e, 'mod+k')) {
     e.preventDefault()
@@ -166,13 +188,13 @@ function onGlobalKeydown(e: KeyboardEvent) {
   }
 }
 
-function onPanelKeydown(e: KeyboardEvent) {
-  if (e.key === 'Escape') {
-    e.preventDefault()
-    active.value ? back() : close()
-    return
-  }
-  if (active.value) return
+function onCancel() {
+  if (active.value) back()
+  else close()
+}
+
+function onSearchKeydown(e: KeyboardEvent) {
+  if (e.isComposing || !filtered.value.length) return
   if (e.key === 'ArrowDown') { e.preventDefault(); selected.value = Math.min(selected.value + 1, filtered.value.length - 1) }
   else if (e.key === 'ArrowUp') { e.preventDefault(); selected.value = Math.max(selected.value - 1, 0) }
   else if (e.key === 'Enter') { e.preventDefault(); invoke(filtered.value[selected.value]) }
@@ -186,6 +208,7 @@ onMounted(() => {
 })
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onGlobalKeydown)
+  dialogRef.value?.close()
   teardownEl()
 })
 
@@ -193,9 +216,17 @@ defineExpose({ openPalette, close })
 </script>
 
 <template>
-  <Transition name="cp-fade">
-    <div v-if="open" class="cp-mask" @click.self="close" @keydown="onPanelKeydown">
-      <div class="cp-panel" :class="{ 'cp-panel-wide': !!active }" role="dialog" aria-modal="true" aria-label="Command palette">
+  <dialog
+    v-if="open"
+    ref="dialogRef"
+    class="cp-panel"
+    :class="{ 'cp-panel-wide': !!active }"
+    aria-label="Command palette"
+    @cancel.prevent="onCancel"
+    @click.self="close"
+    @keydown="cycleDialogTab"
+  >
+    <div class="cp-content">
         <!-- List view: search + registry commands -->
         <template v-if="!active">
           <div class="cp-search">
@@ -207,8 +238,16 @@ defineExpose({ openPalette, close })
               type="text"
               placeholder="Search commands…"
               aria-label="Search commands"
+              role="combobox"
+              aria-autocomplete="list"
+              :aria-expanded="filtered.length > 0"
+              :aria-controls="filtered.length ? 'command-palette-results' : undefined"
+              :aria-activedescendant="filtered[selected] ? `command-palette-option-${selected}` : undefined"
+              @keydown="onSearchKeydown"
             />
-            <kbd class="cp-esc">Esc</kbd>
+            <button type="button" class="cp-close" aria-label="Close" @click="close">
+              <Icon icon="tabler:x" aria-hidden="true" />
+            </button>
           </div>
 
           <div v-if="!filtered.length" class="cp-empty">
@@ -216,9 +255,10 @@ defineExpose({ openPalette, close })
             <span>{{ commands.length ? 'No commands match' : 'No commands available' }}</span>
           </div>
 
-          <ul v-else class="cp-list" role="listbox">
+          <ul v-else id="command-palette-results" class="cp-list" role="listbox">
             <li
               v-for="(c, i) in filtered"
+              :id="`command-palette-option-${i}`"
               :key="c.id"
               class="cp-item"
               :class="{ 'cp-item-sel': i === selected }"
@@ -242,40 +282,42 @@ defineExpose({ openPalette, close })
         <!-- Action view: the command's mounted web component -->
         <template v-else>
           <header class="cp-head">
-            <button class="cp-back" aria-label="Back to commands" @click="back">
+            <button ref="backRef" type="button" class="cp-back" aria-label="Back to commands" @click="back">
               <Icon icon="tabler:arrow-left" aria-hidden="true" />
             </button>
             <span class="cp-head-ico"><Icon :icon="str(active.icon) || 'tabler:command'" aria-hidden="true" /></span>
             <span class="cp-head-title">{{ active.label }}</span>
-            <button class="cp-close" aria-label="Close" @click="close"><Icon icon="tabler:x" aria-hidden="true" /></button>
+            <button type="button" class="cp-close" aria-label="Close" @click="close"><Icon icon="tabler:x" aria-hidden="true" /></button>
           </header>
-          <div v-if="mountError" class="cp-empty">
+          <div v-if="mountError" class="cp-empty" role="status">
             <Icon icon="tabler:plug-off" aria-hidden="true" />
             <span>This action's component is not available in this build.</span>
           </div>
           <div v-show="!mountError" ref="hostRef" class="cp-host"></div>
         </template>
-      </div>
     </div>
-  </Transition>
+  </dialog>
 </template>
 
 <style scoped>
-.cp-mask {
-  position: fixed; inset: 0; z-index: 2000; display: flex; justify-content: center; align-items: flex-start;
-  padding: 12vh 16px 16px; background: color-mix(in srgb, var(--p-text-color) 45%, transparent);
-}
 .cp-panel {
-  width: min(640px, 100%); max-height: 70vh; display: flex; flex-direction: column; overflow: hidden;
+  position: fixed; inset: 12vh 0 auto; margin: 0 auto; padding: 0;
+  width: min(640px, calc(100% - 32px)); max-height: 70dvh; overflow: hidden;
   background: var(--p-content-background); color: var(--p-text-color);
   border: 1px solid var(--p-content-border-color); border-radius: 14px;
   box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .5);
 }
-.cp-panel-wide { width: min(900px, 100%); max-height: 80vh; }
+.cp-panel::backdrop { background: var(--p-mask-background, rgba(0, 0, 0, .45)); }
+.cp-panel-wide { width: min(900px, calc(100% - 32px)); max-height: 80dvh; }
+.cp-content { max-height: inherit; display: flex; flex-direction: column; overflow: hidden; }
 
 .cp-search { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--p-content-border-color); }
 .cp-search-ico { width: 18px; height: 18px; color: var(--p-text-muted-color); flex: none; }
 .cp-search-input { flex: 1; min-width: 0; border: 0; background: transparent; font: inherit; font-size: 15px; color: var(--p-text-color); outline: none; }
+.cp-search-input:focus-visible, .cp-back:focus-visible, .cp-close:focus-visible {
+  outline: var(--p-focus-ring-width) var(--p-focus-ring-style) var(--p-focus-ring-color);
+  outline-offset: var(--p-focus-ring-offset);
+}
 .cp-search-input::placeholder { color: var(--p-text-muted-color); }
 
 .cp-list { list-style: none; margin: 0; padding: 6px; overflow-y: auto; }
@@ -294,7 +336,6 @@ kbd {
   border: 1px solid var(--p-content-border-color); background: color-mix(in srgb, var(--p-text-color) 5%, transparent);
   color: var(--p-text-muted-color);
 }
-.cp-esc { flex: none; }
 
 .cp-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 16px; color: var(--p-text-muted-color); font-size: 13px; }
 .cp-empty svg { width: 26px; height: 26px; opacity: .7; }
@@ -311,6 +352,4 @@ kbd {
 .cp-close { margin-left: auto; }
 .cp-host { flex: 1; min-height: 0; overflow: auto; }
 
-.cp-fade-enter-active, .cp-fade-leave-active { transition: opacity .14s; }
-.cp-fade-enter-from, .cp-fade-leave-to { opacity: 0; }
 </style>

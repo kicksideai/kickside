@@ -374,12 +374,12 @@ const {acceptDeletion} = useComponentDeletion(skills, row => row.skill_id, undef
       </div>
 
       <div v-else class="kx-grid">
-        <div v-for="s in filtered" :key="s.skill_id" class="kx-card" tabindex="0" role="button" :aria-label="`Open ${s.name || 'skill'}`" @click="!s.deleting_at && openEdit(s)" @keydown.enter="!s.deleting_at && openEdit(s)" @keydown.space.prevent="!s.deleting_at && openEdit(s)">
+        <div v-for="s in filtered" :key="s.skill_id" class="kx-card">
           <ComponentDeletion :state="s" @retry="askRemove(s)" />
           <div class="kx-card-head">
             <span class="kx-ficon"><Icon :icon="s.icon || 'tabler:bulb'" aria-hidden="true" /></span>
             <div class="kx-card-id">
-              <div class="kx-card-name" :title="s.name || '(untitled)'">{{ s.name || '(untitled)' }}</div>
+              <button type="button" class="kx-card-name kx-card-open" :title="s.name || '(untitled)'" :aria-label="`Open ${s.name || 'skill'}`" :disabled="!!s.deleting_at" @click="openEdit(s)">{{ s.name || '(untitled)' }}</button>
               <div class="kx-card-meta">
                 <span v-if="s.version" class="kx-chip kx-tag-sm kx-ver">v{{ s.version }}</span>
                 <span v-if="s.file_count" class="kx-chip kx-tag-sm kx-files-badge" :title="`${s.file_count} bundled file${s.file_count === 1 ? '' : 's'}`"><Icon icon="tabler:paperclip" aria-hidden="true" /> {{ s.file_count }}</span>
@@ -387,7 +387,7 @@ const {acceptDeletion} = useComponentDeletion(skills, row => row.skill_id, undef
                 <span v-if="s.status && s.status !== 'active'" class="kx-chip kx-tag-sm kx-status">{{ skillStatusLabel(s.status) }}</span>
               </div>
             </div>
-            <div class="kx-card-actions" @click.stop>
+            <div class="kx-card-actions">
               <Button type="button" severity="secondary" outlined size="small" title="Edit / refine" :aria-label="`Edit ${s.name}`" @click="!s.deleting_at && openEdit(s)" :disabled="!!s.deleting_at">
                 <template #icon="{ class: iconClass }"><Icon icon="tabler:pencil" :class="iconClass" aria-hidden="true" /></template>
               </Button>

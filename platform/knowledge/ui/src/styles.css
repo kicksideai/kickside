@@ -111,6 +111,14 @@ wippy-loading ~ wippy-loading { display: none; }
 .kx-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 12px; }
 .kx-card .kx-ficon { width: 38px; height: 38px; border-radius: 11px; flex: none; }
 .kx-card .kx-ficon svg { width: 20px; height: 20px; }
+.kx-card-open { text-align: start; }
+.kx-card-open:not(:disabled)::after { content: ''; position: absolute; inset: 0; }
+.kx-card-actions { z-index: 1; }
+.kx-card-open:focus-visible { outline: none; }
+.kx-card:has(.kx-card-open:focus-visible) {
+  border-color: var(--p-focus-ring-color);
+  box-shadow: var(--p-focus-ring-shadow);
+}
 
 /* open/delete: subtle, top-right, hover-revealed */
 

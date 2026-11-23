@@ -252,25 +252,19 @@ const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (de
             v-for="k in filtered"
             :key="k.id"
             class="kx-card"
-            role="button"
-            tabindex="0"
-            :aria-label="`Open ${k.name || 'knowledge base'}`"
-            @click="!k.deleting_at && openDetail(k)"
-            @keydown.enter="!k.deleting_at && openDetail(k)"
-            @keydown.space.prevent="!k.deleting_at && openDetail(k)"
           >
             <ComponentDeletion :state="k" @retry="askRemove(k)" />
             <div class="kx-card-head">
               <span class="kx-ficon"><Icon :icon="k.icon || k.badge?.icon || 'tabler:books'" aria-hidden="true" /></span>
               <div class="kx-card-id">
-                <div class="kx-card-name" :title="k.name || '(untitled)'">{{ k.name || '(untitled)' }}</div>
+                <button type="button" class="kx-card-name kx-card-open" :title="k.name || '(untitled)'" :aria-label="`Open ${k.name || 'knowledge base'}`" :disabled="!!k.deleting_at" @click="openDetail(k)">{{ k.name || '(untitled)' }}</button>
                 <div v-if="k.badge" class="kx-card-meta">
                   <Tag :severity="badgeSeverity(k.badge.tone)" class="kx-pill kx-tag-caps">
                     <Icon :icon="k.badge.icon" aria-hidden="true" />{{ k.badge.label }}
                   </Tag>
                 </div>
               </div>
-              <div class="kx-card-actions" @click.stop>
+              <div class="kx-card-actions">
                 <Button type="button" severity="secondary" outlined size="small" title="Edit" :aria-label="`Edit ${k.name}`" @click="!k.deleting_at && openEdit(k)" :disabled="!!k.deleting_at">
                   <template #icon="{ class: iconClass }"><Icon icon="tabler:pencil" :class="iconClass" aria-hidden="true" /></template>
                 </Button>

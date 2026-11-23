@@ -5,6 +5,7 @@ import { useWippy, useApi } from '../composables/useWippy'
 import { isComponentTag, type SplashInfo } from '../composables/useSurfaces'
 import SplashWizardRail from './SplashWizardRail.vue'
 import type { SplashOutcome } from './splashTypes'
+import { cycleDialogTab } from './dialogFocus'
 import {
   handleInstrumentRecommendationRequest,
   type InstrumentModelContext,
@@ -21,42 +22,13 @@ const dialogEl = ref<HTMLDialogElement | null>(null)
 function dismissDialog() {
   if (isDialog.value && !props.dismissing) emit('dismiss')
 }
-function dialogControls(root: Element | ShadowRoot): HTMLElement[] {
-  const controls: HTMLElement[] = []
-  for (const child of root.children) {
-    if (child instanceof HTMLElement && child.matches('button, input, select, textarea, a[href], summary, [tabindex], [contenteditable="true"]')
-      && child.tabIndex >= 0 && !child.matches(':disabled') && child.checkVisibility({ visibilityProperty: true })) {
-      controls.push(child)
-    }
-    const children = child instanceof HTMLSlotElement ? child.assignedElements({ flatten: true }) : []
-    if (children.length) {
-      for (const assigned of children) {
-        if (assigned instanceof HTMLElement && assigned.tabIndex >= 0 && !assigned.matches(':disabled')
-          && assigned.checkVisibility({ visibilityProperty: true })) controls.push(assigned)
-        controls.push(...dialogControls(assigned.shadowRoot || assigned))
-      }
-    } else controls.push(...dialogControls(child.shadowRoot || child))
-  }
-  return controls
-}
 function handleDialogKeydown(event: KeyboardEvent) {
   if (!isDialog.value) return
   if (event.key === 'Escape') {
     if (event.composedPath().some(node => node instanceof Element && node.getAttribute('aria-expanded') === 'true')) event.preventDefault()
     return
   }
-  if (event.key !== 'Tab') return
-  const controls = dialogControls(dialogEl.value!)
-  const first = controls[0]
-  const last = controls[controls.length - 1]
-  const active = event.composedPath()[0]
-  if (event.shiftKey && active === first) {
-    event.preventDefault()
-    last.focus()
-  } else if (!event.shiftKey && active === last) {
-    event.preventDefault()
-    first.focus()
-  }
+  cycleDialogTab(event)
 }
 const steps = computed(() => props.splash.steps ?? [])
 const idx = ref(0)

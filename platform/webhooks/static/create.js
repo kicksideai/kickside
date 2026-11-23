@@ -1,5 +1,5 @@
 import { W as e, P as t, u as r } from "./wc-runtime-pqFrgqFa.js";
-import { l as s, s as i } from "./styles-CeBRcDSy.js";
+import { l as s, s as i } from "./styles-pKw_zLKY.js";
 import { p as n } from "./package-CCTUAjDf.js";
 import "@iconify/vue";
 import { define as p } from "@wippy-fe/proxy";

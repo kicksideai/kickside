@@ -54,8 +54,13 @@ it('clears a failed catalog read once a finished deletion is read back', async (
   await flushPromises()
   expect(wrapper.findAll('.kx-card')).toHaveLength(1)
 
+  const remove = wrapper.get('button[aria-label="Delete Cleanup library"]')
+  const pressSpace = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })
+  expect(remove.element.dispatchEvent(pressSpace)).toBe(true)
+  expect(api.get).not.toHaveBeenCalledWith('/api/v1/knowledge/library')
+
   listReads = [() => ({ success: false, error: 'cleanup status unavailable' })]
-  await wrapper.get('[aria-label="Delete Cleanup library"]').trigger('click')
+  await remove.trigger('click')
   await flushPromises()
   expect(wrapper.get('.kx-err').text()).toBe('cleanup status unavailable')
   expect(wrapper.findAll('.kx-card')).toHaveLength(1)
