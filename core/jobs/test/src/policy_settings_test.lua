@@ -36,9 +36,10 @@ return { run = test.run_cases(function()
         local function restricted(): any
             local actor = security.new_actor("jobs-policy-reader", {})
             local scope = security.new_scope({assert(security.policy("app:policy_settings_scope"))})
-            for _, resource in ipairs({"get_namespace", "set", "kickside.settings:settings"}) do
+            for _, resource in ipairs({"get_namespace", "list", "set", "kickside.settings:settings"}) do
                 test.eq(scope:evaluate(actor, "contract.call", resource), "undefined")
             end
+            test.eq(scope:evaluate(actor, "access", "kickside.settings.api:list_settings.endpoint"), "undefined")
             for _, resource in ipairs({"kickside.settings:settings", "kickside.settings:settings_binding"}) do
                 for _, action in ipairs({"registry.get", "contract.get", "contract.open"}) do
                     test.eq(scope:evaluate(actor, action, resource), "undefined")
@@ -100,6 +101,29 @@ return { run = test.run_cases(function()
                 test.is_nil(admin.set({["worker.count_postgres"] = 4}))
                 test.eq(assert(runtime_policy.resolve()).worker_count_postgres, 4)
             end)
+        end)
+
+        test.it("uses legacy list provenance without caller Settings authority", function()
+            local original = assert(registry.get("kickside.settings:get_namespace"))
+            local legacy = config.copy(original)
+            legacy.data.source = "return {get_namespace = function() return {success = true, values = {}} end}"
+            local changes = assert(registry.snapshot()):changes()
+            changes:update(legacy)
+            assert(changes:apply())
+            local ok, err = pcall(function()
+                with_host(function(meta) meta.worker.count_postgres = 30 end, function()
+                    local reader = restricted()
+                    test.eq(assert(reader:call("app:policy_settings_resolve")).worker_count_postgres, 30)
+                    test.is_nil(admin.set({["worker.count_postgres"] = 4}))
+                    test.eq(assert(reader:call("app:policy_settings_resolve")).worker_count_postgres, 4)
+                    admin.reset({"worker.count_postgres"})
+                    test.eq(assert(reader:call("app:policy_settings_resolve")).worker_count_postgres, 30)
+                end)
+            end)
+            local restore = assert(registry.snapshot()):changes()
+            restore:update(original)
+            assert(restore:apply())
+            test.is_true(ok, tostring(err))
         end)
 
         test.it("refuses values the Jobs policy rejects and keeps the stored override", function()

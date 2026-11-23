@@ -49,6 +49,24 @@ entries:
     resources: get_namespace
     actions: contract.call
     effect: allow
+- name: legacy_settings_list_method
+  kind: security.policy
+  meta:
+    private: true
+    comment: Allows the Jobs policy reader to obtain override provenance from older Settings contracts.
+  policy:
+    resources: list
+    actions: contract.call
+    effect: allow
+- name: legacy_settings_list_access
+  kind: security.policy
+  meta:
+    private: true
+    comment: Older Settings gates its contract list on this endpoint permission.
+  policy:
+    resources: kickside.settings.api:list_settings.endpoint
+    actions: access
+    effect: allow
 - name: settings_overrides
   kind: function.lua
   meta:
@@ -65,6 +83,8 @@ entries:
     - kickside.core.jobs.policy:settings_reader
     - kickside.core.jobs.policy:settings_read_binding
     - kickside.core.jobs.policy:settings_read_method
+    - kickside.core.jobs.policy:legacy_settings_list_method
+    - kickside.core.jobs.policy:legacy_settings_list_access
 - name: settings_overrides_lib
   kind: library.lua
   meta:
@@ -89,6 +109,8 @@ entries:
     - kickside.core.jobs.policy:settings_reader
     - kickside.core.jobs.policy:settings_read_binding
     - kickside.core.jobs.policy:settings_read_method
+    - kickside.core.jobs.policy:legacy_settings_list_method
+    - kickside.core.jobs.policy:legacy_settings_list_access
 - name: execution
   kind: library.lua
   meta:
