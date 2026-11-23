@@ -16,7 +16,8 @@ local unused_grant = "00000000-0000-4000-8000-000000000007"
 
 local untyped_key = "UNIQUE(subject_id,component_id,source_component_id)"
 local typed_key = "UNIQUE(subject_type,subject_id,component_id,source_component_id)"
-local alternate_typed_key = 'CONSTRAINT "retained ACL typed grant" ' .. typed_key
+local alternate_key_name = "retained ACL typed grant"
+local alternate_typed_key = 'CONSTRAINT "' .. alternate_key_name .. '" ' .. typed_key
 local insert = "INSERT INTO kickside_component_access(access_id,subject_id,component_id,source_component_id,"
     .. "access_mask,inherited,subject_type,created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)"
 local upsert = insert .. " ON CONFLICT (subject_type,subject_id,component_id,source_component_id)"
@@ -26,7 +27,7 @@ local function with_db(id, use)
     local db = assert(sql.get(id))
     local ok, result = pcall(use, db)
     db:release()
-    if not ok then error(result) end
+    if not ok then error(result, 0) end
     return result
 end
 
@@ -40,7 +41,7 @@ local function complete(receipt)
     test.eq(result.status, "complete", tostring(result.error))
 end
 
-local function setup(keys, legacy)
+local function setup(keys, legacy, has_derived)
     local pg = with_db("app:db", function(shared)
         local is_pg = assert(shared:type()) == sql.type.POSTGRES
         if is_pg then
@@ -82,7 +83,9 @@ local function setup(keys, legacy)
                 .. " ON kickside_component_access(" .. columns .. ")"))
         end
         assert(db:execute(insert, {group_grant, "same", root, root, 3, 0, "group", "old"}))
-        assert(db:execute(insert, {derived_grant, "same", child, root, 3, 1, "group", "derived"}))
+        if legacy or has_derived then
+            assert(db:execute(insert, {derived_grant, "same", child, root, 3, 1, "group", "derived"}))
+        end
         if legacy then
             assert(db:execute(insert, {agent_grant, "obsolete", root, root, 15, 0, "agent", "old"}))
         else
@@ -121,11 +124,11 @@ local function assert_effective_grants(db)
     test.is_true(untyped ~= nil)
 end
 
-local function assert_alternate_key(db, pg)
-    local rows = assert(db:query(pg and [[SELECT conname AS name FROM pg_constraint
-        WHERE conrelid='kickside_component_access'::regclass AND conname='retained ACL typed grant']]
+local function assert_named_key(db, pg, name)
+    local rows = assert(db:query(pg and [[SELECT conname FROM pg_constraint
+        WHERE conrelid='kickside_component_access'::regclass AND conname=$1]]
         or [[SELECT name FROM sqlite_schema WHERE name='kickside_component_access'
-            AND instr(sql, 'CONSTRAINT "retained ACL typed grant"') > 0]]))
+            AND instr(sql, 'CONSTRAINT "' || $1 || '"') > 0]], {name}))
     test.eq(#rows, 1)
 end
 
@@ -149,9 +152,6 @@ local function assert_legacy_recovered(db, active_count)
 end
 
 local function assert_modern_preserved(db)
-    local rows = assert(db:query("SELECT access_id FROM kickside_component_access WHERE inherited=1"))
-    test.eq(#rows, 1)
-    test.eq(tostring(rows[1].access_id), derived_grant)
     local ancestors = assert(db:query("SELECT marker FROM kickside_component_ancestor"))
     test.eq(#ancestors, 3)
     for _, ancestor in ipairs(ancestors) do test.eq(ancestor.marker, "original") end
@@ -161,7 +161,7 @@ end
 return {run = test.run_cases(function()
     test.describe("retained Component grants", function()
         test.it("recovers a legacy untyped key without promoting historical subjects", function()
-            setup(untyped_key, true)
+            local pg = setup(untyped_key, true)
             with_db(db_id, function(db)
                 assert(db:execute(insert, {"00000000-0000-4000-8000-000000000004", "principal:service:collision",
                     root, root, 15, 0, "user", "old"}))
@@ -181,6 +181,7 @@ return {run = test.run_cases(function()
             complete("replay_legacy_untyped")
             with_db(db_id, function(db)
                 assert_legacy_recovered(db, 3)
+                if pg then assert_named_key(db, pg, "uq_kickside_component_access_subject") end
                 assert_effective_grants(db)
             end)
         end)
@@ -196,7 +197,7 @@ return {run = test.run_cases(function()
             complete("replay_legacy_both")
             with_db(db_id, function(db)
                 assert_legacy_recovered(db, 3)
-                assert_alternate_key(db, pg)
+                assert_named_key(db, pg, alternate_key_name)
                 assert_effective_grants(db)
                 local _, duplicate = db:execute(insert, {unused_grant, "other", root, root, 3, 0, "group", "old"})
                 test.is_true(duplicate ~= nil)
@@ -204,12 +205,15 @@ return {run = test.run_cases(function()
         end)
 
         test.it("removes a stale untyped key from modern grants without rerunning the legacy data repair", function()
-            local pg = setup(alternate_typed_key .. "," .. untyped_key, false)
+            local pg = setup(alternate_typed_key .. "," .. untyped_key, false, true)
             complete("modern_both")
             with_db(db_id, add_typed_grants)
             complete("replay_modern_both")
             with_db(db_id, function(db)
-                assert_alternate_key(db, pg)
+                assert_named_key(db, pg, alternate_key_name)
+                local derived = assert(db:query("SELECT access_id FROM kickside_component_access WHERE inherited=1"))
+                test.eq(#derived, 1)
+                test.eq(tostring(derived[1].access_id), derived_grant)
                 assert_modern_preserved(db)
             end)
         end)
