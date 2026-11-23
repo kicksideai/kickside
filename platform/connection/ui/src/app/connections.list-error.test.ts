@@ -26,17 +26,43 @@ afterEach(() => {
   vi.resetAllMocks()
 })
 
-function serve(reads: unknown[]) {
+function serve(reads: unknown[], providers: unknown[] = []) {
   vi.mocked(on).mockReturnValue(vi.fn() as never)
   vi.mocked(loadByTagName).mockResolvedValue(undefined as never)
   vi.mocked(api.get).mockImplementation(async (url: string) => {
     if (url.startsWith('/api/v1/connections?')) return { data: await reads.shift() } as never
-    if (url.endsWith('/providers/discover')) return { data: { success: true, providers: [] } } as never
+    if (url.endsWith('/providers/discover')) return { data: { success: true, providers } } as never
     throw new Error('unexpected request ' + url)
   })
 }
 
 const failed = { success: false, error: { message: 'connections unavailable' } }
+
+it.each([
+  { state: 'connected', grants: ['openid', 'service.read'], canEdit: true, status: 'Connected', detail: 'OAuth connection available for agents and automations.' },
+  { state: 'error', grants: ['openid'], canEdit: true, status: 'Unavailable', detail: 'This connection is unavailable. Reconnect to restore access.' },
+  { state: 'error', grants: ['openid'], canEdit: false, status: 'Unavailable', detail: 'This connection is unavailable. Ask the connection owner to check it.' },
+  { state: 'connected', grants: ['openid'], canEdit: true, status: 'Limited access', detail: 'This connection is limited to sign-in. Reconnect to grant service access.' },
+  { state: 'connected', grants: ['openid'], canEdit: false, status: 'Limited access', detail: 'This connection is limited to sign-in. Ask the connection owner to grant service access.' },
+  { state: 'disabled', grants: ['openid'], canEdit: false, status: 'Disabled', detail: 'This connection is disabled and will not be used.' },
+  { state: 'expired', grants: ['openid'], canEdit: true, status: 'Token expired', detail: 'The stored access token has expired. Reconnect to restore access.' },
+  { state: 'needs_reauth', grants: ['openid'], canEdit: false, status: 'Reconnect required', detail: 'This connection must be reauthorized. Ask the connection owner to reconnect.' },
+  { state: 'unrecognized', grants: ['openid'], canEdit: false, status: 'Status unknown', detail: 'Connection availability could not be verified.' },
+])('renders $status with matching guidance when edit permission is $canEdit', async ({ state, grants, canEdit, status, detail }) => {
+  serve([{ success: true, connections: [{
+    component_id: 'fixture', name: 'Fixture connection', provider: 'fixture', oauth: true,
+    connection_state: state, scopes_granted: grants, can_edit: canEdit,
+  }] }], [{
+    provider: 'fixture', title: 'Fixture service', default_scopes: ['openid'],
+    available_scopes: [{ scope: 'openid' }, { scope: 'service.read' }],
+  }])
+  wrapper = mount(Connections, { global: { plugins: [PrimeVuePlugin] } })
+  await flushPromises()
+  const card = wrapper.get('.live-card')
+  expect(card.get('.lc-primary').text()).toBe(status)
+  expect(card.get('.lc-desc').text()).toBe(detail)
+  expect(card.find('button[aria-label="Reconnect Fixture connection"]').exists()).toBe(canEdit)
+})
 
 it('reports a failed first read as the load error, not as an empty list', async () => {
   serve([failed])

@@ -33,6 +33,8 @@ entries:
     source: file://list_connections.lua
     modules: [http, contract, registry, security]
     imports:
+      access_policy: kickside.component:access_policy
+      component_types: kickside.component:types
       deletion_progress: kickside.component:deletion_progress
       conn_types: kickside.connection:types
       query_params: kickside.connection.api:query_params

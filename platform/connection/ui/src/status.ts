@@ -4,13 +4,14 @@ import type { MetaFieldTypes } from '@kickside/ui-kit/componentRealtime'
 // emits the stored connection_state verbatim; expired is derived here from token
 // expiry so the initial list and the realtime meta relay resolve to the same
 // display state.
-export type ConnectionState = 'connected' | 'expired' | 'needs_reauth' | 'disabled' | 'error'
+export type ConnectionState = 'connected' | 'expired' | 'needs_reauth' | 'disabled' | 'error' | 'unknown'
 
 export function resolveConnectionState(connectionState?: string, expiresAt?: number | null): ConnectionState {
-  const state = (connectionState || 'connected') as ConnectionState
+  const state = connectionState || 'connected'
+  if (!Object.hasOwn(CONNECTION_STATE_LABELS, state)) return 'unknown'
   const exp = Number(expiresAt || 0)
   if (state === 'connected' && exp > 0 && exp <= Math.floor(Date.now() / 1000)) return 'expired'
-  return state
+  return state as ConnectionState
 }
 
 // The single user-visible label per state; components layer scope-based overlays
@@ -21,6 +22,7 @@ export const CONNECTION_STATE_LABELS: Record<ConnectionState, string> = {
   needs_reauth: 'Reconnect required',
   disabled: 'Disabled',
   error: 'Unavailable',
+  unknown: 'Status unknown',
 }
 
 // The card and its status line are not PrimeVue components, so they take a class
@@ -31,6 +33,7 @@ export const CONNECTION_STATE_CLASSES: Record<ConnectionState, string> = {
   needs_reauth: 'bad',
   disabled: 'muted',
   error: 'warn',
+  unknown: 'muted',
 }
 
 // Declared field types for connection component public meta. The realtime meta

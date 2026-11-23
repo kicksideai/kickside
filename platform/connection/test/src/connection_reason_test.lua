@@ -3,6 +3,7 @@ local handler = require("handler")
 local fixture = require("fixture")
 local registry_fixture = require("registry_fixture")
 local contract_fixture = require("contract_fixture")
+local access = require("component_types").ACCESS
 local function define_tests()
     test.describe("connection reconnect reason response", function()
         test.it("projects the public reason into the list response without exposing private tokens", function()
@@ -11,6 +12,20 @@ local function define_tests()
             test.eq(result.connections[1].connection_state, "needs_reauth")
             test.contains(result.connections[1].reauth_reason or "", "invalid_grant")
             test.is_nil(result.connections[1].private_context)
+        end)
+        test.it("reports edit access from the effective component permissions", function()
+            contract_fixture.connections = {
+                { component_id = "owner", access_level = access.FULL },
+                { component_id = "shared-editor", access_level = access.READ_WRITE },
+                { component_id = "shared-reader", access_level = access.READ },
+                { component_id = "unknown-access" },
+            }
+            handler.handler()
+            local connections = fixture.result.connections
+            test.eq(connections[1].can_edit, true)
+            test.eq(connections[2].can_edit, true)
+            test.eq(connections[3].can_edit, false)
+            test.eq(connections[4].can_edit, false)
         end)
         test.it("selects the connection declaration icon in every source and sink registry order", function()
             local orders: {{integer}} = { {1, 2, 3}, {1, 3, 2}, {2, 1, 3}, {2, 3, 1}, {3, 1, 2}, {3, 2, 1} }

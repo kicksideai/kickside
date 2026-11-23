@@ -13,6 +13,8 @@ local security = require("security")
 local conn_types = require("conn_types")
 local query_params = require("query_params")
 local create_policy = require("create_policy")
+local access_policy = require("access_policy")
+local component_types = require("component_types")
 
 local REPLY_PROVIDER_CONTRACT = "kickside.connection:reply_provider"
 local DEFAULT_LIMIT = 100
@@ -148,6 +150,7 @@ local function project_connection(row: any): any
         provider = provider,
         icon = icon,
         connection_state = state,
+        can_edit = access_policy.has_all(row.access_level, component_types.ACCESS.WRITE),
         reauth_reason = meta.reauth_reason or "",
         reply_provider = provider_exposes_channels(provider),
         channel_context = false,

@@ -16,7 +16,7 @@ class e extends o {
   static get vueConfig() {
     return {
       lazyConfig: p(
-        () => import("./lazy-mount-BkTN-gyA.js").then((t) => t.mountConfig),
+        () => import("./lazy-mount-DpoA5YMZ.js").then((t) => t.mountConfig),
         "Could not load the connections page. Reload the page to try again.",
         n
       )

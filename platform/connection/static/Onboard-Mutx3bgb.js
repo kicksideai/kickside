@@ -1,8 +1,8 @@
 import { defineComponent as D, ref as l, computed as $, onMounted as M, openBlock as s, createElementBlock as r, createVNode as d, unref as a, createElementVNode as n, Fragment as f, toDisplayString as m, createTextVNode as j, renderList as x, normalizeClass as B, createCommentVNode as N, withDirectives as q, vModelText as z, createBlock as F } from "vue";
 import { Icon as u } from "@iconify/vue";
 import { api as w } from "@wippy-fe/proxy";
-import { u as U, r as G, a as H } from "./status-vqwfu--5.js";
-import { _ as J } from "./ConnectionPicker.vue_vue_type_script_setup_true_lang-rHrj-MJk.js";
+import { u as U, r as G, a as H } from "./status-CErul0OK.js";
+import { _ as J } from "./ConnectionPicker.vue_vue_type_script_setup_true_lang-D8LyloDj.js";
 const Q = { class: "conn-page oc" }, R = {
   key: 0,
   class: "oc-loading"
@@ -190,4 +190,4 @@ const Q = { class: "conn-page oc" }, R = {
 export {
   ge as default
 };
-//# sourceMappingURL=Onboard-Cy9zcEKn.js.map
+//# sourceMappingURL=Onboard-Mutx3bgb.js.map

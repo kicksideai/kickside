@@ -447,6 +447,7 @@ entries:
       fixture: app:connection_reason_fixture
       registry_fixture: app:connection_reason_registry
       contract_fixture: app:connection_reason_contract
+      component_types: kickside.component:types
 
   - name: connection_reason_fixture
     kind: library.lua
@@ -456,6 +457,8 @@ entries:
     kind: library.lua
     source: file://list_connections_source.lua
     imports:
+      access_policy: kickside.component:access_policy
+      component_types: kickside.component:types
       deletion_progress: kickside.component:deletion_progress
       http: app:connection_reason_fixture
       contract: app:connection_reason_contract
