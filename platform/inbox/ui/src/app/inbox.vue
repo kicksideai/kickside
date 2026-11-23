@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onUnmounted, watch } from 'vue'
 import { Icon } from '@iconify/vue'
+import Button from 'primevue/button'
 import Tab from 'primevue/tab'
 import TabList from 'primevue/tablist'
 import Tabs from 'primevue/tabs'
@@ -49,6 +50,9 @@ const totalCount = ref(0)
 const kinds = ref<Record<string, Kind>>({})
 const loading = ref(true)
 const error = ref('')
+const typeError = ref('')
+const listError = ref('')
+const loadedFolder = ref('')
 const filter = ref('pending')
 const selectedId = ref('')
 const resolvingId = ref('')
@@ -61,6 +65,7 @@ let disposed = false
 const resolutions = new Map<string, Item>()
 let resolvedCountFloor = 0
 
+const hasSnapshot = computed(() => loadedFolder.value === filter.value)
 const selected = computed(() => items.value.find(i => i.id === selectedId.value) || null)
 const previews = computed(() => new Map(items.value.map(item => [item.id, previewText(item.content)])))
 const kindOf = (t: string): Kind | undefined => kinds.value[t]
@@ -111,7 +116,8 @@ async function loadKinds() {
       }
     }
     kinds.value = map
-  } catch (cause) { error.value = errMsg(cause, 'Could not load inbox item types.') }
+    typeError.value = ''
+  } catch (cause) { typeError.value = errMsg(cause, 'Could not load inbox item types.') }
 }
 
 function matchesFilter(item: Item): boolean {
@@ -145,7 +151,7 @@ function reconcile(projected: Item[], counts: Stats, total: number, acknowledge 
 async function load() {
   if (disposed) return
   const current = ++requestId
-  error.value = ''
+  loading.value = true
   try {
     const { data } = await api.get('/api/v1/inbox?status=' + encodeURIComponent(filter.value))
     if (current !== requestId || disposed) return
@@ -166,14 +172,16 @@ async function load() {
       urgent_count: Number(data.urgent_count ?? 0),
       high_count: Number(data.high_count ?? 0),
     }, Number(data.total_count ?? data.items.length))
+    loadedFolder.value = filter.value
+    listError.value = ''
   } catch (e) {
-    if (current === requestId && !disposed) error.value = errMsg(e, 'Could not load the inbox.')
+    if (current === requestId && !disposed) listError.value = errMsg(e, 'Could not load the inbox.')
   } finally {
     if (current === requestId && !disposed) loading.value = false
   }
 }
 
-watch(filter, () => { selectedId.value = ''; load() })
+watch(filter, () => { selectedId.value = ''; listError.value = ''; void load() })
 
 async function resolve(payload: { id: string; action: string; form?: Record<string, unknown> }) {
   error.value = ''
@@ -249,7 +257,7 @@ onUnmounted(() => {
         <div class="kx-head-icon"><Icon icon="tabler:inbox" aria-hidden="true" /></div>
         <div class="kx-head-text">
           <h1 class="kx-title">Inbox</h1>
-          <p class="kx-sub">{{ headerCount }} {{ filter }} · live</p>
+          <p v-if="hasSnapshot && !listError" class="kx-sub">{{ headerCount }} {{ filter }}<template v-if="connectedComponentId"> · live</template></p>
         </div>
       </div>
       <Tabs :value="filter" data-kx-separator="surface" @update:value="filter = String($event)">
@@ -262,16 +270,21 @@ onUnmounted(() => {
       </Tabs>
     </header>
 
+    <Message v-if="typeError" severity="error" class="kx-alert">{{ typeError }}</Message>
     <Message v-if="error" severity="error" class="kx-alert">{{ error }}</Message>
 
     <main class="kx-shell">
       <aside class="kx-list-pane">
-        <div v-if="loading" class="kx-loading">Loading...</div>
-        <div v-else-if="!items.length" class="kx-list-empty">
+        <Message v-if="listError" severity="error">
+          {{ listError }}
+          <Button type="button" label="Retry" size="small" text :disabled="loading" @click="load" />
+        </Message>
+        <div v-else-if="!hasSnapshot && loading" class="kx-loading">Loading...</div>
+        <div v-else-if="hasSnapshot && !items.length" class="kx-list-empty">
           {{ filter === 'pending' ? 'Inbox zero — nothing to review.' : 'Nothing here.' }}
         </div>
         <button
-          v-for="item in items"
+          v-for="item in hasSnapshot ? items : []"
           :key="item.id"
           class="kx-item"
           :class="{ active: selectedId === item.id }"
@@ -297,10 +310,10 @@ onUnmounted(() => {
       </aside>
 
       <section class="kx-detail-pane">
-        <div v-if="!selected" class="kx-detail-empty">
+        <div v-if="hasSnapshot && items.length && !selected" class="kx-detail-empty">
           Select an item to view it.
         </div>
-        <div v-else class="kx-detail-card">
+        <div v-else-if="hasSnapshot && selected" class="kx-detail-card">
           <InboxItem
             :key="selected.id"
             :item="selected"

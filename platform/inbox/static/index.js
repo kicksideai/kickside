@@ -1,4 +1,4 @@
-import { W as c, u as n } from "./wc-runtime-BWOoAokg.js";
+import { W as c, u as n } from "./wc-runtime-DA9itsi8.js";
 import "@iconify/vue";
 import { defineComponent as l, h as s, onMounted as d } from "vue";
 import { define as x } from "@wippy-fe/proxy";
@@ -33,7 +33,7 @@ class i extends c {
   static get vueConfig() {
     return {
       lazyConfig: f(
-        () => import("./lazy-mount-BE6Mxfg8.js").then((r) => r.mountConfig),
+        () => import("./lazy-mount-DQiMas11.js").then((r) => r.mountConfig),
         "Could not load the inbox. Reload the page to try again.",
         n
       )

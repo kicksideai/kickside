@@ -1,4 +1,4 @@
-import { a as c } from "./wc-runtime-BWOoAokg.js";
+import { a as c } from "./wc-runtime-DA9itsi8.js";
 import { define as d, loadByTagName as p } from "@wippy-fe/proxy";
 const m = `
   :host { display: block; color: inherit; font-family: inherit; }
