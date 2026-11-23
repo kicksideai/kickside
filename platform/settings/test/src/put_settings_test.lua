@@ -24,7 +24,7 @@ local function put(body: any): (number, any)
         body = assert(json.encode(body)),
         headers = { ["Content-Type"] = "application/json", Authorization = "Bearer " .. admin_token() },
     }))
-    return response.status_code, json.decode(response.body)
+    return response.status_code, json.decode(assert(response.body))
 end
 
 local function settings(): any
