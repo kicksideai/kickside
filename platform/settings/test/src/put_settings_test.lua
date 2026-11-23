@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+
 local test = require("test")
 local http_client = require("http_client")
 local json = require("json")

@@ -169,6 +169,19 @@ entries:
     imports:
       test: wippy.test:test
 
+  - name: revision_migration_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_settings
+      group: KickSide Settings
+      comment: Upgrade overrides that were stored before revision tracking.
+    source: file://revision_migration_test.lua
+    method: run
+    modules: [funcs, sql]
+    imports:
+      test: wippy.test:test
+
   - name: changes_test
     kind: function.lua
     meta:
@@ -267,6 +280,12 @@ entries:
     meta:
       comment: In-memory database for the settings suites.
     file: "${sqlite_path}"
+
+  - name: revision_migration_db
+    kind: db.sql.sqlite
+    meta:
+      comment: Isolated database for the settings revision upgrade test.
+    file: ":memory:"
 
   - name: env_storage
     kind: env.storage.file
