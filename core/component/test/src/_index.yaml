@@ -3257,3 +3257,4 @@ entries:
     modules: [sql, funcs]
     imports:
       test: wippy.test:test
+      access_subjects: kickside.component.persist:access_subjects
