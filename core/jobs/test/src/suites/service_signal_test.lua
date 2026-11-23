@@ -57,7 +57,8 @@ end
 
 local function history(job_id: string): table[]
     local db = assert(sql.get("app:db"))
-    local rows, err = db:query("SELECT status, error_text FROM kickside_job_run WHERE job_id=$1", { job_id })
+    local rows, err = db:query("SELECT status, error_text, CAST(result_json AS TEXT) AS result_json,"
+        .. " CAST(actions_json AS TEXT) AS actions_json FROM kickside_job_run WHERE job_id=$1", { job_id })
     db:release()
     return assert(rows, err)
 end
@@ -140,7 +141,10 @@ local function define_tests()
             { title = "execution ceiling on the only attempt", payload = { block = true, max_execution_ms = 250 },
                 state = "dead", run = "failed", error_text = worker_child.PROC_TIMEOUT_MARKER },
             { title = "invalid worker output", payload = { output = { next_run_at = "invalid" } },
-                state = "dead", run = "failed", error_text = "uses rearm" },
+                state = "dead", run = "failed", error_text = "uses rearm", rejected_output = true },
+            { title = "oversized invalid worker output",
+                payload = { output = { next_run_at = "invalid", extra = string.rep("x", 2200000) } },
+                state = "dead", run = "failed", error_text = "uses rearm", rejected_output = true },
             { title = "slot park", slot = true, payload = { output = { park = true, record = { status = "parked" } } },
                 state = "pending", run = "parked" },
         }) do
@@ -159,6 +163,10 @@ local function define_tests()
                 local run = assert_release(job.id, job.execution_seq, route.state, route.run)
                 if route.error_text then
                     test.is_true(tostring(run.error_text):find(route.error_text, 1, true) ~= nil, tostring(run.error_text))
+                end
+                if route.rejected_output then
+                    test.eq(run.result_json, "{}")
+                    test.eq(run.actions_json, "{}")
                 end
             end)
         end

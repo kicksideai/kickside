@@ -8,6 +8,7 @@ local completion = require("completion")
 local lease_release = require("lease_release")
 local sql_boundary = require("sql_boundary")
 local error_envelope = require("error_envelope")
+local canonical_json = require("canonical_json")
 
 local worker_completion = {}
 
@@ -81,7 +82,10 @@ worker_completion.fail_job = fail_job
 local function complete_job(db: sql.DB, dbtype: string, job: table, output: any, run_ctx: table?): (error?, boolean?)
     local opts, opts_err = completion_opts(output)
     if opts_err then
-        local fail_err, recorded = fail_job(db, dbtype, job, output, tostring(opts_err), "deterministic", run_ctx)
+        -- Keep the validation error as the diagnostic. Rejected output may
+        -- exceed the history row limit and roll back the failure settlement.
+        local fail_err, recorded = fail_job(db, dbtype, job, canonical_json.object({}),
+            tostring(opts_err), "deterministic", run_ctx)
         if fail_err then
             return error_envelope.wrap_secondary(fail_err, opts_err, "invalid worker output settlement failed"), recorded
         end
