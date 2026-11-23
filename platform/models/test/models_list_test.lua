@@ -39,7 +39,7 @@ local function define_tests()
             local function listed()
                 local _, err = native_handler.handler()
                 test.is_nil(err)
-                local by_name = {}
+                local by_name: { [string]: any } = {}
                 for _, row in ipairs(state.result().models) do by_name[row.name] = row end
                 return by_name
             end
@@ -58,8 +58,9 @@ local function define_tests()
                 test.eq(second.provider, first.provider)
                 test.eq(second.provider_title, "Second endpoint")
                 test.eq(second.provider_icon, "tabler:server")
-                test.eq(rows[builtin_name].provider_title, "OpenAI")
-                test.eq(rows[builtin_name].provider_icon, "tabler:brand-openai")
+                local builtin = assert(rows[builtin_name], "built-in model was omitted")
+                test.eq(builtin.provider_title, "OpenAI")
+                test.eq(builtin.provider_icon, "tabler:brand-openai")
                 for _, row in ipairs({ first, second }) do
                     test.is_nil(row.config)
                     test.is_nil(row.context)

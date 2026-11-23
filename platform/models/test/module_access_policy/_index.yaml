@@ -28,7 +28,7 @@ entries:
   kind: function.lua
   source: file://test.lua
   method: store_probe
-  modules: [registry, security, funcs, json, store, ctx]
+  modules: [registry, security, funcs, json, store, ctx, sql]
   imports:
     test: wippy.test:test
     models_repo: kickside.models.persist:repo
@@ -40,7 +40,7 @@ entries:
   kind: function.lua
   source: file://test.lua
   method: resolve_probe
-  modules: [registry, security, funcs, json, store, ctx]
+  modules: [registry, security, funcs, json, store, ctx, sql]
   imports:
     test: wippy.test:test
     models_repo: kickside.models.persist:repo
@@ -53,7 +53,7 @@ entries:
   kind: function.lua
   source: file://test.lua
   method: execution_probe
-  modules: [registry, security, funcs, json, store, ctx]
+  modules: [registry, security, funcs, json, store, ctx, sql]
   imports:
     test: wippy.test:test
     models_repo: kickside.models.persist:repo

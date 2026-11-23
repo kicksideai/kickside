@@ -518,10 +518,14 @@ local function define_tests()
                     -- SQLite serializes access to the application connection.
                     update_config()
                 end
-                local ok, status, result = pcall(post_import, document)
+                local ok, imported = pcall(function()
+                    local status, result = post_import(document)
+                    return { status = status, result = result }
+                end)
                 policy.clean_profile_input = clean
-                if not ok then error(status, 0) end
-                test.eq(status, postgres and 400 or 200, tostring(result and result.error))
+                if not ok then error(imported, 0) end
+                local result = imported.result
+                test.eq(imported.status, postgres and 400 or 200, tostring(result and result.error))
 
                 assert(models_repo.reload())
                 local after = assert(models_repo.get_profile(id))
