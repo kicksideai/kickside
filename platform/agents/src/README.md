@@ -22,7 +22,7 @@ CRUD API.
 - **Registry discovery** — built-in agent entries can be contributed by the app
   or any installed module via `agent.gen1` registry entries.
 - **HTTP API** — `/user-agents` CRUD + `/agents/{list,traits,tools}` discovery.
-- **Chat discovery** — `kickside.agents.api:catalog_agent_details` returns basic agent details and any declared start prompts. It uses component read access for user agents and public visibility for registry agents. `kickside.agents.api:catalog_tool_titles` returns titles for public tools by registry ID or unambiguous tool name. Both run as the caller. The app binds them to the `wippy.session_util:catalog` contract, and `wippy/session-util` serves the chat routes `GET /agents/details` and `GET /tools/by-name`.
+- **Chat discovery** — `kickside.agents.api:catalog_agent_details` returns basic agent details and any declared start prompts. It uses component read access for user agents and public visibility for registry agents. An unknown agent, or one the caller may not read, gives no agent. Any other registry or component failure is returned as an error, so the route answers 500 with its cause for that agent only. `kickside.agents.api:catalog_tool_titles` returns titles for public tools by registry ID or unambiguous tool name. Both run as the caller. The app binds them to the `wippy.session_util:catalog` contract, and `wippy/session-util` serves the chat routes `GET /agents/details` and `GET /tools/by-name`.
 
 ## Requirements
 

@@ -1,0 +1,14 @@
+version: '1.0'
+namespace: app.agents_by_name_errors_test
+entries:
+- name: agents_by_name_errors_test
+  kind: function.lua
+  meta:
+    type: test
+    suite: agents_by_name_errors
+  source: file://agents_by_name_errors_test.lua
+  method: run
+  imports:
+    test: wippy.test:test
+    agents_by_name: kickside.agents.api:agents_by_name
+    dependency: kickside.component:component

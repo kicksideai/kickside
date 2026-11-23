@@ -182,7 +182,7 @@ function M.catalog_tool_titles(input: any): (any, string?)
         if type(name) == "string" and name ~= "" then wanted[name] = true end
     end
     local entries, err = find_tools()
-    if err then return nil, "tool lookup failed" end
+    if err then return nil, "tool lookup failed: " .. tostring(err) end
     return M.resolve_names(entries, wanted)
 end
 

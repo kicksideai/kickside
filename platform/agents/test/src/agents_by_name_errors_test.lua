@@ -1,0 +1,135 @@
+local test = require("test")
+local lookup = require("agents_by_name")
+local dependency = require("dependency")
+
+local USER_AGENT_IMPL = "kickside.agents:user_agent"
+local PUBLIC = {
+    id = "app:public_agent",
+    meta = { type = "agent.gen1", public = true, name = "public_agent", title = "Public Agent" },
+    data = { start_prompts = { "Hello" } },
+}
+
+local function failure(kind: string, message: string): any
+    return errors.new({ kind = kind, message = message })
+end
+
+local function registry_double(get: any?, find: any?): any
+    return {
+        get = get or function() return nil, failure(errors.NOT_FOUND, "entry not found") end,
+        find = find or function() return {}, nil end,
+    }
+end
+
+local function component_double(access_err: any?, service: any?, service_err: any?): any
+    return {
+        ACCESS = dependency.ACCESS,
+        validate_access = function()
+            if access_err then return 0, access_err end
+            return 1, nil
+        end,
+        get_service = function() return service, service_err end,
+    }
+end
+
+local function service_returning(result: any, err: any?): any
+    return { get = function() return result, err end }
+end
+
+local function details(deps: any, agent: string): (any, any)
+    return lookup.new(deps).catalog_agent_details({ agent = agent })
+end
+
+local function define_tests()
+    test.describe("agent details lookup errors", function()
+        test.it("returns the agent when the lookup works", function()
+            local registry_agent, registry_err = details({ registry = registry_double(function() return PUBLIC, nil end) }, PUBLIC.id)
+            test.is_nil(registry_err, tostring(registry_err))
+            test.eq(registry_agent.id, PUBLIC.id)
+            test.eq(registry_agent.start_prompts[1], "Hello")
+
+            local service = service_returning({ success = true, impl_id = USER_AGENT_IMPL, meta = { title = "Mine" } })
+            local user_agent, user_err = details({ component = component_double(nil, service) }, "user_agent:c1")
+            test.is_nil(user_err, tostring(user_err))
+            test.eq(user_agent.title, "Mine")
+        end)
+
+        test.it("returns no agent for a missing or denied registry entry", function()
+            for _, kind in ipairs({ errors.NOT_FOUND, errors.PERMISSION_DENIED }) do
+                local by_id, id_err = details({ registry = registry_double(function() return nil, failure(kind, "x") end) }, "app:x")
+                test.is_nil(id_err, kind .. ": " .. tostring(id_err))
+                test.is_nil(by_id, kind)
+                local by_name, name_err = details({ registry = registry_double(nil, function() return nil, failure(kind, "x") end) }, "x")
+                test.is_nil(name_err, kind .. ": " .. tostring(name_err))
+                test.is_nil(by_name, kind)
+            end
+        end)
+
+        test.it("returns a registry failure as an error", function()
+            local by_id, id_err = details({ registry = registry_double(function() return nil, failure(errors.INTERNAL, "registry is down") end) }, "app:x")
+            test.is_nil(by_id)
+            test.is_true(errors.is(id_err, errors.INTERNAL), tostring(id_err))
+            test.contains(tostring(id_err), "registry is down")
+
+            local by_name, name_err = details({ registry = registry_double(nil, function() return nil, failure(errors.UNAVAILABLE, "find failed") end) }, "x")
+            test.is_nil(by_name)
+            test.is_true(errors.is(name_err, errors.UNAVAILABLE), tostring(name_err))
+        end)
+
+        test.it("returns no agent for a missing or denied user agent", function()
+            for _, kind in ipairs({ errors.NOT_FOUND, errors.PERMISSION_DENIED }) do
+                local agent, err = details({ component = component_double(failure(kind, "x")) }, "user_agent:c1")
+                test.is_nil(err, kind .. ": " .. tostring(err))
+                test.is_nil(agent, kind)
+            end
+            -- A component deleted between the access check and the read. The
+            -- real get binding answers it with PERMISSION_DENIED, so its
+            -- existence stays hidden.
+            for _, kind in ipairs({ errors.NOT_FOUND, errors.PERMISSION_DENIED }) do
+                local gone = service_returning({ success = false, kind = kind, error = "Component not found or access denied" })
+                local agent, err = details({ component = component_double(nil, gone) }, "user_agent:c1")
+                test.is_nil(err, kind .. ": " .. tostring(err))
+                test.is_nil(agent, kind)
+            end
+        end)
+
+        test.it("returns a component failure as an error", function()
+            local access_agent, access_err = details({ component = component_double(failure(errors.INTERNAL, "access check failed")) }, "user_agent:c1")
+            test.is_nil(access_agent)
+            test.is_true(errors.is(access_err, errors.INTERNAL), tostring(access_err))
+
+            local service_agent, service_err = details({ component = component_double(nil, nil, failure(errors.UNAVAILABLE, "no service")) }, "user_agent:c1")
+            test.is_nil(service_agent)
+            test.is_true(errors.is(service_err, errors.UNAVAILABLE), tostring(service_err))
+
+            local broken = service_returning({ success = false, kind = errors.INTERNAL, error = "database is down" })
+            local read_agent, read_err = details({ component = component_double(nil, broken) }, "user_agent:c1")
+            test.is_nil(read_agent)
+            test.is_true(errors.is(read_err, errors.INTERNAL), tostring(read_err))
+            test.contains(tostring(read_err), "database is down")
+
+            local call_agent, call_err = details({ component = component_double(nil, service_returning(nil, failure(errors.TIMEOUT, "slow"))) }, "user_agent:c1")
+            test.is_nil(call_agent)
+            test.is_true(errors.is(call_err, errors.TIMEOUT), tostring(call_err))
+        end)
+
+        test.it("rejects an input without an agent string", function()
+            for _, input in ipairs({ {}, { agent = "" }, { agent = 5 } }) do
+                local agent, err = lookup.new({}).catalog_agent_details(input)
+                test.is_nil(agent)
+                test.is_true(errors.is(err, errors.INVALID), tostring(err))
+            end
+        end)
+
+        test.it("leaves a failing agent out of agents/by-name and resolves the others", function()
+            local registry = registry_double(function(id)
+                if id == "app:broken" then return nil, failure(errors.INTERNAL, "broken entry") end
+                return PUBLIC, nil
+            end)
+            local titles = lookup.new({ registry = registry }).resolve_identifiers({ "app:broken", PUBLIC.id })
+            test.is_nil(titles["app:broken"])
+            test.eq(titles[PUBLIC.id], "Public Agent")
+        end)
+    end)
+end
+
+return { run = test.run_cases(define_tests) }

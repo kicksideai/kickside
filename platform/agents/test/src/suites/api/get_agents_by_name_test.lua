@@ -11,6 +11,7 @@ local PROC_SCOPE = "wippy.security:process"
 local APP_DB = "app:db"
 local PUBLIC_SYSTEM_AGENT = "app:fixture_public_system_agent"
 local PRIVATE_SYSTEM_AGENT = "app:fixture_system_agent"
+local REGISTRY_DENY_SCOPE = "app:agents_details_registry_deny_scope"
 
 local function uuid(): string
     local id, err = crypto.random.uuid()
@@ -143,6 +144,19 @@ local function define_tests()
             local private, private_err = new_executor(owner):call(PROBE, {detail = PRIVATE_SYSTEM_AGENT})
             test.is_nil(private_err)
             test.is_nil(private)
+        end)
+
+        -- The runtime reports a registry read that the caller's scope denies as
+        -- PERMISSION_DENIED. For agent details that means "no agent", not a
+        -- failed lookup, so a member never gets a 500 for an agent it cannot see.
+        test.it("returns no agent and no error when the caller's scope denies the registry read", function()
+            local actor: any = security.new_actor(owner, {})
+            local denied: any = funcs.new():with_actor(actor):with_scope(security.named_scope(REGISTRY_DENY_SCOPE))
+            for _, identifier in ipairs({ PUBLIC_SYSTEM_AGENT, "fixture_public" }) do
+                local details, err = denied:call(PROBE, {detail = identifier})
+                test.is_nil(err, identifier .. ": " .. tostring(err))
+                test.is_nil(details, identifier)
+            end
         end)
     end)
 end

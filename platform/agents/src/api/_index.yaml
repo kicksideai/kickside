@@ -145,6 +145,7 @@ entries:
     source: file://get_agents_by_name.lua
     modules: [http, registry, security]
     imports:
+      component_envelope: kickside.component:envelope
       component: kickside.component:component
       agent_ref: kickside.agents:agent_ref
       agent_types: kickside.agents:types
@@ -164,6 +165,7 @@ entries:
     source: file://get_agents_by_name.lua
     modules: [http, registry, security]
     imports:
+      component_envelope: kickside.component:envelope
       component: kickside.component:component
       agent_ref: kickside.agents:agent_ref
       agent_types: kickside.agents:types
