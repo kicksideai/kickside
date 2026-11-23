@@ -29,3 +29,17 @@ entries:
     imports:
       migration: wippy.migration:migration
     method: migrate
+
+  - name: 03_settings_key_revision
+    kind: function.lua
+    meta:
+      type: migration
+      comment: kickside_settings per-key revision
+      target_db: ""
+      depends_on:
+        - kickside.settings.migrations:02_settings_revision
+      timestamp: "2026-11-19T12:00:01Z"
+    source: file://03_settings_key_revision.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
