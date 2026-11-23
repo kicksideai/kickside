@@ -34,7 +34,7 @@ local function exercise(row: any, store_contract: string?): (any, any, any)
         },
         security = { actor = function() return {} end },
         component = {
-            ACCESS = { READ = 1 }, validate_access = function() return true end,
+            ACCESS = { READ = 1 }, validate_access = function() return 3 end,
             get_service = function() return { get = function() return {
                 success = true, component_id = "records",
                 meta = { title = "Records", kb_type = "records", document_count = "20" },
@@ -53,6 +53,7 @@ return { run = test.run_cases(function()
                 concept_count = 6, chunk_count = 7, summary_count = 8, claim_count = 9 }
             local status, response, calls = exercise({ config = { chunk_size = 400 }, stats = counters }, "test:store")
             test.eq(status, 200)
+            test.eq(response.access_level, 3)
             test.eq(response.stat_items[1].value, 5)
             for name, value in pairs(counters) do test.eq(response[name], value, name) end
             test.eq(response.config.chunk_size, 400)

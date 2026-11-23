@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
-import { afterEach, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
 import { api, host, loadByTagName, on } from '@wippy-fe/proxy'
@@ -24,14 +24,58 @@ vi.mock('@wippy-fe/webcomponent-vue', () => ({
 vi.mock('@iconify/vue', () => ({ Icon: { template: '<span aria-hidden="true" />' } }))
 
 let wrapper: VueWrapper | undefined
+beforeEach(() => {
+  vi.mocked(loadByTagName).mockResolvedValue(undefined as never)
+})
 afterEach(() => {
   wrapper?.unmount()
   wrapper = undefined
   vi.resetAllMocks()
 })
 
+it('offers recovery after the first catalog failure and creation after an empty retry', async () => {
+  vi.mocked(api.get).mockImplementation(async (url: string) => {
+    if (url === '/api/v1/knowledge/engines') return { data: { success: true, engines: [] } } as never
+    return { data: { success: false, error: 'Knowledge catalog is unavailable' } } as never
+  })
+  wrapper = mount(Knowledge, { global: { plugins: [PrimeVuePlugin] } })
+  await flushPromises()
+
+  expect(wrapper.get('[role="alert"]').text()).toBe('Knowledge catalog is unavailable')
+  expect(wrapper.text()).not.toContain('No knowledge bases yet')
+  expect(wrapper.find('[data-testid="knowledge-create"]').exists()).toBe(false)
+
+  vi.mocked(api.get).mockResolvedValueOnce({ data: { success: true, items: [] } } as never)
+  await wrapper.get('button.kx-cat-retry').trigger('click')
+  await flushPromises()
+  expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  expect(wrapper.text()).toContain('No knowledge bases yet')
+  expect(wrapper.findAll('[data-testid="knowledge-create"]')).toHaveLength(1)
+})
+
+it('honors the individual access bits on catalog cards and detail actions', async () => {
+  const read = { id: 'shared', name: 'Shared library', access_level: 1 }
+  const write = { id: 'editable', name: 'Editable library', access_level: 3 }
+  const remove = { id: 'removable', name: 'Removable library', access_level: 5 }
+  vi.mocked(api.get).mockImplementation(async (url: string) => {
+    if (url === '/api/v1/knowledge/list') return { data: { success: true, items: [read, write, remove] } } as never
+    if (url.endsWith('/shared')) return { data: { success: true, ...read } } as never
+    return { data: { success: true, engines: [] } } as never
+  })
+  wrapper = mount(Knowledge, { global: { plugins: [PrimeVuePlugin] } })
+  await flushPromises()
+
+  const actions = () => wrapper!.findAll('.kx-card-actions button').map(button => button.attributes('aria-label'))
+  expect(actions()).toEqual(['Edit Editable library', 'Delete Removable library'])
+  expect(wrapper.findAll('.kx-card').find(card => card.find('[aria-label="Open Shared library"]').exists())?.text()).toContain('Read only')
+  await wrapper.get('[aria-label="Open Shared library"]').trigger('click')
+  await flushPromises()
+  expect(wrapper.get('.kx-bar').text()).toContain('Read only')
+  expect(wrapper.find('.kx-bar-r button').exists()).toBe(false)
+})
+
 it('clears a failed catalog read once a finished deletion is read back', async () => {
-  const library = { id: 'library', name: 'Cleanup library', kb_type: 'records' }
+  const library = { id: 'library', name: 'Cleanup library', kb_type: 'records', access_level: 15 }
   const receivers: Array<(message: unknown) => void> = []
   vi.mocked(on).mockImplementation((_topic, callback) => {
     receivers.push(callback as (message: unknown) => void)
@@ -75,7 +119,7 @@ it('clears a failed catalog read once a finished deletion is read back', async (
 })
 
 it('keeps the latest list read when an earlier read fails after it', async () => {
-  const library = { id: 'library', name: 'Cleanup library', kb_type: 'records' }
+  const library = { id: 'library', name: 'Cleanup library', kb_type: 'records', access_level: 15 }
   const receivers: Array<(message: unknown) => void> = []
   vi.mocked(on).mockImplementation((_topic, callback) => {
     receivers.push(callback as (message: unknown) => void)

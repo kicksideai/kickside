@@ -7,6 +7,7 @@ export interface Badge { label: string; icon: string; tone: string }
 
 export interface KnowledgeBase extends ComponentDeletionState {
   id: string
+  access_level?: number
   name?: string
   description?: string
   icon?: string

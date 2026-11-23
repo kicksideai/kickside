@@ -18,6 +18,18 @@ import { useKnowledgeDetail } from './useKnowledgeDetail.ts'
 
 const formatCount = (n?: number): string => (n ?? 0).toLocaleString()
 
+// Component access bits are independent. Use the caller's effective mask from
+// the authorized list/detail reads for each action's own permission.
+const WRITE = 2
+const DELETE = 4
+const ADMIN = 8
+function allows(k: KnowledgeBase, access: number): boolean {
+  return ((k.access_level ?? 0) & access) !== 0
+}
+function readOnly(k: KnowledgeBase): boolean {
+  return typeof k.access_level === 'number' && !allows(k, WRITE | DELETE | ADMIN)
+}
+
 function badgeSeverity(tone?: string): string | undefined {
   if (tone === 'neutral') return 'secondary'
   if (tone === 'warning') return 'warn'
@@ -28,7 +40,7 @@ function badgeSeverity(tone?: string): string | undefined {
 const detail = ref<KbDetail | null>(null)
 const catalog = useKnowledgeCatalog({ detail })
 const {
-  loading, error, notice, kbs, query, filtered, models, engines, dialogLoadError,
+  loading, error, catalogError, catalogLoaded, notice, kbs, query, filtered, models, engines, dialogLoadError,
   load, loadModels, loadEngines, engineFor, loadDialogCatalog,
   detailUnsub, applyComponentMetaEvent,
 } = catalog
@@ -67,6 +79,7 @@ async function openCreate() {
 
 // Edit needs the KB's stored config + type, so fetch the full record first.
 async function openEdit(k: KnowledgeBase) {
+  if (!allows(k, WRITE)) return
   error.value = ''
   detailError.value = ''
   dialogLoadError.value = ''
@@ -74,6 +87,12 @@ async function openEdit(k: KnowledgeBase) {
   try {
     const { data } = await api.get(`/api/v1/knowledge/${k.id}`)
     if (!data?.success) throw new Error(data?.error || 'could not load knowledge base settings')
+    if (!allows(data, WRITE)) {
+      await load()
+      if (detail.value?.id === k.id) detail.value = { ...detail.value, access_level: data.access_level }
+      showSurfaceError('You no longer have permission to edit this knowledge base.')
+      return
+    }
     dialogTarget.value = {
       id: k.id,
       name: data.name ?? k.name,
@@ -109,6 +128,7 @@ async function onDialogSaved() {
 // The destructive confirm runs in the host layer via host.confirm (rendered
 // outside this web component), so no in-component modal is needed.
 async function askRemove(k: KnowledgeBase) {
+  if (!allows(k, DELETE)) return
   const ok = await host.confirm({
     header: 'Delete knowledge base',
     message: `Delete “${k.name || '(untitled)'}”? This removes the knowledge base and all of its contents. This can't be undone.`,
@@ -138,7 +158,11 @@ const shareOpen = ref(false)
 const shareTarget = ref<KnowledgeBase | null>(null)
 const shareHost = ref<HTMLElement | null>(null)
 
-function openShare(k: KnowledgeBase) { shareTarget.value = k; shareOpen.value = true }
+function openShare(k: KnowledgeBase) {
+  if (!allows(k, ADMIN)) return
+  shareTarget.value = k
+  shareOpen.value = true
+}
 function closeShare() { shareOpen.value = false; shareTarget.value = null }
 
 // Esc dismisses the topmost open overlay, matching the click-outside behavior.
@@ -211,18 +235,19 @@ const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (de
           <p class="kx-head-sub">Knowledge bases your agents search and reason over.</p>
         </div>
         <div class="kx-head-actions">
-          <span class="kx-count">{{ kbs.length }} knowledge base{{ kbs.length !== 1 ? 's' : '' }}</span>
+          <span v-if="catalogLoaded" class="kx-count">{{ kbs.length }} knowledge base{{ kbs.length !== 1 ? 's' : '' }}</span>
           <div class="kx-search">
             <Icon icon="tabler:search" class="kx-search-ico" aria-hidden="true" />
             <input v-model="query" class="kx-search-input" type="text" placeholder="Search knowledge bases…" />
           </div>
-          <Button type="button" data-testid="knowledge-create" label="New knowledge base" @click="openCreate">
+          <Button v-if="kbs.length" type="button" data-testid="knowledge-create" label="New knowledge base" @click="openCreate">
             <template #icon="{ class: iconClass }"><Icon icon="tabler:plus" :class="iconClass" aria-hidden="true" /></template>
           </Button>
         </div>
       </header>
 
       <div v-if="error" class="kx-err">{{ error }}</div>
+      <div v-if="catalogError" class="kx-err" role="alert">{{ catalogError }}</div>
       <div v-if="notice" class="kx-notice">
         <Icon icon="tabler:info-circle" aria-hidden="true" />
         <span><strong>No knowledge engine installed.</strong> Install a KB engine to create and browse knowledge bases.</span>
@@ -233,7 +258,9 @@ const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (de
           <Icon icon="tabler:loader-2" class="spin" aria-hidden="true" /> Loading…
         </div>
 
-        <div v-else-if="!kbs.length" class="kx-empty">
+        <Button v-else-if="catalogError" type="button" label="Retry" severity="secondary" outlined class="kx-cat-retry" @click="load" />
+
+        <div v-else-if="catalogLoaded && !notice && !kbs.length" class="kx-empty">
           <div class="kx-empty-ico"><Icon icon="tabler:books" aria-hidden="true" /></div>
           <div class="kx-empty-title">No knowledge bases yet</div>
           <div class="kx-empty-sub">A knowledge base your agents can search and reason over.</div>
@@ -242,22 +269,24 @@ const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (de
           </Button>
         </div>
 
-        <div v-else-if="!filtered.length" class="kx-empty">
+        <div v-if="kbs.length && !filtered.length" class="kx-empty">
           <div class="kx-empty-title">No matches</div>
           <div class="kx-empty-sub">No knowledge bases match the current search.</div>
         </div>
 
-        <div v-else class="kx-grid">
+        <div v-else-if="filtered.length" class="kx-grid">
           <div
             v-for="k in filtered"
             :key="k.id"
             class="kx-card"
           >
-            <ComponentDeletion :state="k" @retry="askRemove(k)" />
+            <ComponentDeletion v-if="allows(k, DELETE)" :state="k" @retry="askRemove(k)" />
+            <span v-else-if="k.deleting_at" class="kx-sub" role="status">Deletion requested</span>
             <div class="kx-card-head">
               <span class="kx-ficon"><Icon :icon="k.icon || k.badge?.icon || 'tabler:books'" aria-hidden="true" /></span>
               <div class="kx-card-id">
                 <button type="button" class="kx-card-name kx-card-open" :title="k.name || '(untitled)'" :aria-label="`Open ${k.name || 'knowledge base'}`" :disabled="!!k.deleting_at" @click="openDetail(k)">{{ k.name || '(untitled)' }}</button>
+                <span v-if="readOnly(k)" class="kx-sub">Read only</span>
                 <div v-if="k.badge" class="kx-card-meta">
                   <Tag :severity="badgeSeverity(k.badge.tone)" class="kx-pill kx-tag-caps">
                     <Icon :icon="k.badge.icon" aria-hidden="true" />{{ k.badge.label }}
@@ -265,13 +294,13 @@ const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (de
                 </div>
               </div>
               <div class="kx-card-actions">
-                <Button type="button" severity="secondary" outlined size="small" title="Edit" :aria-label="`Edit ${k.name}`" @click="!k.deleting_at && openEdit(k)" :disabled="!!k.deleting_at">
+                <Button v-if="allows(k, WRITE)" type="button" severity="secondary" outlined size="small" title="Edit" :aria-label="`Edit ${k.name}`" @click="!k.deleting_at && openEdit(k)" :disabled="!!k.deleting_at">
                   <template #icon="{ class: iconClass }"><Icon icon="tabler:pencil" :class="iconClass" aria-hidden="true" /></template>
                 </Button>
-                <Button type="button" severity="secondary" outlined size="small" title="Share" :aria-label="`Share ${k.name}`" @click="openShare(k)" :disabled="!!k.deleting_at">
+                <Button v-if="allows(k, ADMIN)" type="button" severity="secondary" outlined size="small" title="Share" :aria-label="`Share ${k.name}`" @click="openShare(k)" :disabled="!!k.deleting_at">
                   <template #icon="{ class: iconClass }"><Icon icon="tabler:share" :class="iconClass" aria-hidden="true" /></template>
                 </Button>
-                <Button type="button" severity="danger" outlined size="small" title="Delete" :aria-label="`Delete ${k.name}`" @click="askRemove(k)" :disabled="!!k.deleting_at">
+                <Button v-if="allows(k, DELETE)" type="button" severity="danger" outlined size="small" title="Delete" :aria-label="`Delete ${k.name}`" @click="askRemove(k)" :disabled="!!k.deleting_at">
                   <template #icon="{ class: iconClass }"><Icon icon="tabler:trash" :class="iconClass" aria-hidden="true" /></template>
                 </Button>
               </div>
@@ -299,6 +328,7 @@ const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (de
         <div class="kx-bar-l">
           <button class="kx-back" @click="backDetail()"><Icon icon="tabler:arrow-left" aria-hidden="true" /> Back</button>
           <h1 class="kx-title" :title="detail.name || '(untitled)'">{{ detail.name || '(untitled)' }}</h1>
+          <span v-if="readOnly(detail)" class="kx-sub">Read only</span>
           <Tag v-if="detail.badge" :severity="badgeSeverity(detail.badge.tone)" class="kx-pill kx-tag-caps">
             <Icon :icon="detail.badge.icon" aria-hidden="true" />{{ detail.badge.label }}
           </Tag>
@@ -342,13 +372,13 @@ const {acceptDeletion} = useComponentDeletion(kbs, row => row.id, id => { if (de
               @click="setDetailView(mode.id)"
             ><Icon v-if="mode.icon" :icon="mode.icon" aria-hidden="true" /> {{ mode.label }}</button>
           </div>
-          <Button type="button" severity="secondary" outlined label="Edit" @click="openEdit(detail)">
+          <Button v-if="allows(detail, WRITE)" type="button" severity="secondary" outlined label="Edit" @click="openEdit(detail)">
             <template #icon="{ class: iconClass }"><Icon icon="tabler:pencil" :class="iconClass" aria-hidden="true" /></template>
           </Button>
-          <Button type="button" severity="secondary" outlined label="Share" @click="openShare(detail)">
+          <Button v-if="allows(detail, ADMIN)" type="button" severity="secondary" outlined label="Share" @click="openShare(detail)">
             <template #icon="{ class: iconClass }"><Icon icon="tabler:share" :class="iconClass" aria-hidden="true" /></template>
           </Button>
-          <Button type="button" severity="danger" outlined label="Delete" @click="askRemove(detail)">
+          <Button v-if="allows(detail, DELETE)" type="button" severity="danger" outlined label="Delete" @click="askRemove(detail)">
             <template #icon="{ class: iconClass }"><Icon icon="tabler:trash" :class="iconClass" aria-hidden="true" /></template>
           </Button>
         </div>

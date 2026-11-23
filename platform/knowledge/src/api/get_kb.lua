@@ -36,7 +36,7 @@ local function handler()
         return
     end
 
-    local _, access_err = component.validate_access(kb_id, component.ACCESS.READ)
+    local access_level, access_err = component.validate_access(kb_id, component.ACCESS.READ)
     if access_err then
         local status = http_errors.classify(access_err)
         local msg = tostring(access_err or "access denied")
@@ -125,6 +125,7 @@ local function handler()
     local response: any = {
         success = true,
         id = kb_id,
+        access_level = access_level,
         deleting_at = comp.deleting_at,
         deletion_job_id = comp.deletion_job_id,
         name = meta.title or "",
