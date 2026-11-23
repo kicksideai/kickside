@@ -12,7 +12,7 @@ it('keeps delivery and Workflow outcomes distinct when the optional outcome is p
     drive_key: 'main', round_token: 'round', source_port: 'timer', item_key: 'item',
     identity_key: 'delivery', state: 'resolved', evidence_status: 'absent', round_at: '2026-11-20T16:00:00Z',
   }
-  vi.mocked(api.get).mockImplementation(async (_path, options) => {
+  vi.mocked(api.get).mockImplementation(async (_path: string, options?: { params?: { kind?: string } }) => {
     const kind = options?.params?.kind
     const entries = kind === 'deliveries' ? [
       entry,

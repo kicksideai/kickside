@@ -12,12 +12,15 @@ it('shows the retained hold and counts when the predecessor still describes itse
     success: true, drives: [],
     legacy_adoption: { state: 'awaiting_adoption', unresolved: 2, dependency_blocked: 1 },
   } } as Awaited<ReturnType<typeof api.get>>)
-  const wrapper = shallowMount(DetailDrawer, { props: {
-    automation: {
-      id: 'retained', title: 'Retained Sync', drive_status: { drives: [] },
-      public_state: { status: 'active', next_run_at: '2099-01-01T00:00:00Z' },
+  const wrapper = shallowMount(DetailDrawer, {
+    global: { renderStubDefaultSlot: true },
+    props: {
+      automation: {
+        id: 'retained', title: 'Retained Sync', drive_status: { drives: [] },
+        public_state: { status: 'active', next_run_at: '2099-01-01T00:00:00Z' },
+      },
     },
-  } })
+  })
   try {
     await flushPromises()
     expect(api.get).toHaveBeenCalledWith('/api/v1/automations/retained/status')
