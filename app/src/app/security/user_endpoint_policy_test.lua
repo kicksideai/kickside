@@ -55,6 +55,10 @@ local function define_tests()
                 test.eq(decision("app.security:user", "funcs.call", id), "allow", id)
                 test.eq(decision("app.security:stranger", "funcs.call", id), "undefined", id)
             end
+            -- contract.call is checked against the method name.
+            for _, method in ipairs({"agent_details", "tool_titles"}) do
+                test.eq(decision("app.security:user", "contract.call", method), "allow", method)
+            end
             test.eq(decision("app.security:user", "funcs.call", "kickside.agents.api:create_user_agent"), "undefined")
             test.eq(decision("app.security:user", "registry.update", "wippy.session_util:catalog"), "undefined")
         end)
