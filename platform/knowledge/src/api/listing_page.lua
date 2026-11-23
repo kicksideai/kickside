@@ -57,7 +57,7 @@ local function selected(query: any, impl_ids: { string }, ids: Map): (Map?, any?
         local batch: { string } = {}
         for i = start, math.min(#wanted, start + PAGE - 1) do batch[#batch + 1] = wanted[i] end
         local page, err = read(query, { impl_ids = impl_ids, component_ids = batch,
-            include = { meta = true }, order_by = { field = "created_at", direction = "DESC" }, limit = #batch })
+            include = { meta = true, access = true }, order_by = { field = "created_at", direction = "DESC" }, limit = #batch })
         if err then return nil, err end
         for _, row in ipairs(page or {}) do components[#components + 1] = row end
     end
@@ -80,7 +80,7 @@ function M.collect(query: any, impl_ids: { string }, options: Map): (Map?, any?)
     local components: { Map } = {}
     local scanned = offset :: integer
     while true do
-        local page, err = read(query, { impl_ids = impl_ids, include = { meta = true },
+        local page, err = read(query, { impl_ids = impl_ids, include = { meta = true, access = true },
             order_by = { field = "created_at", direction = "DESC" }, limit = PAGE, offset = scanned })
         if err then return nil, err end
         local batch = page or {}

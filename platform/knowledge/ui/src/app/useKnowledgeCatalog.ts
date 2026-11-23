@@ -15,6 +15,8 @@ interface KnowledgeCatalogOptions {
 export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
   const loading = ref(false)
   const error = ref('')
+  const catalogError = ref('')
+  const catalogLoaded = ref(false)
   const notice = ref('')
   const kbs = ref<KnowledgeBase[]>([])
   const query = ref('')
@@ -52,6 +54,7 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
     catalogLoadVersion++
     loading.value = true
     error.value = ''
+    catalogError.value = ''
     notice.value = ''
     try {
       const { data } = await api.get('/api/v1/knowledge/list')
@@ -67,13 +70,14 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
       }
       if (current() && catalogActive) {
         kbs.value = (data.items || []) as KnowledgeBase[]
+        catalogLoaded.value = true
       }
       return true
     } catch (e) {
       const msg = errMsg(e, 'could not load knowledge bases')
       if (current() && catalogActive) {
         if (isEngineMissing(msg)) notice.value = ENGINE_NOTICE
-        else error.value = msg
+        else catalogError.value = msg
       }
       return false
     } finally {
@@ -305,7 +309,7 @@ export function useKnowledgeCatalog({ detail }: KnowledgeCatalogOptions) {
   onBeforeUnmount(clearComponentSubscriptions)
 
   return {
-    loading, error, notice, kbs, query, filtered, models, engines, dialogLoadError,
+    loading, error, catalogError, catalogLoaded, notice, kbs, query, filtered, models, engines, dialogLoadError,
     load, loadModels, loadEngines, engineFor, loadDialogCatalog,
     detailUnsub, applyComponentMetaEvent, clearComponentSubscriptions,
   }
