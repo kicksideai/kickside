@@ -23,7 +23,7 @@ local insert = "INSERT INTO kickside_component_access(access_id,subject_id,compo
 local upsert = insert .. " ON CONFLICT (subject_type,subject_id,component_id,source_component_id)"
     .. " DO UPDATE SET access_mask=excluded.access_mask"
 
-local function with_db(id, use)
+local function with_db(id: string, use: (sql.DB) -> any): any
     local db = assert(sql.get(id))
     local ok, result = pcall(use, db)
     db:release()
@@ -106,7 +106,7 @@ local function assert_mask(db, subject_type, subject_id, component_id, mask)
     test.eq(tonumber(assert(db:query(statement, args))[1].access_mask) or 0, mask)
 end
 
-local function assert_effective_grants(db)
+local function assert_effective_grants(db: sql.DB)
     for _, component_id in ipairs({root, child}) do
         assert_mask(db, "group", "same", component_id, 3)
         assert_mask(db, "user", "same", component_id, 1)
