@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.97](https://github.com/kicksideai/kickside/compare/models-v0.1.96...models-v0.1.97) (2026-11-24)
+
+
+### Features
+
+* **models:** agent tools and a trait for provider profiles ([#976](https://github.com/kicksideai/kickside/issues/976)) ([4960a48](https://github.com/kicksideai/kickside/commit/4960a48f6c139138c3d759bd16f286991af36c91))
+
 ## [0.1.96](https://github.com/kicksideai/kickside/compare/models-v0.1.95...models-v0.1.96) (2026-11-24)
 
 

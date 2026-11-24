@@ -13,9 +13,9 @@
   "platform/hub": "0.1.78",
   "platform/identity": "0.1.46",
   "platform/inbox": "0.1.82",
-  "platform/knowledge": "0.1.107",
+  "platform/knowledge": "0.1.108",
   "platform/mcp": "0.2.15",
-  "platform/models": "0.1.96",
+  "platform/models": "0.1.97",
   "platform/oauth": "0.1.45",
   "platform/realtime": "0.1.32",
   "core/realtime-dispatch": "0.1.1",
@@ -33,7 +33,7 @@
   "platform/uploads": "0.3.36",
   "platform/users": "0.2.31",
   "platform/webhooks": "0.1.48",
-  "platform/widgets": "0.1.75",
-  "platform/workflows": "0.2.24",
+  "platform/widgets": "0.1.76",
+  "platform/workflows": "0.2.25",
   "app": "0.2.63"
 }
