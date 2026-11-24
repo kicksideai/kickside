@@ -8,6 +8,8 @@ local agent_types = require("agent_types")
 
 local function new(dependencies: any?): any
     local deps = dependencies or {}
+    local http = deps.http or http
+    local security = deps.security or security
     local registry = deps.registry or registry
     local component = deps.component or component
 
@@ -161,16 +163,41 @@ local function describe_agent(identifier)
     return {id = entry.id, name = name, title = entry.meta.title or name, start_prompts = prompts}
 end
 
--- Catalog lookup for the chat's agent details route. It runs as the caller,
--- so it keeps the public-agent and component READ rules. It returns nil for
--- an unknown or hidden agent, and an error when the lookup fails or the
--- agent's data is bad.
-local function catalog_agent_details(input)
-    local identifier = type(input) == "table" and input.agent or nil
-    if type(identifier) ~= "string" or identifier == "" then
-        return nil, errors.new({ kind = errors.INVALID, message = "agent_details needs a non-empty 'agent' string" })
+-- An unknown agent and one the caller may not read get the same answer,
+-- agent: null, so the answer does not show whether a hidden agent exists. The
+-- json module has no null value, so that body is written as text. A failed
+-- lookup or bad agent data is 500 with its cause, for this one agent only.
+local NO_AGENT_BODY = '{"success":true,"agent":null}'
+
+local function details()
+    local req, res = http.request(), http.response()
+    if not req or not res then return end
+    res:set_header("Cache-Control", "no-store")
+    res:set_content_type(http.CONTENT.JSON)
+    if not security.actor() then
+        res:set_status(http.STATUS.UNAUTHORIZED)
+        res:write_json({success = false, error = "authentication required"})
+        return
     end
-    return describe_agent(identifier)
+    local identifier = req:query("agent")
+    if type(identifier) ~= "string" or identifier == "" then
+        res:set_status(http.STATUS.BAD_REQUEST)
+        res:write_json({success = false, error = "Missing 'agent' query parameter"})
+        return
+    end
+    local agent, err = describe_agent(identifier)
+    if err then
+        res:set_status(http.STATUS.INTERNAL_ERROR)
+        res:write_json({success = false, error = tostring(err)})
+        return
+    end
+    if not agent then
+        res:set_status(http.STATUS.OK)
+        res:write(NO_AGENT_BODY)
+        return
+    end
+    res:set_status(http.STATUS.OK)
+    res:write_json({success = true, agent = agent})
 end
 
 local function handler()
@@ -209,7 +236,7 @@ end
 
 return {
     handler = handler,
-    catalog_agent_details = catalog_agent_details,
+    details = details,
     describe_agent = describe_agent,
     is_public_system_agent = is_public_system_agent,
     resolve_identifiers = resolve_identifiers,

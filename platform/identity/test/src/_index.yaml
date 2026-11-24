@@ -59,8 +59,6 @@ entries:
     value: app:db
   - name: kickside.identity:api_router
     value: app:api
-  - name: wippy.session_util:api_router
-    value: app:api
   - name: kickside.identity:ui_server
     value: app:gateway
   - name: wippy.bootloader:application_host

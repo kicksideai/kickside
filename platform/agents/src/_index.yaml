@@ -9,12 +9,6 @@ entries:
       title: KickSide Agents
       comment: User agents — agent/tool registries, user-created agent components, the agent resolver, runner, and capability library, with a user-facing CRUD API. Permission-agnostic; all auth is enforced by the host router and the component service.
 
-  # The app must set wippy.session_util:api_router on its kickside/agents dependency; see README "Chat routes".
-  - name: session_util
-    kind: ns.dependency
-    component: wippy/session-util
-    version: ">=v0.0.1"
-
   # ─── Dependency interface (ns.requirement) ───────────────────────────
   # The consuming host wires this via ns.dependency. The module owns no tables;
   # user-created agents persist through kickside.component. Its HTTP endpoints
@@ -41,11 +35,15 @@ entries:
         path: .meta.router
       - entry: kickside.agents.api:agents_by_name.endpoint
         path: .meta.router
+      - entry: kickside.agents.api:agent_details.endpoint
+        path: .meta.router
       - entry: kickside.agents.api:list_traits.endpoint
         path: .meta.router
       - entry: kickside.agents.api:list_namespaces.endpoint
         path: .meta.router
       - entry: kickside.agents.api:list_tools.endpoint
+        path: .meta.router
+      - entry: kickside.agents.api:tools_by_name.endpoint
         path: .meta.router
       - entry: kickside.agents.api:list_memory_options.endpoint
         path: .meta.router

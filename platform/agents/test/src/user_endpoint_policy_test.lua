@@ -9,6 +9,7 @@ local function define_tests()
             test.not_nil(policy)
             local actor = security.new_actor("module-member", {})
             for _, id in ipairs({
+                "kickside.agents.api:agent_details.endpoint",
                 "kickside.agents.api:agents_by_name.endpoint",
                 "kickside.agents.api:create_user_agent.endpoint",
                 "kickside.agents.api:delete_user_agent.endpoint",
@@ -17,6 +18,7 @@ local function define_tests()
                 "kickside.agents.api:list_memory_options.endpoint",
                 "kickside.agents.api:list_namespaces.endpoint",
                 "kickside.agents.api:list_tools.endpoint",
+                "kickside.agents.api:tools_by_name.endpoint",
                 "kickside.agents.api:list_traits.endpoint",
                 "kickside.agents.api:list_user_agents.endpoint",
                 "kickside.agents.api:update_user_agent.endpoint",

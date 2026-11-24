@@ -40,30 +40,6 @@ local function define_tests()
             test.eq(decision("app.security:user", "funcs.call", "wippy.usage:usage_tracker"), "allow")
             test.eq(decision("app.security:user", "funcs.call", "wippy.usage:unrelated"), "undefined")
         end)
-        test.it("allows the session-util chat routes through the KickSide catalog only", function()
-            for _, id in ipairs({"wippy.session_util.api:agent_details.endpoint", "wippy.session_util.api:tools_by_name.endpoint"}) do
-                test.eq(decision("app.security:members", "access", id), "allow", id)
-                test.eq(decision("app.security:stranger", "access", id), "undefined", id)
-            end
-            -- Only the two exact endpoint ids: any other endpoint of the module stays closed.
-            test.eq(decision("app.security:members", "access", "wippy.session_util.api:other.endpoint"), "undefined")
-            for _, action in ipairs({"contract.get", "contract.implementations"}) do
-                test.eq(decision("app.security:user", action, "wippy.session_util:catalog"), "allow", action)
-                test.eq(decision("app.security:stranger", action, "wippy.session_util:catalog"), "undefined", action)
-            end
-            test.eq(decision("app.security:user", "contract.open", "kickside.agents.api:session_util_catalog"), "allow")
-            test.eq(decision("app.security:user", "contract.open", "app.deps:unrelated_binding"), "undefined")
-            for _, id in ipairs({"kickside.agents.api:catalog_agent_details", "kickside.agents.api:catalog_tool_titles"}) do
-                test.eq(decision("app.security:user", "funcs.call", id), "allow", id)
-                test.eq(decision("app.security:stranger", "funcs.call", id), "undefined", id)
-            end
-            -- contract.call is checked against the method name.
-            for _, method in ipairs({"agent_details", "tool_titles"}) do
-                test.eq(decision("app.security:user", "contract.call", method), "allow", method)
-            end
-            test.eq(decision("app.security:user", "funcs.call", "kickside.agents.api:create_user_agent"), "undefined")
-            test.eq(decision("app.security:user", "registry.update", "wippy.session_util:catalog"), "undefined")
-        end)
         test.it("requires listed module authority and retains the Core baseline and retains the Core baseline", function()
             test.eq(decision("app.security:members", "access", "unrelated.catalog:list.endpoint"), "undefined")
             test.eq(decision("app.security:user", "access", "unrelated.catalog:list.endpoint"), "undefined")

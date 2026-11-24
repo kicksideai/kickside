@@ -2,18 +2,6 @@ version: "1.0"
 namespace: kickside.agents.api
 
 entries:
-  # Both catalog methods run as the caller and enforce KickSide visibility.
-  - name: session_util_catalog
-    kind: contract.binding
-    meta:
-      comment: KickSide agent and tool lookup for the wippy/session-util chat routes.
-    contracts:
-      - contract: wippy.session_util:catalog
-        default: true
-        methods:
-          agent_details: kickside.agents.api:catalog_agent_details
-          tool_titles: kickside.agents.api:catalog_tool_titles
-
   - name: query_params
     kind: library.lua
     meta:
@@ -170,10 +158,10 @@ entries:
     func: agents_by_name
     path: /agents/by-name
 
-  - name: catalog_agent_details
+  - name: agent_details
     kind: function.lua
     meta:
-      comment: Resolves chat agent details and start prompts for the caller (catalog method for the app's chat routes).
+      comment: Resolves chat agent details and start prompts.
     source: file://get_agents_by_name.lua
     modules: [http, registry, security]
     imports:
@@ -181,7 +169,14 @@ entries:
       component: kickside.component:component
       agent_ref: kickside.agents:agent_ref
       agent_types: kickside.agents:types
-    method: catalog_agent_details
+    method: details
+
+  - name: agent_details.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: agent_details
+    path: /agents/details
 
   - name: list_traits
     kind: function.lua
@@ -241,10 +236,10 @@ entries:
     func: list_tools
     path: /agents/tools
 
-  - name: catalog_tool_titles
+  - name: tools_by_name
     kind: function.lua
     meta:
-      comment: Resolves public tool titles for chat by tool name or registry id (catalog method for the app's chat routes).
+      comment: Resolves tool titles for chat by tool name or registry id.
     source: file://list_tools.lua
     modules: [http, security, registry]
     imports:
@@ -254,7 +249,14 @@ entries:
       tool_visibility: kickside.agents.registry:tool_visibility
       tool_resolver: wippy.agent.discovery:tools
       canonical_json: kickside.contract:canonical_json
-    method: catalog_tool_titles
+    method: by_name
+
+  - name: tools_by_name.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: tools_by_name
+    path: /tools/by-name
 
   - name: list_memory_options
     kind: function.lua

@@ -173,17 +173,31 @@ function M.resolve_names(entries: {any}?, wanted: any): any
     return resolved
 end
 
--- Catalog lookup for the chat's tool names route: public tools only, and a
--- name that two tools share is left out.
-function M.catalog_tool_titles(input: any): (any, string?)
-    local wanted = {}
-    local names = type(input) == "table" and input.names or nil
-    for _, name in ipairs(type(names) == "table" and names or {}) do
-        if type(name) == "string" and name ~= "" then wanted[name] = true end
+function M.by_name()
+    local req, res = http.request(), http.response()
+    if not req or not res then return end
+    res:set_content_type(http.CONTENT.JSON)
+    res:set_header("Cache-Control", "no-store")
+    if not security.actor() then
+        res:set_status(http.STATUS.UNAUTHORIZED)
+        res:write_json({success = false, error = "authentication required"})
+        return
     end
+    local names = req:query("tools")
+    if type(names) ~= "string" or names == "" then
+        query_params.bad_request(res, "Missing 'tools' query parameter")
+        return
+    end
+    local wanted = {}
+    for name in names:gmatch("[^,]+") do wanted[name] = true end
     local entries, err = find_tools()
-    if err then return nil, "tool lookup failed: " .. tostring(err) end
-    return M.resolve_names(entries, wanted)
+    if err then
+        res:set_status(http.STATUS.INTERNAL_ERROR)
+        res:write_json({success = false, error = "tool lookup failed"})
+        return
+    end
+    res:set_status(http.STATUS.OK)
+    res:write_json({success = true, tools = M.resolve_names(entries, wanted)})
 end
 
 M.handler = handler

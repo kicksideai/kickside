@@ -113,8 +113,6 @@ entries:
       value: app:env_storage
     - name: kickside.agents:api_router
       value: app:api
-    - name: wippy.session_util:api_router
-      value: app:api
     - name: kickside.agents:ui_server
       value: app:gateway
     - name: kickside.component:target_db

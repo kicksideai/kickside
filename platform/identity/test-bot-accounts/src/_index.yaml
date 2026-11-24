@@ -229,8 +229,6 @@ entries:
     value: app:gateway
   - name: kickside.agents:api_router
     value: app:api
-  - name: wippy.session_util:api_router
-    value: app:api
   - name: kickside.agents:ui_server
     value: app:gateway
   - name: kickside.channel:target_db

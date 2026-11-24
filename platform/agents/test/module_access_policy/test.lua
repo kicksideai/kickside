@@ -31,6 +31,7 @@ local function define_tests()
             test.not_nil(declaration)
             test.is_nil(declaration.data.policy.conditions)
             local expected = {
+                ["kickside.agents.api:agent_details.endpoint"] = true,
                 ["kickside.agents.api:agents_by_name.endpoint"] = true,
                 ["kickside.agents.api:create_user_agent.endpoint"] = true,
                 ["kickside.agents.api:delete_user_agent.endpoint"] = true,
@@ -40,6 +41,7 @@ local function define_tests()
                 ["kickside.agents.api:list_namespaces.endpoint"] = true,
                 ["kickside.agents.api:list_tools.endpoint"] = true,
                 ["kickside.agents.api:list_traits.endpoint"] = true,
+                ["kickside.agents.api:tools_by_name.endpoint"] = true,
                 ["kickside.agents.api:list_user_agents.endpoint"] = true,
                 ["kickside.agents.api:update_user_agent.endpoint"] = true,
             }
@@ -90,9 +92,11 @@ local function define_tests()
                 "kickside.agents.api:delete_user_agent.endpoint",
                 "kickside.agents.api:list_agents.endpoint",
                 "kickside.agents.api:agents_by_name.endpoint",
+                "kickside.agents.api:agent_details.endpoint",
                 "kickside.agents.api:list_traits.endpoint",
                 "kickside.agents.api:list_namespaces.endpoint",
                 "kickside.agents.api:list_tools.endpoint",
+                "kickside.agents.api:tools_by_name.endpoint",
                 "kickside.agents.api:list_memory_options.endpoint",
             }) do
                 test.not_nil(registry.get(id), id)

@@ -34,6 +34,7 @@ entries:
   policy:
     resources:
     - kickside.agents.api:agents_by_name.endpoint
+    - kickside.agents.api:agent_details.endpoint
     - kickside.agents.api:create_user_agent.endpoint
     - kickside.agents.api:delete_user_agent.endpoint
     - kickside.agents.api:get_user_agent.endpoint
@@ -41,6 +42,7 @@ entries:
     - kickside.agents.api:list_memory_options.endpoint
     - kickside.agents.api:list_namespaces.endpoint
     - kickside.agents.api:list_tools.endpoint
+    - kickside.agents.api:tools_by_name.endpoint
     - kickside.agents.api:list_traits.endpoint
     - kickside.agents.api:list_user_agents.endpoint
     - kickside.agents.api:update_user_agent.endpoint
