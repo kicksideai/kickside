@@ -178,6 +178,41 @@ local function define_tests()
             end
             assert(ok, tostring(err))
         end)
+        test.it("keeps distinct route options when profile route identities repeat", function()
+            local profile = assert(models_repo.create_profile({id = "same-route-profile", name = "Same route",
+                provider_id = "wippy.llm.openai_compat:provider", base_url = "https://provider.example.test/v1",
+                api_key = "fixture-cache-secret"}))
+            local get_all, model = registry_models.get_all, fixture.model
+            registry_models.get_all = function() return {{name = "same-route-model", providers = {
+                {id = profile.provider_id, provider_model = "same-wire", provider_profile_id = profile.id,
+                    options = {timeout = 11}},
+                {id = profile.provider_id, provider_model = "same-wire", provider_profile_id = profile.id,
+                    options = {timeout = 22}}}}} end
+            local original_context = context.context
+            local ok, err = pcall(function()
+                local card, resolve_err = resolver.resolve({model = "same-route-model"})
+                test.is_nil(resolve_err, tostring(resolve_err))
+                fixture.model = "same-wire"
+                for index, expected_timeout in ipairs({11, 22}) do
+                    context.context = card.providers[index].context
+                    local response, call_err = driver.generate({})
+                    test.is_nil(call_err, tostring(call_err))
+                    test.is_true(response.success)
+                    test.eq(fixture.context.timeout, expected_timeout)
+                end
+                local stale = card.providers[1].context
+                stale.provider_route_index = 2
+                context.context = stale
+                local result, call_err = driver.generate({})
+                test.is_nil(call_err, tostring(call_err))
+                test.is_true(result.success)
+                test.eq(fixture.context.timeout, 22)
+            end)
+            context.context, registry_models.get_all, fixture.model = original_context, get_all, model
+            local _, delete_err = models_repo.delete_profile(profile.id)
+            test.is_nil(delete_err, tostring(delete_err))
+            assert(ok, tostring(err))
+        end)
         test.it("runs a plain chat profile on the upstream driver with string text content", function()
             local profile = assert(models_repo.create_profile({id = "plain-profile", name = "Plain profile",
                 provider_id = "kickside.models:openai_compat_plain.provider", base_url = "https://provider.example.test/v1",

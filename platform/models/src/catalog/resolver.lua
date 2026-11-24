@@ -8,7 +8,7 @@ local function resolved_card(card: any): any
     local resolved = {}
     for key, value in pairs(card) do resolved[key] = value end
     resolved.providers = {}
-    for _, route in ipairs(card.providers or {}) do
+    for index, route in ipairs(card.providers or {}) do
         local provider = {}
         for key, value in pairs(route) do provider[key] = value end
         if route.provider_profile_id then
@@ -22,8 +22,8 @@ local function resolved_card(card: any): any
             end
             -- The context names the route this entry stands for, so the managed
             -- driver calls it among the card's routes.
-            provider.context = { card = card.name, provider_id = route.id, provider_model = route.provider_model,
-                provider_profile_id = route.provider_profile_id }
+            provider.context = { card = card.name, provider_route_index = index, provider_id = route.id,
+                provider_model = route.provider_model, provider_profile_id = route.provider_profile_id }
             provider.id = "kickside.models:provider"
         end
         table.insert(resolved.providers, provider)

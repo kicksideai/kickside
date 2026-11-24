@@ -99,6 +99,14 @@ end
 local function pinned_route(card: any, context: any): any
     local routes = card.providers or {}
     if context.provider_id == nil then return routes[1] end
+    if context.provider_route_index ~= nil then
+        local route = routes[context.provider_route_index]
+        if route and route.id == context.provider_id and route.provider_model == context.provider_model
+            and route.provider_profile_id == context.provider_profile_id then
+            return route
+        end
+        return nil
+    end
     for _, route in ipairs(routes) do
         if route.id == context.provider_id and route.provider_model == context.provider_model
             and route.provider_profile_id == context.provider_profile_id then
