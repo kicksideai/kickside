@@ -52,6 +52,18 @@ entries:
         path: .meta.router
       - entry: kickside.hub.instruments:requirement_resolution.endpoint
         path: .meta.router
+      - entry: kickside.hub.first_boot:status.endpoint
+        path: .meta.router
+
+  - name: process_host
+    kind: ns.requirement
+    default: app:processes
+    meta:
+      value_kind: process.host
+      description: Process host the first-boot module installer runs on.
+    targets:
+      - entry: kickside.hub.first_boot:service
+        path: .host
 
   # ─── Hub UI (self-served web component) ───────────────────────────────
   - name: ui_server

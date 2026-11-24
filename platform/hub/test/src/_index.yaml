@@ -303,3 +303,12 @@ entries:
     imports:
       test: wippy.test:test
       setup: kickside.hub.api:required_setup_runtime
+
+  - name: first_boot_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_hub}
+    source: file://first_boot_test.lua
+    method: run
+    imports:
+      test: wippy.test:test
+      installer: kickside.hub.first_boot:installer

@@ -1,0 +1,111 @@
+version: "1.0"
+namespace: kickside.hub.first_boot
+
+# Installs the hub modules named by KICKSIDE_INSTALL_MODULES once, through the
+# same Keeper plan + install path as the onboarding queue. The run state lives
+# in the kickside.hub/first_boot_install setting, so a restart does not repeat a
+# finished run. Administrators read per-module state from GET /hub/first-boot.
+
+entries:
+  - name: envs
+    kind: env.storage.os
+    meta:
+      type: envstorage
+      comment: OS storage for the first-boot module list.
+
+  - name: install_modules
+    kind: env.variable
+    meta:
+      comment: Comma-separated hub modules (org/name) to install on first boot.
+      private: true
+    storage: kickside.hub.first_boot:envs
+    default: ""
+    variable: KICKSIDE_INSTALL_MODULES
+
+  - name: setting_state
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+      comment: First-boot module install state.
+    namespace: kickside.hub
+    key: first_boot_install
+    value_type: json
+    default: {}
+    description: State of the first-boot install of the modules chosen at signup.
+    scope: global
+    editable: true
+    visible: false
+    read_access: admin
+
+  - name: installer
+    kind: library.lua
+    source: file://installer.lua
+
+  - name: state
+    kind: library.lua
+    source: file://state.lua
+    modules: [contract]
+
+  - name: process
+    kind: process.lua
+    meta:
+      comment: One-shot first-boot module installer.
+    source: file://process.lua
+    method: main
+    modules: [env, time, logger, contract]
+    imports:
+      installer: kickside.hub.first_boot:installer
+      state: kickside.hub.first_boot:state
+      hub_service: keeper.hub:service
+      planner: keeper.hub:planner
+      required_setup: kickside.hub.api:required_setup_runtime
+
+  # Runs once per start and exits; a finished run returns at once.
+  - name: service
+    kind: process.service
+    meta:
+      comment: Starts the first-boot module installer after the boot steps.
+    process: kickside.hub.first_boot:process
+    host: ""
+    lifecycle:
+      depends_on: [wippy.bootloader:bootloader.service]
+      auto_start: true
+      restart:
+        max_delay: 60s
+        max_attempts: 3
+      security:
+        actor:
+          id: kickside.hub.first_boot:installer
+        groups: []
+
+  - name: status
+    kind: function.lua
+    meta:
+      comment: GET /hub/first-boot - per-module first-boot install state.
+    source: file://status.lua
+    method: handler
+    modules: [http, env, contract]
+    imports:
+      installer: kickside.hub.first_boot:installer
+      state: kickside.hub.first_boot:state
+
+  - name: status.endpoint
+    kind: http.endpoint
+    meta: {}
+    method: GET
+    func: status
+    path: /hub/first-boot
+
+  - name: status_endpoint_access
+    kind: security.policy
+    meta:
+      title: Hub first-boot install
+      surface: Hub
+      intent: Read the state of the first-boot module install.
+      comment: Administrators may read the first-boot module install state.
+    groups: []
+    policy:
+      resources:
+        - kickside.hub.first_boot:status.endpoint
+      actions: access
+      effect: allow
