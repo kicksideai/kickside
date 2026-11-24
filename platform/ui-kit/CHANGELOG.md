@@ -1,6 +1,6 @@
 # Changelog
 
-## [1.8.0](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.8...ui-kit-v1.8.0) (2026-11-24)
+## [1.7.9](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.8...ui-kit-v1.7.9) (2026-11-24)
 
 
 ### Features
