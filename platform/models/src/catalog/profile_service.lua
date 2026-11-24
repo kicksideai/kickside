@@ -37,11 +37,16 @@ function M.list(): ({ any }?, any?)
     return models_repo.list_profiles_public()
 end
 
+-- create saves a profile and, when it is enabled, tests it (every *_env reference, then the
+-- provider probe), so its status is the test's outcome; the test failing leaves the profile
+-- saved and unhealthy with the reason.
 function M.create(input: any): (any?, any?)
     local profile, err = models_repo.create_profile(input)
     if not profile then return nil, err end
     record("created", profile.id, profile)
-    return profile
+    if profile.enabled == false then return profile end
+    model_discovery.test(profile.id, {})
+    return M.get(profile.id)
 end
 
 function M.update(id: any, input: any): (any?, any?)
@@ -91,7 +96,8 @@ function M.delete(id: any): (boolean, any?)
 end
 
 -- Tests the profile id: its environment references resolve and its provider
--- answers. The outcome is recorded as the profile status (healthy, unhealthy).
+-- answers. An unscoped test records the profile status (healthy, unhealthy);
+-- a model-scoped test leaves that status unchanged.
 function M.test(id: any, opts: any?): (any?, any?)
     if type(id) ~= "string" or id == "" then return nil, "Profile id is required" end
     local profile, get_err = models_repo.get_profile(id)
