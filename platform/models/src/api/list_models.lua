@@ -1,4 +1,5 @@
 local http = require("http")
+local security = require("security")
 local models = require("models")
 local provider_read_model = require("provider_read_model")
 
@@ -94,6 +95,7 @@ local function handler()
         capability = capability or "generate",
         count = #formatted,
         models = formatted,
+        can_manage_models = security.can("access", "kickside.models.api.admin:admin.endpoint") == true,
     })
 end
 

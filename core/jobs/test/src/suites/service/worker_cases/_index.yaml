@@ -21,6 +21,7 @@ entries:
     worker_fence: kickside.core.jobs.service:worker_fence
     worker_pool: kickside.core.jobs.service:worker_pool
     lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
+    lease_release: kickside.core.jobs:lease_release
 - name: dispatch_context_test
   kind: function.lua
   meta:

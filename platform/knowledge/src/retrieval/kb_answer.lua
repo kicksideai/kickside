@@ -26,12 +26,65 @@ local ANSWER_MAX_TOKENS = 1024
 local ANSWER_TIMEOUT_SECONDS = 30
 local NO_ANSWER_FOUND = "No answer found. No source passages matched the question."
 
-local ANSWER_PROMPT = [[Answer the question using ONLY the passages below. State nothing the passages do not support; if they do not contain the answer, say so plainly. Cite each supported statement with the passage number in square brackets, such as [1]. Use one number per bracket pair: for multiple sources write [1][2]; never combine numbers inside one pair. Use only numbers from the supplied passages. Be concise and direct.%s
+local ANSWER_PROMPT = [[Answer the question using ONLY the passages below. State nothing the passages do not support; if they do not contain the answer, say so plainly. Cite each supported statement with the passage number in square brackets, such as [1]. Use one number per bracket pair: for multiple sources write [1][2]; never combine numbers inside one pair. Use only numbers from the supplied passages. A passage may start with its source in parentheses; when that source names a page or slide, give it with the citation, such as "(Guide.pdf, p. 47) [1]". Be concise and direct.%s
 
 QUESTION: "%s"
 
 PASSAGES:
 %s]]
+
+-- The chunk metadata of a retrieved item: engine items nest it under meta,
+-- normalized sources carry it at the top level.
+local function item_metadata(item: any): { [string]: any }
+    local row = type(item) == "table" and item or {}
+    if type(row.metadata) == "table" then return row.metadata end
+    local meta = type(row.meta) == "table" and row.meta or {}
+    return type(meta.metadata) == "table" and meta.metadata or {}
+end
+
+-- The page or slide range a chunk covers, from the locators KB engines record
+-- at ingest (page_start/page_end, slide_start/slide_end).
+local function locator(metadata: { [string]: any }): string?
+    for _, kind in ipairs({ "page", "slide" }) do
+        local first, last = metadata[kind .. "_start"], metadata[kind .. "_end"]
+        if type(first) == "number" then
+            local one = kind == "page" and "p. " or "slide "
+            if type(last) ~= "number" or last <= first then
+                return one .. tostring(math.floor(first))
+            end
+            local many = kind == "page" and "pp. " or "slides "
+            return many .. tostring(math.floor(first)) .. "-" .. tostring(math.floor(last))
+        end
+    end
+    return nil
+end
+
+-- A passage's source as a reader cites it ("Guide.pdf, p. 47"), or nil when
+-- the item names neither a file nor a page.
+function M.source_label(item: any): string?
+    local metadata = item_metadata(item)
+    local parts = {}
+    for _, key in ipairs({ "original_filename", "filename", "title" }) do
+        local name = metadata[key]
+        if type(name) == "string" and string.find(name, "%S") then
+            parts[#parts + 1] = name
+            break
+        end
+    end
+    local where = locator(metadata)
+    if where then parts[#parts + 1] = where end
+    if #parts == 0 then return nil end
+    return table.concat(parts, ", ")
+end
+
+-- One numbered passage line, led by its source when the item has one.
+function M.passage(index: integer, item: any, max_length: integer?): string
+    local content = tostring((type(item) == "table" and item.content) or "")
+    if max_length then content = content:sub(1, max_length) end
+    local label = M.source_label(item)
+    if label then return string.format("[%d] (%s) %s", index, label, content) end
+    return string.format("[%d] %s", index, content)
+end
 
 -- The answer is free-form prose the UI renders verbatim, so it is produced with
 -- a plain generation. Strict structured output (response_format json_schema) is
@@ -44,8 +97,7 @@ local function synthesize(query_text: string, items: any, model: any, extra_prom
     end
     local passages = {}
     for i = 1, math.min(#items, MAX_SOURCES) do
-        local content = items[i].content or ""
-        table.insert(passages, string.format("[%d] %s", i, content:sub(1, math.min(#content, PREVIEW_LENGTH))))
+        table.insert(passages, M.passage(i, items[i], PREVIEW_LENGTH))
     end
     local extra = ""
     if type(extra_prompt) == "string" and extra_prompt ~= "" then
@@ -153,7 +205,10 @@ function M.ask(kb_id: any, opts: any): (any, any)
         local seed_items = {}
         for i = 1, math.min(#items, 5) do
             local item = type(items[i]) == "table" and items[i] or {}
-            table.insert(seed_items, { id = item.id, content = (item.content or ""):sub(1, 600) })
+            local content = (item.content or ""):sub(1, 600)
+            local label = M.source_label(item)
+            if label then content = "(" .. label .. ") " .. content end
+            table.insert(seed_items, { id = item.id, content = content })
         end
         -- Run the dataflow agent in its own pool (funcs.call) so its dataflow
         -- runtime never enters this control-plane/HTTP import closure.

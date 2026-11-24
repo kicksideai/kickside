@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.107](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.106...knowledge-v0.1.107) (2026-11-24)
+
+
+### Bug Fixes
+
+* **frontend:** preserve modal and resource card keyboard access ([#962](https://github.com/kicksideai/kickside/issues/962)) ([a7267f6](https://github.com/kicksideai/kickside/commit/a7267f61db4d6f4598b25631810c1438f68a5361))
+* **knowledge:** cite the file and page of KB passages ([#948](https://github.com/kicksideai/kickside/issues/948)) ([07a892e](https://github.com/kicksideai/kickside/commit/07a892e66c58ab5237a46eae0dfe1720696adc70))
+* **knowledge:** distinguish read failures and collaborator access ([#965](https://github.com/kicksideai/kickside/issues/965)) ([a0e2aba](https://github.com/kicksideai/kickside/commit/a0e2aba059c3a31f2e5c9751f7a9f7beb50ef892))
+
 ## [0.1.106](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.105...knowledge-v0.1.106) (2026-11-21)
 
 

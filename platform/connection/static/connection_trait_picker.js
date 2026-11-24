@@ -3,7 +3,7 @@ import { l as i, s as r } from "./styles-UELhE1cW.js";
 import "@iconify/vue";
 import { define as s } from "@wippy-fe/proxy";
 const p = i(
-  () => import("./ConnectionTraitPicker-BnSGkawT.js"),
+  () => import("./ConnectionTraitPicker-PP65-jkY.js"),
   { loading: "Loading connection picker…", failed: "Could not load the connection picker. Reload the page to try again." },
   n
 ), a = {

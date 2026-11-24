@@ -57,6 +57,16 @@ or has field errors. It opens Advanced when needed and focuses the first invalid
 control in render order. Set `field-errors` to a JSON object to associate server
 messages with their fields. Clear those messages once they no longer apply.
 Set `allow-unset` when missing overrides can inherit host settings.
+Set `disabled` to disable every control.
+
+### SPEC for schema form host choices
+
+A field, or the `items` of an array field, can declare `x-choices: <name>`. The
+host passes `choices` as a JSON object that maps each name to a list of
+`{value, label}` entries. The form treats the listed values as the field's
+`enum` and shows each `label`. It offers only values that pass the field's own
+constraints, such as `pattern` or `not.enum`. When the host supplies no entries
+for the name, the form says no choices are available.
 
 ### SPEC: Model picker field context
 

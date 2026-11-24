@@ -159,12 +159,16 @@ local function result_summary(raw: any, kb_id: string?, fields: { [string]: bool
     local metadata = type(row.metadata) == "table" and row.metadata
         or (type(meta.metadata) == "table" and meta.metadata or {})
     local title = row.title or metadata.title or metadata.label or metadata.name
+        or metadata.original_filename or metadata.filename
     local result: any = { id = row.id }
     if kb_id then result.kb_id = kb_id end
     if title ~= nil then result.title = title end
     local score = row.score or row.similarity or meta.score or meta.similarity
     if score ~= nil then result.score = score end
     if row.snippet ~= nil then result.snippet = row.snippet end
+    for _, key in ipairs({ "page_start", "page_end", "slide_start", "slide_end" }) do
+        if metadata[key] ~= nil then result[key] = metadata[key] end
+    end
     return selected(result, row, fields)
 end
 

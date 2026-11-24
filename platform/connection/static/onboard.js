@@ -3,7 +3,7 @@ import { l as s, s as i } from "./styles-UELhE1cW.js";
 import "@iconify/vue";
 import { define as r } from "@wippy-fe/proxy";
 const a = s(
-  () => import("./Onboard-Cy9zcEKn.js"),
+  () => import("./Onboard-Mutx3bgb.js"),
   { loading: "Loading services…", failed: "Could not load the connections step. Reload the page to try again." },
   n
 );

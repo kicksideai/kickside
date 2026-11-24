@@ -94,13 +94,35 @@ local function redact_returns(context: any): (any) -> any
     return redact
 end
 
+-- The route the resolved call pinned: the card's route its context names by provider,
+-- provider model and profile, or the card's first route when the context names none.
+local function pinned_route(card: any, context: any): any
+    local routes = card.providers or {}
+    if context.provider_id == nil then return routes[1] end
+    if context.provider_route_index ~= nil then
+        local route = routes[context.provider_route_index]
+        if route and route.id == context.provider_id and route.provider_model == context.provider_model
+            and route.provider_profile_id == context.provider_profile_id then
+            return route
+        end
+        return nil
+    end
+    for _, route in ipairs(routes) do
+        if route.id == context.provider_id and route.provider_model == context.provider_model
+            and route.provider_profile_id == context.provider_profile_id then
+            return route
+        end
+    end
+    return nil
+end
+
 local function call(method: string, input: any): (any?, any?)
     local context = ctx.all() or {}
     local card, read_err = model_catalog.get_by_name(context.card)
     if not card then return nil, read_err end
     if card.enabled == false then return nil, "Model route is unavailable" end
-    local route = card.providers and card.providers[1]
-    local profile, profile_err = models_repo.get_profile(card.provider_profile_id)
+    local route = pinned_route(card, context)
+    local profile, profile_err = models_repo.get_profile(route and route.provider_profile_id or card.provider_profile_id)
     if profile_err then return nil, profile_err end
     if not route or not profile or profile.enabled == false then return nil, "Provider profile is unavailable" end
     if profile.error then return nil, profile.error end

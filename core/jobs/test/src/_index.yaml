@@ -664,11 +664,20 @@ entries:
       comment: Lease releases and execution revocations reach their recipients from a principal without process messaging authority.
     source: file://suites/service_signal_test.lua
     method: run
-    modules: [uuid, security, funcs, process, channel, time]
+    modules: [uuid, security, funcs, process, channel, time, sql]
     imports:
       test: wippy.test:test
       lease_release: kickside.core.jobs:lease_release
       proc_supervisor: kickside.core.jobs:proc_supervisor
+      jobs: kickside.core.jobs:jobs
+      job_types: kickside.core.jobs:types
+      job_fixture: app:job_fixture
+      lifecycle: kickside.core.jobs.persist:lifecycle
+      lease_manager: kickside.core.jobs.persist:lease_heartbeat
+      reclaim: kickside.core.jobs.persist:reclaim
+      worker: kickside.core.jobs.service:loop
+      worker_fence: kickside.core.jobs.service:worker_fence
+      worker_child: kickside.core.jobs.service:worker_child
 
   - name: delivery_notification_test
     kind: function.lua
@@ -1857,6 +1866,7 @@ entries:
       lease_release: app:worker_completion_native_release
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       error_envelope: kickside.contract:error_envelope
+      canonical_json: kickside.contract:canonical_json
 
   - name: worker_completion_native_test
     kind: function.lua
@@ -3444,11 +3454,17 @@ entries:
     source: file://wake_native_dependency.lua
     imports:
       fixture: app:wake_native_fixture
+  - name: wake_native_release
+    kind: library.lua
+    source: file://wake_native_dependency.lua
+    imports:
+      fixture: app:wake_native_fixture
   - name: wake_native_source
     kind: library.lua
     source: file://wake_native_source.lua
     imports:
       job_types: kickside.core.jobs:types
+      lease_release: app:wake_native_release
       sql: app:wake_native_sql
       clock: app:wake_native_clock
       lifecycle: app:wake_native_lifecycle

@@ -41,3 +41,28 @@ describe('Inbox list excerpts', () => {
     view.unmount()
   })
 })
+
+it('shows an unavailable folder until Retry returns an empty snapshot', async () => {
+  api.get.mockImplementation(async (url: string) => {
+    if (url.endsWith('/item-types')) return { data: { item_types: [] } }
+    throw new Error('Inbox unavailable')
+  })
+  const view = mount(Inbox, { global: { plugins: [PrimeVuePlugin] } })
+  try {
+    await flushPromises()
+    expect(view.text()).toContain('Inbox unavailable')
+    expect(view.find('.kx-sub').exists()).toBe(false)
+    expect(view.find('.kx-list-empty').exists()).toBe(false)
+    expect(view.find('.kx-detail-empty').exists()).toBe(false)
+    const retry = view.get('button[aria-label="Retry"]')
+    serve([])
+    await retry.trigger('click')
+    await flushPromises()
+    expect(api.get).toHaveBeenLastCalledWith('/api/v1/inbox?status=pending')
+    expect(view.get('.kx-list-empty').text()).toContain('nothing to review')
+    expect(view.get('.kx-sub').text()).toBe('0 pending')
+    expect(view.text()).not.toContain('Inbox unavailable')
+  } finally {
+    view.unmount()
+  }
+})

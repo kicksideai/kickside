@@ -365,6 +365,13 @@ entries:
         field-errors:
           type: object
           description: Server validation messages keyed by field.
+        choices:
+          type: object
+          description: Named choice sets of {value, label}; a field or its items select one with x-choices.
+        disabled:
+          type: boolean
+          default: false
+          description: Disable every control.
     events:
       config-changed:
         type: object

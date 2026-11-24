@@ -171,6 +171,31 @@ local function define_tests()
             test.eq(r.sources[2].id, "second")
         end)
 
+        test.it("ask formatter leads query passages with their file and page", function()
+            local r = kb_tools.format_ask_result({
+                mode = "query",
+                answer = "Answers are disabled. Returning query results.",
+                results = {
+                    { id = "first", content = "first passage", metadata = { filename = "Guide.pdf", page_start = 46, page_end = 47 } },
+                },
+            })
+            test.eq(r.answer, "Answers are disabled. Returning query results.\n\n[1] (Guide.pdf, pp. 46-47) first passage")
+        end)
+
+        test.it("search summaries carry the page and slide locators", function()
+            local row = kb_render.result_summary({ id = "n1", meta = { metadata = { title = "Guide.pdf", page_start = 5, page_end = 6 } } }, "kb-1", {})
+            test.eq(row.title, "Guide.pdf")
+            test.eq(row.page_start, 5)
+            test.eq(row.page_end, 6)
+            test.is_nil(row.slide_start)
+        end)
+
+        test.it("search summaries name a document chunk by its file", function()
+            local row = kb_render.result_summary({ id = "n2", meta = { metadata = { filename = "Guide.pdf", page_start = 3 } } }, "kb-1", {})
+            test.eq(row.title, "Guide.pdf")
+            test.eq(row.page_start, 3)
+        end)
+
         -- Multi-KB pinning (the kb_reader trait writes kb_ids: string[]). A single
         -- pinned KB still resolves with no kb_id; several pinned changes how each
         -- tool resolves — search spans every base.

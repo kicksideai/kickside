@@ -67,6 +67,7 @@ function M.builder(): any
         return statement, {}, err
     end
     function q:query()
+        if M.route == "finish" then return M.result("update", {row()}) end
         M.selections = M.selections + 1
         local locked = ((M.route == "terminated" or M.route == "live") and M.selections == 2)
             or (M.route == "expired" and M.commits == 1)

@@ -31,3 +31,11 @@ profiles:
       "app:db:options.sslmode": disable
       "app:db:pool.max_open": 16
       "app:db:pool.max_idle": 8
+      "app:revision_migration_db:kind": db.sql.postgres
+      "app:revision_migration_db:host": "${pg_host}"
+      "app:revision_migration_db:port": "${pg_port}"
+      "app:revision_migration_db:database": "${pg_database}"
+      "app:revision_migration_db:username": "${pg_username}"
+      "app:revision_migration_db:password": "${pg_password}"
+      "app:revision_migration_db:options.sslmode": disable
+      "app:revision_migration_db:options.search_path": settings_revision_migration_test

@@ -1,6 +1,6 @@
 import { u as t, W as o } from "./wc-runtime-Bmxpx-Ro.js";
 import { a as n } from "./lazy-ZWC1tvFC.js";
-import { s as r } from "./styles-CtbZvY-c.js";
+import { s as r } from "./styles-CmO1WNG3.js";
 import "@iconify/vue";
 import { define as s } from "@wippy-fe/proxy";
 const i = n(

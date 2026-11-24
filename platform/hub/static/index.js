@@ -16,7 +16,7 @@ class e extends o {
   static get vueConfig() {
     return {
       lazyConfig: i(
-        () => import("./lazy-mount-D6q6nXDj.js").then((t) => t.mountConfig),
+        () => import("./lazy-mount-WsPGQZRz.js").then((t) => t.mountConfig),
         "Could not load the Modules page. Reload the page to try again.",
         s
       )

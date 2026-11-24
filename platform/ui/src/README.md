@@ -60,6 +60,11 @@ The editor reads `/nav/list` and writes `/nav/config`. Those compatibility route
 are owned by this module; internally, persisted navigation controls live under
 the `kickside.ui` settings namespace.
 
+`GET /nav/list?manage=1` returns `config.chat_appearance` as `{}` when chat
+appearance inherits the built-in defaults. Sending `{"chat_appearance": {}}` to
+`PUT /nav/config` clears the stored chat appearance override. Omitting the
+field preserves the current chat appearance.
+
 ## Scoped System access
 
 Hosts may compose `kickside.ui.security:system_tabs_access` into a scoped

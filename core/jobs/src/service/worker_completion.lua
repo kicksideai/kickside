@@ -8,6 +8,7 @@ local completion = require("completion")
 local lease_release = require("lease_release")
 local sql_boundary = require("sql_boundary")
 local error_envelope = require("error_envelope")
+local canonical_json = require("canonical_json")
 
 local worker_completion = {}
 
@@ -49,41 +50,6 @@ local function response_error(field: string): error
         retryable = false, details = {code = "job_worker_completion_response", field = field}})
 end
 
-local function complete_job(db: sql.DB, dbtype: string, job: table, output: any, run_ctx: table?): error?
-    local opts, opts_err = completion_opts(output)
-    if opts_err then
-        local park_err = lifecycle.fail_job(db, job, dbtype, tostring(opts_err), "deterministic")
-        if park_err then return error_envelope.wrap_secondary(park_err, opts_err, "invalid worker output parking failed") end
-        return opts_err
-    end
-    local lease = { token = job.lease_token, execution_seq = tonumber(job.execution_seq) }
-    local tx, begin_err = sql_boundary.begin(db, "completion begin failed", "transaction", response_error)
-    if begin_err or not tx then return begin_err or response_error("transaction") end
-    local done, done_err = completion.complete_worker_tx(tx, tostring(job.id), lease, opts :: table)
-    if done_err then
-        return sql_boundary.rollback(tx, done_err, "completion rollback failed")
-    end
-    if type(done) ~= "table" then
-        return sql_boundary.rollback(tx, response_error("completion"), "completion rollback failed")
-    end
-    if done.already_completed == true then
-        return sql_boundary.rollback(tx, nil, "completion rollback failed")
-    end
-    if (opts :: table).record ~= nil then
-        local record = (opts :: table).record
-        local history_err = lifecycle.finalize_job_run(tx, dbtype, run_ctx,
-            record.status, output, output, record.error)
-        if history_err then return sql_boundary.rollback(tx, history_err, "completion rollback failed") end
-    end
-    local _, commit_err = tx:commit()
-    if commit_err then
-        return errors.wrap(commit_err, "completion commit failed")
-    end
-    return lease_release.notify(tostring(job.id), tonumber(job.execution_seq),
-        { kind = job.owner_kind, id = job.owner_id })
-end
-worker_completion.complete_job = complete_job
-
 local function fail_job(db: sql.DB, dbtype: string, job: table, output: any,
     error_text: string, failure_class: string?, run_ctx: table?, retry_floor: table?): (error?, boolean)
     local tx, begin_err = sql_boundary.begin(db, "failure begin failed", "transaction", response_error)
@@ -112,5 +78,45 @@ local function fail_job(db: sql.DB, dbtype: string, job: table, output: any,
         { kind = job.owner_kind, id = job.owner_id }), true
 end
 worker_completion.fail_job = fail_job
+
+local function complete_job(db: sql.DB, dbtype: string, job: table, output: any, run_ctx: table?): (error?, boolean?)
+    local opts, opts_err = completion_opts(output)
+    if opts_err then
+        -- Keep the validation error as the diagnostic. Rejected output may
+        -- exceed the history row limit and roll back the failure settlement.
+        local fail_err, recorded = fail_job(db, dbtype, job, canonical_json.object({}),
+            tostring(opts_err), "deterministic", run_ctx)
+        if fail_err then
+            return error_envelope.wrap_secondary(fail_err, opts_err, "invalid worker output settlement failed"), recorded
+        end
+        return opts_err, recorded
+    end
+    local lease = { token = job.lease_token, execution_seq = tonumber(job.execution_seq) }
+    local tx, begin_err = sql_boundary.begin(db, "completion begin failed", "transaction", response_error)
+    if begin_err or not tx then return begin_err or response_error("transaction") end
+    local done, done_err = completion.complete_worker_tx(tx, tostring(job.id), lease, opts :: table)
+    if done_err then
+        return sql_boundary.rollback(tx, done_err, "completion rollback failed")
+    end
+    if type(done) ~= "table" then
+        return sql_boundary.rollback(tx, response_error("completion"), "completion rollback failed")
+    end
+    if done.already_completed == true then
+        return sql_boundary.rollback(tx, nil, "completion rollback failed")
+    end
+    if (opts :: table).record ~= nil then
+        local record = (opts :: table).record
+        local history_err = lifecycle.finalize_job_run(tx, dbtype, run_ctx,
+            record.status, output, output, record.error)
+        if history_err then return sql_boundary.rollback(tx, history_err, "completion rollback failed") end
+    end
+    local _, commit_err = tx:commit()
+    if commit_err then
+        return errors.wrap(commit_err, "completion commit failed")
+    end
+    return lease_release.notify(tostring(job.id), tonumber(job.execution_seq),
+        { kind = job.owner_kind, id = job.owner_id }), true
+end
+worker_completion.complete_job = complete_job
 
 return worker_completion

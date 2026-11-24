@@ -474,7 +474,7 @@ export function keeperHub(api: Api) {
       return unwrap<{ success: boolean }>(api.delete('/api/v1/hub/auth'))
     },
 
-    async fetchAllByKeyword(keyword: string | string[], pageSize = 100): Promise<HubModuleListItem[]> {
+    async fetchAllByKeyword(keyword: string | string[], pageSize = 100, includePrivate = false): Promise<HubModuleListItem[]> {
       const targets = (Array.isArray(keyword) ? keyword : [keyword])
         .map(k => k.trim().toLowerCase())
         .filter(Boolean)
@@ -483,6 +483,12 @@ export function keeperHub(api: Api) {
       const out: HubModuleListItem[] = []
       const seen = new Set<string>()
       const MAX_PAGES = 50
+      function add(item: HubModuleListItem) {
+        const dedupeKey = moduleIdentityKeys(item)[0] || String(item.full_name || item.id || '').trim().toLowerCase()
+        if (!dedupeKey || seen.has(dedupeKey)) return
+        seen.add(dedupeKey)
+        out.push(item)
+      }
       async function* pages(params: Record<string, unknown>) {
         for (let page = 1; page <= MAX_PAGES; page++) {
           const res = await unwrap<HubBrowseResponse>(api.get('/api/v1/keeper/hub/browse', {
@@ -513,10 +519,7 @@ export function keeperHub(api: Api) {
             // kickside/self-reflection) while retaining keyword filtering for
             // cross-organization capability tags such as agent-tools.
             if (!keys.some(k => targetSet.has(k)) && !targetSet.has(orgKey)) continue
-            const dedupeKey = moduleIdentityKeys(item)[0] || String(item.full_name || item.id || '').trim().toLowerCase()
-            if (!dedupeKey || seen.has(dedupeKey)) continue
-            seen.add(dedupeKey)
-            out.push(item)
+            add(item)
           }
         }
       }
@@ -524,6 +527,7 @@ export function keeperHub(api: Api) {
       for await (const items of pages({ visibility: 'private' })) {
         for (const item of items) {
           for (const key of moduleIdentityKeys(item)) privateKeys.add(key)
+          if (includePrivate) add(item)
         }
       }
       for (const item of out) {

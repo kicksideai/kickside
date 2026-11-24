@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.78](https://github.com/kicksideai/kickside/compare/hub-v0.1.77...hub-v0.1.78) (2026-11-24)
+
+
+### Bug Fixes
+
+* **hub:** list readable private modules in the module catalog ([#954](https://github.com/kicksideai/kickside/issues/954)) ([70ecfa3](https://github.com/kicksideai/kickside/commit/70ecfa3b564739157ee62dbcab9f4d2c4e1c5128))
+
 ## [0.1.77](https://github.com/kicksideai/kickside/compare/hub-v0.1.76...hub-v0.1.77) (2026-11-19)
 
 

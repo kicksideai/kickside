@@ -6,6 +6,7 @@ local cfg = require("config")
 local row_bytes = require("row_bytes")
 local boundary = require("sql_boundary")
 local job_types = require("job_types")
+local lease_release = require("lease_release")
 
 local wake = {}
 type DialectTransaction = { db_type: (any) -> (string?, error?) }
@@ -378,7 +379,7 @@ function wake.wake_multi(tx, keys: { string }, dbtype: string?, completion_job_i
     return apply_plans(tx, plans, dialect, completion_job_id, mutation)
 end
 
-function wake.continue_job(db: sql.DB, dbtype: string, job: table)
+function wake.continue_job(db: sql.DB, dbtype: string, job: table, run_ctx: table?)
     local payload, decode_err = lifecycle.decode_payload(job.payload)
     if decode_err then return nil, decode_err end
     if type(payload) ~= "table" then return nil, response_error("payload") end
@@ -408,9 +409,15 @@ function wake.continue_job(db: sql.DB, dbtype: string, job: table)
     local opts = #candidates > fanout_limit and { next_run_at = clock.now(dbtype) } or { terminal = true }
     local complete_err = lifecycle.complete_tx(tx, job, dbtype, opts)
     if complete_err then return nil, boundary.rollback(tx, complete_err, "wake continuation rollback failed") end
+    local result = { self_completed = true, woken = count }
+    local history_err = lifecycle.finalize_job_run(tx, dbtype, run_ctx, job_types.RUN_STATE.SUCCESS, result, result, nil)
+    if history_err then return nil, boundary.rollback(tx, history_err, "wake continuation rollback failed") end
     local _, commit_err = tx:commit()
     if commit_err then return nil, query_error("wake continuation commit failed", commit_err) end
-    return { self_completed = true, woken = count }, nil
+    result.completion = { run_history_settled = true }
+    local release_err = lease_release.notify(tostring(job.id), tonumber(job.execution_seq),
+        { kind = job.owner_kind, id = job.owner_id })
+    return result, release_err
 end
 
 -- wake_job wakes one job by id (CONTRACTS jobs.wake_job) and returns

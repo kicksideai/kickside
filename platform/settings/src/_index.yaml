@@ -25,6 +25,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.settings.migrations:02_settings_revision
         path: .meta.target_db
+      - entry: kickside.settings.migrations:03_settings_key_revision
+        path: .meta.target_db
       - entry: kickside.settings:db_config
         path: .meta.db_id
       - entry: kickside.settings:reader_db
@@ -470,32 +472,32 @@ entries:
         output_schemas:
           - definition: |
               { "type": "object",
-                "properties": { "success": { "type": "boolean" }, "value": { "description": "Stored value or declared default" }, "error": { "type": "string" } },
+                "properties": { "success": { "type": "boolean" }, "value": { "description": "Stored value or declared default" }, "revision": { "type": "integer", "minimum": 0, "description": "Revision of the stored override; 0 while the setting holds its declared default" }, "error": { "type": "string" } },
                 "required": ["success"] }
             format: application/schema+json
       - name: set
-        description: set({ namespace, key, value }) -> { success }. Validates against the declaration.
+        description: set({ namespace, key, value, expected_revision? }) -> { success, revision }. Validates against the declaration. With expected_revision the write applies only while the stored override is at that revision (0 = no override); otherwise it is refused with { success = false, conflict = true, revision = <current> }.
         input_schemas:
           - definition: |
               { "type": "object",
-                "properties": { "namespace": { "type": "string" }, "key": { "type": "string" }, "value": { "description": "Value to store; validated against the setting declaration" } },
+                "properties": { "namespace": { "type": "string" }, "key": { "type": "string" }, "value": { "description": "Value to store; validated against the setting declaration" }, "expected_revision": { "type": "integer", "minimum": 0, "description": "Revision of the override the caller read; 0 expects the declared default" } },
                 "required": ["namespace", "key", "value"] }
             format: application/schema+json
         output_schemas:
           - definition: |
-              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" } }, "required": ["success"] }
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" }, "conflict": { "type": "boolean", "description": "True when expected_revision did not match" }, "revision": { "type": "integer", "minimum": 0, "description": "Revision of the override after the write, or the current revision on conflict" } }, "required": ["success"] }
             format: application/schema+json
       - name: unset
-        description: unset({ namespace, key }) -> { success }. Reverts to the declared default.
+        description: unset({ namespace, key, expected_revision? }) -> { success, revision }. Reverts to the declared default; expected_revision applies as for set.
         input_schemas:
           - definition: |
               { "type": "object",
-                "properties": { "namespace": { "type": "string" }, "key": { "type": "string" } },
+                "properties": { "namespace": { "type": "string" }, "key": { "type": "string" }, "expected_revision": { "type": "integer", "minimum": 0 } },
                 "required": ["namespace", "key"] }
             format: application/schema+json
         output_schemas:
           - definition: |
-              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" } }, "required": ["success"] }
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" }, "conflict": { "type": "boolean", "description": "True when expected_revision did not match" }, "revision": { "type": "integer", "minimum": 0, "description": "Revision of the override after the write, or the current revision on conflict" } }, "required": ["success"] }
             format: application/schema+json
       - name: list
         description: list({ namespace? }) -> { success, settings[] }

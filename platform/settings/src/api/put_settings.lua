@@ -1,6 +1,8 @@
 -- PUT /settings — set one or many overrides. Body is a single
 -- { namespace, key, value } or { values: [ ... ] }; a null value clears the
--- override (revert to default). Authn + admin authz are enforced by the router
+-- override (revert to default). An item may carry expected_revision: the write
+-- applies only while the override stands at that revision, otherwise the response
+-- is 409 with the current revision. Authn + admin authz are enforced by the router
 -- firewall + app.security's positive allowlist; the actor is read only for audit.
 
 local http = require("http")
@@ -54,7 +56,7 @@ local function handler()
 
     local updated = {}
     for _, item in ipairs(items :: { any }) do
-        local it = item :: { namespace: any, key: any, value: any }
+        local it = item :: { namespace: any, key: any, value: any, expected_revision: any }
         if type(item) ~= "table" or type(it.namespace) ~= "string" or type(it.key) ~= "string" then
             res:set_status(http.STATUS.BAD_REQUEST)
             res:write_json({ success = false, error = "namespace and key are required" })
@@ -62,12 +64,25 @@ local function handler()
         end
         local r
         if it.value == nil or it.value == json.null then
-            r = inst:unset({ namespace = it.namespace, key = it.key })
+            r = inst:unset({ namespace = it.namespace, key = it.key, expected_revision = it.expected_revision })
         else
-            r = inst:set({ namespace = it.namespace, key = it.key, value = it.value })
+            r = inst:set({ namespace = it.namespace, key = it.key, value = it.value, expected_revision = it.expected_revision })
         end
         if not r or not r.success then
             local message = tostring(r and r.error)
+            if r and r.conflict then
+                res:set_status(http.STATUS.CONFLICT)
+                res:write_json({
+                    success = false,
+                    conflict = true,
+                    namespace = it.namespace,
+                    key = it.key,
+                    revision = r.revision,
+                    message = message,
+                    error = tostring(it.namespace) .. ":" .. tostring(it.key) .. ": " .. message,
+                })
+                return
+            end
             res:set_status(http.STATUS.BAD_REQUEST)
             res:write_json({
                 success = false,
@@ -78,7 +93,7 @@ local function handler()
             })
             return
         end
-        updated[#updated + 1] = { namespace = it.namespace, key = it.key }
+        updated[#updated + 1] = { namespace = it.namespace, key = it.key, revision = r.revision }
     end
 
     res:set_status(http.STATUS.OK)

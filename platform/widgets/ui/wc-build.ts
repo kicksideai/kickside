@@ -15,7 +15,8 @@ type ChunkGraph = {
 // theme dependencies stay with it so Rollup keeps import.meta.url in the entry.
 export function wcRuntimeChunk(id: string, graph: ChunkGraph): string | undefined {
   if (!id.includes('/@wippy-fe/webcomponent-') && !id.includes('/@wippy-fe/theme/')) return
-  for (const moduleId of graph.getModuleIds()) {
-    if (graph.getModuleInfo(moduleId)?.dynamicallyImportedIds.length) return 'wc-runtime'
+  const modules = graph.getModuleIds()
+  for (let entry = modules.next(); !entry.done; entry = modules.next()) {
+    if (graph.getModuleInfo(entry.value)?.dynamicallyImportedIds.length) return 'wc-runtime'
   }
 }

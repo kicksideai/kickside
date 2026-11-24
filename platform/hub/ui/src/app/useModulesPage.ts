@@ -256,7 +256,7 @@ export function useModulesPage() {
     catalogLoading.value = true
     catalogError.value = null
     try {
-      catalog.value = (await hub.fetchAllByKeyword(TAGS)).filter(isInstallableCatalogModule)
+      catalog.value = (await hub.fetchAllByKeyword(TAGS, 100, true)).filter(isInstallableCatalogModule)
     } catch (e: unknown) {
       logError('modules:catalog', e)
       if (e instanceof KeeperHubError && (e.code === 'UNAUTHORIZED' || e.code === 'FORBIDDEN')) {

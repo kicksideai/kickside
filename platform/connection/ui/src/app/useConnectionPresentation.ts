@@ -37,6 +37,10 @@ export function useConnectionPresentation({ providers, connections, search, conf
     return connection.provider ? providersByKey.value[connection.provider] : undefined
   }
 
+  function canReconnect(connection: Connection): boolean {
+    return connection.can_edit === true && !!providerForConnection(connection)
+  }
+
   function grantedScopeSet(connection: Connection): Set<string> {
     return new Set((connection.scopes_granted ?? []).filter(scope => typeof scope === 'string' && scope.length > 0))
   }
@@ -111,13 +115,35 @@ export function useConnectionPresentation({ providers, connections, search, conf
 
   function connectionDescription(connection: Connection): string {
     if (confirmId.value === connection.component_id) return 'Click the check again to remove this connection.'
-    const status = connectionState(connection)
-    if (status === 'expired') return 'The stored access token is expired; reconnect or wait for refresh.'
-    if (status === 'needs_reauth') return `Reauthorize this connection to restore access.${connection.reauth_reason ? ' ' + connection.reauth_reason : ''}`
-    if (status === 'disabled') return 'This connection is disabled and will not be used.'
-    if (hasSignInOnlyScopes(connection)) return 'Reauthorize this connection to grant service scopes.'
-    if (connection.oauth) return 'OAuth connection available for agents and automations.'
-    return 'Connection available for agents and automations.'
+    switch (connectionState(connection)) {
+      case 'connected':
+        if (hasSignInOnlyScopes(connection)) {
+          const hint = canReconnect(connection)
+            ? 'Reconnect to grant service access.'
+            : 'Ask the connection owner to grant service access.'
+          return `This connection is limited to sign-in. ${hint}`
+        }
+        return connection.oauth
+          ? 'OAuth connection available for agents and automations.'
+          : 'Connection available for agents and automations.'
+      case 'expired':
+        return `The stored access token has expired. ${reconnectHint(connection)}`
+      case 'needs_reauth':
+        return ['This connection must be reauthorized.', reconnectHint(connection), connection.reauth_reason]
+          .filter(Boolean).join(' ')
+      case 'disabled':
+        return 'This connection is disabled and will not be used.'
+      case 'error':
+        return `This connection is unavailable. ${reconnectHint(connection, 'Ask the connection owner to check it.')}`
+      case 'unknown':
+        return 'Connection availability could not be verified.'
+    }
+  }
+
+  function reconnectHint(connection: Connection, readOnly = 'Ask the connection owner to reconnect.'): string {
+    if (canReconnect(connection)) return 'Reconnect to restore access.'
+    if (connection.can_edit === true) return 'Check the provider configuration.'
+    return readOnly
   }
 
   function matches(text: string): boolean {
@@ -131,7 +157,7 @@ export function useConnectionPresentation({ providers, connections, search, conf
     connections.value.filter(connection => matches(`${connection.name ?? ''} ${connection.provider ?? ''}`)))
 
   return {
-    providerKey, providerLabel, providerIcon, connIcon, providerForConnection,
+    providerKey, providerLabel, providerIcon, connIcon, providerForConnection, canReconnect,
     grantedScopeSet, defaultScopeSet, availableScopeValues, hasOptionalProviderScopes,
     hasSignInOnlyScopes, connectionState, statusClass, statusLabel, expiryText,
     statusDetail, connectionDescription, filteredProviders, filteredConnections,

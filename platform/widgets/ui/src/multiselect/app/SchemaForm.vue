@@ -3,8 +3,9 @@ import { computed, onMounted, ref, useId, watch } from 'vue'
 import { useEvents, useProps } from '@wippy-fe/webcomponent-vue'
 import WcMount from '../../app/WcMount.vue'
 import StructuredValueField from './StructuredValueField.vue'
+import StringListField from './StringListField.vue'
 import { jsonEqual } from '../../app/json-equal'
-import { fieldError, type SchemaField, type SchemaFormValidity } from '../schema-form-validation'
+import { fieldError, type SchemaChoice, type SchemaField, type SchemaFormValidity } from '../schema-form-validation'
 
 // Generic JSON-schema -> form widget. The shared, decoupled default for any
 // config surface: pass a `schema` (a JSON Schema, as object or string) and the
@@ -16,6 +17,8 @@ interface P {
   config?: Record<string, unknown> | null
   fieldErrors?: Record<string, string>
   allowUnset?: boolean
+  choices?: Record<string, SchemaChoice[]> | string | null
+  disabled?: boolean
 }
 interface E {
   'config-changed': Record<string, unknown>
@@ -30,11 +33,45 @@ const parsed = computed<JsonSchema>(() => {
   if (typeof s === 'string') { try { return JSON.parse(s) } catch { return {} } }
   return s || {}
 })
-const fields = computed<Array<[string, SchemaField]>>(() => Object.entries(parsed.value.properties || {}))
-const groups = computed(() => [
-  { advanced: false, fields: fields.value.filter(([, f]) => f.group !== 'advanced') },
-  { advanced: true, fields: fields.value.filter(([, f]) => f.group === 'advanced') },
-].filter(group => group.fields.length))
+const choiceSets = computed<Record<string, SchemaChoice[]>>(() => {
+  const c = props.value.choices
+  if (typeof c === 'string') { try { return JSON.parse(c) } catch { return {} } }
+  return c || {}
+})
+// x-choices names a choice set the host supplies; it becomes the field's enum,
+// limited to the values the field's own constraints admit.
+function withChoices(f: SchemaField): SchemaField {
+  const items = f.items && withChoices(f.items)
+  const resolved = items === f.items ? f : { ...f, items }
+  const name = f['x-choices']
+  if (typeof name !== 'string') return resolved
+  const admitted = (choiceSets.value[name] ?? []).filter(choice => !fieldError(f, choice.value, true))
+  return { ...resolved, enum: admitted.map(choice => choice.value) }
+}
+function choiceLabel(f: SchemaField, option: unknown): string {
+  const name = f['x-choices']
+  const choice = typeof name === 'string' ? choiceSets.value[name]?.find(entry => entry.value === option) : undefined
+  return choice?.label ?? String(option)
+}
+const fields = computed<Array<[string, SchemaField]>>(() => Object.entries(parsed.value.properties || {}).map(([key, f]) => [key, withChoices(f)]))
+// Fields keep their declared order inside named groups; ungrouped fields lead
+// and the advanced group stays folded at the end.
+const groups = computed(() => {
+  const named = new Map<string, Array<[string, SchemaField]>>()
+  for (const entry of fields.value) {
+    if (entry[1].group === 'advanced') continue
+    const name = typeof entry[1].group === 'string' ? entry[1].group.trim() : ''
+    if (!named.has(name)) named.set(name, [])
+    named.get(name)!.push(entry)
+  }
+  const ungrouped = named.get('') ?? []
+  named.delete('')
+  return [
+    { advanced: false, title: '', fields: ungrouped },
+    ...[...named].map(([title, entries]) => ({ advanced: false, title, fields: entries })),
+    { advanced: true, title: '', fields: fields.value.filter(([, f]) => f.group === 'advanced') },
+  ].filter(group => group.fields.length)
+})
 
 const id = useId()
 const fieldIndices = computed(() => new Map(fields.value.map(([key], index) => [key, index])))
@@ -104,7 +141,7 @@ function controlId(key: string) {
 
 function controlAttrs(key: string, field: SchemaField) {
   const target = controlId(key)
-  const describedBy = [field.description ? target + '-help' : '', errors.value.has(key) ? target + '-error' : ''].filter(Boolean)
+  const describedBy = [field.description ? target + '-help' : '', defaultHint(key, field) ? target + '-default' : '', errors.value.has(key) ? target + '-error' : ''].filter(Boolean)
   return {
     id: target,
     'aria-describedby': describedBy.join(' ') || undefined,
@@ -141,6 +178,33 @@ function controlType(f: SchemaField): string {
 }
 function isRequired(key: string, f: SchemaField): boolean {
   return required.value.has(key) || f.required === true
+}
+function stringList(f: SchemaField): boolean {
+  return f.type === 'array' && f.items?.type === 'string' && !f.items.enum
+}
+function optionList(f: SchemaField): boolean {
+  return f.type === 'array' && Array.isArray(f.items?.enum)
+}
+function strings(key: string, f: SchemaField): string[] {
+  const value = effectiveValue(key, f)
+  return Array.isArray(value) ? value.map(String) : []
+}
+function toggleOption(key: string, f: SchemaField, option: unknown, on: boolean) {
+  const current = Array.isArray(effectiveValue(key, f)) ? effectiveValue(key, f) as unknown[] : []
+  const next = (f.items?.enum ?? []).filter(entry => entry === option ? on : current.includes(entry))
+  set(key, next)
+}
+function display(value: unknown): string {
+  if (typeof value === 'boolean') return value ? 'On' : 'Off'
+  if (Array.isArray(value)) return value.length ? value.join(', ') : 'None'
+  if (value && typeof value === 'object') return JSON.stringify(value)
+  return String(value)
+}
+// Explains what an unset field resolves to, so defaults are visible without a value.
+function defaultHint(key: string, f: SchemaField): string {
+  if (Object.hasOwn(values.value, key) && values.value[key] != null) return ''
+  if (f.default !== undefined) return 'Default: ' + display(f.default)
+  return props.value.allowUnset ? 'Uses the application setting.' : ''
 }
 function textRows(f: SchemaField): number {
   const n = Number(f.rows)
@@ -189,28 +253,41 @@ function pickerValue(key: string, detail: unknown): unknown {
 
 <template>
   <form ref="form" class="sf" novalidate @submit.prevent="reportValidity()" @schema-form-report="reportValidity">
-    <component :is="group.advanced ? 'details' : 'div'" v-for="group in groups" :key="String(group.advanced)" :class="group.advanced ? 'sf-advanced' : 'sf-primary'">
+    <fieldset class="sf-body" :disabled="props.disabled">
+    <component :is="group.advanced ? 'details' : group.title ? 'fieldset' : 'div'" v-for="group in groups" :key="group.advanced + group.title"
+      :class="group.advanced ? 'sf-advanced' : group.title ? 'sf-group' : 'sf-primary'">
       <summary v-if="group.advanced" class="sf-advanced-summary">Advanced</summary>
-      <div :class="group.advanced ? 'sf-advanced-body' : 'sf-primary'">
+      <legend v-else-if="group.title" class="sf-group-title">{{ group.title }}</legend>
+      <div :class="group.advanced ? 'sf-advanced-body' : group.title ? 'sf-group-body' : 'sf-primary'">
         <div v-for="[key, f] in group.fields" :key="key" class="sf-field">
-          <component :is="pickerTag(f) ? 'span' : 'label'" :id="controlId(key) + '-label'" :for="pickerTag(f) ? undefined : controlId(key)" class="sf-lbl">
+          <component :is="pickerTag(f) || optionList(f) ? 'span' : 'label'" :id="controlId(key) + '-label'" :for="pickerTag(f) || optionList(f) ? undefined : controlId(key)" class="sf-lbl">
             {{ f.title || key }}<span v-if="!props.allowUnset && isRequired(key, f)" class="sf-req" aria-hidden="true"> *</span>
           </component>
           <WcMount v-if="pickerTag(f)" :tag="pickerTag(f)" :schema="pickerSchema(key, f)" :config="pickerConfig(key)" :meta="pickerMeta(f)" :provider="pickerProvider(f)" :label="pickerLabel(f)"
-            :attrs="{ ...controlAttrs(key, f), 'aria-labelledby': controlId(key) + '-label', role: 'group' }"
+            :attrs="{ ...controlAttrs(key, f), 'aria-labelledby': controlId(key) + '-label', role: 'group', inert: props.disabled || undefined }"
             @change="set(key, pickerValue(key, $event))" />
           <select v-else-if="f.enum" v-bind="controlAttrs(key, f)" class="sf-input"
             :value="effectiveValue(key, f) ?? ''" @change="set(key, f.enum[($event.target as HTMLSelectElement).selectedIndex - (f.enum.includes('') ? 0 : 1)])">
             <option v-if="!f.enum.includes('')" value="">Choose a value</option>
-            <option v-for="(opt, index) in f.enum" :key="index" :value="opt">{{ opt }}</option>
+            <option v-for="(opt, index) in f.enum" :key="index" :value="opt">{{ choiceLabel(f, opt) }}</option>
           </select>
           <textarea v-else-if="f.format === 'textarea'" v-bind="controlAttrs(key, f)" class="sf-input sf-textarea"
             :minlength="f.minLength" :maxlength="f.maxLength" :rows="textRows(f)" :value="String(effectiveValue(key, f) ?? '')"
             @input="updateInput(key, $event.target as HTMLTextAreaElement)" />
+          <StringListField v-else-if="stringList(f)" v-bind="controlAttrs(key, f)" :label="f.title || key"
+            :value="strings(key, f)" @change="set(key, $event)" />
+          <div v-else-if="optionList(f)" v-bind="{ ...controlAttrs(key, f), 'aria-labelledby': controlId(key) + '-label' }" role="group" class="sf-options">
+            <label v-for="(option, index) in f.items!.enum" :key="index" class="sf-option">
+              <input type="checkbox" class="sf-check" :checked="strings(key, f).includes(String(option))"
+                @change="toggleOption(key, f, option, ($event.target as HTMLInputElement).checked)" />
+              <span>{{ choiceLabel(f.items!, option) }}</span>
+            </label>
+            <span v-if="!f.items!.enum!.length" class="sf-hint">No choices are available.</span>
+          </div>
           <StructuredValueField v-else-if="f.type === 'object' || f.type === 'array'" v-bind="controlAttrs(key, f)"
             :value="values[key]" :fallback="f.default" :kind="f.type" :rows="textRows(f)"
             @change="set(key, $event)" @error="draftErrors.set(key, $event)" />
-          <input v-else-if="f.type === 'boolean'" v-bind="controlAttrs(key, f)" class="sf-check" type="checkbox"
+          <input v-else-if="f.type === 'boolean'" v-bind="controlAttrs(key, f)" class="sf-switch" type="checkbox" role="switch"
             :checked="!!effectiveValue(key, f)" @change="set(key, ($event.target as HTMLInputElement).checked)" />
           <input v-else-if="f.type === 'number' || f.type === 'integer'" v-bind="controlAttrs(key, f)" class="sf-input" type="number"
             :min="f.minimum" :max="f.maximum" :step="f.type === 'integer' ? 1 : 'any'" :value="effectiveValue(key, f) ?? ''"
@@ -219,9 +296,11 @@ function pickerValue(key: string, detail: unknown): unknown {
             :minlength="f.minLength" :maxlength="f.maxLength" :value="effectiveValue(key, f) ?? ''"
             @input="updateInput(key, $event.target as HTMLInputElement)" />
           <span v-if="f.description" :id="controlId(key) + '-help'" class="sf-hint">{{ f.description }}</span>
+          <span v-if="defaultHint(key, f)" :id="controlId(key) + '-default'" class="sf-hint">{{ defaultHint(key, f) }}</span>
           <span v-if="errors.get(key)" :id="controlId(key) + '-error'" class="sf-error" role="alert">{{ errors.get(key) }}</span>
         </div>
       </div>
     </component>
+    </fieldset>
   </form>
 </template>

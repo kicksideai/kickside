@@ -71,6 +71,14 @@ wippy-loading ~ wippy-loading { display: none; }
   /* Wider action row than the other card modules. */
   padding-right: 72px;
 }
+.kx-card-open { text-align: start; }
+.kx-card-open:not(:disabled)::after { content: ''; position: absolute; inset: 0; }
+.kx-card-actions { z-index: 1; }
+.kx-card-open:focus-visible { outline: none; }
+.kx-card:has(.kx-card-open:focus-visible) {
+  border-color: var(--p-focus-ring-color);
+  box-shadow: var(--p-focus-ring-shadow);
+}
 .kx-card-meta {
   flex-wrap: wrap;
 }
