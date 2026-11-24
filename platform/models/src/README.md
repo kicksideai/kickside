@@ -159,6 +159,27 @@ are outside the member module grant; administrators assign them to a group
 through the `kickside.models.security:card_tools` tool capability, which
 includes `card_registrar`.
 
+## Profiles contract and agent tools
+
+`kickside.models.profiles:profiles` lets a module list, read, create, update and
+delete provider profiles without the admin HTTP surface. Writes share
+`catalog/profile_service` with `POST/PUT/DELETE /models/provider-profiles`, which
+logs each write (action, actor, profile id, names of the secrets set) on the
+`kickside.models.profiles` logger. Replies are the public projection: settings,
+`*_env` pointers, `has_api_key` and `secret_fields` (names only). The contract
+is granted through the `kickside.models.security:profile_registrar` policy.
+
+The `kickside.models.traits:profile_manager` trait carries `ModelProfilesRead`
+(`profiles_read`, MCP scope `state.read`: list, get) and `ModelProfilesManage`
+(`profiles_manage`, MCP scope `state.write`: create, update, delete), assigned
+to a group through the `kickside.models.security:profile_tools` tool capability.
+
+Credentials: a profile setting named `api_key_env` (or the provider's other
+`*_env` setting) holds the name of an environment variable the runtime resolves,
+so no secret passes through the tool. A credential supplied as `api_key`,
+`access_key`, `secret_key`, `session_token`, `google_credentials`,
+`access_token` or `headers` is stored encrypted and never returned.
+
 ## Runtime resolution
 
 `kickside.models:model_resolver` binds `wippy.llm:model_resolver`, so

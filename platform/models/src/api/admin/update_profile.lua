@@ -1,7 +1,7 @@
 local http = require("http")
 local http_params = require("http_params")
 local json = require("json")
-local models_repo = require("models_repo")
+local profile_service = require("profile_service")
 
 local function handler()
     local req = http.request()
@@ -29,7 +29,7 @@ local function handler()
         return
     end
 
-    local profile, perr = models_repo.update_profile(id, data)
+    local profile, perr = profile_service.update(id, data)
     if not profile then
         if errors.is(perr, errors.INVALID) then
             http_params.bad_request(res, perr:message(), perr)

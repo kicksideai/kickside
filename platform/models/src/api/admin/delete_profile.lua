@@ -1,5 +1,5 @@
 local http = require("http")
-local models_repo = require("models_repo")
+local profile_service = require("profile_service")
 
 local function handler()
     local req = http.request()
@@ -14,7 +14,7 @@ local function handler()
         return
     end
 
-    local ok, err = models_repo.delete_profile(id)
+    local ok, err = profile_service.delete(id)
     if not ok then
         res:set_status(http.STATUS.BAD_REQUEST)
         res:write_json({ success = false, error = err })

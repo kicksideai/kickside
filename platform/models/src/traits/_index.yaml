@@ -2,9 +2,10 @@
 version: "1.0"
 namespace: kickside.models.traits
 
-# Agent surface over the kickside.models.cards:cards contract. The namespace is
-# outside the member module grant; a group receives the trait and its tools
-# through the kickside.models.security:card_tools policy.
+# Agent surface over the kickside.models.cards:cards and
+# kickside.models.profiles:profiles contracts. The namespace is outside the member
+# module grant; a group receives a trait and its tools through the
+# kickside.models.security:card_tools and :profile_tools policies.
 
 entries:
   - name: card_manager
@@ -154,5 +155,143 @@ entries:
     method: handler
     imports:
       cards_client: kickside.models.traits:cards_client
+      tool_action: kickside.contract:tool_action
+      tool_result: kickside.contract:tool_result
+
+  - name: profile_manager
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Model Provider Profile Manager
+      public: true
+      icon: tabler:plug-connected
+      comment: Lists, reads, creates, updates and deletes model provider profiles.
+      tags: [models, providers, profiles, management]
+    prompt: |
+      You can manage model provider profiles with **ModelProfilesRead** and **ModelProfilesManage**.
+
+      ModelProfilesRead action=list returns every profile; action=get with an id
+      returns one. A profile never reveals a secret value: has_api_key and
+      secret_fields name the credentials that are stored, and config shows the
+      public settings, including any *_env pointers.
+
+      ModelProfilesManage action=create saves a profile (name, provider_id, config
+      settings such as base_url, enabled); action=update with an id changes it and
+      keeps every setting and stored secret the patch omits; action=delete removes
+      the profile and the cards routed through it.
+
+      Prefer an environment reference for credentials: set api_key_env (or the
+      provider's *_env setting such as access_key_env, secret_key_env,
+      session_token_env, google_credentials_env or access_token_env) to the name of
+      an environment variable the runtime holds, so no secret passes through the
+      tool. When no variable exists, pass the credential once as api_key,
+      access_key, secret_key, session_token, google_credentials, access_token or
+      headers; it is stored encrypted and never returned. A refusal returns
+      success false with the reason.
+    tools:
+      - kickside.models.traits:profiles_read
+      - kickside.models.traits:profiles_manage
+
+  - name: profiles_client
+    kind: library.lua
+    meta:
+      comment: Opens the provider profiles contract as the caller and maps its replies onto tool results.
+    source: file://profiles_client.lua
+    modules: [contract, security]
+    imports:
+      tool_result: kickside.contract:tool_result
+
+  - name: profiles_read
+    kind: function.lua
+    meta:
+      type: tool
+      title: Model Profiles Read
+      public: true
+      mcp:
+        required_scopes: [state.read]
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "action": { "type": "string", "enum": ["list", "get"], "description": "list: every provider profile. get: one profile by id." },
+            "id": { "type": "string", "minLength": 1, "description": "get: the profile id." }
+          },
+          "required": ["action"],
+          "additionalProperties": false
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "description": "The action's record. Failures return no result and a typed tool error with a clear message; a contract refusal returns success false with its error. Secret values never appear.",
+          "properties": {
+            "success": { "type": "boolean" },
+            "error": { "type": "string", "description": "Present with success false: the contract's refusal." },
+            "count": { "type": "integer", "description": "list: number of profiles." },
+            "profiles": { "type": "array", "description": "list: profiles in the public projection.", "items": { "type": "object" } },
+            "profile": { "type": "object", "description": "get: id, name, provider_id, enabled, config (public settings and *_env pointers), status, has_api_key, has_api_key_env and secret_fields (names of stored secrets)." }
+          },
+          "required": ["success"]
+        }
+      llm_alias: ModelProfilesRead
+      llm_description: "Read model provider profiles: list every profile or get one by id. Replies show public settings, *_env pointers and the names of stored secrets, never secret values. Read-only. Failures return a typed tool error; a refusal returns success false with its error."
+    source: file://profiles_read.lua
+    method: handler
+    imports:
+      profiles_client: kickside.models.traits:profiles_client
+      tool_action: kickside.contract:tool_action
+      tool_result: kickside.contract:tool_result
+
+  - name: profiles_manage
+    kind: function.lua
+    meta:
+      type: tool
+      title: Model Profiles Manage
+      public: true
+      mcp:
+        required_scopes: [state.write]
+      input_schema: |
+        {
+          "type": "object",
+          "properties": {
+            "action": { "type": "string", "enum": ["create", "update", "delete"], "description": "create: profile. update: id and profile patch. delete: id; also removes the cards routed through the profile." },
+            "id": { "type": "string", "minLength": 1, "description": "update, delete: the profile id." },
+            "profile": {
+              "type": "object",
+              "description": "create: the profile. update: the fields to change; omitted settings and stored secrets keep their saved values.",
+              "properties": {
+                "id": { "type": "string", "description": "create: stable id; derived from the name when omitted." },
+                "name": { "type": "string", "minLength": 1 },
+                "provider_id": { "type": "string", "description": "Registered llm.provider entry id, e.g. wippy.llm.openai_compat:provider." },
+                "icon": { "type": "string" },
+                "enabled": { "type": "boolean" },
+                "config": { "type": "object", "description": "Public settings (base_url, timeout, retry, test_model, ...). *_env keys name environment variables that hold credentials." },
+                "api_key_env": { "type": "string", "description": "Environment variable holding the API key; preferred over api_key." },
+                "api_key": { "type": "string", "description": "Write-only credential, stored encrypted and never returned. Prefer api_key_env." },
+                "headers": { "type": "object", "description": "Write-only provider request headers, stored encrypted." }
+              },
+              "required": []
+            }
+          },
+          "required": ["action"],
+          "additionalProperties": false
+        }
+      output_schema: |
+        {
+          "type": "object",
+          "description": "The action's record. Failures return no result and a typed tool error with a clear message; a contract refusal returns success false with its error. Secret values never appear.",
+          "properties": {
+            "success": { "type": "boolean" },
+            "error": { "type": "string", "description": "Present with success false: the contract's refusal." },
+            "profile": { "type": "object", "description": "create, update: the stored profile in its public projection; secret_fields names the stored secrets." },
+            "id": { "type": "string", "description": "delete: the deleted profile id." }
+          },
+          "required": ["success"]
+        }
+      llm_alias: ModelProfilesManage
+      llm_description: "Manage model provider profiles. create saves a profile; update patches one by id and keeps omitted settings and stored secrets; delete removes it with its cards. Prefer api_key_env (an environment variable name) over api_key; credentials passed in are stored encrypted and never returned. Every write is logged. Failures return a typed tool error; a refusal returns success false with its error."
+    source: file://profiles_manage.lua
+    method: handler
+    imports:
+      profiles_client: kickside.models.traits:profiles_client
       tool_action: kickside.contract:tool_action
       tool_result: kickside.contract:tool_result

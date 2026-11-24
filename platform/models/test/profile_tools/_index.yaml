@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: app
+
+# Agent tools over kickside.models.profiles:profiles. The tools run from the
+# registry as shipped, under the scope the profile tools policy composes; no
+# provider is contacted.
+
+entries:
+  - name: profile_tools_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_models_profile_tools
+      comment: Listing, reading, saving and deleting provider profiles through the profile agent tools.
+    source: file://test.lua
+    modules: [funcs, security, registry, json]
+    method: run
+    imports:
+      test: wippy.test:test
+      models_repo: kickside.models.persist:repo

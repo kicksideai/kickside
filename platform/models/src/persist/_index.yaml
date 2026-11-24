@@ -94,6 +94,14 @@ entries:
       actions: [funcs.call, funcs.security]
       effect: allow
 
+  - name: profile_changed_call
+    kind: security.policy
+    meta: {private: true}
+    policy:
+      resources: [kickside.models.persist:profile_changed_signal]
+      actions: [funcs.call, funcs.security]
+      effect: allow
+
   - name: publish_profile_cache
     kind: security.policy
     meta: {private: true}

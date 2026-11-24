@@ -92,3 +92,12 @@ entries:
     imports:
       model_catalog: kickside.models.catalog:model_catalog
       models_repo: kickside.models.persist:repo
+
+  - name: profile_service
+    kind: library.lua
+    meta:
+      comment: Single write path for provider profiles, shared by the admin handlers and the profiles contract; records each write.
+    source: file://profile_service.lua
+    modules: [security, logger]
+    imports:
+      models_repo: kickside.models.persist:repo
