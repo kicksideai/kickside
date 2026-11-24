@@ -22,7 +22,7 @@ local function b64url(raw: string): string
 end
 
 local function from_hex(hex: string): string
-    return (hex:gsub("..", function(pair) return string.char(tonumber(pair, 16)) end))
+    return (hex:gsub("..", function(pair) return string.char(tonumber(pair, 16) or 0) end))
 end
 
 local function sign(payload, secret: string?): string

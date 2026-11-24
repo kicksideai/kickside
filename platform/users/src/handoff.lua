@@ -31,7 +31,7 @@ function M.verify(token: any, secret: any, now: number)
     if type(secret) ~= "string" or secret == "" then return nil, "not_configured" end
     if type(token) ~= "string" or token == "" or #token > M.MAX_TOKEN_LENGTH then return nil, "malformed" end
     local encoded, signature = token:match("^([%w%-_]+)%.([%w%-_]+)$")
-    if not encoded then return nil, "malformed" end
+    if not encoded or not signature then return nil, "malformed" end
 
     local presented = decode_base64url(signature)
     local expected, hmac_err = crypto.hmac.sha256(secret, encoded)
