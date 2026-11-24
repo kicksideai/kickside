@@ -13,7 +13,6 @@ entries:
       llm_mapper: wippy.llm.openai_compat:mapper
       llm_output: wippy.llm:output
       llm_transport: wippy.llm.util:transport
-      platform_cap: kickside.models.providers.profile:platform_cap
 
   - name: mapper
     kind: library.lua

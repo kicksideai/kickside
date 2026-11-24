@@ -459,7 +459,6 @@ entries:
       models_repo: app:profile_repo_fixture
       catalog_policy: kickside.models.catalog:policy
       providers: app:profile_execution_fixture
-      platform_cap: kickside.models.providers.profile:platform_cap
 
   - name: profile_repo_fixture
     kind: library.lua
@@ -610,17 +609,3 @@ entries:
       anthropic: app:diagnostics_anthropic
       google: app:diagnostics_google_genai
       bedrock: app:diagnostics_bedrock
-
-  - name: platform_cap_test
-    kind: function.lua
-    meta: {type: test, suite: kickside_models}
-    source: file://platform_cap_test.lua
-    method: run
-    modules: [sql, time]
-    imports:
-      test: wippy.test:test
-      platform_cap: kickside.models.providers.profile:platform_cap
-      models_types: kickside.models:models_types
-      models_repo: kickside.models.persist:repo
-      driver: app:profile_driver_fixture
-      context: app:profile_context_fixture

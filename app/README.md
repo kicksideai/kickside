@@ -107,10 +107,6 @@ A deploying platform can also set these optional variables:
 - `KICKSIDE_HANDOFF_SECRET`: shared secret for one-time sign-in links
   (`/login/handoff#token=...`, verified by `POST /api/public/user/handoff`).
   Empty disables handoff sign-in.
-- `KICKSIDE_PLATFORM_LLM_API_KEY` and `KICKSIDE_PLATFORM_TOKEN_MONTHLY_CAP`: a
-  model key and the tokens per calendar month (UTC) that calls through it may
-  use. Only calls through the "KickSide platform" provider profile count. With
-  both set, the first boot creates that profile. Without a cap, it is disabled.
 
 ## Postgres
 

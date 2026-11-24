@@ -9,7 +9,6 @@ local model_catalog = require("model_catalog")
 local models_repo = require("models_repo")
 local policy = require("catalog_policy")
 local providers = require("providers")
-local platform_cap = require("platform_cap")
 
 local M = {}
 
@@ -127,8 +126,6 @@ local function call(method: string, input: any): (any?, any?)
     if profile_err then return nil, profile_err end
     if not route or not profile or profile.enabled == false then return nil, "Provider profile is unavailable" end
     if profile.error then return nil, profile.error end
-    local cap_err = platform_cap.check(profile)
-    if cap_err then return nil, cap_err end
     local real_context, context_err, driver = driver_context(route.id, profile, route.options)
     if not real_context then return nil, context_err end
     local redact = redact_returns(real_context)
@@ -138,9 +135,6 @@ local function call(method: string, input: any): (any?, any?)
     for key, value in pairs(input or {}) do request[key] = value end
     request.model = route.provider_model
     local result, call_err = provider[method](provider, request)
-    if not call_err and type(result) == "table" and result.success ~= false then
-        platform_cap.account(profile, result)
-    end
     result = redact(result)
     if (method == "generate" or method == "embed") and type(result) == "table" then
         -- Provider responses may carry arbitrary metadata. Only the managed

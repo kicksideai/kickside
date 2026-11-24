@@ -20,29 +20,6 @@ entries:
       policies:
         - kickside.models:reload_profiles_call
 
-  - name: platform_profile_bootloader
-    kind: function.lua
-    meta:
-      comment: Creates the platform-managed provider profile when the platform key and cap are set.
-      type: bootloader
-      order: 36
-      requires:
-        - kickside.models.service:cache_bootloader
-    source: file://platform_profile.lua
-    method: run
-    modules: [env]
-    imports:
-      models_repo: kickside.models.persist:repo
-      model_discovery: kickside.models.discovery:model_discovery
-      platform_cap: kickside.models.providers.profile:platform_cap
-    security:
-      policies:
-        - kickside.models:reload_profiles_call
-        - kickside.models:secret_key_access
-        - kickside.models.catalog:catalog_read
-        - kickside.models.catalog:catalog_database
-        - kickside.models.providers.profile:platform_usage
-
   # ─── Admin UI (self-served web component) ────────────────────────────
 
   - name: models_cache

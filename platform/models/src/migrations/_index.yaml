@@ -103,16 +103,3 @@ entries:
     method: migrate
     imports:
       migration: wippy.migration:migration
-
-  - name: 08_platform_usage
-    kind: function.lua
-    meta:
-      type: migration
-      depends_on:
-        - ns:wippy.migration
-        - kickside.models.migrations:07_provider_profile_icon
-      timestamp: "2026-11-24T00:00:08Z"
-    source: file://08_platform_usage.lua
-    method: migrate
-    imports:
-      migration: wippy.migration:migration

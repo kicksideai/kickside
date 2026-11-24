@@ -39,13 +39,9 @@ entries:
         path: .meta.target_db
       - entry: kickside.models.migrations:07_provider_profile_icon
         path: .meta.target_db
-      - entry: kickside.models.migrations:08_platform_usage
-        path: .meta.target_db
       - entry: kickside.models:db_config
         path: .meta.db_id
       - entry: kickside.models.catalog:catalog_database
-        path: .policy.resources +=
-      - entry: kickside.models.providers.profile:platform_usage_database
         path: .policy.resources +=
 
   - name: db_config
