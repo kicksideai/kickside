@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.25](https://github.com/kicksideai/kickside/compare/workflows-v0.2.24...workflows-v0.2.25) (2026-11-24)
+
+
+### Bug Fixes
+
+* **widgets:** honor schema-owned component selections ([#982](https://github.com/kicksideai/kickside/issues/982)) ([2a03673](https://github.com/kicksideai/kickside/commit/2a03673caeaa5e1faec2e778bf9b89a8f10832cd))
+
 ## [0.2.24](https://github.com/kicksideai/kickside/compare/workflows-v0.2.23...workflows-v0.2.24) (2026-11-24)
 
 
