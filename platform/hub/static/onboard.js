@@ -1,9 +1,9 @@
 import { W as o, P as t, u as n } from "./wc-runtime-Bo_8bBDp.js";
-import { a as s, s as i } from "./styles-DWmFMkWO.js";
+import { a as s, s as i } from "./styles-BVzRP3QW.js";
 import "@iconify/vue";
 import { define as r } from "@wippy-fe/proxy";
 const a = s(
-  () => import("./OnboardRecommendations-TyHKWOcM.js"),
+  () => import("./OnboardRecommendations-p7rZe47_.js"),
   { loading: "Loading module recommendations…", failed: "Could not load module recommendations. Reload the page to try again." },
   n
 );

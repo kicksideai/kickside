@@ -17,7 +17,7 @@ function S(e) {
   const i = h(e.id);
   return i.includes("/") && r(i), Array.from(t);
 }
-function B(e, t) {
+function M(e, t) {
   const r = h(t);
   return r ? S(e).includes(r) : !1;
 }
@@ -242,6 +242,9 @@ function oe(e) {
     requiredSetupStatus(t) {
       return a(e.get("/api/v1/hub/required-setup", { params: { descriptor: t } }));
     },
+    firstBootStatus() {
+      return a(e.get("/api/v1/hub/first-boot"));
+    },
     applyRequiredSetup(t) {
       return a(e.post("/api/v1/hub/required-setup", { descriptor: t }));
     },
@@ -292,7 +295,7 @@ function oe(e) {
     }
   };
 }
-const E = "registry:v1:", N = 3e4, M = 250;
+const E = "registry:v1:", N = 3e4, B = 250;
 function ae(e) {
   const t = /* @__PURE__ */ new Set();
   for (const r of e) {
@@ -325,7 +328,7 @@ async function ue(e, t, r = {}) {
       const y = s - Date.now();
       if (y <= 0)
         throw new p("SETUP_DESCRIPTOR_NOT_VISIBLE", "Required setup does not become available after installation.");
-      await new Promise((d) => setTimeout(d, Math.min(M, y)));
+      await new Promise((d) => setTimeout(d, Math.min(B, y)));
     }
     if (o.success && o.ready && o.status === "ready") continue;
     n(), r.onPhase?.(o.pending_label || "Running required setup…");
@@ -349,7 +352,7 @@ export {
   p as K,
   q as a,
   U as b,
-  B as c,
+  M as c,
   te as d,
   se as e,
   re as f,
@@ -374,4 +377,4 @@ export {
   Y as y,
   ee as z
 };
-//# sourceMappingURL=requiredSetup-BI-hhUXu.js.map
+//# sourceMappingURL=requiredSetup-B_O8Zebg.js.map

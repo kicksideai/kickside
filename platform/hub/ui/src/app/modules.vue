@@ -13,6 +13,7 @@ import {
 import { useModulesPage } from './useModulesPage.ts'
 import InstallDialog from './InstallDialog.vue'
 import ModuleDetailView from './ModuleDetailView.vue'
+import FirstBootStatus from './FirstBootStatus.vue'
 
 const page = useModulesPage()
 const {
@@ -70,6 +71,7 @@ const anchorEl = ref<HTMLElement | null>(null)
 
       <!-- ───────────────────────── List view ───────────────────────── -->
       <div v-else class="km-list">
+        <FirstBootStatus />
         <!-- Discovery: the tagged catalog. The System tab already titles this
              "Modules", so no in-component section title — just the toolbar. -->
         <section>
