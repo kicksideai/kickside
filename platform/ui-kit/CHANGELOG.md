@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.10](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.9...ui-kit-v1.7.10) (2026-11-24)
+
+
+### Bug Fixes
+
+* **ui-kit:** keep settings row actions beside the text at narrow widths ([#971](https://github.com/kicksideai/kickside/issues/971)) ([5a0e3aa](https://github.com/kicksideai/kickside/commit/5a0e3aac700d87583b4e00b462731282e77bd239))
+
 ## [1.7.9](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.8...ui-kit-v1.7.9) (2026-11-24)
 
 
