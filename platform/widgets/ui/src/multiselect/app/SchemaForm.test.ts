@@ -157,4 +157,51 @@ describe('schema form field validation', () => {
     await input(control(), '')
     expect(validity).toHaveBeenLastCalledWith({ valid: true, errors: {} })
   })
+
+  it('edits a text list as chips and validates each entry against the item schema', async () => {
+    const { root, control, changed, validity } = await mount({
+      attributes: { type: 'array', title: 'Attributes', items: { type: 'string', pattern: '^[a-z_]+$' }, uniqueItems: true },
+    }, { attributes: ['brand'] })
+    const entry = control()
+    expect(root.querySelector('label.sf-lbl')!.getAttribute('for')).toBe(entry.id)
+    expect([...root.querySelectorAll('.sf-list-chip-label')].map(chip => chip.textContent)).toEqual(['brand'])
+    await input(entry, 'Color')
+    entry.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))
+    await nextTick()
+    expect(changed).toHaveBeenLastCalledWith({ attributes: ['brand', 'Color'] })
+    expect(validity).toHaveBeenLastCalledWith({ valid: false, errors: { attributes: 'Entry 2: Use the required format.' } })
+    root.querySelector<HTMLButtonElement>('button[aria-label="Remove Color"]')!.click()
+    await nextTick()
+    expect(changed).toHaveBeenLastCalledWith({ attributes: ['brand'] })
+    expect(validity).toHaveBeenLastCalledWith({ valid: true, errors: {} })
+  })
+
+  it('offers enumerated list items as a labelled group of choices', async () => {
+    const { root, changed } = await mount({ days: { type: 'array', title: 'Days', items: { type: 'string', enum: ['mon', 'tue', 'wed'] } } }, { days: ['wed'] })
+    const group = root.querySelector<HTMLElement>('[role="group"].sf-options')!
+    expect(root.getElementById(group.getAttribute('aria-labelledby')!)!.textContent!.trim()).toBe('Days')
+    const boxes = [...group.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')]
+    expect(boxes.map(box => box.checked)).toEqual([false, false, true])
+    boxes[0]!.checked = true
+    boxes[0]!.dispatchEvent(new Event('change'))
+    await nextTick()
+    expect(changed).toHaveBeenLastCalledWith({ days: ['mon', 'wed'] })
+  })
+
+  it('renders booleans as switches, named groups under a legend and explains unset defaults', async () => {
+    const { root, control } = await mount({
+      enabled: { type: 'boolean', title: 'Enabled', default: true },
+      hold: { type: 'integer', title: 'Hold', group: 'Reservations' },
+      note: { type: 'string', title: 'Note', group: 'Reservations', default: 'none' },
+    }, {}, { 'allow-unset': '' })
+    expect(control().getAttribute('role')).toBe('switch')
+    expect(control().checked).toBe(true)
+    const legend = root.querySelector('fieldset.sf-group > legend')!
+    expect(legend.textContent).toBe('Reservations')
+    expect([...legend.parentElement!.querySelectorAll('.sf-lbl')].map(label => label.textContent!.trim())).toEqual(['Hold', 'Note'])
+    const hints = (index: number) => control(index).getAttribute('aria-describedby')!.split(' ').map(id => root.getElementById(id)!.textContent)
+    expect(hints(0)).toEqual(['Default: On'])
+    expect(hints(1)).toEqual(['Uses the application setting.'])
+    expect(hints(2)).toEqual(['Default: none'])
+  })
 })
