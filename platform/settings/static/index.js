@@ -1,6 +1,6 @@
 import { W as s, a as o } from "./wc-runtime-56DLhE4T.js";
 import { l as i } from "./lazy-ZWC1tvFC.js";
-import { s as n } from "./styles-DJi-TJey.js";
+import { s as n } from "./styles-BwCnGIq7.js";
 import "@iconify/vue";
 import { define as p } from "@wippy-fe/proxy";
 const r = { props: { type: "object", properties: { route: { type: "string", default: "", description: "Deep-link to a settings block by key. Unset selects the first block." } } } }, a = {
@@ -17,7 +17,7 @@ class t extends s {
   static get vueConfig() {
     return {
       lazyConfig: i(
-        () => import("./lazy-mount-BTn11Kgl.js").then((e) => e.mountConfig),
+        () => import("./lazy-mount-8PVP98aG.js").then((e) => e.mountConfig),
         "Could not load Settings. Reload the page to try again.",
         o
       )

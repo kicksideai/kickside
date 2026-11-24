@@ -6,6 +6,7 @@ import Select from 'primevue/select'
 import ToggleSwitch from 'primevue/toggleswitch'
 import { relativeTime } from '@widgets/app/datetime'
 import WcMount from '@widgets/app/WcMount.vue'
+import SettingsGroup from '@kickside/ui-kit/SettingsGroup.vue'
 import { api } from '@wippy-fe/proxy'
 import { confirmSettingChange, type DestructiveSetting } from './setting-change'
 
@@ -353,13 +354,8 @@ onMounted(load)
 
     <template v-else>
       <input v-if="all" v-model="query" type="search" class="ks-input ks-all-search" aria-label="Search settings" placeholder="Search settings" />
-      <section v-for="g in groups" :key="g.name" class="ks-group">
-        <div v-if="!singleDefaultGroup" class="ks-group-head">
-          <h2 class="ks-group-title">{{ g.name }}</h2>
-          <span class="ks-group-count">{{ g.items.length }}</span>
-        </div>
-
-        <component :is="all ? 'table' : 'div'" class="ks-list" :class="{ 'ks-all-table': all }">
+      <SettingsGroup v-for="g in groups" :key="g.name" :title="singleDefaultGroup ? undefined : g.name" :count="g.items.length">
+        <component :is="all ? 'table' : 'div'" :class="{ 'ks-all-table': all }">
           <thead v-if="all"><tr><th scope="col">Owner</th><th scope="col">Setting</th><th scope="col">Value</th></tr></thead>
           <component :is="all ? 'tbody' : 'div'">
           <component :is="all ? 'tr' : 'div'" v-for="s in g.items" :key="idOf(s)" class="ks-row"
@@ -452,7 +448,7 @@ onMounted(load)
           </component>
           </component>
         </component>
-      </section>
+      </SettingsGroup>
     </template>
   </div>
 </template>

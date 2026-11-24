@@ -2,6 +2,7 @@
 @import "@kickside/ui-kit/spin.css";
 @import "@kickside/ui-kit/kx-tag.css";
 @import "@kickside/ui-kit/kx-settings-rail.css";
+@import "@kickside/ui-kit/kx-settings-group.css";
 @import "@widgets/app/wc-mount.css";
 
 /* Tailwind base. The theme's PrimeVue CSS is @apply-based and assumes
@@ -92,21 +93,6 @@ wippy-loading ~ wippy-loading { display: none; }
    two-pane shell), so it owns the surface padding + scroll. */
 .ks-pane-solo { flex: 1; min-height: 0; overflow-y: auto; padding: 18px var(--system-surface-gutter) 28px; }
 
-.ks-group { display: flex; flex-direction: column; }
-.ks-group-head { display: flex; align-items: center; gap: 8px; margin: 0 0 8px 2px; }
-.ks-group-ico { width: 16px; height: 16px; color: var(--p-text-muted-color); }
-.ks-group-title {
-  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
-  color: var(--p-text-muted-color); margin: 0;
-}
-.ks-group-count {
-  font-size: 10px; font-weight: 600; line-height: 1; padding: 2px 7px; border-radius: 999px;
-  background: color-mix(in srgb, var(--p-text-color) 10%, transparent); color: var(--p-text-muted-color);
-}
-.ks-list {
-  border: 1px solid var(--p-content-border-color); border-radius: 14px; overflow: hidden;
-  background: var(--p-content-background);
-}
 /* Flex-wrap (not grid + media query): media queries measure the iframe viewport,
    not this embedded content area, so they cannot react to the real available
    width. flex-wrap lets the control drop below the description when the row is
