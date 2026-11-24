@@ -94,7 +94,7 @@ entries:
     meta:
       comment: Connector-level model discovery port for DB-backed provider profiles.
     source: file://service.lua
-    modules: [logger]
+    modules: [logger, registry, funcs]
     imports:
       models_repo: kickside.models.persist:repo
       models_types: kickside.models:models_types

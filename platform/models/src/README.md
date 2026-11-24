@@ -171,6 +171,9 @@ is granted through the `kickside.models.security:profile_registrar` policy.
 `served_models({ id })` answers the provider models a profile serves now, read
 from the provider's model list without recording anything; a module that only
 reads profiles and what they serve holds `kickside.models.security:profile_reader`.
+A provider without a discovery adapter answers its model list through the
+function its `llm.provider` entry names in `meta.model_list` (called with
+`{ profile_id }`, answering `{ models }`).
 
 The `kickside.models.traits:profile_manager` trait carries `ModelProfilesRead`
 (`profiles_read`, MCP scope `state.read`: list, get, served) and `ModelProfilesManage`

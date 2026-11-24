@@ -599,6 +599,21 @@ entries:
       http: app:card_save_fake_http
       model_discovery: kickside.models.discovery:model_discovery
 
+  - name: listed_provider
+    kind: registry.entry
+    meta: { type: llm.provider, name: listed, title: Listed provider, model_list: app:listed_models }
+    driver: { id: app:listed_models, options: {} }
+
+  - name: unlisted_provider
+    kind: registry.entry
+    meta: { type: llm.provider, name: unlisted, title: Unlisted provider }
+    driver: { id: app:listed_models, options: {} }
+
+  - name: listed_models
+    kind: function.lua
+    source: file://listed_models.lua
+    method: models
+
   - name: discovery_diagnostics_test
     kind: function.lua
     meta: {type: test, suite: kickside_models}

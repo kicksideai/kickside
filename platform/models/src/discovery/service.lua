@@ -5,6 +5,8 @@ local common = require("discovery_common")
 local mapper = require("model_mapper")
 local provider_registry = require("provider_registry")
 local reference_registry = require("reference_registry")
+local registry = require("registry")
+local funcs = require("funcs")
 
 local M = {}
 local log = logger:named("kickside.models.discovery")
@@ -127,9 +129,26 @@ function M.discover(profile_id: string): (any?, any?, any?)
     }
 end
 
+-- declared_list answers the model list the profile's provider declares (its llm.provider
+-- entry's meta.model_list names a function called with { profile_id } and answering
+-- { models = { provider_model, ... } }), or nil when it declares none.
+local function declared_list(profile_id: string, provider_id: string): ({ string }?, any?, boolean)
+    local entry = registry.get(provider_id)
+    local fn = entry and entry.meta and entry.meta.model_list
+    if type(fn) ~= "string" or fn == "" then return nil, nil, false end
+    local answer, err = funcs.new():call(fn, { profile_id = profile_id })
+    if err then return nil, "model list failed: " .. tostring(err), true end
+    local out: { string } = {}
+    for _, m in ipairs((type(answer) == "table" and type(answer.models) == "table") and answer.models or {}) do
+        if type(m) == "string" and m ~= "" then out[#out + 1] = m end
+    end
+    return out, nil, true
+end
+
 -- served answers the provider models profile_id serves now, as the provider's model list
--- answers them through the profile's discovery adapter, in the list's order. It records
--- nothing: neither cards nor the profile status change.
+-- answers them, in the list's order: through the profile's discovery adapter, else the model
+-- list the provider's entry declares (meta.model_list). It records nothing: neither cards nor
+-- the profile status change.
 function M.served(profile_id: string): ({ string }?, any?, any?)
     local profile, profile_err = models_repo.get_profile(profile_id)
     if profile_err then return nil, profile_err end
@@ -139,9 +158,12 @@ function M.served(profile_id: string): ({ string }?, any?, any?)
     if refused_err then return nil, refused_err end
     if refused then return nil, refused end
 
-    local adapter = M.adapter_for(tostring(profile.provider_id or ""))
+    local provider_id = tostring(profile.provider_id or "")
+    local adapter = M.adapter_for(provider_id)
     if not adapter or not adapter.fetch then
-        return nil, "provider does not support model discovery yet"
+        local listed, list_err, declared = declared_list(profile_id, provider_id)
+        if declared then return listed, list_err end
+        return nil, "provider has no model list: it has no discovery adapter and declares no meta.model_list"
     end
 
     local rows, err, diagnostics = adapter.fetch(profile)
