@@ -144,13 +144,4 @@ function M.run(deps: any): (any?, string?)
     return state, nil
 end
 
--- The first-boot service is supervised. A recorded failed run must therefore
--- have the same non-zero process outcome as an infrastructure error, so the
--- supervisor can make its configured recovery attempts. A completed run and
--- an unconfigured deployment both exit cleanly.
-function M.exit_code(result: any, err: any): number
-    if err or (type(result) == "table" and result.status == "failed") then return 1 end
-    return 0
-end
-
 return M

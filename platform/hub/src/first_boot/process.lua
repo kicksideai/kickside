@@ -42,10 +42,18 @@ local function main(): any
     })
     if err then
         log:warn("first boot module install did not finish", { error = err })
+        error("first boot module install did not finish: " .. tostring(err))
+    elseif result and result.status == "failed" then
+        -- A process service retries runtime failures. Returning a numeric Lua
+        -- value would only mark a clean terminal result, so surface the
+        -- recorded failure after it has been persisted for the status view.
+        local reason = result.message or "one or more modules failed to install"
+        log:warn("first boot module install did not finish", { error = reason })
+        error("first boot module install did not finish: " .. tostring(reason))
     elseif result and result.status ~= "none" then
         log:info("first boot module install finished", { status = result.status })
     end
-    return installer.exit_code(result, err)
+    return 0
 end
 
 return { main = main }

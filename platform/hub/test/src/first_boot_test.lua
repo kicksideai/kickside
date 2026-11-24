@@ -87,13 +87,6 @@ local function define_tests()
             test.eq(calls.install[1], "acme/crm")
         end)
 
-        test.it("exits for supervisor recovery when installation is incomplete", function()
-            test.eq(installer.exit_code({status = "completed"}, nil), 0)
-            test.eq(installer.exit_code({status = "none"}, nil), 0)
-            test.eq(installer.exit_code({status = "failed"}, nil), 1)
-            test.eq(installer.exit_code(nil, "hub unavailable"), 1)
-        end)
-
         test.it("does not install a module with missing settings", function()
             local deps, calls = fake({ env = "acme/crm", plans = {
                 ["acme/crm"] = { missing_requirements = { "acme.crm:target_db" }, requirements = {} },

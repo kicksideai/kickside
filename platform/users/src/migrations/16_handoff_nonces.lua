@@ -11,6 +11,13 @@ return require("migration").define(function()
                         )
                     ]])
                     if err then error(tostring(err)) end
+                    -- Handoff claim removes expired one-time tokens before its
+                    -- insert. Keep that bounded to the expired range rather
+                    -- than scanning live nonces on every sign-in.
+                    local _, index_err = db:execute(
+                        "CREATE INDEX IF NOT EXISTS app_user_handoff_nonces_expires_at_idx "
+                        .. "ON app_user_handoff_nonces (expires_at)")
+                    if index_err then error(tostring(index_err)) end
                 end)
                 down(function(db)
                     local _, err = db:execute("DROP TABLE IF EXISTS app_user_handoff_nonces")
