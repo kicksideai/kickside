@@ -30,6 +30,26 @@ local function check(message, diagnostics, kind, retryable, status)
 end
 
 return {run = test.run_cases(function()
+    test.describe("provider discovery references", function()
+        test.it("fails a discovery whose api_key_env names a variable that does not resolve, naming the reference", function()
+            local saved = assert(repo.create_profile({name = "Provider discovery unresolved key",
+                provider_id = "wippy.llm.openai_compat:provider",
+                config = {base_url = "https://example.invalid", api_key_env = "MODELS_UNDECLARED_KEY"}}))
+            local original = discovery.adapter_for
+            discovery.adapter_for = function() return openai end
+            local ok, err = pcall(function()
+                http_fixture.prepare({status_code = 200, body = '{"data":[]}'}, nil)
+                local result, failure = discovery.discover(saved.id)
+                test.is_nil(result)
+                test.contains(tostring(failure), "model discovery failed: api_key_env MODELS_UNDECLARED_KEY does not resolve")
+                test.eq(assert(repo.get_profile(saved.id)).status, "unhealthy")
+            end)
+            discovery.adapter_for = original
+            assert(repo.delete_profile(saved.id))
+            if not ok then error(err, 0) end
+        end)
+    end)
+
     test.describe("provider discovery timeout", function()
         test.it("uses saved timeout strings and environment durations for discovery and connection probes", function()
             local saved = assert(repo.create_profile({name = "Provider discovery timeout",
