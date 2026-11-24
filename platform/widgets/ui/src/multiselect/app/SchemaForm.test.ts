@@ -164,6 +164,7 @@ describe('schema form field validation', () => {
     }, { attributes: ['brand'] })
     const entry = control()
     expect(root.querySelector('label.sf-lbl')!.getAttribute('for')).toBe(entry.id)
+    expect(root.querySelectorAll('#' + CSS.escape(entry.id))).toHaveLength(1)
     expect([...root.querySelectorAll('.sf-list-chip-label')].map(chip => chip.textContent)).toEqual(['brand'])
     await input(entry, 'Color')
     entry.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))
@@ -186,6 +187,55 @@ describe('schema form field validation', () => {
     boxes[0]!.dispatchEvent(new Event('change'))
     await nextTick()
     expect(changed).toHaveBeenLastCalledWith({ days: ['mon', 'wed'] })
+  })
+
+  it('offers a host-supplied choice set for x-choices, limited to the values the item schema admits', async () => {
+    const choices = { board_item_types: [{ value: 'task', label: 'Task' }, { value: 'issue', label: 'Issue' }, { value: 'support', label: 'Support request' }] }
+    const { root, changed, validity } = await mount({
+      types: { type: 'array', title: 'Types', items: { type: 'string', 'x-choices': 'board_item_types', not: { enum: ['issue'] } } },
+    }, { types: ['support'] }, { choices: JSON.stringify(choices) })
+    const group = root.querySelector<HTMLElement>('[role="group"].sf-options')!
+    expect([...group.querySelectorAll('.sf-option')].map(option => option.textContent!.trim())).toEqual(['Task', 'Support request'])
+    const boxes = [...group.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')]
+    expect(boxes.map(box => box.checked)).toEqual([false, true])
+    boxes[0]!.checked = true
+    boxes[0]!.dispatchEvent(new Event('change'))
+    await nextTick()
+    expect(changed).toHaveBeenLastCalledWith({ types: ['task', 'support'] })
+    expect(validity).toHaveBeenLastCalledWith({ valid: true, errors: {} })
+    root.host.setAttribute('config', JSON.stringify({ types: ['issue', 'gone'] }))
+    await nextTick()
+    expect(validity).toHaveBeenLastCalledWith({ valid: false, errors: { types: 'Entry 1: Choose a different value.' } })
+  })
+
+  it('labels a single x-choices value and says when the host supplies no choices', async () => {
+    const { root, control, changed } = await mount({
+      owner: { type: 'string', title: 'Owner type', 'x-choices': 'board_item_types' },
+      types: { type: 'array', title: 'Types', items: { type: 'string', 'x-choices': 'missing_set' } },
+    }, {}, { choices: JSON.stringify({ board_item_types: [{ value: 'task', label: 'Task' }, { value: 'bug' }] }) })
+    const select = control() as unknown as HTMLSelectElement
+    expect([...select.options].map(option => option.textContent)).toEqual(['Choose a value', 'Task', 'bug'])
+    select.selectedIndex = 1
+    select.dispatchEvent(new Event('change'))
+    await nextTick()
+    expect(changed).toHaveBeenLastCalledWith({ owner: 'task' })
+    const group = root.querySelector<HTMLElement>('[role="group"].sf-options')!
+    expect(group.querySelectorAll('input').length).toBe(0)
+    expect(group.textContent!.trim()).toBe('No choices are available.')
+  })
+
+  it('disables every control while the host marks the form disabled', async () => {
+    const { root, element } = await mount({
+      name: { type: 'string' }, owner: { picker: 'test-schema-picker' },
+    }, {}, { disabled: '' })
+    const body = root.querySelector<HTMLFieldSetElement>('fieldset.sf-body')!
+    expect(body.disabled).toBe(true)
+    expect(body.contains(root.querySelector('input'))).toBe(true)
+    expect(root.querySelector('test-schema-picker')!.hasAttribute('inert')).toBe(true)
+    element.setAttribute('disabled', 'false')
+    await nextTick()
+    expect(body.disabled).toBe(false)
+    expect(root.querySelector('test-schema-picker')!.hasAttribute('inert')).toBe(false)
   })
 
   it('renders booleans as switches, named groups under a legend and explains unset defaults', async () => {

@@ -5,7 +5,7 @@ import WcMount from '../../app/WcMount.vue'
 import StructuredValueField from './StructuredValueField.vue'
 import StringListField from './StringListField.vue'
 import { jsonEqual } from '../../app/json-equal'
-import { fieldError, type SchemaField, type SchemaFormValidity } from '../schema-form-validation'
+import { fieldError, type SchemaChoice, type SchemaField, type SchemaFormValidity } from '../schema-form-validation'
 
 // Generic JSON-schema -> form widget. The shared, decoupled default for any
 // config surface: pass a `schema` (a JSON Schema, as object or string) and the
@@ -17,6 +17,8 @@ interface P {
   config?: Record<string, unknown> | null
   fieldErrors?: Record<string, string>
   allowUnset?: boolean
+  choices?: Record<string, SchemaChoice[]> | string | null
+  disabled?: boolean
 }
 interface E {
   'config-changed': Record<string, unknown>
@@ -31,7 +33,27 @@ const parsed = computed<JsonSchema>(() => {
   if (typeof s === 'string') { try { return JSON.parse(s) } catch { return {} } }
   return s || {}
 })
-const fields = computed<Array<[string, SchemaField]>>(() => Object.entries(parsed.value.properties || {}))
+const choiceSets = computed<Record<string, SchemaChoice[]>>(() => {
+  const c = props.value.choices
+  if (typeof c === 'string') { try { return JSON.parse(c) } catch { return {} } }
+  return c || {}
+})
+// x-choices names a choice set the host supplies; it becomes the field's enum,
+// limited to the values the field's own constraints admit.
+function withChoices(f: SchemaField): SchemaField {
+  const items = f.items && withChoices(f.items)
+  const resolved = items === f.items ? f : { ...f, items }
+  const name = f['x-choices']
+  if (typeof name !== 'string') return resolved
+  const admitted = (choiceSets.value[name] ?? []).filter(choice => !fieldError(f, choice.value, true))
+  return { ...resolved, enum: admitted.map(choice => choice.value) }
+}
+function choiceLabel(f: SchemaField, option: unknown): string {
+  const name = f['x-choices']
+  const choice = typeof name === 'string' ? choiceSets.value[name]?.find(entry => entry.value === option) : undefined
+  return choice?.label ?? String(option)
+}
+const fields = computed<Array<[string, SchemaField]>>(() => Object.entries(parsed.value.properties || {}).map(([key, f]) => [key, withChoices(f)]))
 // Fields keep their declared order inside named groups; ungrouped fields lead
 // and the advanced group stays folded at the end.
 const groups = computed(() => {
@@ -231,6 +253,7 @@ function pickerValue(key: string, detail: unknown): unknown {
 
 <template>
   <form ref="form" class="sf" novalidate @submit.prevent="reportValidity()" @schema-form-report="reportValidity">
+    <fieldset class="sf-body" :disabled="props.disabled">
     <component :is="group.advanced ? 'details' : group.title ? 'fieldset' : 'div'" v-for="group in groups" :key="group.advanced + group.title"
       :class="group.advanced ? 'sf-advanced' : group.title ? 'sf-group' : 'sf-primary'">
       <summary v-if="group.advanced" class="sf-advanced-summary">Advanced</summary>
@@ -241,12 +264,12 @@ function pickerValue(key: string, detail: unknown): unknown {
             {{ f.title || key }}<span v-if="!props.allowUnset && isRequired(key, f)" class="sf-req" aria-hidden="true"> *</span>
           </component>
           <WcMount v-if="pickerTag(f)" :tag="pickerTag(f)" :schema="pickerSchema(key, f)" :config="pickerConfig(key)" :meta="pickerMeta(f)" :provider="pickerProvider(f)" :label="pickerLabel(f)"
-            :attrs="{ ...controlAttrs(key, f), 'aria-labelledby': controlId(key) + '-label', role: 'group' }"
+            :attrs="{ ...controlAttrs(key, f), 'aria-labelledby': controlId(key) + '-label', role: 'group', inert: props.disabled || undefined }"
             @change="set(key, pickerValue(key, $event))" />
           <select v-else-if="f.enum" v-bind="controlAttrs(key, f)" class="sf-input"
             :value="effectiveValue(key, f) ?? ''" @change="set(key, f.enum[($event.target as HTMLSelectElement).selectedIndex - (f.enum.includes('') ? 0 : 1)])">
             <option v-if="!f.enum.includes('')" value="">Choose a value</option>
-            <option v-for="(opt, index) in f.enum" :key="index" :value="opt">{{ opt }}</option>
+            <option v-for="(opt, index) in f.enum" :key="index" :value="opt">{{ choiceLabel(f, opt) }}</option>
           </select>
           <textarea v-else-if="f.format === 'textarea'" v-bind="controlAttrs(key, f)" class="sf-input sf-textarea"
             :minlength="f.minLength" :maxlength="f.maxLength" :rows="textRows(f)" :value="String(effectiveValue(key, f) ?? '')"
@@ -257,8 +280,9 @@ function pickerValue(key: string, detail: unknown): unknown {
             <label v-for="(option, index) in f.items!.enum" :key="index" class="sf-option">
               <input type="checkbox" class="sf-check" :checked="strings(key, f).includes(String(option))"
                 @change="toggleOption(key, f, option, ($event.target as HTMLInputElement).checked)" />
-              <span>{{ option }}</span>
+              <span>{{ choiceLabel(f.items!, option) }}</span>
             </label>
+            <span v-if="!f.items!.enum!.length" class="sf-hint">No choices are available.</span>
           </div>
           <StructuredValueField v-else-if="f.type === 'object' || f.type === 'array'" v-bind="controlAttrs(key, f)"
             :value="values[key]" :fallback="f.default" :kind="f.type" :rows="textRows(f)"
@@ -277,5 +301,6 @@ function pickerValue(key: string, detail: unknown): unknown {
         </div>
       </div>
     </component>
+    </fieldset>
   </form>
 </template>

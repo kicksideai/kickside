@@ -209,6 +209,8 @@
    shares this stylesheet; the SchemaForm.vue control classes (.sf-*) must live in
    the shadow CSS, not an SFC <style> block (which never reaches the shadow root). */
 .sf { display: flex; flex-direction: column; gap: 12px; width: 100%; color: var(--p-text-color); font: inherit; font-size: 13px; }
+.sf-body { display: flex; flex-direction: column; gap: 12px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.sf-body:disabled .sf-field { opacity: .6; cursor: not-allowed; }
 .sf-primary { display: contents; }
 .sf-field { display: flex; flex-direction: column; gap: 5px; }
 .sf-lbl { font-size: 12.5px; font-weight: 600; color: var(--p-text-color); }

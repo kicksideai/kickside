@@ -1,7 +1,7 @@
 import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { lazyControl } from '../lazy'
-import type { SchemaFormValidity } from './schema-form-validation'
+import type { SchemaChoice, SchemaFormValidity } from './schema-form-validation'
 import stylesText from './styles.css?inline'
 
 const SchemaForm = lazyControl(
@@ -15,6 +15,8 @@ interface SchemaFormProps {
   config?: unknown
   fieldErrors?: Record<string, string>
   allowUnset?: boolean
+  choices?: Record<string, SchemaChoice[]>
+  disabled?: boolean
 }
 interface SchemaFormEvents {
   'config-changed': Record<string, unknown>
@@ -28,6 +30,8 @@ const PROPS_SCHEMA: WippyPropsSchema = {
     config: { type: 'object', description: 'Current config values.' },
     'field-errors': { type: 'object', description: 'Server validation messages by field key.' },
     'allow-unset': { type: 'boolean', description: 'Allow missing overrides to inherit from the host.' },
+    choices: { type: 'object', description: 'Named choice sets of {value, label} that fields select through x-choices.' },
+    disabled: { type: 'boolean', description: 'Disable every control.' },
   },
 }
 

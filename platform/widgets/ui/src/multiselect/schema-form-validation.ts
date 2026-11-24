@@ -25,6 +25,13 @@ export interface SchemaField {
   class?: string
   source?: string
   value_field?: string
+  not?: { enum?: Array<string | number | boolean | null> }
+  'x-choices'?: string
+}
+
+export interface SchemaChoice {
+  value: string | number | boolean
+  label?: string
 }
 
 export interface SchemaFormValidity {
@@ -34,6 +41,7 @@ export interface SchemaFormValidity {
 
 export function fieldError(field: SchemaField, value: unknown, required: boolean): string {
   if (value == null || (value === '' && required)) return required ? 'A value is required.' : ''
+  if (field.not?.enum?.some(option => option === value)) return 'Choose a different value.'
   if (field.enum) return field.enum.some(option => option === value) ? '' : 'Choose one of the available values.'
 
   switch (field.type) {

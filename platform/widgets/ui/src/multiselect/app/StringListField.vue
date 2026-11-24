@@ -2,6 +2,8 @@
 import { ref } from 'vue'
 
 // A list of short text values edited as removable chips with one entry input.
+// The control attributes (id, ARIA) belong to the entry input alone.
+defineOptions({ inheritAttrs: false })
 const props = defineProps<{ value: string[]; label: string; placeholder?: string }>()
 const emit = defineEmits<{ change: [value: string[]] }>()
 const draft = ref('')
