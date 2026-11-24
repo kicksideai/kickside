@@ -146,6 +146,32 @@ local function define_tests()
             test.is_nil(private)
         end)
 
+        -- A stored user agent without a title is bad data: the details lookup
+        -- returns an error for it, and the batch title route leaves it out.
+        test.it("returns an error for a stored user agent without a title", function()
+            local cid = uuid()
+            created[#created + 1] = cid
+            local enc, _ = json.encode({ prompt = "You are a test agent." })
+            db:execute(
+                [[INSERT INTO kickside_components (component_id, impl_id, private_context, created_at, updated_at)
+                  VALUES ($1, 'kickside.agents:user_agent', $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)]],
+                { cid, enc })
+            db:execute(
+                [[INSERT INTO kickside_component_access (access_id, subject_id, component_id, source_component_id, subject_type, access_mask, created_at)
+                  VALUES ($1, $2, $3, $4, 'user', 15, CURRENT_TIMESTAMP)]],
+                { uuid(), owner, cid, cid })
+
+            local ref = "user_agent:" .. cid
+            local details, err = new_executor(owner):call(PROBE, {detail = ref})
+            test.is_nil(details)
+            test.not_nil(err)
+            test.contains(tostring(err), ref .. " has no title")
+
+            local resolved = resolve_as(owner, { ref, PUBLIC_SYSTEM_AGENT })
+            test.is_nil(resolved[ref])
+            test.eq(resolved[PUBLIC_SYSTEM_AGENT], "Public Fixture Agent")
+        end)
+
         -- The runtime reports a registry read that the caller's scope denies as
         -- PERMISSION_DENIED. For agent details that means "no agent", not a
         -- failed lookup, so a member never gets a 500 for an agent it cannot see.

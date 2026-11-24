@@ -36,6 +36,11 @@ local function means_no_agent(err): boolean
     return errors.is(err, errors.NOT_FOUND) or errors.is(err, errors.PERMISSION_DENIED)
 end
 
+-- Stored agent data that the chat cannot show is an error, not "no agent".
+local function bad_agent(agent_id: string, problem: string): error
+    return errors.new({ kind = errors.INTERNAL, message = "agent " .. agent_id .. " " .. problem })
+end
+
 local function get_agent_by_id(agent_id)
     local entry, err = registry.get(agent_id)
     if err then
@@ -68,6 +73,7 @@ end
 -- User agents are workspace components, not registry entries: resolve the
 -- title through the component service under the caller's READ access, so a
 -- chat participant sees the agent's title while anyone else gets no answer.
+-- A user agent without a title is bad data and an error.
 local function get_user_agent(ref)
     local component_id = agent_ref.user_component_id(ref)
     if not component_id then
@@ -95,11 +101,11 @@ local function get_user_agent(ref)
         return nil
     end
 
-    local meta = type(comp_result.meta) == "table" and comp_result.meta or {}
-    if type(meta.title) == "string" and meta.title ~= "" then
-        return {id = ref, meta = meta}
+    local meta = comp_result.meta
+    if type(meta) ~= "table" or type(meta.title) ~= "string" or meta.title == "" then
+        return nil, bad_agent(ref, "has no title")
     end
-    return nil
+    return {id = ref, meta = meta}
 end
 
 local function resolve_agent(identifier, name_key)
@@ -117,26 +123,48 @@ local function resolve_identifiers(identifiers)
     return result
 end
 
+-- Start prompts must be a list of strings. An empty prompt is dropped. Any
+-- other value is bad agent data and an error.
+local function start_prompts_of(entry): ({string}?, error?)
+    local declared = entry.data and entry.data.start_prompts
+    if declared == nil then return {} end
+    if type(declared) ~= "table" then
+        return nil, bad_agent(entry.id, "has start_prompts that are not a list")
+    end
+    local count = 0
+    for _, prompt in pairs(declared) do
+        count = count + 1
+        if type(prompt) ~= "string" then
+            return nil, bad_agent(entry.id, "has a start prompt that is not a string")
+        end
+    end
+    -- count keys in all, so keys 1..count present means exactly a list.
+    for index = 1, count do
+        if declared[index] == nil then
+            return nil, bad_agent(entry.id, "has start_prompts that are not a list")
+        end
+    end
+    local prompts: {string} = {}
+    for _, prompt in ipairs(declared) do
+        if prompt ~= "" then prompts[#prompts + 1] = prompt end
+    end
+    return prompts
+end
+
 local function describe_agent(identifier)
     local entry, err = resolve_agent(identifier, "name")
     if err then return nil, err end
     if not entry then return nil end
-    local prompts = {}
-    local declared = entry.data and entry.data.start_prompts
-    if type(declared) == "table" then
-        for _, prompt in ipairs(declared) do
-            if type(prompt) == "string" and prompt ~= "" then
-                prompts[#prompts + 1] = prompt
-            end
-        end
-    end
+    local prompts, prompts_err = start_prompts_of(entry)
+    if prompts_err then return nil, prompts_err end
     local name = entry.meta.name or entry.id
     return {id = entry.id, name = name, title = entry.meta.title or name, start_prompts = prompts}
 end
 
 -- Catalog lookup for the chat's agent details route. It runs as the caller,
 -- so it keeps the public-agent and component READ rules. It returns nil for
--- an unknown or hidden agent, and an error when the lookup itself fails.
+-- an unknown or hidden agent, and an error when the lookup fails or the
+-- agent's data is bad.
 local function catalog_agent_details(input)
     local identifier = type(input) == "table" and input.agent or nil
     if type(identifier) ~= "string" or identifier == "" then

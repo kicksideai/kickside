@@ -112,6 +112,42 @@ local function define_tests()
             test.is_true(errors.is(call_err, errors.TIMEOUT), tostring(call_err))
         end)
 
+        test.it("returns an error for start prompts that are not a list of strings", function()
+            local holey: any = { "a", "b", "c", x = "d" }
+            holey[2] = nil
+            local bad_prompts: {any} = { "Hello", { "Hello", 3 }, { [1] = "a", [3] = "b" }, { first = "a" }, holey }
+            for index, prompts in ipairs(bad_prompts) do
+                local entry = { id = PUBLIC.id, meta = PUBLIC.meta, data = { start_prompts = prompts } }
+                local agent, err = details({ registry = registry_double(function() return entry, nil end) }, PUBLIC.id)
+                test.is_nil(agent, "case " .. index)
+                test.is_true(errors.is(err, errors.INTERNAL), "case " .. index .. ": " .. tostring(err))
+                test.contains(tostring(err), PUBLIC.id)
+            end
+
+            local kept_entry = { id = PUBLIC.id, meta = PUBLIC.meta, data = { start_prompts = { "Hello", "", "Bye" } } }
+            local kept, kept_err = details({ registry = registry_double(function() return kept_entry, nil end) }, PUBLIC.id)
+            test.is_nil(kept_err, tostring(kept_err))
+            test.eq(#kept.start_prompts, 2)
+            test.eq(kept.start_prompts[2], "Bye")
+        end)
+
+        test.it("returns an error for a user agent without a title", function()
+            local bad_metas: {any} = { {}, { title = "" }, { title = 5 }, "Mine" }
+            for index, meta in ipairs(bad_metas) do
+                local service = service_returning({ success = true, impl_id = USER_AGENT_IMPL, meta = meta })
+                local agent, err = details({ component = component_double(nil, service) }, "user_agent:c1")
+                test.is_nil(agent, "case " .. index)
+                test.is_true(errors.is(err, errors.INTERNAL), "case " .. index .. ": " .. tostring(err))
+                test.contains(tostring(err), "user_agent:c1 has no title")
+            end
+
+            -- A component of another kind is no agent, with or without a title.
+            local other = service_returning({ success = true, impl_id = "kickside.test:not_agent", meta = {} })
+            local not_agent, not_agent_err = details({ component = component_double(nil, other) }, "user_agent:c1")
+            test.is_nil(not_agent_err, tostring(not_agent_err))
+            test.is_nil(not_agent)
+        end)
+
         test.it("rejects an input without an agent string", function()
             for _, input in ipairs({ {}, { agent = "" }, { agent = 5 } }) do
                 local agent, err = lookup.new({}).catalog_agent_details(input)
@@ -125,8 +161,11 @@ local function define_tests()
                 if id == "app:broken" then return nil, failure(errors.INTERNAL, "broken entry") end
                 return PUBLIC, nil
             end)
-            local titles = lookup.new({ registry = registry }).resolve_identifiers({ "app:broken", PUBLIC.id })
+            local untitled = service_returning({ success = true, impl_id = USER_AGENT_IMPL, meta = { title = "" } })
+            local titles = lookup.new({ registry = registry, component = component_double(nil, untitled) })
+                .resolve_identifiers({ "app:broken", "user_agent:c1", PUBLIC.id })
             test.is_nil(titles["app:broken"])
+            test.is_nil(titles["user_agent:c1"])
             test.eq(titles[PUBLIC.id], "Public Agent")
         end)
     end)
