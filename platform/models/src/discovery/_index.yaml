@@ -38,7 +38,7 @@ entries:
     meta:
       comment: Anthropic /v1/models discovery adapter.
     source: file://providers/anthropic.lua
-    modules: [http_client]
+    modules: [http_client, json]
     imports:
       discovery_common: kickside.models.discovery:common
 
@@ -47,7 +47,7 @@ entries:
     meta:
       comment: Google Gemini Developer API models.list adapter.
     source: file://providers/google_genai.lua
-    modules: [http_client]
+    modules: [http_client, json]
     imports:
       discovery_common: kickside.models.discovery:common
 

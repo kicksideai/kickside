@@ -121,6 +121,62 @@ return {run = test.run_cases(function()
         end)
     end)
 
+    test.describe("provider error classification", function()
+        local anthropic, google = adapters[2], adapters[3]
+        local cases = {
+            {"HTTP 401", openai, 401, "{}", "invalid_key"},
+            {"HTTP 403", openai, 403, "{}", "invalid_key"},
+            {"HTTP 402", openai, 402, "{}", "insufficient_credits"},
+            {"Anthropic 400 low credit balance", anthropic, 400,
+                '{"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API."}}',
+                "insufficient_credits"},
+            {"OpenAI 429 insufficient_quota", openai, 429,
+                '{"error":{"message":"You exceeded your current quota.","type":"insufficient_quota","code":"insufficient_quota"}}',
+                "insufficient_credits"},
+            {"plain 429", openai, 429, '{"error":{"message":"Rate limit reached","type":"requests"}}', "rate_limited"},
+            {"Google 400 invalid key", google, 400,
+                '{"error":{"code":400,"message":"API key not valid.","status":"INVALID_ARGUMENT","details":[{"reason":"API_KEY_INVALID"}]}}',
+                "invalid_key"},
+            {"other 400", anthropic, 400, '{"error":{"type":"invalid_request_error","message":"max_tokens"}}', nil},
+        }
+        for _, row in ipairs(cases) do
+            test.it("classifies " .. row[1], function()
+                http_fixture.prepare({status_code = row[3], body = row[4]}, nil)
+                local result, message, diagnostics = row[2].test(profile(), {model = "probe-model"})
+                test.is_nil(result)
+                test.not_nil(diagnostics)
+                test.eq(diagnostics.status_code, row[3])
+                test.eq(diagnostics.error_type, row[5])
+                test.is_nil((assert(json.encode({message, diagnostics})):find("credit balance is too low", 1, true)))
+            end)
+        end
+
+        test.it("does not return the provider body", function()
+            http_fixture.prepare({status_code = 402, body = sentinel}, nil)
+            local _, message, diagnostics = openai.test(profile(), {model = "probe-model"})
+            test.eq(diagnostics.error_type, "insufficient_credits")
+            test.is_nil((assert(json.encode({message, diagnostics})):find(sentinel, 1, true)))
+        end)
+
+        test.it("probes Anthropic and Google with one generated token", function()
+            http_fixture.prepare_probe('{"data":[{"id":"claude-opus-x"},{"id":"claude-haiku-x"}]}')
+            local result = assert(anthropic.test(profile(), {}))
+            test.eq(result.model, "claude-haiku-x")
+            local request = assert(http_fixture.probe())
+            test.eq(request.url, "https://example.invalid/v1/messages")
+            test.eq(assert(json.decode(request.body)).max_tokens, 1)
+
+            http_fixture.prepare_probe('{"models":[{"name":"models/text-embedding-004","supportedActions":["embedContent"]},'
+                .. '{"name":"models/gemini-pro-x","supportedActions":["generateContent"]},'
+                .. '{"name":"models/gemini-flash-x","supportedActions":["generateContent"]}]}')
+            result = assert(google.test(profile(), {}))
+            test.eq(result.model, "gemini-flash-x")
+            request = assert(http_fixture.probe())
+            test.eq(request.url, "https://example.invalid/models/gemini-flash-x:generateContent")
+            test.eq(assert(json.decode(request.body)).generationConfig.maxOutputTokens, 1)
+        end)
+    end)
+
     test.describe("safe discovery diagnostics", function()
         for _, row in ipairs({{401, errors.PERMISSION_DENIED, false}, {429, errors.RATE_LIMITED, true},
             {503, errors.UNAVAILABLE, true}}) do
