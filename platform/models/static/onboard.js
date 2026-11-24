@@ -1,9 +1,9 @@
 import { W as t, P as o, u as s } from "./wc-runtime-CHL0PH8L.js";
-import { a as r, s as n } from "./styles-C_6g8nZP.js";
+import { a as r, s as n } from "./styles-Da9ZOhuE.js";
 import "@iconify/vue";
 import { define as i } from "@wippy-fe/proxy";
 const a = r(
-  () => import("./Onboard-Dagy6j0x.js"),
+  () => import("./Onboard-CRyYyDhK.js"),
   { loading: "Loading model setup…", failed: "Could not load the model setup. Reload the page to try again." },
   s
 );

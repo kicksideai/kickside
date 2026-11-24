@@ -8,6 +8,7 @@ import { isBuiltInEditorTag, specForProviderTag } from '../providerSpecs.ts'
 import { useModelsApi } from './useModelsApi.ts'
 import { makeLookups, profileEndpoint, statusLabel, statusSeverity } from './presenters.ts'
 import { usableFastModelContext } from '../modelReadiness.ts'
+import { connectFailure, type ProviderErrorType } from '../providerBilling.ts'
 import { Avatar, Button, Notice, SelectField, Spinner } from './shared'
 import ModelEditor from './ModelEditor.vue'
 import ProviderProfileEditor from './ProviderProfileEditor.vue'
@@ -32,6 +33,7 @@ const selectedPreset = ref<Preset | null>(null)
 const editingModel = ref<ModelCard | null>(null)
 const connectMsg = ref('')
 const connectFail = ref('')
+const connectBillingUrl = ref('')
 // busy spans discovery so the form cannot be resubmitted.
 const busy = ref(false)
 
@@ -107,8 +109,10 @@ function skipModelSetup() {
   finish()
 }
 
-function showConnectFailure(message: string) {
-  connectFail.value = message
+function showConnectFailure(message: string, errorType?: ProviderErrorType, providerId = '') {
+  const failure = connectFailure(message, errorType, providerId)
+  connectFail.value = failure.message
+  connectBillingUrl.value = failure.errorType === 'insufficient_credits' ? (failure.billingUrl ?? '') : ''
   // Connection failures belong to the inline result. Keeping the store-level
   // copy as well made the review stage render the exact same error twice.
   error.value = ''
@@ -118,11 +122,13 @@ function goPick() {
   selectedPreset.value = null
   connectMsg.value = ''
   connectFail.value = ''
+  connectBillingUrl.value = ''
   stage.value = 'pick'
 }
 function pickPreset(preset: Preset) {
   selectedPreset.value = preset
   connectFail.value = ''
+  connectBillingUrl.value = ''
   stage.value = 'connect'
 }
 function cancelConnect() {
@@ -135,6 +141,7 @@ async function connect(payload: Record<string, unknown>) {
   if (busy.value) return
   busy.value = true
   connectFail.value = ''
+  connectBillingUrl.value = ''
   try {
     payload.enabled = true
     const before = new Set(profiles.value.map(p => p.id))
@@ -145,10 +152,17 @@ async function connect(payload: Record<string, unknown>) {
     const created = profiles.value.find(p => !before.has(p.id))
     if (created) {
       connectMsg.value = 'Verifying key and importing models…'
+      const providerId = String(created.provider_id || '')
       const r = await store.discover(created.id)
       await store.loadClasses()
-      if (!r.ok) showConnectFailure(r.message)
-      else { connectMsg.value = 'Selecting sensible defaults…'; await autoSelectDefaults(false) }
+      if (!r.ok) showConnectFailure(r.message, r.errorType, providerId)
+      else {
+        connectMsg.value = 'Checking that the key can generate…'
+        const probe = await store.testProfile(created.id)
+        if (!probe.ok) showConnectFailure(probe.message, probe.errorType, providerId)
+        connectMsg.value = 'Selecting sensible defaults…'
+        await autoSelectDefaults(false)
+      }
     }
     stage.value = 'review'
   } finally {
@@ -379,6 +393,7 @@ onMounted(async () => {
           />
           <div v-if="connectFail" class="ob-result fail">
             <Icon icon="tabler:circle-x" aria-hidden="true" /><span>{{ connectFail }}</span>
+            <a v-if="connectBillingUrl" class="ob-billing-link" :href="connectBillingUrl" target="_blank" rel="noopener noreferrer">Add credits</a>
           </div>
         </template>
       </section>
@@ -399,6 +414,7 @@ onMounted(async () => {
       <section v-else class="ob-stage">
         <div v-if="connectFail" class="ob-result fail">
           <Icon icon="tabler:circle-x" aria-hidden="true" /><span>{{ connectFail }}</span>
+          <a v-if="connectBillingUrl" class="ob-billing-link" :href="connectBillingUrl" target="_blank" rel="noopener noreferrer">Add credits</a>
         </div>
 
         <div class="ob-block">

@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { api } from '@wippy-fe/proxy'
 import type { Adapter, ClassGroup, ImportReport, ModelCard, Preset, Profile } from '../types.ts'
+import { errorTypeOf, type ProviderErrorType } from '../providerBilling.ts'
 
 // Admin data store for the models surface. Owns the four admin collections, the
 // load lifecycle, and the profile / card mutations. Every mutation reloads the
@@ -12,6 +13,12 @@ function messageOf(e: unknown, fallback: string): string {
   if (typeof data?.message === 'string' && data.message) return data.message
   return e instanceof Error ? e.message : fallback
 }
+
+function errorTypeFromError(e: unknown): ProviderErrorType | undefined {
+  return errorTypeOf((e as any)?.response?.data ?? (e as any)?.data)
+}
+
+type CheckResult = { ok: boolean; message: string; errorType?: ProviderErrorType }
 
 export function useModelsApi() {
   const adapters = ref<Adapter[]>([])
@@ -126,7 +133,7 @@ export function useModelsApi() {
     return ok ? report : null
   }
 
-  async function discover(id: string): Promise<{ ok: boolean; message: string }> {
+  async function discover(id: string): Promise<CheckResult> {
     discovering.value = id
     error.value = ''
     try {
@@ -134,12 +141,12 @@ export function useModelsApi() {
       await load()
       if (data && data.success === false) {
         error.value = data.error || 'connection failed'
-        return { ok: false, message: error.value }
+        return { ok: false, message: error.value, errorType: errorTypeOf(data) }
       }
       return { ok: true, message: 'Connection succeeded' }
     } catch (e) {
       error.value = messageOf(e, 'connection failed')
-      return { ok: false, message: error.value }
+      return { ok: false, message: error.value, errorType: errorTypeFromError(e) }
     } finally {
       discovering.value = ''
     }
@@ -148,21 +155,21 @@ export function useModelsApi() {
   // Authenticated connection check against the provider. Unlike discovery, this
   // does not create model cards; OpenAI-compatible profiles can use test_model
   // for a real chat-completions probe.
-  async function testProfile(id: string): Promise<{ ok: boolean; message: string }> {
+  async function testProfile(id: string): Promise<CheckResult> {
     error.value = ''
     try {
       const { data } = await api.post(`/api/v1/models/provider-profiles/${encodeURIComponent(id)}/test`, {})
       await load()
       if (data && data.success === false) {
         error.value = data.error || 'connection test failed'
-        return { ok: false, message: error.value }
+        return { ok: false, message: error.value, errorType: errorTypeOf(data) }
       }
       return { ok: true, message: data?.message || 'Connection test succeeded' }
     } catch (e) {
       const message = messageOf(e, 'connection test failed')
       await load()
       error.value = message
-      return { ok: false, message }
+      return { ok: false, message, errorType: errorTypeFromError(e) }
     }
   }
 

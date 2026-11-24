@@ -1034,6 +1034,7 @@ wippy-loading ~ wippy-loading { display: none; }
 }
 .ob-result.fail { background: color-mix(in srgb, var(--p-danger-500) 12%, transparent); color: var(--p-danger-700); }
 .ob-result svg { width: 16px; height: 16px; flex: none; }
+.ob-billing-link { margin-left: auto; font-weight: 600; color: inherit; text-decoration: underline; white-space: nowrap; }
 
 /* Provider tiles */
 .ob-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
