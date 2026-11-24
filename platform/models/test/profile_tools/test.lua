@@ -200,6 +200,32 @@ local function define_tests()
             cleanup()
         end)
 
+        test.it("tests a profile it creates, so the new profile carries a tested status", function()
+            local created = ok(MANAGE, { action = "create", profile = {
+                id = ID, name = "Created untested", provider_id = "wippy.llm.openai:provider",
+                base_url = "https://example.invalid/v1", api_key_env = "PT_UNDECLARED_KEY",
+            } })
+            test.eq(created.success, true, tostring(created.error))
+            test.eq(created.profile.status, "unhealthy", "a created profile is tested, never left unknown")
+            test.contains(tostring(created.profile.message), "PT_UNDECLARED_KEY")
+            cleanup()
+        end)
+
+        test.it("tests a profile against the model a card routes when one is given, leaving the profile status as it was", function()
+            ok(MANAGE, { action = "create", profile = {
+                id = ID, name = "Scoped test profile", provider_id = "wippy.llm.openai:provider",
+                base_url = "https://example.invalid/v1", api_key_env = "PT_UNDECLARED_KEY",
+            } })
+            local before = ok(READ, { action = "get", id = ID }).profile
+            local tested = ok(MANAGE, { action = "test", id = ID, model = "card-model" })
+            test.eq(tested.success, false)
+            test.eq(tested.code, "profile_unhealthy")
+            local after = ok(READ, { action = "get", id = ID }).profile
+            test.eq(after.status, before.status)
+            test.eq(after.message, before.message, "a test scoped to a card's model records no profile status")
+            cleanup()
+        end)
+
         test.it("refuses to delete a profile a declared holder holds, naming each holder", function()
             ok(MANAGE, { action = "create", profile = profile_body({ id = HELD }) })
             local refused = ok(MANAGE, { action = "delete", id = HELD })
