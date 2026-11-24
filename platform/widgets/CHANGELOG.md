@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.1.75](https://github.com/kicksideai/kickside/compare/widgets-v0.1.74...widgets-v0.1.75) (2026-11-24)
+
+
+### Features
+
+* **widgets:** host choice sets and disabled state for the schema form ([#973](https://github.com/kicksideai/kickside/issues/973)) ([6d5ba3a](https://github.com/kicksideai/kickside/commit/6d5ba3aeb3360c52a87f5a29c48589dbef9ad7fa))
+
+## [0.1.74](https://github.com/kicksideai/kickside/compare/widgets-v0.1.73...widgets-v0.1.74) (2026-11-24)
+
+
+### Features
+
+* **ui-kit:** grouped settings lists and schema form list controls ([#969](https://github.com/kicksideai/kickside/issues/969)) ([de3a935](https://github.com/kicksideai/kickside/commit/de3a935bd70987a8f7602a7fe10e0110fedb2569))
+
+## [0.1.73](https://github.com/kicksideai/kickside/compare/widgets-v0.1.72...widgets-v0.1.73) (2026-11-24)
+
+
+### Bug Fixes
+
+* restore frontend checks and Share focus styling ([#960](https://github.com/kicksideai/kickside/issues/960)) ([1ca06ea](https://github.com/kicksideai/kickside/commit/1ca06ea0d174bd0572373c15515cda026f2fbfe3))
+
 ## [0.1.72](https://github.com/kicksideai/kickside/compare/widgets-v0.1.71...widgets-v0.1.72) (2026-11-23)
 
 

@@ -34,7 +34,7 @@ const credentialConnection = ref<Connection | null>(null)
 const search = ref('')
 const presentation = useConnectionPresentation({ providers, connections, search, confirmId })
 const {
-  providerKey, providerLabel, providerIcon, connIcon, statusClass, statusLabel,
+  providerKey, providerLabel, providerIcon, connIcon, canReconnect, statusClass, statusLabel,
   statusDetail, connectionDescription, filteredProviders, filteredConnections,
 } = presentation
 const connectionsTotal = ref(0)
@@ -247,7 +247,7 @@ async function mountShare() {
 // Re-authorize an existing connection (e.g. to grant more scopes): reopen the
 // picker for its provider, carrying the component_id so init updates it in place.
 function reconnect(c: Connection) {
-  if (!c.provider) return
+  if (!c.provider || !canReconnect(c) || c.deleting_at) return
   const provider = providers.value.find(p => providerKey(p) === c.provider)
   if (provider?.credential_schema && !c.oauth && !provider.create_ui_id) {
     credentialConnection.value = c
@@ -337,7 +337,7 @@ const {acceptDeletion} = useComponentDeletion(connections, row => row.component_
                     :title="`Credentials ${c.name || c.provider}`" :disabled="!!c.deleting_at" @click="credentialConnection = c">
                     <Icon icon="tabler:key" aria-hidden="true" />
                   </button>
-                  <button class="lc-add" :title="`Reconnect ${c.name || c.provider}`" :aria-label="`Reconnect ${c.name || c.provider}`" @click="reconnect(c)" :disabled="!!c.deleting_at">
+                  <button v-if="canReconnect(c)" class="lc-add" :title="`Reconnect ${c.name || c.provider}`" :aria-label="`Reconnect ${c.name || c.provider}`" @click="reconnect(c)" :disabled="!!c.deleting_at">
                     <Icon icon="tabler:refresh" />
                   </button>
                   <button

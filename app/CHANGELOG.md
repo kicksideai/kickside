@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.63](https://github.com/kicksideai/kickside/compare/kickside-v0.2.62...kickside-v0.2.63) (2026-11-24)
+
+
+### Bug Fixes
+
+* **frontend:** preserve modal and resource card keyboard access ([#962](https://github.com/kicksideai/kickside/issues/962)) ([a7267f6](https://github.com/kicksideai/kickside/commit/a7267f61db4d6f4598b25631810c1438f68a5361))
+* **jobs:** commit run history with job outcomes and notify owners ([#956](https://github.com/kicksideai/kickside/issues/956)) ([a0c6c5c](https://github.com/kicksideai/kickside/commit/a0c6c5c73552d6bf0a07ef5e5f4aee6af377721b))
+
 ## [0.2.62](https://github.com/kicksideai/kickside/compare/kickside-v0.2.61...kickside-v0.2.62) (2026-11-22)
 
 

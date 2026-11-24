@@ -128,6 +128,78 @@ local function define_tests()
             end
         end)
 
+        test.it("names the offending value and the allowed set on an enum violation", function()
+            test.eq(
+                assist.validate_config({ prompt = "Review?", priority = "critical" }, review_schema),
+                'config.priority must be one of the allowed values ["low", "normal", "high", "urgent"], got "critical"'
+            )
+        end)
+
+        test.it("names the offending key and the declared properties on an undeclared key", function()
+            test.eq(
+                assist.validate_config({ prompt = "Review?", hidden_id = "component-1" }, review_schema),
+                "config.hidden_id is not declared; declared properties: approve_label, assignee, context, form, priority, prompt, reject_label"
+            )
+        end)
+
+        test.it("bounds the listed allowed values and the rendered offending value", function()
+            local values: { string } = {}
+            for i = 1, 14 do values[i] = "v" .. tostring(i) end
+            local schema: Map = { type = "object", properties = { mode = { type = "string", enum = values } } }
+            test.eq(
+                assist.validate_config({ mode = string.rep("x", 100) }, schema),
+                'config.mode must be one of the allowed values ["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10", ... 4 more], got "'
+                    .. string.rep("x", 39) .. "..."
+            )
+        end)
+
+        test.it("keeps sensitive and write-only comparison values out of validation errors", function()
+            local sensitive = "never-return-this"
+            local enum_schema: Map = {
+                type = "object",
+                properties = { token = { type = "string", sensitive = true, enum = { "expected" } } },
+            }
+            local const_schema: Map = {
+                type = "object",
+                properties = { token = { type = "string", writeOnly = true, const = "expected" } },
+            }
+            local enum_err = tostring(assist.validate_config({ token = sensitive }, enum_schema))
+            local const_err = tostring(assist.validate_config({ token = sensitive }, const_schema))
+            test.eq(enum_err, "config.token must be one of the declared allowed values")
+            test.eq(const_err, "config.token must equal its declared constant")
+            test.is_true(enum_err:find(sensitive, 1, true) == nil)
+            test.is_true(const_err:find(sensitive, 1, true) == nil)
+            test.is_true(const_err:find("expected", 1, true) == nil)
+        end)
+
+        test.it("redacts comparison values beneath sensitive objects and write-only arrays", function()
+            local secret = "never-return-this"
+            local object_schema: Map = {
+                type = "object",
+                properties = {
+                    credentials = {
+                        type = "object",
+                        sensitive = true,
+                        properties = { token = { type = "string", enum = { "expected" } } },
+                    },
+                },
+            }
+            local array_schema: Map = {
+                type = "object",
+                properties = {
+                    tokens = { type = "array", writeOnly = true, items = { type = "string", const = "expected" } },
+                },
+            }
+            local object_err = tostring(assist.validate_config({ credentials = { token = secret } }, object_schema))
+            local array_err = tostring(assist.validate_config({ tokens = { secret } }, array_schema))
+            test.eq(object_err, "config.credentials.token must be one of the declared allowed values")
+            test.eq(array_err, "config.tokens[1] must equal its declared constant")
+            test.is_true(object_err:find(secret, 1, true) == nil)
+            test.is_true(object_err:find("expected", 1, true) == nil)
+            test.is_true(array_err:find(secret, 1, true) == nil)
+            test.is_true(array_err:find("expected", 1, true) == nil)
+        end)
+
         test.it("honors string constants, lengths, and additionalProperties schemas", function()
             local schema: Map = {
                 type = "object",

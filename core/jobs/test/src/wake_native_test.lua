@@ -20,7 +20,7 @@ end
 local routes = {wake = {"begin", "policy", "size", "update", "read", "commit"}, addressed = {"begin", "addressed", "policy", "size", "dispatch", "commit"},
     fanout = {"dialect", "policy", "demand", "identity", "discovery", "prelock", "size", "update", "ack"},
     multi = {"dialect", "policy", "demand", "identity", "discovery", "prelock", "size", "update", "ack"},
-    continue = {"payload", "begin", "fanout", "policy", "candidates", "prelock", "size", "update", "ack", "complete", "commit"}, nudge = {"nudge"}}
+    continue = {"payload", "begin", "fanout", "policy", "candidates", "prelock", "size", "update", "ack", "complete", "history", "commit", "notify"}, nudge = {"nudge"}}
 return {run = test.run_cases(function()
     for route, phases in pairs(routes) do
         test.describe("native wake/" .. route, function()
@@ -32,7 +32,7 @@ return {run = test.run_cases(function()
                                 local source = errors.new({kind = kind, retryable = policy.retryable, message = "wake dependency refusal",
                                     details = detailed and {code = "wake_dependency", nested = {marker = "kept"}} or nil})
                                 fixture.reset(route, phase, source); local _, err = invoke(route); retained(required(err), source)
-                                test.eq(fixture.commits, phase == "commit" and 1 or 0)
+                                test.eq(fixture.commits, (phase == "commit" or phase == "notify") and 1 or 0)
                             end)
                         end
                     end
@@ -40,7 +40,7 @@ return {run = test.run_cases(function()
             end
             if route == "continue" or route == "wake" or route == "addressed" then
                 for _, phase in ipairs(phases) do
-                    if phase ~= "begin" and phase ~= "payload" and phase ~= "commit" then
+                    if phase ~= "begin" and phase ~= "payload" and phase ~= "commit" and phase ~= "notify" then
                         test.it("rollback/" .. phase, function()
                             local primary = errors.new({kind = errors.PERMISSION_DENIED, retryable = false, message = "wake primary refusal", details = {code = "wake_primary"}})
                             local source = errors.new({kind = errors.UNAVAILABLE, retryable = true, message = "wake rollback refusal", details = {code = "wake_dependency", nested = {marker = "kept"}}})

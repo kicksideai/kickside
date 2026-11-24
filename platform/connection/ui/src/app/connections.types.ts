@@ -5,6 +5,7 @@ export interface Connection extends ComponentDeletionState {
   provider?: string
   icon?: string
   connection_state?: string
+  can_edit?: boolean
   reauth_reason?: string
   expires_at?: number | null
   refresh_expires_at?: number | null

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.13](https://github.com/kicksideai/kickside/compare/connection-v0.5.12...connection-v0.5.13) (2026-11-24)
+
+
+### Bug Fixes
+
+* **connection:** present connection availability accurately ([#963](https://github.com/kicksideai/kickside/issues/963)) ([571350e](https://github.com/kicksideai/kickside/commit/571350e3660180e791be67454e06c14666adbf0f))
+
 ## [0.5.12](https://github.com/kicksideai/kickside/compare/connection-v0.5.11...connection-v0.5.12) (2026-11-20)
 
 

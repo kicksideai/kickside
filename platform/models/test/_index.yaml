@@ -288,6 +288,7 @@ entries:
   - name: models_list_fixture
     kind: library.lua
     source: file://fixtures/list_models.lua
+    modules: [security]
     imports:
       http: app:models_list_fixture_state
       models: app:models_catalog_fixture
@@ -296,6 +297,7 @@ entries:
   - name: native_models_list_fixture
     kind: library.lua
     source: file://fixtures/list_models.lua
+    modules: [security]
     imports:
       http: app:models_list_fixture_state
       models: kickside.models.catalog:model_catalog

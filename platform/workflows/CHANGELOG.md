@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.24](https://github.com/kicksideai/kickside/compare/workflows-v0.2.23...workflows-v0.2.24) (2026-11-24)
+
+
+### Bug Fixes
+
+* **workflows:** name safe values in config validation errors ([#950](https://github.com/kicksideai/kickside/issues/950)) ([189bafd](https://github.com/kicksideai/kickside/commit/189bafdbf8b22127ddaef19d08e0a21fbd97d64c))
+
 ## [0.2.23](https://github.com/kicksideai/kickside/compare/workflows-v0.2.22...workflows-v0.2.23) (2026-11-22)
 
 

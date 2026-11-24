@@ -299,9 +299,10 @@ The editable policy paths are Settings definitions in namespace
 Precedence is administrator override, then the host assignment, then the
 shipped default. The complete host policy stays in `kickside.core.jobs:policy`
 meta so active workers can read it while a new module version is applied.
-Settings stores only overrides; Jobs reads the keys `get_namespace` reports as
-`overridden`, so a value without an override follows the host configuration
-rather than the Settings default. Each override is validated by
+Settings stores only overrides. Jobs reads the keys `get_namespace` reports as
+`overridden`. With older Settings releases, Jobs reads the Jobs namespace's
+`list` rows marked `is_default: false`. In both cases, a value without an
+override follows the host configuration. Each override is validated by
 `kickside.core.jobs.policy:validate`, which resolves the whole policy with the
 candidate: durations are positive, the lease timeout is a whole number of
 seconds and at least 1s, and the heartbeat is strictly shorter. Edits that move

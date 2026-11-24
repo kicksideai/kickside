@@ -14,7 +14,7 @@ class e extends o {
   }
   static get vueConfig() {
     return {
-      ...n(() => import("./lazy-mount-Da0JsVGz.js").then((t) => t.mountConfig), { surface: "page", loading: "Loading…", failed: "Could not load the connections page. Reload the page to try again.", timeout: 3e4 })
+      ...n(() => import("./lazy-mount-CiUjYlCC.js").then((t) => t.mountConfig), { surface: "page", loading: "Loading…", failed: "Could not load the connections page. Reload the page to try again.", timeout: 3e4 })
     };
   }
 }

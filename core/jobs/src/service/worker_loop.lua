@@ -21,7 +21,6 @@ local dispatch = require("worker_dispatch")
 local worker_child = require("worker_child")
 local worker_fence = require("worker_fence")
 local worker_completion = require("worker_completion")
-local lease_release = require("lease_release")
 local sql_boundary = require("sql_boundary")
 local error_envelope = require("error_envelope")
 
@@ -97,8 +96,7 @@ local function settle_child_exit(db: sql.DB, dbtype: string, job: table, run_ctx
             if settle_err then return settle_err end
             return nil
         end
-        return lease_release.notify(tostring(job.id), tonumber(job.execution_seq),
-            { kind = job.owner_kind, id = job.owner_id })
+        return nil
     elseif control == "shutdown" and not child_err then
         local _, settle_err = reclaim.settle_confirmed(db, dbtype, {
             id = job.id, token = job.lease_token, execution_seq = job.execution_seq,
@@ -153,9 +151,10 @@ local function process_job(db: sql.DB, dbtype: string, pid: string, job: table, 
     local heartbeat_pid, hb_err = lease.start(job, lease_deadline)
     if hb_err or type(heartbeat_pid) ~= "string" or heartbeat_pid == "" then
         local primary = hb_err or worker_response_error("heartbeat.id")
-        local park_err = lifecycle.fail_job(db, job, dbtype, "lease heartbeat spawn failed: " .. tostring(primary), failure_class_for(primary), retry_floor_for(primary))
-        if park_err then primary = error_envelope.wrap_secondary(park_err, primary, "heartbeat failure persistence failed") end
-        return nil, finalize(job_types.RUN_STATE.FAILED, {}, tostring(primary), primary)
+        local fail_err = fail_job(db, dbtype, job, {}, "lease heartbeat spawn failed: " .. tostring(primary),
+            failure_class_for(primary), run_ctx, retry_floor_for(primary))
+        if fail_err then primary = error_envelope.wrap_secondary(fail_err, primary, "heartbeat failure persistence failed") end
+        return nil, primary
     end
     local output: any = nil
     local execution_err: error? = nil
@@ -173,7 +172,7 @@ local function process_job(db: sql.DB, dbtype: string, pid: string, job: table, 
         output = result
         execution_err = proc_err
     else
-        local exec_output, exec_err = dispatch.execute_job(db, dbtype, job)
+        local exec_output, exec_err = dispatch.execute_job(db, dbtype, job, run_ctx)
         output = exec_output
         execution_err = exec_err
     end
@@ -192,7 +191,11 @@ local function process_job(db: sql.DB, dbtype: string, pid: string, job: table, 
     end
     if control == "shutdown" then return finish("shutdown", nil) end
 
+    local self_completed = type(output) == "table" and (output :: any).self_completed == true
+    local history_settled = self_completed and type((output :: any).completion) == "table"
+        and (output :: any).completion.run_history_settled == true
     if error_text then
+        if history_settled then return finish(control, execution_err) end
         logger:error("job_worker " .. pid .. " execute error job=" .. tostring(job.id) .. ": " .. error_text)
         local fail_err, recorded = fail_job(db, dbtype, job, output, error_text,
             failure_class, run_ctx, retry_floor_for(execution_err))
@@ -207,21 +210,15 @@ local function process_job(db: sql.DB, dbtype: string, pid: string, job: table, 
         return finish(control, fail_err)
     end
 
-    local done_err: error? = nil
-    if not (type(output) == "table" and (output :: any).self_completed == true) then
-        done_err = complete_job(db, dbtype, job, output, run_ctx)
+    if not self_completed then
+        local done_err, recorded = complete_job(db, dbtype, job, output, run_ctx)
+        if done_err then
+            if recorded then return finish(control, done_err) end
+            local status = job_types.is_lease_lost_error(done_err) and job_types.RUN_STATE.LEASE_LOST or job_types.RUN_STATE.FAILED
+            return finish(control, finalize(status, output, tostring(done_err), done_err))
+        end
     end
-    if done_err then
-        local status = job_types.is_lease_lost_error(done_err) and job_types.RUN_STATE.LEASE_LOST or job_types.RUN_STATE.FAILED
-        return finish(control, finalize(status, output, tostring(done_err), done_err))
-    end
-    -- A target using jobs.complete already settled its retained run history,
-    -- including an idle slot's parked attempt.
-    -- Other self-completing targets (such as wake continuations) only update
-    -- the job and still need the worker to finalize their run row.
-    if type(output) == "table" and (output :: any).self_completed == true
-        and not (type((output :: any).completion) == "table"
-            and (output :: any).completion.run_history_settled == true) then
+    if self_completed and not history_settled then
         return finish(control, finalize(job_types.RUN_STATE.SUCCESS, output, nil, nil))
     end
     return finish(control, nil)

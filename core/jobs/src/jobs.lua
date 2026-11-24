@@ -175,10 +175,16 @@ function jobs.enqueue(params: table?): (table?, error?)
         if enqueue_err then return nil, sql_boundary.rollback(tx, enqueue_err, "job enqueue rollback failed") end
         local _, commit_err = tx:commit()
         if commit_err then return nil, errors.wrap(commit_err, "job enqueue commit failed") end
+        local notify_err: error? = nil
         if job_params.demand or value.existing ~= true then
-            local nudge_err = nudge_after_enqueue(db, dbtype, job_params.parked == true and not job_params.demand)
-            if nudge_err then return nil, nudge_err end
+            notify_err = nudge_after_enqueue(db, dbtype, job_params.parked == true and not job_params.demand)
         end
+        if value.replaced_job_id then
+            notify_err = error_envelope.cleanup(function(): (any, error?)
+                return nil, lease_release.notify(value.replaced_job_id, nil, job_params.owner_locator)
+            end, notify_err, "replacement notification failed")
+        end
+        if notify_err then return nil, notify_err end
         return value, nil
     end, true)
     return result :: table?, err
@@ -210,12 +216,16 @@ function jobs.cancel(id: string, expected_lease_token: string?): (table?, error?
         local tx, begin_err = sql_boundary.begin(db, "cancel begin failed", "transaction", response_error)
         if begin_err then return nil, begin_err end
         if not tx then return nil, response_error("transaction") end
-        local canceled, cancel_err, revoked = lifecycle_cancel.cancel_job_tx(tx, dbtype, {
+        local canceled, cancel_err, revoked, owner = lifecycle_cancel.cancel_job_tx(tx, dbtype, {
             id = id, expected_lease_token = expected_lease_token,
         })
         if cancel_err then return nil, sql_boundary.rollback(tx, cancel_err, "cancel rollback failed") end
         local _, commit_err = tx:commit()
         if commit_err then return nil, errors.wrap(commit_err, "cancel commit failed") end
+        if owner then
+            local release_err = lease_release.notify(id, nil, owner)
+            if release_err then return nil, release_err end
+        end
         local notify_err = reclaim.notify_cancellations(db, dbtype, revoked or {})
         if notify_err then return nil, notify_err end
         return { canceled = canceled, job_id = id }, nil

@@ -179,10 +179,10 @@ entries:
       type: test
       suite: kickside_ui_branding
       group: KickSide UI
-      comment: A configuration write broadcasts nav.changed without caller realtime or process messaging authority.
+      comment: Navigation appearance round-trips and broadcasts nav.changed without caller realtime or process messaging authority.
     source: file://nav_broadcast_test.lua
     method: run
-    modules: [security, http_client, json, sql, registry]
+    modules: [security, http_client, json, sql, registry, funcs]
     imports:
       test: wippy.test:test
       principal_fixture: kickside.ui:principal_fixture

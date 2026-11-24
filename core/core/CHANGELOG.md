@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.55](https://github.com/kicksideai/kickside/compare/core-v0.3.54...core-v0.3.55) (2026-11-24)
+
+
+### Performance Improvements
+
+* **core:** check member WRITE once for a primary-thread append ([#945](https://github.com/kicksideai/kickside/issues/945)) ([542b617](https://github.com/kicksideai/kickside/commit/542b617fea5779e9a981937dd3f6c06b9b37188e))
+* **core:** normalize event payloads once per append ([#947](https://github.com/kicksideai/kickside/issues/947)) ([a8f209c](https://github.com/kicksideai/kickside/commit/a8f209cb6e376448e95891a980f2a1219b66300b))
+
 ## [0.3.54](https://github.com/kicksideai/kickside/compare/core-v0.3.53...core-v0.3.54) (2026-11-22)
 
 

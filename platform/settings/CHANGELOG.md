@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.16](https://github.com/kicksideai/kickside/compare/settings-v0.3.15...settings-v0.3.16) (2026-11-24)
+
+
+### Features
+
+* **ui-kit:** grouped settings lists and schema form list controls ([#969](https://github.com/kicksideai/kickside/issues/969)) ([de3a935](https://github.com/kicksideai/kickside/commit/de3a935bd70987a8f7602a7fe10e0110fedb2569))
+
+## [0.3.15](https://github.com/kicksideai/kickside/compare/settings-v0.3.14...settings-v0.3.15) (2026-11-24)
+
+
+### Features
+
+* **settings:** conditional write on the revision of a key ([#949](https://github.com/kicksideai/kickside/issues/949)) ([cfef5b4](https://github.com/kicksideai/kickside/commit/cfef5b4496a595efa7883c480dc7e533d6a6391f))
+
 ## [0.3.14](https://github.com/kicksideai/kickside/compare/settings-v0.3.13...settings-v0.3.14) (2026-11-21)
 
 

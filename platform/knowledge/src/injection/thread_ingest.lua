@@ -201,12 +201,19 @@ function M.status(kb_id, opts)
 end
 
 -- The Core lookup checks the caller's READ access on the KB primary thread.
--- Return only the source work count to callers that render progress.
+-- Report the source work count and whether its active cursor hit a retryable
+-- failure without disclosing the underlying error to callers rendering progress.
 function M.pending_source(kb_id: string, impl_id: string): (any?, any?)
     local exec, exec_err = current_executor()
     if not exec then return nil, exec_err end
     local source, read_err = status.lookup_source_projection(exec, kb_id, impl_id, true)
-    return source and source.pending_source or nil, read_err
+    local pending = source and source.pending_source
+    if type(pending) ~= "table" then return nil, read_err end
+    return {
+        count = pending.count,
+        truncated = pending.truncated,
+        retrying = source.projection.status == "active" and trim(source.projection.last_error) ~= "",
+    }, nil
 end
 
 function M.pause(kb_id, opts)

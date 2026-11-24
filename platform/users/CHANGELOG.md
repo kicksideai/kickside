@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.31](https://github.com/kicksideai/kickside/compare/users-v0.2.30...users-v0.2.31) (2026-11-24)
+
+
+### Bug Fixes
+
+* restore frontend checks and Share focus styling ([#960](https://github.com/kicksideai/kickside/issues/960)) ([1ca06ea](https://github.com/kicksideai/kickside/commit/1ca06ea0d174bd0572373c15515cda026f2fbfe3))
+
 ## [0.2.30](https://github.com/kicksideai/kickside/compare/users-v0.2.29...users-v0.2.30) (2026-11-22)
 
 

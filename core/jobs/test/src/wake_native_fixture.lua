@@ -27,6 +27,8 @@ function M.decode_payload(...) return M.result("payload", {wake_key = "key"}) en
 function M.identity_parts(...) return M.result("identity", "identity") end
 function M.enqueue_job(...) return M.result("enqueue", "continuation") end
 function M.complete_tx(...) local _, err = M.result("complete", true); return err end
+function M.finalize_job_run(...) local _, err = M.result("history", true); return err end
+function M.notify(...) local _, err = M.result("notify", true); return err end
 function M.rows_affected(result) return result and tonumber(result.rows_affected) or 0 end
 function M.call(entry, ...)
     M.calls, M.called_entry = M.calls + 1, entry

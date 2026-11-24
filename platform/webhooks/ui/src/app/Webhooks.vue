@@ -218,14 +218,12 @@ const {acceptDeletion} = useComponentDeletion(rows, row => row.webhook_id, undef
         <div
           v-for="row in filtered" :key="row.webhook_id"
           class="kx-card" :class="row.status === 'revoked' && 'is-revoked'"
-          tabindex="0" role="button" :aria-label="`Open ${row.label || 'webhook'}`"
-          @click="!row.deleting_at && openEdit(row)" @keydown.enter="!row.deleting_at && openEdit(row)" @keydown.space.prevent="!row.deleting_at && openEdit(row)"
         >
           <ComponentDeletion :state="row" @retry="askDelete(row)" />
           <div class="kx-card-head">
             <span class="kx-ficon"><Icon icon="tabler:webhook" aria-hidden="true" /></span>
             <div class="kx-card-id">
-              <div class="kx-card-name" :title="row.label || 'Webhook'">{{ row.label || 'Webhook' }}</div>
+              <button type="button" class="kx-card-name kx-card-open" :title="row.label || 'Webhook'" :aria-label="`Open ${row.label || 'webhook'}`" :disabled="!!row.deleting_at" @click="openEdit(row)">{{ row.label || 'Webhook' }}</button>
               <div class="kx-card-meta">
                 <span class="kx-chip kx-tag-sm" :class="row.status === 'active' ? 'is-active' : 'is-revoked'">{{ webhookStatusLabel(row.status) }}</span>
                 <span v-if="subscriberCount(row) > 0" class="kx-chip kx-tag-sm is-count" :title="`Used by ${subscriberCount(row)} automation(s)`">
@@ -233,8 +231,8 @@ const {acceptDeletion} = useComponentDeletion(rows, row => row.webhook_id, undef
                 </span>
               </div>
             </div>
-            <div class="kx-card-actions" @click.stop>
-              <Button type="button" severity="secondary" outlined size="small" title="Open" :aria-label="`Open ${row.label || 'webhook'}`" @click="!row.deleting_at && openEdit(row)" :disabled="!!row.deleting_at">
+            <div class="kx-card-actions">
+              <Button type="button" severity="secondary" outlined size="small" title="Edit" :aria-label="`Edit ${row.label || 'webhook'}`" @click="openEdit(row)" :disabled="!!row.deleting_at">
                 <template #icon="{ class: iconClass }"><Icon icon="tabler:pencil" :class="iconClass" aria-hidden="true" /></template>
               </Button>
               <Button v-if="row.status === 'active'" type="button" severity="danger" outlined size="small" title="Revoke" :aria-label="`Revoke ${row.label || 'webhook'}`" @click="askRevoke(row)" :disabled="!!row.deleting_at">

@@ -20,7 +20,7 @@ class e extends o {
     };
   }
   static get vueConfig() {
-    return n(() => import("./ConnectionTraitPicker-h60M9sAq.js").then((t) => ({ rootComponent: t.default, plugins: [i] })), { surface: "compact", loading: "Loading connection picker…", failed: "Could not load the connection picker. Reload the page to try again.", delay: 200, timeout: 3e4 });
+    return n(() => import("./ConnectionTraitPicker-3kAPRy0N.js").then((t) => ({ rootComponent: t.default, plugins: [i] })), { surface: "compact", loading: "Loading connection picker…", failed: "Could not load the connection picker. Reload the page to try again.", delay: 200, timeout: 3e4 });
   }
 }
 async function u() {

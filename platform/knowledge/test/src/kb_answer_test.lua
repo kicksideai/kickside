@@ -149,6 +149,34 @@ local function define_tests()
                 test.is_true((seen :: string):find("Respond as the KB itself.", 1, true) ~= nil, "extra prompt included")
             end)
         end)
+
+        test.it("leads each passage with its file and page from the chunk metadata", function()
+            local seen: any = nil
+            with_llm({
+                generate = function(prompt: any): (any, any) seen = prompt; return { result = "ok" }, nil end,
+            }, function()
+                kb_answer._synthesize("q", {
+                    { content = "Wampanoag homesites", meta = { metadata = { filename = "Guide.pdf", page_start = 47, page_end = 47 } } },
+                    { content = "plain passage" },
+                }, "m", nil)
+                local prompt = seen :: string
+                test.is_true(prompt:find("[1] (Guide.pdf, p. 47) Wampanoag homesites", 1, true) ~= nil, prompt)
+                test.is_true(prompt:find("[2] plain passage", 1, true) ~= nil, prompt)
+                test.is_true(prompt:find("p. 47) [1]", 1, true) ~= nil, "prompt asks for the page with the citation")
+            end)
+        end)
+    end)
+
+    test.describe("kb_answer.source_label", function()
+        test.it("names the file and the page or slide range a chunk covers", function()
+            test.eq(kb_answer.source_label({ metadata = { filename = "a.pdf", page_start = 3, page_end = 3 } }), "a.pdf, p. 3")
+            test.eq(kb_answer.source_label({ metadata = { filename = "a.pdf", page_start = 3, page_end = 4 } }), "a.pdf, pp. 3-4")
+            test.eq(kb_answer.source_label({ meta = { metadata = { original_filename = "Deck.pptx", filename = "x", slide_start = 2, slide_end = 5 } } }), "Deck.pptx, slides 2-5")
+            test.eq(kb_answer.source_label({ metadata = { page_start = 9 } }), "p. 9")
+            test.eq(kb_answer.source_label({ metadata = { title = "Notes" } }), "Notes")
+            test.is_nil(kb_answer.source_label({ content = "no metadata" }))
+            test.is_nil(kb_answer.source_label({ metadata = { filename = " " } }))
+        end)
     end)
 
     test.describe("kb_answer query mode", function()

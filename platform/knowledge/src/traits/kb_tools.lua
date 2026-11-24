@@ -151,7 +151,7 @@ function M.format_ask_result(result: any): any
     if r.mode == "query" then
         local passages = { answer }
         for i, source in ipairs(sources) do
-            passages[#passages + 1] = string.format("[%d] %s", i, source.content)
+            passages[#passages + 1] = kb_answer.passage(i, source)
         end
         answer = table.concat(passages, "\n\n")
     end

@@ -1,5 +1,5 @@
 import { W as t, l as i } from "./wc-runtime-BQHcLGi8.js";
-import { s } from "./styles-DkVjMRNl.js";
+import { s } from "./styles-BSWT_thV.js";
 import { p as n } from "./package-CCTUAjDf.js";
 import { define as r } from "@wippy-fe/proxy";
 class e extends t {
@@ -12,7 +12,7 @@ class e extends t {
   }
   static get vueConfig() {
     return {
-      ...i(() => import("./lazy-mount-DRd6B8d1.js").then((o) => o.mountConfig), { surface: "page", loading: "Loading…", failed: "Could not load the Webhooks page. Reload the page to try again.", timeout: 3e4 })
+      ...i(() => import("./lazy-mount-rIrmPOid.js").then((o) => o.mountConfig), { surface: "page", loading: "Loading…", failed: "Could not load the Webhooks page. Reload the page to try again.", timeout: 3e4 })
     };
   }
 }

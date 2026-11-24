@@ -197,7 +197,8 @@ return {run = test.run_cases(function()
             local job = edited_claim("complete")
             assert(db:execute("UPDATE kickside_job SET heartbeat_at=$1 WHERE id=$2",
                 {lifecycle.future_string(dialect, -10), job.id}))
-            test.is_nil(worker.complete_job(db, dialect, row(job), {}, nil))
+            local complete_err = worker.complete_job(db, dialect, row(job), {}, nil)
+            test.is_nil(complete_err)
             test.eq(row(job).status, "done")
         end)
         for _, path in ipairs({"heartbeat", "completion", "failure", "fence", "reclaim", "dispatch"}) do
@@ -216,7 +217,8 @@ return {run = test.run_cases(function()
                         {lifecycle.future_string(dialect, 1), job.id}))
                     test.is_true(assert(lease.validate_for_dispatch(db, dialect, job)))
                 elseif path == "completion" then
-                    test.is_nil(worker.complete_job(db, dialect, row(job), {}, nil))
+                    local complete_err = worker.complete_job(db, dialect, row(job), {}, nil)
+                    test.is_nil(complete_err)
                     test.eq(row(job).status, "done")
                 elseif path == "failure" then
                     test.is_nil(lifecycle.fail_job(db, row(job), dialect, "temporary", "infrastructure"))

@@ -15,6 +15,26 @@ local function unavailable(message: string, cause: any?): error
     return errors.new({kind = errors.UNAVAILABLE, retryable = true, message = message})
 end
 
+local function legacy_overrides(instance: any): (table?, error?)
+    -- Older Settings reports provenance only in its admin list. Use the value
+    -- from the same row so a concurrent write cannot pair it with stale provenance.
+    local response, err = instance:list({namespace = NAMESPACE})
+    if err then return nil, unavailable("Jobs policy legacy Settings read failed", err) end
+    if type(response) ~= "table" or response.success ~= true or type(response.settings) ~= "table" then
+        return nil, unavailable("Jobs policy legacy Settings read failed: " .. tostring(type(response) == "table" and response.error or "invalid response"))
+    end
+    local values: table = {}
+    for _, row in ipairs(response.settings) do
+        if row.namespace == NAMESPACE and cfg.editable(row.key) and row.is_default == false then
+            if row.error or row.value == nil then
+                return nil, unavailable("Jobs policy legacy Settings override is invalid: " .. row.key)
+            end
+            values[row.key] = row.value
+        end
+    end
+    return values, nil
+end
+
 local function run(): (table?, error?)
     local declared, lookup_err = registry.get(SETTINGS)
     if lookup_err and not errors.is(lookup_err, errors.NOT_FOUND) then
@@ -30,9 +50,9 @@ local function run(): (table?, error?)
     if type(response) ~= "table" or response.success ~= true or type(response.values) ~= "table" then
         return nil, unavailable("Jobs policy Settings read failed: " .. tostring(type(response) == "table" and response.error or "invalid response"))
     end
+    if response.overridden == nil then return legacy_overrides(instance) end
     if type(response.overridden) ~= "table" then
-        return nil, errors.new({kind = errors.INTERNAL, retryable = false,
-            message = "Jobs policy requires a Settings release that reports overridden keys"})
+        return nil, unavailable("Jobs policy Settings override list is invalid")
     end
     local values: table = {}
     for _, key in ipairs(response.overridden) do

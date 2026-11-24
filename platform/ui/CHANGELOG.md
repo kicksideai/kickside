@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.17](https://github.com/kicksideai/kickside/compare/ui-v0.2.16...ui-v0.2.17) (2026-11-24)
+
+
+### Bug Fixes
+
+* **ui:** round-trip inherited chat appearance ([#957](https://github.com/kicksideai/kickside/issues/957)) ([5f8bc4c](https://github.com/kicksideai/kickside/commit/5f8bc4ce367d89f5fd78a24e27cbb0ca9fba9321))
+
 ## [0.2.16](https://github.com/kicksideai/kickside/compare/ui-v0.2.15...ui-v0.2.16) (2026-11-20)
 
 

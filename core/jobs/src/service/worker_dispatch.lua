@@ -348,11 +348,11 @@ worker.run_supervised_proc = run_supervised_proc
 -- Dispatch a claimed job: a wake continuation runs in jobs, a worker_ref job
 -- runs its target under the worker frame bounded by the unattributed-execution
 -- policy (the target loads the execution identity from its own record). An unknown type is skipped, not failed.
-local function execute_job(db: sql.DB, dbtype: string, job: table): (table?, error?)
+local function execute_job(db: sql.DB, dbtype: string, job: table, run_ctx: table?): (table?, error?)
     local job_type = tostring(job.job_type or "")
 
     if job_type == wake.CONTINUATION_TYPE then
-        return wake.continue_job(db, dbtype, job)
+        return wake.continue_job(db, dbtype, job, run_ctx)
     end
 
     local binding, bind_err = parse_worker_ref(job.worker_ref)

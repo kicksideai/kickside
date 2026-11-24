@@ -10,7 +10,7 @@ class e extends o {
     };
   }
   static get vueConfig() {
-    return n(() => import("./Onboard-CMqiolRW.js").then((t) => ({ rootComponent: t.default, plugins: [i] })), { surface: "compact", loading: "Loading services…", failed: "Could not load the connections step. Reload the page to try again.", delay: 200, timeout: 3e4 });
+    return n(() => import("./Onboard-CjOYv8RD.js").then((t) => ({ rootComponent: t.default, plugins: [i] })), { surface: "compact", loading: "Loading services…", failed: "Could not load the connections step. Reload the page to try again.", delay: 200, timeout: 3e4 });
   }
 }
 async function u() {

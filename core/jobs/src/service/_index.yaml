@@ -95,6 +95,7 @@ entries:
       completion: kickside.core.jobs.persist:completion
       sql_boundary: kickside.core.jobs.persist:sql_boundary
       error_envelope: kickside.contract:error_envelope
+      canonical_json: kickside.contract:canonical_json
 
   - name: worker
     kind: process.lua
@@ -183,7 +184,6 @@ entries:
       worker_fence: kickside.core.jobs.service:worker_fence
       worker_child: kickside.core.jobs.service:worker_child
       worker_completion: kickside.core.jobs.service:worker_completion
-      lease_release: kickside.core.jobs:lease_release
 
   - name: job_child
     kind: process.lua
@@ -208,7 +208,6 @@ entries:
       worker_fence: kickside.core.jobs.service:worker_fence
       worker_child: kickside.core.jobs.service:worker_child
       worker_completion: kickside.core.jobs.service:worker_completion
-      lease_release: kickside.core.jobs:lease_release
 
   - name: worker.service
     kind: process.service

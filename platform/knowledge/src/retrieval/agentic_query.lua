@@ -24,7 +24,7 @@ local QUERY_PROMPT = [[You answer the user's question using a single knowledge b
 
 Use RetrieveKB with fields: ["content", "meta"] to fetch the passages that answer the question. Refine the query across calls when the first result is too broad or incomplete.
 
-Base your answer ONLY on retrieved content — never on prior knowledge. If the knowledge base does not contain the answer, say so plainly rather than guessing. Be concise and direct, and prefer concrete facts. When you have enough, return the final answer.]]
+Base your answer ONLY on retrieved content — never on prior knowledge. If the knowledge base does not contain the answer, say so plainly rather than guessing. Be concise and direct, and prefer concrete facts. When a passage's meta.metadata has page_start/page_end or slide_start/slide_end, name its file and page or slide where you use it, such as "Guide.pdf, p. 47". When you have enough, return the final answer.]]
 
 local INSTRUCTION_HEADER = "Instructions from the knowledge base owner — always follow these:\n"
 local SEED_HEADER = "Passages already retrieved for this question (a starting point — explore further with the tools and verify before relying on them):\n\n"

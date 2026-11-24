@@ -48,8 +48,13 @@ it('clears a failed list read once a finished deletion is read back', async () =
   await flushPromises()
   expect(wrapper.findAll('.kx-card')).toHaveLength(1)
 
+  const remove = wrapper.get('button[aria-label="Delete Cleanup skill"]')
+  expect(remove.element.closest('[role="button"]')).toBeNull()
+  await remove.trigger('keydown', { key: 'Enter' })
+  expect(api.get).not.toHaveBeenCalledWith('/api/v1/skills/skill')
+
   listReads = [() => ({ success: false, error: 'cleanup status unavailable' })]
-  await wrapper.get('[aria-label="Delete Cleanup skill"]').trigger('click')
+  await remove.trigger('click')
   await flushPromises()
   expect(wrapper.get('.kx-err').text()).toBe('cleanup status unavailable')
   expect(wrapper.findAll('.kx-card')).toHaveLength(1)

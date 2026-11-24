@@ -157,4 +157,101 @@ describe('schema form field validation', () => {
     await input(control(), '')
     expect(validity).toHaveBeenLastCalledWith({ valid: true, errors: {} })
   })
+
+  it('edits a text list as chips and validates each entry against the item schema', async () => {
+    const { root, control, changed, validity } = await mount({
+      attributes: { type: 'array', title: 'Attributes', items: { type: 'string', pattern: '^[a-z_]+$' }, uniqueItems: true },
+    }, { attributes: ['brand'] })
+    const entry = control()
+    expect(root.querySelector('label.sf-lbl')!.getAttribute('for')).toBe(entry.id)
+    expect(root.querySelectorAll('#' + CSS.escape(entry.id))).toHaveLength(1)
+    expect([...root.querySelectorAll('.sf-list-chip-label')].map(chip => chip.textContent)).toEqual(['brand'])
+    await input(entry, 'Color')
+    entry.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }))
+    await nextTick()
+    expect(changed).toHaveBeenLastCalledWith({ attributes: ['brand', 'Color'] })
+    expect(validity).toHaveBeenLastCalledWith({ valid: false, errors: { attributes: 'Entry 2: Use the required format.' } })
+    root.querySelector<HTMLButtonElement>('button[aria-label="Remove Color"]')!.click()
+    await nextTick()
+    expect(changed).toHaveBeenLastCalledWith({ attributes: ['brand'] })
+    expect(validity).toHaveBeenLastCalledWith({ valid: true, errors: {} })
+  })
+
+  it('offers enumerated list items as a labelled group of choices', async () => {
+    const { root, changed } = await mount({ days: { type: 'array', title: 'Days', items: { type: 'string', enum: ['mon', 'tue', 'wed'] } } }, { days: ['wed'] })
+    const group = root.querySelector<HTMLElement>('[role="group"].sf-options')!
+    expect(root.getElementById(group.getAttribute('aria-labelledby')!)!.textContent!.trim()).toBe('Days')
+    const boxes = [...group.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')]
+    expect(boxes.map(box => box.checked)).toEqual([false, false, true])
+    boxes[0]!.checked = true
+    boxes[0]!.dispatchEvent(new Event('change'))
+    await nextTick()
+    expect(changed).toHaveBeenLastCalledWith({ days: ['mon', 'wed'] })
+  })
+
+  it('offers a host-supplied choice set for x-choices, limited to the values the item schema admits', async () => {
+    const choices = { board_item_types: [{ value: 'task', label: 'Task' }, { value: 'issue', label: 'Issue' }, { value: 'support', label: 'Support request' }] }
+    const { root, changed, validity } = await mount({
+      types: { type: 'array', title: 'Types', items: { type: 'string', 'x-choices': 'board_item_types', not: { enum: ['issue'] } } },
+    }, { types: ['support'] }, { choices: JSON.stringify(choices) })
+    const group = root.querySelector<HTMLElement>('[role="group"].sf-options')!
+    expect([...group.querySelectorAll('.sf-option')].map(option => option.textContent!.trim())).toEqual(['Task', 'Support request'])
+    const boxes = [...group.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')]
+    expect(boxes.map(box => box.checked)).toEqual([false, true])
+    boxes[0]!.checked = true
+    boxes[0]!.dispatchEvent(new Event('change'))
+    await nextTick()
+    expect(changed).toHaveBeenLastCalledWith({ types: ['task', 'support'] })
+    expect(validity).toHaveBeenLastCalledWith({ valid: true, errors: {} })
+    root.host.setAttribute('config', JSON.stringify({ types: ['issue', 'gone'] }))
+    await nextTick()
+    expect(validity).toHaveBeenLastCalledWith({ valid: false, errors: { types: 'Entry 1: Choose a different value.' } })
+  })
+
+  it('labels a single x-choices value and says when the host supplies no choices', async () => {
+    const { root, control, changed } = await mount({
+      owner: { type: 'string', title: 'Owner type', 'x-choices': 'board_item_types' },
+      types: { type: 'array', title: 'Types', items: { type: 'string', 'x-choices': 'missing_set' } },
+    }, {}, { choices: JSON.stringify({ board_item_types: [{ value: 'task', label: 'Task' }, { value: 'bug' }] }) })
+    const select = control() as unknown as HTMLSelectElement
+    expect([...select.options].map(option => option.textContent)).toEqual(['Choose a value', 'Task', 'bug'])
+    select.selectedIndex = 1
+    select.dispatchEvent(new Event('change'))
+    await nextTick()
+    expect(changed).toHaveBeenLastCalledWith({ owner: 'task' })
+    const group = root.querySelector<HTMLElement>('[role="group"].sf-options')!
+    expect(group.querySelectorAll('input').length).toBe(0)
+    expect(group.textContent!.trim()).toBe('No choices are available.')
+  })
+
+  it('disables every control while the host marks the form disabled', async () => {
+    const { root, element } = await mount({
+      name: { type: 'string' }, owner: { picker: 'test-schema-picker' },
+    }, {}, { disabled: '' })
+    const body = root.querySelector<HTMLFieldSetElement>('fieldset.sf-body')!
+    expect(body.disabled).toBe(true)
+    expect(body.contains(root.querySelector('input'))).toBe(true)
+    expect(root.querySelector('test-schema-picker')!.hasAttribute('inert')).toBe(true)
+    element.setAttribute('disabled', 'false')
+    await nextTick()
+    expect(body.disabled).toBe(false)
+    expect(root.querySelector('test-schema-picker')!.hasAttribute('inert')).toBe(false)
+  })
+
+  it('renders booleans as switches, named groups under a legend and explains unset defaults', async () => {
+    const { root, control } = await mount({
+      enabled: { type: 'boolean', title: 'Enabled', default: true },
+      hold: { type: 'integer', title: 'Hold', group: 'Reservations' },
+      note: { type: 'string', title: 'Note', group: 'Reservations', default: 'none' },
+    }, {}, { 'allow-unset': '' })
+    expect(control().getAttribute('role')).toBe('switch')
+    expect(control().checked).toBe(true)
+    const legend = root.querySelector('fieldset.sf-group > legend')!
+    expect(legend.textContent).toBe('Reservations')
+    expect([...legend.parentElement!.querySelectorAll('.sf-lbl')].map(label => label.textContent!.trim())).toEqual(['Hold', 'Note'])
+    const hints = (index: number) => control(index).getAttribute('aria-describedby')!.split(' ').map(id => root.getElementById(id)!.textContent)
+    expect(hints(0)).toEqual(['Default: On'])
+    expect(hints(1)).toEqual(['Uses the application setting.'])
+    expect(hints(2)).toEqual(['Default: none'])
+  })
 })

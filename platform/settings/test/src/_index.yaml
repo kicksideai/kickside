@@ -156,6 +156,32 @@ entries:
       settings_writer: kickside.settings.persist:settings_writer
       settings_cache: kickside.settings:settings_cache
 
+  - name: put_settings_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_settings
+      group: KickSide Settings
+      comment: PUT /settings with expected_revision.
+    source: file://put_settings_test.lua
+    method: run
+    modules: [http_client, json, system, contract, security]
+    imports:
+      test: wippy.test:test
+
+  - name: revision_migration_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_settings
+      group: KickSide Settings
+      comment: Upgrade overrides that were stored before revision tracking.
+    source: file://revision_migration_test.lua
+    method: run
+    modules: [funcs, sql]
+    imports:
+      test: wippy.test:test
+
   - name: changes_test
     kind: function.lua
     meta:
@@ -255,6 +281,12 @@ entries:
       comment: In-memory database for the settings suites.
     file: "${sqlite_path}"
 
+  - name: revision_migration_db
+    kind: db.sql.sqlite
+    meta:
+      comment: Isolated database for the settings revision upgrade test.
+    file: ":memory:"
+
   - name: env_storage
     kind: env.storage.file
     meta:
@@ -283,6 +315,24 @@ entries:
       comment: Test API router.
       server: gateway
     prefix: /api
+    middleware: [token_auth]
+    options:
+      token_store: app:tokens
+
+  - name: token_storage
+    kind: store.memory
+    meta:
+      comment: Token storage for the harness router.
+
+  - name: tokens
+    kind: security.token_store
+    meta:
+      comment: Bearer tokens the harness mints for the settings API tests.
+    default_expiration: 1h
+    store: app:token_storage
+    token_key: ""
+    token_key_env: ""
+    token_length: 32
 
   # ─── Scopes the contract suite opens the settings service under ───────
 

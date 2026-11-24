@@ -1,7 +1,6 @@
--- PUT /nav/config — set one or more nav system controls (layout, overrides,
--- categories, custom_items). Body carries any subset of those keys; each is
--- written through the kickside/settings contract (validated + cached). Authn +
--- admin authz are enforced by the router firewall; the actor is read for audit.
+-- PUT /nav/config updates editable navigation and appearance settings through
+-- the kickside/settings contract. The router enforces administrator access, and
+-- the writer uses the current actor for audit records.
 
 local http = require("http")
 local json = require("json")
@@ -44,6 +43,12 @@ SETTABLE[ui_types.KEY.LOGO_URL] = "string"
 SETTABLE[ui_types.KEY.HOME] = "string"
 SETTABLE[ui_types.KEY.PRIMARY_COLOR] = "string"
 
+local CHAT_APPEARANCE_RESET_SCHEMA = {
+    type = "object",
+    required = { "chat_appearance" },
+    properties = { chat_appearance = { type = "object", maxProperties = 0 } },
+}
+
 local function handler()
     local res = http.response()
     local req = http.request()
@@ -85,8 +90,13 @@ local function handler()
     end
 
     local b = body :: { [string]: any }
-    if b.chat_appearance ~= nil then
-        local result = chat_appearance.validate({ value = b.chat_appearance })
+    local appearance = b.chat_appearance
+    -- An empty object is the inherited value returned by GET /nav/list.
+    -- Check the wire shape so arrays and null-valued fields cannot trigger a reset.
+    local reset_appearance = type(appearance) == "table" and next(appearance) == nil
+        and json.validate_string(CHAT_APPEARANCE_RESET_SCHEMA, raw)
+    if appearance ~= nil and not reset_appearance then
+        local result = chat_appearance.validate({ value = appearance })
         if not result.valid then
             res:set_status(http.STATUS.BAD_REQUEST)
             res:write_json({ success = false, error = result.error })
@@ -125,8 +135,13 @@ local function handler()
         end
     end
 
-    if b.chat_appearance ~= nil then
-        local r = inst:set({ namespace = ui_types.SETTINGS_NS, key = "chat_appearance", value = b.chat_appearance })
+    if appearance ~= nil then
+        local r
+        if reset_appearance then
+            r = inst:unset({ namespace = ui_types.SETTINGS_NS, key = "chat_appearance" })
+        else
+            r = inst:set({ namespace = ui_types.SETTINGS_NS, key = "chat_appearance", value = appearance })
+        end
         if not r or not r.success then
             res:set_status(http.STATUS.BAD_REQUEST)
             res:write_json({ success = false, error = "chat_appearance: " .. tostring(r and r.error) })

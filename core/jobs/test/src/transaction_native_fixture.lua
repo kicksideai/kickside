@@ -3,6 +3,8 @@ function M.reset(route, stage, source)
     M.route, M.stage, M.source = route, stage, source
     M.missing, M.value, M.rollback_error = false, nil, nil
     M.rollbacks, M.commits = 0, 0
+    M.replaced_job_id = nil
+    M.nudges, M.releases = 0, 0
 end
 local function result(stage, value)
     if M.stage == stage then
@@ -27,10 +29,20 @@ end
 function M.carried_identity_error(...) return nil end
 function M.owner_locator_error(...) return nil end
 function M.identity_parts(params, id) return params.job_identity, nil end
-function M.enqueue_job(...) return result("operation", "job") end
+function M.enqueue_job(...)
+    local id, err = result("operation", "job")
+    return id, err, true, M.replaced_job_id
+end
 function M.cancel_job_tx(...) local value, err = result("operation", 1); return value, err, {} end
 function M.complete_tx(...) return result("operation", {owner_locator = {kind = "thread", id = "owner"}}) end
-function M.nudge_workers(...) return true, nil end
+function M.nudge_workers(...)
+    M.nudges = M.nudges + 1
+    return result("nudge", true)
+end
 function M.notify_cancellations(...) return nil end
-function M.notify(...) return nil end
+function M.notify(...)
+    M.releases = M.releases + 1
+    local _, err = result("release", true)
+    return err
+end
 return M
