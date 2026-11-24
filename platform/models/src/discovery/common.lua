@@ -41,6 +41,24 @@ function M.env_value(ref: any): string?
     return nil
 end
 
+-- The first *_env reference of the profile config, in key order, whose variable
+-- does not resolve to a value, described with the reason; nil when all resolve.
+function M.unresolved_env(profile: any): string?
+    local config = type(profile) == "table" and profile.config or {}
+    local keys = {}
+    for key, value in pairs(config) do
+        if type(key) == "string" and key:match("_env$") and type(value) == "string" and value ~= "" then keys[#keys + 1] = key end
+    end
+    table.sort(keys)
+    for _, key in ipairs(keys) do
+        local name = config[key]
+        local value, err = env.get(name)
+        if err then return key .. " " .. name .. " does not resolve: " .. tostring(err) end
+        if type(value) ~= "string" or value == "" then return key .. " " .. name .. " does not resolve: the variable holds no value" end
+    end
+    return nil
+end
+
 function M.resolve_value(profile: any, key: string, default_env: string?): string?
     local secret = type(profile) == "table" and profile.secret_config or {}
     local config = type(profile) == "table" and profile.config or {}

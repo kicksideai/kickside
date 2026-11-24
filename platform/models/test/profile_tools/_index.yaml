@@ -19,3 +19,20 @@ entries:
     imports:
       test: wippy.test:test
       models_repo: kickside.models.persist:repo
+
+  # A profile holder: it holds the profile pt-held-profile with one fixture driver.
+  - name: profile_holder_fixture
+    kind: function.lua
+    meta:
+      comment: Answers the fixture driver holding pt-held-profile.
+    source: file://holder.lua
+    method: holders
+
+  - name: profile_holder_binding
+    kind: contract.binding
+    meta:
+      comment: The fixture's implementation of kickside.models.profiles:profile_holder.
+    contracts:
+      - contract: kickside.models.profiles:profile_holder
+        methods:
+          holders: app:profile_holder_fixture

@@ -5,12 +5,24 @@ local profile_service = require("profile_service")
 local M = {}
 
 local function message(err: any): string
-    if type(err) == "table" and type((err :: any).message) == "function" then return (err :: any):message() end
+    if (type(err) == "table" or type(err) == "userdata") and type((err :: any).message) == "function" then return (err :: any):message() end
     return tostring(err)
 end
 
+local function refusal(err: any): any
+    local out: any = { success = false, error = message(err) }
+    if type(err) == "userdata" then
+        local details = (err :: any):details()
+        if type(details) == "table" then
+            out.code = details.code
+            out.holders = details.holders
+        end
+    end
+    return out
+end
+
 local function respond(profile: any?, err: any?): any
-    if not profile then return { success = false, error = message(err) } end
+    if not profile then return refusal(err) end
     return { success = true, profile = profile }
 end
 
@@ -45,8 +57,16 @@ end
 function M.delete_profile(args: any): any
     if type(args) ~= "table" then return { success = false, error = "request must be an object" } end
     local ok, err = profile_service.delete(args.id)
-    if not ok then return { success = false, error = message(err) } end
+    if not ok then return refusal(err) end
     return { success = true }
+end
+
+-- test_profile({ id, model? }) -> { success, result?, error?, code? }. Records the profile status.
+function M.test_profile(args: any): any
+    if type(args) ~= "table" then return { success = false, error = "request must be an object" } end
+    local result, err = profile_service.test(args.id, { model = args.model })
+    if not result then return refusal(err) end
+    return { success = true, result = result }
 end
 
 return M

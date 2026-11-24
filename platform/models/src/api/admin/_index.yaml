@@ -81,6 +81,9 @@ entries:
     security:
       policies:
         - kickside.models:reload_profiles_call
+        - kickside.models.profiles:holder_read
+        - kickside.models.profiles:holder_open
+        - kickside.models.profiles:holder_call
 
   - name: delete_profile.endpoint
     kind: http.endpoint

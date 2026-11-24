@@ -4,7 +4,11 @@
 -- names of the secrets it set, never their values.
 local security = require("security")
 local logger = require("logger")
+local contract = require("contract")
 local models_repo = require("models_repo")
+local model_discovery = require("model_discovery")
+
+local HOLDER_CONTRACT = "kickside.models.profiles:profile_holder"
 
 local M = {}
 local log = logger:named("kickside.models.profiles")
@@ -48,12 +52,57 @@ function M.update(id: any, input: any): (any?, any?)
     return profile
 end
 
+-- The records naming the profile id, across every implementation of the
+-- profile holder contract.
+function M.holders(id: string): ({ any }?, any?)
+    local bindings, find_err = contract.find_implementations(HOLDER_CONTRACT)
+    if find_err then return nil, find_err end
+    if #(bindings or {}) == 0 then return {} end
+    local def, def_err = contract.get(HOLDER_CONTRACT)
+    if def_err then return nil, def_err end
+    local out = {}
+    for _, binding in ipairs(bindings or {}) do
+        local holder, open_err = (def :: any):open(binding)
+        if open_err then return nil, open_err end
+        local reply, call_err = holder:holders({ profile_id = id })
+        if call_err then return nil, call_err end
+        for _, h in ipairs(type(reply) == "table" and reply.holders or {}) do out[#out + 1] = h end
+    end
+    return out
+end
+
+-- Deletes the profile id and the cards routed through it, refused with code
+-- profile_in_use while a holder names it.
 function M.delete(id: any): (boolean, any?)
     if type(id) ~= "string" or id == "" then return false, "Profile id is required" end
+    local holders, holders_err = M.holders(id)
+    if not holders then return false, holders_err end
+    if #holders > 0 then
+        local names = {}
+        for i, h in ipairs(holders) do names[i] = tostring(h.kind) .. " " .. tostring(h.id) end
+        return false, errors.new({ kind = errors.CONFLICT, retryable = false,
+            message = "provider profile " .. id .. " is in use by " .. table.concat(names, ", ") .. "; remove them first, then delete the profile",
+            details = { code = "profile_in_use", holders = holders } })
+    end
     local ok, err = models_repo.delete_profile(id)
     if not ok then return false, err end
     record("deleted", id)
     return true
+end
+
+-- Tests the profile id: its environment references resolve and its provider
+-- answers. The outcome is recorded as the profile status (healthy, unhealthy).
+function M.test(id: any, opts: any?): (any?, any?)
+    if type(id) ~= "string" or id == "" then return nil, "Profile id is required" end
+    local profile, get_err = models_repo.get_profile(id)
+    if get_err then return nil, get_err end
+    if not profile then return nil, "profile not found" end
+    local result, err = model_discovery.test(id, opts or {})
+    if not result then
+        return nil, errors.new({ kind = errors.UNAVAILABLE, retryable = true, message = tostring(err),
+            details = { code = "profile_unhealthy" } })
+    end
+    return result
 end
 
 return M

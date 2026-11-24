@@ -15,6 +15,7 @@ local READ = "kickside.models.traits:profiles_read"
 local MANAGE = "kickside.models.traits:profiles_manage"
 local POLICY = "kickside.models.security:profile_tools"
 local ID = "pt-tool-profile"
+local HELD = "pt-held-profile"
 local SYNTHETIC_KEY = "synthetic-key-0123456789"
 local SYNTHETIC_HEADER = "synthetic-header-value-9876"
 
@@ -182,6 +183,34 @@ local function define_tests()
             test.eq(deleted.success, true, tostring(deleted.error))
             test.eq(deleted.id, ID)
             test.is_nil(models_repo.get_profile(ID))
+        end)
+
+        test.it("tests a profile whose environment reference does not resolve unhealthy, naming the variable", function()
+            ok(MANAGE, { action = "create", profile = {
+                id = ID, name = "Unbound env profile", provider_id = "wippy.llm.openai:provider",
+                base_url = "https://example.invalid/v1", api_key_env = "PT_UNDECLARED_KEY",
+            } })
+            local tested = ok(MANAGE, { action = "test", id = ID })
+            test.eq(tested.success, false)
+            test.eq(tested.code, "profile_unhealthy")
+            test.contains(tostring(tested.error), "api_key_env PT_UNDECLARED_KEY")
+            local read = ok(READ, { action = "get", id = ID })
+            test.eq(read.profile.status, "unhealthy", "the test records the profile status")
+            test.contains(tostring(read.profile.message), "PT_UNDECLARED_KEY")
+            cleanup()
+        end)
+
+        test.it("refuses to delete a profile a declared holder holds, naming each holder", function()
+            ok(MANAGE, { action = "create", profile = profile_body({ id = HELD }) })
+            local refused = ok(MANAGE, { action = "delete", id = HELD })
+            test.eq(refused.success, false)
+            test.eq(refused.code, "profile_in_use")
+            test.contains(tostring(refused.error), "fixture driver fx-driver")
+            test.eq(#refused.holders, 1)
+            test.eq(refused.holders[1].kind, "fixture driver")
+            test.eq(refused.holders[1].id, "fx-driver")
+            test.not_nil(models_repo.get_profile(HELD), "a held profile stays stored")
+            models_repo.delete_profile(HELD)
         end)
 
         test.it("answers a refusal for an invalid profile", function()

@@ -59,14 +59,43 @@ entries:
               { "type": "object", "properties": { "success": { "type": "boolean" }, "profile": { "type": "object" }, "error": { "type": "string" } }, "required": ["success"] }
             format: application/schema+json
       - name: delete_profile
-        description: delete_profile({ id }) -> { success, error? }. Removes the profile and the cards routed through it; deleting an absent profile succeeds.
+        description: delete_profile({ id }) -> { success, error?, code?, holders? }. Removes the profile and the cards routed through it; deleting an absent profile succeeds. Refused with code profile_in_use, naming the holders, while an implementation of kickside.models.profiles:profile_holder answers records that name it.
         input_schemas:
           - definition: |
               { "type": "object", "properties": { "id": { "type": "string", "minLength": 1 } }, "required": ["id"] }
             format: application/schema+json
         output_schemas:
           - definition: |
-              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" } }, "required": ["success"] }
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" }, "code": { "type": "string" }, "holders": { "type": "array", "items": { "type": "object" } } }, "required": ["success"] }
+            format: application/schema+json
+      - name: test_profile
+        description: test_profile({ id, model? }) -> { success, result?, error?, code? }. Checks that every *_env reference of the profile resolves, then probes the provider; records the outcome as the profile status (healthy, unhealthy). A failed test answers code profile_unhealthy with the reason.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "id": { "type": "string", "minLength": 1 }, "model": { "type": "string", "description": "Provider model to probe; the profile's test_model or the first listed model otherwise" } }, "required": ["id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "result": { "type": "object" }, "error": { "type": "string" }, "code": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+
+  # A module whose records name a provider profile declares a binding of this
+  # contract; delete_profile refuses a profile any holder answers holders for.
+  - name: profile_holder
+    kind: contract.definition
+    meta:
+      title: Model Provider Profile Holder
+      description: Implemented by a module whose records name a provider profile, so the profile is not deleted under them.
+    methods:
+      - name: holders
+        description: holders({ profile_id }) -> { holders }. The records of the implementing module that name the profile, each { kind, id, title? }; empty when none does.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "profile_id": { "type": "string", "minLength": 1 } }, "required": ["profile_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "holders": { "type": "array", "items": { "type": "object", "properties": { "kind": { "type": "string" }, "id": { "type": "string" }, "title": { "type": "string" } }, "required": ["kind", "id"] } } }, "required": ["holders"] }
             format: application/schema+json
 
   - name: list_profiles
@@ -145,6 +174,9 @@ entries:
       profile_service: kickside.models.catalog:profile_service
     security:
       policies:
+        - kickside.models.profiles:holder_read
+        - kickside.models.profiles:holder_open
+        - kickside.models.profiles:holder_call
         - kickside.models:secret_key_access
         - kickside.models.catalog:catalog_database
         - kickside.models.catalog:catalog_read
@@ -152,6 +184,60 @@ entries:
         - kickside.models:reload_profiles_call
         - kickside.models.persist:decode_profiles_call
         - kickside.models.persist:profile_changed_call
+
+  - name: test_profile
+    kind: function.lua
+    meta:
+      comment: profiles contract -- test a profile and record its status.
+    source: file://profiles_contract.lua
+    method: test_profile
+    imports:
+      profile_service: kickside.models.catalog:profile_service
+    security:
+      policies:
+        - kickside.models:secret_key_access
+        - kickside.models.catalog:catalog_database
+        - kickside.models.catalog:catalog_read
+        - kickside.models.catalog:provider_binding_read
+        - kickside.models:reload_profiles_call
+        - kickside.models.persist:decode_profiles_call
+        - kickside.models.persist:profile_changed_call
+
+  # delete_profile lists the implementations of the profile holder contract,
+  # opens each (their ids are the implementing modules') and calls holders only;
+  # the runtime checks contract.call against the bare method name.
+  - name: holder_read
+    kind: security.policy
+    meta:
+      private: true
+      includes:
+        - kickside.models.profiles:holder_open
+        - kickside.models.profiles:holder_call
+    groups: []
+    policy:
+      resources: ["kickside.models.profiles:profile_holder"]
+      actions: [contract.get, contract.implementations]
+      effect: allow
+
+  - name: holder_open
+    kind: security.policy
+    meta:
+      private: true
+    groups: []
+    policy:
+      resources: ["*"]
+      actions: [contract.open]
+      effect: allow
+
+  - name: holder_call
+    kind: security.policy
+    meta:
+      private: true
+    groups: []
+    policy:
+      resources: [holders]
+      actions: [contract.call]
+      effect: allow
 
   - name: profiles_binding
     kind: contract.binding
@@ -167,3 +253,4 @@ entries:
           create_profile: kickside.models.profiles:create_profile
           update_profile: kickside.models.profiles:update_profile
           delete_profile: kickside.models.profiles:delete_profile
+          test_profile: kickside.models.profiles:test_profile

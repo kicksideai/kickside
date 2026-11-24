@@ -98,6 +98,7 @@ entries:
     meta:
       comment: Single write path for provider profiles, shared by the admin handlers and the profiles contract; records each write.
     source: file://profile_service.lua
-    modules: [security, logger]
+    modules: [security, logger, contract]
     imports:
       models_repo: kickside.models.persist:repo
+      model_discovery: kickside.models.discovery:model_discovery

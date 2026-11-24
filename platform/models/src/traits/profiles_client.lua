@@ -10,7 +10,8 @@ local PROFILES_CONTRACT = "kickside.models.profiles:profiles"
 local M = {}
 
 -- call(method, args) opens the contract in the caller's security context and
--- invokes method. A contract refusal answers a domain error carrying its message.
+-- invokes method. A contract refusal answers a domain error carrying its message,
+-- its code and the holders it names.
 function M.call(method: string, args: any): (any?, error?)
     if not security.actor() or not security.scope() then
         return tool_result.fail(errors.PERMISSION_DENIED, "an authenticated actor and scope are required")
@@ -22,7 +23,8 @@ function M.call(method: string, args: any): (any?, error?)
     local reply, call_err = (profiles :: any)[method](profiles, args)
     if call_err then return nil, errors.wrap(call_err, "provider profiles " .. method) end
     if type(reply) ~= "table" or reply.success ~= true then
-        return tool_result.domain_error(type(reply) == "table" and reply.error or "provider profiles contract refused " .. method)
+        if type(reply) ~= "table" then return tool_result.domain_error("provider profiles contract refused " .. method) end
+        return tool_result.domain_error(reply.error or "provider profiles contract refused " .. method, { code = reply.code, holders = reply.holders })
     end
     return reply, nil
 end

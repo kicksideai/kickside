@@ -16,6 +16,12 @@ local function handler()
 
     local ok, err = profile_service.delete(id)
     if not ok then
+        if type(err) == "userdata" then
+            local details = err:details() or {}
+            res:set_status(details.code == "profile_in_use" and http.STATUS.CONFLICT or http.STATUS.BAD_REQUEST)
+            res:write_json({ success = false, error = err:message(), code = details.code, holders = details.holders })
+            return
+        end
         res:set_status(http.STATUS.BAD_REQUEST)
         res:write_json({ success = false, error = err })
         return
