@@ -69,36 +69,33 @@ local function define_tests()
 
         test.it("counts the current UTC calendar month", function()
             local now = assert(time.parse(time.RFC3339, "2026-11-24T23:59:00-03:00"))
-            test.eq(cap.month_start(now), "2026-11-01T00:00:00Z")
+            test.eq(cap.month(now), "2026-11")
             local december = assert(time.parse(time.RFC3339, "2026-11-30T22:00:00-03:00"))
-            test.eq(cap.month_start(december), "2026-12-01T00:00:00Z")
+            test.eq(cap.month(december), "2026-12")
             local seen
-            cap.check(platform(), {cap = "10", now = now, used = function(since) seen = since; return 0 end})
-            test.eq(seen, "2026-11-01T00:00:00Z")
+            cap.check(platform(), {cap = "10", now = now, used = function(month) seen = month; return 0 end})
+            test.eq(seen, "2026-11")
         end)
 
-        test.it("sums the month's usage with one aggregate query", function()
+        test.it("records only platform profile calls, one row per month", function()
             local db_id = models_types.db_id()
             local db = assert(sql.get(db_id))
-            local _, create_err = db:execute([[CREATE TABLE IF NOT EXISTS token_usage (
-                usage_id TEXT PRIMARY KEY, user_id TEXT NOT NULL, model_id TEXT NOT NULL,
-                prompt_tokens INTEGER NOT NULL, completion_tokens INTEGER NOT NULL, timestamp TEXT NOT NULL)]])
-            test.is_nil(create_err)
-            local rows = {
-                {"cap-test-1", 100, 50, "2026-10-31T23:59:59Z"},
-                {"cap-test-2", 200, 20, "2026-11-01T00:00:00Z"},
-                {"cap-test-3", 300, 30, "2026-11-20T10:00:00Z"},
-            }
-            for _, row in ipairs(rows) do
-                local _, insert_err = db:execute("INSERT INTO token_usage (usage_id, user_id, model_id, prompt_tokens, completion_tokens, timestamp) VALUES ($1, 'u', 'm', $2, $3, $4)",
-                    {row[1], row[2], row[3], row[4]})
-                test.is_nil(insert_err)
-            end
-            local total, err = cap.used_tokens(db_id, "2026-11-01T00:00:00Z")
-            db:execute("DELETE FROM token_usage WHERE usage_id LIKE 'cap-test-%'")
+            db:execute("DELETE FROM kickside_model_platform_usage WHERE month LIKE '2099-%'")
             db:release()
-            test.is_nil(err)
-            test.eq(total, 550)
+            local now = assert(time.parse(time.RFC3339, "2099-01-15T00:00:00Z"))
+            local result = {tokens = {prompt_tokens = 100, completion_tokens = 20, thinking_tokens = 5, total_tokens = 125}}
+            assert(cap.account(platform(), result, now))
+            assert(cap.account(platform(), result, now))
+            assert(cap.account({config = {api_key_env = "ANTHROPIC_API_KEY"}}, result, now))
+            assert(cap.account({config = {}, secret_config = {api_key = "own"}}, result, now))
+            assert(cap.account(platform(), {tokens = {}}, now))
+            assert(cap.account(platform(), result, assert(time.parse(time.RFC3339, "2099-02-01T00:00:00Z"))))
+            test.eq(assert(cap.used_tokens(db_id, "2099-01")), 250)
+            test.eq(assert(cap.used_tokens(db_id, "2099-02")), 125)
+            test.eq(assert(cap.used_tokens(db_id, "2099-03")), 0)
+            db = assert(sql.get(db_id))
+            db:execute("DELETE FROM kickside_model_platform_usage WHERE month LIKE '2099-%'")
+            db:release()
         end)
 
         test.it("maps the provider of the platform key from its prefix", function()

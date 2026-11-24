@@ -1,8 +1,8 @@
 -- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- A provider profile whose API key comes from KICKSIDE_PLATFORM_LLM_API_KEY uses
--- the key of the platform that deployed this instance. Calls through it stop at
--- KICKSIDE_PLATFORM_TOKEN_MONTHLY_CAP tokens per calendar month (UTC); without a
--- cap the profile is disabled.
+-- the key of the platform that deployed this instance. Only calls through such a
+-- profile are counted, per calendar month (UTC), and they stop at
+-- KICKSIDE_PLATFORM_TOKEN_MONTHLY_CAP tokens; without a cap the profile is disabled.
 local env = require("env")
 local sql = require("sql")
 local time = require("time")
@@ -60,9 +60,9 @@ function M.provider_for_key(key: any): string?
     return nil
 end
 
-function M.month_start(now: any): string
+function M.month(now: any): string
     local utc = (now or time.now()):utc()
-    return string.format("%04d-%02d-01T00:00:00Z", utc:year(), utc:month())
+    return string.format("%04d-%02d", utc:year(), utc:month())
 end
 
 function M.cap(raw: any): number?
@@ -71,16 +71,37 @@ function M.cap(raw: any): number?
     return value
 end
 
--- One aggregate over the usage rows recorded since `since` (RFC3339, as stored).
-function M.used_tokens(db_id: string, since: string): (number?, any?)
+function M.used_tokens(db_id: string, month: string): (number?, any?)
     local db, err = sql.get(db_id)
-    if err or not db then return nil, err or "usage database unavailable" end
-    local rows, query_err = db:query(
-        "SELECT COALESCE(SUM(prompt_tokens + completion_tokens), 0) AS total FROM token_usage WHERE timestamp >= $1",
-        { since })
+    if err or not db then return nil, err or "models database unavailable" end
+    local rows, query_err = db:query("SELECT tokens FROM kickside_model_platform_usage WHERE month = $1", { month })
     db:release()
     if query_err then return nil, query_err end
-    return tonumber(rows and rows[1] and rows[1].total) or 0
+    return tonumber(rows and rows[1] and rows[1].tokens) or 0
+end
+
+function M.record(db_id: string, month: string, tokens: number): (boolean, any?)
+    if tokens <= 0 then return true end
+    local db, err = sql.get(db_id)
+    if err or not db then return false, err or "models database unavailable" end
+    local _, exec_err = db:execute([[
+        INSERT INTO kickside_model_platform_usage (month, tokens) VALUES ($1, $2)
+        ON CONFLICT (month) DO UPDATE SET tokens = kickside_model_platform_usage.tokens + excluded.tokens
+    ]], { month, math.floor(tokens) })
+    db:release()
+    if exec_err then return false, exec_err end
+    return true
+end
+
+-- Prompt, completion, and thinking tokens of one provider result.
+function M.result_tokens(result: any): number
+    local tokens = type(result) == "table" and type(result.tokens) == "table" and result.tokens or {}
+    local total = 0
+    for _, key in ipairs({ "prompt_tokens", "completion_tokens", "thinking_tokens" }) do
+        local value = tonumber(tokens[key])
+        if value and value > 0 then total = total + value end
+    end
+    return total
 end
 
 local function payment_required(message: string, details: any?): error
@@ -89,8 +110,14 @@ local function payment_required(message: string, details: any?): error
     return (errors.new({ kind = errors.PERMISSION_DENIED, retryable = false, message = message, details = out }) :: error)
 end
 
+-- Adds a successful call's tokens to this month's platform usage.
+function M.account(profile: any, result: any, now: any?): (boolean, any?)
+    if not M.is_platform(profile) then return true end
+    return M.record(models_types.db_id(), M.month(now), M.result_tokens(result))
+end
+
 -- Returns nil when the call may go on, or a payment_required error.
--- options: cap (raw string), used (since) -> tokens, now (time).
+-- options: cap (raw string), used (month) -> tokens, now (time).
 function M.check(profile: any, options: any?): error?
     if not M.is_platform(profile) then return nil end
     local opts = options or {}
@@ -103,12 +130,12 @@ function M.check(profile: any, options: any?): error?
     if not cap then
         return payment_required("Platform model access is not available. Add your own API key in Models.")
     end
-    local since = M.month_start(opts.now)
+    local month = M.month(opts.now)
     local used, used_err
     if opts.used then
-        used, used_err = opts.used(since)
+        used, used_err = opts.used(month)
     else
-        used, used_err = M.used_tokens(models_types.db_id(), since)
+        used, used_err = M.used_tokens(models_types.db_id(), month)
     end
     if used_err or not used then
         return (errors.new({ kind = errors.UNAVAILABLE, retryable = true,

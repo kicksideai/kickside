@@ -138,6 +138,9 @@ local function call(method: string, input: any): (any?, any?)
     for key, value in pairs(input or {}) do request[key] = value end
     request.model = route.provider_model
     local result, call_err = provider[method](provider, request)
+    if not call_err and type(result) == "table" and result.success ~= false then
+        platform_cap.account(profile, result)
+    end
     result = redact(result)
     if (method == "generate" or method == "embed") and type(result) == "table" then
         -- Provider responses may carry arbitrary metadata. Only the managed
