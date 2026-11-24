@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.75](https://github.com/kicksideai/kickside/compare/widgets-v0.1.74...widgets-v0.1.75) (2026-11-24)
+
+
+### Features
+
+* **widgets:** host choice sets and disabled state for the schema form ([#973](https://github.com/kicksideai/kickside/issues/973)) ([6d5ba3a](https://github.com/kicksideai/kickside/commit/6d5ba3aeb3360c52a87f5a29c48589dbef9ad7fa))
+
 ## [0.1.74](https://github.com/kicksideai/kickside/compare/widgets-v0.1.73...widgets-v0.1.74) (2026-11-24)
 
 

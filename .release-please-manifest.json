@@ -33,7 +33,7 @@
   "platform/uploads": "0.3.36",
   "platform/users": "0.2.31",
   "platform/webhooks": "0.1.48",
-  "platform/widgets": "0.1.74",
+  "platform/widgets": "0.1.75",
   "platform/workflows": "0.2.24",
   "app": "0.2.63"
 }
