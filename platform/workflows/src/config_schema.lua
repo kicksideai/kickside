@@ -82,6 +82,14 @@ local function render(value: any): string
     return encoded :: string
 end
 
+-- Validation errors can reach operators and model-assisted configuration flows.
+-- A schema author may mark a field as sensitive or write-only precisely because
+-- its value must not leave the input boundary. Keep the useful path and rule in
+-- the error, but never render either side of a value comparison for those fields.
+local function renders_values(schema: Map, ancestor_redacts_values: boolean): boolean
+    return not ancestor_redacts_values and schema.sensitive ~= true and schema.writeOnly ~= true
+end
+
 local function listed(items: { string }): string
     local shown: { string } = {}
     for i = 1, math.min(#items, MAX_LISTED) do shown[i] = items[i] end
@@ -103,13 +111,14 @@ local function declared_properties(properties: Map): string
     return listed(names)
 end
 
-local validate_value: (any, any, string, boolean, number, ((any) -> boolean)?) -> string?
+local validate_value: (any, any, string, boolean, number, ((any) -> boolean)?, boolean) -> string?
 
-validate_value = function(value: any, raw_schema: any, path: string, require_fields: boolean, depth: number, defer: ((any) -> boolean)?): string?
+validate_value = function(value: any, raw_schema: any, path: string, require_fields: boolean, depth: number, defer: ((any) -> boolean)?, ancestor_redacts_values: boolean): string?
     if defer and defer(value) then return nil end
     if depth > MAX_DEPTH then return path .. " exceeds the supported nesting depth" end
     if type(raw_schema) ~= "table" then return nil end
     local schema = raw_schema :: Map
+    local redacts_values = ancestor_redacts_values or schema.sensitive == true or schema.writeOnly == true
     local expected = schema_type(schema)
     if expected == nil then
         if schema.properties ~= nil or schema.required ~= nil or schema.additionalProperties ~= nil then expected = "object"
@@ -128,10 +137,12 @@ validate_value = function(value: any, raw_schema: any, path: string, require_fie
             if same_json(value, allowed, 1) then matched = true; break end
         end
         if not matched then
+            if not renders_values(schema, ancestor_redacts_values) then return path .. " must be one of the declared allowed values" end
             return path .. " must be one of the allowed values " .. allowed_values(schema.enum :: { any }) .. ", got " .. render(value)
         end
     end
     if schema.const ~= nil and not same_json(value, schema.const, 1) then
+        if not renders_values(schema, ancestor_redacts_values) then return path .. " must equal its declared constant" end
         return path .. " must equal its declared constant " .. render(schema.const) .. ", got " .. render(value)
     end
 
@@ -163,12 +174,12 @@ validate_value = function(value: any, raw_schema: any, path: string, require_fie
         for key, child in pairs(object) do
             local child_schema = properties[tostring(key)]
             if child_schema ~= nil then
-                local err = validate_value(child, child_schema, path .. "." .. tostring(key), require_fields, depth + 1, defer)
+                local err = validate_value(child, child_schema, path .. "." .. tostring(key), require_fields, depth + 1, defer, redacts_values)
                 if err then return err end
             elseif schema.additionalProperties == false then
                 return path .. "." .. tostring(key) .. " is not declared; declared properties: " .. declared_properties(properties)
             elseif type(schema.additionalProperties) == "table" then
-                local err = validate_value(child, schema.additionalProperties, path .. "." .. tostring(key), require_fields, depth + 1, defer)
+                local err = validate_value(child, schema.additionalProperties, path .. "." .. tostring(key), require_fields, depth + 1, defer, redacts_values)
                 if err then return err end
             end
         end
@@ -182,7 +193,7 @@ validate_value = function(value: any, raw_schema: any, path: string, require_fie
         end
         if type(schema.items) == "table" then
             for index, child in ipairs(value :: { any }) do
-                local err = validate_value(child, schema.items, path .. "[" .. tostring(index) .. "]", require_fields, depth + 1, defer)
+                local err = validate_value(child, schema.items, path .. "[" .. tostring(index) .. "]", require_fields, depth + 1, defer, redacts_values)
                 if err then return err end
             end
         end
@@ -199,7 +210,7 @@ function M.validate(config: any, raw_schema: any, opts: any?): string?
     if type(options.defer) == "function" then
         defer = function(value: any): boolean return options.defer(value) == true end
     end
-    return validate_value(config, schema, tostring(options.path or "config"), options.require_fields ~= false, 1, defer)
+    return validate_value(config, schema, tostring(options.path or "config"), options.require_fields ~= false, 1, defer, false)
 end
 
 local function keyword_family(schema: Map): (string?, string?)

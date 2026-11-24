@@ -153,6 +153,53 @@ local function define_tests()
             )
         end)
 
+        test.it("keeps sensitive and write-only comparison values out of validation errors", function()
+            local sensitive = "never-return-this"
+            local enum_schema: Map = {
+                type = "object",
+                properties = { token = { type = "string", sensitive = true, enum = { "expected" } } },
+            }
+            local const_schema: Map = {
+                type = "object",
+                properties = { token = { type = "string", writeOnly = true, const = "expected" } },
+            }
+            local enum_err = tostring(assist.validate_config({ token = sensitive }, enum_schema))
+            local const_err = tostring(assist.validate_config({ token = sensitive }, const_schema))
+            test.eq(enum_err, "config.token must be one of the declared allowed values")
+            test.eq(const_err, "config.token must equal its declared constant")
+            test.is_true(enum_err:find(sensitive, 1, true) == nil)
+            test.is_true(const_err:find(sensitive, 1, true) == nil)
+            test.is_true(const_err:find("expected", 1, true) == nil)
+        end)
+
+        test.it("redacts comparison values beneath sensitive objects and write-only arrays", function()
+            local secret = "never-return-this"
+            local object_schema: Map = {
+                type = "object",
+                properties = {
+                    credentials = {
+                        type = "object",
+                        sensitive = true,
+                        properties = { token = { type = "string", enum = { "expected" } } },
+                    },
+                },
+            }
+            local array_schema: Map = {
+                type = "object",
+                properties = {
+                    tokens = { type = "array", writeOnly = true, items = { type = "string", const = "expected" } },
+                },
+            }
+            local object_err = tostring(assist.validate_config({ credentials = { token = secret } }, object_schema))
+            local array_err = tostring(assist.validate_config({ tokens = { secret } }, array_schema))
+            test.eq(object_err, "config.credentials.token must be one of the declared allowed values")
+            test.eq(array_err, "config.tokens[1] must equal its declared constant")
+            test.is_true(object_err:find(secret, 1, true) == nil)
+            test.is_true(object_err:find("expected", 1, true) == nil)
+            test.is_true(array_err:find(secret, 1, true) == nil)
+            test.is_true(array_err:find("expected", 1, true) == nil)
+        end)
+
         test.it("honors string constants, lengths, and additionalProperties schemas", function()
             local schema: Map = {
                 type = "object",
