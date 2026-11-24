@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.74](https://github.com/kicksideai/kickside/compare/widgets-v0.1.73...widgets-v0.1.74) (2026-11-24)
+
+
+### Features
+
+* **ui-kit:** grouped settings lists and schema form list controls ([#969](https://github.com/kicksideai/kickside/issues/969)) ([de3a935](https://github.com/kicksideai/kickside/commit/de3a935bd70987a8f7602a7fe10e0110fedb2569))
+
 ## [0.1.73](https://github.com/kicksideai/kickside/compare/widgets-v0.1.72...widgets-v0.1.73) (2026-11-24)
 
 
