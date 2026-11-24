@@ -127,6 +127,39 @@ function M.discover(profile_id: string): (any?, any?, any?)
     }
 end
 
+-- served answers the provider models profile_id serves now, as the provider's model list
+-- answers them through the profile's discovery adapter, in the list's order. It records
+-- nothing: neither cards nor the profile status change.
+function M.served(profile_id: string): ({ string }?, any?, any?)
+    local profile, profile_err = models_repo.get_profile(profile_id)
+    if profile_err then return nil, profile_err end
+    if not profile then return nil, "profile not found" end
+
+    local refused, refused_err = unresolved(profile_id, profile, "model list failed", false)
+    if refused_err then return nil, refused_err end
+    if refused then return nil, refused end
+
+    local adapter = M.adapter_for(tostring(profile.provider_id or ""))
+    if not adapter or not adapter.fetch then
+        return nil, "provider does not support model discovery yet"
+    end
+
+    local rows, err, diagnostics = adapter.fetch(profile)
+    if err then
+        if not diagnostics then
+            local _, classified = common.transport_error(err)
+            diagnostics = classified
+        end
+        return nil, common.failure_message("model list failed", diagnostics), diagnostics
+    end
+    local out: { string } = {}
+    for _, item in ipairs(rows or {}) do
+        local provider_model = adapter.model_id and adapter.model_id(item) or mapper.provider_model_id(item)
+        if provider_model then out[#out + 1] = provider_model end
+    end
+    return out
+end
+
 function M.test(profile_id: string, opts: any): (any?, any?, any?)
     local profile, profile_err = models_repo.get_profile(profile_id)
     if profile_err then return nil, profile_err end

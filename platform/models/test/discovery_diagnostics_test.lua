@@ -50,6 +50,37 @@ return {run = test.run_cases(function()
         end)
     end)
 
+    test.describe("served models", function()
+        test.it("answers the provider models a profile serves from the provider's model list, recording nothing", function()
+            local saved = assert(repo.create_profile({name = "Provider served models",
+                provider_id = "wippy.llm.openai_compat:provider", api_key = "test-key",
+                config = {base_url = "https://example.invalid"}}))
+            local original = discovery.adapter_for
+            discovery.adapter_for = function() return openai end
+            local ok, err = pcall(function()
+                local before = assert(repo.get_profile(saved.id))
+                http_fixture.prepare({status_code = 200, body = '{"data":[{"id":"served-a"},{"id":"served-b"}]}'}, nil)
+                local models = assert(discovery.served(saved.id))
+                test.eq(#models, 2)
+                test.eq(models[1], "served-a")
+                test.eq(models[2], "served-b")
+                local after = assert(repo.get_profile(saved.id))
+                test.eq(after.status, before.status)
+                for _, card in ipairs(assert(repo.list_card_overlays())) do
+                    test.neq(card.provider_profile_id, saved.id)
+                end
+                http_fixture.prepare({status_code = 500, body = "{}"}, nil)
+                local none, failure = discovery.served(saved.id)
+                test.is_nil(none)
+                test.contains(tostring(failure), "model list failed")
+                test.eq(assert(repo.get_profile(saved.id)).status, before.status)
+            end)
+            discovery.adapter_for = original
+            assert(repo.delete_profile(saved.id))
+            if not ok then error(err, 0) end
+        end)
+    end)
+
     test.describe("provider discovery timeout", function()
         test.it("uses saved timeout strings and environment durations for discovery and connection probes", function()
             local saved = assert(repo.create_profile({name = "Provider discovery timeout",

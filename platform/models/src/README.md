@@ -168,9 +168,12 @@ logs each write (action, actor, profile id, names of the secrets set) on the
 `kickside.models.profiles` logger. Replies are the public projection: settings,
 `*_env` pointers, `has_api_key` and `secret_fields` (names only). The contract
 is granted through the `kickside.models.security:profile_registrar` policy.
+`served_models({ id })` answers the provider models a profile serves now, read
+from the provider's model list without recording anything; a module that only
+reads profiles and what they serve holds `kickside.models.security:profile_reader`.
 
 The `kickside.models.traits:profile_manager` trait carries `ModelProfilesRead`
-(`profiles_read`, MCP scope `state.read`: list, get) and `ModelProfilesManage`
+(`profiles_read`, MCP scope `state.read`: list, get, served) and `ModelProfilesManage`
 (`profiles_manage`, MCP scope `state.write`: create, update, delete), assigned
 to a group through the `kickside.models.security:profile_tools` tool capability.
 
