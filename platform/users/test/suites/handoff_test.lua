@@ -12,7 +12,7 @@ local user_lifecycle_repo = require("user_lifecycle_repo")
 local user_group_sources_repo = require("user_group_sources_repo")
 
 local SECRET_KEY = "kickside.users.env:handoff_secret"
-local SECRET = "dGVzdC1oYW5kb2ZmLXNlY3JldC1mb3ItdGhlLXVzZXJzLWhhcm5lc3M"
+local SECRET = string.rep("handoff-test-value-", 3)
 local USER_ID = "handoff_test_user"
 local EMAIL = "handoff@test.local"
 
