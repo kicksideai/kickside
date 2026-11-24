@@ -2,6 +2,18 @@ version: "1.0"
 namespace: kickside.agents.api
 
 entries:
+  # Both catalog methods run as the caller and enforce KickSide visibility.
+  - name: session_util_catalog
+    kind: contract.binding
+    meta:
+      comment: KickSide agent and tool lookup for the wippy/session-util chat routes.
+    contracts:
+      - contract: wippy.session_util:catalog
+        default: true
+        methods:
+          agent_details: kickside.agents.api:catalog_agent_details
+          tool_titles: kickside.agents.api:catalog_tool_titles
+
   - name: query_params
     kind: library.lua
     meta:

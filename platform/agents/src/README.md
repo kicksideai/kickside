@@ -22,7 +22,42 @@ CRUD API.
 - **Registry discovery** — built-in agent entries can be contributed by the app
   or any installed module via `agent.gen1` registry entries.
 - **HTTP API** — `/user-agents` CRUD + `/agents/{list,traits,tools}` discovery.
-- **Chat discovery** — `kickside.agents.api:catalog_agent_details` returns basic agent details and any declared start prompts. It uses component read access for user agents and public visibility for registry agents. An unknown agent, or one the caller may not read, gives no agent. Any other registry or component failure is returned as an error, so the route answers 500 with its cause for that agent only. Bad agent data is an error too: a user agent without a title, or start prompts that are not a list of strings. An empty start prompt is dropped. Create and update both reject an empty user agent title. `kickside.agents.api:catalog_tool_titles` returns titles for public tools by registry ID or unambiguous tool name. Both run as the caller. The app binds them to the `wippy.session_util:catalog` contract, and `wippy/session-util` serves the chat routes `GET /agents/details` and `GET /tools/by-name`.
+- **Chat discovery** — `kickside.agents.api:catalog_agent_details` returns basic agent details and any declared start prompts. It uses component read access for user agents and public visibility for registry agents. An unknown agent, or one the caller may not read, gives no agent. Any other registry or component failure is returned as an error, so the route answers 500 with its cause for that agent only. Bad agent data is an error too: a user agent without a title, or start prompts that are not a list of strings. An empty start prompt is dropped. Create and update both reject an empty user agent title. `kickside.agents.api:catalog_tool_titles` returns titles for public tools by registry ID or unambiguous tool name. Both run as the caller. The module binds them to the `wippy.session_util:catalog` contract through `kickside.agents.api:session_util_catalog`. See "Chat routes" for app wiring.
+
+## Chat routes
+
+The module no longer serves `GET /agents/details` and `GET /tools/by-name`
+itself. It depends on `wippy/session-util`, which serves both routes on the
+app's API router. The app must pass `wippy.session_util:api_router` on its
+`kickside/agents` dependency, in the same change that moves to this release.
+Set the value to the app's API router:
+
+```yaml
+- name: kickside_agents
+  kind: ns.dependency
+  component: kickside/agents
+  parameters:
+    - name: kickside.agents:api_router
+      value: app:api
+    - name: kickside.agents:ui_server
+      value: app:gateway
+    - name: wippy.session_util:api_router
+      value: app:api
+```
+
+The app must allow its users to access both endpoint IDs:
+`wippy.session_util.api:agent_details.endpoint` and
+`wippy.session_util.api:tools_by_name.endpoint`.
+A module access policy may list only resources the module owns.
+The app must grant access because these endpoints belong to `wippy/session-util`.
+
+Without the router parameter the app does not start. `wippy run` stops with
+"entry loading failed" and "unresolved requirement
+wippy.session_util:api_router ... no value available". `wippy install`,
+`wippy update` and `wippy lint` do not report it (lint logs only a warning),
+so the first start is where it shows. The fix is the parameter above.
+Setting the parameter while the app still resolves an older `kickside/agents`
+is harmless: the runtime ignores a parameter that matches no requirement.
 
 ## Requirements
 

@@ -179,12 +179,12 @@ entries:
       type: app.security.policy_binding
       surface: app.runtime.chat
       intent: trusted_product_runtime
-      comment: The wippy/session-util chat routes run as the caller and look agents and tools up through the app's catalog binding and its two KickSide methods.
+      comment: The wippy/session-util chat routes run as the caller and look agents and tools up through the Agents catalog binding and its two methods.
     groups: [app.security:user]
     policy:
       resources:
         - wippy.session_util:catalog
-        - app.deps:session_util_catalog
+        - kickside.agents.api:session_util_catalog
         - kickside.agents.api:catalog_agent_details
         - kickside.agents.api:catalog_tool_titles
       actions: [contract.get, contract.implementations, contract.open, funcs.call]

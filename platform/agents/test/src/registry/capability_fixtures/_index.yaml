@@ -125,6 +125,8 @@ entries:
         graph.
     component: kickside/agents
     parameters:
+    - name: wippy.session_util:api_router
+      value: app:api
     - name: kickside.agents:api_router
       value: app:api
     - name: kickside.agents:ui_server

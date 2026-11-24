@@ -51,7 +51,7 @@ local function define_tests()
                 test.eq(decision("app.security:user", action, "wippy.session_util:catalog"), "allow", action)
                 test.eq(decision("app.security:stranger", action, "wippy.session_util:catalog"), "undefined", action)
             end
-            test.eq(decision("app.security:user", "contract.open", "app.deps:session_util_catalog"), "allow")
+            test.eq(decision("app.security:user", "contract.open", "kickside.agents.api:session_util_catalog"), "allow")
             test.eq(decision("app.security:user", "contract.open", "app.deps:unrelated_binding"), "undefined")
             for _, id in ipairs({"kickside.agents.api:catalog_agent_details", "kickside.agents.api:catalog_tool_titles"}) do
                 test.eq(decision("app.security:user", "funcs.call", id), "allow", id)
