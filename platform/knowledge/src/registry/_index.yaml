@@ -12,6 +12,7 @@ entries:
     method: create
     modules: [contract, uuid, registry, security]
     imports:
+      kb_access: kickside.knowledge:kb_access
       component: kickside.component:component
       engines: kickside.knowledge:engines
       stores: kickside.knowledge:stores
@@ -26,6 +27,7 @@ entries:
     method: find
     modules: [contract, uuid, registry, security]
     imports:
+      kb_access: kickside.knowledge:kb_access
       component: kickside.component:component
       engines: kickside.knowledge:engines
       stores: kickside.knowledge:stores
@@ -40,6 +42,7 @@ entries:
     method: upsert
     modules: [contract, uuid, registry, security]
     imports:
+      kb_access: kickside.knowledge:kb_access
       component: kickside.component:component
       engines: kickside.knowledge:engines
       stores: kickside.knowledge:stores
@@ -54,6 +57,7 @@ entries:
     method: update
     modules: [contract, uuid, registry, security]
     imports:
+      kb_access: kickside.knowledge:kb_access
       component: kickside.component:component
       engines: kickside.knowledge:engines
       stores: kickside.knowledge:stores
@@ -68,6 +72,7 @@ entries:
     method: delete
     modules: [contract, uuid, registry, security]
     imports:
+      kb_access: kickside.knowledge:kb_access
       component: kickside.component:component
       engines: kickside.knowledge:engines
       stores: kickside.knowledge:stores
@@ -82,6 +87,7 @@ entries:
     method: list
     modules: [contract, uuid, registry, security]
     imports:
+      kb_access: kickside.knowledge:kb_access
       component: kickside.component:component
       engines: kickside.knowledge:engines
       stores: kickside.knowledge:stores
@@ -97,6 +103,7 @@ entries:
     source: file://knowledge_bases.lua
     modules: [contract, uuid, registry, security]
     imports:
+      kb_access: kickside.knowledge:kb_access
       component: kickside.component:component
       engines: kickside.knowledge:engines
       stores: kickside.knowledge:stores

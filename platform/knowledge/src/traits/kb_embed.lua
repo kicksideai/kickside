@@ -4,6 +4,7 @@ local ctx = require("ctx")
 local security = require("security")
 local upload_query_repo = require("upload_query_repo")
 local ingest_upload = require("ingest_upload")
+local kb_access = require("kb_access")
 
 local trim = util.trim
 
@@ -114,6 +115,11 @@ local function handle(args: any, context: any)
     local comp, comp_err = svc:get({ component_id = kb_id })
     if not comp or not comp.success then
         return nil, errors.new({ message = tostring("knowledge base not found: " .. tostring(comp_err)), kind = errors.NOT_FOUND })
+    end
+
+    local meta = type(comp.meta) == "table" and comp.meta or {}
+    if not kb_access.is_kb(meta) then
+        return nil, errors.new({ kind = errors.INVALID, message = "component is not a knowledge base" })
     end
 
     local engine, access_err = component.open(
