@@ -6,6 +6,7 @@ local upload_tokens = require("upload_tokens")
 local execution_identity = require("execution_identity")
 local trace_context = require("trace_context")
 local uuid = require("uuid")
+local kb_access = require("kb_access")
 
 local function handler()
     local res = http.response()
@@ -38,6 +39,13 @@ local function handler()
         local msg = tostring(access_err or "access denied")
         res:set_status(status)
         res:write_json({ success = false, error = msg })
+        return
+    end
+
+    local _, kb_err = kb_access.get(kb_id, component.ACCESS.WRITE)
+    if kb_err then
+        res:set_status((http_errors.classify(kb_err)))
+        res:write_json(http_errors.response(kb_err))
         return
     end
 

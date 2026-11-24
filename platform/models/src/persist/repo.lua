@@ -620,7 +620,11 @@ function M.delete_card(name: string, retired_only: boolean?): (boolean, any?)
         local rows, read_err = dbh:query("SELECT 1 FROM kickside_model_cards WHERE name = $1", { name })
         dbh:release()
         if read_err then return false, read_err end
-        if rows[1] then return false, "Model card " .. name .. " is enabled; disable it before deleting it" end
+        if rows[1] then
+            return false, errors.new({ kind = errors.CONFLICT, retryable = false,
+                message = "Model card " .. name .. " is enabled; disable it first (ModelCardsManage action disable), then delete it",
+                details = { code = "card_enabled", name = name } })
+        end
         return false, "No stored model card named: " .. name
     end
     dbh:release()

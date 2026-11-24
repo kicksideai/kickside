@@ -5,6 +5,7 @@ local html = require("html")
 local http_client = require("http_client")
 local security = require("security")
 local component = require("component")
+local kb_access = require("kb_access")
 local upload_lib = require("upload_lib")
 local upload_tokens = require("upload_tokens")
 local execution_identity = require("execution_identity")
@@ -145,6 +146,10 @@ local function handle(args)
         return nil, errors.new({ message = "no kb_id available, use SelectKB first or provide kb_id", kind = errors.INVALID })
     end
     local kb_id = kb_id_raw :: string
+
+    local _, kb_err = kb_access.get(kb_id, component.ACCESS.WRITE,
+        errors.new({ kind = errors.PERMISSION_DENIED, message = "cannot access KB" }))
+    if kb_err then return nil, kb_err end
 
     -- Gate KB access before touching the network, so the tool cannot be used as
     -- an SSRF probe against a KB the caller has no write access to.

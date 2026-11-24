@@ -243,6 +243,7 @@ entries:
       component: kickside.component:component
       upload_query_repo: kickside.uploads.persist:upload_query_repo
       ingest_upload: kickside.knowledge.api:ingest_upload
+      kb_access: kickside.knowledge:kb_access
 
   # KB Explorer trait — deterministic, runtime-targeted access to ANY knowledge
   # base the agent's user can read: discover one, then ask / search / read nodes /

@@ -1,0 +1,256 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: kickside.models.profiles
+
+# The provider profiles contract. This namespace is outside the member module
+# grant (kickside.models.security:module_runtime); a module calls it only through
+# kickside.models.security:profile_registrar.
+
+entries:
+  - name: profiles
+    kind: contract.definition
+    meta:
+      title: Model Provider Profiles
+      description: Read, create, update and delete provider profiles without the admin HTTP surface. Writes share the /models/provider-profiles save path. Replies carry the names of stored secrets, never their values.
+    methods:
+      - name: list_profiles
+        description: list_profiles({}) -> { success, profiles?, error? }. Every profile in its public projection, disabled profiles included.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": {} }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "profiles": { "type": "array", "items": { "type": "object" } }, "error": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+      - name: get_profile
+        description: get_profile({ id }) -> { success, profile?, error? }. One profile in its public projection.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "id": { "type": "string", "minLength": 1 } }, "required": ["id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "profile": { "type": "object" }, "error": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+      - name: create_profile
+        description: create_profile(profile) -> { success, profile?, error? }. Credentials arrive as api_key, access_key, secret_key, session_token, google_credentials, access_token or headers and are stored encrypted; an *_env setting names an environment variable instead.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "id": { "type": "string", "description": "Stable profile id; derived from the name when omitted" },
+                  "name": { "type": "string", "minLength": 1 },
+                  "provider_id": { "type": "string", "description": "Registered llm.provider entry id" },
+                  "icon": { "type": "string" },
+                  "enabled": { "type": "boolean" },
+                  "config": { "type": "object", "description": "Public settings; *_env keys name environment variables that hold credentials" } }, "required": ["name"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "profile": { "type": "object" }, "error": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+      - name: update_profile
+        description: update_profile({ id, profile }) -> { success, profile?, error? }. Omitted settings and stored secrets keep their saved values.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "id": { "type": "string", "minLength": 1 }, "profile": { "type": "object" } }, "required": ["id", "profile"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "profile": { "type": "object" }, "error": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+      - name: delete_profile
+        description: delete_profile({ id }) -> { success, error?, code?, holders? }. Removes the profile and the cards routed through it; deleting an absent profile succeeds. Refused with code profile_in_use, naming the holders, while an implementation of kickside.models.profiles:profile_holder answers records that name it.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "id": { "type": "string", "minLength": 1 } }, "required": ["id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" }, "code": { "type": "string" }, "holders": { "type": "array", "items": { "type": "object" } } }, "required": ["success"] }
+            format: application/schema+json
+      - name: test_profile
+        description: test_profile({ id, model? }) -> { success, result?, error?, code? }. Checks that every *_env reference of the profile resolves, then probes the provider. Without model it records the outcome as the profile status (healthy, unhealthy); a model-scoped probe leaves that status unchanged. A failed test answers code profile_unhealthy with the reason.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "id": { "type": "string", "minLength": 1 }, "model": { "type": "string", "description": "Provider model to probe; the profile's test_model or the first listed model otherwise" } }, "required": ["id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "result": { "type": "object" }, "error": { "type": "string" }, "code": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+
+  # A module whose records name a provider profile declares a binding of this
+  # contract; delete_profile refuses a profile any holder answers holders for.
+  - name: profile_holder
+    kind: contract.definition
+    meta:
+      title: Model Provider Profile Holder
+      description: Implemented by a module whose records name a provider profile, so the profile is not deleted under them.
+    methods:
+      - name: holders
+        description: holders({ profile_id }) -> { holders }. The records of the implementing module that name the profile, each { kind, id, title? }; empty when none does.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "profile_id": { "type": "string", "minLength": 1 } }, "required": ["profile_id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "holders": { "type": "array", "items": { "type": "object", "properties": { "kind": { "type": "string" }, "id": { "type": "string" }, "title": { "type": "string" } }, "required": ["kind", "id"] } } }, "required": ["holders"] }
+            format: application/schema+json
+
+  - name: list_profiles
+    kind: function.lua
+    meta:
+      comment: profiles contract -- every profile, disabled included.
+    source: file://profiles_contract.lua
+    method: list_profiles
+    imports:
+      profile_service: kickside.models.catalog:profile_service
+    security:
+      policies:
+        - kickside.models.cards:database_config_read
+        - kickside.models.catalog:catalog_database
+        - kickside.models.catalog:catalog_read
+        - kickside.models:reload_profiles_call
+
+  - name: get_profile
+    kind: function.lua
+    meta:
+      comment: profiles contract -- one profile by id.
+    source: file://profiles_contract.lua
+    method: get_profile
+    imports:
+      profile_service: kickside.models.catalog:profile_service
+    security:
+      policies:
+        - kickside.models.cards:database_config_read
+        - kickside.models.catalog:catalog_database
+        - kickside.models.catalog:catalog_read
+        - kickside.models:reload_profiles_call
+
+  - name: create_profile
+    kind: function.lua
+    meta:
+      comment: profiles contract -- create a profile through the shared profile service.
+    source: file://profiles_contract.lua
+    method: create_profile
+    imports:
+      profile_service: kickside.models.catalog:profile_service
+    security:
+      policies:
+        - kickside.models:secret_key_access
+        - kickside.models.catalog:catalog_database
+        - kickside.models.catalog:catalog_read
+        - kickside.models.catalog:provider_binding_read
+        - kickside.models:reload_profiles_call
+        - kickside.models.persist:decode_profiles_call
+        - kickside.models.persist:profile_changed_call
+
+  - name: update_profile
+    kind: function.lua
+    meta:
+      comment: profiles contract -- update a profile through the shared profile service.
+    source: file://profiles_contract.lua
+    method: update_profile
+    imports:
+      profile_service: kickside.models.catalog:profile_service
+    security:
+      policies:
+        - kickside.models:secret_key_access
+        - kickside.models.catalog:catalog_database
+        - kickside.models.catalog:catalog_read
+        - kickside.models.catalog:provider_binding_read
+        - kickside.models:reload_profiles_call
+        - kickside.models.persist:decode_profiles_call
+        - kickside.models.persist:profile_changed_call
+
+  - name: delete_profile
+    kind: function.lua
+    meta:
+      comment: profiles contract -- delete a profile and its cards.
+    source: file://profiles_contract.lua
+    method: delete_profile
+    imports:
+      profile_service: kickside.models.catalog:profile_service
+    security:
+      policies:
+        - kickside.models.profiles:holder_read
+        - kickside.models.profiles:holder_open
+        - kickside.models.profiles:holder_call
+        - kickside.models:secret_key_access
+        - kickside.models.catalog:catalog_database
+        - kickside.models.catalog:catalog_read
+        - kickside.models.catalog:provider_binding_read
+        - kickside.models:reload_profiles_call
+        - kickside.models.persist:decode_profiles_call
+        - kickside.models.persist:profile_changed_call
+
+  - name: test_profile
+    kind: function.lua
+    meta:
+      comment: profiles contract -- test a profile and record its status.
+    source: file://profiles_contract.lua
+    method: test_profile
+    imports:
+      profile_service: kickside.models.catalog:profile_service
+    security:
+      policies:
+        - kickside.models:secret_key_access
+        - kickside.models.catalog:catalog_database
+        - kickside.models.catalog:catalog_read
+        - kickside.models.catalog:provider_binding_read
+        - kickside.models:reload_profiles_call
+        - kickside.models.persist:decode_profiles_call
+        - kickside.models.persist:profile_changed_call
+
+  # delete_profile lists the implementations of the profile holder contract,
+  # opens each (their ids are the implementing modules') and calls holders only;
+  # the runtime checks contract.call against the bare method name.
+  - name: holder_read
+    kind: security.policy
+    meta:
+      private: true
+      includes:
+        - kickside.models.profiles:holder_open
+        - kickside.models.profiles:holder_call
+    groups: []
+    policy:
+      resources: ["kickside.models.profiles:profile_holder"]
+      actions: [contract.get, contract.implementations]
+      effect: allow
+
+  - name: holder_open
+    kind: security.policy
+    meta:
+      private: true
+    groups: []
+    policy:
+      resources: ["*"]
+      actions: [contract.open]
+      effect: allow
+
+  - name: holder_call
+    kind: security.policy
+    meta:
+      private: true
+    groups: []
+    policy:
+      resources: [holders]
+      actions: [contract.call]
+      effect: allow
+
+  - name: profiles_binding
+    kind: contract.binding
+    meta:
+      title: Model Provider Profiles Service
+      comment: Canonical implementation of kickside.models.profiles:profiles.
+    contracts:
+      - contract: kickside.models.profiles:profiles
+        default: true
+        methods:
+          list_profiles: kickside.models.profiles:list_profiles
+          get_profile: kickside.models.profiles:get_profile
+          create_profile: kickside.models.profiles:create_profile
+          update_profile: kickside.models.profiles:update_profile
+          delete_profile: kickside.models.profiles:delete_profile
+          test_profile: kickside.models.profiles:test_profile

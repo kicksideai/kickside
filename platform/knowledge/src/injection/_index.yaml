@@ -57,6 +57,7 @@ entries:
     source: file://thread_ingest_base.lua
     modules: [security, contract, uuid, hash, json]
     imports:
+      kb_access: kickside.knowledge:kb_access
       util: kickside.knowledge:util
       component: kickside.component:component
       source_ref_builder: kickside.core.provenance:source_ref

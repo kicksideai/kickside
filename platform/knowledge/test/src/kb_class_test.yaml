@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: app.kb_class
+entries:
+  - name: kb_class_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge_class }
+    source: file://kb_class_test.lua
+    method: run
+    security:
+      actor: { id: knowledge-class-tests }
+    modules: [sql, uuid, json, funcs, security, contract, http_client, fs]
+    imports:
+      test: wippy.test:test
+      test_gateway: app:test_gateway
+      session: kickside.users:session
+      groups: kickside.users.persist:user_groups_repo
+      fixture_cleanup: app:fixture_cleanup
+      provision: kickside.core.threads:provision
+      upload_types: kickside.uploads:types
+      upload_records: kickside.uploads.persist:upload_record_repo
+      artifacts: kickside.uploads.persist:artifact_content_repo
+  - name: probe
+    kind: function.lua
+    source: file://kb_class_probe.lua
+    method: run
+    modules: [http, contract, security]
+    imports:
+      component: kickside.component:component
+      knowledge_bases: kickside.knowledge.registry:knowledge_bases_lib
+      kb_search: kickside.knowledge.retrieval:kb_search
+      stores: kickside.knowledge:stores
+      ingest_upload: kickside.knowledge.api:ingest_upload

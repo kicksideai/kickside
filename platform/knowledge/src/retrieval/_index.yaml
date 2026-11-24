@@ -16,6 +16,7 @@ entries:
       component: kickside.component:component
       engines: kickside.knowledge:engines
       stores: kickside.knowledge:stores
+      kb_access: kickside.knowledge:kb_access
 
   # Agentic query driver: answers via a tool-calling agent over the KB. A
   # function (invoked by funcs.call) so its dataflow runtime stays in its own

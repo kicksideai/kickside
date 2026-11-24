@@ -110,6 +110,7 @@ local function handle(args)
         source_ref = source_ref,
     })
     if delete_err then
+        if errors.is(delete_err, errors.INVALID) then return nil, delete_err end
         return nil, errors.new({ message = tostring("delete enqueue failed: " .. tostring(delete_err)), kind = errors.INTERNAL })
     end
 

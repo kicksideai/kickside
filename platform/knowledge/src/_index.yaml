@@ -279,6 +279,13 @@ entries:
     kind: library.lua
     source: file://types.lua
 
+  - name: kb_access
+    kind: library.lua
+    source: file://kb_access.lua
+    imports:
+      component: kickside.component:component
+      kb_types: kickside.knowledge:types
+
   - name: stores
     kind: library.lua
     meta:

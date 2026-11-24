@@ -5,6 +5,7 @@ local http_errors = require("http_errors")
 local canonical_json = require("canonical_json")
 local engines = require("engines")
 local stores = require("stores")
+local kb_access = require("kb_access")
 
 local function new(dependencies: any?): any
     local deps = dependencies or {}
@@ -62,6 +63,11 @@ local function handler()
     -- Public metadata carries identity and status. Detail already reads the
     -- engine store for configuration, so reuse its statistics when available.
     local meta = type(comp.meta) == "table" and comp.meta or {}
+    if not kb_access.is_kb(meta) then
+        res:set_status(http.STATUS.NOT_FOUND)
+        res:write_json({ success = false, error = "knowledge base not found" })
+        return
+    end
     local embedding_model = meta.embedding_model
     local auto_summary = meta.auto_summary
     local auto_description = meta.auto_description

@@ -4,6 +4,11 @@ namespace: test.kb
 
 # The harness engines name installed component kinds.
 entries:
+  - name: non_kb
+    kind: contract.binding
+    contracts:
+      - contract: kickside.contract:component
+        methods: {get_status: kickside.core.threads:thread_status}
   - name: bound
     kind: contract.binding
     contracts:

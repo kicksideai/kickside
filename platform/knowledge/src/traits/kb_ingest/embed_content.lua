@@ -1,6 +1,7 @@
 local util = require("util")
 local ctx = require("ctx")
 local component = require("component")
+local kb_access = require("kb_access")
 
 local trim = util.trim
 
@@ -61,6 +62,10 @@ local function handle(args)
         return nil, errors.new({ message = "no kb_id available, use SelectKB first or provide kb_id", kind = errors.INVALID })
     end
     local kb_id = kb_id_raw :: string
+
+    local _, kb_err = kb_access.get(kb_id, component.ACCESS.WRITE,
+        errors.new({ kind = errors.PERMISSION_DENIED, message = "cannot access KB" }))
+    if kb_err then return nil, kb_err end
 
     local engine, access_err = component.open(
         kb_id, component.ACCESS.WRITE, "kickside.contract:embeddable"

@@ -6,7 +6,7 @@ entries:
   kind: function.lua
   source: file://test.lua
   method: driver_probe
-  modules: [registry, security, funcs, json, store, ctx]
+  modules: [registry, security, funcs, json, sql, store, ctx]
   imports:
     test: wippy.test:test
     models_repo: kickside.models.persist:repo

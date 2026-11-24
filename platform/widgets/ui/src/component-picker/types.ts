@@ -1,8 +1,9 @@
 // Props for the shared component-picker web component. All are attributes on the
 // <wc-component-picker> element. `thread_class` (or the `meta` object carrying it)
 // scopes the thread class; `implId` narrows the stored component binding.
-// `value`/`config` carries the current
-// selection as a JSON object string {thread_id}.
+// `value`/`config` carries the current selection as a JSON object. Its key is
+// the picker field's schema key (usually {thread_id}; a domain block may use
+// {extractor_id}, {knowledge_base_id}, and so on).
 export interface ComponentProps {
   source?: string
   // The host passes the selected config field as JSON schema. A field may declare

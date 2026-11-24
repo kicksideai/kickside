@@ -7,6 +7,7 @@ local errors = require("errors")
 local upload_query_repo = require("upload_query_repo")
 local engines = require("engines")
 local thread_ingest = require("thread_ingest")
+local kb_access = require("kb_access")
 
 -- Shared "ingest an upload into a KB" core. One path turns a processed upload
 -- (its primary artifact + original-file provenance) into a KB content event,
@@ -146,14 +147,11 @@ end
 local ingest_impl
 
 local function ensure_kb_exists(kb_id: string): (any, any?)
-    local rows, comp_err = component.query({ component_ids = { kb_id }, access_mask = component.ACCESS.READ,
-        include = { meta = false } })
+    local missing = errors.new({ kind = errors.NOT_FOUND, message = "knowledge base not found", retryable = false,
+        details = { code = "knowledge_base_not_found" } })
+    local comp, comp_err = kb_access.get(kb_id, component.ACCESS.READ, missing)
     if comp_err then return comp_err end
-    local comp = rows and rows[1]
-    if not comp or not comp.impl_id then
-        return errors.new({ kind = errors.NOT_FOUND, message = "knowledge base not found", retryable = false,
-            details = { code = "knowledge_base_not_found" } })
-    end
+    if not comp.impl_id then return missing end
     return nil, comp
 end
 

@@ -419,6 +419,7 @@ entries:
     source: file://fixtures/kb_fetch_url.lua
     modules: [ctx, html, security, process, channel, time, uuid]
     imports:
+      kb_access: app:kb_fetch_url_access
       text_trim: kickside.contract:text_trim
       util: kickside.knowledge:util
       component: app:kb_fetch_url_component_stub
@@ -430,6 +431,13 @@ entries:
       llm: app:kb_fetch_url_llm_stub
       prompt: wippy.llm:prompt
       net_safety: kickside.uploads:net_safety
+
+  - name: kb_fetch_url_access
+    kind: library.lua
+    source: file://fixtures/kb_access.lua
+    imports:
+      component: app:kb_fetch_url_component_stub
+      kb_types: kickside.knowledge:types
 
   - name: planner_llm_stub
     kind: library.lua

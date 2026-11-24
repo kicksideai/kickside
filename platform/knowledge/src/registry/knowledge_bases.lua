@@ -15,6 +15,7 @@ local uuid = require("uuid")
 local errors = require("errors")
 local security = require("security")
 local component = require("component")
+local kb_access = require("kb_access")
 local engines = require("engines")
 local stores = require("stores")
 local kb_types = require("kb_types")
@@ -300,7 +301,7 @@ function M.upsert(args: any): (kb_types.UpsertResult?, error?)
 end
 
 -- update: patch metadata (title/description/icon) — embedding_model is immutable.
-function M.update(args: any): (kb_types.ComponentRef?, string?)
+function M.update(args: any): (kb_types.ComponentRef?, any?)
     args = args or {}
     if not is_str(args.component_id) then return nil, "component_id is required" end
     if args.embedding_model ~= nil then
@@ -318,6 +319,10 @@ function M.update(args: any): (kb_types.ComponentRef?, string?)
         meta_fields.comment = args.description
     end
     if next(meta_fields) == nil then return nil, "nothing to update (provide name or description)" end
+
+    local _, kb_err = kb_access.get(args.component_id, component.ACCESS.WRITE,
+        errors.new({ kind = errors.PERMISSION_DENIED, message = "knowledge base not found or access denied" }))
+    if kb_err then return nil, kb_err end
 
     local ok, err = component.set_meta(args.component_id :: string, meta_fields)
     if not ok then return nil, "update_component: " .. tostring(err or "failed") end
