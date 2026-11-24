@@ -45,7 +45,7 @@ local function main(): any
     elseif result and result.status ~= "none" then
         log:info("first boot module install finished", { status = result.status })
     end
-    return 0
+    return installer.exit_code(result, err)
 end
 
 return { main = main }
