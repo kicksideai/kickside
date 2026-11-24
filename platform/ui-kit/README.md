@@ -72,6 +72,17 @@ For URL-backed sections, derive `value` from the current route and handle
 selection. The host renders the selected pane and puts the rail and pane in a
 flex container that changes from row to column at 640 CSS px.
 
+## Grouped settings lists
+
+Import `kx-settings-group.css` where the lists render. System Settings and the
+admin plugin sections use these, so grouped settings look the same everywhere.
+
+| Export | API |
+|---|---|
+| `SettingsGroup.vue` | Optional `title: string` and `count: number`. The title renders as a caps heading above one bordered card; the default slot holds the rows. Without a title the card renders alone. |
+| `SettingsItem.vue` | `title: string`, optional `description: string`, `expandLabel: string` (defaults to `Details`) and `keepMounted: boolean`, with `v-model:open`. Slots: `status` beside the title, `meta` under the description, `actions` at the row end, and the default slot as the expandable body. The body mounts on first open unless `keepMounted` is set. |
+| `settingsGroups` | `groupByCategory(rows, category, on)` groups rows by a declared category, orders groups by title with uncategorized rows last under "Other", returns one untitled group when nothing declares a category, and puts rows that are on first. `listNames(names)` joins names as prose. |
+
 Put `ListRail` and its detail pane inside `.kx-shell`. The shell stacks them
 at 760 CSS px. Supply entity rows, selection and actions from the host.
 

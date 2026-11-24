@@ -37,7 +37,11 @@
     "./SettingsDraftActions.vue": "./SettingsDraftActions.vue",
     "./kx-settings-head.css": "./kx-settings-head.css",
     "./Disclosure.vue": "./Disclosure.vue",
-    "./kx-disclosure.css": "./kx-disclosure.css"
+    "./kx-disclosure.css": "./kx-disclosure.css",
+    "./SettingsGroup.vue": "./SettingsGroup.vue",
+    "./SettingsItem.vue": "./SettingsItem.vue",
+    "./kx-settings-group.css": "./kx-settings-group.css",
+    "./settingsGroups": "./settingsGroups.ts"
   },
   "files": [
     "focus.css",
@@ -68,7 +72,11 @@
     "SettingsDraftActions.vue",
     "kx-settings-head.css",
     "Disclosure.vue",
-    "kx-disclosure.css"
+    "kx-disclosure.css",
+    "SettingsGroup.vue",
+    "SettingsItem.vue",
+    "kx-settings-group.css",
+    "settingsGroups.ts"
   ],
   "peerDependencies": {
     "@wippy-fe/proxy": "*",
