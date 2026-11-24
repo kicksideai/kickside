@@ -210,3 +210,11 @@ entries:
         - kickside.users.security:login_env_read
         - kickside.users.security:session_group_policy_read
         - kickside.users.security:resolve_scope_groups
+
+  - name: handoff_nonce_repo
+    kind: library.lua
+    source: file://handoff_nonce_repo.lua
+    modules: [sql]
+    imports:
+      user_consts: kickside.users:consts
+      user_repo_support: kickside.users.persist:user_repo_support

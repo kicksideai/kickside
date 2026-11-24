@@ -111,6 +111,8 @@ entries:
         path: ".storage"
       - entry: kickside.users.env:token_expiration
         path: ".storage"
+      - entry: kickside.users.env:handoff_secret
+        path: ".storage"
 
   - name: public_router
     kind: ns.requirement
@@ -120,6 +122,8 @@ entries:
       description: Public API router for unauthenticated login.
     targets:
       - entry: kickside.users.api:login.endpoint
+        path: .meta.router
+      - entry: kickside.users.api:handoff.endpoint
         path: .meta.router
 
   - name: api_router
@@ -178,6 +182,8 @@ entries:
       comment: SQL database resource backing kickside_profile.
       description: SQL database resource backing kickside_profile.
     targets:
+      - entry: kickside.users.migrations:16_handoff_nonces
+        path: .meta.target_db
       - entry: kickside.users.migrations:15_retained_auth_generation
         path: .meta.target_db
       - entry: kickside.users.migrations:14_bot_lifecycle_audit
@@ -296,6 +302,13 @@ entries:
       user_authority: kickside.users:user_authority
       execution_identity: kickside.execution:execution_identity
       user_groups_repo: kickside.users.persist:user_groups_repo
+
+  - name: handoff
+    kind: library.lua
+    meta:
+      comment: Verification of one-time sign-in tokens from the deploying platform.
+    source: file://handoff.lua
+    modules: [base64, crypto, json]
 
   - name: revocation
     kind: library.lua

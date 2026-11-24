@@ -61,12 +61,16 @@ entries:
     modules:
       - http
       - json
+      - env
+      - time
     imports:
       consts: kickside.users:consts
       user_groups_repo: kickside.users.persist:user_groups_repo
       user_credentials_repo: kickside.users.persist:user_credentials_repo
       user_repo_support: kickside.users.persist:user_repo_support
       session: kickside.users:session
+      handoff_token: kickside.users:handoff
+      handoff_nonce_repo: kickside.users.persist:handoff_nonce_repo
     security:
       actor:
         id: kickside.users.api:login
@@ -91,6 +95,51 @@ entries:
     method: POST
     func: login
     path: /user/token
+
+  # kickside.users.api:handoff
+  - name: handoff
+    kind: function.lua
+    meta:
+      comment: KickSide Users one-time sign-in from the deploying platform
+    source: file://login.lua
+    modules:
+      - http
+      - json
+      - env
+      - time
+    imports:
+      consts: kickside.users:consts
+      user_groups_repo: kickside.users.persist:user_groups_repo
+      user_credentials_repo: kickside.users.persist:user_credentials_repo
+      user_repo_support: kickside.users.persist:user_repo_support
+      session: kickside.users:session
+      handoff_token: kickside.users:handoff
+      handoff_nonce_repo: kickside.users.persist:handoff_nonce_repo
+    security:
+      actor:
+        id: kickside.users.api:handoff
+      policies:
+        - kickside.users.security:login_db_access
+        - kickside.users.security:login_env_read
+        - kickside.users.security:handoff_env_read
+        - kickside.users.security:login_actor_create
+        - kickside.users.security:session_group_policy_read
+        - kickside.users.security:resolve_scope_groups
+        - kickside.users.security:login_role_resolve
+        - kickside.users.security:login_scope_compose
+        - kickside.users.security:login_token_mint
+        - kickside.users.security:login_settings_read
+    method: handoff
+
+  # kickside.users.api:handoff.endpoint
+  - name: handoff.endpoint
+    kind: http.endpoint
+    meta:
+      comment: KickSide Users one-time sign-in endpoint
+      router: public_router
+    method: POST
+    func: handoff
+    path: /user/handoff
 
   # kickside.users.api:me
   - name: me

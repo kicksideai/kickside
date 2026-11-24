@@ -11,19 +11,55 @@
       // SSO return leg: the callback redirects here with #sso_token or
       // #sso_error. Consume the fragment before anything renders so the
       // token never lingers in the URL and lands in the same storage the
-      // password flow uses.
+      // password flow uses. /login/handoff#token= carries a one-time
+      // sign-in token from the deploying platform instead.
       (function () {
         var h = window.location.hash;
         if (!h || h.length < 2) return;
         var params = new URLSearchParams(h.slice(1));
+        var handoff = window.location.pathname === "/login/handoff"
+          ? params.get("token")
+          : null;
         var token = params.get("sso_token");
         var err = params.get("sso_error");
-        if (!token && !err) return;
+        if (!handoff && !token && !err) return;
         history.replaceState(
           null,
           "",
           window.location.pathname + window.location.search,
         );
+        if (handoff) {
+          fetch("/api/public/user/handoff", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: handoff }),
+          })
+            .then(function (res) {
+              return res.ok ? res.json() : {};
+            })
+            .then(function (data) {
+              if (!data.success || !data.token) throw new Error();
+              localStorage.setItem(
+                "@wippy_token_info",
+                JSON.stringify({ token: data.token }),
+              );
+              window.location.replace("/");
+            })
+            .catch(function () {
+              var show = function () {
+                var el = document.querySelector("#error");
+                el.textContent =
+                  "This sign-in link is invalid or expired. Sign in with your password.";
+                el.style.display = "block";
+              };
+              if (document.readyState === "loading") {
+                window.addEventListener("DOMContentLoaded", show);
+              } else {
+                show();
+              }
+            });
+          return;
+        }
         if (token) {
           localStorage.setItem(
             "@wippy_token_info",
