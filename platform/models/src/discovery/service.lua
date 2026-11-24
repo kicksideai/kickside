@@ -114,6 +114,16 @@ function M.test(profile_id: string, opts: any): (any?, any?, any?)
     if not profile then return nil, "profile not found" end
     local scoped_model = type(opts) == "table" and type(opts.model) == "string" and opts.model ~= ""
 
+    local unresolved = common.unresolved_env(profile)
+    if unresolved then
+        local message = "connection test failed: " .. unresolved
+        if not scoped_model then
+            local _, status_err = models_repo.set_profile_status(profile_id, "unhealthy", message, nil)
+            if status_err then return nil, status_err end
+        end
+        return nil, message
+    end
+
     local adapter = M.adapter_for(tostring(profile.provider_id or ""))
     if not adapter then
         return nil, "provider does not support connection testing yet"

@@ -26,7 +26,7 @@ local ANSWER_MAX_TOKENS = 1024
 local ANSWER_TIMEOUT_SECONDS = 30
 local NO_ANSWER_FOUND = "No answer found. No source passages matched the question."
 
-local ANSWER_PROMPT = [[Answer the question using ONLY the passages below. State nothing the passages do not support; if they do not contain the answer, say so plainly. Cite each supported statement with the passage number in square brackets, such as [1]. Use one number per bracket pair: for multiple sources write [1][2]; never combine numbers inside one pair. Use only numbers from the supplied passages. A passage may start with its source in parentheses; when that source names a page or slide, give it with the citation, such as "(Guide.pdf, p. 47) [1]". Be concise and direct.%s
+local ANSWER_PROMPT = [[Answer the question using ONLY the passages below. State nothing the passages do not support; if they do not contain the answer, say so plainly. Cite each supported statement with the passage number in square brackets, such as [1]. Use one number per bracket pair: for multiple sources write [1][2]; never combine numbers inside one pair. Use only numbers from the supplied passages. When a cited passage starts with a parenthesized source that includes a page or slide, copy that entire source immediately after the citation number, such as "[1] (Guide.pdf, p. 47)". Do this for every such citation, including in a one-sentence answer. Do not invent a page or slide for a passage whose source does not provide one. Be concise and direct.%s
 
 QUESTION: "%s"
 

@@ -107,7 +107,11 @@ end
 function M.delete_card(args: any): any
     if type(args) ~= "table" then return { success = false, error = "request must be an object" } end
     local ok, err = card_service.delete(args.name)
-    if not ok then return { success = false, error = tostring(err) } end
+    if not ok then
+        local details = type(err) == "userdata" and (err :: any):details() or nil
+        local code = type(details) == "table" and details.code or nil
+        return { success = false, error = type(err) == "userdata" and (err :: any):message() or tostring(err), code = code }
+    end
     return { success = true }
 end
 

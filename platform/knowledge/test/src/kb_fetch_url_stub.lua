@@ -6,6 +6,10 @@ local M = {}
 
 M.ACCESS = { READ = "read", WRITE = "write" }
 
+function M.query(): (any, any?)
+    return { { meta = { class = "knowledge_base" } } }, nil
+end
+
 function M.get(): (any?, string?)
     return nil, "fetch stub was not configured"
 end

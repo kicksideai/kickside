@@ -9,6 +9,7 @@ local security = require("security")
 local component = require("component")
 local engines = require("engines")
 local stores = require("stores")
+local kb_access = require("kb_access")
 
 local M = {}
 local QUERYABLE_CONTRACT = "kickside.contract:queryable"
@@ -56,6 +57,11 @@ function M.query(kb_id: any, opts: any): (any, any, boolean?)
             lookup_kind == errors.NOT_FOUND or lookup_kind == errors.PERMISSION_DENIED
     end
 
+    local meta = type(comp.meta) == "table" and comp.meta or {}
+    if not kb_access.is_kb(meta) then
+        return nil, errors.new({ kind = errors.INVALID, message = "component is not a knowledge base" })
+    end
+
     local _, _, engine, store_err = stores.resolve_component_store(kb_id)
     if store_err or not engine then return nil, tostring(store_err or "no query engine for this knowledge base") end
     local eng = engine :: { kb_type: any, query_binding: any, default_config: any }
@@ -83,7 +89,7 @@ end
 -- config(kb_id) -> (merged_config, engine, err). The KB's stored config overlaid
 -- on the engine defaults, plus the engine descriptor. The answering layer uses
 -- it to select a query driver and models without re-resolving the component.
-function M.config(kb_id: any): (any, any, string?)
+function M.config(kb_id: any): (any, any, any?)
     if type(kb_id) ~= "string" or kb_id == "" then
         return nil, nil, "knowledge base id is required"
     end
@@ -95,6 +101,11 @@ function M.config(kb_id: any): (any, any, string?)
     if not comp or not comp.success then
         return nil, nil, tostring(comp_err or "knowledge base not found")
     end
+    local meta = type(comp.meta) == "table" and comp.meta or {}
+    if not kb_access.is_kb(meta) then
+        return nil, nil, errors.new({ kind = errors.INVALID, message = "component is not a knowledge base" })
+    end
+
     local stored: any = {}
     local _, store_row, engine, store_err = stores.resolve_component_store(kb_id)
     if store_err or not engine then return nil, nil, tostring(store_err or "no engine for this knowledge base") end

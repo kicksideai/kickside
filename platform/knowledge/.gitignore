@@ -7,3 +7,4 @@ test/storage/*
 !test/storage/.gitkeep
 test/src/fixtures/planner.lua
 test/src/fixtures/kb_fetch_url.lua
+test/src/fixtures/kb_access.lua

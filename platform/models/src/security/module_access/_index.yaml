@@ -168,3 +168,64 @@ entries:
     - funcs.call
     - funcs.security
     effect: allow
+
+- name: profile_registrar
+  kind: security.policy
+  meta:
+    title: Provider profile registration
+    comment: Grants a module the kickside.models.profiles:profiles contract, so it reads, creates, updates, deletes and tests provider profiles without admin HTTP.
+  groups: []
+  policy:
+    resources:
+    - kickside.models.profiles:profiles
+    - kickside.models.profiles:profiles_binding
+    - kickside.models.profiles:list_profiles
+    - kickside.models.profiles:get_profile
+    - kickside.models.profiles:create_profile
+    - kickside.models.profiles:update_profile
+    - kickside.models.profiles:delete_profile
+    - kickside.models.profiles:test_profile
+    - list_profiles
+    - get_profile
+    - create_profile
+    - update_profile
+    - delete_profile
+    - test_profile
+    actions:
+    - contract.get
+    - contract.open
+    - contract.call
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: profile_tools
+  kind: security.policy
+  meta:
+    title: Provider profile tools
+    surface: kickside.models
+    intent: tool_access
+    comment: Grants the Model Provider Profile Manager trait and its tools, which list, read, create, update and delete provider profiles through the kickside.models.profiles:profiles contract.
+    includes:
+    - kickside.models.security:profile_tools_runtime
+    - kickside.models.security:profile_registrar
+  groups: []
+  policy:
+    resources:
+    - kickside.models.traits:*
+    actions:
+    - registry.get
+    - registry.find
+    effect: allow
+- name: profile_tools_runtime
+  kind: security.policy
+  meta:
+    private: true
+  groups: []
+  policy:
+    resources:
+    - kickside.models.traits:profiles_read
+    - kickside.models.traits:profiles_manage
+    actions:
+    - funcs.call
+    - funcs.security
+    effect: allow

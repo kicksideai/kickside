@@ -24,6 +24,7 @@ entries:
       component: kickside.component:component
       engines: kickside.knowledge:engines
       stores: kickside.knowledge:stores
+      kb_access: kickside.knowledge:kb_access
   - name: query_binding_stub
     kind: library.lua
     source: file://query_binding_stub.lua

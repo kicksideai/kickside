@@ -5,6 +5,7 @@ local component = require("component")
 local http_errors = require("http_errors")
 local upload_query_repo = require("upload_query_repo")
 local ingest_upload = require("ingest_upload")
+local kb_access = require("kb_access")
 
 -- POST /knowledge/{id}/ingest-upload — ingest already-uploaded file(s) into a KB
 -- without re-uploading bytes. The actor picks files they previously uploaded
@@ -42,6 +43,13 @@ local function handler()
         local msg = tostring(access_err or "access denied")
         res:set_status(status)
         res:write_json({ success = false, error = msg })
+        return
+    end
+
+    local _, kb_err = kb_access.get(kb_id, component.ACCESS.WRITE)
+    if kb_err then
+        res:set_status((http_errors.classify(kb_err)))
+        res:write_json(http_errors.response(kb_err))
         return
     end
 
