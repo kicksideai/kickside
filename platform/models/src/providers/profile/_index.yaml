@@ -13,8 +13,9 @@ entries:
       models_repo: kickside.models.persist:repo
       catalog_policy: kickside.models.catalog:policy
       providers: wippy.llm.discovery:providers
+      platform_cap: kickside.models.providers.profile:platform_cap
     security:
-      policies: [kickside.models.catalog:catalog_read, kickside.models:reload_profiles_call, kickside.models.providers.profile:provider_contract, kickside.models.providers.profile:provider_call, kickside.models.providers.profile:provider_context]
+      policies: [kickside.models.catalog:catalog_read, kickside.models:reload_profiles_call, kickside.models.providers.profile:provider_contract, kickside.models.providers.profile:provider_call, kickside.models.providers.profile:provider_context, kickside.models.providers.profile:platform_usage, kickside.models.providers.profile:platform_usage_database]
   - name: generate
     kind: function.lua
     source: file://driver.lua
@@ -26,8 +27,9 @@ entries:
       models_repo: kickside.models.persist:repo
       catalog_policy: kickside.models.catalog:policy
       providers: wippy.llm.discovery:providers
+      platform_cap: kickside.models.providers.profile:platform_cap
     security:
-      policies: [kickside.models.catalog:catalog_read, kickside.models:reload_profiles_call, kickside.models.providers.profile:provider_contract, kickside.models.providers.profile:provider_call, kickside.models.providers.profile:provider_context]
+      policies: [kickside.models.catalog:catalog_read, kickside.models:reload_profiles_call, kickside.models.providers.profile:provider_contract, kickside.models.providers.profile:provider_call, kickside.models.providers.profile:provider_context, kickside.models.providers.profile:platform_usage, kickside.models.providers.profile:platform_usage_database]
   - name: embed
     kind: function.lua
     source: file://driver.lua
@@ -39,8 +41,9 @@ entries:
       models_repo: kickside.models.persist:repo
       catalog_policy: kickside.models.catalog:policy
       providers: wippy.llm.discovery:providers
+      platform_cap: kickside.models.providers.profile:platform_cap
     security:
-      policies: [kickside.models.catalog:catalog_read, kickside.models:reload_profiles_call, kickside.models.providers.profile:provider_contract, kickside.models.providers.profile:provider_call, kickside.models.providers.profile:provider_context]
+      policies: [kickside.models.catalog:catalog_read, kickside.models:reload_profiles_call, kickside.models.providers.profile:provider_contract, kickside.models.providers.profile:provider_call, kickside.models.providers.profile:provider_context, kickside.models.providers.profile:platform_usage, kickside.models.providers.profile:platform_usage_database]
   - name: structured_output
     kind: function.lua
     source: file://driver.lua
@@ -52,8 +55,9 @@ entries:
       models_repo: kickside.models.persist:repo
       catalog_policy: kickside.models.catalog:policy
       providers: wippy.llm.discovery:providers
+      platform_cap: kickside.models.providers.profile:platform_cap
     security:
-      policies: [kickside.models.catalog:catalog_read, kickside.models:reload_profiles_call, kickside.models.providers.profile:provider_contract, kickside.models.providers.profile:provider_call, kickside.models.providers.profile:provider_context]
+      policies: [kickside.models.catalog:catalog_read, kickside.models:reload_profiles_call, kickside.models.providers.profile:provider_contract, kickside.models.providers.profile:provider_call, kickside.models.providers.profile:provider_context, kickside.models.providers.profile:platform_usage, kickside.models.providers.profile:platform_usage_database]
   - name: evaluate
     kind: function.lua
     source: file://driver.lua
@@ -65,8 +69,9 @@ entries:
       models_repo: kickside.models.persist:repo
       catalog_policy: kickside.models.catalog:policy
       providers: wippy.llm.discovery:providers
+      platform_cap: kickside.models.providers.profile:platform_cap
     security:
-      policies: [kickside.models.catalog:catalog_read, kickside.models:reload_profiles_call, kickside.models.providers.profile:provider_contract, kickside.models.providers.profile:provider_call, kickside.models.providers.profile:provider_context]
+      policies: [kickside.models.catalog:catalog_read, kickside.models:reload_profiles_call, kickside.models.providers.profile:provider_contract, kickside.models.providers.profile:provider_call, kickside.models.providers.profile:provider_context, kickside.models.providers.profile:platform_usage, kickside.models.providers.profile:platform_usage_database]
   - name: provider_contract
     kind: security.policy
     meta: {private: true}
@@ -87,4 +92,26 @@ entries:
     policy:
       resources: [context]
       actions: [contract.context]
+      effect: allow
+  - name: platform_cap
+    kind: library.lua
+    meta:
+      comment: Monthly token cap for profiles that use the deploying platform's model key.
+    source: file://platform_cap.lua
+    modules: [env, sql, time]
+    imports:
+      models_types: kickside.models:models_types
+  - name: platform_usage
+    kind: security.policy
+    meta: {private: true}
+    policy:
+      resources: [KICKSIDE_PLATFORM_LLM_API_KEY, KICKSIDE_PLATFORM_TOKEN_MONTHLY_CAP]
+      actions: [env.get]
+      effect: allow
+  - name: platform_usage_database
+    kind: security.policy
+    meta: {private: true}
+    policy:
+      resources: []
+      actions: [db.get]
       effect: allow

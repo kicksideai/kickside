@@ -43,6 +43,8 @@ entries:
         path: .meta.db_id
       - entry: kickside.models.catalog:catalog_database
         path: .policy.resources +=
+      - entry: kickside.models.providers.profile:platform_usage_database
+        path: .policy.resources +=
 
   - name: db_config
     kind: registry.entry

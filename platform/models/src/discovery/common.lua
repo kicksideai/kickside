@@ -4,6 +4,7 @@ local http_errors = require("http_errors")
 local llm_mapper = require("llm_mapper")
 local llm_output = require("llm_output")
 local llm_transport = require("llm_transport")
+local platform_cap = require("platform_cap")
 
 local M = {}
 
@@ -68,7 +69,9 @@ function M.resolve_value(profile: any, key: string, default_env: string?): strin
     if type(config[key]) == "string" and config[key] ~= "" then
         return tostring(config[key])
     end
-    local from_ref = M.env_value(config[key .. "_env"])
+    local ref = config[key .. "_env"]
+    if platform_cap.is_platform(profile) and platform_cap.custom_endpoint(profile) then return nil end
+    local from_ref = M.env_value(ref)
     if from_ref then return from_ref end
     if default_env then return M.env_value(default_env) end
     return nil
