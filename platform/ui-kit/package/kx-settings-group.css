@@ -16,11 +16,11 @@
   background: var(--p-content-background);
 }
 
-/* Expandable row. The head wraps its actions below the text when the row is narrow. */
+/* Expandable row. Actions stay beside the text, which wraps as the row narrows. */
 .kx-settings-item { border-bottom: 1px solid var(--p-content-border-color); }
 .kx-settings-item:last-child { border-bottom: none; }
-.kx-settings-item-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 16px; }
-.kx-settings-item-main { flex: 1 1 200px; min-width: 0; }
+.kx-settings-item-head { display: flex; align-items: center; gap: 12px 24px; padding: 16px; }
+.kx-settings-item-main { flex: 1 1 auto; min-width: 0; }
 .kx-settings-item-line { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
 .kx-settings-item-title { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.4; color: var(--p-text-color); overflow-wrap: anywhere; }
 .kx-settings-item-desc { margin: 3px 0 0; font-size: 12px; line-height: 1.45; color: var(--p-text-muted-color); }
