@@ -109,8 +109,8 @@ A deploying platform can also set these optional variables:
   Empty disables handoff sign-in.
 - `KICKSIDE_PLATFORM_LLM_API_KEY` and `KICKSIDE_PLATFORM_TOKEN_MONTHLY_CAP`: a
   model key and the tokens per calendar month (UTC) that calls through it may
-  use. With both set, the first boot creates the "KickSide platform" provider
-  profile. Without a cap, that profile is disabled.
+  use. Only calls through the "KickSide platform" provider profile count. With
+  both set, the first boot creates that profile. Without a cap, it is disabled.
 
 ## Postgres
 
