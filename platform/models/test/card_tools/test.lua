@@ -194,6 +194,8 @@ local function define_tests()
 
             local refused = ok(MANAGE, { action = "delete", name = NAME })
             test.eq(refused.success, false)
+            test.eq(refused.code, "card_enabled", "an enabled card is refused with a code")
+            test.contains(tostring(refused.error), "action disable")
             test.not_nil(model_catalog.get_by_name(NAME))
 
             local retired = ok(MANAGE, { action = "disable", name = NAME })

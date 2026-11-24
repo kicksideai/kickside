@@ -36,7 +36,7 @@ entries:
     source: file://create_profile.lua
     modules: [http, json]
     imports:
-      models_repo: kickside.models.persist:repo
+      profile_service: kickside.models.catalog:profile_service
       http_params: kickside.contract:http_params
     method: handler
     security:
@@ -56,7 +56,7 @@ entries:
     source: file://update_profile.lua
     modules: [http, json]
     imports:
-      models_repo: kickside.models.persist:repo
+      profile_service: kickside.models.catalog:profile_service
       http_params: kickside.contract:http_params
     method: handler
     security:
@@ -76,11 +76,14 @@ entries:
     source: file://delete_profile.lua
     modules: [http]
     imports:
-      models_repo: kickside.models.persist:repo
+      profile_service: kickside.models.catalog:profile_service
     method: handler
     security:
       policies:
         - kickside.models:reload_profiles_call
+        - kickside.models.profiles:holder_read
+        - kickside.models.profiles:holder_open
+        - kickside.models.profiles:holder_call
 
   - name: delete_profile.endpoint
     kind: http.endpoint
