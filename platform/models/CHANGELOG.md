@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.95](https://github.com/kicksideai/kickside/compare/models-v0.1.94...models-v0.1.95) (2026-11-24)
+
+
+### Bug Fixes
+
+* **models:** expose caller setup access in discovery ([#964](https://github.com/kicksideai/kickside/issues/964)) ([0db7c73](https://github.com/kicksideai/kickside/commit/0db7c73a196542999526ef3aec1600e9e756935c))
+
 ## [0.1.94](https://github.com/kicksideai/kickside/compare/models-v0.1.93...models-v0.1.94) (2026-11-22)
 
 

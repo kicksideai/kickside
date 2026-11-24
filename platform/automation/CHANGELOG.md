@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.46](https://github.com/kicksideai/kickside/compare/automation-v0.2.45...automation-v0.2.46) (2026-11-24)
+
+
+### Bug Fixes
+
+* restore frontend checks and Share focus styling ([#960](https://github.com/kicksideai/kickside/issues/960)) ([1ca06ea](https://github.com/kicksideai/kickside/commit/1ca06ea0d174bd0572373c15515cda026f2fbfe3))
+
 ## [0.2.45](https://github.com/kicksideai/kickside/compare/automation-v0.2.44...automation-v0.2.45) (2026-11-22)
 
 

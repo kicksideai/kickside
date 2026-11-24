@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.82](https://github.com/kicksideai/kickside/compare/inbox-v0.1.81...inbox-v0.1.82) (2026-11-24)
+
+
+### Bug Fixes
+
+* **inbox:** show unavailable folders with a retry action ([#959](https://github.com/kicksideai/kickside/issues/959)) ([e03a179](https://github.com/kicksideai/kickside/commit/e03a1796f98f108e414f5e6aa22ecb3d1500731e))
+
 ## [0.1.81](https://github.com/kicksideai/kickside/compare/inbox-v0.1.80...inbox-v0.1.81) (2026-11-22)
 
 

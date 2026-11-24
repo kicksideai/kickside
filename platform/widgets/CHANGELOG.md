@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.73](https://github.com/kicksideai/kickside/compare/widgets-v0.1.72...widgets-v0.1.73) (2026-11-24)
+
+
+### Bug Fixes
+
+* restore frontend checks and Share focus styling ([#960](https://github.com/kicksideai/kickside/issues/960)) ([1ca06ea](https://github.com/kicksideai/kickside/commit/1ca06ea0d174bd0572373c15515cda026f2fbfe3))
+
 ## [0.1.72](https://github.com/kicksideai/kickside/compare/widgets-v0.1.71...widgets-v0.1.72) (2026-11-23)
 
 

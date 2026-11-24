@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.102](https://github.com/kicksideai/kickside/compare/jobs-v0.1.101...jobs-v0.1.102) (2026-11-24)
+
+
+### Bug Fixes
+
+* **jobs:** commit run history with job outcomes and notify owners ([#956](https://github.com/kicksideai/kickside/issues/956)) ([a0c6c5c](https://github.com/kicksideai/kickside/commit/a0c6c5c73552d6bf0a07ef5e5f4aee6af377721b))
+* **jobs:** read override provenance from older Settings releases ([#958](https://github.com/kicksideai/kickside/issues/958)) ([9427266](https://github.com/kicksideai/kickside/commit/942726652171dacded7b7a46884fdeb1f0d73068))
+
 ## [0.1.101](https://github.com/kicksideai/kickside/compare/jobs-v0.1.100...jobs-v0.1.101) (2026-11-22)
 
 

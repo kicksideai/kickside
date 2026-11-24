@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.48](https://github.com/kicksideai/kickside/compare/webhooks-v0.1.47...webhooks-v0.1.48) (2026-11-24)
+
+
+### Bug Fixes
+
+* **frontend:** preserve modal and resource card keyboard access ([#962](https://github.com/kicksideai/kickside/issues/962)) ([a7267f6](https://github.com/kicksideai/kickside/commit/a7267f61db4d6f4598b25631810c1438f68a5361))
+
 ## [0.1.47](https://github.com/kicksideai/kickside/compare/webhooks-v0.1.46...webhooks-v0.1.47) (2026-11-19)
 
 
