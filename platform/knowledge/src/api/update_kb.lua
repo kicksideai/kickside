@@ -6,6 +6,8 @@ local engines = require("engines")
 local stores = require("stores")
 local http_errors = require("http_errors")
 local update_consistency = require("update_consistency")
+local kb_types = require("kb_types")
+local trim = require("text_trim").trim
 
 local function problem(message: any, status: number): any
     return { message = tostring(message), status = status }
@@ -24,6 +26,10 @@ local function get_component(component_id: string): (any?, any?)
     if get_err or not row or row.success ~= true then
         local message = get_err or (type(row) == "table" and row.error) or "knowledge base not found"
         return nil, problem(message, get_err and (http_errors.classify(get_err)) or http.STATUS.NOT_FOUND)
+    end
+    local meta = type(row.meta) == "table" and row.meta or {}
+    if meta.class ~= kb_types.COMPONENT_CLASS then
+        return nil, problem("component is not a knowledge base", http.STATUS.BAD_REQUEST)
     end
     return row, nil
 end
@@ -125,7 +131,12 @@ local function update(kb_id: string, body: any): (any?, error?)
     end
 
     local meta_fields = {}
-    if body.name ~= nil then meta_fields.title = body.name end
+    if body.name ~= nil then
+        if type(body.name) ~= "string" or trim(body.name) == "" then
+            return nil, errors.new({ kind = errors.INVALID, message = "name must be a non-empty string" })
+        end
+        meta_fields.title = trim(body.name)
+    end
     if body.description ~= nil then meta_fields.comment = body.description end
     if body.icon ~= nil then meta_fields.icon = body.icon end
 
