@@ -187,6 +187,8 @@ entries:
     source: file://update_kb.lua
     modules: [http, json, security]
     imports:
+      kb_types: kickside.knowledge:types
+      text_trim: kickside.contract:text_trim
       component: kickside.component:component
       engines: kickside.knowledge:engines
       stores: kickside.knowledge:stores

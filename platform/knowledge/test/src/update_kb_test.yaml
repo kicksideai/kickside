@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: app.update_kb
+entries:
+  - name: update_kb_test
+    kind: function.lua
+    meta: { type: test, suite: knowledge_update }
+    source: file://update_kb_test.lua
+    method: run
+    modules: [funcs, security]
+    imports:
+      test: wippy.test:test
+  - name: probe
+    kind: function.lua
+    source: file://update_kb_probe.lua
+    method: run
+    modules: [http]
+    imports:
+      component: kickside.component:component
+      knowledge_bases: kickside.knowledge.registry:knowledge_bases_lib
+      update_kb: kickside.knowledge.api:update_kb
