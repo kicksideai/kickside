@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- Shared actor-filtered KB lookup. Callers choose their existing missing-row error.
 local component = require("component")
 local kb_types = require("kb_types")
