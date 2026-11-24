@@ -96,7 +96,8 @@ function M.delete(id: any): (boolean, any?)
 end
 
 -- Tests the profile id: its environment references resolve and its provider
--- answers. The outcome is recorded as the profile status (healthy, unhealthy).
+-- answers. An unscoped test records the profile status (healthy, unhealthy);
+-- a model-scoped test leaves that status unchanged.
 function M.test(id: any, opts: any?): (any?, any?)
     if type(id) ~= "string" or id == "" then return nil, "Profile id is required" end
     local profile, get_err = models_repo.get_profile(id)

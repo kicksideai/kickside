@@ -178,8 +178,9 @@ entries:
       public settings, including any *_env pointers.
 
       ModelProfilesManage action=create saves a profile (name, provider_id, config
-      settings such as base_url, enabled) and tests it, so the reply's status is
-      healthy or unhealthy with the reason; action=test with an id tests it again,
+      settings such as base_url, enabled) and, when enabled, tests it, so the
+      reply's status is healthy or unhealthy with the reason; a disabled profile
+      remains untested and unknown; action=test with an id tests it again,
       and with model (the provider_model of a card being routed) probes that
       model; action=update with an id changes it and
       keeps every setting and stored secret the patch omits; action=delete removes
@@ -258,7 +259,7 @@ entries:
         {
           "type": "object",
           "properties": {
-            "action": { "type": "string", "enum": ["create", "update", "delete", "test"], "description": "create: profile. update: id and profile patch. delete: id; also removes the cards routed through the profile, refused with code profile_in_use naming the holders while records of another module (a driver profile's route) name it. test: id, optional model; checks every *_env reference resolves, probes the provider (with model, the card's model) and, without model, records the profile status (healthy, unhealthy). create tests the new profile the same way, so its status is never unknown." },
+            "action": { "type": "string", "enum": ["create", "update", "delete", "test"], "description": "create: profile. update: id and profile patch. delete: id; also removes the cards routed through the profile, refused with code profile_in_use naming the holders while records of another module (a driver profile's route) name it. test: id, optional model; checks every *_env reference resolves, probes the provider (with model, the card's model) and, without model, records the profile status (healthy, unhealthy). create tests an enabled profile the same way; a disabled profile remains untested and unknown." },
             "id": { "type": "string", "minLength": 1, "description": "update, delete, test: the profile id." },
             "model": { "type": "string", "minLength": 1, "description": "test: the provider_model of the card being routed through the profile; the probe generates with that model and records no profile status. Without it the probe uses the profile's test_model or the first model the provider lists, and records the profile status." },
             "profile": {
@@ -297,7 +298,7 @@ entries:
           "required": ["success"]
         }
       llm_alias: ModelProfilesManage
-      llm_description: "Manage model provider profiles. create saves a profile; update patches one by id and keeps omitted settings and stored secrets; delete removes it with its cards, refused with code profile_in_use while another module's records name it; test checks its *_env references and provider (pass model, a card's provider_model, to probe the model being routed) and records its status; create runs that test on the new profile, so the reply's status is healthy or unhealthy with the reason. Prefer api_key_env (an environment variable name) over api_key; credentials passed in are stored encrypted and never returned. Every write is logged. Failures return a typed tool error; a refusal returns success false with its error."
+      llm_description: "Manage model provider profiles. create saves a profile and tests it when enabled, returning healthy or unhealthy status with the reason; a disabled profile remains untested and unknown. update patches one by id and keeps omitted settings and stored secrets; delete removes it with its cards, refused with code profile_in_use while another module's records name it; test checks its *_env references and provider (pass model, a card's provider_model, to probe the model being routed) and without model records its status. Prefer api_key_env (an environment variable name) over api_key; credentials passed in are stored encrypted and never returned. Every write is logged. Failures return a typed tool error; a refusal returns success false with its error."
     source: file://profiles_manage.lua
     method: handler
     imports:
