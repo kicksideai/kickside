@@ -140,6 +140,20 @@ describe('schema form field validation', () => {
     expect(picker.shadowRoot!.activeElement).toBe(picker.shadowRoot!.querySelector('button'))
   })
 
+  it('adapts legacy component-picker input but accepts the field-named selection it emits', async () => {
+    const { control, changed } = await mount({
+      extractor_id: { picker: 'test-schema-picker', class: 'kickside.docscout' },
+    }, { extractor_id: 'invoice-fields' })
+    const picker = control() as HTMLElement
+    // SchemaForm preserves the published component-picker input convention.
+    expect(picker.getAttribute('config')).toBe('{"thread_id":"invoice-fields"}')
+    picker.dispatchEvent(new CustomEvent('change', {
+      bubbles: true, composed: true, detail: { extractor_id: 'invoice-fields-2' },
+    }))
+    await nextTick()
+    expect(changed).toHaveBeenLastCalledWith({ extractor_id: 'invoice-fields-2' })
+  })
+
   it('allows unset deployment overrides and records explicit false as a value', async () => {
     const { element, control, validity, changed } = await mount({
       name: { type: 'string', required: true, minLength: 2 },

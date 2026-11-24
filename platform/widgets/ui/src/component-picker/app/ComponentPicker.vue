@@ -50,62 +50,82 @@ function rowId(row: Row): string {
 }
 function rowLabel(row: Row): string {
   const attrs = obj(row.attrs)
+  const meta = obj(row.meta)
   return str(
     row.label ||
     row.title ||
     row.name ||
     row.component_title ||
-    (attrs && (attrs.label || attrs.title || attrs.name))
+    (attrs && (attrs.label || attrs.title || attrs.name)) ||
+    (meta && (meta.label || meta.title || meta.name))
   ).trim()
 }
 function rowIcon(row: Row): string {
-  return str(row.icon || row.component_icon).trim() || 'tabler:message-circle'
+  const meta = obj(row.meta)
+  return str(row.icon || row.component_icon || (meta && meta.icon)).trim() || 'tabler:message-circle'
 }
 
-function schemaString(raw: unknown, key: string): string {
-  const schema = obj(raw)
-  if (!schema) return ''
-  // The mount may pass the picker field's own schema (source at top level) or a
-  // wrapping object schema (the setting declared on one of its properties).
-  const direct = str(schema[key]).trim()
-  if (direct) return direct
+// A component picker receives either its one field declaration or an object schema
+// that contains it. Never borrow metadata from an unrelated field (pages, an
+// arbitrary custom picker, etc.). A legacy structured catalog can be recognized by
+// its unique value_field; otherwise retain the standalone {thread_id} protocol.
+const pickerSchemaField = computed(() => {
+  const schema = obj(props.value?.schema)
+  if (!schema) return null
   const properties = obj(schema.properties)
-  if (!properties) return ''
-  for (const field of Object.values(properties)) {
-    const declaration = obj(field)
-    const declared = str(declaration?.[key]).trim()
-    if (declared) return declared
-  }
-  return ''
+  if (!properties) return { key: '', field: schema }
+  const fields = Object.entries(properties)
+    .flatMap(([key, raw]) => {
+      const field = obj(raw)
+      return field ? [{ key, field }] : []
+    })
+  const component = fields.filter(({ field }) => field.picker === 'wc-component-picker')
+  if (component.length === 1) return component[0]
+  const structured = fields.filter(({ field }) => typeof field.value_field === 'string' && field.value_field)
+  return structured.length === 1 ? structured[0] : null
+})
+function schemaPickerString(key: string): string {
+  return str(pickerSchemaField.value?.field[key]).trim()
 }
-// A catalog may declare a structured value on each row (for example a
-// revision-pinned reference). The schema names that row field and the config
-// key; the picker transports it without interpreting the producer's domain.
+// The field that declares this picker owns the selection's config key. Most
+// thread-backed fields therefore store {thread_id}; a block is equally free to
+// name the reference for its domain (for example {extractor_id}). A catalog may
+// additionally declare a structured value on each row (a revision-pinned
+// reference, for example), which the picker transports without interpreting.
 const selectionField = computed(() => {
-  const properties = obj(obj(props.value?.schema)?.properties)
-  for (const [key, raw] of Object.entries(properties || {})) {
-    const field = obj(raw)
-    if (typeof field?.value_field === 'string' && field.value_field) return { key, valueField: field.value_field }
-  }
-  return null
+  const declared = pickerSchemaField.value
+  if (!declared?.key) return null
+  return { key: declared.key, valueField: typeof declared.field.value_field === 'string' && declared.field.value_field ? declared.field.value_field : '' }
 })
 function selectionFor(row: Row, id: string): Record<string, unknown> {
   const field = selectionField.value
   if (!field) return { thread_id: id }
+  if (!field.valueField) return { [field.key]: id }
   if (!(field.valueField in row)) throw new Error('Catalog item is missing its declared selection value.')
   return { [field.key]: row[field.valueField] }
 }
 function configuredId(raw: unknown): string {
   const field = selectionField.value
   if (!field) return parseSelectedId(raw, 'thread_id')
-  const value = obj(raw)?.[field.key]
+  const config = obj(raw)
+  // SchemaForm historically adapted every unstructured component picker to the
+  // standalone {thread_id} convention. New field-aware hosts send the declared
+  // key. Accept both on input so opening an existing workflow/form never loses
+  // its label, while new picks always emit the owning field's key.
+  // An explicit null is an intentional clear, not a reason to resurrect the
+  // legacy value. Structured catalogs have always owned their declared key and
+  // must never fall back to a coincidental thread_id either.
+  const value = config && Object.hasOwn(config, field.key)
+    ? config[field.key]
+    : (!field.valueField ? config?.thread_id : undefined)
   if (typeof value === 'string') return value
   const reference = obj(value)
   return typeof reference?.id === 'string' ? reference.id : ''
 }
-const source = computed(() => str(props.value?.source).trim() || schemaString(props.value?.schema, 'source') || '/api/v1/threads')
-// A custom catalog owns its own filtering. Only the canonical thread endpoint
-// receives the thread_class and limit query parameters below.
+const source = computed(() => str(props.value?.source).trim() || schemaPickerString('source') || '/api/v1/threads')
+// A custom catalog owns its own filtering and initial request shape. Every
+// picker catalog may paginate; only the canonical thread endpoint receives a
+// class filter from this widget.
 const threadSource = computed(() => source.value.split('?')[0] === '/api/v1/threads')
 // thread_class arrives either as its own attribute or inside the `meta` object the
 // poller mount passes ({ type: "thread", thread_class }).
@@ -116,8 +136,8 @@ const metaObj = computed(() => {
   }
   return {}
 })
-const threadClass = computed(() => str(props.value?.threadClass).trim() || str(metaObj.value.thread_class).trim())
-const implId = computed(() => str(props.value?.implId).trim() || str(metaObj.value.impl_id).trim() || schemaString(props.value?.schema, 'impl_id'))
+const threadClass = computed(() => str(props.value?.threadClass).trim() || str(metaObj.value.thread_class).trim() || schemaPickerString('class'))
+const implId = computed(() => str(props.value?.implId).trim() || str(metaObj.value.impl_id).trim() || schemaPickerString('impl_id'))
 // An optional "delete a listed component" capability: a base endpoint the field
 // config (directly or via `meta`) supplies. When present the list rows offer a gated
 // delete (DELETE <endpoint>/<id>), keeping the picker generic — it knows nothing about
@@ -185,8 +205,10 @@ async function resolveCreateView() {
   }
 }
 
-// The threads endpoint returns the canonical picker envelope: data.items, each a
-// flat { id, label, icon }. The picker reads those fields directly.
+// Thread catalogs use numeric offsets. Component-owned catalogs use their own
+// opaque keyset cursors. Both expose data.items, but domain rows commonly carry
+// their label and icon in meta (for example DocScout extractors). Do not turn a
+// component catalog into Core threads merely to feed this control.
 async function load() {
   if (loading.value) return
   loading.value = true
@@ -196,12 +218,18 @@ async function load() {
     if (threadSource.value) {
       if (threadClass.value) params.set('thread_class', threadClass.value)
       if (implId.value) params.set('impl_id', implId.value)
+    }
+    if (threadSource.value) {
       params.set('limit', '100')
     }
+    // A schema-declared custom source is its owner's contract: preserve its
+    // first request verbatim, including omitted/default parameters. Thread
+    // catalogs are the sole built-in protocol this widget configures itself.
     const url = threadSource.value ? `${path}?${params}` : source.value
     const rows: Row[] = []
     let pageUrl = url
     let offset = 0
+    const cursors = new Set<string>()
     while (true) {
       const { data } = await api.get(pageUrl)
       if (data?.success === false) throw new Error(String(data.error || 'Could not load components'))
@@ -209,16 +237,29 @@ async function load() {
         ? data.items as Row[]
         : (Array.isArray(data?.threads) ? data.threads as Row[] : [])
       rows.push(...page)
-      const next = data?.next_offset
-      if (next == null) break
-      if (typeof next !== 'number' || !Number.isSafeInteger(next) || next <= offset) {
-        throw new Error('The server returns an invalid component offset.')
+      const nextOffset = data?.next_offset
+      if (nextOffset != null) {
+        if (typeof nextOffset !== 'number' || !Number.isSafeInteger(nextOffset) || nextOffset <= offset) {
+          throw new Error('The server returns an invalid component offset.')
+        }
+        offset = nextOffset
+        const [nextPath, nextQuery = ''] = url.split('?')
+        const nextParams = new URLSearchParams(nextQuery)
+        nextParams.set('offset', String(offset))
+        pageUrl = `${nextPath}?${nextParams}`
+        continue
       }
-      offset = next
-      const [path, query = ''] = url.split('?')
-      const params = new URLSearchParams(query)
-      params.set('offset', String(offset))
-      pageUrl = `${path}?${params}`
+      if (threadSource.value) break
+      const cursor = data?.next_cursor
+      if (cursor == null) break
+      if (typeof cursor !== 'string' || cursor === '' || cursors.has(cursor)) {
+        throw new Error('The server returns an invalid component cursor.')
+      }
+      cursors.add(cursor)
+      const [nextPath, nextQuery = ''] = url.split('?')
+      const nextParams = new URLSearchParams(nextQuery)
+      nextParams.set('cursor', cursor)
+      pageUrl = `${nextPath}?${nextParams}`
     }
     const seen = new Set<string>()
     const out: Item[] = []
@@ -365,12 +406,12 @@ async function onCreated(detail: unknown) {
   await load()
   if (id) {
     const listed = items.value.find(i => i.id === id)
-    if (!listed && selectionField.value) {
+    if (!listed && selectionField.value?.valueField) {
       const message = 'The created item has no published selection value in the catalog.'
       emit('error', { message, error: new Error(message) })
       return
     }
-    const item = listed || { id, label: createdLabel(detail) || untitledLabel.value, icon: 'tabler:components', selection: { thread_id: id } }
+    const item = listed || { id, label: createdLabel(detail) || untitledLabel.value, icon: 'tabler:components', selection: selectionFor({ id }, id) }
     if (!items.value.find(i => i.id === id)) items.value = [item, ...items.value]
     pick(item)
     emit('created', { thread_id: id })

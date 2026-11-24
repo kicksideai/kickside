@@ -18,13 +18,13 @@ const ComponentPicker = lazyControl(
 const PROPS_SCHEMA: WippyPropsSchema = {
   type: 'object',
   properties: {
-    source: { type: 'string', description: 'Endpoint listing the picker catalog. When absent, the field schema\'s declared source wins, then the thread endpoint default.' },
-    schema: { type: 'string', default: '', description: 'Field schema. Its primary field may declare source to select a non-thread picker catalog.' },
+    source: { type: 'string', description: 'Endpoint listing the picker catalog. Custom sources keep their declared first request and may paginate with next_offset or next_cursor. When absent, the field schema\'s declared source wins, then the thread endpoint default.' },
+    schema: { type: 'string', default: '', description: 'Field schema. Its primary field may declare source for a component-owned catalog instead of the thread endpoint.' },
     'thread-class': { type: 'string', default: '', description: 'The component class to scope the instance list to (meta.thread_class).' },
     'impl-id': { type: 'string', default: '', description: 'Stored component implementation binding to scope the instance list to.' },
     meta: { type: 'string', default: '', description: 'JSON object {type:"thread", thread_class}. Supplies thread_class when set; the poller mount passes it.' },
-    value: { type: 'string', default: '', description: 'Current selection: a JSON object string {thread_id} or empty.' },
-    config: { type: 'string', default: '', description: 'Alias of value: a JSON object string {thread_id}. Used by the poller config form.' },
+    value: { type: 'string', default: '', description: 'Current selection: a JSON object keyed by the picker field (normally {thread_id}), or empty.' },
+    config: { type: 'string', default: '', description: 'Alias of value: a JSON object keyed by the picker field. Used by configuration forms.' },
     placeholder: { type: 'string', default: '', description: 'Text shown when nothing is selected. Empty lets the field title drive the prompt ("Select a <noun>…"), falling back to a neutral "Select…".' },
     'delete-endpoint': { type: 'string', default: '', description: 'Base endpoint enabling per-row deletion (DELETE <endpoint>/<id>). Empty disables it. Also read from meta.delete_endpoint.' },
   },
