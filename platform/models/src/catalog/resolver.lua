@@ -20,8 +20,11 @@ local function resolved_card(card: any): any
                 local accepts = route_policy.accepts(route, {}, "resolved", true)
                 for key, value in pairs(accepts or {}) do provider[key] = value end
             end
+            -- The context names the route this entry stands for, so the managed
+            -- driver calls it among the card's routes.
+            provider.context = { card = card.name, provider_id = route.id, provider_model = route.provider_model,
+                provider_profile_id = route.provider_profile_id }
             provider.id = "kickside.models:provider"
-            provider.context = { card = card.name }
         end
         table.insert(resolved.providers, provider)
     end
