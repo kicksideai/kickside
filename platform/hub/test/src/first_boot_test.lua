@@ -1,6 +1,9 @@
 -- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
 local installer = require("installer")
+local funcs = require("funcs")
+local security = require("security")
+local state = require("state")
 
 local function fake(options)
     local calls = { plan = {}, install = {}, setup = {}, writes = {} }
@@ -106,5 +109,52 @@ local function define_tests()
     end)
 end
 
-local run_cases = test.run_cases(define_tests)
+local function define_readiness_tests()
+    test.describe("first boot readiness", function()
+        test.it("is ready when no module list is set", function()
+            test.is_nil(installer.readiness(nil, nil))
+            test.is_nil(installer.readiness("", {}))
+        end)
+
+        test.it("is ready only after the configured run completed", function()
+            test.is_nil(installer.readiness("acme/crm", {source = "acme/crm", status = "completed"}))
+            test.eq(installer.readiness("acme/crm", {source = "acme/crm", status = "running"}), "installing_modules")
+            test.eq(installer.readiness("acme/crm", {}), "installing_modules")
+            test.eq(installer.readiness("acme/crm,acme/docs", {source = "acme/crm", status = "completed"}),
+                "installing_modules")
+        end)
+
+        test.it("reports a failed setup", function()
+            test.eq(installer.readiness("acme/crm", {source = "acme/crm", status = "failed"}), "setup_failed")
+            test.eq(installer.readiness("Not Valid", nil), "setup_failed")
+        end)
+
+        test.it("reports ready through the readiness function when nothing is configured", function()
+            local result = assert(funcs.call("kickside.hub.first_boot:readiness"))
+            test.is_true(result.ready)
+            test.is_nil(result.reason)
+        end)
+
+        test.it("reads the stored state with only the readiness policy", function()
+            local value = {source = "acme/crm", status = "completed", modules = {}}
+            assert(state.write(value))
+            local function anonymous(id)
+                return funcs.new():with_actor(security.new_actor("first-boot-anonymous"))
+                    :with_scope(security.new_scope({})):call(id)
+            end
+            local stored = assert(anonymous("app:first_boot_state_probe"))
+            local denied, denied_err = anonymous("app:first_boot_state_denied_probe")
+            assert(state.write({}))
+            test.is_nil(denied)
+            test.not_nil(denied_err)
+            test.eq(stored.source, "acme/crm")
+            test.eq(stored.status, "completed")
+        end)
+    end)
+end
+
+local run_cases = test.run_cases(function()
+    define_tests()
+    define_readiness_tests()
+end)
 return { run = function(options) return run_cases(options) end }

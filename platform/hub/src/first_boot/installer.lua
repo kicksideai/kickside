@@ -81,6 +81,19 @@ local function install_one(deps: any, component: string): (boolean, string?)
     return true, nil
 end
 
+-- Readiness from the configured module list and the stored run state: nil when
+-- the first-boot install is finished or not configured, else a reason.
+function M.readiness(raw: any, state: any): string?
+    local modules = M.parse(raw)
+    if not modules then return "setup_failed" end
+    if #modules == 0 then return nil end
+    local stored = type(state) == "table" and state or {}
+    if stored.source ~= table.concat(modules, ",") then return "installing_modules" end
+    if stored.status == "completed" then return nil end
+    if stored.status == "failed" then return "setup_failed" end
+    return "installing_modules"
+end
+
 -- deps: env_modules(), read_state(), write_state(state), installed() -> set,
 -- plan(args), install(args), setup(descriptor, action).
 -- A run that finished for the same module list is not repeated. Failed modules

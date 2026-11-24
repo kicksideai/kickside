@@ -37,3 +37,43 @@ entries:
     method: GET
     func: serve
     path: /health
+
+  - name: readiness_access
+    kind: security.policy
+    meta:
+      type: app.security.policy_binding
+      surface: app.health
+      intent: public_readiness_runtime
+      comment: The readiness probe may read the first-boot install state and check the main UI bundle.
+    policy:
+      resources:
+        - kickside.hub.first_boot:readiness
+        - app:app_fs
+      actions:
+        - funcs.call
+        - fs.get
+      effect: allow
+
+  - name: readiness
+    kind: function.lua
+    meta:
+      comment: Reports 200 only when the first-boot modules are installed and the main UI bundle is present.
+    source: file://readiness.lua
+    security:
+      actor:
+        id: app.health:readiness
+      policies:
+        - app.health:readiness_access
+    modules:
+      - http
+      - fs
+      - funcs
+    method: handler
+
+  - name: readiness.endpoint
+    kind: http.endpoint
+    meta:
+      router: app:api.public
+    method: GET
+    func: readiness
+    path: /readiness

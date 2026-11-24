@@ -33,3 +33,23 @@ entries:
     imports:
       health: app:subject
       test: wippy.test:test
+
+  - name: readiness_subject
+    kind: library.lua
+    source: file://readiness.lua
+    modules:
+      - http
+      - fs
+      - funcs
+
+  - name: readiness_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: app_health
+      comment: Verifies the public readiness decision using the production source.
+    source: file://readiness_test.lua
+    method: run
+    imports:
+      readiness: app:readiness_subject
+      test: wippy.test:test

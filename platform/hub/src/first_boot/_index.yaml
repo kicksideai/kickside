@@ -110,3 +110,38 @@ entries:
         - kickside.hub.first_boot:status.endpoint
       actions: access
       effect: allow
+
+  - name: readiness
+    kind: function.lua
+    meta:
+      comment: First-boot install readiness for the public readiness probe.
+    source: file://readiness.lua
+    method: readiness
+    modules: [env, contract]
+    imports:
+      installer: kickside.hub.first_boot:installer
+      state: kickside.hub.first_boot:state
+    security:
+      actor:
+        id: kickside.hub.first_boot:readiness
+      policies:
+        - kickside.hub.first_boot:readiness_read
+
+  - name: readiness_read
+    kind: security.policy
+    meta:
+      comment: The readiness check reads the module list and the stored first-boot state only.
+    policy:
+      resources:
+        - kickside.hub.first_boot:install_modules
+        - kickside.settings:settings
+        - kickside.settings:*
+        - get
+        - kickside.settings.api:list_settings.endpoint
+      actions:
+        - env.get
+        - contract.get
+        - contract.open
+        - contract.call
+        - access
+      effect: allow
