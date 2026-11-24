@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- One-time sign-in tokens issued by the platform that deployed this instance.
 -- Token: base64url(payload) "." base64url(HMAC-SHA256(secret, base64url(payload))).
 local base64 = require("base64")

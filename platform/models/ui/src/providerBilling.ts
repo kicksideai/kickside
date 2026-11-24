@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 // Billing pages where an account owner adds credits for each first-party provider.
 const BILLING_URLS: Record<string, string> = {
   'wippy.llm.claude:provider': 'https://platform.claude.com/settings/billing',

@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- First-boot install of the hub modules named by the deployment. The same
 -- Keeper plan + install path as the onboarding queue, run once on the server.
 local M = {}
