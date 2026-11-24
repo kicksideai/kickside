@@ -69,6 +69,7 @@ entries:
     method: handle
     modules: [ctx, json, html, http_client, security, process, channel, time, uuid]
     imports:
+      kb_access: kickside.knowledge:kb_access
       text_trim: kickside.contract:text_trim
       util: kickside.knowledge:util
       component: kickside.component:component
@@ -134,6 +135,7 @@ entries:
     method: handle
     modules: [ctx]
     imports:
+      kb_access: kickside.knowledge:kb_access
       util: kickside.knowledge:util
       component: kickside.component:component
 
@@ -232,6 +234,7 @@ entries:
     method: handle
     modules: [ctx, json]
     imports:
+      kb_access: kickside.knowledge:kb_access
       component: kickside.component:component
 
   - name: kb_ingest

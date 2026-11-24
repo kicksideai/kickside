@@ -3,6 +3,7 @@ local json = require("json")
 local security = require("security")
 local component = require("component")
 local http_errors = require("http_errors")
+local kb_access = require("kb_access")
 
 local function shallow_copy(input: any): { [string]: any }
     local out: { [string]: any } = {}
@@ -54,6 +55,13 @@ local function handler()
     if access_err or not engine then
         res:set_status(http_errors.classify(access_err))
         res:write_json({ success = false, error = tostring(access_err) })
+        return
+    end
+
+    local _, kb_err = kb_access.get(kb_id, component.ACCESS.WRITE)
+    if kb_err then
+        res:set_status((http_errors.classify(kb_err)))
+        res:write_json(http_errors.response(kb_err))
         return
     end
 

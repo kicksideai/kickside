@@ -157,7 +157,7 @@ return {
 				component.get_service = function()
 					return {
 						get = function()
-							return { success = true }
+							return { success = true, meta = { class = "knowledge_base" } }
 						end,
 					}
 				end

@@ -5,6 +5,7 @@ local uuid = require("uuid")
 local hash = require("hash")
 local json = require("json")
 local component = require("component")
+local kb_access = require("kb_access")
 local trace_context = require("trace_context")
 local source_ref_builder = require("source_ref_builder")
 
@@ -162,13 +163,10 @@ local function validate_kb_access(kb_id: string, access: any): (any?, any?)
         return errors.new({ message = "component service unavailable: " .. tostring(svc_err), kind = errors.UNAVAILABLE, retryable = true })
     end
 
-    local result, access_err = svc:get_access_context({
-        component_id = kb_id,
-        access_mask = access_mask,
-        include_context = false,
-    })
-    if access_err or type(result) ~= "table" or result.success ~= true then
-        if access_err and errors.is(access_err, errors.UNAVAILABLE) then return access_err end
+    local result, access_err = kb_access.get(kb_id, access_mask,
+        errors.new({ kind = errors.PERMISSION_DENIED, message = "component not found" }))
+    if access_err or not result then
+        if access_err and (errors.is(access_err, errors.UNAVAILABLE) or errors.is(access_err, errors.INVALID)) then return access_err end
         return errors.new({ message = "access denied: " .. tostring(access_err or (result and result.error) or "component not found"),
             kind = errors.PERMISSION_DENIED, retryable = false })
     end

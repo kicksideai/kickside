@@ -90,6 +90,7 @@ entries:
       component: kickside.component:component
       engines: kickside.knowledge:engines
       stores: kickside.knowledge:stores
+      kb_access: kickside.knowledge:kb_access
     method: handler
 
   - name: get_kb.endpoint
@@ -220,6 +221,7 @@ entries:
     imports:
       http_errors: kickside.contract:http_errors
       component: kickside.component:component
+      kb_access: kickside.knowledge:kb_access
       upload_tokens: kickside.uploads.persist:upload_tokens
       execution_identity: kickside.execution:execution_identity
       trace_context: kickside.execution:trace
@@ -251,6 +253,7 @@ entries:
     imports:
       http_errors: kickside.contract:http_errors
       component: kickside.component:component
+      kb_access: kickside.knowledge:kb_access
     method: handler
     pool:
       size: 8
@@ -302,6 +305,7 @@ entries:
       engines: kickside.knowledge:engines
       thread_ingest: kickside.knowledge.injection:thread_ingest
       component: kickside.component:component
+      kb_access: kickside.knowledge:kb_access
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
       upload_query_repo: kickside.uploads.persist:upload_query_repo
 
@@ -317,6 +321,7 @@ entries:
     imports:
       http_errors: kickside.contract:http_errors
       component: kickside.component:component
+      kb_access: kickside.knowledge:kb_access
       upload_query_repo: kickside.uploads.persist:upload_query_repo
       ingest_upload: kickside.knowledge.api:ingest_upload
     method: handler

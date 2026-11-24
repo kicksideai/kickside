@@ -37,7 +37,7 @@ local function exercise(row: any, store_contract: string?): (any, any, any)
             ACCESS = { READ = 1 }, validate_access = function() return 3 end,
             get_service = function() return { get = function() return {
                 success = true, component_id = "records",
-                meta = { title = "Records", kb_type = "records", document_count = "20" },
+                meta = { class = "knowledge_base", title = "Records", kb_type = "records", document_count = "20" },
             } end } end,
         },
     })
