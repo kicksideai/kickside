@@ -17,6 +17,10 @@ if ($Target -eq 'test' -and $env:WIPPY_TEST_PORT) {
     $arguments += @('--set', "vars.http_port=$($env:WIPPY_TEST_PORT)")
 }
 $testRoot = Join-Path $PSScriptRoot 'test'
+if ($Target -eq 'test') {
+    & node --test (Join-Path $testRoot 'oauth_callback_page_test.mjs')
+    if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
 $sourceLink = Join-Path $testRoot 'src_link'
 $placeholder = $null
 Push-Location $testRoot
