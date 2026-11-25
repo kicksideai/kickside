@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.108](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.107...knowledge-v0.1.108) (2026-11-24)
+
+
+### Bug Fixes
+
+* **knowledge:** act only on knowledge base components ([#977](https://github.com/kicksideai/kickside/issues/977)) ([bfd788a](https://github.com/kicksideai/kickside/commit/bfd788a014ae6eabaaf7c01cd615a6997134279f))
+* **knowledge:** reject updates to components that are not knowledge bases ([#975](https://github.com/kicksideai/kickside/issues/975)) ([4580702](https://github.com/kicksideai/kickside/commit/4580702235dd6fa89029ccac206c4585017ce276))
+* **knowledge:** require the page with every citation in answers ([#979](https://github.com/kicksideai/kickside/issues/979)) ([ffc35d7](https://github.com/kicksideai/kickside/commit/ffc35d7d9871c85cf37db2411a3ede8ce52569ab))
+
 ## [0.1.107](https://github.com/kicksideai/kickside/compare/knowledge-v0.1.106...knowledge-v0.1.107) (2026-11-24)
 
 

@@ -28,8 +28,13 @@ const access = names.map((full_name, index) => ({
   access_mask: index === 0 ? 15 : (index % 7) + 1,
   owner: index === 0,
 }))
-const capabilities = ['Read', 'Write', 'Delete', 'Admin'].map((label, index) => ({
-  label, key: label.toLowerCase(), bit: 1 << index,
+const capabilities = [
+  ['Read', 'View this item'],
+  ['Write', 'Edit this item'],
+  ['Delete', 'Delete this item'],
+  ['Admin', 'Manage access and sharing'],
+].map(([label, description], index) => ({
+  label, description, key: label.toLowerCase(), bit: 1 << index,
 }))
 const newPrincipal = {
   id: 'new-person',
@@ -134,6 +139,29 @@ for (const width of [390, 1440]) {
       assert.deepEqual(metrics.rows.map(row => row.tooltip).sort(), names.toSorted())
       assert.equal(metrics.pickerAboveShare, width === 390)
       assert(metrics.rows.every(row => row.chipsBelowName === (width === 390)))
+
+      const permissions = dialog.getByRole('group', { name: 'Permissions' })
+      const buttonBoxes = []
+      for (const { label, description } of capabilities) {
+        const button = permissions.getByRole('button', { name: label, exact: true })
+        const effect = permissions.getByText(description, { exact: true })
+        const buttonBox = await button.boundingBox()
+        const effectBox = await effect.boundingBox()
+        assert(buttonBox && effectBox, `${label} and its description are visible`)
+        assert.equal(await button.getAttribute('aria-describedby'), await effect.getAttribute('id'))
+        assert(effectBox.y >= buttonBox.y + buttonBox.height, `${label} has its description below it`)
+        const labelLines = await button.locator('span').evaluate(element => {
+          const range = document.createRange()
+          range.selectNodeContents(element)
+          return range.getClientRects().length
+        })
+        assert.equal(labelLines, 1, `${label} fits on one line`)
+        buttonBoxes.push(buttonBox)
+      }
+      assert(buttonBoxes.every(box => Math.abs(box.y - buttonBoxes[0].y) < 1),
+        'Permission buttons share one row')
+      assert(buttonBoxes.slice(1).every((box, index) => box.x >= buttonBoxes[index].x + buttonBoxes[index].width),
+        'Permission buttons are ordered left to right without overlapping')
 
       await dialog.getByRole('button', { name: 'Select a person or group…' }).click()
       await dialog.getByRole('combobox', { name: 'Search people or groups' }).fill('Margareta')

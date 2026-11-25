@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.76](https://github.com/kicksideai/kickside/compare/widgets-v0.1.75...widgets-v0.1.76) (2026-11-24)
+
+
+### Bug Fixes
+
+* **widgets:** honor schema-owned component selections ([#982](https://github.com/kicksideai/kickside/issues/982)) ([2a03673](https://github.com/kicksideai/kickside/commit/2a03673caeaa5e1faec2e778bf9b89a8f10832cd))
+
 ## [0.1.75](https://github.com/kicksideai/kickside/compare/widgets-v0.1.74...widgets-v0.1.75) (2026-11-24)
 
 

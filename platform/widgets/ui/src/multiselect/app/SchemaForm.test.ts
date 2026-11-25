@@ -37,8 +37,9 @@ async function mount(
   const changed = vi.fn()
   element.addEventListener('validity-changed', event => validity((event as CustomEvent).detail))
   element.addEventListener('config-changed', event => changed((event as CustomEvent).detail))
+  const mounted = new Promise<void>(resolve => element.addEventListener('wippy-mounted', () => resolve(), { once: true }))
   document.body.append(element)
-  await vi.waitFor(() => expect(element.shadowRoot?.querySelector('.sf-field')).toBeTruthy())
+  await mounted
   const root = element.shadowRoot!
   const fields = () => [...root.querySelectorAll('.sf-field')]
   const control = (index = 0) => fields()[index]!.querySelector<HTMLInputElement>('input, textarea, select, test-schema-picker')!
@@ -138,6 +139,20 @@ describe('schema form field validation', () => {
     expect(picker.getAttribute('tabindex')).toBeNull()
     expect(element.reportValidity()).toBe(false)
     expect(picker.shadowRoot!.activeElement).toBe(picker.shadowRoot!.querySelector('button'))
+  })
+
+  it('adapts legacy component-picker input but accepts the field-named selection it emits', async () => {
+    const { control, changed } = await mount({
+      extractor_id: { picker: 'test-schema-picker', class: 'kickside.docscout' },
+    }, { extractor_id: 'invoice-fields' })
+    const picker = control() as HTMLElement
+    // SchemaForm preserves the published component-picker input convention.
+    expect(picker.getAttribute('config')).toBe('{"thread_id":"invoice-fields"}')
+    picker.dispatchEvent(new CustomEvent('change', {
+      bubbles: true, composed: true, detail: { extractor_id: 'invoice-fields-2' },
+    }))
+    await nextTick()
+    expect(changed).toHaveBeenLastCalledWith({ extractor_id: 'invoice-fields-2' })
   })
 
   it('allows unset deployment overrides and records explicit false as a value', async () => {

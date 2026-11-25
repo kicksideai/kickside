@@ -11,7 +11,7 @@ local ACTIONS = {
     create = { required = { "profile" } },
     update = { required = { "id", "profile" } },
     delete = { required = { "id" } },
-    test = { required = { "id" } },
+    test = { required = { "id" }, optional = { "model" } },
 }
 
 local function handler(args: any): (any?, error?)
@@ -19,7 +19,7 @@ local function handler(args: any): (any?, error?)
     if action_err then return nil, action_err end
     local input = args :: Map
     if action == "test" then
-        local reply, err = profiles_client.call("test_profile", { id = input.id })
+        local reply, err = profiles_client.call("test_profile", { id = input.id, model = input.model })
         if err or tool_result.is_domain_error(reply) then return reply, err end
         return { success = true, test = (reply :: Map).result }, nil
     end

@@ -61,7 +61,8 @@ function M.delete_profile(args: any): any
     return { success = true }
 end
 
--- test_profile({ id, model? }) -> { success, result?, error?, code? }. Records the profile status.
+-- test_profile({ id, model? }) -> { success, result?, error?, code? }. An unscoped
+-- probe records the profile status; a model-scoped probe leaves it unchanged.
 function M.test_profile(args: any): any
     if type(args) ~= "table" then return { success = false, error = "request must be an object" } end
     local result, err = profile_service.test(args.id, { model = args.model })
