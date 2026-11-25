@@ -66,6 +66,43 @@ Initialization reports success only after the spawned negotiator's callback name
 is visible. Readiness has a five-second deadline; a failed startup returns 503
 without publishing an authorization URL.
 
+### Agent account tools
+
+Attach `kickside.oauth.traits:accounts` to an agent to enable:
+
+| Tool | Arguments | Result |
+| --- | --- | --- |
+| `ConnectAccount` | `provider`, optional `scopes` array and `purpose` string | `connected` with provider and granted scopes, or `authorization_required` with `authorization_url` and `expires_in` |
+| `CheckConnection` | `provider`, optional `scopes` array | `connected` with provider and granted scopes, or `authorization_required` with a reason |
+
+The tools query the current actor's accessible connections and require one
+matching connection, as provider tools do. Results contain no connection IDs,
+tokens, private profiles, or separate negotiation state. A missing account
+starts the same consent flow as `POST /api/v1/oauth/providers/{name}/init`.
+Missing requested scopes or unusable credentials require consent again, with
+WRITE access to the existing connection. Existing grants are retained in the
+new scope request, and provider defaults are always included during consent.
+
+Show the returned consent URL to the user. After consent, call
+`CheckConnection` with the same provider and scopes to verify the saved account.
+A partial grant returns `authorization_required` with reason `missing_scopes`.
+A check does not start another
+consent flow, and it can recover an expired token through the connection's
+existing refresh contract. Discovery, permissions, and transport failures are
+errors rather than a successful connection result.
+
+`connected` means Kickside holds a usable token with the requested scopes.
+The check does not call Google to validate the grant. A grant revoked at Google
+is detected at the first Google call. If a provider tool reports that the account
+must be reconnected, call `ConnectAccount` again with the required scopes.
+Consent `expires_in` is the smaller of the connector expiry and the negotiator's
+300-second callback wait.
+
+On Windows, run the module's `make.bat test` or `make.bat lint` adapter. Set
+`WIPPY_BIN` to the desired Wippy executable and `WIPPY_TEST_PORT` to the test
+gateway port. The adapter temporarily supplies a directory junction when Git
+checks out the harness's source symlink as a plain file.
+
 ### Host requirements
 
 Bind these exact requirement IDs through the module’s dependency declaration
