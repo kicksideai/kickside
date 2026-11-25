@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.47](https://github.com/kicksideai/kickside/compare/sessions-v0.1.46...sessions-v0.1.47) (2026-11-25)
+
+
+### Bug Fixes
+
+* **frontend:** adopt Web Host 1.0.70 and mount readiness ([#537](https://github.com/kicksideai/kickside/issues/537)) ([5d36990](https://github.com/kicksideai/kickside/commit/5d369902003a72720e2008663a2a798e595fc0a2))
+
 ## [0.1.46](https://github.com/kicksideai/kickside/compare/sessions-v0.1.45...sessions-v0.1.46) (2026-11-21)
 
 

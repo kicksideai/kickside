@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.77](https://github.com/kicksideai/kickside/compare/widgets-v0.1.76...widgets-v0.1.77) (2026-11-25)
+
+
+### Bug Fixes
+
+* **frontend:** adopt Web Host 1.0.70 and mount readiness ([#537](https://github.com/kicksideai/kickside/issues/537)) ([5d36990](https://github.com/kicksideai/kickside/commit/5d369902003a72720e2008663a2a798e595fc0a2))
+
 ## [0.1.76](https://github.com/kicksideai/kickside/compare/widgets-v0.1.75...widgets-v0.1.76) (2026-11-24)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.32](https://github.com/kicksideai/kickside/compare/security-v0.2.31...security-v0.2.32) (2026-11-25)
+
+
+### Bug Fixes
+
+* **frontend:** adopt Web Host 1.0.70 and mount readiness ([#537](https://github.com/kicksideai/kickside/issues/537)) ([5d36990](https://github.com/kicksideai/kickside/commit/5d369902003a72720e2008663a2a798e595fc0a2))
+
 ## [0.2.31](https://github.com/kicksideai/kickside/compare/security-v0.2.30...security-v0.2.31) (2026-11-21)
 
 

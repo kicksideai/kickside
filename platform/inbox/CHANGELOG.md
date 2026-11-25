@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.83](https://github.com/kicksideai/kickside/compare/inbox-v0.1.82...inbox-v0.1.83) (2026-11-25)
+
+
+### Bug Fixes
+
+* **frontend:** adopt Web Host 1.0.70 and mount readiness ([#537](https://github.com/kicksideai/kickside/issues/537)) ([5d36990](https://github.com/kicksideai/kickside/commit/5d369902003a72720e2008663a2a798e595fc0a2))
+
 ## [0.1.82](https://github.com/kicksideai/kickside/compare/inbox-v0.1.81...inbox-v0.1.82) (2026-11-24)
 
 
