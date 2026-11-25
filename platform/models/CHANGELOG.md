@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.98](https://github.com/kicksideai/kickside/compare/models-v0.1.97...models-v0.1.98) (2026-11-25)
+
+
+### Bug Fixes
+
+* **models:** name unresolved env reference in discovery; test profiles on create ([#983](https://github.com/kicksideai/kickside/issues/983)) ([0791c31](https://github.com/kicksideai/kickside/commit/0791c31f00e45608510012b436cfb040def3e2b6))
+* **models:** use host role credentials for Bedrock discovery ([#989](https://github.com/kicksideai/kickside/issues/989)) ([22b495b](https://github.com/kicksideai/kickside/commit/22b495bd3dda41a2f91cdae86e9c6ce17050dd94))
+
 ## [0.1.97](https://github.com/kicksideai/kickside/compare/models-v0.1.96...models-v0.1.97) (2026-11-24)
 
 
