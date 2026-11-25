@@ -582,6 +582,11 @@ entries:
       discovery_common: kickside.models.discovery:common
       model_mapper: kickside.models.discovery:mapper
       sigv4: wippy.llm.bedrock:sigv4
+      bedrock_credentials: app:bedrock_credentials_fixture
+
+  - name: bedrock_credentials_fixture
+    kind: library.lua
+    source: file://bedrock_credentials_fixture.lua
 
   - name: diagnostics_discover_profile
     kind: library.lua
@@ -617,3 +622,4 @@ entries:
       anthropic: app:diagnostics_anthropic
       google: app:diagnostics_google_genai
       bedrock: app:diagnostics_bedrock
+      bedrock_credentials: app:bedrock_credentials_fixture
