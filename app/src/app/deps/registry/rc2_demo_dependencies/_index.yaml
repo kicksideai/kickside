@@ -72,6 +72,17 @@ entries:
       - name: kickside.google:import_receiver_binding
         value: spiralscout.storage.loadable:receiver
 
+  # wippy/dashboards depends on wippy-swiss/markdown for the text tile. Like chartjs it
+  # serves its bundle from a server requirement named `server`.
+  - name: rc2_wippy_swiss_markdown
+    kind: ns.dependency
+    meta: {}
+    component: wippy-swiss/markdown
+    version: ">=0.2.0"
+    parameters:
+      - name: server
+        value: app:gateway
+
   # wippy/dashboards depends on wippy-swiss/chartjs for the chart tile. The module serves
   # its bundle from a server requirement named `server`; without a binding the boot stops
   # with "wippy-swiss.chartjs:static: server not found".
