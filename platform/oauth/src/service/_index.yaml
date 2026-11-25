@@ -46,6 +46,7 @@ entries:
       connection_manager: kickside.oauth:connection_manager
       callback_reply: kickside.oauth.service:callback_reply
       callback_names: kickside.oauth:callback_names
+      consent_lifetime: kickside.oauth:consent_lifetime
     method: run
     security:
       policies:

@@ -42,6 +42,30 @@ local function define_tests()
             test.is_false(selected.value.success)
             test.is_true(selected.value.oauth_error)
         end)
+        test.it("removes the callback name after the shared wait limit expires", function()
+            local state = "expiry-" .. uuid.v4()
+            local policy = assert(security.policy("app:negotiator_constrained"))
+            local spawner = assert(process.with_context({}))
+                :with_actor(security.new_actor("principal:group:oauth", {}))
+                :with_scope(security.new_scope({policy}))
+            local pid, spawn_err = spawner:spawn_monitored("app:negotiator_short_wait", "app:processes", {
+                state_token = state, connection_data = {provider_name = "fixture"}, connector_info = {}})
+            test.is_nil(spawn_err, tostring(spawn_err)); test.not_nil(pid)
+            local name = callback_names.NEGOTIATOR_PREFIX .. state
+            local registered = nil
+            local deadline = time.now():add(5 * time.SECOND)
+            while not registered and time.now():before(deadline) do
+                registered = process.registry.lookup(name, process.registry.CONSISTENT)
+                if not registered then time.sleep("5ms") end
+            end
+            test.not_nil(registered, "the negotiator never registered its callback name")
+            deadline = time.now():add(time.SECOND)
+            while registered and time.now():before(deadline) do
+                time.sleep("20ms")
+                registered = process.registry.lookup(name, process.registry.CONSISTENT)
+            end
+            test.is_nil(registered, "the callback name remained usable past the wait limit")
+        end)
     end)
 end
 
