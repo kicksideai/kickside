@@ -177,6 +177,22 @@ local function public_card_summary(card: any): any
     }
 end
 
+-- Every route the card carries in order, route-owned fields (options, pricing,
+-- limits, sampling) included. Provider context holds resolved credentials and
+-- stays out of the projection.
+local function public_routes(card: any): { any }
+    local routes: { any } = {}
+    for _, provider in ipairs(card.providers or {}) do
+        local route: { [string]: any } = {}
+        for key, value in pairs(provider) do
+            if key ~= "id" and key ~= "context" then route[key] = value end
+        end
+        route.provider_id = provider.id
+        routes[#routes + 1] = policy.scrub_sensitive(route)
+    end
+    return routes
+end
+
 local function public_card(card: any): any
     local provider = card.providers and card.providers[1] or {}
     local out = public_card_summary(card)
@@ -187,6 +203,7 @@ local function public_card(card: any): any
     out.pricing = card.pricing or {}
     out.dimensions = card.dimensions
     out.options = policy.scrub_sensitive(provider.options or {})
+    out.routes = public_routes(card)
     out.metadata = policy.scrub_sensitive(card.metadata or {})
     return out
 end
@@ -199,6 +216,7 @@ local function export_card(card: any): any
     exported.max_tokens = card.stored_limits.max_tokens
     exported.output_tokens = card.stored_limits.output_tokens
     exported.dimensions = card.stored_limits.dimensions
+    exported.routes = nil
     local public = policy.split_config(exported)
     return public
 end

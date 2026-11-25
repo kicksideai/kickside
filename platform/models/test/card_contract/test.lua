@@ -347,11 +347,75 @@ local function define_tests()
             test.eq(result.success, true, tostring(result.error))
             test.eq(result.model.name, NAME)
             test.eq(result.model.provider_model, "cc-trained-model-v1")
+            test.eq(#result.model.routes, 1)
+            test.eq(result.model.routes[1].provider_id, "wippy.llm.openai:provider")
+            test.eq(result.model.routes[1].provider_model, "cc-trained-model-v1")
             call(DISABLE, { name = NAME })
             local retired = assert(registrar():get_card({ name = NAME }))
             test.eq(retired.success, true, tostring(retired.error))
             test.eq(retired.model.enabled, false)
             cleanup()
+        end)
+
+        test.it("answers every route of a card with its options", function()
+            local entry_id = "app:cc_two_route"
+            local changes = assert(registry.snapshot()):changes()
+            changes:create({
+                id = entry_id,
+                kind = "registry.entry",
+                meta = { type = "llm.model", name = "cc-two-route", capabilities = { "generate" }, class = { "cc-two-route-class" } },
+                data = {
+                    max_tokens = 100000,
+                    pricing = { input = 1, output = 2 },
+                    providers = {
+                        {
+                            id = "wippy.llm.openai:provider",
+                            provider_model = "route-a-model",
+                            provider_profile_id = "profile-a",
+                            options = { thinking_effort = "low", api_key = "route-a-secret" },
+                            pricing = { input = 1, output = 2 },
+                            max_tokens = 100000,
+                        },
+                        {
+                            id = "wippy.llm.anthropic:provider",
+                            provider_model = "route-b-model",
+                            provider_profile_id = "profile-b",
+                            options = { thinking_effort = "high" },
+                            pricing = { input = 3, output = 4 },
+                            output_tokens = 8000,
+                        },
+                    },
+                },
+            })
+            test.is_nil(select(2, changes:apply()))
+            models_cache.clear()
+            local ok, err = pcall(function()
+                local result = assert(registrar():get_card({ name = "cc-two-route" }))
+                test.eq(result.success, true, tostring(result.error))
+                test.eq(result.model.provider_model, "route-a-model")
+                local routes = result.model.routes
+                test.not_nil(routes, "routes missing")
+                test.eq(#routes, 2)
+                test.eq(routes[1].provider_id, "wippy.llm.openai:provider")
+                test.eq(routes[1].provider_model, "route-a-model")
+                test.eq(routes[1].provider_profile_id, "profile-a")
+                test.eq(routes[1].options.thinking_effort, "low")
+                test.is_nil(routes[1].options.api_key)
+                test.is_nil(routes[1].context)
+                test.eq(routes[1].pricing.input, 1)
+                test.eq(routes[1].max_tokens, 100000)
+                test.eq(routes[2].provider_id, "wippy.llm.anthropic:provider")
+                test.eq(routes[2].provider_model, "route-b-model")
+                test.eq(routes[2].provider_profile_id, "profile-b")
+                test.eq(routes[2].options.thinking_effort, "high")
+                test.eq(routes[2].pricing.output, 4)
+                test.eq(routes[2].output_tokens, 8000)
+            end)
+            local cleanup_changes = assert(registry.snapshot()):changes()
+            cleanup_changes:delete(entry_id)
+            test.is_nil(select(2, cleanup_changes:apply()))
+            models_cache.clear()
+            if not ok then error(err, 0) end
         end)
 
         test.it("fails for a name the catalog does not hold", function()
