@@ -1,6 +1,7 @@
 local http_client = require("http_client")
 local common = require("discovery_common")
 local sigv4 = require("sigv4")
+local bedrock_credentials = require("bedrock_credentials")
 
 local M = {}
 
@@ -10,10 +11,9 @@ local function extract_host(url: string): string?
     return tostring(url):match("^https?://([^/]+)")
 end
 
-local function default_base_url(profile: any, region: string): string
-    local configured = common.configured_base_url(profile, "")
-    if configured ~= "" then return configured:gsub("bedrock%-runtime%.", "bedrock.") end
-    return "https://bedrock." .. region .. ".amazonaws.com"
+local function credential_error(code: string, kind: string): (nil, string, any)
+    local diagnostics = { kind = kind, retryable = false, code = code }
+    return nil, common.failure_message("Bedrock credentials could not be used", diagnostics), diagnostics
 end
 
 function M.fetch(profile: any): ({ any }?, string?, any?)
@@ -23,11 +23,25 @@ function M.fetch(profile: any): ({ any }?, string?, any?)
     local access_key = common.resolve_value(profile, "access_key", "AWS_ACCESS_KEY_ID")
     local secret_key = common.resolve_value(profile, "secret_key", "AWS_SECRET_ACCESS_KEY")
     local session_token = common.resolve_value(profile, "session_token", "AWS_SESSION_TOKEN")
-    if not access_key or not secret_key then
-        return nil, "AWS access key and secret key are required for Bedrock discovery"
+    local aws_url = "https://bedrock." .. region .. ".amazonaws.com"
+    local base_url = common.configured_base_url(profile, aws_url):gsub("bedrock%-runtime%.", "bedrock.")
+    if not (access_key and secret_key) then
+        if access_key or secret_key or session_token then
+            return credential_error("aws_credentials_incomplete", errors.INVALID)
+        end
+        -- Only sign AWS's regional endpoint with credentials from the host role.
+        if base_url ~= aws_url or not region:match("^[a-z][a-z0-9%-]*%-%d+$") then
+            return credential_error("aws_role_endpoint_required", errors.INVALID)
+        end
+        local credentials = bedrock_credentials.resolve()
+        if not credentials then
+            return credential_error("aws_credentials_unavailable", errors.PERMISSION_DENIED)
+        end
+        access_key = credentials.access_key
+        secret_key = credentials.secret_key
+        session_token = credentials.session_token
     end
 
-    local base_url = default_base_url(profile, region)
     local host = extract_host(base_url)
     if not host then return nil, "invalid Bedrock endpoint" end
 

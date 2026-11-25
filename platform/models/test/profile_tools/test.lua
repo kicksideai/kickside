@@ -16,7 +16,7 @@ local MANAGE = "kickside.models.traits:profiles_manage"
 local POLICY = "kickside.models.security:profile_tools"
 local ID = "pt-tool-profile"
 local HELD = "pt-held-profile"
-local SYNTHETIC_KEY = "synthetic-key-0123456789"
+local SYNTHETIC_KEY = "<fixture-key>"
 local SYNTHETIC_HEADER = "synthetic-header-value-9876"
 
 local function composed_scope(root: string): any
@@ -139,9 +139,18 @@ local function define_tests()
             test.eq(created.profile.id, ID)
             test.eq(created.profile.has_api_key, true)
             test.is_true(#created.profile.secret_fields >= 2)
+            test.eq(created.profile.status, "unhealthy", "an enabled profile is tested at creation")
             test.is_false(leaks(created))
             local stored = models_repo.get_profile(ID)
             test.eq(stored.secret_config.api_key, SYNTHETIC_KEY)
+            cleanup()
+        end)
+
+        test.it("leaves a disabled profile untested", function()
+            local created = ok(MANAGE, { action = "create", profile = profile_body({ enabled = false }) })
+            test.eq(created.success, true, tostring(created.error))
+            test.eq(created.profile.status, "unknown")
+            test.eq(created.profile.message, "")
             cleanup()
         end)
 
@@ -197,6 +206,32 @@ local function define_tests()
             local read = ok(READ, { action = "get", id = ID })
             test.eq(read.profile.status, "unhealthy", "the test records the profile status")
             test.contains(tostring(read.profile.message), "PT_UNDECLARED_KEY")
+            cleanup()
+        end)
+
+        test.it("tests an enabled profile it creates, so it carries a tested status", function()
+            local created = ok(MANAGE, { action = "create", profile = {
+                id = ID, name = "Created untested", provider_id = "wippy.llm.openai:provider",
+                base_url = "https://example.invalid/v1", api_key_env = "PT_UNDECLARED_KEY",
+            } })
+            test.eq(created.success, true, tostring(created.error))
+            test.eq(created.profile.status, "unhealthy", "a created enabled profile is tested")
+            test.contains(tostring(created.profile.message), "PT_UNDECLARED_KEY")
+            cleanup()
+        end)
+
+        test.it("tests a profile against the model a card routes when one is given, leaving the profile status as it was", function()
+            ok(MANAGE, { action = "create", profile = {
+                id = ID, name = "Scoped test profile", provider_id = "wippy.llm.openai:provider",
+                base_url = "https://example.invalid/v1", api_key_env = "PT_UNDECLARED_KEY",
+            } })
+            local before = ok(READ, { action = "get", id = ID }).profile
+            local tested = ok(MANAGE, { action = "test", id = ID, model = "card-model" })
+            test.eq(tested.success, false)
+            test.eq(tested.code, "profile_unhealthy")
+            local after = ok(READ, { action = "get", id = ID }).profile
+            test.eq(after.status, before.status)
+            test.eq(after.message, before.message, "a test scoped to a card's model records no profile status")
             cleanup()
         end)
 

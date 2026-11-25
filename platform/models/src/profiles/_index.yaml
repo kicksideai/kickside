@@ -69,7 +69,7 @@ entries:
               { "type": "object", "properties": { "success": { "type": "boolean" }, "error": { "type": "string" }, "code": { "type": "string" }, "holders": { "type": "array", "items": { "type": "object" } } }, "required": ["success"] }
             format: application/schema+json
       - name: test_profile
-        description: test_profile({ id, model? }) -> { success, result?, error?, code? }. Checks that every *_env reference of the profile resolves, then probes the provider; records the outcome as the profile status (healthy, unhealthy). A failed test answers code profile_unhealthy with the reason.
+        description: test_profile({ id, model? }) -> { success, result?, error?, code? }. Checks that every *_env reference of the profile resolves, then probes the provider. Without model it records the outcome as the profile status (healthy, unhealthy); a model-scoped probe leaves that status unchanged. A failed test answers code profile_unhealthy with the reason.
         input_schemas:
           - definition: |
               { "type": "object", "properties": { "id": { "type": "string", "minLength": 1 }, "model": { "type": "string", "description": "Provider model to probe; the profile's test_model or the first listed model otherwise" } }, "required": ["id"] }

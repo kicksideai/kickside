@@ -13,10 +13,29 @@ function M.adapter_for(provider_id: string): any?
     return provider_registry.adapter_for(provider_id)
 end
 
+-- unresolved fails a provider call of the profile whose *_env reference does not
+-- resolve, before the adapter runs, naming the reference: the adapters read an
+-- unresolved reference as an unset setting, and their failures reach the caller
+-- only classified. record marks the profile unhealthy with the message.
+local function unresolved(profile_id: string, profile: any, label: string, record: boolean): (string?, any?)
+    local reason = common.unresolved_env(profile)
+    if not reason then return nil end
+    local message = label .. ": " .. reason
+    if record then
+        local _, status_err = models_repo.set_profile_status(profile_id, "unhealthy", message, nil)
+        if status_err then return nil, status_err end
+    end
+    return message
+end
+
 function M.discover(profile_id: string): (any?, any?, any?)
     local profile, profile_err = models_repo.get_profile(profile_id)
     if profile_err then return nil, profile_err end
     if not profile then return nil, "profile not found" end
+
+    local refused, refused_err = unresolved(profile_id, profile, "model discovery failed", true)
+    if refused_err then return nil, refused_err end
+    if refused then return nil, refused end
 
     local adapter = M.adapter_for(tostring(profile.provider_id or ""))
     if not adapter or not adapter.fetch then
@@ -114,15 +133,9 @@ function M.test(profile_id: string, opts: any): (any?, any?, any?)
     if not profile then return nil, "profile not found" end
     local scoped_model = type(opts) == "table" and type(opts.model) == "string" and opts.model ~= ""
 
-    local unresolved = common.unresolved_env(profile)
-    if unresolved then
-        local message = "connection test failed: " .. unresolved
-        if not scoped_model then
-            local _, status_err = models_repo.set_profile_status(profile_id, "unhealthy", message, nil)
-            if status_err then return nil, status_err end
-        end
-        return nil, message
-    end
+    local refused, refused_err = unresolved(profile_id, profile, "connection test failed", not scoped_model)
+    if refused_err then return nil, refused_err end
+    if refused then return nil, refused end
 
     local adapter = M.adapter_for(tostring(profile.provider_id or ""))
     if not adapter then

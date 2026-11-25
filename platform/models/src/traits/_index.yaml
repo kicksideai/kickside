@@ -25,7 +25,9 @@ entries:
       by name, title or provider model. Call action=get with a card name for the
       full card, including its options, pricing and metadata.
 
-      ModelCardsManage action=upsert creates or updates a card by name; fields
+      ModelCardsManage action=upsert takes card {name, provider_profile_id or
+      provider_id, provider_model, ...} and creates or updates the card
+      card.name names; fields
       the card omits keep their saved values. A card routes through a provider
       profile (provider_profile_id) or a provider entry (provider_id) and names
       the provider's model in provider_model. Credentials belong on the provider
@@ -107,7 +109,7 @@ entries:
         {
           "type": "object",
           "properties": {
-            "action": { "type": "string", "enum": ["upsert", "disable", "delete"], "description": "upsert: card. disable, delete: name. delete accepts only a disabled card; an enabled one is refused with code card_enabled." },
+            "action": { "type": "string", "enum": ["upsert", "disable", "delete"], "description": "upsert: card (card.name names the card). disable, delete: name. delete accepts only a disabled card; an enabled one is refused with code card_enabled." },
             "name": { "type": "string", "minLength": 1, "description": "disable, delete: the card name." },
             "card": {
               "type": "object",
@@ -150,7 +152,7 @@ entries:
           "required": ["success"]
         }
       llm_alias: ModelCardsManage
-      llm_description: "Manage model catalog cards. upsert creates or updates a card by name (omitted fields keep saved values; credentials belong on the provider profile, never on the card). disable retires a card and keeps its row; upsert with enabled true restores it. delete removes a disabled card; an enabled card is refused with code card_enabled: disable it first. Failures return a typed tool error; a refusal returns success false with its error."
+      llm_description: "Manage model catalog cards. upsert {action: upsert, card: {name, provider_profile_id or provider_id, provider_model, class, capabilities, enabled, ...}} creates or updates the card card.name names (omitted fields keep saved values; credentials belong on the provider profile, never on the card). disable retires a card and keeps its row; upsert with enabled true restores it. delete removes a disabled card; an enabled card is refused with code card_enabled: disable it first. Failures return a typed tool error; a refusal returns success false with its error."
     source: file://cards_manage.lua
     method: handler
     imports:
@@ -176,7 +178,11 @@ entries:
       public settings, including any *_env pointers.
 
       ModelProfilesManage action=create saves a profile (name, provider_id, config
-      settings such as base_url, enabled); action=update with an id changes it and
+      settings such as base_url, enabled) and, when enabled, tests it, so the
+      reply's status is healthy or unhealthy with the reason; a disabled profile
+      remains untested and unknown; action=test with an id tests it again,
+      and with model (the provider_model of a card being routed) probes that
+      model; action=update with an id changes it and
       keeps every setting and stored secret the patch omits; action=delete removes
       the profile and the cards routed through it.
 
@@ -253,8 +259,9 @@ entries:
         {
           "type": "object",
           "properties": {
-            "action": { "type": "string", "enum": ["create", "update", "delete", "test"], "description": "create: profile. update: id and profile patch. delete: id; also removes the cards routed through the profile, refused with code profile_in_use naming the holders while records of another module (a driver profile's route) name it. test: id; checks every *_env reference resolves, probes the provider and records the profile status (healthy, unhealthy)." },
+            "action": { "type": "string", "enum": ["create", "update", "delete", "test"], "description": "create: profile. update: id and profile patch. delete: id; also removes the cards routed through the profile, refused with code profile_in_use naming the holders while records of another module (a driver profile's route) name it. test: id, optional model; checks every *_env reference resolves, probes the provider (with model, the card's model) and, without model, records the profile status (healthy, unhealthy). create tests an enabled profile the same way; a disabled profile remains untested and unknown." },
             "id": { "type": "string", "minLength": 1, "description": "update, delete, test: the profile id." },
+            "model": { "type": "string", "minLength": 1, "description": "test: the provider_model of the card being routed through the profile; the probe generates with that model and records no profile status. Without it the probe uses the profile's test_model or the first model the provider lists, and records the profile status." },
             "profile": {
               "type": "object",
               "description": "create: the profile. update: the fields to change; omitted settings and stored secrets keep their saved values.",
@@ -291,7 +298,7 @@ entries:
           "required": ["success"]
         }
       llm_alias: ModelProfilesManage
-      llm_description: "Manage model provider profiles. create saves a profile; update patches one by id and keeps omitted settings and stored secrets; delete removes it with its cards, refused with code profile_in_use while another module's records name it; test checks its *_env references and provider and records its status. Prefer api_key_env (an environment variable name) over api_key; credentials passed in are stored encrypted and never returned. Every write is logged. Failures return a typed tool error; a refusal returns success false with its error."
+      llm_description: "Manage model provider profiles. create saves a profile and tests it when enabled, returning healthy or unhealthy status with the reason; a disabled profile remains untested and unknown. update patches one by id and keeps omitted settings and stored secrets; delete removes it with its cards, refused with code profile_in_use while another module's records name it; test checks its *_env references and provider (pass model, a card's provider_model, to probe the model being routed) and without model records its status. Prefer api_key_env (an environment variable name) over api_key; credentials passed in are stored encrypted and never returned. Every write is logged. Failures return a typed tool error; a refusal returns success false with its error."
     source: file://profiles_manage.lua
     method: handler
     imports:
