@@ -141,6 +141,21 @@ return {run = test.run_cases(function()
     end)
 
     test.describe("declared model list", function()
+        test.it("distinguishes an empty model list from invalid provider replies", function()
+            for _, id in ipairs({"fixture-empty-list", "fixture-missing-list", "fixture-map-list", "fixture-invalid-id"}) do
+                local profile = assert(repo.create_profile({id = id, name = id, provider_id = "app:listed_provider", config = {}}))
+                local models, failure = discovery.served(profile.id)
+                assert(repo.delete_profile(profile.id))
+                if id == "fixture-empty-list" then
+                    test.is_nil(failure)
+                    test.eq(#assert(models), 0)
+                else
+                    test.is_nil(models)
+                    test.contains(tostring(failure), "invalid model list")
+                end
+            end
+        end)
+
         test.it("answers the model list a provider without a discovery adapter declares, and refuses a provider declaring none", function()
             local listed = assert(repo.create_profile({name = "Declared model list", provider_id = "app:listed_provider", config = {}}))
             local bare = assert(repo.create_profile({name = "No model list", provider_id = "app:unlisted_provider", config = {}}))

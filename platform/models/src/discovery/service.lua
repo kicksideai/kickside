@@ -138,11 +138,18 @@ local function declared_list(profile_id: string, provider_id: string): ({ string
     if type(fn) ~= "string" or fn == "" then return nil, nil, false end
     local answer, err = funcs.new():call(fn, { profile_id = profile_id })
     if err then return nil, "model list failed: " .. tostring(err), true end
-    local out: { string } = {}
-    for _, m in ipairs((type(answer) == "table" and type(answer.models) == "table") and answer.models or {}) do
-        if type(m) == "string" and m ~= "" then out[#out + 1] = m end
+    local invalid = "provider returned an invalid model list"
+    if type(answer) ~= "table" or type(answer.models) ~= "table" then return nil, invalid, true end
+    local count, last = 0, 0
+    for index, model in pairs(answer.models) do
+        if type(index) ~= "number" or index < 1 or index % 1 ~= 0 or type(model) ~= "string" or model == "" then
+            return nil, invalid, true
+        end
+        count = count + 1
+        last = math.max(last, index)
     end
-    return out, nil, true
+    if last ~= count then return nil, invalid, true end
+    return answer.models, nil, true
 end
 
 -- served answers the provider models profile_id serves now, as the provider's model list
