@@ -1,0 +1,64 @@
+version: "1.0"
+namespace: app.deps
+
+# RC2 demo: chat flow "connect Google, import data, show it on a dashboard".
+# wippy/dashboards, kickside/dashboards-plugin and kickside/google run from local
+# checkouts through app/.local/rc2-modules.yaml. The Data Explorer modules come from
+# the Hub. Every requirement of these modules has a Kickside value by default
+# (app:db, app:api, app:gateway, app:processes, app.security:user, app.security:admin).
+entries:
+  - name: rc2_wippy_dashboards
+    kind: ns.dependency
+    meta: {}
+    component: wippy/dashboards
+    version: ">=0.0.3"
+
+  - name: rc2_kickside_dashboards_plugin
+    kind: ns.dependency
+    meta: {}
+    component: kickside/dashboards-plugin
+    version: "*"
+    parameters:
+      # The generic dataset point reads Data Explorer tables through Storage.
+      - name: kickside.dashboards_plugin:readable_binding
+        value: spiralscout.storage.readable:reader
+
+  - name: rc2_spiralscout_storage
+    kind: ns.dependency
+    meta: {}
+    component: spiralscout/storage
+    version: ">=0.1.3"
+
+  - name: rc2_spiralscout_data_explorer
+    kind: ns.dependency
+    meta: {}
+    component: spiralscout/data-explorer
+    version: ">=0.1.0"
+
+  - name: rc2_kickside_google
+    kind: ns.dependency
+    meta: {}
+    component: kickside/google
+    version: "*"
+    parameters:
+      - name: kickside.google:ui_server
+        value: app:gateway
+      - name: kickside.google:env_storage
+        value: app.env:store
+      # GoogleSheetsImport defines and loads Data Explorer tables through Storage.
+      - name: kickside.google:import_administrator_binding
+        value: spiralscout.storage.definable:administrator
+      - name: kickside.google:import_receiver_binding
+        value: spiralscout.storage.loadable:receiver
+
+  # wippy/dashboards depends on wippy-swiss/chartjs for the chart tile. The module serves
+  # its bundle from a server requirement named `server`; without a binding the boot stops
+  # with "wippy-swiss.chartjs:static: server not found".
+  - name: rc2_wippy_swiss_chartjs
+    kind: ns.dependency
+    meta: {}
+    component: wippy-swiss/chartjs
+    version: ">=0.2.0"
+    parameters:
+      - name: server
+        value: app:gateway
