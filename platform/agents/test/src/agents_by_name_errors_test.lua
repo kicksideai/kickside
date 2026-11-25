@@ -1,5 +1,6 @@
 -- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
+local json = require("json")
 local lookup = require("agents_by_name")
 local dependency = require("dependency")
 
@@ -41,16 +42,31 @@ local function details(deps: any, agent: string): (any, any)
 end
 
 -- Calls the GET /agents/details handler with a fake request and response and
--- returns what it wrote.
-local function call_route(deps: any, query: any, signed_in: boolean?): any
-    local sent: any = {}
+-- returns what it wrote. `writes` holds every body write in order, and `body`
+-- and `text` hold the last one of each kind. `logged` holds the server log
+-- lines, unless `real_logger` leaves the module's own logger in place.
+local function call_route(deps: any, query: any, signed_in: boolean?, real_logger: boolean?): any
+    local sent: any = { logged = {}, writes = {} }
+    if not real_logger then
+        deps.logger = {
+            error = function(_, message, fields)
+                sent.logged[#sent.logged + 1] = { message = message, fields = fields }
+            end,
+        }
+    end
     local req = { query = function(_, key) return query[key] end }
     local res = {
         set_header = function() end,
         set_content_type = function() end,
         set_status = function(_, status) sent.status = status end,
-        write_json = function(_, body) sent.body = body end,
-        write = function(_, text) sent.text = text end,
+        write_json = function(_, body)
+            sent.body = body
+            sent.writes[#sent.writes + 1] = body
+        end,
+        write = function(_, text)
+            sent.text = text
+            sent.writes[#sent.writes + 1] = text
+        end,
     }
     deps.http = {
         STATUS = { OK = 200, BAD_REQUEST = 400, UNAUTHORIZED = 401, NOT_FOUND = 404, INTERNAL_ERROR = 500 },
@@ -61,6 +77,56 @@ local function call_route(deps: any, query: any, signed_in: boolean?): any
     deps.security = { actor = function() if signed_in == false then return nil end return {} end }
     lookup.new(deps).details()
     return sent
+end
+
+-- Everything the route sent to the client, as one string.
+local function public_text(sent: any): string
+    local parts: {string} = {}
+    for _, written in ipairs(sent.writes) do
+        if type(written) == "string" then
+            parts[#parts + 1] = written
+        else
+            local encoded, err = json.encode(written)
+            test.is_nil(err, tostring(err))
+            parts[#parts + 1] = encoded
+        end
+    end
+    return table.concat(parts, "\n")
+end
+
+-- Requests for an agent that does not exist and for one the caller may not
+-- read. Each case builds new doubles, because call_route adds to them.
+local function no_agent_requests(): {any}
+    -- Public and private at once: only the private flag hides this agent.
+    local private_entry = { id = "app:private_agent", meta = { type = "agent.gen1", public = true, private = true }, data = {} }
+    local function registry_get(kind: string): any
+        return { registry = registry_double(function() return nil, failure(kind, "x") end) }
+    end
+    return {
+        { label = "missing registry id", deps = registry_get(errors.NOT_FOUND), agent = "app:x" },
+        { label = "denied registry id", deps = registry_get(errors.PERMISSION_DENIED), agent = "app:x" },
+        { label = "private registry agent", deps = { registry = registry_double(function() return private_entry, nil end) }, agent = private_entry.id },
+        { label = "private registry agent by name", deps = { registry = registry_double(nil, function() return { private_entry }, nil end) }, agent = "private_agent" },
+        { label = "unknown name", deps = { registry = registry_double() }, agent = "nobody" },
+        { label = "missing user agent", deps = { component = component_double(failure(errors.NOT_FOUND, "x")) }, agent = "user_agent:c1" },
+        { label = "denied user agent", deps = { component = component_double(failure(errors.PERMISSION_DENIED, "x")) }, agent = "user_agent:c1" },
+    }
+end
+
+-- Lookups that fail, with the backend text that must stay on the server.
+local function failed_lookup_requests(): {any}
+    local broken = service_returning({ success = false, kind = errors.INTERNAL, error = "database is down" })
+    local untitled = service_returning({ success = true, impl_id = USER_AGENT_IMPL, meta = { title = "" } })
+    local bad_prompts = { id = PUBLIC.id, meta = PUBLIC.meta, data = { start_prompts = "Hello" } }
+    return {
+        { cause = "registry is down", deps = { registry = registry_double(function() return nil, failure(errors.INTERNAL, "registry is down") end) }, agent = "app:x" },
+        { cause = "find failed", deps = { registry = registry_double(nil, function() return nil, failure(errors.UNAVAILABLE, "find failed") end) }, agent = "x" },
+        { cause = "access check failed", deps = { component = component_double(failure(errors.INTERNAL, "access check failed")) }, agent = "user_agent:c1" },
+        { cause = "no service", deps = { component = component_double(nil, nil, failure(errors.UNAVAILABLE, "no service")) }, agent = "user_agent:c1" },
+        { cause = "database is down", deps = { component = component_double(nil, broken) }, agent = "user_agent:c1" },
+        { cause = "user_agent:c1 has no title", deps = { component = component_double(nil, untitled) }, agent = "user_agent:c1" },
+        { cause = "has start_prompts that are not a list", deps = { registry = registry_double(function() return bad_prompts, nil end) }, agent = PUBLIC.id },
+    }
 end
 
 local function define_tests()
@@ -172,31 +238,57 @@ local function define_tests()
             test.is_nil(not_agent)
         end)
 
-        test.it("answers the details route with a generic 500 for a failed lookup", function()
-            local failed = call_route({ registry = registry_double(function() return nil, failure(errors.INTERNAL, "registry is down") end) }, { agent = "app:x" })
-            test.eq(failed.status, 500)
-            test.eq(failed.body.success, false)
-            test.eq(failed.body.error, "Agent lookup failed")
+        test.it("answers a failed lookup with 500 and a fixed error, and logs the cause", function()
+            for _, nullable in ipairs({ false, true }) do
+                for _, case in ipairs(failed_lookup_requests()) do
+                    local query = { agent = case.agent, nullable = nullable and "true" or nil }
+                    local sent = call_route(case.deps, query)
+                    test.eq(sent.status, 500, case.cause)
+                    test.eq(sent.body.success, false, case.cause)
+                    test.eq(sent.body.error, "Agent lookup failed", case.cause)
+                    test.eq(#sent.writes, 1, case.cause)
+                    test.is_nil(string.find(public_text(sent), case.cause, 1, true), case.cause)
 
-            local untitled = service_returning({ success = true, impl_id = USER_AGENT_IMPL, meta = { title = "" } })
-            local bad = call_route({ component = component_double(nil, untitled) }, { agent = "user_agent:c1" })
-            test.eq(bad.status, 500)
-            test.eq(bad.body.error, "Agent lookup failed")
+                    test.eq(#sent.logged, 1, case.cause)
+                    test.eq(sent.logged[1].fields.agent, case.agent, case.cause)
+                    test.contains(sent.logged[1].fields.error, case.cause)
+                end
+            end
+
+            -- The module's own logger takes the same call.
+            local down = registry_double(function() return nil, failure(errors.INTERNAL, "registry is down") end)
+            local sent = call_route({ registry = down }, { agent = "app:x" }, nil, true)
+            test.eq(sent.status, 500)
+            test.eq(sent.body.error, "Agent lookup failed")
         end)
 
-        test.it("answers the details route with 404 for an unknown or hidden agent", function()
-            for _, kind in ipairs({ errors.NOT_FOUND, errors.PERMISSION_DENIED }) do
-                local sent = call_route({ registry = registry_double(function() return nil, failure(kind, "x") end) }, { agent = "app:x" })
-                test.eq(sent.status, 404, kind)
-                test.eq(sent.body.success, false, kind)
-                test.eq(sent.body.error, "Agent not found", kind)
+        test.it("answers an unknown or hidden agent with the same 404", function()
+            local first: string? = nil
+            for _, case in ipairs(no_agent_requests()) do
+                local sent = call_route(case.deps, { agent = case.agent })
+                test.eq(sent.status, 404, case.label)
+                test.eq(sent.body.success, false, case.label)
+                test.eq(sent.body.error, "Agent not found", case.label)
+                test.eq(#sent.writes, 1, case.label)
+                test.eq(#sent.logged, 0, case.label)
+                -- Every case gets the same response text.
+                first = first or public_text(sent)
+                test.eq(public_text(sent), first, case.label)
             end
-            -- A registry agent that is not public is hidden the same way.
-            local private_entry = { id = "app:private_agent", meta = { type = "agent.gen1", private = true }, data = {} }
-            local hidden = call_route({ registry = registry_double(function() return private_entry, nil end) }, { agent = private_entry.id })
-            test.eq(hidden.status, 404)
-            test.eq(hidden.body.success, false)
-            test.eq(hidden.body.error, "Agent not found")
+        end)
+
+        test.it("answers an unknown or hidden agent with agent null when the request has nullable=true", function()
+            for _, case in ipairs(no_agent_requests()) do
+                local sent = call_route(case.deps, { agent = case.agent, nullable = "true" })
+                test.eq(sent.status, 200, case.label)
+                test.eq(#sent.writes, 1, case.label)
+                test.eq(public_text(sent), '{"success":true,"agent":null}', case.label)
+            end
+            -- Only the exact value turns the answer on.
+            for _, value in ipairs({ "", "1", "false", "TRUE", "null" }) do
+                local sent = call_route({ registry = registry_double() }, { agent = "app:x", nullable = value })
+                test.eq(sent.status, 404, "nullable=" .. value)
+            end
         end)
 
         test.it("answers the details route with the agent, 400 or 401 as before", function()
@@ -208,6 +300,13 @@ local function define_tests()
             test.eq(call_route({}, {}).status, 400)
             test.eq(call_route({}, { agent = "" }).status, 400)
             test.eq(call_route({}, { agent = PUBLIC.id }, false).status, 401)
+
+            -- nullable=true changes only the answer for no agent.
+            local nullable = call_route({ registry = registry_double(function() return PUBLIC, nil end) }, { agent = PUBLIC.id, nullable = "true" })
+            test.eq(nullable.status, 200)
+            test.eq(nullable.body.agent.id, PUBLIC.id)
+            test.eq(call_route({}, { nullable = "true" }).status, 400)
+            test.eq(call_route({}, { agent = PUBLIC.id, nullable = "true" }, false).status, 401)
         end)
 
         test.it("leaves a failing agent out of agents/by-name and resolves the others", function()

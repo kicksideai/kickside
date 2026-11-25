@@ -13,6 +13,7 @@ local function new(dependencies: any?): any
     local security = deps.security or security
     local registry = deps.registry or registry
     local component = deps.component or component
+    local logger = deps.logger or logger
 
 local function split_string(str: string, sep: string): {string}
     local fields: {string} = {}
@@ -34,7 +35,7 @@ local function is_public_system_agent(entry)
 end
 
 -- A missing entry and a denied read both mean "no agent" for this caller.
--- Every other failure goes back to the caller with its cause.
+-- Every other failure is returned as an error.
 local function means_no_agent(err): boolean
     return errors.is(err, errors.NOT_FOUND) or errors.is(err, errors.PERMISSION_DENIED)
 end
@@ -164,6 +165,12 @@ local function describe_agent(identifier)
     return {id = entry.id, name = name, title = entry.meta.title or name, start_prompts = prompts}
 end
 
+-- An unknown agent and one the caller may not read get the same answer, so the
+-- answer does not show whether a hidden agent exists. That answer is 404. A
+-- request with nullable=true gets 200 with agent: null instead. The json module
+-- has no null value, so that body is written as text.
+local NO_AGENT_BODY = '{"success":true,"agent":null}'
+
 local function details()
     local req, res = http.request(), http.response()
     if not req or not res then return end
@@ -182,12 +189,17 @@ local function details()
     end
     local agent, err = describe_agent(identifier)
     if err then
-        logger:error("Agent details lookup failed", { error = tostring(err) })
+        logger:error("Agent details lookup failed", { agent = identifier, error = tostring(err) })
         res:set_status(http.STATUS.INTERNAL_ERROR)
         res:write_json({success = false, error = "Agent lookup failed"})
         return
     end
     if not agent then
+        if req:query("nullable") == "true" then
+            res:set_status(http.STATUS.OK)
+            res:write(NO_AGENT_BODY)
+            return
+        end
         res:set_status(http.STATUS.NOT_FOUND)
         res:write_json({success = false, error = "Agent not found"})
         return

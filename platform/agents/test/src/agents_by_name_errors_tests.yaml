@@ -9,6 +9,7 @@ entries:
     suite: agents_by_name_errors
   source: file://agents_by_name_errors_test.lua
   method: run
+  modules: [json]
   imports:
     test: wippy.test:test
     agents_by_name: kickside.agents.api:agents_by_name
