@@ -1,3 +1,4 @@
+local logger = require("logger")
 local http = require("http")
 local registry = require("registry")
 local security = require("security")
@@ -163,12 +164,6 @@ local function describe_agent(identifier)
     return {id = entry.id, name = name, title = entry.meta.title or name, start_prompts = prompts}
 end
 
--- An unknown agent and one the caller may not read get the same answer,
--- agent: null, so the answer does not show whether a hidden agent exists. The
--- json module has no null value, so that body is written as text. A failed
--- lookup or bad agent data is 500 with its cause, for this one agent only.
-local NO_AGENT_BODY = '{"success":true,"agent":null}'
-
 local function details()
     local req, res = http.request(), http.response()
     if not req or not res then return end
@@ -187,13 +182,14 @@ local function details()
     end
     local agent, err = describe_agent(identifier)
     if err then
+        logger:error("Agent details lookup failed", { error = tostring(err) })
         res:set_status(http.STATUS.INTERNAL_ERROR)
-        res:write_json({success = false, error = tostring(err)})
+        res:write_json({success = false, error = "Agent lookup failed"})
         return
     end
     if not agent then
-        res:set_status(http.STATUS.OK)
-        res:write(NO_AGENT_BODY)
+        res:set_status(http.STATUS.NOT_FOUND)
+        res:write_json({success = false, error = "Agent not found"})
         return
     end
     res:set_status(http.STATUS.OK)

@@ -172,30 +172,31 @@ local function define_tests()
             test.is_nil(not_agent)
         end)
 
-        test.it("answers the details route with 500 and the cause for a failed lookup", function()
+        test.it("answers the details route with a generic 500 for a failed lookup", function()
             local failed = call_route({ registry = registry_double(function() return nil, failure(errors.INTERNAL, "registry is down") end) }, { agent = "app:x" })
             test.eq(failed.status, 500)
             test.eq(failed.body.success, false)
-            test.contains(tostring(failed.body.error), "registry is down")
+            test.eq(failed.body.error, "Agent lookup failed")
 
             local untitled = service_returning({ success = true, impl_id = USER_AGENT_IMPL, meta = { title = "" } })
             local bad = call_route({ component = component_double(nil, untitled) }, { agent = "user_agent:c1" })
             test.eq(bad.status, 500)
-            test.contains(tostring(bad.body.error), "user_agent:c1 has no title")
+            test.eq(bad.body.error, "Agent lookup failed")
         end)
 
-        test.it("answers the details route with agent null for an unknown or hidden agent", function()
+        test.it("answers the details route with 404 for an unknown or hidden agent", function()
             for _, kind in ipairs({ errors.NOT_FOUND, errors.PERMISSION_DENIED }) do
                 local sent = call_route({ registry = registry_double(function() return nil, failure(kind, "x") end) }, { agent = "app:x" })
-                test.eq(sent.status, 200, kind)
-                test.eq(sent.text, '{"success":true,"agent":null}', kind)
-                test.is_nil(sent.body, kind)
+                test.eq(sent.status, 404, kind)
+                test.eq(sent.body.success, false, kind)
+                test.eq(sent.body.error, "Agent not found", kind)
             end
             -- A registry agent that is not public is hidden the same way.
             local private_entry = { id = "app:private_agent", meta = { type = "agent.gen1", private = true }, data = {} }
             local hidden = call_route({ registry = registry_double(function() return private_entry, nil end) }, { agent = private_entry.id })
-            test.eq(hidden.status, 200)
-            test.eq(hidden.text, '{"success":true,"agent":null}')
+            test.eq(hidden.status, 404)
+            test.eq(hidden.body.success, false)
+            test.eq(hidden.body.error, "Agent not found")
         end)
 
         test.it("answers the details route with the agent, 400 or 401 as before", function()
