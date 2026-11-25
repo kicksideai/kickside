@@ -1,6 +1,8 @@
 -- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local sql = require("sql")
 local json = require("json")
+type DB = sql.DB
+type Transaction = sql.Transaction
 local M = {reads = 0, calls = 0, context = {}, decodes = 0, api_key = "fixture-cache-secret", model = "wire-model",
     provider_id = "wippy.llm.openai_compat:provider"}
 
