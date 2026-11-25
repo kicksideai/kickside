@@ -9,7 +9,7 @@ import { useModelsApi } from './useModelsApi.ts'
 import { makeLookups, profileEndpoint, statusLabel, statusSeverity } from './presenters.ts'
 import { usableFastModelContext } from '../modelReadiness.ts'
 import { connectFailure, type ProviderErrorType } from '../providerBilling.ts'
-import { Avatar, Button, Notice, SelectField, Spinner } from './shared'
+import { Avatar, Button, Notice, SelectField, Spinner, Toggle } from './shared'
 import ModelEditor from './ModelEditor.vue'
 import ProviderProfileEditor from './ProviderProfileEditor.vue'
 
@@ -43,6 +43,8 @@ const busy = ref(false)
 const onboardingPresets = computed(() => presets.value.filter(p => p.onboarding !== false))
 
 const selectedProviderId = computed(() => selectedPreset.value?.provider_id || COMPAT_PROVIDER)
+const generationCheck = ref(false)
+const offersGenerationCheck = computed(() => ['wippy.llm.claude:provider', 'wippy.llm.google.generative_ai:provider'].includes(selectedProviderId.value))
 const selectedAdapter = computed(() => lookups.adapterFor(selectedProviderId.value))
 const selectedEditorTag = computed(
   () => selectedPreset.value?.profile_editor_tag || selectedAdapter.value?.profile_editor_tag || COMPAT_EDITOR,
@@ -126,6 +128,7 @@ function goPick() {
   stage.value = 'pick'
 }
 function pickPreset(preset: Preset) {
+  generationCheck.value = false
   selectedPreset.value = preset
   connectFail.value = ''
   connectBillingUrl.value = ''
@@ -157,8 +160,8 @@ async function connect(payload: Record<string, unknown>) {
       await store.loadClasses()
       if (!r.ok) showConnectFailure(r.message, r.errorType, providerId)
       else {
-        connectMsg.value = 'Checking that the key can generate…'
-        const probe = await store.testProfile(created.id, true)
+        connectMsg.value = 'Testing the connection…'
+        const probe = await store.testProfile(created.id, offersGenerationCheck.value && generationCheck.value)
         if (!probe.ok) showConnectFailure(probe.message, probe.errorType, providerId)
         connectMsg.value = 'Selecting sensible defaults…'
         await autoSelectDefaults(false)
@@ -371,6 +374,8 @@ onMounted(async () => {
         </div>
 
         <template v-else>
+          <Toggle v-if="offersGenerationCheck" v-model="generationCheck"
+            label="Test generation with one output token (provider charges may apply)" />
           <ProviderProfileEditor
             v-if="useBuiltInEditor"
             :spec-key="spec.key"
