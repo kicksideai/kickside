@@ -12,6 +12,11 @@ entries:
     meta: {}
     component: wippy/dashboards
     version: ">=0.0.3"
+    parameters:
+      # Agent links open the page inside Kickside, where the dashboards plugin
+      # lists it in the navigation (same base as the plugin's nav_base).
+      - name: wippy.dashboards:page_link_base
+        value: /dashboards
 
   - name: rc2_kickside_dashboards_plugin
     kind: ns.dependency
@@ -22,6 +27,13 @@ entries:
       # The generic dataset point reads Data Explorer tables through Storage.
       - name: kickside.dashboards_plugin:readable_binding
         value: spiralscout.storage.readable:reader
+      # Dashboard pages in the Kickside navigation, shown inside the Kickside layout.
+      - name: kickside.dashboards_plugin:nav_base
+        value: /dashboards
+      - name: kickside.dashboards_plugin:ui_server
+        value: app:gateway
+      - name: kickside.dashboards_plugin:process_host
+        value: app:processes
 
   - name: rc2_spiralscout_storage
     kind: ns.dependency
