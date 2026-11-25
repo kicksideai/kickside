@@ -441,7 +441,8 @@ return test.run_cases(function()
                         { uuid.v4(), component_id, assert(json.encode({ job_id = job_id })),
                             "18:kickside.jobs.dead" .. #job_id .. ":" .. job_id .. "7:outcome", owner, fixture.outcome })
                 end
-                checkpoint(component_id, owner, upload_id, job_id, metadata, fixture.failed and "failed" or "completed")
+                -- Keep the checkpoint ineligible while the live sweeper is running.
+                checkpoint(component_id, owner, upload_id, job_id, metadata, "uploaded")
                 test.eq(#outcomes(upload_id), 0)
             end
 
@@ -453,6 +454,10 @@ return test.run_cases(function()
                     "the expired parent is pruned before checkpoint recovery")
             end
 
+            for _, item in ipairs(checkpoints) do
+                exec("UPDATE kickside_uploads SET storage_state=$1 WHERE uuid=$2",
+                    { item.failed and "failed" or "completed", item.upload_id })
+            end
             await_sweeper()
             local _, wake_err = notifier.notify({ kind = "uploads_retention_test" })
             test.is_nil(wake_err, tostring(wake_err))
