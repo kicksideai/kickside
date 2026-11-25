@@ -130,8 +130,12 @@ function M.test(profile_id: string, opts: any): (any?, any?, any?)
     end
 
     local result, err, diagnostics
-    if adapter.test then
-        result, err, diagnostics = adapter.test(profile, opts or {})
+    local probe = adapter.test
+    if type(opts) == "table" and opts.generation == true and adapter.test_generation then
+        probe = adapter.test_generation
+    end
+    if probe then
+        result, err, diagnostics = probe(profile, opts or {})
     elseif adapter.fetch then
         local rows
         rows, err, diagnostics = adapter.fetch(profile)

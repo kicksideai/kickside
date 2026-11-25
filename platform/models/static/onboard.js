@@ -3,7 +3,7 @@ import { a as r, s as n } from "./styles-Da9ZOhuE.js";
 import "@iconify/vue";
 import { define as i } from "@wippy-fe/proxy";
 const a = r(
-  () => import("./Onboard-CRyYyDhK.js"),
+  () => import("./Onboard-DlpfmckR.js"),
   { loading: "Loading model setup…", failed: "Could not load the model setup. Reload the page to try again." },
   s
 );

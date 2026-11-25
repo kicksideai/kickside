@@ -189,6 +189,12 @@ local function handoff()
         return
     end
 
+    local user, lookup_err = user_groups_repo.get_user_with_groups(claims.email)
+    if lookup_err and lookup_err ~= consts.ERROR.USER_NOT_FOUND then
+        res:set_status(http.STATUS.INTERNAL_ERROR)
+        res:write_json({ success = false, error = "Authentication system error" })
+        return
+    end
     local fresh, claim_err = handoff_nonce_repo.claim(claims.nonce, claims.exp, now)
     if claim_err then
         res:set_status(http.STATUS.INTERNAL_ERROR)
@@ -200,7 +206,6 @@ local function handoff()
         return
     end
 
-    local user = user_groups_repo.get_user_with_groups(claims.email)
     if not user or user.status ~= consts.USER_STATUS.ACTIVE
         or user.bot_account == true or tonumber(user.bot_account) == 1 then
         rejected()

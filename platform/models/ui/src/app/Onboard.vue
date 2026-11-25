@@ -158,7 +158,7 @@ async function connect(payload: Record<string, unknown>) {
       if (!r.ok) showConnectFailure(r.message, r.errorType, providerId)
       else {
         connectMsg.value = 'Checking that the key can generate…'
-        const probe = await store.testProfile(created.id)
+        const probe = await store.testProfile(created.id, true)
         if (!probe.ok) showConnectFailure(probe.message, probe.errorType, providerId)
         connectMsg.value = 'Selecting sensible defaults…'
         await autoSelectDefaults(false)

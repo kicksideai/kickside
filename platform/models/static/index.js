@@ -17,7 +17,7 @@ class n extends o {
   static get vueConfig() {
     return {
       lazyConfig: i(
-        () => import("./lazy-mount-BCFENMYS.js").then((t) => t.mountConfig),
+        () => import("./lazy-mount-CQ0ipDpO.js").then((t) => t.mountConfig),
         "Could not load Models. Reload the page to try again.",
         s
       )

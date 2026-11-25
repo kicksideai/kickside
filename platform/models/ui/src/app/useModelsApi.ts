@@ -155,10 +155,10 @@ export function useModelsApi() {
   // Authenticated connection check against the provider. Unlike discovery, this
   // does not create model cards; OpenAI-compatible profiles can use test_model
   // for a real chat-completions probe.
-  async function testProfile(id: string): Promise<CheckResult> {
+  async function testProfile(id: string, generation = false): Promise<CheckResult> {
     error.value = ''
     try {
-      const { data } = await api.post(`/api/v1/models/provider-profiles/${encodeURIComponent(id)}/test`, {})
+      const { data } = await api.post(`/api/v1/models/provider-profiles/${encodeURIComponent(id)}/test`, generation ? { generation: true } : {})
       await load()
       if (data && data.success === false) {
         error.value = data.error || 'connection test failed'

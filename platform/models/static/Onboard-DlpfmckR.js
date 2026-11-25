@@ -1,7 +1,7 @@
 import { defineComponent as Oe, ref as $, computed as f, onMounted as Ve, openBlock as n, createElementBlock as i, unref as l, createBlock as q, withCtx as oe, createTextVNode as G, toDisplayString as k, createCommentVNode as h, Fragment as I, createVNode as b, createElementVNode as s, renderList as H, normalizeClass as xe } from "vue";
 import { Icon as V } from "@iconify/vue";
 import { u as De } from "./wc-runtime-CHL0PH8L.js";
-import { u as Fe, j as Be, k as fe, l as Le, n as Re, p as Ue, a as ze, b as je, _ as be, m as qe, q as Ge } from "./useModelsApi-CUzAl2yI.js";
+import { u as Fe, j as Be, k as fe, l as Le, n as Re, p as Ue, a as ze, b as je, _ as be, m as qe, q as Ge } from "./useModelsApi-dvWzp8Sg.js";
 import { d as He, i as Ke, c as We, a as me, _ as Ye } from "./ProviderProfileEditor.vue_vue_type_script_setup_true_lang-DhB1ATyK.js";
 const Je = () => De();
 function Qe(x, C, c) {
@@ -127,7 +127,7 @@ const Ze = { class: "ob" }, et = {
             if (await c.loadClasses(), !p.ok) X(p.message, p.errorType, u);
             else {
               S.value = "Checking that the key can generate…";
-              const d = await c.testProfile(a.id);
+              const d = await c.testProfile(a.id, !0);
               d.ok || X(d.message, d.errorType, u), S.value = "Selecting sensible defaults…", await j(!1);
             }
           }
@@ -482,4 +482,4 @@ const Ze = { class: "ob" }, et = {
 export {
   Ut as default
 };
-//# sourceMappingURL=Onboard-CRyYyDhK.js.map
+//# sourceMappingURL=Onboard-DlpfmckR.js.map

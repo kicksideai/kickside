@@ -51,7 +51,7 @@ local function probe_model(rows: { any }): string
 end
 
 -- A one-token generation: listing models does not need billing, generating does.
-function M.test(profile: any, opts: any): (any?, string?, any?)
+function M.test_generation(profile: any, opts: any): (any?, string?, any?)
     local config = type(profile) == "table" and profile.config or {}
     local model = type(opts) == "table" and type(opts.model) == "string" and opts.model or ""
     if model == "" and type(config.test_model) == "string" then model = config.test_model end

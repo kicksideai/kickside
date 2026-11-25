@@ -142,7 +142,8 @@ return {run = test.run_cases(function()
         for _, row in ipairs(cases) do
             test.it("classifies " .. row[1], function()
                 http_fixture.prepare({status_code = row[3], body = row[4]}, nil)
-                local result, message, diagnostics = row[2].test(profile(), {model = "probe-model"})
+                local probe = row[2].test_generation or row[2].test
+                local result, message, diagnostics = probe(profile(), {model = "probe-model"})
                 test.is_nil(result)
                 test.not_nil(diagnostics)
                 test.eq(diagnostics.status_code, row[3])
@@ -158,9 +159,29 @@ return {run = test.run_cases(function()
             test.is_nil((assert(json.encode({message, diagnostics})):find(sentinel, 1, true)))
         end)
 
+        test.it("keeps ordinary connection checks list-only for Anthropic and Google", function()
+            local saved = assert(repo.create_profile({name = "List-only connection check",
+                provider_id = "wippy.llm.openai_compat:provider", api_key = "test-key",
+                config = {base_url = "https://example.invalid"}}))
+            local original = discovery.adapter_for
+            local ok, err = pcall(function()
+                for _, adapter in ipairs({anthropic, google}) do
+                    discovery.adapter_for = function() return adapter end
+                    http_fixture.prepare_probe('{"models":[{"id":"sample","supportedActions":["generateContent"]}]}')
+                    test.eq(assert(discovery.test(saved.id, {})).mode, "models")
+                    test.is_nil(http_fixture.probe())
+                    assert(discovery.test(saved.id, {generation = true}))
+                    test.not_nil(http_fixture.probe())
+                end
+            end)
+            discovery.adapter_for = original
+            assert(repo.delete_profile(saved.id))
+            if not ok then error(err, 0) end
+        end)
+
         test.it("probes Anthropic and Google with one generated token", function()
             http_fixture.prepare_probe('{"data":[{"id":"claude-opus-x"},{"id":"claude-haiku-x"}]}')
-            local result = assert(anthropic.test(profile(), {}))
+            local result = assert(anthropic.test_generation(profile(), {}))
             test.eq(result.model, "claude-haiku-x")
             local request = assert(http_fixture.probe())
             test.eq(request.url, "https://example.invalid/v1/messages")
@@ -169,7 +190,7 @@ return {run = test.run_cases(function()
             http_fixture.prepare_probe('{"models":[{"name":"models/text-embedding-004","supportedActions":["embedContent"]},'
                 .. '{"name":"models/gemini-pro-x","supportedActions":["generateContent"]},'
                 .. '{"name":"models/gemini-flash-x","supportedActions":["generateContent"]}]}')
-            result = assert(google.test(profile(), {}))
+            result = assert(google.test_generation(profile(), {}))
             test.eq(result.model, "gemini-flash-x")
             request = assert(http_fixture.probe())
             test.eq(request.url, "https://example.invalid/models/gemini-flash-x:generateContent")

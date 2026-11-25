@@ -157,9 +157,10 @@ local function define_tests()
 
         test.it("refuses an inactive user", function()
             assert(user_lifecycle_repo.update(USER_ID, {status = "suspended"}))
-            local status = post(sign({email = EMAIL, exp = time.now():unix() + 120, nonce = nonce()}))
+            local token = sign({email = EMAIL, exp = time.now():unix() + 120, nonce = nonce()})
+            test.eq(post(token), 401)
             assert(user_lifecycle_repo.update(USER_ID, {status = "active"}))
-            test.eq(status, 401)
+            test.eq(post(token), 401)
         end)
 
         test.it("refuses a bad signature and an expired token", function()
