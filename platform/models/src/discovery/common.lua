@@ -133,6 +133,7 @@ function M.failure_message(label: string, diagnostics: any): string
     if not diagnostics then return label end
     local fields = {}
     if diagnostics.kind then table.insert(fields, diagnostics.kind) end
+    if diagnostics.code then table.insert(fields, diagnostics.code) end
     if diagnostics.retryable ~= nil then
         table.insert(fields, "retryable=" .. tostring(diagnostics.retryable))
     end

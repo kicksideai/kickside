@@ -8,7 +8,9 @@ local fake_http = require("fake_http")
 local discover_handler = require("discover_handler")
 local test_handler = require("test_handler")
 local openai = require("openai")
-local adapters = {openai, require("anthropic"), require("google"), require("bedrock")}
+local bedrock = require("bedrock")
+local bedrock_credentials = require("bedrock_credentials")
+local adapters = {openai, require("anthropic"), require("google"), bedrock}
 local sentinel = "provider-body-credential-sentinel"
 
 local function profile()
@@ -30,6 +32,63 @@ local function check(message, diagnostics, kind, retryable, status)
 end
 
 return {run = test.run_cases(function()
+    test.describe("Bedrock discovery credentials", function()
+        local function prepare()
+            bedrock_credentials.prepare({
+                access_key = "role-access", secret_key = "role-secret", session_token = "role-session",
+            })
+            http_fixture.prepare({ status_code = 200, body = '{"modelSummaries":[]}' }, nil)
+        end
+
+        test.it("signs the discovery request with temporary credentials for a role-only profile", function()
+            prepare()
+            assert(bedrock.fetch({ config = { region = "us-west-2" } }))
+            local request = assert(http_fixture.last_get())
+            test.eq(request.url, "https://bedrock.us-west-2.amazonaws.com/foundation-models")
+            test.eq(request.headers["x-amz-security-token"], "role-session")
+            test.contains(request.headers.Authorization, "Credential=role-access/")
+            test.contains(request.headers.Authorization, "/us-west-2/bedrock/aws4_request")
+            test.eq(bedrock_credentials.calls(), 1)
+        end)
+
+        test.it("keeps explicit credentials and the configured endpoint", function()
+            prepare()
+            local configured = profile()
+            configured.secret_config.session_token = "profile-session"
+            assert(bedrock.fetch(configured))
+            local request = assert(http_fixture.last_get())
+            test.eq(request.url, "https://example.invalid/foundation-models")
+            test.eq(request.headers["x-amz-security-token"], "profile-session")
+            test.contains(request.headers.Authorization, "Credential=test-access/")
+            test.eq(bedrock_credentials.calls(), 0)
+        end)
+
+        test.it("reports incomplete and unavailable credentials without contacting Bedrock", function()
+            prepare()
+            local rows, _, diagnostics = bedrock.fetch({ config = {}, secret_config = { access_key = "profile-access" } })
+            test.is_nil(rows)
+            test.eq(diagnostics.code, "aws_credentials_incomplete")
+            test.eq(bedrock_credentials.calls(), 0)
+            test.is_nil(http_fixture.last_get())
+
+            bedrock_credentials.prepare(nil)
+            rows, _, diagnostics = bedrock.fetch({ config = {} })
+            test.is_nil(rows)
+            test.eq(diagnostics.code, "aws_credentials_unavailable")
+            test.eq(bedrock_credentials.calls(), 1)
+            test.is_nil(http_fixture.last_get())
+        end)
+
+        test.it("does not sign a custom destination with the host role", function()
+            prepare()
+            local rows, _, diagnostics = bedrock.fetch({ config = { base_url = "https://example.invalid" } })
+            test.is_nil(rows)
+            test.eq(diagnostics.code, "aws_role_endpoint_required")
+            test.eq(bedrock_credentials.calls(), 0)
+            test.is_nil(http_fixture.last_get())
+        end)
+    end)
+
     test.describe("provider discovery references", function()
         test.it("fails a discovery whose api_key_env names a variable that does not resolve, naming the reference", function()
             local saved = assert(repo.create_profile({name = "Provider discovery unresolved key",

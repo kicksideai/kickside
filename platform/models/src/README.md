@@ -253,6 +253,11 @@ Developer API `models.list`, and Bedrock `ListFoundationModels`. Google Vertex
 AI profiles can still be used by explicit model-card overlays, but the current
 publisher-model REST surface does not expose a list method.
 
+Bedrock discovery and connection testing use the profile's explicit credentials
+when provided. A profile without keys can use the runtime's EC2 instance role
+or container credentials at the standard regional AWS endpoint. The role needs
+`bedrock:ListFoundationModels` for discovery and connection testing.
+
 The connection test for first-party OpenAI probes generation through Responses.
 When the authenticated model list has no Responses-capable generation model,
 the test reports that the list succeeded and generation was skipped.
