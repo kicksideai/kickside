@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.99](https://github.com/kicksideai/kickside/compare/models-v0.1.98...models-v0.1.99) (2026-11-25)
+
+
+### Bug Fixes
+
+* **frontend:** adopt Web Host 1.0.70 and mount readiness ([#537](https://github.com/kicksideai/kickside/issues/537)) ([5d36990](https://github.com/kicksideai/kickside/commit/5d369902003a72720e2008663a2a798e595fc0a2))
+
 ## [0.1.98](https://github.com/kicksideai/kickside/compare/models-v0.1.97...models-v0.1.98) (2026-11-25)
 
 

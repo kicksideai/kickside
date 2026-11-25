@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.37](https://github.com/kicksideai/kickside/compare/transfer-v0.1.36...transfer-v0.1.37) (2026-11-25)
+
+
+### Bug Fixes
+
+* **frontend:** adopt Web Host 1.0.70 and mount readiness ([#537](https://github.com/kicksideai/kickside/issues/537)) ([5d36990](https://github.com/kicksideai/kickside/commit/5d369902003a72720e2008663a2a798e595fc0a2))
+
 ## [0.1.36](https://github.com/kicksideai/kickside/compare/transfer-v0.1.35...transfer-v0.1.36) (2026-11-16)
 
 

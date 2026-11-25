@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.102](https://github.com/kicksideai/kickside/compare/sync-v0.1.101...sync-v0.1.102) (2026-11-25)
+
+
+### Bug Fixes
+
+* **frontend:** adopt Web Host 1.0.70 and mount readiness ([#537](https://github.com/kicksideai/kickside/issues/537)) ([5d36990](https://github.com/kicksideai/kickside/commit/5d369902003a72720e2008663a2a798e595fc0a2))
+
 ## [0.1.101](https://github.com/kicksideai/kickside/compare/sync-v0.1.100...sync-v0.1.101) (2026-11-20)
 
 
