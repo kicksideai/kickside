@@ -173,7 +173,7 @@ function M.served(profile_id: string): ({ string }?, any?, any?)
         return nil, "provider has no model list: it has no discovery adapter and declares no meta.model_list"
     end
 
-    local rows, err, diagnostics = adapter.fetch(profile)
+    local rows, err, diagnostics = adapter.fetch(profile, true)
     if err then
         if not diagnostics then
             local _, classified = common.transport_error(err)
@@ -183,8 +183,11 @@ function M.served(profile_id: string): ({ string }?, any?, any?)
     end
     local out: { string } = {}
     for _, item in ipairs(rows or {}) do
-        local provider_model = adapter.model_id and adapter.model_id(item) or mapper.provider_model_id(item)
-        if provider_model then out[#out + 1] = provider_model end
+        if type(item) ~= "table" then return nil, "provider returned an invalid model row" end
+        local model_id = adapter.model_id or mapper.provider_model_id
+        local provider_model = model_id(item)
+        if type(provider_model) ~= "string" or provider_model == "" then return nil, "provider returned an invalid model ID" end
+        out[#out + 1] = provider_model
     end
     return out
 end

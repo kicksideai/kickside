@@ -123,6 +123,14 @@ return {run = test.run_cases(function()
                 test.eq(#models, 2)
                 test.eq(models[1], "served-a")
                 test.eq(models[2], "served-b")
+                for _, body in ipairs({ "{}", '{"data":{}}', '{"data":[{}]}', '{"data":[false]}' }) do
+                    http_fixture.prepare({status_code = 200, body = body}, nil)
+                    local rejected, rejection = discovery.served(saved.id)
+                    test.is_nil(rejected)
+                    test.not_nil(rejection)
+                end
+                http_fixture.prepare({status_code = 200, body = '{"data":[]}'}, nil)
+                test.eq(#assert(discovery.served(saved.id)), 0)
                 local after = assert(repo.get_profile(saved.id))
                 test.eq(after.status, before.status)
                 for _, card in ipairs(assert(repo.list_card_overlays())) do
