@@ -186,6 +186,10 @@ function M.decode_response(response: any, label: string?, require_list: boolean?
     if require_list and not json.validate_string(bedrock and bedrock_schema or list_schema, response.body) then
         return nil, "provider returned an invalid model list"
     end
+    if require_list and type(parsed) == "table" and (parsed.has_more == true
+            or (type(parsed.nextPageToken) == "string" and parsed.nextPageToken ~= "")) then
+        return nil, "provider returned a partial model list"
+    end
     return parsed
 end
 

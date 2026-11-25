@@ -123,7 +123,8 @@ return {run = test.run_cases(function()
                 test.eq(#models, 2)
                 test.eq(models[1], "served-a")
                 test.eq(models[2], "served-b")
-                for _, body in ipairs({ "{}", '{"data":{}}', '{"data":[{}]}', '{"data":[false]}' }) do
+                for _, body in ipairs({ "{}", '{"data":{}}', '{"data":[{}]}', '{"data":[false]}',
+                        '{"data":[],"has_more":true}', '{"models":[],"nextPageToken":"page-2"}' }) do
                     http_fixture.prepare({status_code = 200, body = body}, nil)
                     local rejected, rejection = discovery.served(saved.id)
                     test.is_nil(rejected)
