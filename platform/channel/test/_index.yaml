@@ -753,6 +753,8 @@ entries:
         value: app:db
       - name: kickside.component:api_router
         value: app:api
+      - name: kickside.component:lifecycle_impl
+        value: kickside.core.lifecycle:component_lifecycle_impl
 
   - name: dep.kickside_jobs
     kind: ns.dependency
