@@ -15,10 +15,10 @@ import {
 // shell resolves the tag through the host proxy (loadByTagName) — it never
 // imports the component, so a surface can be its own standalone WC module.
 //
-// Deep-link bridge: the part of the route under the surface's base path is fed to
-// the element as a `route` attribute, and a `navigate` CustomEvent from the
-// element pushes the router (so the URL reflects the in-surface location). A
-// surface that ignores both stays a plain full-screen view.
+// Before connection, the element receives the normalized surface base as
+// `base-path` and the route relative to that base as `route` (empty at the base).
+// A base change remounts the element with the new attributes. A `navigate`
+// CustomEvent from the element pushes the router to reflect its location.
 const props = withDefaults(defineProps<{ tag: string; basePath?: string; path: string; visible?: boolean }>(), {
   visible: true,
 })
@@ -143,6 +143,7 @@ async function mount() {
     // element is connected, then change in place as a retained buffer changes
     // ownership; visibility never participates in the mount watcher below.
     setWippyVisibility(next, props.visible)
+    next.setAttribute('base-path', normalizePath(basePath || '/'))
     next.setAttribute('route', subPath())
     next.addEventListener(legacy ? 'load' : 'wippy-mounted', (event) => {
       if (!current(event) || ready || (!legacy && next.wippyMountState !== 'mounted')) return

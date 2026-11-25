@@ -30,6 +30,14 @@ UI package keeps `specification: wippy-component-1.0` and uses
 `define(import.meta.url, ElementClass)`. The source and static entry both
 belong to this module; inspect their exact IDs before rebuilding.
 
+Before connecting a surface element, the shell sets `base-path` to the
+normalized navigation path and `route` to the path relative to that base.
+For a base of `/workspace/first`, `/workspace/first/details` gives
+`base-path="/workspace/first"` and `route="details"`. At the base, `route` is
+empty. A missing base defaults to `/`. Route changes update the existing
+element, while a base change remounts it with the new attributes. A component
+used by several navigation items can read `base-path` to identify its mount.
+
 The shell gives a page a definite-height surface. For a full page, `:host`
 needs `display: block; height: 100%; min-height: 0;`; the page root needs
 `height: 100%; overflow-y: auto;` so content scrolls inside that surface.
