@@ -1,9 +1,8 @@
-import { u as P, a as I, W as A, P as M } from "./wc-runtime-AHFoIAXw.js";
-import { computed as v, watch as h, defineComponent as N, ref as c, onMounted as T, openBlock as m, createElementBlock as f, withModifiers as x, toDisplayString as O, createCommentVNode as V, createVNode as R, unref as j } from "vue";
+import { u as P, a as I, W as A, P as M } from "./wc-runtime-B0OetHdg.js";
+import { computed as v, watch as h, defineComponent as N, ref as c, onMounted as T, openBlock as f, createElementBlock as m, withModifiers as x, toDisplayString as O, createCommentVNode as V, createVNode as R, unref as j } from "vue";
 import { loadByTagName as _, api as B, define as F } from "@wippy-fe/proxy";
 import { u as L, e as k, _ as U } from "./SyncPipeline.vue_vue_type_script_setup_true_lang-wUVvfzFm.js";
 import { s as z } from "./styles-CAHyBPNr.js";
-import "@iconify/vue";
 function d(r) {
   if (r == null || r === "") return {};
   const t = typeof r == "string" ? JSON.parse(r) : r;
@@ -93,12 +92,12 @@ const K = {
       } finally {
         l.value = !1;
       }
-    }), (o, e) => l.value ? (m(), f("div", K, "Loading catalog…")) : (m(), f("form", {
+    }), (o, e) => l.value ? (f(), m("div", K, "Loading catalog…")) : (f(), m("form", {
       key: 1,
       class: "kx-flow",
       onSubmit: x(y, ["prevent"])
     }, [
-      a.value ? (m(), f("p", W, O(a.value), 1)) : V("", !0),
+      a.value ? (f(), m("p", W, O(a.value), 1)) : V("", !0),
       R(U, {
         form: j(n),
         "generation-policy": b.value,
@@ -129,11 +128,11 @@ class C extends A {
     return { rootComponent: $, plugins: [M] };
   }
 }
-async function re() {
+async function ne() {
   return C;
 }
 F(import.meta.url, C);
 export {
-  re as webComponent
+  ne as webComponent
 };
 //# sourceMappingURL=sync_create.js.map

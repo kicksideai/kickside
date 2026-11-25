@@ -216,7 +216,7 @@ entries:
     meta: { comment: settings — get one value. }
     source: file://settings.lua
     method: get
-    modules: [store, security]
+    modules: [store, security, json]
     imports:
       settings_defs: kickside.settings:settings_defs
       settings_cache: kickside.settings:settings_cache
@@ -234,7 +234,7 @@ entries:
     meta: { comment: settings — set (override) one value via the canonical writer. }
     source: file://settings.lua
     method: set
-    modules: [store, security]
+    modules: [store, security, json]
     imports:
       settings_defs: kickside.settings:settings_defs
       settings_cache: kickside.settings:settings_cache
@@ -251,7 +251,7 @@ entries:
     meta: { comment: "settings — clear an override, reverting to the default." }
     source: file://settings.lua
     method: unset
-    modules: [store, security]
+    modules: [store, security, json]
     imports:
       settings_defs: kickside.settings:settings_defs
       settings_cache: kickside.settings:settings_cache
@@ -268,7 +268,7 @@ entries:
     meta: { comment: settings — list declarations merged with overrides + provenance. }
     source: file://settings.lua
     method: list
-    modules: [store, security]
+    modules: [store, security, json]
     imports:
       settings_defs: kickside.settings:settings_defs
       settings_cache: kickside.settings:settings_cache
@@ -286,7 +286,7 @@ entries:
     meta: { comment: settings — effective values for every key in a namespace. }
     source: file://settings.lua
     method: get_namespace
-    modules: [store, security]
+    modules: [store, security, json]
     imports:
       settings_defs: kickside.settings:settings_defs
       settings_cache: kickside.settings:settings_cache

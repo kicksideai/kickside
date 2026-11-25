@@ -1,34 +1,28 @@
-import { W as o, u as n } from "./wc-runtime-Bmxpx-Ro.js";
-import { l as p } from "./lazy-ZWC1tvFC.js";
-import { s as i } from "./styles-CmO1WNG3.js";
-import "@iconify/vue";
-import { define as s } from "@wippy-fe/proxy";
-const r = { props: { type: "object", properties: { route: { type: "string", default: "", description: "Deep-link sub-path under /knowledge: a kb id, optionally followed by an in-KB node path (kbId/nodeId)." } } } }, a = {
-  wippy: r
+import { W as o, l as n } from "./wc-runtime-CPT3aEO7.js";
+import { s as i } from "./styles-hpMJ42Qq.js";
+import { define as p } from "@wippy-fe/proxy";
+const s = { props: { type: "object", properties: { route: { type: "string", default: "", description: "Deep-link sub-path under /knowledge: a kb id, optionally followed by an in-KB node path (kbId/nodeId)." } } } }, r = {
+  wippy: s
 };
 class e extends o {
   static get wippyConfig() {
     return {
-      propsSchema: a.wippy.props,
+      propsSchema: r.wippy.props,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
       inlineCss: i
     };
   }
   static get vueConfig() {
     return {
-      lazyConfig: p(
-        () => import("./lazy-mount-C46RqpI0.js").then((t) => t.mountConfig),
-        "Could not load Knowledge. Reload the page to try again.",
-        n
-      )
+      ...n(() => import("./lazy-mount-C1H8lOcc.js").then((t) => t.mountConfig), { surface: "page", loading: "Loading…", failed: "Could not load Knowledge. Reload the page to try again.", timeout: 3e4 })
     };
   }
 }
-async function f() {
+async function m() {
   return e;
 }
-s(import.meta.url, e);
+p(import.meta.url, e);
 export {
-  f as webComponent
+  m as webComponent
 };
 //# sourceMappingURL=index.js.map

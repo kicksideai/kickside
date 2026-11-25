@@ -1,14 +1,10 @@
-import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, lazyVueConfig } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
-import { lazyControl } from '@widgets/lazy'
+
 import stylesText from './styles.css?inline'
 
-const Provider = lazyControl(
-  () => import('./app/provider.vue'),
-  { loading: 'Loading provider settings…', failed: 'Could not load the provider settings. Reload the page to try again.' },
-  useEvents,
-)
+
 
 // kickside-settings-provider — the shared, config-driven provider settings card.
 // One element reused by every connection/tool provider block: its block passes a
@@ -35,7 +31,7 @@ class KicksideSettingsProviderElement extends WippyVueElement<ProviderProps, Pro
   }
 
   static get vueConfig() {
-    return { rootComponent: Provider, plugins: [PrimeVuePlugin] }
+    return lazyVueConfig(() => import('./app/provider.vue').then(module => ({ rootComponent: module.default, plugins: [PrimeVuePlugin] })), { surface: 'compact', loading: 'Loading provider settings…', failed: 'Could not load the provider settings. Reload the page to try again.', delay: 200, timeout: 30000 })
   }
 }
 

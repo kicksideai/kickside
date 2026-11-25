@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
-import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, lazyVueConfig } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
-import { lazyPage } from '@widgets/lazy'
+
 import type { Events } from './constants.ts'
 import stylesText from './styles.css?inline'
 
@@ -16,11 +16,7 @@ class KicksideArtifactsElement extends WippyVueElement<Record<string, unknown>, 
 
   static get vueConfig() {
     return {
-      lazyConfig: lazyPage(
-        () => import('./artifacts-mount').then((module) => module.mountConfig),
-        'Could not load the artifact gallery. Reload the page to try again.',
-        useEvents,
-      ),
+      ...lazyVueConfig(() => import('./artifacts-mount').then((module) => module.mountConfig), { surface: 'page', loading: 'Loading…', failed: 'Could not load the artifact gallery. Reload the page to try again.', timeout: 30000 }),
     }
   }
 }

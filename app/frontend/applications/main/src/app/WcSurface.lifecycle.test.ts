@@ -9,6 +9,8 @@ vi.mock('../composables/useWippy', () => ({
 }))
 vi.mock('@wippy-fe/proxy', () => ({ on: vi.fn() }))
 
+customElements.define('test-agent-editor', class extends HTMLElement {})
+
 const wrappers: ReturnType<typeof mount>[] = []
 afterEach(() => wrappers.splice(0).forEach(wrapper => wrapper.unmount()))
 
@@ -51,6 +53,26 @@ it('reports readiness only for the surface itself', async () => {
   expect(wrapper.emitted('ready')).toBeUndefined()
   element.dispatchEvent(new CustomEvent('load', { bubbles: true, composed: true }))
   expect(wrapper.emitted('ready')).toHaveLength(1)
+})
+
+it('forwards dirty state only from the current surface', async () => {
+  const { wrapper, element, picker } = await editor()
+  picker.dispatchEvent(new CustomEvent('dirty-change', {
+    bubbles: true, composed: true, detail: { dirty: true },
+  }))
+  expect(wrapper.emitted('dirtyChange')).toBeUndefined()
+
+  element.dispatchEvent(new CustomEvent('dirty-change', { detail: { dirty: true } }))
+  element.dispatchEvent(new CustomEvent('dirty-changed', { detail: { dirty: false } }))
+  expect(wrapper.emitted('dirtyChange')).toEqual([[true]])
+  element.dispatchEvent(new CustomEvent('dirty-change', { detail: { dirty: false } }))
+  expect(wrapper.emitted('dirtyChange')).toEqual([[true], [false]])
+
+  await wrapper.setProps({ basePath: '/agents' })
+  await flushPromises()
+  expect(wrapper.get('test-agent-editor').element).not.toBe(element)
+  element.dispatchEvent(new CustomEvent('dirty-change', { detail: { dirty: true } }))
+  expect(wrapper.emitted('dirtyChange')).toEqual([[true], [false]])
 })
 
 it('still removes a surface whose own load fails', async () => {

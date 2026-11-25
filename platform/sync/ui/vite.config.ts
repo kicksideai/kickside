@@ -19,7 +19,7 @@ export default defineConfig({
   },
   plugins: [
     vue({ template: { compilerOptions: { isCustomElement: (t) => t.startsWith('wc-') || t.startsWith('kickside-') } } }),
-    wippyComponentPlugin(),
+    wippyComponentPlugin({ required: true, lazyEntries: ['sync_manage'] }),
   ],
   define: {
     'process.env.NODE_ENV': JSON.stringify('production'),

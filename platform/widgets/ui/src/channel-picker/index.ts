@@ -1,19 +1,11 @@
-import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, lazyVueConfig } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import type { ComponentProps } from './types.ts'
 import type { Events } from './constants.ts'
-import { lazyControl } from '../lazy'
+
 import stylesText from './styles.css?inline'
 
-const ChannelPicker = lazyControl(
-  () => import('./app/ChannelPicker.vue'),
-  {
-    loading: 'Loading channel picker…',
-    failed: 'Could not load the channel picker. Reload the page to try again.',
-    iconOnly: true,
-  },
-  useEvents,
-)
+
 
 const PROPS_SCHEMA: WippyPropsSchema = {
   type: 'object',
@@ -37,7 +29,7 @@ class KicksideChannelPickerElement extends WippyVueElement<ComponentProps, Event
   }
 
   static get vueConfig() {
-    return { rootComponent: ChannelPicker }
+    return lazyVueConfig(() => import('./app/ChannelPicker.vue').then(module => ({ rootComponent: module.default })), { surface: 'compact', loading: 'Loading channel picker…', failed: 'Could not load the channel picker. Reload the page to try again.', iconOnly: true, delay: 200, timeout: 30000 })
   }
 }
 

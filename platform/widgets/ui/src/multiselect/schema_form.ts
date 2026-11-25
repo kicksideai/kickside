@@ -1,14 +1,7 @@
-import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, lazyVueConfig } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
-import { lazyControl } from '../lazy'
 import type { SchemaChoice, SchemaFormValidity } from './schema-form-validation'
 import stylesText from './styles.css?inline'
-
-const SchemaForm = lazyControl(
-  () => import('./app/SchemaForm.vue'),
-  { loading: 'Loading schema form…', failed: 'Could not load the schema form. Reload the page to try again.' },
-  useEvents,
-)
 
 interface SchemaFormProps {
   schema?: unknown
@@ -50,7 +43,7 @@ class KicksideSchemaFormElement extends WippyVueElement<SchemaFormProps, SchemaF
   }
 
   static get vueConfig() {
-    return { rootComponent: SchemaForm }
+    return lazyVueConfig(() => import('./app/SchemaForm.vue').then(module => ({ rootComponent: module.default })), { surface: 'compact', loading: 'Loading schema form…', failed: 'Could not load the schema form. Reload the page to try again.', delay: 200, timeout: 30000 })
   }
 }
 

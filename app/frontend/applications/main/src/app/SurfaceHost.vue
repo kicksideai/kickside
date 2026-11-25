@@ -16,7 +16,7 @@ import { provideSurfaceActivity } from './surfaceActivity'
 const props = withDefaults(defineProps<{ path: string; routeName?: string; active?: boolean }>(), {
   active: true,
 })
-const emit = defineEmits<{ ready: []; error: [error: unknown] }>()
+const emit = defineEmits<{ ready: []; attached: [legacy: boolean]; error: [error: unknown] }>()
 provideSurfaceActivity(toRef(props, 'active'))
 const { navItems } = useSurfaces()
 const surface = shallowRef<Component | null>(null)
@@ -79,7 +79,16 @@ watch(() => [props.path, props.routeName, navItems.value], async () => {
 </script>
 
 <template>
-  <WcSurface v-if="tag" :tag="tag" :base-path="basePath" :path="path" :visible="active" @ready="emit('ready')" @error="emit('error', $event)" />
+  <WcSurface
+    v-if="tag"
+    :tag="tag"
+    :base-path="basePath"
+    :path="path"
+    :visible="active"
+    @ready="emit('ready')"
+    @attached="emit('attached', $event)"
+    @error="emit('error', $event)"
+  />
   <component v-else-if="surface" :is="surface" />
   <EmptyState
     v-else

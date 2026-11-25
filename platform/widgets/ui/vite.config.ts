@@ -19,7 +19,7 @@ const entries = {
 }
 
 export default defineConfig(({ mode }) => ({
-  plugins: [vue(), wippyComponentPlugin(), tablerIconNames()],
+  plugins: [vue(), wippyComponentPlugin({ required: true, lazyEntries: ['index', 'model_picker', 'multiselect', 'schema_form', 'channel_picker', 'connection_picker', 'component_picker'] }), tablerIconNames()],
   define: mode === 'test' ? {} : {
     'process.env.NODE_ENV': JSON.stringify('production'),
     'process.env': '{}',

@@ -50,10 +50,10 @@
   "dependencies": {
     "@kickside/ui-kit": "*",
     "@iconify-json/tabler": "*",
-    "@wippy-fe/layout": "*",
-    "@wippy-fe/router": "*",
-    "@wippy-fe/shared": "*",
-    "@wippy-fe/theme": "*",
+    "@wippy-fe/layout": "0.0.71",
+    "@wippy-fe/router": "0.0.71",
+    "@wippy-fe/shared": "0.0.71",
+    "@wippy-fe/theme": "0.0.71",
     "@fontsource-variable/inter": "*",
     "@fontsource-variable/outfit": "*",
     "@fontsource-variable/jetbrains-mono": "*"
@@ -61,8 +61,8 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.0",
     "@vue/test-utils": "^2.4.11",
-    "@wippy-fe/types-global-proxy": "*",
-    "@wippy-fe/vite-plugin": "*",
+    "@wippy-fe/types-global-proxy": "0.0.71",
+    "@wippy-fe/vite-plugin": "0.0.71",
     "autoprefixer": "^10.4.0",
     "es-module-lexer": "*",
     "happy-dom": "^20.10.6",
@@ -79,7 +79,7 @@
   },
   "peerDependencies": {
     "@iconify/vue": "^5.0.0",
-    "@wippy-fe/proxy": "*",
+    "@wippy-fe/proxy": "0.0.71",
     "axios": "^1.0.0",
     "luxon": "^3.5.0",
     "pinia": "^2.1.0",

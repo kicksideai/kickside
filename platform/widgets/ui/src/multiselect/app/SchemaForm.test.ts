@@ -37,8 +37,9 @@ async function mount(
   const changed = vi.fn()
   element.addEventListener('validity-changed', event => validity((event as CustomEvent).detail))
   element.addEventListener('config-changed', event => changed((event as CustomEvent).detail))
+  const mounted = new Promise<void>(resolve => element.addEventListener('wippy-mounted', () => resolve(), { once: true }))
   document.body.append(element)
-  await vi.waitFor(() => expect(element.shadowRoot?.querySelector('.sf-field')).toBeTruthy())
+  await mounted
   const root = element.shadowRoot!
   const fields = () => [...root.querySelectorAll('.sf-field')]
   const control = (index = 0) => fields()[index]!.querySelector<HTMLInputElement>('input, textarea, select, test-schema-picker')!

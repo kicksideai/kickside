@@ -4,7 +4,7 @@ import { latestRequest } from '@kickside/ui-kit/latestRequest'
 import InputText from 'primevue/inputtext'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
-import ProgressSpinner from 'primevue/progressspinner'
+import Skeleton from 'primevue/skeleton'
 import { computed, nextTick, ref } from 'vue'
 import { Icon } from '@iconify/vue'
 import Dialog from 'primevue/dialog'
@@ -39,6 +39,8 @@ const parentId = computed(() => {
 const rows = ref<WorkflowSummary[]>([])
 const loading = ref(true)
 const listError = ref('')
+const listLoaded = ref(false)
+const loadingList = computed(() => loading.value && rows.value.length === 0)
 const error = ref('')
 const q = ref('')
 const newTitle = ref('')
@@ -144,7 +146,10 @@ async function load() {
   listError.value = ''
   try {
     const listed = await listWorkflows()
-    if (current()) rows.value = listed
+    if (current()) {
+      rows.value = listed
+      listLoaded.value = true
+    }
   } catch (e) {
     if (current()) listError.value = humanError(e, 'Couldn’t load your Workflows.')
   } finally {
@@ -268,7 +273,7 @@ const {acceptDeletion} = useComponentDeletion(rows, row => row.id, undefined, lo
 <template>
   <div ref="rootEl" class="wf-list kx">
     <WorkflowListHeader
-      :total-count="totalCount"
+      :total-count="listLoaded ? totalCount : null"
       :label-vocab="labelVocab"
       v-model:q="q"
       v-model:label-filter="labelFilter"
@@ -369,15 +374,19 @@ const {acceptDeletion} = useComponentDeletion(rows, row => row.id, undefined, lo
       </template>
     </Dialog>
 
-    <main class="kx-body" :class="{ 'kx-body--state': !filteredRows.length }">
+    <main class="kx-body" :class="{ 'kx-body--state': !loadingList && !filteredRows.length }">
       <Message v-if="listError && rows.length" class="wf-banner" severity="error">
         {{ listError }}
         <Button label="Retry" size="small" text @click="load" />
       </Message>
 
-      <div v-if="loading && !rows.length" class="kx-empty" role="status">
-        <ProgressSpinner class="wf-status-spinner" stroke-width="4" aria-label="Loading Workflows" />
-        <span>Loading Workflows…</span>
+      <div v-if="loadingList" role="status" aria-label="Loading Workflows">
+        <div class="wf-list-skeleton" aria-hidden="true">
+          <div v-for="row in 3" :key="row" class="wf-list-skeleton-row">
+            <Skeleton width="2rem" height="2rem" animation="none" />
+            <Skeleton width="min(12rem, 45%)" height="0.875rem" animation="none" />
+          </div>
+        </div>
       </div>
 
       <div v-else-if="listError && !rows.length" class="kx-empty" role="alert">

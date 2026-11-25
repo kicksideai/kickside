@@ -1,7 +1,7 @@
-import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, lazyVueConfig } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
-import { lazyControl } from '@widgets/lazy'
+
 import type { Trait } from './app/agent-form.types'
 import stylesText from './styles.css?inline'
 
@@ -33,11 +33,7 @@ const PROPS_SCHEMA: WippyPropsSchema = {
   },
 }
 
-const MasterNamespacePicker = lazyControl(
-  () => import('./app/MasterNamespacePicker.vue'),
-  { loading: 'Loading capability scope picker…', failed: 'Could not load the capability scope picker. Reload the page to try again.' },
-  useEvents,
-)
+
 
 class KicksideMasterNamespacePickerElement extends WippyVueElement<MasterPickerProps, MasterPickerEvents> {
   static get wippyConfig(): WippyElementConfig<MasterPickerProps> {
@@ -49,7 +45,7 @@ class KicksideMasterNamespacePickerElement extends WippyVueElement<MasterPickerP
   }
 
   static get vueConfig() {
-    return { rootComponent: MasterNamespacePicker, plugins: [PrimeVuePlugin] }
+    return lazyVueConfig(() => import('./app/MasterNamespacePicker.vue').then(module => ({ rootComponent: module.default, plugins: [PrimeVuePlugin] })), { surface: 'compact', loading: 'Loading capability scope picker…', failed: 'Could not load the capability scope picker. Reload the page to try again.', delay: 200, timeout: 30000 })
   }
 }
 

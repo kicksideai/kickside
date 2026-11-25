@@ -1,7 +1,7 @@
-import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, lazyVueConfig } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
-import { lazyControl } from '@widgets/lazy'
+
 import stylesText from './trait-picker.css?inline'
 
 interface AgentTraitPickerProps { value?: string; refreshKey?: number; keepMenuOpenOnAdd?: boolean }
@@ -21,11 +21,7 @@ const PROPS_SCHEMA: WippyPropsSchema = {
   },
 }
 
-const AgentTraitPicker = lazyControl(
-  () => import('./app/AgentTraitPicker.vue'),
-  { loading: 'Loading capability picker…', failed: 'Could not load the capability picker. Reload the page to try again.' },
-  useEvents,
-)
+
 
 class KicksideAgentTraitPickerElement extends WippyVueElement<AgentTraitPickerProps, AgentTraitPickerEvents> {
   static get wippyConfig(): WippyElementConfig<AgentTraitPickerProps> {
@@ -37,7 +33,7 @@ class KicksideAgentTraitPickerElement extends WippyVueElement<AgentTraitPickerPr
   }
 
   static get vueConfig() {
-    return { rootComponent: AgentTraitPicker, plugins: [PrimeVuePlugin] }
+    return lazyVueConfig(() => import('./app/AgentTraitPicker.vue').then(module => ({ rootComponent: module.default, plugins: [PrimeVuePlugin] })), { surface: 'compact', loading: 'Loading capability picker…', failed: 'Could not load the capability picker. Reload the page to try again.', delay: 200, timeout: 30000 })
   }
 }
 

@@ -13,7 +13,7 @@ export default defineConfig({
     },
     dedupe: ['vue', '@iconify/vue', '@wippy-fe/proxy'],
   },
-  plugins: [vue(), wippyComponentPlugin()],
+  plugins: [vue(), wippyComponentPlugin({ required: true, lazyEntries: ['index', 'onboard'] })],
   // Specs assert the composed stylesheet, so CSS runs through the Vite pipeline under vitest.
   test: { css: { include: [/\.css(\?|$)/] } },
   // Lib builds don't auto-replace process.env; provide it so deps that read

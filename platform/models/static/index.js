@@ -1,30 +1,25 @@
-import { W as o, u as s } from "./wc-runtime-CHL0PH8L.js";
-import { s as r, l as i } from "./styles-C_6g8nZP.js";
-import { E as p } from "./provider-tags-C0mtMONl.js";
-import "@iconify/vue";
-import { define as a } from "@wippy-fe/proxy";
-const m = { props: { type: "object", properties: {} } }, l = {
-  wippy: m
+import { W as o, l as i } from "./wc-runtime-DYOSFvWw.js";
+import { E as n } from "./provider-tags-C0mtMONl.js";
+import { s } from "./styles-JRSdLrvT.js";
+import { define as p } from "@wippy-fe/proxy";
+const a = { props: { type: "object", properties: {} } }, l = {
+  wippy: a
 };
-class n extends o {
+class r extends o {
   static get wippyConfig() {
     return {
       propsSchema: l.wippy.props,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: r
+      inlineCss: s
     };
   }
   static get vueConfig() {
     return {
-      lazyConfig: i(
-        () => import("./lazy-mount-C0QnlPnZ.js").then((t) => t.mountConfig),
-        "Could not load Models. Reload the page to try again.",
-        s
-      )
+      ...i(() => import("./lazy-mount-gjLmW_Sl.js").then((t) => t.mountConfig), { surface: "page", loading: "Loading…", failed: "Could not load Models. Reload the page to try again.", timeout: 3e4 })
     };
   }
 }
-const c = {
+const m = {
   type: "object",
   properties: {
     mode: { type: "string" },
@@ -38,29 +33,25 @@ function g(e) {
   return class extends o {
     static get wippyConfig() {
       return {
-        propsSchema: c,
+        propsSchema: m,
         hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-        inlineCss: r
+        inlineCss: s
       };
     }
     static get vueConfig() {
       return {
-        lazyConfig: i(
-          () => import("./provider-editor-mount-Ckr-0lDM.js").then((t) => t.editorMountConfig(e)),
-          "Could not load the provider editor. Reload the page to try again.",
-          s
-        )
+        ...i(() => import("./provider-editor-mount-C9vVWd7m.js").then((t) => t.editorMountConfig(e)), { surface: "page", loading: "Loading…", failed: "Could not load the provider editor. Reload the page to try again.", timeout: 3e4 })
       };
     }
   };
 }
-async function h() {
-  return n;
+async function y() {
+  return r;
 }
-a(import.meta.url, n);
-for (const [e, t] of Object.entries(p))
+p(import.meta.url, r);
+for (const [e, t] of Object.entries(n))
   customElements.get(e) || customElements.define(e, g(t));
 export {
-  h as webComponent
+  y as webComponent
 };
 //# sourceMappingURL=index.js.map

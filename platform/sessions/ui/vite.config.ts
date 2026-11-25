@@ -14,7 +14,7 @@ export default defineConfig({
         },
       },
     }),
-    wippyComponentPlugin(),
+    wippyComponentPlugin({ required: true, lazyEntries: ['index', 'artifacts', 'chat_empty_state'] }),
   ],
   // Lib builds don't auto-replace process.env; provide it so deps that read
   // NODE_ENV don't throw "process is not defined" in the browser/shadow DOM.

@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
   confirm: vi.fn(),
   navigate: vi.fn(),
   onRouteChanged: vi.fn(),
-  loadByTagName: vi.fn().mockResolvedValue(undefined),
+  loadByTagName: vi.fn(),
   tabs: [
     { key: 'work', label: 'Work', render: 'component', component_tag: 'test-work-admin' },
     { key: 'pim', label: 'Catalogs', render: 'component', component_tag: 'test-pim-admin' },
@@ -45,6 +45,10 @@ vi.mock('../composables/useSurfaces', () => ({
     navItems: shallowRef([{ path: '/system' }]), loaded: shallowRef(true), loadNav: vi.fn(),
   }),
 }))
+
+mocks.loadByTagName.mockImplementation(async (tag: string) => {
+  if (!customElements.get(tag)) customElements.define(tag, class extends HTMLElement {})
+})
 
 let wrapper: ReturnType<typeof mount> | undefined
 afterEach(() => {

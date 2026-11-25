@@ -88,7 +88,7 @@ it('clears a failed list read once a finished deletion is read back', async () =
   expect(vi.mocked(api.get).mock.calls.filter(([url]: unknown[]) => String(url).startsWith('/api/v1/workflows?'))).toHaveLength(3)
 })
 
-it('keeps the latest list read when an earlier read fails after it', async () => {
+it.each(['failure', 'success'])('keeps the latest list read when an earlier read settles with %s', async (outcome) => {
   const workflow = { id: 'workflow', title: 'Cleanup workflow' }
   const receivers: Array<(message: unknown) => void> = []
   vi.mocked(on).mockImplementation((_topic, callback) => {
@@ -110,9 +110,13 @@ it('keeps the latest list read when an earlier read fails after it', async () =>
   await flushPromises()
   expect(wrapper.findAll('.wf-row')).toHaveLength(1)
 
-  let rejectFirst!: (error: Error) => void
+  let settleFirst!: () => void
   listReads = [
-    () => new Promise((_resolve, reject) => { rejectFirst = reject }),
+    () => new Promise((resolve, reject) => {
+      settleFirst = () => outcome === 'failure'
+        ? reject(new Error('cleanup status unavailable'))
+        : resolve({ success: true, workflows: [{ id: 'stale', title: 'Stale workflow' }] })
+    }),
     () => ({ success: true, workflows: [{ id: 'kept', title: 'Kept workflow' }] }),
   ]
   await wrapper.get('[aria-label="Actions for Cleanup workflow"]').trigger('click')
@@ -130,7 +134,7 @@ it('keeps the latest list read when an earlier read fails after it', async () =>
   expect(wrapper.findAll('.wf-row')).toHaveLength(1)
   expect(wrapper.text()).toContain('Kept workflow')
 
-  rejectFirst(new Error('cleanup status unavailable'))
+  settleFirst()
   await flushPromises()
 
   expect(wrapper.find('.wf-banner').exists()).toBe(false)

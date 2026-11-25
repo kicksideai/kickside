@@ -1,15 +1,12 @@
-import { W as e, P as o, u as s } from "./wc-runtime-Tr5oXE7R.js";
-import { l as n } from "./lazy-Cfv2E3SG.js";
-import { p as r, w as i } from "./wc-mount-N7h56Ydz.js";
+import { W as o, l as s, P as n } from "./wc-runtime-BGqR6wyP.js";
+import { p as i, w as r } from "./wc-mount-N7h56Ydz.js";
 import { s as p } from "./workflow-embed-Cq35e5M9.js";
-import "@iconify/vue";
-import { define as l } from "@wippy-fe/proxy";
-const a = [r, i, p].join(`
-`), m = n(
-  () => import("./EmbedWorkflow-RizcBQVY.js"),
-  { loading: "Loading the Workflow panel…", failed: "Could not load the Workflow panel. Reload the page to try again." },
-  s
-), u = {
+import { define as a } from "@wippy-fe/proxy";
+const l = [i, r, p].join(`
+`), m = s(
+  () => import("./EmbedWorkflow-DqUTM308.js").then(({ default: e }) => ({ rootComponent: e, plugins: [n] })),
+  { surface: "compact", loading: "Loading the Workflow panel…", failed: "Could not load the Workflow panel. Reload the page to try again." }
+), f = {
   type: "object",
   properties: {
     "flow-id": { type: "string" },
@@ -18,22 +15,22 @@ const a = [r, i, p].join(`
     label: { type: "string" }
   }
 };
-class t extends e {
+class t extends o {
   static get wippyConfig() {
     return {
-      propsSchema: u,
+      propsSchema: f,
       hostCssKeys: ["themeConfigUrl", "markdownCssUrl", "primeVueCssUrl"],
-      inlineCss: a
+      inlineCss: l
     };
   }
   static get vueConfig() {
-    return { rootComponent: m, plugins: [o] };
+    return m;
   }
 }
-async function h() {
+async function C() {
   return t;
 }
-l(import.meta.url, t);
+a(import.meta.url, t);
 export {
-  h as webComponent
+  C as webComponent
 };

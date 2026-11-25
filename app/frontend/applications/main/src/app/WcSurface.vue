@@ -22,7 +22,12 @@ import {
 const props = withDefaults(defineProps<{ tag: string; basePath?: string; path: string; visible?: boolean }>(), {
   visible: true,
 })
-const emit = defineEmits<{ ready: []; error: [error: unknown]; dirtyChange: [dirty: boolean] }>()
+const emit = defineEmits<{
+  ready: []
+  attached: [legacy: boolean]
+  error: [error: unknown]
+  dirtyChange: [dirty: boolean]
+}>()
 const wippy = useWippy()
 const router = useRouter()
 const host = ref<HTMLElement | null>(null)
@@ -82,15 +87,14 @@ function onDirtyChange(event: Event) {
   if (typeof dirty === 'boolean') emit('dirtyChange', dirty)
 }
 
-// Drop the previous element's navigate listener before it's replaced/destroyed,
-// so a tag change or unmount can't leak the handler (and its captured closure).
+// Drop the previous element's listeners before it is replaced or destroyed.
 function detach() {
-  if (el) {
-    el.removeEventListener('navigate', onNavigate)
-    el.removeEventListener('dirty-change', onDirtyChange)
-    el.removeEventListener('instrumentRequirementResolution', onInstrumentRequirementResolution)
-    el = null
-  }
+  const previous = el
+  el = null
+  previous?.removeEventListener('navigate', onNavigate)
+  previous?.removeEventListener('dirty-change', onDirtyChange)
+  previous?.removeEventListener('instrumentRequirementResolution', onInstrumentRequirementResolution)
+  previous?.remove()
 }
 
 async function mount() {
@@ -99,12 +103,6 @@ async function mount() {
   const basePath = props.basePath
   failed.value = false
   detach()
-  // `failed` conditionally removes the host. Let Vue restore it before a
-  // retry, then clear the old element before the next tag's loader can settle.
-  await nextTick()
-  if (generation !== mountGeneration || !tag || !host.value) return
-  const mountHost = host.value
-  mountHost.replaceChildren()
   if (!isComponentTag(tag)) {
     if (generation !== mountGeneration) return
     failed.value = true
@@ -112,16 +110,31 @@ async function mount() {
     return
   }
   try {
-    await wippy.loadByTagName(tag)
+    // Registration and implementation can start before Vue restores a mount host.
+    await wippy.loadByTagName(tag, { timeoutMs: 8000 })
+    await customElements.whenDefined(tag)
+    const constructor = customElements.get(tag) as (CustomElementConstructor & {
+      preloadImplementation?: () => Promise<void>
+    }) | undefined
+    if (generation !== mountGeneration) return
+    void Promise.resolve().then(() => constructor?.preloadImplementation?.()).catch(() => {
+      // The attached component owns the mount result and its error event.
+    })
+    await nextTick()
+    const mountHost = host.value
     // A slot can be evicted or retargeted while a tag is loading. Only the
     // current attempt may mount or report readiness/failure for this buffer.
     if (
       generation !== mountGeneration
-      || host.value !== mountHost
+      || !mountHost
       || props.tag !== tag
       || props.basePath !== basePath
     ) return
-    const next = document.createElement(tag)
+    const next = mountHost.ownerDocument.createElement(tag) as HTMLElement & { wippyMountState?: string }
+    const legacy = next.wippyMountState === undefined
+    let ready = false
+    const current = (event: Event) =>
+      generation === mountGeneration && el === next && event.composedPath()[0] === next
     next.style.display = 'block'
     next.style.width = '100%'
     next.style.minWidth = '0'
@@ -131,15 +144,15 @@ async function mount() {
     // ownership; visibility never participates in the mount watcher below.
     setWippyVisibility(next, props.visible)
     next.setAttribute('route', subPath())
-    next.addEventListener('load', (event) => {
-      if (event.composedPath()[0] === next && generation === mountGeneration && el === next) emit('ready')
+    next.addEventListener(legacy ? 'load' : 'wippy-mounted', (event) => {
+      if (!current(event) || ready || (!legacy && next.wippyMountState !== 'mounted')) return
+      ready = true
+      emit('ready')
     })
     next.addEventListener('error', (event) => {
-      // Shadow DOM retargets a nested control's event to the surface.
-      if (event.composedPath()[0] !== next || generation !== mountGeneration || el !== next) return
+      if (!current(event) || ready) return
       const error = new Error(`Component <${tag}> failed to load.`)
       detach()
-      mountHost.replaceChildren()
       failed.value = true
       emit('error', error)
       console.error('[kickside-surface] component error', event)
@@ -148,10 +161,11 @@ async function mount() {
     next.addEventListener('dirty-change', onDirtyChange)
     next.addEventListener('instrumentRequirementResolution', onInstrumentRequirementResolution)
     el = next
+    emit('attached', legacy)
     mountHost.replaceChildren(next)
   } catch (error) {
-    if (generation !== mountGeneration || host.value !== mountHost) return
-    mountHost.replaceChildren()
+    if (generation !== mountGeneration) return
+    host.value?.replaceChildren()
     failed.value = true
     emit('error', error)
   }

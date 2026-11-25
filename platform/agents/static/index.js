@@ -1,34 +1,28 @@
-import { W as o, u as s } from "./wc-runtime-C2f1ro5W.js";
-import { a as p } from "./lazy-Cfv2E3SG.js";
-import { s as n } from "./styles-C5MTfWEG.js";
-import "@iconify/vue";
-import { define as r } from "@wippy-fe/proxy";
-const i = { props: { type: "object", properties: {} } }, a = {
-  wippy: i
+import { W as o, l as s } from "./wc-runtime-BREvwtdZ.js";
+import { s as i } from "./styles-5upERzQv.js";
+import { define as n } from "@wippy-fe/proxy";
+const p = { props: { type: "object", properties: {} } }, r = {
+  wippy: p
 };
 class e extends o {
   static get wippyConfig() {
     return {
-      propsSchema: a.wippy.props,
+      propsSchema: r.wippy.props,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: n
+      inlineCss: i
     };
   }
   static get vueConfig() {
     return {
-      lazyConfig: p(
-        () => import("./lazy-mount-BzOaQUAm.js").then((t) => t.mountConfig),
-        "Could not load Agents. Reload the page to try again.",
-        s
-      )
+      ...s(() => import("./lazy-mount-B6kci4qV.js").then((t) => t.mountConfig), { surface: "page", loading: "Loading…", failed: "Could not load Agents. Reload the page to try again.", timeout: 3e4 })
     };
   }
 }
-async function c() {
+async function u() {
   return e;
 }
-r(import.meta.url, e);
+n(import.meta.url, e);
 export {
-  c as webComponent
+  u as webComponent
 };
 //# sourceMappingURL=index.js.map

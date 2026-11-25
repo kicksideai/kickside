@@ -39,7 +39,7 @@ local function define_tests()
             local function listed()
                 local _, err = native_handler.handler()
                 test.is_nil(err)
-                local by_name = {}
+                local by_name: { [string]: any } = {}
                 for _, row in ipairs(state.result().models) do by_name[row.name] = row end
                 return by_name
             end
