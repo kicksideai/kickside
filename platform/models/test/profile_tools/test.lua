@@ -16,7 +16,7 @@ local MANAGE = "kickside.models.traits:profiles_manage"
 local POLICY = "kickside.models.security:profile_tools"
 local ID = "pt-tool-profile"
 local HELD = "pt-held-profile"
-local SYNTHETIC_KEY = "synthetic-key-0123456789"
+local SYNTHETIC_KEY = "<fixture-key>"
 local SYNTHETIC_HEADER = "synthetic-header-value-9876"
 
 local function composed_scope(root: string): any

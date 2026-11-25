@@ -532,7 +532,8 @@ local function define_tests()
                 test.eq(after.config.extra.label, "concurrent label")
                 test.eq(after.config.timeout, postgres and initial_timeout or 46)
                 if postgres then
-                    test.is_false(result.committed)
+                    local response = assert(result)
+                    test.is_false(response.committed)
                     test.is_nil(models_repo.get_profile("io-import-concurrent"))
                 else
                     test.not_nil(models_repo.get_profile("io-import-concurrent"))

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.32](https://github.com/kicksideai/kickside/compare/users-v0.2.31...users-v0.2.32) (2026-11-25)
+
+
+### Bug Fixes
+
+* **users:** align sharing permission choices in a row ([#985](https://github.com/kicksideai/kickside/issues/985)) ([aca8ddf](https://github.com/kicksideai/kickside/commit/aca8ddff3dbc8093fafb1db7c8ae9d200c65dccc))
+
 ## [0.2.31](https://github.com/kicksideai/kickside/compare/users-v0.2.30...users-v0.2.31) (2026-11-24)
 
 

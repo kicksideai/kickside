@@ -58,7 +58,7 @@ local function define_tests()
                 test.eq(second.provider, first.provider)
                 test.eq(second.provider_title, "Second endpoint")
                 test.eq(second.provider_icon, "tabler:server")
-                local builtin = assert(rows[builtin_name], "built-in model was omitted")
+                local builtin = assert(rows[builtin_name])
                 test.eq(builtin.provider_title, "OpenAI")
                 test.eq(builtin.provider_icon, "tabler:brand-openai")
                 for _, row in ipairs({ first, second }) do
