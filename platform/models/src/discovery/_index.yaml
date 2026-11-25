@@ -60,6 +60,7 @@ entries:
     imports:
       discovery_common: kickside.models.discovery:common
       sigv4: wippy.llm.bedrock:sigv4
+      bedrock_credentials: wippy.llm.bedrock:credentials
 
   - name: provider_registry
     kind: library.lua
