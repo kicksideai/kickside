@@ -23,6 +23,7 @@ entries:
     imports:
       artifact_parts_repo: kickside.uploads.persist:artifact_parts_repo
       text_trim: kickside.uploads:text_trim
+      image_header: kickside.uploads.pages:image
       doc2md: kickside.convert.doc2md:doc2md
 
   - name: stage
@@ -210,6 +211,36 @@ entries:
     category: Thresholds
     order: 30
     description: An extracted image at or above this size counts as a full page; if one per page is present, rendering is skipped and the originals are reused.
+    scope: global
+    editable: true
+    visible: true
+
+  - name: setting.rasterize_max_bytes
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+    namespace: kickside.uploads.rasterize
+    key: rasterize_max_bytes
+    value_type: int
+    default: 3932160
+    title: Maximum OCR page bytes
+    category: Rasterization
+    description: Upper bound for each binary document page before base64 encoding. May tighten the 3932160-byte transport limit.
+    scope: global
+    editable: true
+    visible: true
+
+  - name: setting.rasterize_max_long_edge
+    kind: registry.entry
+    meta:
+      type: kickside.settings:definition
+    namespace: kickside.uploads.rasterize
+    key: rasterize_max_long_edge
+    value_type: int
+    default: 2576
+    title: Maximum OCR page edge
+    category: Rasterization
+    description: Longest rendered page edge in pixels. Zero disables this rendering preference.
     scope: global
     editable: true
     visible: true
