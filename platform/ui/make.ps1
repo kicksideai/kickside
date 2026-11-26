@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 # Windows adapter for this module's Makefile test target.
 [CmdletBinding()]
 param(

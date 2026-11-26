@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 import { onMounted, onUnmounted } from 'vue'
 import type { Router } from 'vue-router'
 import type { HostApi } from '../types'

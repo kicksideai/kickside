@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
