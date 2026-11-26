@@ -334,6 +334,25 @@ local function define_tests()
             test.eq(calls[3][1], 2)
         end)
 
+        test.it("replaces an oversized cached render even when the extracted scan covers the page", function()
+            local path = scripted_document({total = 1})
+            local id = seed_document(SCRIPTED_MIME, "<!-- page 1 -->")
+            local old, err = artifact_content_repo.create_artifact({upload_id = id, kind = "image",
+                role = "rendered-page", mime_type = "image/jpeg", ordinal = 2001,
+                content = string.rep("x", 3932161), storage_id = STORAGE_ID, metadata = {page = 1}})
+            test.is_nil(err)
+            local _, scan_err = artifact_content_repo.create_artifact({upload_id = id, kind = "image",
+                role = "extracted-image", mime_type = "image/png", ordinal = 1,
+                content = string.rep("x", 60000), storage_id = STORAGE_ID,
+                metadata = {page = 1, width = 200, height = 300}})
+            test.is_nil(scan_err)
+            test.is_true(run_stage(id, SCRIPTED_MIME, FIXTURE_SIZE, path).completed)
+            local pages = page_images.page_set(id, 51200)
+            test.eq(#pages, 1)
+            test.eq(pages[1].artifact_id, old.artifact_id)
+            test.is_true(pages[1].size < 3932161)
+        end)
+
         test.it("renders an octet-stream scan and fits a poster to the OCR dimensions", function()
             local id = seed_document("application/pdf", "<!-- page 1 -->")
             local path = id .. ".pdf"
