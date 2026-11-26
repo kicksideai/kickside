@@ -13,6 +13,7 @@ local user_agents = require("user_agents")
 
 local AGENTS_NS = "kickside.agents.registry"
 local WIPE_PROBE = "app:user_agents_update_wipe_probe"
+local UPDATE_PROBE = "app:user_agents_shared_read_probe"
 local PROC_SCOPE = "wippy.security:process"
 
 local function new_executor(user_id: string): any
@@ -77,6 +78,41 @@ local function define_tests()
             ok, err = user_agents.validate_entry_ids({ "keeper.hub.tools:dependencies" }, "tool")
             test.is_false(ok)
             test.ok((tostring(err):find("not found", 1, true)))
+        end)
+
+        -- Create requires a title, and the chat treats a user agent without one
+        -- as bad data, so an update may not clear it.
+        test.it("rejects an empty or non-string title and keeps the stored title", function()
+            local exec = new_executor(owner)
+            local name = "title_probe_agent_" .. uuid_v4():sub(1, 8)
+            local reg, err = exec:call(AGENTS_NS .. ":a_create", {
+                name = name,
+                prompt = "Title probe.",
+                model = "class:fast",
+            })
+            test.is_nil(err, "a_create: " .. tostring(err))
+            test.not_nil(reg)
+            local cid = reg.component_id :: string
+            created[#created + 1] = cid
+
+            local bad_titles: {any} = { "", 5 }
+            for _, bad in ipairs(bad_titles) do
+                local probe, perr = exec:call(UPDATE_PROBE, { op = "update", component_id = cid, patch = { title = bad } })
+                test.is_nil(perr, "probe: " .. tostring(perr))
+                test.is_nil(probe.result)
+                test.eq(probe.kind, errors.INVALID)
+                test.contains(probe.error, "title must be a non-empty string")
+            end
+
+            -- An update without a title still works and keeps the title.
+            local kept, kerr = exec:call(UPDATE_PROBE, { op = "update", component_id = cid, patch = { prompt = "Changed." } })
+            test.is_nil(kerr, "probe: " .. tostring(kerr))
+            test.is_nil(kept.error, tostring(kept.error))
+            test.is_true(kept.result.success)
+
+            local read, rerr = exec:call(UPDATE_PROBE, { op = "get", component_id = cid })
+            test.is_nil(rerr, "probe: " .. tostring(rerr))
+            test.eq(read.result.agent.title, name)
         end)
 
         test.it("aborts and leaves the stored config unchanged (no wipe)", function()

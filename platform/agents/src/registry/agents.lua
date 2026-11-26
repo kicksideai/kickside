@@ -216,6 +216,10 @@ end
 function M.update(args: any): (agent_types.ComponentRef?, error?)
     args = args or {}
     if not is_str(args.component_id) then return nil, fail(errors.INVALID, "component_id is required") end
+    -- name is the agent's title. Create requires it, so an update may not clear it.
+    if args.name ~= nil and not is_str(args.name) then
+        return nil, fail(errors.INVALID, "name must be a non-empty string")
+    end
     local budget, budget_err = agent_types.response_token_budget(args.max_tokens)
     if budget_err then return nil, budget_err end
 

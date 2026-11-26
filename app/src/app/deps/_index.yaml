@@ -210,6 +210,7 @@ entries:
       - name: api_routes
         value: |
           {
+            "agents": { "details": "@/details?agent={agent}&nullable=true" },
             "pages": { "@prefix": "/api/v1/views/pages" },
             "components": { "@prefix": "/api/v1/views/components" }
           }
