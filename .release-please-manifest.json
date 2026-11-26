@@ -4,7 +4,7 @@
   "core/core": "0.3.55",
   "core/execution": "0.2.10",
   "core/jobs": "0.1.103",
-  "platform/agents": "0.2.25",
+  "platform/agents": "0.2.26",
   "platform/automation": "0.2.47",
   "platform/blocks": "0.1.46",
   "platform/channel": "0.2.16",
@@ -30,10 +30,10 @@
   "platform/transform": "0.1.56",
   "platform/ui": "0.2.18",
   "platform/ui-kit": "1.7.10",
-  "platform/uploads": "0.3.37",
+  "platform/uploads": "0.3.38",
   "platform/users": "0.2.33",
   "platform/webhooks": "0.1.49",
   "platform/widgets": "0.1.77",
   "platform/workflows": "0.2.26",
-  "app": "0.2.64"
+  "app": "0.2.65"
 }
