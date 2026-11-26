@@ -7,6 +7,7 @@ local row_bytes = require("row_bytes")
 local boundary = require("sql_boundary")
 local job_types = require("job_types")
 local lease_release = require("lease_release")
+local wake_rows = require("wake_rows")
 
 local wake = {}
 type DialectTransaction = { db_type: (any) -> (string?, error?) }
@@ -427,9 +428,11 @@ local function wake_job_tx(db, id, opts, dbtype)
     local policy, policy_err = read_policy()
     if policy_err then return nil, policy_err end
     local control = type(opts) == "table" and opts.control == true
-    local found, advance, consumes_rearm = false, false, false
+    local job, lock_err = wake_rows.lock_job_id(db, dbtype, id, "job", response_error)
+    if lock_err then return nil, lock_err end
+    if not job then return { woken = false }, nil end
+    local advance, consumes_rearm = false, false
     local size_err = row_bytes.check_update(db, "kickside_job", id, function(row)
-        found = true
         local err
         advance, consumes_rearm, err = demand_transition(row, now, control)
         if err then return nil, err end
@@ -445,9 +448,8 @@ local function wake_job_tx(db, id, opts, dbtype)
             changes.wake_demand_at = now
         end
         return changes
-    end, (policy :: any).max_row_bytes, "wake_job")
+    end, (policy :: any).max_row_bytes, "wake_job", job)
     if size_err then return nil, size_err end
-    if not found then return { woken = false }, nil end
     local update = sql.builder.update("kickside_job")
         :where(sql.builder.eq({ id = id }))
         :where("status IN ('pending','running')")
@@ -475,11 +477,8 @@ end
 -- An addressed waiter publishes dispatch demand without changing an already
 -- due slot's schedule or retry state. The request lasts until the slot parks.
 local function ensure_due_tx(db, id, opts, dbtype)
-    local lock = dbtype == sql.type.POSTGRES and " FOR UPDATE" or ""
-    local rows, read_err = db:query("SELECT * FROM kickside_job WHERE id=$1" .. lock, { id })
-    rows, read_err = boundary.bounded_rows(rows, read_err, "addressed wake read failed", "addressed", 0, 1, response_error)
+    local job, read_err = wake_rows.lock_job_id(db, dbtype, id, "addressed", response_error)
     if read_err then return nil, read_err end
-    local job = rows[1]
     local result
     if job and job.status == "running" then
         result = { woken = true, scheduled_at = job.scheduled_at, already_due = true }

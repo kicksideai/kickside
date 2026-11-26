@@ -98,6 +98,7 @@ entries:
       lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
       capacity: kickside.core.jobs:capacity
       dead_outcome: kickside.core.jobs.persist:dead_outcome
+      wake_rows: kickside.core.jobs.persist:wake_rows
 
   - name: thread_fence
     kind: library.lua
@@ -256,6 +257,16 @@ entries:
       clock: kickside.core.jobs:clock
       lifecycle: kickside.core.jobs.persist:lifecycle
       config: kickside.core.jobs:config
+      sql_boundary: kickside.core.jobs.persist:sql_boundary
+      wake_rows: kickside.core.jobs.persist:wake_rows
+
+  - name: wake_rows
+    kind: library.lua
+    meta:
+      comment: Wake-row before job-row locking for single-job writes outside a wake.
+    source: file://wake_rows.lua
+    modules: [sql]
+    imports:
       sql_boundary: kickside.core.jobs.persist:sql_boundary
 
   # The pool notification runs under the Jobs identity: producers commit wake
