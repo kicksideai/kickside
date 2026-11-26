@@ -96,10 +96,12 @@ local function define_tests()
                 test.eq(outcome.thread_id, dead.thread_id)
                 local ordinary = leased_proc(db, dbtype, SLEEP_PROC, nil, {})
                 local attempts = assert(db:query("SELECT max_attempts FROM kickside_job WHERE id=$1", {ordinary.id}))[1]
-                test.eq(tonumber(outcome.max_attempts), tonumber(attempts.max_attempts))
+                test.is_nil(outcome.max_attempts)
 
                 test.eq(deliver(db, dbtype, outcome.id), job_types.JOB_STATE.DONE)
-                test.eq(#outcomes_for(db, job.id), 1)
+                local delivered = outcomes_for(db, job.id)
+                test.eq(#delivered, 1)
+                test.eq(tonumber(delivered[1].max_attempts), tonumber(attempts.max_attempts))
 
                 local selected = channel.select({ replies:case_receive(), time.after("5s"):case_receive() })
                 test.is_true(selected.channel == replies, "the dead handler receives the outcome")

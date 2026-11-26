@@ -289,6 +289,7 @@ function fixture.lease_own(db: sql.DB, dbtype: string, id: string?): (table?, er
         :set("status", "running")
         :set("lease_policy", assert(json.encode(snapshot)))
         :set("attempts", sql.builder.expr("attempts + 1"))
+        :set("max_attempts", sql.builder.expr("COALESCE(max_attempts, ?)", (policy :: any).retry_max_attempts))
         :set("execution_seq", sql.builder.expr("execution_seq + 1"))
         :set("lease_token", uuid.v7())
         :set("lease_until", lifecycle.future_string(dbtype, (policy :: any).lease_timeout_seconds))

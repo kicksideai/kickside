@@ -247,15 +247,15 @@ local function complete_tx_impl(tx: sql.Transaction, id: string, lease: table, o
         args[#args + 1] = scheduled
         schedule_sql = "$" .. tostring(#args)
     end
-    local error_sql = "NULL"
-    if options.record ~= nil and options.record.error ~= nil then
-        args[#args + 1] = options.record.error
-        error_sql = "$" .. tostring(#args)
-    end
     local finished_sql = "NULL"
     if not pending then
         args[#args + 1] = now
         finished_sql = "$" .. tostring(#args)
+    end
+    local error_sql = "NULL"
+    if options.record ~= nil and options.record.error ~= nil then
+        args[#args + 1] = options.record.error
+        error_sql = "$" .. tostring(#args)
     end
     args[#args + 1] = id
     local id_sql = "$" .. tostring(#args)

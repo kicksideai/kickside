@@ -2260,7 +2260,6 @@ entries:
     source: file://enqueue_native_source.lua
     modules: [uuid, time]
     imports:
-      runtime_policy: app:enqueue_native_fixture
       execution_policy: kickside.core.jobs.policy:execution
       sql: app:enqueue_native_sql
       json: app:enqueue_native_json_adapter

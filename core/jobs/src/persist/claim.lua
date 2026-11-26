@@ -147,10 +147,18 @@ end
 -- the run history starts from the value this statement wrote. Returns nil when
 -- the row is no longer pending.
 function claim.lease_row(tx: sql.Transaction, dbtype: string, id: string, token: string,
-        lease_until: string, now: string, captured: string?): (table?, error?)
-    if not captured then
-        local policy, policy_err = read_committed()
+        lease_until: string, now: string, captured: string?, default_max_attempts: integer?): (table?, error?)
+    local policy: any = nil
+    if not captured or not default_max_attempts then
+        -- Transaction-only callers have the host policy. Claim entry points
+        -- pass the committed policy values they read before opening the transaction.
+        local policy_err
+        policy, policy_err = cfg.policy()
         if policy_err then return nil, policy_err end
+        if type(policy) ~= "table" then return nil, response_error("policy") end
+        default_max_attempts = default_max_attempts or policy.retry_max_attempts
+    end
+    if not captured then
         local rows, read_err = tx:query("SELECT lease_policy FROM kickside_job WHERE id=$1 AND status='pending'", {id})
         rows, read_err = boundary.bounded_rows(rows, read_err, "claim policy lookup failed", "policy.job", 0, 1, response_error)
         if read_err then return nil, read_err end
@@ -163,9 +171,11 @@ function claim.lease_row(tx: sql.Transaction, dbtype: string, id: string, token:
     local rows, err = tx:query("UPDATE kickside_job SET status=$1, attempts=attempts+1, execution_seq="
         .. greatest .. "(execution_seq, COALESCE((SELECT MAX(r.execution_seq) FROM kickside_job_run r"
         .. " WHERE r.job_id=kickside_job.id), 0)) + 1, lease_token=$2, lease_until=$3, heartbeat_at=$4,"
-        .. " wake_demand_at=NULL, rearm_on_demand=NULL, lease_policy=$5, last_error=CASE WHEN last_error=$6 THEN NULL ELSE last_error END WHERE id=$7 AND status=$8"
-        .. " AND " .. available_concurrency_key("$1") .. " RETURNING attempts, execution_seq",
-        { job_types.JOB_STATE.RUNNING, token, lease_until, now, captured, job_types.TERMINATION_SETTLED, id, job_types.JOB_STATE.PENDING })
+        .. " wake_demand_at=NULL, rearm_on_demand=NULL, lease_policy=$5, max_attempts=COALESCE(max_attempts,$6),"
+        .. " last_error=CASE WHEN last_error=$7 THEN NULL ELSE last_error END WHERE id=$8 AND status=$9"
+        .. " AND " .. available_concurrency_key("$1") .. " RETURNING attempts, execution_seq, max_attempts",
+        { job_types.JOB_STATE.RUNNING, token, lease_until, now, captured, default_max_attempts,
+            job_types.TERMINATION_SETTLED, id, job_types.JOB_STATE.PENDING })
     rows, err = boundary.bounded_rows(rows, err, "claim lease failed", "lease", 0, 1, response_error)
     if err then return nil, err end
     local row = rows[1]
@@ -174,7 +184,9 @@ function claim.lease_row(tx: sql.Transaction, dbtype: string, id: string, token:
     if attempts_err then return nil, attempts_err end
     local sequence, sequence_err = boundary.number_value(row.execution_seq, "lease.execution_seq", 1, true, false, response_error)
     if sequence_err then return nil, sequence_err end
-    return { attempts = attempts, execution_seq = sequence }, nil
+    local max_attempts, max_err = boundary.number_value(row.max_attempts, "lease.max_attempts", 1, true, false, response_error)
+    if max_err then return nil, max_err end
+    return { attempts = attempts, execution_seq = sequence, max_attempts = max_attempts }, nil
 end
 
 local function select_next_pending(tx: sql.Transaction, dbtype: string, now: string, lock_suffix: string): (table?, error?)
@@ -228,18 +240,20 @@ function claim.claim_job(db: sql.DB, dbtype: string): (table?, error?)
     local lease_until = lifecycle.future_string(dbtype, lease_seconds)
     local captured, capture_err, snapshot = capture(policy :: table, job)
     if capture_err then return nil, boundary.rollback(tx, capture_err, "claim rollback failed") end
+    local default_max_attempts = (policy :: any).retry_max_attempts
     local size_err = row_bytes.check_update(tx, "kickside_job", job.id, function(row)
         local attempts, sequence = tonumber(row.attempts), tonumber(row.execution_seq)
         if not attempts or not sequence then return nil, (errors.new({
             message = "invalid claim counters", kind = errors.INTERNAL }) :: error) end
         return { status = job_types.JOB_STATE.RUNNING,
-            attempts = attempts + 1, execution_seq = sequence + 1,
+            attempts = attempts + 1, execution_seq = sequence + 1, max_attempts = row.max_attempts or default_max_attempts,
             lease_token = lease_token, lease_until = lease_until, heartbeat_at = now, lease_policy = captured, wake_demand_at = row_bytes.NULL,
             rearm_on_demand = row_bytes.NULL,
                 last_error = row.last_error == job_types.TERMINATION_SETTLED and row_bytes.NULL or row.last_error }
     end, (policy :: any).max_row_bytes, "claim_job")
     if size_err then return nil, boundary.rollback(tx, size_err, "claim rollback failed") end
-    local leased, update_err = claim.lease_row(tx, dbtype, tostring(job.id), lease_token, lease_until, now, captured)
+    local leased, update_err = claim.lease_row(tx, dbtype, tostring(job.id), lease_token, lease_until, now,
+        captured, default_max_attempts)
     if update_err then
         return nil, boundary.rollback(tx, errors.wrap(update_err, "claim update failed"), "claim rollback failed")
     end
@@ -257,6 +271,7 @@ function claim.claim_job(db: sql.DB, dbtype: string): (table?, error?)
     job.lease_policy = snapshot
     job.lease_until = lease_until
     job.attempts = leased.attempts
+    job.max_attempts = leased.max_attempts
     job.execution_seq = leased.execution_seq
     return job, nil
 end
@@ -729,6 +744,7 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
         if all_held then reserved[#reserved + 1] = job end
     end
     local claimed: table[] = {}
+    local default_max_attempts = (policy :: any).retry_max_attempts
     -- Each row leases under its own savepoint. A row-scoped refusal (a lost
     -- concurrency-key race, a row over the size limit, run history that cannot
     -- start) rolls back that row alone and is reported; database faults and a
@@ -752,7 +768,7 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
             if not attempts or not sequence then return nil, (errors.new({
                 message = "invalid claim counters", kind = errors.INTERNAL }) :: error) end
             return { status = job_types.JOB_STATE.RUNNING,
-                attempts = attempts + 1, execution_seq = sequence + 1,
+                attempts = attempts + 1, execution_seq = sequence + 1, max_attempts = row.max_attempts or default_max_attempts,
                 lease_token = token, lease_until = lease_until, heartbeat_at = now, lease_policy = captured, wake_demand_at = row_bytes.NULL,
                 rearm_on_demand = row_bytes.NULL,
                 last_error = row.last_error == job_types.TERMINATION_SETTLED and row_bytes.NULL or row.last_error }
@@ -760,7 +776,8 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
         local leased: table? = nil
         if not refusal then
             local update_err: error? = nil
-            leased, update_err = claim.lease_row(tx, dbtype, tostring(job.id), token, lease_until, now, captured)
+            leased, update_err = claim.lease_row(tx, dbtype, tostring(job.id), token, lease_until, now,
+                captured, default_max_attempts)
             if update_err then
                 return nil, boundary.rollback(tx, errors.wrap(update_err, "claim batch update failed"), "claim rollback failed")
             end
@@ -772,6 +789,7 @@ function claim.claim_batch(db: sql.DB, dbtype: string, requested: integer?, pref
             job.lease_policy = snapshot
             job.lease_until = lease_until
             job.attempts = leased.attempts
+            job.max_attempts = leased.max_attempts
             job.execution_seq = leased.execution_seq
             local owner_id: string? = worker_ids and worker_ids[#claimed + 1] or worker_id
             if owner_id then

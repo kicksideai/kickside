@@ -250,3 +250,16 @@ entries:
     imports:
       migration: wippy.migration:migration
     method: migrate
+
+  - name: 33_claim_attempt_limit
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      comment: Allows jobs to defer the default attempt limit until claim.
+      depends_on: [ns:wippy.migration, "kickside.core.jobs.migrations:32_wake_retention"]
+      timestamp: "2026-11-25T00:00:33Z"
+    source: file://33_claim_attempt_limit.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate
