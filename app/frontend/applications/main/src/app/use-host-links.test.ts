@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
-import { defineComponent } from 'vue'
-import type { Router } from 'vue-router'
+import { defineComponent, ref } from 'vue'
+import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 import type { Window as HappyDOMWindow } from 'happy-dom'
 import { classifyLink, host as proxyHost, setLocalRouter } from '@wippy-fe/proxy'
-import { createAppRouter } from '../router'
+import { createAppRouter, routes } from '../router'
+import type { NavItem } from '../composables/useSurfaces'
 import { useHostLinks } from './use-host-links'
 
 // The real proxy entry reads the Host API eagerly, even for its pure exports.
@@ -15,6 +16,20 @@ vi.hoisted(() => {
 afterAll(() => vi.unstubAllGlobals())
 
 vi.mock('./SurfaceHost.vue', () => ({ default: { render: () => null } }))
+vi.mock('../composables/useSurfaces', () => ({ useSurfaces: () => ({ navItems }) }))
+
+const navItems = ref<NavItem[]>([])
+const { resolve } = createRouter({ history: createMemoryHistory(), routes })
+
+function navItem(path: string): NavItem {
+  return {
+    id: path, path, label: 'Reports', icon: 'tabler:chart-bar',
+    route_name: 'reports', category: '', order: 0,
+    render: 'component', component_tag: 'test-reports',
+  }
+}
+
+beforeEach(() => { navItems.value = [navItem('/dashboards')] })
 
 // Preserve the click's cancellation state without following unhandled anchors.
 const navigationSettings = (window as unknown as HappyDOMWindow).happyDOM.settings.navigation
@@ -37,7 +52,7 @@ const context = {
   hostOrigin: 'http://localhost:8098',
 }
 
-function setup(router: Pick<Router, 'push'> = { push: vi.fn() }) {
+function setup(router: Pick<Router, 'push' | 'resolve'> = { push: vi.fn(), resolve }) {
   const host = {
     classifyLink: vi.fn((href: string | null | undefined) => classifyLink(href, context)),
     navigate: vi.fn(),
@@ -90,6 +105,59 @@ describe('shell host links', () => {
     expect(host.navigate).not.toHaveBeenCalled()
   })
 
+  it.each(['/', '/sessions', '/sessions/abc', '/system/settings/profile', '/connections', '/inbox'])(
+    'pushes the named shell route %s without nav items', (href) => {
+      navItems.value = []
+      const { host, router } = setup()
+      expect(click(anchor(href).label).defaultPrevented).toBe(true)
+      expect(host.classifyLink.mock.results[0]?.value.kind).toBe('child-nav')
+      expect(router.push).toHaveBeenCalledExactlyOnceWith(href)
+      expect(host.navigate).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each(['/api/v1/uploads/x/download', '/app/assets/report.pdf', '/@static/assets/main.js',
+    '/webcomponents-reports/main.js', '/unknown', '/dashboards-other'])(
+    'leaves the unowned child-nav path %s to the browser', (href) => {
+      const { host, router } = setup()
+      expect(click(anchor(href).label).defaultPrevented).toBe(false)
+      expect(host.classifyLink.mock.results[0]?.value.kind).toBe('child-nav')
+      expect(router.push).not.toHaveBeenCalled()
+      expect(host.navigate).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each(['/dashboards?view=all#latest', '/dashboards/dash/orders?view=all#latest'])(
+    'matches the normalized nav-item path for %s', (href) => {
+      navItems.value = [navItem(' dashboards ')]
+      const { host, router } = setup()
+      expect(click(anchor(href).label).defaultPrevented).toBe(true)
+      expect(router.push).toHaveBeenCalledExactlyOnceWith(href)
+      expect(host.navigate).not.toHaveBeenCalled()
+    },
+  )
+
+  it('uses the current effective navigation when a nav item is added or removed', () => {
+    navItems.value = []
+    const { router } = setup()
+    const href = '/reports/orders'
+    const { label } = anchor(href)
+    expect(click(label).defaultPrevented).toBe(false)
+    navItems.value = [navItem('/reports')]
+    expect(click(label).defaultPrevented).toBe(true)
+    navItems.value = []
+    expect(click(label).defaultPrevented).toBe(false)
+    expect(router.push).toHaveBeenCalledExactlyOnceWith(href)
+  })
+
+  it('does not treat the root nav item as owning every path', () => {
+    navItems.value = [navItem('/')]
+    const { host, router } = setup()
+    expect(click(anchor('/api/v1/uploads/x/download').label).defaultPrevented).toBe(false)
+    expect(router.push).not.toHaveBeenCalled()
+    expect(host.navigate).not.toHaveBeenCalled()
+  })
+
   it.each([true, false])('navigates host-nav once through the host (shadow root: %s)', (shadow) => {
     const { host, router } = setup()
     const href = '/app/keeper/example?view=all#latest'
@@ -118,7 +186,7 @@ describe('shell host links', () => {
 
   it.each(['host-nav', 'child-nav'] as const)('uses a validated href without normalizedPath (%s)', (kind) => {
     const { host, router } = setup()
-    const href = '/keeper/example'
+    const href = '/dashboards/dash/orders'
     host.classifyLink.mockReturnValue({ kind, href })
     expect(click(anchor(href).label).defaultPrevented).toBe(true)
     expect(kind === 'host-nav' ? host.navigate : router.push).toHaveBeenCalledExactlyOnceWith(href)
@@ -182,13 +250,16 @@ describe('shell host links', () => {
     expect(router.push).not.toHaveBeenCalled()
   })
 
-  it.each(['#', '#latest'])('prevents ignored hash link %s', (href) => {
-    const { host, router } = setup()
-    expect(click(anchor(href).label).defaultPrevented).toBe(true)
-    expect(host.classifyLink.mock.results[0]?.value.kind).toBe('ignore')
-    expect(host.navigate).not.toHaveBeenCalled()
-    expect(router.push).not.toHaveBeenCalled()
-  })
+  it.each([true, false].flatMap(shadow => ['', '#', '#latest'].map(href => ({ href, shadow }))))(
+    'leaves an empty or hash href $href to the browser (shadow root: $shadow)', ({ href, shadow }) => {
+      const { host, router } = setup()
+      expect(click(anchor(href, shadow).label).defaultPrevented).toBe(false)
+      if (href) expect(host.classifyLink.mock.results[0]?.value.kind).toBe('ignore')
+      else expect(host.classifyLink).not.toHaveBeenCalled()
+      expect(host.navigate).not.toHaveBeenCalled()
+      expect(router.push).not.toHaveBeenCalled()
+    },
+  )
 
   it('allows double slashes in a query or fragment', () => {
     const { host, router } = setup()
