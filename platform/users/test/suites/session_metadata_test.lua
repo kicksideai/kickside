@@ -22,17 +22,23 @@ local function define_tests()
         test.it("reserves session context while retaining server metadata", function()
             local metadata = session_metadata.actor({user_id = "metadata-user"}, {}, "scope", {}, {
                 login_time = "2026-01-01T00:00:00Z", ip_address = "192.0.2.1", user_agent = "session-test",
+                auth_method = "sso", sso_provider = "github",
             }, {
                 session = {login_time = "forged"}, login_time = "forged",
                 ip_address = "forged", user_agent = "forged", provider_trace = "retained",
+                auth_method = "forged", sso_provider = "forged",
             })
             test.not_nil(metadata.session)
             test.eq(metadata.session.login_time, "2026-01-01T00:00:00Z")
             test.eq(metadata.session.ip_address, "192.0.2.1")
             test.eq(metadata.session.user_agent, "session-test")
+            test.eq(metadata.session.auth_method, "sso")
+            test.eq(metadata.session.sso_provider, "github")
             test.is_nil(metadata.login_time)
             test.is_nil(metadata.ip_address)
             test.is_nil(metadata.user_agent)
+            test.is_nil(metadata.auth_method)
+            test.is_nil(metadata.sso_provider)
             test.eq(metadata.provider_trace, "retained")
         end)
 
@@ -40,12 +46,15 @@ local function define_tests()
             for _, context in ipairs({{}, {value = false}, {value = true}, {value = 17}, {value = "invalid"}}) do
                 local metadata = session_metadata.actor({user_id = "metadata-user"}, {}, "scope", {}, context.value, {
                     login_time = "old-time", ip_address = "old-address", user_agent = "old-agent",
+                    auth_method = "old-method", sso_provider = "old-provider",
                     session = {login_time = "forged"}, provider_trace = "retained",
                 })
                 test.eq(next(metadata.session), nil)
                 test.is_nil(metadata.login_time)
                 test.is_nil(metadata.ip_address)
                 test.is_nil(metadata.user_agent)
+                test.is_nil(metadata.auth_method)
+                test.is_nil(metadata.sso_provider)
                 test.eq(metadata.provider_trace, "retained")
             end
         end)
