@@ -82,7 +82,13 @@ const pickerSchemaField = computed(() => {
   const component = fields.filter(({ field }) => field.picker === 'wc-component-picker')
   if (component.length === 1) return component[0]
   const structured = fields.filter(({ field }) => typeof field.value_field === 'string' && field.value_field)
-  return structured.length === 1 ? structured[0] : null
+  if (structured.length === 1) return structured[0]
+  // Older standalone thread pickers declared their catalog on thread_id before
+  // the schema carried an explicit picker. Do not borrow another field's source.
+  if (component.length === 0 && structured.length === 0) {
+    return fields.find(({ key, field }) => key === 'thread_id' && !field.picker && typeof field.source === 'string' && field.source.trim()) ?? null
+  }
+  return null
 })
 function schemaPickerString(key: string): string {
   return str(pickerSchemaField.value?.field[key]).trim()

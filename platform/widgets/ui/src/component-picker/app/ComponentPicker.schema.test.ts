@@ -126,3 +126,26 @@ it('does not revive a legacy thread_id when an explicit schema-owned selection i
   expect(wrapper.get('.cp-value').text()).toBe('Select…')
   wrapper.unmount()
 })
+
+it('uses the legacy thread_id field catalog and keeps the standalone selection key', async () => {
+  vi.clearAllMocks()
+  props.value = {
+    schema: { properties: { thread_id: { source: '/api/v1/workflows/published' } } },
+    meta: JSON.stringify({ thread_class: 'workflow', title: 'Workflow' }),
+  }
+  vi.mocked(api.get).mockImplementation(async (url: string) => {
+    if (url === '/api/v1/workflows/published') return { data: { items: [{ id: 'wf-published', label: 'Published workflow' }] } } as never
+    throw new Error(`Unexpected catalog request: ${url}`)
+  })
+  const wrapper = mount(ComponentPicker, {
+    global: { stubs: { AnchoredPanel: { props: ['open'], template: '<div v-if="open"><slot /></div>' } } },
+  })
+
+  await wrapper.get('.cp').trigger('click')
+  await flushPromises()
+  expect(api.get).toHaveBeenCalledWith('/api/v1/workflows/published')
+  expect(wrapper.get('.cp-row-main').text()).toContain('Published workflow')
+  await wrapper.get('.cp-row-main').trigger('click')
+  expect(emit).toHaveBeenLastCalledWith('config-changed', { thread_id: 'wf-published' })
+  wrapper.unmount()
+})

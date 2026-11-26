@@ -23,7 +23,7 @@ class r extends a {
     };
   }
   static get vueConfig() {
-    return e(() => import("./ComponentPicker-D6il1n1p.js").then((o) => ({ rootComponent: o.default })), { surface: "compact", loading: "Loading component picker…", failed: "Could not load the component picker. Reload the page to try again.", iconOnly: !0, delay: 200, timeout: 3e4 });
+    return e(() => import("./ComponentPicker-Bb4J_r3B.js").then((o) => ({ rootComponent: o.default })), { surface: "compact", loading: "Loading component picker…", failed: "Could not load the component picker. Reload the page to try again.", iconOnly: !0, delay: 200, timeout: 3e4 });
   }
 }
 async function l() {
