@@ -177,18 +177,22 @@ local function public_card_summary(card: any): any
     }
 end
 
--- Every route the card carries in order, route-owned fields (options, pricing,
--- limits, sampling) included. Provider context holds resolved credentials and
--- stays out of the projection.
+-- Copy the public route fields explicitly. Provider entries may carry private
+-- transport settings alongside the catalog fields.
 local function public_routes(card: any): { any }
     local routes: { any } = {}
     for _, provider in ipairs(card.providers or {}) do
-        local route: { [string]: any } = {}
-        for key, value in pairs(provider) do
-            if key ~= "id" and key ~= "context" then route[key] = value end
-        end
-        route.provider_id = provider.id
-        routes[#routes + 1] = policy.scrub_sensitive(route)
+        routes[#routes + 1] = policy.scrub_sensitive({
+            provider_id = provider.id,
+            provider_model = provider.provider_model,
+            provider_profile_id = provider.provider_profile_id,
+            options = provider.options,
+            pricing = provider.pricing,
+            sampling = provider.sampling,
+            limits = provider.limits,
+            max_tokens = provider.max_tokens,
+            output_tokens = provider.output_tokens,
+        })
     end
     return routes
 end

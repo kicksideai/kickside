@@ -375,6 +375,7 @@ local function define_tests()
                             options = { thinking_effort = "low", api_key = "route-a-secret" },
                             pricing = { input = 1, output = 2 },
                             max_tokens = 100000,
+                            transport_settings = { internal_label = "private" },
                         },
                         {
                             id = "wippy.llm.anthropic:provider",
@@ -402,6 +403,7 @@ local function define_tests()
                 test.eq(routes[1].options.thinking_effort, "low")
                 test.is_nil(routes[1].options.api_key)
                 test.is_nil(routes[1].context)
+                test.is_nil(routes[1].transport_settings)
                 test.eq(routes[1].pricing.input, 1)
                 test.eq(routes[1].max_tokens, 100000)
                 test.eq(routes[2].provider_id, "wippy.llm.anthropic:provider")
