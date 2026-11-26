@@ -116,6 +116,19 @@ work. Core remains independent of Settings.
 - `unset({ namespace, key }) -> { success }` (revert to default)
 - `list({ namespace? }) -> { success, settings[] }` (declarations merged with overrides + provenance)
 - `get_namespace({ namespace }) -> { success, values, overridden }` (`overridden` lists the keys with a stored override)
+- `definitions({ namespace }) -> { success, definitions[] }` (declaration metadata only: type, default, schema, `visible`, `read_access`, presentation hints; never a value, and no default for a `secret`)
+
+### Reading definitions
+
+`definitions` serves a module that needs the declarations of its own
+namespace, including `visible: false` and `read_access: admin` ones, without
+admin list access. Definitions are registry entries, so the access rule is the
+registry's: the function carries no registry grant of its own and scans under
+the caller's policy, and the registry answers only the definition entries the
+caller holds `registry.get` on. A module's `module_access` policy grants that on
+its own entries, so it reads its own definitions and nothing else; an admin
+scope reads every namespace; a caller with no grant receives an empty list.
+`namespace` is required. Use `get_namespace` for values.
 
 A consumer reads a setting through the contract; e.g. a retention sweeper reads
 `get({ namespace = "kickside.vacuum", key = "global_retention_days" })`.
