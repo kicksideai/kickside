@@ -71,4 +71,6 @@ function M.validate(bytes: string, mime: string, limits: types.PageLimits, page:
         width = width, height = height, image_checksum = checksum}, nil
 end
 
+M.dimensions = dimensions
+
 return M

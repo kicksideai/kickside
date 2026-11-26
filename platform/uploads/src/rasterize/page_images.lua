@@ -1,4 +1,5 @@
 local artifact_parts_repo = require("artifact_parts_repo")
+local image_header = require("image_header")
 local doc2md = require("doc2md")
 local trim = require("text_trim").trim
 
@@ -41,6 +42,41 @@ local function document_artifacts(upload_id: string): { any }
         end
     end
     return current
+end
+
+-- Keep OCR documents portable across vision providers. Five MiB on the wire
+-- leaves 3.75 MiB for the binary image before base64 encoding.
+M.MAX_OCR_BYTES = 3932160
+M.DEFAULT_MAX_LONG_EDGE = 2576
+
+function M.pixel_size(bytes: string): (integer?, integer?)
+    local width, height = image_header.dimensions(bytes)
+    if width then return width, height end
+    if bytes:sub(1, 4) == "RIFF" and bytes:sub(9, 12) == "WEBP" then
+        local kind = bytes:sub(13, 16)
+        if kind == "VP8X" and #bytes >= 30 then
+            return 1 + string.unpack("<I3", bytes, 25), 1 + string.unpack("<I3", bytes, 28)
+        elseif kind == "VP8 " and #bytes >= 30 and bytes:sub(24, 26) == "\157\1\42" then
+            return string.unpack("<I2", bytes, 27) % 16384, string.unpack("<I2", bytes, 29) % 16384
+        elseif kind == "VP8L" and #bytes >= 25 and bytes:byte(21) == 47 then
+            local bits = string.unpack("<I4", bytes, 22)
+            return 1 + bits % 16384, 1 + math.floor(bits / 16384) % 16384
+        end
+    end
+    if (bytes:sub(1, 6) == "GIF87a" or bytes:sub(1, 6) == "GIF89a") and #bytes >= 10 then
+        return string.unpack("<I2", bytes, 7), (string.unpack("<I2", bytes, 9))
+    end
+    return nil, nil
+end
+
+local vision_mimes = {["image/jpeg"] = true, ["image/png"] = true, ["image/gif"] = true,
+    ["image/webp"] = true, ["image/jpg"] = true, ["image/pjpeg"] = true}
+
+function M.ocr_image_error(mime: any, size: number, edge: number, max_bytes: number, max_edge: number): string?
+    local key = type(mime) == "string" and (mime:lower() .. ";"):match("^%s*([^;]-)%s*;")
+    if not key or not vision_mimes[key] then return "unsupported_image_format" end
+    if size > max_bytes or (max_edge > 0 and edge > max_edge) then return "image_too_large" end
+    return nil
 end
 
 -- Rendered-page screenshots produced by the rasterizer.
