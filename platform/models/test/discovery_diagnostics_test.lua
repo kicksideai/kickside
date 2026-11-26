@@ -150,6 +150,16 @@ return {run = test.run_cases(function()
     end)
 
     test.describe("declared model list", function()
+        test.it("keeps provider exception details out of the public error", function()
+            local profile = assert(repo.create_profile({id = "fixture-failing-list", name = "Failure",
+                provider_id = "app:listed_provider", config = {}}))
+            local models, failure = discovery.served(profile.id)
+            assert(repo.delete_profile(profile.id))
+            test.is_nil(models)
+            test.contains(tostring(failure), "model list failed")
+            test.is_nil(tostring(failure):find("private provider detail", 1, true))
+        end)
+
         test.it("distinguishes an empty model list from invalid provider replies", function()
             for _, id in ipairs({"fixture-empty-list", "fixture-missing-list", "fixture-map-list", "fixture-invalid-id"}) do
                 local profile = assert(repo.create_profile({id = id, name = id, provider_id = "app:listed_provider", config = {}}))

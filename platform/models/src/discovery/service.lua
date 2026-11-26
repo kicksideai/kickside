@@ -134,10 +134,13 @@ end
 -- { models = { provider_model, ... } }), or nil when it declares none.
 local function declared_list(profile_id: string, provider_id: string): ({ string }?, any?, boolean)
     local entry = registry.get(provider_id)
-    local fn = entry and entry.meta and entry.meta.model_list
+    local fn = entry and entry.meta and entry.meta.type == "llm.provider" and entry.meta.model_list
     if type(fn) ~= "string" or fn == "" then return nil, nil, false end
     local answer, err = funcs.new():call(fn, { profile_id = profile_id })
-    if err then return nil, "model list failed: " .. tostring(err), true end
+    if err then
+        local message = common.transport_error(err, "model list failed")
+        return nil, message, true
+    end
     local invalid = "provider returned an invalid model list"
     if type(answer) ~= "table" or type(answer.models) ~= "table" then return nil, invalid, true end
     local count, last = 0, 0
