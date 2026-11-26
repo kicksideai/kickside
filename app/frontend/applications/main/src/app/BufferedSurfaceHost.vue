@@ -123,5 +123,5 @@ function retry(slot: SwapSlot<SurfaceEntry>) {
 .surface-buffer__loader { pointer-events: none; background: color-mix(in srgb, var(--p-content-background) 25%, transparent); color: var(--p-text-muted-color); }
 .surface-buffer__error { padding: 1.5rem; background: var(--p-content-background); color: var(--p-text-muted-color); }
 .surface-buffer__error strong { color: var(--p-text-color); }
-.surface-buffer__retry { justify-self: center; padding: .375rem .75rem; border: 1px solid currentColor; border-radius: .375rem; }
+.surface-buffer__retry { justify-self: center; padding: .375rem .75rem; border: 1px solid currentColor; border-radius: var(--kx-radius-8, 8px); }
 </style>
