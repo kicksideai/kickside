@@ -146,23 +146,19 @@ async function connect(payload: Record<string, unknown>) {
   connectFail.value = ''
   connectBillingUrl.value = ''
   try {
-    payload.enabled = true
-    const before = new Set(profiles.value.map(p => p.id))
-    connectMsg.value = 'Saving connection…'
-    const ok = await store.saveProfile('create', '', payload)
-    if (!ok) { showConnectFailure(error.value || 'Could not save the connection.'); return }
+    connectMsg.value = 'Saving and testing the connection…'
+    const created = await store.createProfile({ ...payload, enabled: true }, offersGenerationCheck.value && generationCheck.value)
+    if (!created) { showConnectFailure(error.value || 'Could not save the connection.'); return }
 
-    const created = profiles.value.find(p => !before.has(p.id))
-    if (created) {
-      connectMsg.value = 'Verifying key and importing models…'
-      const providerId = String(created.provider_id || '')
-      const r = await store.discover(created.id)
+    const { profile, check } = created
+    if (check?.success === false || profile.status === 'unhealthy') {
+      showConnectFailure(profile.message || 'Connection test failed.', check?.error_type, profile.provider_id)
+    } else {
+      connectMsg.value = 'Importing models…'
+      const result = await store.discover(profile.id)
       await store.loadClasses()
-      if (!r.ok) showConnectFailure(r.message, r.errorType, providerId)
+      if (!result.ok) showConnectFailure(result.message, result.errorType, profile.provider_id)
       else {
-        connectMsg.value = 'Testing the connection…'
-        const probe = await store.testProfile(created.id, offersGenerationCheck.value && generationCheck.value)
-        if (!probe.ok) showConnectFailure(probe.message, probe.errorType, providerId)
         connectMsg.value = 'Selecting sensible defaults…'
         await autoSelectDefaults(false)
       }

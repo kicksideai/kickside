@@ -628,6 +628,7 @@ entries:
     imports:
       test: wippy.test:test
       repo: kickside.models.persist:repo
+      profile_service: kickside.models.catalog:profile_service
       discovery: kickside.models.discovery:model_discovery
       http_fixture: app:discovery_http_fixture
       fake_http: app:card_save_fake_http

@@ -15,7 +15,7 @@ class r extends o {
   }
   static get vueConfig() {
     return {
-      ...i(() => import("./lazy-mount-CE2W5Fph.js").then((t) => t.mountConfig), { surface: "page", loading: "Loading…", failed: "Could not load Models. Reload the page to try again.", timeout: 3e4 })
+      ...i(() => import("./lazy-mount-B5c-vQbK.js").then((t) => t.mountConfig), { surface: "page", loading: "Loading…", failed: "Could not load Models. Reload the page to try again.", timeout: 3e4 })
     };
   }
 }

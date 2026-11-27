@@ -323,6 +323,40 @@ return {run = test.run_cases(function()
             end)
         end
 
+        test.it("runs exactly the requested check when creating an enabled profile", function()
+            local service = require("profile_service")
+            local calls = {}
+            local original = discovery.adapter_for
+            discovery.adapter_for = function()
+                return {
+                    test = function()
+                        calls[#calls + 1] = "connection"
+                        return {success = true}
+                    end,
+                    test_generation = function()
+                        calls[#calls + 1] = "generation"
+                        return nil, "fixture", {status_code = 429, error_type = "rate_limited"}
+                    end,
+                }
+            end
+            local ids = {}
+            local ok, err = pcall(function()
+                for _, generation in ipairs({false, true}) do
+                    local saved, save_err, check = service.create({name = "Onboarding check",
+                        provider_id = "wippy.llm.openai_compat:provider", api_key = "test-key"}, generation)
+                    test.is_nil(save_err)
+                    ids[#ids + 1] = saved.id
+                    test.eq(check.success, not generation)
+                    test.eq(check.error_type, generation and "rate_limited" or nil)
+                    test.eq(saved.status, generation and "unhealthy" or "healthy")
+                end
+                test.eq(table.concat(calls, ","), "connection,generation")
+            end)
+            discovery.adapter_for = original
+            for _, id in ipairs(ids) do assert(repo.delete_profile(id)) end
+            if not ok then error(err) end
+        end)
+
         test.it("does not return the provider body", function()
             http_fixture.prepare({status_code = 402, body = sentinel}, nil)
             local _, message, diagnostics = openai.test(profile(), {model = "probe-model"})

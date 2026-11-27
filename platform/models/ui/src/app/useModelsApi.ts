@@ -81,10 +81,21 @@ export function useModelsApi() {
     }
   }
 
-  function saveProfile(mode: 'create' | 'edit', id: string, body: Record<string, unknown>): Promise<boolean> {
+  async function createProfile(body: Record<string, unknown>, generation = false) {
+    let created: { profile: Profile; check?: { success: boolean; error_type?: ProviderErrorType } } | undefined
+    await mutate(async () => {
+      const { data } = await api.post('/api/v1/models/provider-profiles',
+        generation ? { ...body, test_generation: true } : body)
+      if (!data?.profile?.id) throw new Error('Provider profile creation returned no profile')
+      created = { profile: data.profile, check: data.connection_test }
+    }, 'failed to save profile')
+    return created
+  }
+
+  async function saveProfile(mode: 'create' | 'edit', id: string, body: Record<string, unknown>): Promise<boolean> {
+    if (mode === 'create') return Boolean(await createProfile(body))
     return mutate(async () => {
-      if (mode === 'edit') await api.put(`/api/v1/models/provider-profiles/${encodeURIComponent(id)}`, body)
-      else await api.post('/api/v1/models/provider-profiles', body)
+      await api.put(`/api/v1/models/provider-profiles/${encodeURIComponent(id)}`, body)
     }, 'failed to save profile')
   }
 
@@ -194,7 +205,7 @@ export function useModelsApi() {
   return {
     adapters, presets, profiles, models, classes,
     loading, saving, discovering, probing, error,
-    load, loadClasses, saveProfile, deleteProfile, saveCard, saveCards, deleteCard, discover, testProfile, testModel,
+    load, loadClasses, createProfile, saveProfile, deleteProfile, saveCard, saveCards, deleteCard, discover, testProfile, testModel,
     exportSetup, importSetup,
   }
 }

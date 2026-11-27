@@ -10,7 +10,7 @@ class e extends o {
     };
   }
   static get vueConfig() {
-    return s(() => import("./Onboard-CIMWaWwu.js").then((t) => ({ rootComponent: t.default, plugins: [i] })), { surface: "compact", loading: "Loading model setup…", failed: "Could not load the model setup. Reload the page to try again.", delay: 200, timeout: 3e4 });
+    return s(() => import("./Onboard-BrAeRfRZ.js").then((t) => ({ rootComponent: t.default, plugins: [i] })), { surface: "compact", loading: "Loading model setup…", failed: "Could not load the model setup. Reload the page to try again.", delay: 200, timeout: 3e4 });
   }
 }
 async function u() {
