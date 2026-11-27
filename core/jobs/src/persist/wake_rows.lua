@@ -27,10 +27,13 @@ function M.lock(tx: sql.Transaction, keys: { string }, field: string, response_e
     table.sort(sorted)
     local values: { string } = {}
     for index in ipairs(sorted) do values[index] = "($" .. tostring(index) .. ")" end
-    local rows, err = tx:query("INSERT INTO kickside_wake_fanout (key) VALUES " .. table.concat(values, ",")
-        .. " ON CONFLICT(key) DO UPDATE SET key=excluded.key RETURNING key", sorted)
-    local _, rows_err = boundary.bounded_rows(rows, err, "wake row lock failed", field .. ".wake_rows",
-        #sorted, #sorted, response_error)
+    -- PostgreSQL locks the conflicting row before evaluating the UPDATE
+    -- predicate. A false predicate keeps the lock without creating a tuple
+    -- version. SQLite already serializes writers at this statement.
+    local result, err = tx:execute("INSERT INTO kickside_wake_fanout (key) VALUES " .. table.concat(values, ",")
+        .. " ON CONFLICT(key) DO UPDATE SET key=excluded.key WHERE FALSE", sorted)
+    local _, rows_err = boundary.bounded_row_count(result, err, "wake row lock failed", field .. ".wake_rows",
+        #sorted, response_error)
     return rows_err
 end
 

@@ -423,14 +423,11 @@ end
 
 -- wake_job wakes one job by id (CONTRACTS jobs.wake_job) and returns
 -- { woken, scheduled_at? }; an inactive or missing job is not woken.
-local function wake_job_tx(db, id, opts, dbtype)
+local function wake_locked_job(db, id, opts, dbtype, job)
     local now = clock.now(dbtype)
     local policy, policy_err = read_policy()
     if policy_err then return nil, policy_err end
     local control = type(opts) == "table" and opts.control == true
-    local job, lock_err = wake_rows.lock_job_id(db, dbtype, id, "job", response_error)
-    if lock_err then return nil, lock_err end
-    if not job then return { woken = false }, nil end
     local advance, consumes_rearm = false, false
     local size_err = row_bytes.check_update(db, "kickside_job", id, function(row)
         local err
@@ -474,15 +471,23 @@ local function wake_job_tx(db, id, opts, dbtype)
     return {woken = true, scheduled_at = rows[1].scheduled_at}, nil
 end
 
+local function wake_job_tx(db, id, opts, dbtype)
+    local job, err = wake_rows.lock_job_id(db, dbtype, id, "job", response_error)
+    if err then return nil, err end
+    if not job then return { woken = false }, nil end
+    return wake_locked_job(db, id, opts, dbtype, job)
+end
+
 -- An addressed waiter publishes dispatch demand without changing an already
 -- due slot's schedule or retry state. The request lasts until the slot parks.
 local function ensure_due_tx(db, id, opts, dbtype)
     local job, read_err = wake_rows.lock_job_id(db, dbtype, id, "addressed", response_error)
     if read_err then return nil, read_err end
+    if not job then return { woken = false }, nil end
     local result
-    if job and job.status == "running" then
+    if job.status == "running" then
         result = { woken = true, scheduled_at = job.scheduled_at, already_due = true }
-    elseif job and job.status == "pending" and (job.wake_enabled == true or tonumber(job.wake_enabled) == 1)
+    elseif job.status == "pending" and (job.wake_enabled == true or tonumber(job.wake_enabled) == 1)
         and job.scheduled_at ~= nil then
         local scheduled, scheduled_err = clock.parse(job.scheduled_at)
         if scheduled_err then return nil, scheduled_err end
@@ -494,10 +499,10 @@ local function ensure_due_tx(db, id, opts, dbtype)
     end
     if not result then
         local wake_err
-        result, wake_err = wake_job_tx(db, id, opts, dbtype)
+        result, wake_err = wake_locked_job(db, id, opts, dbtype, job)
         if wake_err then return nil, wake_err end
     end
-    if result and result.woken then
+    if result and result.woken and job.dispatch_requested_at == nil then
         local now = clock.now(dbtype)
         local policy, policy_err = read_policy()
         if policy_err then return nil, policy_err end

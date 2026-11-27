@@ -70,6 +70,39 @@ end
 
 local function define_tests()
     test.describe("wake lock order across caller calls", function()
+        test.it("repeated addressed wakes leave an existing fanout row untouched", function()
+            local db = assert(sql.get("app:db"))
+            local dbtype = tostring(db:type())
+            local key = "repeated-lock:" .. uuid.v7()
+            local slot = assert(jobs.enqueue(slot_request(key, "slot", key)))
+            local tx = assert(db:begin())
+            assert(tx:execute("INSERT INTO kickside_wake_fanout(key) VALUES ($1) ON CONFLICT(key) DO NOTHING", {key}))
+            local inspect = "SELECT demand_generation,ack_generation FROM kickside_wake_fanout WHERE key=$1"
+            if dbtype == sql.type.POSTGRES then
+                inspect = "SELECT ctid::text AS version,demand_generation,ack_generation FROM kickside_wake_fanout WHERE key=$1"
+            end
+            local before = assert(tx:query(inspect, {key}))[1]
+            for _ = 1, 32 do assert(wake.wake_job(tx, slot.id, { control = true }, dbtype)) end
+            local after = assert(tx:query(inspect, {key}))
+            test.eq(#after, 1)
+            test.eq(after[1].version, before.version)
+            test.eq(after[1].demand_generation, before.demand_generation)
+            test.eq(after[1].ack_generation, before.ack_generation)
+            local addressed = { control = true, ensure_due = true }
+            assert(wake.wake_job(tx, slot.id, addressed, dbtype))
+            local job_sql = dbtype == sql.type.POSTGRES
+                and "SELECT ctid::text AS version,dispatch_requested_at FROM kickside_job WHERE id=$1"
+                or "SELECT dispatch_requested_at FROM kickside_job WHERE id=$1"
+            local first = assert(tx:query(job_sql, {slot.id}))[1]
+            test.not_nil(first.dispatch_requested_at)
+            for _ = 1, 32 do assert(wake.wake_job(tx, slot.id, addressed, dbtype)) end
+            local last = assert(tx:query(job_sql, {slot.id}))[1]
+            test.eq(last.version, first.version)
+            test.eq(tostring(last.dispatch_requested_at), tostring(first.dispatch_requested_at))
+            tx:rollback()
+            db:release()
+        end)
+
         test.it("orders slot demand and a later wake against a concurrent wake of the same key", function()
             local db = assert(sql.get("app:db"))
             local dbtype = tostring(db:type())
