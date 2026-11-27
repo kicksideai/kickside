@@ -3,6 +3,8 @@ local test = require("test")
 local sql = require("sql")
 local clock = require("clock")
 local jobs = require("jobs")
+local uuid = require("uuid")
+local lifecycle = require("lifecycle")
 local fixture = require("fixture")
 local query_jobs = require("query_jobs")
 local eligibility = require("eligibility")
@@ -45,6 +47,36 @@ end
 
 return {run = test.run_cases(function()
     test.describe("bounded Jobs diagnostics", function()
+        test.it("reports only erroneous unscheduled pending one-shots as stranded", function()
+            queue(function(db, dbtype)
+                local ids = {}
+                for _, spec in ipairs({{slot = false, parked = true}, {slot = false, parked = true},
+                    {slot = false}, {slot = true, parked = true}, {slot = false, parked = true}}) do
+                    local key = uuid.v7()
+                    ids[#ids + 1] = assert(lifecycle.enqueue_job(db, dbtype, {
+                        owner_locator = {kind = "test", id = key}, job_type = "test.health_stranded",
+                        job_identity = {namespace = "test", scope = key, key = "health"},
+                        slot = spec.slot, parked = spec.parked,
+                    }))
+                end
+                for index = 1, 4 do
+                    assert(db:execute("UPDATE kickside_job SET last_error=$1 WHERE id=$2", {"worker output invalid", ids[index]}))
+                end
+                local health = assert(jobs.health())
+                local found = issue(health, "stranded_jobs")
+                test.not_nil(found)
+                test.is_false(health.healthy)
+                local named = {}
+                for _, id in ipairs(found.job_ids) do named[id] = true end
+                test.is_true(named[ids[1]] == true)
+                test.is_true(named[ids[2]] == true)
+                for index = 3, 5 do test.is_nil(named[ids[index]]) end
+                for _, id in ipairs(ids) do assert(jobs.cancel(id)) end
+                local cleared = assert(jobs.health())
+                test.is_nil(issue(cleared, "stranded_jobs"))
+            end)
+        end)
+
         test.it("seeks legacy concurrency keys during capacity eligibility", function()
             queue(function(db, dbtype)
                 seed(db, dbtype, 10000)

@@ -86,6 +86,10 @@ ordinal, creation time and artifact id, including installations with historical
 duplicates. Immutable source artifacts remain addressable across source changes.
 `create_artifact` keeps its existing append semantics for other callers.
 
+For OCR, an extracted scan can supply a page when its declared MIME type is JPEG, PNG, GIF or WebP and it fits the image budget. A generic binary attachment or an oversized scan triggers a render of its PDF page. The original artifact remains available. Rendered pages start at the configured DPI and quality. Only a page exceeding the budget is rendered again. Its artifact records the effective DPI, quality and pixel dimensions.
+
+`rasterize_max_bytes` defaults to 3932160 bytes before base64 encoding. `rasterize_max_long_edge` defaults to 2576 pixels. Set the latter to zero to disable the preferred edge limit. The downstream vision provider can still enforce its own limits.
+
 The installation-wide `kickside.uploads.rasterize` setting
 `rasterize_page_selection` applies to every upload. Its default, `sparse`, selects
 pages with little or no extractable text. `all` also OCRs pages that already have

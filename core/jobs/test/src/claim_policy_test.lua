@@ -10,6 +10,40 @@ local fixture = require("job_fixture")
 local lifecycle = require("lifecycle")
 return {run = test.run_cases(function()
     test.describe("Claim-time runtime snapshot", function()
+        test.it("takes the live attempt limit at claim and keeps an explicit limit", function()
+            local opened, dialect, fixture_err = fixture.private_queue("app:private_queue_claim_policy")
+            local db = assert(opened, fixture_err)
+            local key = "retry.max_attempts"
+            test.is_nil(admin.set({[key] = 7}))
+            local default_id = assert(lifecycle.enqueue_job(db, dialect, {
+                job_identity = {namespace = "policy", scope = "claim", key = "single-default"},
+                job_type = "policy.default_attempt_limit", owner_locator = {kind = "test", id = "claim-policy"},
+                payload = {}, priority = 3,
+            }))
+            local batch_default_id = assert(lifecycle.enqueue_job(db, dialect, {
+                job_identity = {namespace = "policy", scope = "claim", key = "batch-default"},
+                job_type = "policy.default_attempt_limit", owner_locator = {kind = "test", id = "claim-policy"},
+                payload = {}, priority = 2,
+            }))
+            local explicit_id = assert(lifecycle.enqueue_job(db, dialect, {
+                job_identity = {namespace = "policy", scope = "claim", key = "explicit"},
+                job_type = "policy.explicit_attempt_limit", owner_locator = {kind = "test", id = "claim-policy"},
+                payload = {}, priority = 1, max_attempts = 5,
+            }))
+            test.is_nil(admin.set({[key] = 2}))
+            local first = assert(claim.claim_job(db, dialect))
+            local batch = assert(claim.claim_batch(db, dialect, 2))
+            admin.reset({key})
+            db:release()
+
+            test.eq(first.id, default_id)
+            test.eq(tonumber(first.max_attempts), 2)
+            local limits = {}
+            for _, job in ipairs(batch) do limits[job.id] = tonumber(job.max_attempts) end
+            test.eq(limits[batch_default_id], 2)
+            test.eq(limits[explicit_id], 5)
+        end)
+
         test.it("retains the captured lease pair, execution ceiling and retry delays after an edit before dispatch", function()
             local db, dialect, fixture_err = fixture.private_queue("app:private_queue_claim_policy")
             test.is_nil(fixture_err)

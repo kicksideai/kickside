@@ -14,4 +14,4 @@ local function query(...): any
     function q:exec() return fixture.insert() end
     return q
 end
-return {type = native.type, builder = {select = query, insert = query, eq = function(value) return value end}}
+return {type = native.type, as = native.as, builder = {select = query, insert = query, eq = function(value) return value end}}

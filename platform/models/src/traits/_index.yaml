@@ -219,8 +219,8 @@ entries:
         {
           "type": "object",
           "properties": {
-            "action": { "type": "string", "enum": ["list", "get"], "description": "list: every provider profile. get: one profile by id." },
-            "id": { "type": "string", "minLength": 1, "description": "get: the profile id." }
+            "action": { "type": "string", "enum": ["list", "get", "served"], "description": "list: every provider profile. get: one profile by id. served: the provider models one profile serves now, from the provider's model list." },
+            "id": { "type": "string", "minLength": 1, "description": "get, served: the profile id." }
           },
           "required": ["action"],
           "additionalProperties": false
@@ -234,12 +234,13 @@ entries:
             "error": { "type": "string", "description": "Present with success false: the contract's refusal." },
             "count": { "type": "integer", "description": "list: number of profiles." },
             "profiles": { "type": "array", "description": "list: profiles in the public projection.", "items": { "type": "object" } },
-            "profile": { "type": "object", "description": "get: id, name, provider_id, enabled, config (public settings and *_env pointers), status, has_api_key, has_api_key_env and secret_fields (names of stored secrets)." }
+            "profile": { "type": "object", "description": "get: id, name, provider_id, enabled, config (public settings and *_env pointers), status, has_api_key, has_api_key_env and secret_fields (names of stored secrets)." },
+            "models": { "type": "array", "description": "served: the provider_model ids the profile serves now.", "items": { "type": "string" } }
           },
           "required": ["success"]
         }
       llm_alias: ModelProfilesRead
-      llm_description: "Read model provider profiles: list every profile or get one by id. Replies show public settings, *_env pointers and the names of stored secrets, never secret values. Read-only. Failures return a typed tool error; a refusal returns success false with its error."
+      llm_description: "Read model provider profiles: list every profile, get one by id, or list the provider models one profile serves now (served, read from the provider's model list). Replies show public settings, *_env pointers and the names of stored secrets, never secret values. Read-only. Failures return a typed tool error; a refusal returns success false with its error."
     source: file://profiles_read.lua
     method: handler
     imports:

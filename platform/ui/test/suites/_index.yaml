@@ -31,6 +31,25 @@ entries:
       nav_providers: kickside.ui:nav_providers
       ui_types: kickside.ui:types
 
+  - name: nav_fanout_test
+    kind: function.lua
+    meta:
+      type: test
+      suite: kickside_ui_nav_fanout
+      group: KickSide UI
+    source: file://nav_fanout_test.lua
+    method: run
+    modules: [funcs, time]
+    imports:
+      test: wippy.test:test
+
+  - name: nav_fanout_probe
+    kind: function.lua
+    source: file://nav_fanout_probe.lua
+    method: run
+    imports:
+      nav_providers: kickside.ui:nav_providers
+
   - name: nav_seam_test
     kind: function.lua
     meta:

@@ -23,7 +23,11 @@ local function run(req: any): any
     end
     local pages = {}
     for _, page in ipairs(req.pages or {}) do
-        pages[#pages + 1] = { page = page, bytes = "\255\216\255page-" .. page }
+        local bytes = "\255\216\255page-" .. page
+        if document.large_page == page and (document.always_large or req.quality > 75) then
+            bytes = string.rep("x", 3932161)
+        end
+        pages[#pages + 1] = { page = page, bytes = bytes }
     end
     return { ok = { pages = pages } }
 end

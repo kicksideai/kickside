@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.26](https://github.com/kicksideai/kickside/compare/agents-v0.2.25...agents-v0.2.26) (2026-11-26)
+
+
+### Bug Fixes
+
+* **agents:** distinguish lookup failures while preserving missing-agent responses ([#955](https://github.com/kicksideai/kickside/issues/955)) ([ef14039](https://github.com/kicksideai/kickside/commit/ef140393853559e5599f02226d632f515437fb0a))
+
 ## [0.2.25](https://github.com/kicksideai/kickside/compare/agents-v0.2.24...agents-v0.2.25) (2026-11-25)
 
 

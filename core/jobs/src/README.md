@@ -130,6 +130,10 @@ concurrency keys from its claimable backlog.
 
 `jobs.enqueue` and `jobs.enqueue_tx` accept optional `demand = true` with `slot = true`. Enrollment and control demand commit together: parked work becomes due, and a running attempt retains a follow-up. Reusing an active one-shot identity with demand returns a conflict. Omitting demand retains the existing enqueue behavior.
 
+Enqueue stores an explicit `max_attempts` immediately. Otherwise job reads
+omit the limit until the first claim stores the current `retry.max_attempts`.
+That limit applies to later attempts of the same job.
+
 An independent job's optional `thread_id` is omitted when a retained fence shows that thread cleanup has started. The job retains its own owner, canonical identity, and payload. A write that overlaps an in-progress cleanup transaction can return a retryable conflict before admission.
 
 `jobs.enqueue` and `jobs.enqueue_tx` accept optional boolean `replace`. Identical
@@ -153,6 +157,10 @@ See [lease ownership and progress](../README.md#lease-ownership-and-progress) fo
 heartbeat declaration, fencing, deadlines, and failure semantics.
 
 ### Dead outcomes
+
+A native worker error with `retryable = false` is deterministic. It ends a
+one-shot job dead and parks a slot unless a control wake is pending. When the
+flag is omitted, Jobs classifies the error by kind.
 
 A worker entry names the function that receives its dead jobs:
 
@@ -327,7 +335,7 @@ assigning surplus slots, lets busy slots finish, then retires them. An in-place
 upgrade hands the live slots, their assignments and the last good policy to the
 new code.
 
-Out-of-pool readers (enqueue attempt defaults and recovery batch limits) resolve
+Out-of-pool claim and recovery entry points resolve
 the same committed policy through `kickside.core.jobs.policy:settings_overrides`,
 which reads Settings under its own policy, so callers need no Settings access.
 Fixed registry reads (`config.policy`) never include overrides.
@@ -340,6 +348,6 @@ Migration 24 leaves pre-upgrade running rows with NULL `lease_policy`. Those job
 started before live policy existed, so the shared execution-policy reader
 resolves NULL to the registry/host policy on every execution path. It never
 guesses timing from heartbeat/deadline timestamps or adopts later overrides.
-New executions use the new lease pair and execution ceiling; new one-shot jobs
-inherit the new attempt limit. Retry delays travel with the claim and apply when
+New executions use the new lease pair and execution ceiling. First claims
+resolve unspecified attempt limits. Retry delays travel with the claim and apply when
 that execution fails. Job-specific attempt/execution limits retain precedence.

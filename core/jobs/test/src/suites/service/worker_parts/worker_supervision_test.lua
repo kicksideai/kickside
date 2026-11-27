@@ -675,6 +675,23 @@ local function define_tests()
             release_db()
         end)
 
+        test.it("ends a one-shot proc worker error marked non-retryable after one attempt", function()
+            with_db(function(db: sql.DB)
+                local dbtype = tostring(db:type())
+                local thread_id = make_thread(db)
+                local job = enqueue_proc_and_claim(db, dbtype, thread_id, {
+                    fail = true, error_kind = errors.UNAVAILABLE, error_retryable = false,
+                })
+
+                worker.process_job(db, dbtype, "test-pid-" .. uuid.v7(), job)
+
+                local row = assert(jobs.get_job(job.id))
+                test.eq(row.status, job_types.JOB_STATE.DEAD)
+                test.eq(tonumber(row.attempts), 1)
+                test.is_nil(row.scheduled_at)
+            end)
+        end)
+
         test.it("terminates a proc that exceeds max_execution and retries it", function()
             with_db(function(db: sql.DB)
                 local dbtype = tostring(db:type())

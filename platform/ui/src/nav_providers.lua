@@ -5,7 +5,7 @@ local error_envelope = require("error_envelope")
 local M = {}
 
 type Binding = { id: string, priority: number }
-type Attempt = { id: string, future: any?, response: any?, start_error: any?, cancel_error: any?, resolved: boolean?, result: any?, result_error: any? }
+type Attempt = { id: string, future: any?, response: any?, receive_case: any?, start_error: any?, cancel_error: any?, resolved: boolean?, result: any?, result_error: any? }
 type Collected = {
     items: { nav.Item },
     categories: { nav.CategorySpec },
@@ -87,7 +87,6 @@ end
 local function call_all(port: any, bindings: { Binding }, args: any): ({ [integer]: Attempt }?, any?)
     local attempts: { [integer]: Attempt } = {}
     local timeout_ms = ui_types.NAV_LIMITS.PROVIDER_TIMEOUT_MS
-    local cases: { any } = {}
     local active = 0
 
     for index, binding in ipairs(bindings) do
@@ -119,7 +118,7 @@ local function call_all(port: any, bindings: { Binding }, args: any): ({ [intege
                     attempts[index].start_error = receive_case
                 else
                     attempts[index].response = response
-                    cases[#cases + 1] = receive_case
+                    attempts[index].receive_case = receive_case
                     active = active + 1
                 end
             end
@@ -128,9 +127,17 @@ local function call_all(port: any, bindings: { Binding }, args: any): ({ [intege
 
     local deadline = require("time").after(tostring(timeout_ms) .. "ms")
     local deadline_case = deadline:case_receive()
-    cases[#cases + 1] = deadline_case
     local select_error: any = nil
     while active > 0 do
+        -- A completed response channel stays ready after it closes. Only select
+        -- unresolved attempts so it cannot starve other responses or the deadline.
+        local cases: { any } = {}
+        for _, attempt in ipairs(attempts) do
+            if attempt.response and attempt.resolved ~= true then
+                cases[#cases + 1] = attempt.receive_case
+            end
+        end
+        cases[#cases + 1] = deadline_case
         local selected_ok, selected = pcall(channel.select, cases)
         if not selected_ok then
             select_error = selected
@@ -139,14 +146,19 @@ local function call_all(port: any, bindings: { Binding }, args: any): ({ [intege
         if selected.channel == deadline then break end
         for _, attempt in ipairs(attempts) do
             if attempt.response == selected.channel and attempt.resolved ~= true then
-                local payload: any = selected.value
-                local result_ok, result, result_err = pcall(function() return payload:data() end)
                 attempt.resolved = true
-                if result_ok then
-                    attempt.result = result
-                    attempt.result_error = result_err
+                if selected.ok == false or selected.value == nil then
+                    attempt.result_error = errors.new({kind = errors.UNAVAILABLE, retryable = true,
+                        message = "nav provider response channel closed", details = {code = "nav_provider_response_channel"}})
                 else
-                    attempt.result_error = result
+                    local payload: any = selected.value
+                    local result_ok, result, result_err = pcall(function() return payload:data() end)
+                    if result_ok then
+                        attempt.result = result
+                        attempt.result_error = result_err
+                    else
+                        attempt.result_error = result
+                    end
                 end
                 active = active - 1
                 break

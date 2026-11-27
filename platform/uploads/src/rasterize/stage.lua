@@ -98,6 +98,7 @@ local function store_page(params: any, page: any, fmt: string, source_id: string
         metadata = {
             source = "rasterize",
             name = name,
+            width = page.width, height = page.height, dpi = page.dpi, quality = page.quality,
             mime_type = mime,
             page = page_no,
             original_upload_id = params.upload_id,
@@ -156,6 +157,39 @@ local function heartbeat(params: any): string?
     return nil
 end
 
+-- Re-render only the offending page. Preserve the configured DPI on a byte-only
+-- overshoot when a lower JPEG/WebP quality is sufficient.
+local function fit_page(entry: any, ref: any, page: any, opts: any): (any?, any?, any?)
+    local dpi, quality = opts.dpi, opts.quality
+    while true do
+        local width, height = page_images.pixel_size(page.bytes)
+        local edge, size = math.max(width or 0, height or 0), #page.bytes
+        local over_edge = opts.max_edge > 0 and edge > opts.max_edge
+        if not over_edge and size <= opts.max_bytes then
+            page.width, page.height, page.dpi, page.quality = width, height, dpi, quality
+            return page, nil, nil
+        end
+        if not over_edge and opts.format ~= "png" and quality > 65 then
+            quality = math.max(65, quality - 15)
+        elseif dpi > 1 then
+            local scale = math.min(0.8, math.sqrt(opts.max_bytes / size))
+            if over_edge then scale = math.min(scale, opts.max_edge / edge) end
+            dpi = math.max(1, math.floor(dpi * scale))
+        else
+            return nil, {page = page.page, code = "image_too_large", error = "Page exceeds OCR image limits.",
+                size = size, width = width, height = height}, nil
+        end
+        local smaller, err, diagnostic = render_call(entry, ref, {page.page},
+            {dpi = dpi, quality = quality, format = opts.format}, "fit_page")
+        if err or not smaller or #smaller ~= 1 or smaller[1].page ~= page.page then
+            local failure = err or {code = "render_failed", error = "Unable to resize document page."}
+            failure.page = page.page
+            return nil, failure, diagnostic
+        end
+        page = smaller[1]
+    end
+end
+
 -- Probe the first failed batch page by page. If no page renders, report one
 -- document failure and stop; otherwise retain per-page failures and usable pages.
 local function render_pages(params: any, entry: any, ref: any, selected: { integer }, opts: any, source_id: string?, markdown_id: string?, source_checksum: string?): (integer, { any }, string?, any?)
@@ -165,9 +199,15 @@ local function render_pages(params: any, entry: any, ref: any, selected: { integ
     local diagnostic
     local function store_all(pages: { any }): string?
         for _, p in ipairs(pages) do
-            local store_err = store_page(params, p, opts.format :: string, source_id, markdown_id, source_checksum)
-            if store_err ~= nil then return tostring(store_err) end
-            rendered = rendered + 1
+            local fitted, failure, detail = fit_page(entry, ref, p, opts)
+            if failure then
+                diagnostic = diagnostic or detail
+                failures[#failures + 1] = failure
+            else
+                local store_err = store_page(params, fitted, opts.format :: string, source_id, markdown_id, source_checksum)
+                if store_err ~= nil then return tostring(store_err) end
+                rendered = rendered + 1
+            end
         end
         return nil
     end
@@ -270,8 +310,27 @@ local function process(params: any): any
     -- would duplicate them and discard the originals. Strict 1:1 match only; anything
     -- else (multi-image pages, logos, partial coverage) falls through to rendering.
     local min_page_bytes = setting_int("rasterize_min_page_bytes", page_images.DEFAULT_MIN_PAGE_BYTES)
-    local extracted = page_images.extracted_pages(upload_id, min_page_bytes)
-    if page_images.complete_coverage(extracted, total) then
+    local max_bytes = math.max(1, math.min(page_images.MAX_OCR_BYTES, setting_int("rasterize_max_bytes", page_images.MAX_OCR_BYTES)))
+    local max_edge = math.max(0, setting_int("rasterize_max_long_edge", page_images.DEFAULT_MAX_LONG_EDGE))
+    local function usable(image: any): boolean
+        local meta = image.metadata or {}
+        local width, height = tonumber(meta.width), tonumber(meta.height)
+        if page_images.ocr_image_error(image.mime_type, tonumber(image.size) or 0,
+            math.max(width or 0, height or 0), max_bytes, max_edge) then return false end
+        if max_edge > 0 and (not width or not height) then
+            local bytes = artifact_content_repo.read_artifact_content(upload_id, image.artifact_id)
+            if type(bytes) ~= "string" then return false end
+            width, height = page_images.pixel_size(bytes)
+            return #bytes <= max_bytes and math.max(width or 0, height or 0) <= max_edge
+        end
+        return true
+    end
+    local extracted = {}
+    for _, image in ipairs(page_images.extracted_pages(upload_id, min_page_bytes)) do
+        if usable(image) then extracted[#extracted + 1] = image end
+    end
+    local cached = page_images.rendered(upload_id)
+    if #cached == 0 and page_images.complete_coverage(extracted, total) then
         log:info("pages already extracted by doc2md; skipping rasterize", {
             upload_id = upload_id, total_pages = total, extracted_pages = #extracted,
             reason = ocr_reason,
@@ -280,8 +339,10 @@ local function process(params: any): any
     end
 
     local available = page_images.numbered_images(extracted)
-    for _, image in ipairs(page_images.rendered(upload_id)) do
-        if type(image.metadata) == "table" and image.metadata.page then available[image.metadata.page] = image end
+    for _, image in ipairs(cached) do
+        if type(image.metadata) == "table" and image.metadata.page then
+            available[image.metadata.page] = usable(image) and image or nil
+        end
     end
     local missing: { integer } = {}
     for _, page in ipairs(selected) do if not available[page] then missing[#missing + 1] = page end end
@@ -299,6 +360,7 @@ local function process(params: any): any
     })
 
     local opts = {
+        max_bytes = max_bytes, max_edge = max_edge,
         dpi = setting_int("rasterize_dpi", 150),
         batch = math.max(1, setting_int("rasterize_batch_pages", 8)),
         format = setting_str("rasterize_format", "jpeg"),
@@ -315,7 +377,7 @@ local function process(params: any): any
     if #failures > 0 then
         log:warn("rasterize render failed", { upload_id = upload_id, rendered = rendered, failed = #failures,
             total = total, error = failures[1].error, diagnostic = diagnostic,
-            failed_first_page = failures[1].page or diagnostic.first_page,
+            failed_first_page = failures[1].page or (diagnostic and diagnostic.first_page),
             failed_last_page = failures[#failures].page or selected[#selected] })
     end
 

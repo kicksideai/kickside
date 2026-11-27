@@ -21,7 +21,10 @@ local function run(input: any): table
     end
     if payload.fail == true then
         local kind = job_types.native_kind(payload.error_kind) or errors.INTERNAL
-        return {ok = false, error_native = job_types.error_to_data(errors.new({message = tostring(payload.error_text or "configured proc failure"), kind = kind}) :: error)}
+        return {ok = false, error_native = job_types.error_to_data(errors.new({
+            message = tostring(payload.error_text or "configured proc failure"), kind = kind,
+            retryable = payload.error_retryable,
+        }) :: error)}
     end
     -- Heartbeat heartbeat_count times, heartbeat_every_ms apart.
     for _ = 1, math.floor(tonumber(payload.heartbeat_count) or 0) do
