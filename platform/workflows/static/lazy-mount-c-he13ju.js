@@ -20906,6 +20906,7 @@ const ZD = { class: "wf-panel" }, JD = { class: "wf-panel-hdr-kind" }, QD = { cl
         ])) : ($(), R("div", cP, [
           z(f(pe), {
             severity: "danger",
+            outlined: "",
             onClick: U[4] || (U[4] = (ne) => i("remove-node"))
           }, {
             default: ie(() => [
