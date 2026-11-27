@@ -7,7 +7,6 @@ local time = require("time")
 local clock = require("clock")
 local job_types = require("job_types")
 local cfg = require("config")
-local committed_policy = require("runtime_policy")
 local execution_policy = require("execution_policy")
 local trace_context = require("trace_context")
 local thread_fence = require("thread_fence")
@@ -289,12 +288,7 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
     if carried_err then return nil, carried_err end
     local owner_err = owner_locator_error(params)
     if owner_err then return nil, owner_err end
-    local policy, policy_err
-    if params.max_attempts == nil then
-        policy, policy_err = committed_policy.resolve()
-    else
-        policy, policy_err = cfg.policy()
-    end
+    local policy, policy_err = cfg.policy()
     if policy_err then return nil, policy_err end
     if type(policy) ~= "table" then return nil, response_error("policy") end
     if type(params.job_type) ~= "string" or params.job_type == "" then
@@ -372,6 +366,7 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
         scheduled_at = clock.format(instant, dbtype)
     end
     if params.parked then scheduled_at = nil end
+    local max_attempts = tonumber(params.max_attempts)
     local row: { [string]: any } = {
         id = id,
         owner_kind = owner.kind,
@@ -388,7 +383,7 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
         status = job_types.JOB_STATE.PENDING,
         priority = math.floor(tonumber(params.priority) or 0),
         attempts = 0,
-        max_attempts = math.max(1, math.floor(tonumber(params.max_attempts) or (policy :: any).retry_max_attempts)),
+        max_attempts = max_attempts and math.max(1, math.floor(max_attempts)) or nil,
         queue_tier = params.queue_tier or job_types.QUEUE_TIER.LIVE,
         generation = 1,
         scheduled_at = scheduled_at,
@@ -410,6 +405,7 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
 
     -- ON CONFLICT DO NOTHING keeps a duplicate idempotency_key from raising:
     -- inside a transaction a failed INSERT aborts the whole tx on postgres.
+    row.max_attempts = row.max_attempts or sql.as.null()
     local insert = sql.builder.insert("kickside_job")
         :set_map(row)
         :suffix("ON CONFLICT DO NOTHING")

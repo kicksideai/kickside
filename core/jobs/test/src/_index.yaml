@@ -2260,7 +2260,6 @@ entries:
     source: file://enqueue_native_source.lua
     modules: [uuid, time]
     imports:
-      runtime_policy: app:enqueue_native_fixture
       execution_policy: kickside.core.jobs.policy:execution
       sql: app:enqueue_native_sql
       json: app:enqueue_native_json_adapter
@@ -4084,6 +4083,7 @@ entries:
     method: run
     modules: [sql, funcs, uuid, json]
     imports:
+      policy_settings_fixture: app:policy_settings_fixture
       test: wippy.test:test
 
   - name: claim_policy_test
@@ -4515,7 +4515,9 @@ entries:
     method: run
     modules:
     - sql
+    - uuid
     imports:
+      lifecycle: kickside.core.jobs.persist:lifecycle
       clock: kickside.core.jobs:clock
       test: wippy.test:test
       jobs: app:health_bounded_source

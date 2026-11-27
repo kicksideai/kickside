@@ -15,7 +15,7 @@ end
 function M.job()
     return {id = "job", owner_kind = "thread", owner_id = "owner", queue_tier = "live", status = "pending", attempts = 0, execution_seq = 0, concurrency_key = "key", scheduled_at = "2026-10-10 00:00:00", job_type = "app:worker"}
 end
-function M.policy(...) return M.result("policy", {lease_timeout_seconds = 30, max_row_bytes = 1000, worker_claim_batch = 1, fairness_shares = {live = 1, backfill = 0, maintenance = 0}}) end
+function M.policy(...) return M.result("policy", {lease_timeout_seconds = 30, retry_max_attempts = 3, max_row_bytes = 1000, worker_claim_batch = 1, fairness_shares = {live = 1, backfill = 0, maintenance = 0}}) end
 function M.distribute_shares(...) return {live = 1, backfill = 0, maintenance = 0}, 1 end
 function M.now_string(...) return "2026-10-10 00:00:00" end
 M.future_string = M.now_string
@@ -38,7 +38,7 @@ function M.database(): any
         if statement:find("WITH ordered AS", 1, true) then phase, rows = "keylock", {{concurrency_key = "key", acquired = true}}
         elseif statement:find("SELECT concurrency_key FROM", 1, true) then phase, rows = "keyrecheck", {}
         elseif statement:find("UPDATE kickside_job SET status", 1, true) then
-            phase, rows = "lease", M.empty and {} or {{attempts = 1, execution_seq = 1}}; M.updates = M.updates + 1
+            phase, rows = "lease", M.empty and {} or {{attempts = 1, execution_seq = 1, max_attempts = 3}}; M.updates = M.updates + 1
         elseif statement:find("SELECT COUNT", 1, true) then phase, rows = "backlog", {{n = 1, age_ms = 0, overdue = 0}}
         elseif statement:find("AS candidates ORDER", 1, true) then phase, rows = "candidates", {M.job()}
         else phase, rows = "joblock", {M.job()} end

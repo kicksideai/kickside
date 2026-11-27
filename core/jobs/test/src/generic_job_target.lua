@@ -23,7 +23,7 @@ local function run(input)
         error(tostring(payload.raise_message or "function worker boom"))
     end
     if type(payload) == "table" and payload.raise_kind == "unavailable" then
-        error(errors.new({message = "database unavailable", kind = errors.UNAVAILABLE, retryable = true,
+        error(errors.new({message = "database unavailable", kind = errors.UNAVAILABLE, retryable = payload.raise_retryable,
             details = {code = "test_database_unavailable"}}))
     end
     if type(payload) == "table" and payload.raise_kind == "invalid" then

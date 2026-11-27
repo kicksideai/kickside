@@ -42,10 +42,10 @@ return {run = test.run_cases(function()
                 end)
             end)
         end
-        for _, field in ipairs({"attempts", "execution_seq"}) do
+        for _, field in ipairs({"attempts", "execution_seq", "max_attempts"}) do
             for index, case in ipairs({{}, {value = false}, {value = -1}, {value = 0}, {value = 0.5}, {value = "bad"}}) do
                 test.it("invalid lease counter/" .. field .. "/" .. tostring(index), function()
-                    local row: any = {attempts = 1, execution_seq = 1}; row[field] = case.value
+                    local row: any = {attempts = 1, execution_seq = 1, max_attempts = 3}; row[field] = case.value
                     proof("lease", "lease", {row}, "lease." .. field)
                 end)
             end
@@ -93,8 +93,9 @@ return {run = test.run_cases(function()
             end)
         end
         test.it("numeric string lease counters remain", function()
-            fixture.reset("lease", "lease", nil); fixture.missing, fixture.value = true, {{attempts = "1", execution_seq = "2"}}
+            fixture.reset("lease", "lease", nil); fixture.missing, fixture.value = true, {{attempts = "1", execution_seq = "2", max_attempts = "3"}}
             local result, err = invoke("lease"); test.is_nil(err); test.eq(result.attempts, 1); test.eq(result.execution_seq, 2)
+            test.eq(result.max_attempts, 3)
         end)
         for _, age in ipairs({{},{value = -0.5},{value = "1.9"}}) do
             test.it("valid SQL backlog metrics/" .. tostring(age.value), function()

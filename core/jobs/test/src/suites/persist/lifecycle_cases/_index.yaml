@@ -1,6 +1,15 @@
 version: '1.0'
 namespace: app
 entries:
+- name: transactional_enqueue_test
+  kind: function.lua
+  meta: {type: test, suite: jobs_transactional_enqueue, group: KickSide Core / Jobs}
+  source: file://transactional_enqueue_test.lua
+  method: run
+  modules: [sql, uuid, store]
+  imports:
+    test: wippy.test:test
+    jobs: kickside.core.jobs:jobs
 - name: backoff_test
   kind: function.lua
   meta:
@@ -76,6 +85,7 @@ entries:
   - process
   - channel
   imports:
+    clock: kickside.core.jobs:clock
     test: wippy.test:test
     job_types: kickside.core.jobs:types
     config: kickside.core.jobs:config
@@ -259,6 +269,7 @@ entries:
   - sql
   - uuid
   imports:
+    worker: kickside.core.jobs.service:loop
     jobs: kickside.core.jobs:jobs
     test: wippy.test:test
     job_types: kickside.core.jobs:types
