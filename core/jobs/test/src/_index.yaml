@@ -4083,6 +4083,7 @@ entries:
     method: run
     modules: [sql, funcs, uuid, json]
     imports:
+      policy_settings_fixture: app:policy_settings_fixture
       test: wippy.test:test
 
   - name: claim_policy_test
