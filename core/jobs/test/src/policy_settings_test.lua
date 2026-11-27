@@ -30,7 +30,7 @@ end
 return { run = test.run_cases(function()
     test.describe("Jobs policy through Settings", function()
         test.after_each(function()
-            admin.reset({"worker.count_postgres", "lease.timeout", "lease.heartbeat", "proc.max_execution", "retry.max_attempts"})
+            admin.reset({"worker.count_postgres", "lease.timeout", "lease.heartbeat", "proc.max_execution"})
         end)
 
         local function restricted(): any
@@ -62,15 +62,15 @@ return { run = test.run_cases(function()
             test.eq(policy.worker_count_postgres, 37)
         end)
 
-        test.it("enqueues with committed policy without caller Settings authority", function()
-            test.is_nil(admin.set({["retry.max_attempts"] = 7}))
+        test.it("enqueues without caller Settings authority and leaves the limit unset", function()
             local queued, err = restricted():call("app:policy_settings_enqueue")
             test.is_nil(err, tostring(err))
             local db = assert(sql.get("app:db"))
             local rows, read_err = db:query("SELECT max_attempts FROM kickside_job WHERE id=$1", {queued.id})
             db:release()
             test.is_nil(read_err)
-            test.eq(tonumber(rows[1].max_attempts), 7)
+            test.eq(#rows, 1)
+            test.is_nil(rows[1].max_attempts)
         end)
 
         test.it("keeps the complete host policy in registry metadata during live upgrades", function()

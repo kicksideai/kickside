@@ -37,8 +37,8 @@ local function completion_opts(output: any): (table?, error?)
 end
 worker_completion.completion_opts = completion_opts
 
-local function failure_class_for(err: error): string
-    if job_types.is_deterministic_kind(err:kind()) then
+local function failure_class_for(err: error, worker_reported: boolean?): string
+    if (worker_reported ~= false and err:retryable() == false) or job_types.is_deterministic_kind(err:kind()) then
         return "deterministic"
     end
     return "infrastructure"

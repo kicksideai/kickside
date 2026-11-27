@@ -169,7 +169,7 @@ worker.resolve_max_execution_ms = resolve_max_execution_ms
 -- Dispatch a func:// worker_ref. proc:// jobs do not reach here: they are spawned
 -- non-blocking and supervised by run_supervised_proc so the engine holds a pid it
 -- can terminate, which this synchronous funcs.call could never expose.
-local function run_bound_worker(job: table, binding: table): (table?, error?)
+local function run_bound_worker(job: table, binding: table): (table?, error?, boolean?)
     local target_id = trim(binding.target_id)
     if target_id == "" then
         return nil, (errors.new({ message = "job worker_ref target is required", kind = errors.INVALID }) :: error)
@@ -182,6 +182,7 @@ local function run_bound_worker(job: table, binding: table): (table?, error?)
     if input_err then return nil, input_err end
     local scope, scope_err = unattributed_scope()
     if scope_err then return nil, scope_err end
+    -- Jobs schedules durable retries; each function invocation runs once.
     local executor, executor_err = funcs.new():with_context(context):with_scope(scope):with_options({
         retry = { max_attempts = 1 },
     })
@@ -189,10 +190,8 @@ local function run_bound_worker(job: table, binding: table): (table?, error?)
     if not executor then return nil, (errors.new({ message = "job dispatch scope returns no executor", kind = errors.INTERNAL, retryable = false }) :: error) end
     local result, run_err = executor:call(target_id, input)
     if run_err then
-        -- Jobs schedules durable retries; a function worker invocation runs once.
-        local failure = error_envelope.wrap(run_err,
-            "job worker_ref failed (" .. tostring(binding.worker_ref) .. ")", {})
-        return nil, job_types.error_with_retryable(failure, false)
+        return nil, error_envelope.wrap(run_err,
+            "job worker_ref failed (" .. tostring(binding.worker_ref) .. ")", {}), true
     end
     local output = normalize_worker_output(result)
     local job_error = trim(output.job_error)
@@ -321,8 +320,8 @@ end
 
 -- Run a proc:// job under supervision: spawn the child and
 -- drive the supervise loop. hooks is injectable for tests; nil builds the live
--- wiring. Returns (output?, err?, control?).
-local function run_supervised_proc(db: sql.DB?, dbtype: string, job: table, binding: table, hooks: table?, run_id: string?): (table?, error?, string?)
+-- wiring. The final result marks an error reported by the worker.
+local function run_supervised_proc(db: sql.DB?, dbtype: string, job: table, binding: table, hooks: table?, run_id: string?): (table?, error?, string?, boolean?)
     if not hooks then
         if not db then
             return nil, (errors.new({ message = "db is required for live proc supervision", kind = errors.INTERNAL }) :: error), nil
@@ -341,14 +340,22 @@ local function run_supervised_proc(db: sql.DB?, dbtype: string, job: table, bind
     if spawn_err or not child_pid then
         return nil, spawn_err or (errors.new({ message = "proc spawn returned no pid", kind = errors.INTERNAL }) :: error), nil
     end
-    return supervise_proc_loop(hooks, tostring(child_pid))
+    local opts = job_supervise_opts()
+    local worker_err: error? = nil
+    opts.interpret_exit = function(result: any): (table?, error?)
+        local output, err = interpret_proc_result(result)
+        worker_err = err
+        return output, err
+    end
+    local output, err, control = proc_supervisor.supervise_loop(hooks, tostring(child_pid), opts)
+    return output, err, control, err ~= nil and err == worker_err
 end
 worker.run_supervised_proc = run_supervised_proc
 
 -- Dispatch a claimed job: a wake continuation runs in jobs, a worker_ref job
 -- runs its target under the worker frame bounded by the unattributed-execution
 -- policy (the target loads the execution identity from its own record). An unknown type is skipped, not failed.
-local function execute_job(db: sql.DB, dbtype: string, job: table, run_ctx: table?): (table?, error?)
+local function execute_job(db: sql.DB, dbtype: string, job: table, run_ctx: table?): (table?, error?, boolean?)
     local job_type = tostring(job.job_type or "")
 
     if job_type == wake.CONTINUATION_TYPE then

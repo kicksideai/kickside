@@ -47,6 +47,8 @@ entries:
         path: .meta.target_db
       - entry: kickside.core.jobs.migrations:32_wake_retention
         path: .meta.target_db
+      - entry: kickside.core.jobs.migrations:33_claim_attempt_limit
+        path: .meta.target_db
       - entry: kickside.core.jobs.migrations:25_retention_order
         path: .meta.target_db
       - entry: kickside.core.jobs.migrations:24_lease_policy
