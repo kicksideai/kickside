@@ -154,6 +154,14 @@ return {run = test.run_cases(function()
             assert(repo.reload())
             if not ok then error(err) end
         end)
+        test.it("probes a model that rejects temperature", function()
+            fake_http.prepare('{"name":"sampling-unsupported"}')
+            card_test.handler()
+            local payload = fake_http.payload()
+            test.eq(payload.success, true)
+            test.eq(payload.output, "ok")
+            test.eq(payload.max_tokens, 64)
+        end)
         test.it("keeps provider generation errors private without changing the LLM error contract", function()
             for _, failure in ipairs({"Invalid credential: provider-credential-sentinel",
                 errors.new({kind = errors.UNAUTHORIZED, message = "Invalid credential: provider-credential-sentinel"})}) do
