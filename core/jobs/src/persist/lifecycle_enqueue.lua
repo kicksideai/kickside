@@ -272,7 +272,11 @@ local function resolve_existing(exec: Executor, dbtype: string, existing: table,
         local locked, lock_err = wake_rows.lock_job(exec :: sql.Transaction, dbtype, existing, target_key,
             "slot", response_error)
         if lock_err then return nil, lock_err end
-        if locked then existing = locked end
+        if not locked then
+            return nil, errors.new({message = "job settled during slot convergence", kind = errors.CONFLICT,
+                retryable = true, details = {job_id = tostring(existing.id)}})
+        end
+        existing = locked
     end
     local capacity_err = converge_capacity_group(exec, existing, descriptor, max_row_bytes)
     if capacity_err then return nil, capacity_err end
