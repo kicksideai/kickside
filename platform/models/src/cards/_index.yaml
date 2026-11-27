@@ -17,6 +17,16 @@ entries:
       actions: [registry.get]
       effect: allow
 
+  - name: registry_cards_read
+    kind: security.policy
+    meta:
+      private: true
+      comment: Read the registry-declared llm.model cards the catalog merges with stored cards, so card readers answer registry cards and their routes.
+    policy:
+      resources: '*'
+      actions: [registry.find, registry.get]
+      effect: allow
+
   - name: cards
     kind: contract.definition
     meta:
@@ -36,7 +46,7 @@ entries:
                 "required": ["success"] }
             format: application/schema+json
       - name: get_card
-        description: get_card({ name }) -> { success, model?, error? }. One catalog card in its public projection, disabled cards included.
+        description: get_card({ name }) -> { success, model?, error? }. One catalog card in its public projection, disabled cards included. model.routes lists every route in order with provider_id, provider_model, provider_profile_id, options, and any route-owned pricing and limits.
         input_schemas:
           - definition: |
               { "type": "object",
@@ -148,6 +158,7 @@ entries:
       keyset: kickside.contract:keyset
     security:
       policies:
+        - kickside.models.cards:registry_cards_read
         - kickside.models.cards:database_config_read
         - kickside.models.catalog:catalog_database
         - kickside.models.catalog:catalog_read
@@ -165,6 +176,7 @@ entries:
       keyset: kickside.contract:keyset
     security:
       policies:
+        - kickside.models.cards:registry_cards_read
         - kickside.models.cards:database_config_read
         - kickside.models.catalog:catalog_database
         - kickside.models.catalog:catalog_read
@@ -182,6 +194,7 @@ entries:
       keyset: kickside.contract:keyset
     security:
       policies:
+        - kickside.models.cards:registry_cards_read
         - kickside.models.cards:database_config_read
         - kickside.models.catalog:catalog_database
         - kickside.models.catalog:catalog_read
