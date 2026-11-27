@@ -5,7 +5,7 @@ local profile_service = require("profile_service")
 local M = {}
 
 local function message(err: any): string
-    if (type(err) == "table" or type(err) == "userdata") and type((err :: any).message) == "function" then return (err :: any):message() end
+    if type(err) == "userdata" then return (err :: any):message() end
     return tostring(err)
 end
 

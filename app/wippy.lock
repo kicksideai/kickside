@@ -6,8 +6,8 @@ modules:
       version: 0.5.116
       hash: b534428796dd2ee3a8d4cf379bc3821605ee9e5fc95e9d6d1cd27614a5f0542b
     - name: kickside/agent-onboarding
-      version: 0.1.6
-      hash: 5056a59dc81bbc958c49dd27dd549ae6e364dd8ee022915248568bcfd4989ea1
+      version: 0.1.14
+      hash: 7a0b9151440985f54a7319c8980e20f33da2fe53db1d05d834e60ad7aae25804
     - name: kickside/agents
       version: 0.2.23
       hash: 805cea6cd5a3339f5519dc76b154301c41619060fde8a3b7d0a6a78c99952f55
@@ -36,8 +36,8 @@ modules:
       version: 0.1.20
       hash: a8e23bf51ce36933c20a4d54ff8bc9fb32774f5c960215135652d82b7903d1a5
     - name: kickside/doc2md
-      version: 0.8.21
-      hash: e5d66ebe2da394f2eba7bbc318f4d1d2e647065e95dddc3a531e088a2ad2b700
+      version: 0.8.28
+      hash: 075f61918db65641b3d7a0a625e2715a1b4c64462c6a6f1edf7d3d8d3c3e8b0a
     - name: kickside/execution
       version: 0.2.7
       hash: 3954d2cc679886deb8a15a4a3c8c36e4ea09e578f09a2eb6f27f0ac62e10fdf7
@@ -54,14 +54,14 @@ modules:
       version: 0.1.96
       hash: a14fea84761c474fb6127cf08f79958419437b20122028339e5629cdd387dde7
     - name: kickside/knowledge
-      version: 0.1.85
-      hash: a1a83f0cd6a776570f13ba02a218a337ce177d7df7d104d0378604220e2e33b8
+      version: 0.1.109
+      hash: b765205eed0952523a3d93e0d004deb93793350659106c914b05896e3b650b64
     - name: kickside/mcp-client
       version: 0.2.5
       hash: e399b40bc7f2bbb8eb716aca77423269d5652dbddeea41a81705abe59d8c040b
     - name: kickside/memory
-      version: 0.1.20
-      hash: cfa9fe68cfdb0955cb915304fe91695208863f68912132ab853262d2867af0fb
+      version: 0.1.24
+      hash: c3d24ea4201ea268b8a5ff1f5948c29060371594367938d36ba6fc95ba149187
     - name: kickside/models
       version: 0.1.89
       hash: b08f3c549102b83f30e66beac36792dd91625c8163db8604b24cc343dcb0b919
@@ -71,6 +71,9 @@ modules:
     - name: kickside/pdf2image
       version: 0.7.13
       hash: c08614c8154f9213be5fd94324429d9a6383b70def1c6e3bd922b20cf894b198
+    - name: kickside/provider-text
+      version: 0.1.0
+      hash: 734816c7127cbe526581096c76b7528cbf873497ec7a69a0f1776922fd486a1e
     - name: kickside/realtime
       version: 0.1.32
       hash: a933ef9353ad0453e49f113e068cb43d8c4cad3a181a4dfc7942ea493618faec
@@ -81,8 +84,8 @@ modules:
       version: 0.1.35
       hash: 700c91ece45993ef6e649fb8f6ea02b4353fbf003614d94ec61311722bdfce8b
     - name: kickside/search-index
-      version: 0.1.2
-      hash: b96c647d6cba714d0b6fd1920916ceb12123a96b7a446b9d9714d2de94485867
+      version: 0.1.4
+      hash: 7c34777513b974db101deeb15441e0306eba023425f2d571e348d6a72b2ddabb
     - name: kickside/security
       version: 0.2.20
       hash: 38f8036094a6dd312494b65ea25a197cc4aa9559934b719a0258ae8379159d3d
@@ -90,8 +93,8 @@ modules:
       version: 0.1.45
       hash: ae1e52c6b50dd60885b8c27f933907e2618fc81bd403c03e23dd48f79421cda8
     - name: kickside/settings
-      version: 0.3.0
-      hash: b3e970dbff3a845badbc90feee6582df079880e86674916f540c3f54673046bf
+      version: 0.3.17
+      hash: 1240fb13d9deb338143267f043c958ce051ffd2f3552e3b12a6d8c37b49583e1
     - name: kickside/sso
       version: 0.1.40
       hash: 4b3aee442af282d20064e5d5476d39c67853fe99864ae8b30239a9d8e154836c
@@ -108,8 +111,8 @@ modules:
       version: 0.2.16
       hash: 662f778494a5dca624362762fa66222bb954a660fea00318129528c4e7bc3f78
     - name: kickside/uploads
-      version: 0.3.0
-      hash: 7d229e4847e09323eb7f7c11a67e8e61682ff7a267f8625f059e5e5f1ae8a2c5
+      version: 0.3.38
+      hash: 3499885a2043bebab9952db000070685d5bb89206efdb129cec40e830650a891
     - name: kickside/users
       version: 0.2.14
       hash: bc50567e7da32463341ad9d0d260e0ad2645b4ffcd05ca5f122a55ec6462048b
