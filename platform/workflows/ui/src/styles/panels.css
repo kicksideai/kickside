@@ -34,6 +34,7 @@
 .wf-hint { margin: 6px 2px 0; font-size: var(--wf-fs-meta); color: var(--wf-muted); line-height: 1.45; }
 .wf-panel-hint--warn { color: color-mix(in srgb, var(--wf-danger) 82%, var(--p-text-color)); }
 .wf-field-err { margin: 6px 2px 0; overflow-wrap: anywhere; }
+.wf-panel-foot .p-button.p-button-danger.p-button-outlined { color: var(--wf-danger, var(--p-text-color)); }
 .wf-panel-foot { margin-top: 22px; }
 .wf-panel-pinned-note { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0; }
 .wf-panel-pinned-note svg { width: 13px; height: 13px; }
