@@ -189,7 +189,9 @@ return {run = test.run_cases(function()
             local result = assert(openai.test(profile(), {}))
             test.eq(result.model, "babbage-002")
             test.eq(result.mode, "chat_completions")
-            test.eq(assert(http_fixture.probe()).url, "https://example.invalid/chat/completions")
+            local request = assert(http_fixture.probe())
+            test.eq(request.url, "https://example.invalid/chat/completions")
+            test.is_nil(assert(json.decode(request.body)).temperature)
 
             local explicit = first_party()
             explicit.config.test_model = "configured-chat-model"
