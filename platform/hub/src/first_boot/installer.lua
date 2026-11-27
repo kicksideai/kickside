@@ -114,6 +114,33 @@ function M.readiness(raw: any, state: any): string?
     return "installing_modules"
 end
 
+-- Administrative view of this configuration. A new list starts pending even
+-- if the previous list completed or failed.
+function M.status(raw: any, read_state: () -> (any?, any?)): (any?, any?)
+    local modules, parse_err = M.parse(raw)
+    if not modules then
+        return { success = true, configured = true, status = "failed",
+            retryable = false, message = parse_err, modules = {} }
+    end
+    if #modules == 0 then return { success = true, configured = false, modules = {} } end
+    local value, err = read_state()
+    if err or not value then return nil, err or "missing first boot state" end
+    local items = value.modules or {}
+    local current = value.source == table.concat(modules, ",")
+    if not current then
+        items = {}
+        for index, component in ipairs(modules) do items[index] = { component = component, status = "pending" } end
+    end
+    return {
+        success = true,
+        configured = true,
+        status = current and value.status or "pending",
+        message = current and value.message or nil,
+        updated_at = current and value.updated_at or nil,
+        modules = items,
+    }
+end
+
 -- deps: env_modules(), read_state(), write_state(state), installed() -> set,
 -- plan(args), install(args), setup(descriptor, action).
 -- A run that finished for the same module list is not repeated. Failed modules

@@ -98,6 +98,7 @@ export interface HubMigrationsEntry {
 export type FirstBootModuleStatus = 'pending' | 'installing' | 'installed' | 'failed'
 
 export interface FirstBootInstallStatus {
+  retryable?: boolean
   success: boolean
   configured: boolean
   status?: 'pending' | 'running' | 'completed' | 'failed'

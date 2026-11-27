@@ -11,6 +11,7 @@ const state = ref<FirstBootInstallStatus | null>(null)
 let timer: ReturnType<typeof setTimeout> | undefined
 let stopped = false
 let watching = false
+let retryDelay = POLL_MS
 
 const ICONS: Record<FirstBootModuleStatus, string> = {
   pending: 'tabler:clock',
@@ -27,18 +28,21 @@ const LABELS: Record<FirstBootModuleStatus, string> = {
 
 async function load() {
   try {
-    state.value = await hub.firstBootStatus()
+    const next = await hub.firstBootStatus()
+    if (stopped) return
+    state.value = next
+    if (next.configured && next.status !== 'completed' && next.retryable !== false) {
+      watching = true
+      retryDelay = next.status === 'failed' ? Math.min(30000, retryDelay * 2) : POLL_MS
+      timer = setTimeout(load, retryDelay)
+    } else if (watching) {
+      watching = false
+      window.dispatchEvent(new CustomEvent('kickside:modules-changed'))
+    }
   } catch {
-    state.value = null
-    return
-  }
-  const status = state.value?.status
-  if (!stopped && state.value?.configured && (status === 'pending' || status === 'running')) {
-    watching = true
-    timer = setTimeout(load, POLL_MS)
-  } else if (watching) {
-    watching = false
-    window.dispatchEvent(new CustomEvent('kickside:modules-changed'))
+    if (stopped) return
+    timer = setTimeout(load, retryDelay)
+    retryDelay = Math.min(30000, retryDelay * 2)
   }
 }
 
@@ -63,6 +67,7 @@ onBeforeUnmount(() => {
         <span v-if="item.message" class="km-first-boot-msg">{{ item.message }}</span>
       </li>
     </ul>
-    <p v-if="state.status === 'failed'" class="km-first-boot-msg">Install the failed modules from the catalog below, or restart the workspace to try again.</p>
+    <p v-if="state.retryable === false" class="km-first-boot-msg">Correct the module list in the workspace configuration.</p>
+    <p v-else-if="state.status === 'failed'" class="km-first-boot-msg">Install the failed modules from the catalog below, or restart the workspace to try again.</p>
   </section>
 </template>

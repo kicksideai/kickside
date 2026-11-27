@@ -131,6 +131,27 @@ end
 
 local function define_readiness_tests()
     test.describe("first boot readiness", function()
+        test.it("distinguishes malformed configuration from an empty list without reading persisted state", function()
+            local function unused() error("unexpected state read") end
+            local empty = assert(installer.status("", unused))
+            test.is_false(empty.configured)
+            local invalid = assert(installer.status("acme/crm@1.2.3", unused))
+            test.is_true(invalid.configured)
+            test.eq(invalid.status, "failed")
+            test.is_false(invalid.retryable)
+            test.contains(invalid.message, "invalid module id")
+        end)
+
+        test.it("keeps the previous install failure out of a new module selection", function()
+            local pending = assert(installer.status("acme/docs", function()
+                return {source = "acme/crm", status = "failed", message = "old error", updated_at = "old time"}
+            end))
+            test.eq(pending.status, "pending")
+            test.is_nil(pending.message)
+            test.is_nil(pending.updated_at)
+            test.eq(pending.modules[1].component, "acme/docs")
+        end)
+
         test.it("is ready when no module list is set", function()
             test.is_nil(installer.readiness(nil, nil))
             test.is_nil(installer.readiness("", {}))
