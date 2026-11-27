@@ -24,6 +24,7 @@ entries:
     - kickside.oauth.runtime:*
     - kickside.oauth.security:*
     - kickside.oauth.service:*
+    - kickside.oauth.traits:*
     - kickside.oauth.views:*
     actions:
     - registry.get
@@ -61,6 +62,7 @@ entries:
     - kickside.oauth.runtime:*
     - kickside.oauth.security:*
     - kickside.oauth.service:*
+    - kickside.oauth.traits:*
     - kickside.oauth.views:*
     actions:
     - contract.get

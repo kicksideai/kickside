@@ -39,6 +39,9 @@ export interface NavItem {
   // 'surface' resolves a renderer the bundle ships (by `surface`, default
   // route_name); 'component' mounts the registry-declared web component
   // `component_tag` — a module-owned surface ships its UI and needs no app code.
+  // Before connection, component surfaces receive `base-path` (the normalized
+  // nav path) and `route` (relative to that base, empty at the base). Changing
+  // the base remounts the element; route changes update the existing element.
   render?: string
   surface?: string
   component_tag?: string
