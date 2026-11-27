@@ -170,8 +170,7 @@ function M.classify_response(status: number?, body: any): string?
     end
 
     if status == 402 or code == "insufficient_quota" or kind == "insufficient_quota"
-        or message:find("credit balance is too low", 1, true)
-        or message:find("billing", 1, true) and (status == 400 or status == 403 or status == 429) then
+        or message:find("credit balance is too low", 1, true) then
         return M.ERROR_TYPES.NO_CREDITS
     end
     if status == 401 or status == 403 or reasons.API_KEY_INVALID or kind == "authentication_error"
