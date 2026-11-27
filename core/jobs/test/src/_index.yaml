@@ -4515,7 +4515,9 @@ entries:
     method: run
     modules:
     - sql
+    - uuid
     imports:
+      lifecycle: kickside.core.jobs.persist:lifecycle
       clock: kickside.core.jobs:clock
       test: wippy.test:test
       jobs: app:health_bounded_source
