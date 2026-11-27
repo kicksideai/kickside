@@ -1,3 +1,4 @@
+-- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 -- The jobs lock order is wake rows by ascending key, then job rows by
 -- ascending id. A wake holds its key's wake row before any job row it
 -- targets. A write to one existing job outside a wake takes that job's wake
