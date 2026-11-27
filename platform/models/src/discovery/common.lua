@@ -160,7 +160,17 @@ function M.response_error(response: any, label: string?): (string, any?)
     return M.failure_message(label or "provider request failed", diagnostics), diagnostics
 end
 
-function M.decode_response(response: any, label: string?): (any?, string?, any?)
+-- Validate the original JSON when an authoritative list is requested. Lua tables
+-- alone cannot distinguish an empty array from an empty object.
+local model_array = { type = "array", items = { type = "object" } }
+local list_schema = { anyOf = { model_array, {
+    type = "object", properties = { data = model_array, models = model_array },
+    anyOf = { { required = { "data" } }, { required = { "models" } } },
+} } }
+local bedrock_schema = { type = "object", required = { "modelSummaries" },
+    properties = { modelSummaries = model_array } }
+
+function M.decode_response(response: any, label: string?, require_list: boolean?, bedrock: boolean?): (any?, string?, any?)
     if not response then return nil, "empty response" end
     local status = tonumber(response.status_code)
     if not status or status < 200 or status >= 300 then
@@ -172,6 +182,13 @@ function M.decode_response(response: any, label: string?): (any?, string?, any?)
         diagnostics = diagnostics or {}
         diagnostics.status_code = status
         return nil, "failed to parse model list", diagnostics
+    end
+    if require_list and not json.validate_string(bedrock and bedrock_schema or list_schema, response.body) then
+        return nil, "provider returned an invalid model list"
+    end
+    if require_list and type(parsed) == "table" and (parsed.has_more == true
+            or (type(parsed.nextPageToken) == "string" and parsed.nextPageToken ~= "")) then
+        return nil, "provider returned a partial model list"
     end
     return parsed
 end

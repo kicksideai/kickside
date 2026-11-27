@@ -70,4 +70,13 @@ function M.test_profile(args: any): any
     return { success = true, result = result }
 end
 
+-- served_models({ id }) -> { success, models?, error?, code? }. The provider models the
+-- profile serves now, from the provider's model list.
+function M.served_models(args: any): any
+    if type(args) ~= "table" then return { success = false, error = "request must be an object" } end
+    local models, err = profile_service.served(args.id)
+    if not models then return refusal(err) end
+    return { success = true, models = models }
+end
+
 return M

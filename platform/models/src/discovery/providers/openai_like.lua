@@ -77,7 +77,7 @@ local function auth_headers(profile: any): { [string]: string }
     return headers
 end
 
-function M.fetch(profile: any): ({ any }?, string?, any?)
+function M.fetch(profile: any, require_list: boolean?): ({ any }?, string?, any?)
     local headers = auth_headers(profile)
 
     local base_url = common.configured_base_url(profile, "https://api.openai.com/v1")
@@ -87,7 +87,7 @@ function M.fetch(profile: any): ({ any }?, string?, any?)
     })
     if err then return nil, common.transport_error(err) end
 
-    local parsed, perr, diagnostics = common.decode_response(response, "model list failed")
+    local parsed, perr, diagnostics = common.decode_response(response, "model list failed", require_list)
     if not parsed then return nil, perr, diagnostics end
     return common.model_rows(parsed)
 end

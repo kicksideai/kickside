@@ -16,7 +16,7 @@ local function credential_error(code: string, kind: string): (nil, string, any)
     return nil, common.failure_message("Bedrock credentials could not be used", diagnostics), diagnostics
 end
 
-function M.fetch(profile: any): ({ any }?, string?, any?)
+function M.fetch(profile: any, require_list: boolean?): ({ any }?, string?, any?)
     local region = common.resolve_value(profile, "region", "AWS_REGION")
         or common.resolve_value(profile, "aws_region", "AWS_DEFAULT_REGION")
         or "us-east-1"
@@ -74,7 +74,7 @@ function M.fetch(profile: any): ({ any }?, string?, any?)
     })
     if err then return nil, common.transport_error(err) end
 
-    local parsed, perr, diagnostics = common.decode_response(response)
+    local parsed, perr, diagnostics = common.decode_response(response, nil, require_list, true)
     if not parsed then return nil, perr, diagnostics end
     if type(parsed.modelSummaries) == "table" then return common.as_array(parsed.modelSummaries) end
     return {}
