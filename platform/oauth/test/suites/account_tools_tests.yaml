@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: app
+entries:
+  - name: account_tools_test
+    kind: function.lua
+    meta: {type: test, suite: oauth_accounts}
+    source: file://account_tools_test.lua
+    method: run
+    modules: [registry, security, json]
+    imports:
+      test: wippy.test:test
+      tools: kickside.oauth.traits:account_tools
+      authorization: kickside.oauth:authorization
+
+  - name: account_lookup_provider
+    kind: registry.entry
+    meta: {oauth_provider: account-tools-test}
+    data: {}
+
+  - name: account_tools_integration_test
+    kind: function.lua
+    meta: {type: test, suite: oauth_accounts}
+    source: file://account_tools_integration_test.lua
+    method: run
+    modules: [security, funcs, uuid]
+    imports:
+      test: wippy.test:test
+      tools: kickside.oauth.traits:account_tools
+      connection_manager: kickside.oauth:connection_manager
+
+  - name: account_lookup_seed
+    kind: function.lua
+    source: file://account_tools_integration_test.lua
+    method: seed
+    modules: [security, funcs, uuid]
+    imports:
+      test: wippy.test:test
+      tools: kickside.oauth.traits:account_tools
+      connection_manager: kickside.oauth:connection_manager
+
+  - name: account_lookup_connect
+    kind: function.lua
+    source: file://account_tools_integration_test.lua
+    method: connect
+    modules: [security, funcs, uuid]
+    imports:
+      test: wippy.test:test
+      tools: kickside.oauth.traits:account_tools
+      connection_manager: kickside.oauth:connection_manager

@@ -177,6 +177,26 @@ local function public_card_summary(card: any): any
     }
 end
 
+-- Copy the public route fields explicitly. Provider entries may carry private
+-- transport settings alongside the catalog fields.
+local function public_routes(card: any): { any }
+    local routes: { any } = {}
+    for _, provider in ipairs(card.providers or {}) do
+        routes[#routes + 1] = policy.scrub_sensitive({
+            provider_id = provider.id,
+            provider_model = provider.provider_model,
+            provider_profile_id = provider.provider_profile_id,
+            options = provider.options,
+            pricing = provider.pricing,
+            sampling = provider.sampling,
+            limits = provider.limits,
+            max_tokens = provider.max_tokens,
+            output_tokens = provider.output_tokens,
+        })
+    end
+    return routes
+end
+
 local function public_card(card: any): any
     local provider = card.providers and card.providers[1] or {}
     local out = public_card_summary(card)
@@ -187,6 +207,7 @@ local function public_card(card: any): any
     out.pricing = card.pricing or {}
     out.dimensions = card.dimensions
     out.options = policy.scrub_sensitive(provider.options or {})
+    out.routes = public_routes(card)
     out.metadata = policy.scrub_sensitive(card.metadata or {})
     return out
 end
@@ -199,6 +220,7 @@ local function export_card(card: any): any
     exported.max_tokens = card.stored_limits.max_tokens
     exported.output_tokens = card.stored_limits.output_tokens
     exported.dimensions = card.stored_limits.dimensions
+    exported.routes = nil
     local public = policy.split_config(exported)
     return public
 end

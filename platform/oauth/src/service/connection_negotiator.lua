@@ -6,9 +6,9 @@ local security = require("security")
 local connection_manager = require("connection_manager")
 local callback_reply = require("callback_reply")
 local callback_names = require("callback_names")
+local consent_lifetime = require("consent_lifetime")
 
 -- Constants. Internal oauth ids stay inline; cross-module ports come from consts.
-local NEGOTIATION_TIMEOUT = "5m"
 local OAUTH_CONNECTOR_CONTRACT = "kickside.oauth:connector"
 local CALLBACK_TOPIC = "oauth_callback"
 
@@ -42,7 +42,7 @@ local function run(args)
     -- Set up channels
     local inbox = process.inbox()
     local events = process.events()
-    local timeout_channel = time.after(NEGOTIATION_TIMEOUT)
+    local timeout_channel = time.after(consent_lifetime.CALLBACK_WAIT_SECONDS * time.SECOND)
 
     -- Wait for callback or timeout
     local result = channel.select({

@@ -33,7 +33,7 @@
   transition: background-color .15s, color .15s;
 }
 .kx-settings-item-expand:hover { background: color-mix(in srgb, var(--p-text-color) 6%, transparent); color: var(--p-text-color); }
-.kx-settings-item-expand:focus-visible { outline: 2px solid var(--p-primary-color); outline-offset: 1px; }
+.kx-settings-item-expand:focus-visible { outline: 2px solid var(--p-primary-color); outline-offset: var(--p-focus-ring-offset); }
 .kx-settings-item-expand > svg { width: 16px; height: 16px; transition: transform .2s ease; }
 .kx-settings-item-expand[aria-expanded="true"] { color: var(--p-text-color); }
 .kx-settings-item-expand[aria-expanded="true"] > svg { transform: rotate(180deg); }

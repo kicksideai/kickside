@@ -79,6 +79,17 @@ entries:
               { "type": "object", "properties": { "success": { "type": "boolean" }, "result": { "type": "object" }, "error": { "type": "string" }, "code": { "type": "string" } }, "required": ["success"] }
             format: application/schema+json
 
+      - name: served_models
+        description: served_models({ id }) -> { success, models?, error?, code? }. The provider models the profile serves now, as the provider's model list answers them (provider_model ids), through the provider's discovery adapter, else the function its llm.provider entry names in meta.model_list (called with { profile_id }, answering { models }). Nothing is recorded. A list the provider does not answer (an unresolved *_env reference, a failed request, a provider without a model list) answers code profile_unavailable with the reason.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "id": { "type": "string", "minLength": 1 } }, "required": ["id"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object", "properties": { "success": { "type": "boolean" }, "models": { "type": "array", "items": { "type": "string" } }, "error": { "type": "string" }, "code": { "type": "string" } }, "required": ["success"] }
+            format: application/schema+json
+
   # A module whose records name a provider profile declares a binding of this
   # contract; delete_profile refuses a profile any holder answers holders for.
   - name: profile_holder
@@ -203,6 +214,36 @@ entries:
         - kickside.models.persist:decode_profiles_call
         - kickside.models.persist:profile_changed_call
 
+  - name: served_models
+    kind: function.lua
+    meta:
+      comment: profiles contract -- the provider models a profile serves now.
+    source: file://profiles_contract.lua
+    method: served_models
+    imports:
+      profile_service: kickside.models.catalog:profile_service
+    security:
+      policies:
+        - kickside.models.profiles:model_list_call
+        - kickside.models:secret_key_access
+        - kickside.models.catalog:catalog_database
+        - kickside.models.catalog:catalog_read
+        - kickside.models.catalog:provider_binding_read
+        - kickside.models:reload_profiles_call
+        - kickside.models.persist:decode_profiles_call
+        - kickside.models.persist:profile_changed_call
+
+  # served_models calls the model list function a provider's llm.provider entry declares.
+  - name: model_list_call
+    kind: security.policy
+    meta:
+      private: true
+    groups: []
+    policy:
+      resources: ["*"]
+      actions: [funcs.call, registry.get]
+      effect: allow
+
   # delete_profile lists the implementations of the profile holder contract,
   # opens each (their ids are the implementing modules') and calls holders only;
   # the runtime checks contract.call against the bare method name.
@@ -254,3 +295,4 @@ entries:
           update_profile: kickside.models.profiles:update_profile
           delete_profile: kickside.models.profiles:delete_profile
           test_profile: kickside.models.profiles:test_profile
+          served_models: kickside.models.profiles:served_models

@@ -3,6 +3,22 @@ namespace: kickside.oauth
 
 entries:
 
+  - name: authorization
+    kind: library.lua
+    meta:
+      comment: Shared OAuth consent initialization for HTTP and agent tools.
+    source: file://authorization.lua
+    modules: [contract, env, process, security, funcs]
+    imports:
+      component: kickside.component:component
+      http_errors: kickside.contract:http_errors
+      runtime_config: kickside.oauth:runtime_config
+      consent_lifetime: kickside.oauth:consent_lifetime
+
+  - name: consent_lifetime
+    kind: library.lua
+    source: file://consent_lifetime.lua
+
   - name: definition
     kind: ns.definition
     readme: file://README.md

@@ -11,8 +11,9 @@
 .kx-search-input { width: 220px; max-width: 40vw; }
 
 /* PrimeVue's SelectButton already draws a segmented control; a gap between the
-   segments breaks it into loose chips. Own placement only, not appearance. */
+   segments breaks it into loose chips. Use the theme text color on the tinted toggle background. */
 .kx-seg { flex: none; }
+.kx-seg .p-togglebutton:not(:disabled) { color: var(--p-text-color); }
 
 .kx-body { flex: 1; min-height: 0; padding: 6px 20px 20px; display: flex; flex-direction: column; gap: 14px; container-type: inline-size; }
 .kx-body--state { overflow: auto; padding-block: 20px; }

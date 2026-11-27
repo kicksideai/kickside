@@ -176,6 +176,7 @@ class ReleaseWorkflow(unittest.TestCase):
             with self.subTest(job=name):
                 checkout = re.search(r'uses: actions/checkout@[^\n]+\n(.*?)(?=\n    -|\Z)', jobs[name], re.DOTALL)
                 self.assertIsNotNone(checkout)
+                self.assertIn('fetch-depth: 0', checkout[1])
                 self.assertIn('ref: ${{ needs.release-please.outputs.released_commit }}', checkout[1])
         self.assertIn('released_commit: ${{ steps.release-commit.outputs.released_commit }}', jobs['release-please'])
         self.assertIn('RELEASE_OUTPUTS_JSON: ${{ toJSON(steps.release.outputs) }}', jobs['release-please'])

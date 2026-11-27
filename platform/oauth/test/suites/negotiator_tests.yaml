@@ -7,13 +7,27 @@ entries:
     modules: [process]
   - name: negotiator_fault_adapter
     kind: library.lua
-    source: file://negotiator_fault_adapter.lua
+    source: file://../src_link/service/connection_negotiator.lua
     modules: [time, contract, channel, security]
     imports:
       process: app:negotiator_fault_process
       connection_manager: kickside.oauth:connection_manager
       callback_names: kickside.oauth:callback_names
       callback_reply: app:negotiator_fault_reply
+      consent_lifetime: kickside.oauth:consent_lifetime
+  - name: negotiator_short_lifetime
+    kind: library.lua
+    source: file://negotiator_short_lifetime.lua
+  - name: negotiator_short_wait
+    kind: process.lua
+    source: file://../src_link/service/connection_negotiator.lua
+    method: run
+    modules: [time, contract, process, channel, security]
+    imports:
+      connection_manager: kickside.oauth:connection_manager
+      callback_reply: kickside.oauth.service:callback_reply
+      callback_names: kickside.oauth:callback_names
+      consent_lifetime: app:negotiator_short_lifetime
   - name: negotiator_fault_reply
     kind: library.lua
     source: file://negotiator_fault_reply.lua

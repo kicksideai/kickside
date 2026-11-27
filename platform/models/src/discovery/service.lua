@@ -5,6 +5,8 @@ local common = require("discovery_common")
 local mapper = require("model_mapper")
 local provider_registry = require("provider_registry")
 local reference_registry = require("reference_registry")
+local registry = require("registry")
+local funcs = require("funcs")
 
 local M = {}
 local log = logger:named("kickside.models.discovery")
@@ -125,6 +127,72 @@ function M.discover(profile_id: string): (any?, any?, any?)
         count = #saved,
         models = saved,
     }
+end
+
+-- declared_list answers the model list the profile's provider declares (its llm.provider
+-- entry's meta.model_list names a function called with { profile_id } and answering
+-- { models = { provider_model, ... } }), or nil when it declares none.
+local function declared_list(profile_id: string, provider_id: string): ({ string }?, any?, boolean)
+    local entry = registry.get(provider_id)
+    local fn = entry and entry.meta and entry.meta.type == "llm.provider" and entry.meta.model_list
+    if type(fn) ~= "string" or fn == "" then return nil, nil, false end
+    local answer, err = funcs.new():call(fn, { profile_id = profile_id })
+    if err then
+        local message = common.transport_error(err, "model list failed")
+        return nil, message, true
+    end
+    local invalid = "provider returned an invalid model list"
+    if type(answer) ~= "table" or type(answer.models) ~= "table" then return nil, invalid, true end
+    local count, last = 0, 0
+    for index, model in pairs(answer.models) do
+        if type(index) ~= "number" or index < 1 or index % 1 ~= 0 or type(model) ~= "string" or model == "" then
+            return nil, invalid, true
+        end
+        count = count + 1
+        last = math.max(last, index)
+    end
+    if last ~= count then return nil, invalid, true end
+    return answer.models, nil, true
+end
+
+-- served answers the provider models profile_id serves now, as the provider's model list
+-- answers them, in the list's order: through the profile's discovery adapter, else the model
+-- list the provider's entry declares (meta.model_list). It records nothing: neither cards nor
+-- the profile status change.
+function M.served(profile_id: string): ({ string }?, any?, any?)
+    local profile, profile_err = models_repo.get_profile(profile_id)
+    if profile_err then return nil, profile_err end
+    if not profile then return nil, "profile not found" end
+
+    local refused, refused_err = unresolved(profile_id, profile, "model list failed", false)
+    if refused_err then return nil, refused_err end
+    if refused then return nil, refused end
+
+    local provider_id = tostring(profile.provider_id or "")
+    local adapter = M.adapter_for(provider_id)
+    if not adapter or not adapter.fetch then
+        local listed, list_err, declared = declared_list(profile_id, provider_id)
+        if declared then return listed, list_err end
+        return nil, "provider has no model list: it has no discovery adapter and declares no meta.model_list"
+    end
+
+    local rows, err, diagnostics = adapter.fetch(profile, true)
+    if err then
+        if not diagnostics then
+            local _, classified = common.transport_error(err)
+            diagnostics = classified
+        end
+        return nil, common.failure_message("model list failed", diagnostics), diagnostics
+    end
+    local out: { string } = {}
+    for _, item in ipairs(rows or {}) do
+        if type(item) ~= "table" then return nil, "provider returned an invalid model row" end
+        local model_id = adapter.model_id or mapper.provider_model_id
+        local provider_model = model_id(item)
+        if type(provider_model) ~= "string" or provider_model == "" then return nil, "provider returned an invalid model ID" end
+        out[#out + 1] = provider_model
+    end
+    return out
 end
 
 function M.test(profile_id: string, opts: any): (any?, any?, any?)

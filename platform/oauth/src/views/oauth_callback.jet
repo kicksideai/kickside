@@ -448,7 +448,11 @@
     function showError(error) {
         updateProgress('error');
         setState('error-state');
-        document.getElementById('error-message').textContent = error;
+        const restartRequired = error === 'OAuth session not found or expired' ||
+            error === 'OAuth session timeout';
+        document.getElementById('error-message').textContent = restartRequired
+            ? `${error}. Start the connection again from the app.`
+            : error;
 
         // Send error message to parent window
         if (window.opener) {
@@ -496,16 +500,18 @@
             return;
         }
 
+        // Show processing stage after initial delay
+        setTimeout(() => {
+            updateProgress('processing');
+        }, 600);
+
+        // Add a minimum delay for better UX and to show progress
+        await new Promise(resolve => setTimeout(resolve, 1200));
+
+        let response;
+        let result;
         try {
-            // Show processing stage after initial delay
-            setTimeout(() => {
-                updateProgress('processing');
-            }, 600);
-
-            // Add a minimum delay for better UX and to show progress
-            await new Promise(resolve => setTimeout(resolve, 1200));
-
-            const response = await fetch('/api/public/oauth/callback', {
+            response = await fetch('/api/public/oauth/callback', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -518,20 +524,18 @@
                 })
             });
 
-            if (!response.ok) {
-                throw new Error('Network error');
-            }
-
-            const result = await response.json();
-
-            if (result.success) {
-                showSuccess();
-            } else {
-                showError(result.error || 'Authorization failed');
-            }
-
+            result = await response.json();
         } catch (error) {
-            showError('Connection error');
+            showError('Network error');
+            return;
+        }
+
+        if (result?.error) {
+            showError(result.error);
+        } else if (response.ok && result?.success) {
+            showSuccess();
+        } else {
+            showError('Authorization failed');
         }
     }
 
