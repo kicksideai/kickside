@@ -174,6 +174,20 @@ local function define_tests()
                 test.not_nil(result)
             end)
 
+            -- The name is the agent's title, which create requires and the chat
+            -- needs, so an update may not clear it.
+            test.it("update rejects an empty or non-string name and keeps the title", function()
+                local bad_names: {any} = { "", 5 }
+                for _, bad in ipairs(bad_names) do
+                    local _, err = call(exec, "a_update", { component_id = component_id, name = bad })
+                    test.is_true(errors.is(err, errors.INVALID), tostring(err))
+                    test.contains(tostring(err), "name must be a non-empty string")
+                end
+                local found, find_err = call(exec, "a_find", { component_id = component_id })
+                test.is_nil(find_err)
+                test.eq(((found :: any).meta or {}).title, agent_name)
+            end)
+
             test.it("update rejects invalid trait context", function()
                 local bad_name = prefix .. "bad_update_should_not_write"
                 local _, err = call(exec, "a_update", {

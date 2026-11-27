@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
-import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, lazyVueConfig } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
-import { lazyPage } from '@widgets/lazy'
 import type { Events } from './constants.ts'
 import stylesText from './styles.css?inline'
 import type { ChatSurface } from '@widgets/chatAppearance'
@@ -28,13 +27,15 @@ class KicksideChatEmptyStateElement extends WippyVueElement<ChatEmptyStateProps,
   }
 
   static get vueConfig() {
-    return {
-      lazyConfig: lazyPage(
-        () => import('./chat_empty_state-mount').then((module) => module.mountConfig),
-        'Could not load the chat start screen. Reload the page to try again.',
-        useEvents,
-      ),
-    }
+    return lazyVueConfig(
+      () => import('./chat_empty_state-mount').then((module) => module.mountConfig),
+      {
+        surface: 'page',
+        loading: 'Loading…',
+        failed: 'Could not load the chat start screen. Reload the page to try again.',
+        timeout: 30000,
+      },
+    )
   }
 }
 

@@ -261,6 +261,11 @@ local function update(component_id: string, args: table, get_service: any): (any
     if not component_id or component_id == "" then
         return nil, errors.new({ message = "component_id is required", kind = errors.INVALID })
     end
+    -- Create requires a title, and the chat treats a user agent without one as
+    -- bad data, so an update may not clear it.
+    if args.title ~= nil and (type(args.title) ~= "string" or args.title == "") then
+        return nil, errors.new({ message = "title must be a non-empty string", kind = errors.INVALID })
+    end
     local budget, budget_err = agent_types.response_token_budget(args.max_tokens)
     if budget_err then return nil, budget_err end
 

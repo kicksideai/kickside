@@ -6,7 +6,7 @@ import { defineConfig } from 'vite'
 import { hostExternals, wcRuntimeChunk } from './wc-build'
 
 export default defineConfig({
-  plugins: [vue({ template: { compilerOptions: { isCustomElement: (t) => t.startsWith('wc-') } } }), wippyComponentPlugin()],
+  plugins: [vue({ template: { compilerOptions: { isCustomElement: (t) => t.startsWith('wc-') } } }), wippyComponentPlugin({ required: true, lazyEntries: ['index'] })],
   // Lib builds don't auto-replace process.env; provide it so deps that read
   // NODE_ENV don't throw "process is not defined" in the browser/shadow DOM.
   define: {

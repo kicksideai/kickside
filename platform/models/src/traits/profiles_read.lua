@@ -1,5 +1,6 @@
 -- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
--- ModelProfilesRead: provider profiles and one profile by id, through the
+-- ModelProfilesRead: provider profiles, one profile by id and the provider models
+-- one profile serves, through the
 -- kickside.models.profiles:profiles contract. Secret values are never returned.
 local profiles_client = require("profiles_client")
 local tool_action = require("tool_action")
@@ -10,6 +11,7 @@ type Map = { [string]: any }
 local ACTIONS = {
     list = {},
     get = { required = { "id" } },
+    served = { required = { "id" } },
 }
 
 local function handler(args: any): (any?, error?)
@@ -20,6 +22,12 @@ local function handler(args: any): (any?, error?)
         if err or tool_result.is_domain_error(reply) then return reply, err end
         local profiles = (reply :: Map).profiles
         return { success = true, count = #profiles, profiles = profiles }, nil
+    end
+    if action == "served" then
+        local reply, err = profiles_client.call("served_models", { id = (args :: Map).id })
+        if err or tool_result.is_domain_error(reply) then return reply, err end
+        local models = (reply :: Map).models
+        return { success = true, count = #models, models = models }, nil
     end
     local reply, err = profiles_client.call("get_profile", { id = (args :: Map).id })
     if err or tool_result.is_domain_error(reply) then return reply, err end

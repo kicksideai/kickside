@@ -18,7 +18,7 @@ const HEAD_HINT =
   'Build Workflows from steps, tools, and AI agents. Publish them to use them in Automations, other Workflows, or agents.'
 
 const props = defineProps<{
-  totalCount: number
+  totalCount: number | null
   labelVocab: string[]
   q: string
   labelFilter: string | null
@@ -90,7 +90,7 @@ function buttonInvoker(event: Event): HTMLElement | null {
         <Icon icon="tabler:file-import" aria-hidden="true" />
         <span>Import</span>
       </Button>
-      <span class="kx-count">{{ totalCount }} Workflow{{ totalCount === 1 ? '' : 's' }}</span>
+      <span class="kx-count" :class="{ 'kx-count--pending': totalCount === null }">{{ totalCount ?? 0 }} Workflow{{ totalCount === 1 ? '' : 's' }}</span>
       <Button data-testid="create-workflow" @click="emit('create', buttonInvoker($event))">
         <Icon icon="tabler:plus" aria-hidden="true" />
         <span>New Workflow</span>

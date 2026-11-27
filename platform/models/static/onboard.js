@@ -1,29 +1,23 @@
-import { W as t, P as o, u as s } from "./wc-runtime-CHL0PH8L.js";
-import { a as r, s as n } from "./styles-Da9ZOhuE.js";
-import "@iconify/vue";
-import { define as i } from "@wippy-fe/proxy";
-const a = r(
-  () => import("./Onboard-BIgOVZxE.js"),
-  { loading: "Loading model setup…", failed: "Could not load the model setup. Reload the page to try again." },
-  s
-);
-class e extends t {
+import { W as o, l as s, P as i } from "./wc-runtime-DYOSFvWw.js";
+import { s as r } from "./styles-DH9RQd1B.js";
+import { define as n } from "@wippy-fe/proxy";
+class e extends o {
   static get wippyConfig() {
     return {
       propsSchema: { type: "object", properties: {} },
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl", "iframeCssUrl"],
-      inlineCss: n
+      inlineCss: r
     };
   }
   static get vueConfig() {
-    return { rootComponent: a, plugins: [o] };
+    return s(() => import("./Onboard-CIMWaWwu.js").then((t) => ({ rootComponent: t.default, plugins: [i] })), { surface: "compact", loading: "Loading model setup…", failed: "Could not load the model setup. Reload the page to try again.", delay: 200, timeout: 3e4 });
   }
 }
-async function g() {
+async function u() {
   return e;
 }
-i(import.meta.url, e);
+n(import.meta.url, e);
 export {
-  g as webComponent
+  u as webComponent
 };
 //# sourceMappingURL=onboard.js.map

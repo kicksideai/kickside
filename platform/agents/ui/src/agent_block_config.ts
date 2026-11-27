@@ -1,7 +1,7 @@
-import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, lazyVueConfig } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
-import { lazyControl } from '@widgets/lazy'
+
 import stylesText from './agent-block-config.css?inline'
 
 export interface AgentBlockConfigValue {
@@ -23,11 +23,7 @@ const PROPS_SCHEMA: WippyPropsSchema = {
   properties: { config: { type: 'object', description: 'Canonical Agent Block instance configuration.' } },
 }
 
-const AgentBlockConfig = lazyControl(
-  () => import('./app/AgentBlockConfig.vue'),
-  { loading: 'Loading agent block settings…', failed: 'Could not load the agent block settings. Reload the page to try again.' },
-  useEvents,
-)
+
 
 class KicksideAgentBlockConfigElement extends WippyVueElement<Props, Events> {
   static get wippyConfig(): WippyElementConfig<Props> {
@@ -37,7 +33,7 @@ class KicksideAgentBlockConfigElement extends WippyVueElement<Props, Events> {
       inlineCss: stylesText,
     }
   }
-  static get vueConfig() { return { rootComponent: AgentBlockConfig, plugins: [PrimeVuePlugin] } }
+  static get vueConfig() { return lazyVueConfig(() => import('./app/AgentBlockConfig.vue').then(module => ({ rootComponent: module.default, plugins: [PrimeVuePlugin] })), { surface: 'compact', loading: 'Loading agent block settings…', failed: 'Could not load the agent block settings. Reload the page to try again.', delay: 200, timeout: 30000 }) }
 }
 
 export async function webComponent() { return KicksideAgentBlockConfigElement }

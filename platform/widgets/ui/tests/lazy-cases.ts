@@ -59,7 +59,7 @@ function fixture(factory: (load: () => Promise<Component>) => WippyVueElementCon
   const element = new Surface()
   const error = vi.fn()
   element.addEventListener('error', error)
-  return { element, error, load, mounted, resolve: () => pending.resolve(root), reject: pending.reject }
+  return { Surface, element, error, load, mounted, resolve: () => pending.resolve(root), reject: pending.reject }
 }
 
 export function lazyCases(factories: Record<string, (load: () => Promise<Component>) => WippyVueElementConfig>) {
@@ -69,6 +69,7 @@ export function lazyCases(factories: Record<string, (load: () => Promise<Compone
         const f = fixture(factory)
         expect(f.load).not.toHaveBeenCalled()
         document.body.append(f.element)
+        await vi.advanceTimersByTimeAsync(0)
         expect(f.load).toHaveBeenCalledOnce()
         f.resolve()
         await vi.advanceTimersByTimeAsync(0)
@@ -129,7 +130,7 @@ export function lazyCases(factories: Record<string, (load: () => Promise<Compone
         const detail = f.error.mock.calls[0]![0].detail
         expect(detail.message).toBe(message)
         expect(detail.error).toBeInstanceOf(Error)
-        expect(detail.error.message).toContain('30000')
+        expect(detail.error.message).toMatch(/timed out|did not load in time/i)
         expect(f.element.shadowRoot?.querySelector('wippy-error, [role="alert"]')).not.toBeNull()
         await vi.advanceTimersByTimeAsync(30000)
         expect(vi.getTimerCount()).toBe(0)
@@ -163,6 +164,7 @@ export function lazyCases(factories: Record<string, (load: () => Promise<Compone
       it('loads on reconnect and mounts once', async () => {
         const f = fixture(factory)
         document.body.append(f.element)
+        await vi.advanceTimersByTimeAsync(0)
         expect(f.load).toHaveBeenCalledOnce()
         f.element.remove()
         document.body.append(f.element)
@@ -173,6 +175,41 @@ export function lazyCases(factories: Record<string, (load: () => Promise<Compone
         expect(f.error).not.toHaveBeenCalled()
         await vi.advanceTimersByTimeAsync(30000)
         expect(vi.getTimerCount()).toBe(0)
+      })
+
+      it('preloads while detached and shares that import with an attachment', async () => {
+        const f = fixture(factory)
+        const preload = f.Surface.preloadImplementation()
+        await vi.advanceTimersByTimeAsync(0)
+        expect(f.load).toHaveBeenCalledOnce()
+        expect(f.mounted).not.toHaveBeenCalled()
+        const mounted = vi.fn(() => expect(f.element.wippyMountState).toBe('mounted'))
+        f.element.addEventListener('wippy-mounted', mounted)
+        document.body.append(f.element)
+        f.resolve()
+        await preload
+        await vi.advanceTimersByTimeAsync(0)
+        expect(f.load).toHaveBeenCalledOnce()
+        expect(f.mounted).toHaveBeenCalledOnce()
+        expect(mounted).toHaveBeenCalledOnce()
+      })
+
+      it('removes pending feedback on every disconnect without discarding the shared import', async () => {
+        const f = fixture(factory)
+        for (let cycle = 0; cycle < 5; cycle++) {
+          document.body.append(f.element)
+          await vi.advanceTimersByTimeAsync(250)
+          expect(f.element.shadowRoot?.querySelectorAll('[data-lazy-state="loading"]')).toHaveLength(1)
+          f.element.remove()
+          expect(f.element.shadowRoot?.querySelectorAll('[data-lazy-state]')).toHaveLength(0)
+        }
+        expect(f.load).toHaveBeenCalledOnce()
+        f.resolve()
+        await vi.advanceTimersByTimeAsync(0)
+        expect(f.mounted).not.toHaveBeenCalled()
+        document.body.append(f.element)
+        await vi.advanceTimersByTimeAsync(0)
+        expect(f.mounted).toHaveBeenCalledOnce()
       })
     })
   }

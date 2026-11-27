@@ -1,14 +1,10 @@
-import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, lazyVueConfig } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
-import { lazyControl } from '@widgets/lazy'
+
 import stylesText from './settings-styles.css?inline'
 
-const Storage = lazyControl(
-  () => import('./app/storage-settings.vue'),
-  { loading: 'Loading Files & Uploads settings…', failed: 'Could not load the Files & Uploads settings. Reload the page to try again.' },
-  useEvents,
-)
+
 
 // kickside-settings-storage — the consolidated Files & Uploads settings panel.
 // A bespoke block editor: it gathers the several upload/document/rasterization
@@ -34,7 +30,7 @@ class KicksideSettingsStorageElement extends WippyVueElement<StorageProps, Stora
   }
 
   static get vueConfig() {
-    return { rootComponent: Storage, plugins: [PrimeVuePlugin] }
+    return lazyVueConfig(() => import('./app/storage-settings.vue').then(module => ({ rootComponent: module.default, plugins: [PrimeVuePlugin] })), { surface: 'compact', loading: 'Loading Files & Uploads settings…', failed: 'Could not load the Files & Uploads settings. Reload the page to try again.', delay: 200, timeout: 30000 })
   }
 }
 

@@ -185,12 +185,37 @@ entries:
     - kickside.models.profiles:update_profile
     - kickside.models.profiles:delete_profile
     - kickside.models.profiles:test_profile
+    - kickside.models.profiles:served_models
     - list_profiles
     - get_profile
     - create_profile
     - update_profile
     - delete_profile
     - test_profile
+    - served_models
+    actions:
+    - contract.get
+    - contract.open
+    - contract.call
+    - funcs.call
+    - funcs.security
+    effect: allow
+- name: profile_reader
+  kind: security.policy
+  meta:
+    title: Provider profile reading
+    comment: Grants a module the read methods of the kickside.models.profiles:profiles contract, so it lists and reads provider profiles and the provider models each serves.
+  groups: []
+  policy:
+    resources:
+    - kickside.models.profiles:profiles
+    - kickside.models.profiles:profiles_binding
+    - kickside.models.profiles:list_profiles
+    - kickside.models.profiles:get_profile
+    - kickside.models.profiles:served_models
+    - list_profiles
+    - get_profile
+    - served_models
     actions:
     - contract.get
     - contract.open

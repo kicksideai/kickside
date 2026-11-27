@@ -98,6 +98,18 @@ end
 -- Tests the profile id: its environment references resolve and its provider
 -- answers. An unscoped test records the profile status (healthy, unhealthy);
 -- a model-scoped test leaves that status unchanged.
+-- served answers the provider models the profile serves now (the provider's model list); a
+-- list the provider does not answer is profile_unavailable with the reason.
+function M.served(id: any): ({ string }?, any?)
+    if type(id) ~= "string" or id == "" then return nil, "Profile id is required" end
+    local models, err = model_discovery.served(id)
+    if not models then
+        return nil, errors.new({ kind = errors.UNAVAILABLE, retryable = true, message = tostring(err),
+            details = { code = "profile_unavailable" } })
+    end
+    return models
+end
+
 function M.test(id: any, opts: any?): (any?, any?)
     if type(id) ~= "string" or id == "" then return nil, "Profile id is required" end
     local profile, get_err = models_repo.get_profile(id)

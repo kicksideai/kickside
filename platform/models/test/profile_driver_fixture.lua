@@ -7,6 +7,7 @@ local M = {reads = 0, calls = 0, context = {}, decodes = 0, api_key = "fixture-c
     provider_id = "wippy.llm.openai_compat:provider"}
 
 M.encode = json.encode
+M.type = sql.type
 function M.decode(raw)
     M.decodes = M.decodes + 1
     return json.decode(raw)

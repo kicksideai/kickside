@@ -83,18 +83,9 @@ entries:
     meta:
       comment: Initiates OAuth connection flow for a specific provider
     source: file://init_connection.lua
-    modules:
-      - http
-      - contract
-      - env
-      - logger
-      - process
-      - security
-      - funcs
+    modules: [http]
     imports:
-      http_errors: kickside.contract:http_errors
-      component: kickside.component:component
-      runtime_config: kickside.oauth:runtime_config
+      authorization: kickside.oauth:authorization
     method: handler
 
   # kickside.oauth.api:init_connection.endpoint

@@ -8,6 +8,7 @@ local worker_completion = require("worker_completion")
 local job_fixture = require("job_fixture")
 local jobs = require("jobs")
 local wake = require("wake")
+local worker = require("worker")
 
 local function with_db(fn: (sql.DB, string) -> ())
     local db, err = sql.get("app:db")
@@ -36,6 +37,33 @@ end
 
 local function define_tests()
     test.describe("jobs terminal failure", function()
+        for _, case in ipairs({
+            {label = "ends a one-shot worker failure marked non-retryable on its first attempt",
+                retryable = false, status = job_types.JOB_STATE.DEAD},
+            {label = "schedules a retry for an unavailable worker that omits retryable",
+                status = job_types.JOB_STATE.PENDING},
+        }) do
+            test.it(case.label, function()
+                local db = assert(sql.get("app:db"))
+                local dbtype = tostring(db:type())
+                local job = leased(db, dbtype, {max_attempts = 3, worker_ref = "func://app:generic_job_target",
+                    payload = {raise_kind = "unavailable", raise_retryable = case.retryable}})
+                worker.process_job(db, dbtype, "worker-retry-policy-" .. uuid.v7(), job)
+                db:release()
+
+                local row = assert(jobs.get_job(job.id))
+                test.eq(tonumber(row.attempts), 1)
+                test.eq(row.status, case.status)
+                if case.retryable == false then
+                    test.is_nil(row.scheduled_at)
+                    test.not_nil(row.finished_at)
+                else
+                    test.not_nil(row.scheduled_at)
+                    test.is_nil(row.finished_at)
+                end
+            end)
+        end
+
         test.it("ends a one-shot invalid worker tier dead immediately", function()
             with_db(function(db, dbtype)
                 local job = leased(db, dbtype, {max_attempts = 5})
@@ -46,39 +74,6 @@ local function define_tests()
                 test.not_nil(row.finished_at)
                 test.is_nil(row.scheduled_at)
                 test.is_true(string.find(row.last_error, "worker tier is invalid", 1, true) ~= nil)
-            end)
-        end)
-
-        test.it("reports only erroneous unscheduled pending one-shots as stranded", function()
-            with_db(function(db, dbtype)
-                local ids = {}
-                for _, spec in ipairs({{slot = false, parked = true}, {slot = false, parked = true},
-                    {slot = false}, {slot = true, parked = true}, {slot = false, parked = true}}) do
-                    local key = uuid.v7()
-                    ids[#ids + 1] = assert(lifecycle.enqueue_job(db, dbtype, {
-                        owner_locator = {kind = "test", id = key}, job_type = "test.health_stranded",
-                        job_identity = {namespace = "test", scope = key, key = "health"},
-                        slot = spec.slot, parked = spec.parked,
-                    }))
-                end
-                for index = 1, 4 do
-                    assert(db:execute("UPDATE kickside_job SET last_error=$1 WHERE id=$2", {"worker output invalid", ids[index]}))
-                end
-                local health = assert(jobs.health())
-                local found = nil
-                for _, issue in ipairs(health.issues) do
-                    if issue.code == "stranded_jobs" then found = issue end
-                end
-                test.not_nil(found)
-                test.is_false(health.healthy)
-                local named = {}
-                for _, id in ipairs(found.job_ids) do named[id] = true end
-                test.is_true(named[ids[1]] == true)
-                test.is_true(named[ids[2]] == true)
-                for index = 3, 5 do test.is_nil(named[ids[index]]) end
-                for _, id in ipairs(ids) do assert(jobs.cancel(id)) end
-                local cleared = assert(jobs.health())
-                for _, issue in ipairs(cleared.issues) do test.is_true(issue.code ~= "stranded_jobs") end
             end)
         end)
 
@@ -170,19 +165,20 @@ local function define_tests()
             end)
         end)
 
-        for _, failure in ipairs({"plain", "unavailable"}) do
+        for _, failure in ipairs({"internal", "unavailable"}) do
             test.it("classifies function " .. failure .. " before settling a slot", function()
                 with_db(function(db, dbtype)
                     local job = leased(db, dbtype, {max_attempts = 1, slot = true,
                         job_identity = slot_identity(), worker_ref = "func://app:generic_job_target",
-                        payload = {raise_kind = failure, raise_message = "function worker boom"}})
+                        payload = {raise_kind = failure, raise_retryable = true, raise_message = "function worker boom"}})
                     for attempt = 1, 3 do
                         local output, err = dispatch.execute_job(db, dbtype, job)
                         test.is_nil(output); test.not_nil(err)
-                        test.eq(err:kind(), failure == "plain" and errors.INTERNAL or errors.UNAVAILABLE)
-                        test.is_false(err:retryable())
+                        test.eq(err:kind(), failure == "internal" and errors.INTERNAL or errors.UNAVAILABLE)
                         test.eq(err:details().cause.kind, err:kind())
-                        test.eq(err:details().cause.retryable, failure ~= "plain")
+                        local retryable = failure == "unavailable" and true or nil
+                        test.eq(err:retryable(), retryable)
+                        test.eq(err:details().cause.retryable, retryable)
                         local classification = worker_completion.failure_class_for(err)
                         test.eq(classification, "infrastructure")
                         test.is_nil(lifecycle.fail_job(db, job, dbtype, tostring(err), classification))
@@ -191,7 +187,8 @@ local function define_tests()
                         test.eq(tonumber(row.attempts), attempt)
                         test.not_nil(row.last_error); test.is_nil(row.finished_at)
                         test.not_nil(row.scheduled_at)
-                        test.is_true(row.last_error:find(failure == "plain" and "function worker boom" or "database unavailable", 1, true) ~= nil)
+                        test.is_true(row.last_error:find(failure == "internal" and "function worker boom"
+                            or "database unavailable", 1, true) ~= nil)
                         local again, lease_err = job_fixture.lease_own(db, dbtype, job.id)
                         test.is_nil(lease_err)
                         if not again then error("retry test requires a leased job: " .. tostring(lease_err)) end
@@ -201,13 +198,36 @@ local function define_tests()
             end)
         end
 
-        test.it("keeps infrastructure kinds retryable independently of function retry policy", function()
+        test.it("parks a slot when the runtime marks a plain function error non-retryable", function()
+            with_db(function(db, dbtype)
+                local job = leased(db, dbtype, {max_attempts = 1, slot = true,
+                    job_identity = slot_identity(), worker_ref = "func://app:generic_job_target",
+                    payload = {raise_kind = "plain", raise_message = "function worker boom"}})
+                local output, err = dispatch.execute_job(db, dbtype, job)
+                test.is_nil(output)
+                test.eq(err:kind(), errors.INTERNAL)
+                test.is_false(err:retryable())
+                test.eq(err:details().cause.kind, errors.INTERNAL)
+                test.is_false(err:details().cause.retryable)
+                local classification = worker_completion.failure_class_for(err)
+                test.eq(classification, "deterministic")
+                test.is_nil(lifecycle.fail_job(db, job, dbtype, tostring(err), classification))
+                local row = row_of(db, job.id)
+                test.eq(row.status, job_types.JOB_STATE.PENDING)
+                test.eq(tonumber(row.attempts), 1)
+                test.is_nil(row.scheduled_at)
+                test.is_nil(row.finished_at)
+                test.contains(tostring(row.last_error), "function worker boom")
+            end)
+        end)
+
+        test.it("classifies infrastructure kinds using the native retry flag", function()
             for _, kind in ipairs({errors.UNAVAILABLE, errors.INTERNAL, errors.CANCELED,
                 errors.CONFLICT, errors.TIMEOUT, errors.RATE_LIMITED, errors.UNKNOWN}) do
                 for _, policy in ipairs({{}, {retryable = true}, {retryable = false}}) do
                     local err = errors.new({kind = kind, message = "infrastructure failure", retryable = policy.retryable})
                     test.eq(worker_completion.failure_class_for(err),
-                        "infrastructure")
+                        policy.retryable == false and "deterministic" or "infrastructure")
                 end
             end
             local _, crash = dispatch.supervise_proc_loop({

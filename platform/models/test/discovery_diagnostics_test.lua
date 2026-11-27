@@ -109,6 +109,90 @@ return {run = test.run_cases(function()
         end)
     end)
 
+    test.describe("served models", function()
+        test.it("answers the provider models a profile serves from the provider's model list, recording nothing", function()
+            local saved = assert(repo.create_profile({name = "Provider served models",
+                provider_id = "wippy.llm.openai_compat:provider", api_key = "test-key",
+                config = {base_url = "https://example.invalid"}}))
+            local original = discovery.adapter_for
+            discovery.adapter_for = function() return openai end
+            local ok, err = pcall(function()
+                local before = assert(repo.get_profile(saved.id))
+                http_fixture.prepare({status_code = 200, body = '{"data":[{"id":"served-a"},{"id":"served-b"}]}'}, nil)
+                local models = assert(discovery.served(saved.id))
+                test.eq(#models, 2)
+                test.eq(models[1], "served-a")
+                test.eq(models[2], "served-b")
+                for _, body in ipairs({ "{}", '{"data":{}}', '{"data":[{}]}', '{"data":[false]}',
+                        '{"data":[],"has_more":true}', '{"models":[],"nextPageToken":"page-2"}' }) do
+                    http_fixture.prepare({status_code = 200, body = body}, nil)
+                    local rejected, rejection = discovery.served(saved.id)
+                    test.is_nil(rejected)
+                    test.not_nil(rejection)
+                end
+                http_fixture.prepare({status_code = 200, body = '{"data":[]}'}, nil)
+                test.eq(#assert(discovery.served(saved.id)), 0)
+                local after = assert(repo.get_profile(saved.id))
+                test.eq(after.status, before.status)
+                for _, card in ipairs(assert(repo.list_card_overlays())) do
+                    test.neq(card.provider_profile_id, saved.id)
+                end
+                http_fixture.prepare({status_code = 500, body = "{}"}, nil)
+                local none, failure = discovery.served(saved.id)
+                test.is_nil(none)
+                test.contains(tostring(failure), "model list failed")
+                test.eq(assert(repo.get_profile(saved.id)).status, before.status)
+            end)
+            discovery.adapter_for = original
+            assert(repo.delete_profile(saved.id))
+            if not ok then error(err, 0) end
+        end)
+    end)
+
+    test.describe("declared model list", function()
+        test.it("keeps provider exception details out of the public error", function()
+            local profile = assert(repo.create_profile({id = "fixture-failing-list", name = "Failure",
+                provider_id = "app:listed_provider", config = {}}))
+            local models, failure = discovery.served(profile.id)
+            assert(repo.delete_profile(profile.id))
+            test.is_nil(models)
+            test.contains(tostring(failure), "model list failed")
+            local private_detail = tostring(failure):find("private provider detail", 1, true)
+            test.is_nil(private_detail)
+        end)
+
+        test.it("distinguishes an empty model list from invalid provider replies", function()
+            for _, id in ipairs({"fixture-empty-list", "fixture-missing-list", "fixture-map-list", "fixture-invalid-id"}) do
+                local profile = assert(repo.create_profile({id = id, name = id, provider_id = "app:listed_provider", config = {}}))
+                local models, failure = discovery.served(profile.id)
+                assert(repo.delete_profile(profile.id))
+                if id == "fixture-empty-list" then
+                    test.is_nil(failure)
+                    test.eq(#assert(models), 0)
+                else
+                    test.is_nil(models)
+                    test.contains(tostring(failure), "invalid model list")
+                end
+            end
+        end)
+
+        test.it("answers the model list a provider without a discovery adapter declares, and refuses a provider declaring none", function()
+            local listed = assert(repo.create_profile({name = "Declared model list", provider_id = "app:listed_provider", config = {}}))
+            local bare = assert(repo.create_profile({name = "No model list", provider_id = "app:unlisted_provider", config = {}}))
+            local ok, err = pcall(function()
+                local models = assert(discovery.served(listed.id))
+                test.eq(#models, 1)
+                test.eq(models[1], "listed-model")
+                local none, failure = discovery.served(bare.id)
+                test.is_nil(none)
+                test.contains(tostring(failure), "provider has no model list")
+            end)
+            assert(repo.delete_profile(listed.id))
+            assert(repo.delete_profile(bare.id))
+            if not ok then error(err, 0) end
+        end)
+    end)
+
     test.describe("provider discovery timeout", function()
         test.it("uses saved timeout strings and environment durations for discovery and connection probes", function()
             local saved = assert(repo.create_profile({name = "Provider discovery timeout",

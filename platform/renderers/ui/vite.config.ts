@@ -22,7 +22,7 @@ export default defineConfig({
   plugins: [
     docxPreviewCompatibility(),
     vue({ template: { compilerOptions: { isCustomElement: (t) => t.startsWith('wc-') } } }),
-    wippyComponentPlugin(),
+    wippyComponentPlugin({ required: true, lazyEntries: ['render-code'] }),
     requireRendererEntryRegistration(entryNames),
   ],
   define: {

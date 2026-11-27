@@ -1,0 +1,86 @@
+# SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
+version: "1.0"
+namespace: kickside.oauth.traits
+entries:
+  - name: accounts
+    kind: registry.entry
+    meta:
+      type: agent.trait
+      title: Connect accounts
+      public: true
+      icon: tabler:plug-connected
+      comment: Connects OAuth accounts and checks whether they are ready to use.
+      tags: [oauth, accounts, connections]
+    prompt: |
+      Use ConnectAccount when the user asks to connect an external account.
+      Pass the provider name, such as google, and any scopes needed for the task.
+      If authorization_required includes authorization_url, show that link to
+      the user and ask them to complete consent. After they return, call
+      CheckConnection with the same provider and scopes. Confirm a connection only when
+      status is connected. A check never starts another consent flow. If a
+      check still requires authorization, offer ConnectAccount to reconnect.
+      Provider tools select the current user's accessible connection themselves.
+      If a provider tool reports that the account must be reconnected, call
+      ConnectAccount again with the provider and scopes needed for the task.
+    tools:
+      - kickside.oauth.traits:connect_account
+      - kickside.oauth.traits:check_connection
+
+  - name: account_tools
+    kind: library.lua
+    source: file://account_tools.lua
+    modules: [security]
+    imports:
+      component: kickside.component:component
+      authorization: kickside.oauth:authorization
+
+  - name: connect_account
+    kind: function.lua
+    meta:
+      type: tool
+      title: Connect account
+      llm_alias: ConnectAccount
+      llm_description: Reuse an OAuth account with a usable token held by Kickside or return a consent link. Provider revocation is detected at the first provider call. Call CheckConnection with the same provider and scopes after consent. Call ConnectAccount again if a provider tool requires reconnection.
+      mcp:
+        required_scopes: [state.read, state.write]
+      input_schema: |
+        {"type":"object","properties":{
+          "provider":{"type":"string","description":"OAuth provider name, such as google","minLength":1},
+          "scopes":{"type":"array","items":{"type":"string","minLength":1},"description":"Required OAuth scopes. Provider defaults are included during consent."},
+          "purpose":{"type":"string","maxLength":1000,"description":"Why the user needs this account."}
+        },"required":["provider"],"additionalProperties":false}
+      output_schema: |
+        {"type":"object","properties":{
+          "status":{"type":"string","enum":["connected","authorization_required"]},
+          "provider":{"type":"string"},"scopes":{"type":"array","items":{"type":"string"}},
+          "authorization_url":{"type":"string"},"expires_in":{"type":"integer"}
+        },"required":["status","provider"],"additionalProperties":false}
+    source: file://connect_account.lua
+    method: handler
+    imports:
+      account_tools: kickside.oauth.traits:account_tools
+
+  - name: check_connection
+    kind: function.lua
+    meta:
+      type: tool
+      title: Check connection
+      llm_alias: CheckConnection
+      llm_description: Check whether Kickside holds a usable token with the requested scopes after consent. Provider revocation is detected at the first provider call. Does not start consent. Call ConnectAccount again if a provider tool requires reconnection.
+      mcp:
+        required_scopes: [state.read]
+      input_schema: |
+        {"type":"object","properties":{
+          "provider":{"type":"string","minLength":1},
+          "scopes":{"type":"array","items":{"type":"string","minLength":1},"description":"Required OAuth scopes, matching ConnectAccount."}
+        },"required":["provider"],"additionalProperties":false}
+      output_schema: |
+        {"type":"object","properties":{
+          "status":{"type":"string","enum":["connected","authorization_required"]},
+          "provider":{"type":"string"},"scopes":{"type":"array","items":{"type":"string"}},
+          "reason":{"type":"string","enum":["not_connected","reconnect_required","missing_scopes"]}
+        },"required":["status","provider"],"additionalProperties":false}
+    source: file://check_connection.lua
+    method: handler
+    imports:
+      account_tools: kickside.oauth.traits:account_tools

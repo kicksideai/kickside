@@ -1,30 +1,24 @@
-import { W as e, P as t, u as r } from "./wc-runtime-pqFrgqFa.js";
-import { l as s, s as i } from "./styles-pKw_zLKY.js";
-import { p as n } from "./package-CCTUAjDf.js";
-import "@iconify/vue";
-import { define as p } from "@wippy-fe/proxy";
-const a = s(
-  () => import("./WebhookCreate-BpKiX3XI.js"),
-  { loading: "Loading webhook form…", failed: "Could not load the webhook form. Reload the page to try again." },
-  r
-);
-class o extends e {
+import { W as t, l as i, P as r } from "./wc-runtime-BQHcLGi8.js";
+import { s as n } from "./styles-BSWT_thV.js";
+import { p as s } from "./package-CCTUAjDf.js";
+import { define as a } from "@wippy-fe/proxy";
+class e extends t {
   static get wippyConfig() {
     return {
-      propsSchema: n.wippy.props,
+      propsSchema: s.wippy.props,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: i
+      inlineCss: n
     };
   }
   static get vueConfig() {
-    return { rootComponent: a, plugins: [t] };
+    return i(() => import("./WebhookCreate-Ut85Oh7O.js").then((o) => ({ rootComponent: o.default, plugins: [r] })), { surface: "compact", loading: "Loading webhook form…", failed: "Could not load the webhook form. Reload the page to try again.", delay: 200, timeout: 3e4 });
   }
 }
-async function d() {
-  return o;
+async function g() {
+  return e;
 }
-p(import.meta.url, o);
+a(import.meta.url, e);
 export {
-  d as webComponent
+  g as webComponent
 };
 //# sourceMappingURL=create.js.map

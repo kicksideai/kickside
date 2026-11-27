@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.44](https://github.com/kicksideai/kickside/compare/renderers-v0.1.43...renderers-v0.1.44) (2026-11-25)
+
+
+### Bug Fixes
+
+* **frontend:** adopt Web Host 1.0.70 and mount readiness ([#537](https://github.com/kicksideai/kickside/issues/537)) ([5d36990](https://github.com/kicksideai/kickside/commit/5d369902003a72720e2008663a2a798e595fc0a2))
+
 ## [0.1.43](https://github.com/kicksideai/kickside/compare/renderers-v0.1.42...renderers-v0.1.43) (2026-11-21)
 
 

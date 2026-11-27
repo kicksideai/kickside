@@ -478,6 +478,26 @@ entries:
       actions: contract.call
       effect: deny
 
+  - name: agents_details_registry_runtime_allow
+    kind: security.policy
+    groups: [app:agents_details_registry_deny_scope]
+    meta:
+      comment: Runtime authority for the agent-details registry-denial guard.
+    policy:
+      resources: '*'
+      actions: '*'
+      effect: allow
+
+  - name: agents_details_registry_deny
+    kind: security.policy
+    groups: [app:agents_details_registry_deny_scope]
+    meta:
+      comment: Denies registry reads, as for a member whose scope cannot see an agent entry.
+    policy:
+      resources: '*'
+      actions: [registry.get, registry.find]
+      effect: deny
+
   - name: agents_title_contract_authority_probe
     kind: function.lua
     meta:

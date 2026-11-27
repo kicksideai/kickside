@@ -17,7 +17,7 @@ export default defineConfig({
   resolve: { dedupe: ['vue', 'primevue', '@wippy-fe/proxy'], alias: { '@widgets': resolve(__dirname, '../../widgets/ui/src') } },
   plugins: [
     vue({ template: { compilerOptions: { isCustomElement: (t) => t.startsWith('wc-') } } }),
-    wippyComponentPlugin(),
+    wippyComponentPlugin({ required: true, lazyEntries: ['index', 'agent_picker', 'agent_trait_picker', 'agent_edit', 'master_picker', 'agent_block_config'] }),
     {
       name: 'strip-generated-trailing-whitespace',
       enforce: 'post',

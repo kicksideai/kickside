@@ -43,7 +43,7 @@ entries:
         value: "1000"
 
   # app.deps:facade
-  - version: ">=0.6.53"
+  - version: ">=0.6.54"
     name: facade
     kind: ns.dependency
     meta: {}
@@ -210,6 +210,7 @@ entries:
       - name: api_routes
         value: |
           {
+            "agents": { "details": "@/details?agent={agent}&nullable=true" },
             "pages": { "@prefix": "/api/v1/views/pages" },
             "components": { "@prefix": "/api/v1/views/components" }
           }

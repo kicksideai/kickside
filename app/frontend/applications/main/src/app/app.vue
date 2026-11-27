@@ -24,6 +24,7 @@ import { useShellAccount } from './useShellAccount'
 import { useSessionWorkspace } from './useSessionWorkspace'
 import { completeSplashNavigation as navigateAfterSplash } from './splashNavigation'
 import { useToneOverlay } from './useToneOverlay'
+import { useHostLinks } from './use-host-links'
 import {
   buildShellLayout,
   NAV_TARGET,
@@ -37,6 +38,7 @@ const route = useRoute()
 const api = useApi()
 const host = useHost()
 const instance = useWippy()
+useHostLinks(host, router)
 
 const chat = useChatController()
 const drafts = useInlineChatDrafts(host)

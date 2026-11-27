@@ -143,8 +143,9 @@ entries:
     meta:
       comment: Resolves agent titles by id or name
     source: file://get_agents_by_name.lua
-    modules: [http, registry, security]
+    modules: [http, registry, security, logger]
     imports:
+      component_envelope: kickside.component:envelope
       component: kickside.component:component
       agent_ref: kickside.agents:agent_ref
       agent_types: kickside.agents:types
@@ -162,8 +163,9 @@ entries:
     meta:
       comment: Resolves chat agent details and start prompts.
     source: file://get_agents_by_name.lua
-    modules: [http, registry, security]
+    modules: [http, registry, security, logger]
     imports:
+      component_envelope: kickside.component:envelope
       component: kickside.component:component
       agent_ref: kickside.agents:agent_ref
       agent_types: kickside.agents:types

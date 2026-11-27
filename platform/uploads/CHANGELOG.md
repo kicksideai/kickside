@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.38](https://github.com/kicksideai/kickside/compare/uploads-v0.3.37...uploads-v0.3.38) (2026-11-26)
+
+
+### Bug Fixes
+
+* **uploads:** fit oversized PDF pages and render incompatible scan attachments ([#1001](https://github.com/kicksideai/kickside/issues/1001)) ([7ed0edf](https://github.com/kicksideai/kickside/commit/7ed0edff4073cd25804bab871a0f02f1939afc5c))
+
+## [0.3.37](https://github.com/kicksideai/kickside/compare/uploads-v0.3.36...uploads-v0.3.37) (2026-11-25)
+
+
+### Bug Fixes
+
+* **frontend:** adopt Web Host 1.0.70 and mount readiness ([#537](https://github.com/kicksideai/kickside/issues/537)) ([5d36990](https://github.com/kicksideai/kickside/commit/5d369902003a72720e2008663a2a798e595fc0a2))
+
 ## [0.3.36](https://github.com/kicksideai/kickside/compare/uploads-v0.3.35...uploads-v0.3.36) (2026-11-22)
 
 

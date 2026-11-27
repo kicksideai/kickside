@@ -90,7 +90,7 @@ local function settle_child_exit(db: sql.DB, dbtype: string, job: table, run_ctx
         if not changed then
             local _, settle_err = reclaim.settle_confirmed(db, dbtype, {
                 id = job.id, token = job.lease_token, execution_seq = job.execution_seq,
-                failure = child_err and {cause = child_err, error_text = tostring(child_err), failure_class = failure_class_for(child_err),
+                failure = child_err and {cause = child_err, error_text = tostring(child_err), failure_class = failure_class_for(child_err, false),
                     retry_floor = retry_floor_for(child_err)} or nil,
             })
             if settle_err then return settle_err end
@@ -103,7 +103,7 @@ local function settle_child_exit(db: sql.DB, dbtype: string, job: table, run_ctx
         })
         return settle_err
     elseif child_err then
-        local fail_err = fail_job(db, dbtype, job, {}, tostring(child_err), failure_class_for(child_err), run_ctx, retry_floor_for(child_err))
+        local fail_err = fail_job(db, dbtype, job, {}, tostring(child_err), failure_class_for(child_err, false), run_ctx, retry_floor_for(child_err))
         if fail_err and job_types.is_lease_lost_error(fail_err) then
             return settle_child_exit(db, dbtype, job, run_ctx, child_err, "revoked")
         end
@@ -152,7 +152,7 @@ local function process_job(db: sql.DB, dbtype: string, pid: string, job: table, 
     if hb_err or type(heartbeat_pid) ~= "string" or heartbeat_pid == "" then
         local primary = hb_err or worker_response_error("heartbeat.id")
         local fail_err = fail_job(db, dbtype, job, {}, "lease heartbeat spawn failed: " .. tostring(primary),
-            failure_class_for(primary), run_ctx, retry_floor_for(primary))
+            failure_class_for(primary, false), run_ctx, retry_floor_for(primary))
         if fail_err then primary = error_envelope.wrap_secondary(fail_err, primary, "heartbeat failure persistence failed") end
         return nil, primary
     end
@@ -161,24 +161,24 @@ local function process_job(db: sql.DB, dbtype: string, pid: string, job: table, 
     local error_text: string? = nil
     local failure_class: string? = nil
     local control: string? = nil
+    local worker_reported: boolean? = nil
     local proc_binding = dispatch.proc_binding_for(job)
     if proc_binding then
         local supervised_run_id: string? = nil
         if type(run_ctx) == "table" and type((run_ctx :: any).id) == "string" then
             supervised_run_id = (run_ctx :: any).id :: string
         end
-        local result, proc_err, ctl = dispatch.run_supervised_proc(db, dbtype, job, proc_binding, nil, supervised_run_id)
+        local result, proc_err, ctl, reported = dispatch.run_supervised_proc(db, dbtype, job, proc_binding, nil, supervised_run_id)
         control = ctl
         output = result
         execution_err = proc_err
+        worker_reported = reported
     else
-        local exec_output, exec_err = dispatch.execute_job(db, dbtype, job, run_ctx)
-        output = exec_output
-        execution_err = exec_err
+        output, execution_err, worker_reported = dispatch.execute_job(db, dbtype, job, run_ctx)
     end
     if execution_err then
         error_text = tostring(execution_err)
-        failure_class = failure_class_for(execution_err)
+        failure_class = failure_class_for(execution_err, worker_reported == true)
     end
     local stop_err = lease.stop(heartbeat_pid)
     local function finish(ctl: string?, primary: error?): (string?, error?)

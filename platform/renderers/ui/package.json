@@ -9,9 +9,9 @@
     "@jvmr/pptx-to-html": "^1.0.1",
     "@kickside/ui-kit": "*",
     "@types/markdown-it": "^14.1.2",
-    "@wippy-fe/theme": "*",
-    "@wippy-fe/webcomponent-core": "*",
-    "@wippy-fe/webcomponent-vue": "*",
+    "@wippy-fe/theme": "0.0.71",
+    "@wippy-fe/webcomponent-core": "0.0.71",
+    "@wippy-fe/webcomponent-vue": "0.0.71",
     "docx-preview": "0.4.1",
     "highlight.js": "^11.11.1",
     "markdown-it": "^14.2.0",
@@ -26,8 +26,8 @@
     "@vitejs/plugin-vue": "^5.0.0",
     "@vitest/coverage-v8": "^4.1.9",
     "@vue/test-utils": "^2.4.11",
-    "@wippy-fe/proxy": "*",
-    "@wippy-fe/vite-plugin": "*",
+    "@wippy-fe/proxy": "0.0.71",
+    "@wippy-fe/vite-plugin": "0.0.71",
     "happy-dom": "^20.10.6",
     "magic-string": "^0.30.21",
     "postcss": "^8.5.26",
@@ -40,7 +40,7 @@
     "@types/katex": "*"
   },
   "peerDependencies": {
-    "@wippy-fe/proxy": "*",
+    "@wippy-fe/proxy": "0.0.71",
     "vue": "^3.5.0"
   },
   "wippy": {

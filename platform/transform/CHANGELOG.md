@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.56](https://github.com/kicksideai/kickside/compare/transform-v0.1.55...transform-v0.1.56) (2026-11-25)
+
+
+### Bug Fixes
+
+* **frontend:** adopt Web Host 1.0.70 and mount readiness ([#537](https://github.com/kicksideai/kickside/issues/537)) ([5d36990](https://github.com/kicksideai/kickside/commit/5d369902003a72720e2008663a2a798e595fc0a2))
+
 ## [0.1.55](https://github.com/kicksideai/kickside/compare/transform-v0.1.54...transform-v0.1.55) (2026-11-19)
 
 

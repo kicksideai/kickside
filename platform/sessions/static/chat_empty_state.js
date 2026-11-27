@@ -1,7 +1,6 @@
-import { W as s, m as o } from "./wc-runtime-enaNScz7.js";
-import { l as r } from "./lazy-DX8B4FNv.js";
-import { s as i } from "./styles-HhfABgzS.js";
-import { define as n } from "@wippy-fe/proxy";
+import { W as s, m as o } from "./wc-runtime-D-UdhneU.js";
+import { s as i } from "./styles-Dhq3lUU_.js";
+import { define as r } from "@wippy-fe/proxy";
 class e extends s {
   static get wippyConfig() {
     return {
@@ -21,20 +20,22 @@ class e extends s {
     };
   }
   static get vueConfig() {
-    return {
-      lazyConfig: r(
-        () => import("./chat_empty_state-mount-QqBf09S8.js").then((t) => t.mountConfig),
-        "Could not load the chat start screen. Reload the page to try again.",
-        o
-      )
-    };
+    return o(
+      () => import("./chat_empty_state-mount-D39frekm.js").then((t) => t.mountConfig),
+      {
+        surface: "page",
+        loading: "Loading…",
+        failed: "Could not load the chat start screen. Reload the page to try again.",
+        timeout: 3e4
+      }
+    );
   }
 }
-async function c() {
+async function l() {
   return e;
 }
-n(import.meta.url, e);
+r(import.meta.url, e);
 export {
-  c as webComponent
+  l as webComponent
 };
 //# sourceMappingURL=chat_empty_state.js.map

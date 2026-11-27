@@ -238,7 +238,7 @@ const emit = defineEmits<{ (event: 'back'): void; (event: 'open-workflow', id: s
       <Drawer
         v-if="model.narrowEditor"
         class="wf-inspector-drawer"
-        :visible="model.panelOpen"
+        :visible="model.inspectorVisible"
         position="right"
         :modal="true"
         :dismissable="true"

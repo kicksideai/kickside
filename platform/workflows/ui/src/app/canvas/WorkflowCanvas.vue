@@ -516,7 +516,7 @@ const viewModel = proxyRefs({
   measureAuto, openAutoMapped, dismissAutoMapped, pendingEdge, pendingAnchor,
   availableSteps, pendingOverlaySize, measurePending, acceptPending, showSuggestedNode,
   openPendingMapper, dismissPending, loading, panelOpen, hasSelection, openInspector,
-  narrowEditor, closeInspector, selectedNode, selectedRunStatus,
+  narrowEditor, inspectorVisible, closeInspector, selectedNode, selectedRunStatus,
   viewingNodeHeaders, clearSelection, rerunSameInput, selectedEdge, selectedNote,
   selectedEdgeUpstream, selectedEdgeDownstream, selectedEdgeSourceTitle, selectedEdgeTargetTitle,
   selectedNodeUpstream, selectedCombineConflict, updateNode, removeSelectedNode,

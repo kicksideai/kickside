@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.2.65](https://github.com/kicksideai/kickside/compare/kickside-v0.2.64...kickside-v0.2.65) (2026-11-26)
+
+
+### Bug Fixes
+
+* **agents:** distinguish lookup failures while preserving missing-agent responses ([#955](https://github.com/kicksideai/kickside/issues/955)) ([ef14039](https://github.com/kicksideai/kickside/commit/ef140393853559e5599f02226d632f515437fb0a))
+
+## [0.2.64](https://github.com/kicksideai/kickside/compare/kickside-v0.2.63...kickside-v0.2.64) (2026-11-25)
+
+
+### Bug Fixes
+
+* **frontend:** adopt Web Host 1.0.70 and mount readiness ([#537](https://github.com/kicksideai/kickside/issues/537)) ([5d36990](https://github.com/kicksideai/kickside/commit/5d369902003a72720e2008663a2a798e595fc0a2))
+
 ## [0.2.63](https://github.com/kicksideai/kickside/compare/kickside-v0.2.62...kickside-v0.2.63) (2026-11-24)
 
 

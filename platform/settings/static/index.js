@@ -1,34 +1,28 @@
-import { W as s, a as o } from "./wc-runtime-56DLhE4T.js";
-import { l as i } from "./lazy-ZWC1tvFC.js";
-import { s as n } from "./styles-BwCnGIq7.js";
-import "@iconify/vue";
-import { define as p } from "@wippy-fe/proxy";
-const r = { props: { type: "object", properties: { route: { type: "string", default: "", description: "Deep-link to a settings block by key. Unset selects the first block." } } } }, a = {
-  wippy: r
+import { W as o, l as s } from "./wc-runtime-4lROyJyk.js";
+import { s as i } from "./styles-Dj_-wh0U.js";
+import { define as n } from "@wippy-fe/proxy";
+const p = { props: { type: "object", properties: { route: { type: "string", default: "", description: "Deep-link to a settings block by key. Unset selects the first block." } } } }, r = {
+  wippy: p
 };
-class t extends s {
+class e extends o {
   static get wippyConfig() {
     return {
-      propsSchema: a.wippy.props,
+      propsSchema: r.wippy.props,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: n
+      inlineCss: i
     };
   }
   static get vueConfig() {
     return {
-      lazyConfig: i(
-        () => import("./lazy-mount-8PVP98aG.js").then((e) => e.mountConfig),
-        "Could not load Settings. Reload the page to try again.",
-        o
-      )
+      ...s(() => import("./lazy-mount-CCHEPpxY.js").then((t) => t.mountConfig), { surface: "page", loading: "Loading…", failed: "Could not load Settings. Reload the page to try again.", timeout: 3e4 })
     };
   }
 }
-async function u() {
-  return t;
+async function c() {
+  return e;
 }
-p(import.meta.url, t);
+n(import.meta.url, e);
 export {
-  u as webComponent
+  c as webComponent
 };
 //# sourceMappingURL=index.js.map

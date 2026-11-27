@@ -1,7 +1,6 @@
-import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, lazyVueConfig } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
-import { lazyControl } from '@widgets/lazy'
 import pickerCss from '@widgets/app/pickerselect.css?inline'
 import wcMountCss from '@widgets/app/wc-mount.css?inline'
 import stylesText from './workflow-embed.css?inline'
@@ -11,10 +10,9 @@ import stylesText from './workflow-embed.css?inline'
 // same way the builder mounts it, since composed widgets may render into this root.
 const SHADOW_CSS = [pickerCss, wcMountCss, stylesText].join('\n')
 
-const Root = lazyControl(
-  () => import('./app/embed/EmbedWorkflow.vue'),
-  { loading: 'Loading the Workflow panel…', failed: 'Could not load the Workflow panel. Reload the page to try again.' },
-  useEvents,
+const config = lazyVueConfig(
+  () => import('./app/embed/EmbedWorkflow.vue').then(({ default: rootComponent }) => ({ rootComponent, plugins: [PrimeVuePlugin] })),
+  { surface: 'compact', loading: 'Loading the Workflow panel…', failed: 'Could not load the Workflow panel. Reload the page to try again.' },
 )
 
 interface Props {
@@ -50,7 +48,7 @@ class KicksideWorkflowEmbedElement extends WippyVueElement<Props, Events> {
   }
 
   static get vueConfig() {
-    return { rootComponent: Root, plugins: [PrimeVuePlugin] }
+    return config
   }
 }
 

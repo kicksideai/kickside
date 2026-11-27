@@ -85,7 +85,6 @@ entries:
       - json
       - uuid
     imports:
-      runtime_policy: kickside.core.jobs.policy:runtime
       execution_policy: kickside.core.jobs.policy:execution
       clock: kickside.core.jobs:clock
       job_types: kickside.core.jobs:types

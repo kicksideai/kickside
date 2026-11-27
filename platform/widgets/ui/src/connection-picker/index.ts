@@ -1,20 +1,12 @@
-import { WippyVueElement, define, useEvents } from '@wippy-fe/webcomponent-vue'
+import { WippyVueElement, define, lazyVueConfig } from '@wippy-fe/webcomponent-vue'
 import type { WippyElementConfig, WippyPropsSchema } from '@wippy-fe/webcomponent-vue'
 import { PrimeVuePlugin } from '@wippy-fe/theme/primevue-plugin'
 import type { ComponentProps } from './types.ts'
 import type { Events } from './constants.ts'
-import { lazyControl } from '../lazy'
+
 import stylesText from './styles.css?inline'
 
-const ConnectionPicker = lazyControl(
-  () => import('./app/ConnectionPicker.vue'),
-  {
-    loading: 'Loading connection picker…',
-    failed: 'Could not load the connection picker. Reload the page to try again.',
-    iconOnly: true,
-  },
-  useEvents,
-)
+
 
 const PROPS_SCHEMA: WippyPropsSchema = {
   type: 'object',
@@ -40,7 +32,7 @@ class KicksideConnectionPickerElement extends WippyVueElement<ComponentProps, Ev
   }
 
   static get vueConfig() {
-    return { rootComponent: ConnectionPicker, plugins: [PrimeVuePlugin] }
+    return lazyVueConfig(() => import('./app/ConnectionPicker.vue').then(module => ({ rootComponent: module.default, plugins: [PrimeVuePlugin] })), { surface: 'compact', loading: 'Loading connection picker…', failed: 'Could not load the connection picker. Reload the page to try again.', iconOnly: true, delay: 200, timeout: 30000 })
   }
 }
 

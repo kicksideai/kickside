@@ -298,6 +298,7 @@ function part.attach(M: any, dependencies: any, P: any): ()
         local command = dependencies.command :: any
         local json_mod = dependencies.json :: any
         local read_current_failure = (workflow_history :: { current_failure: CurrentFailureReader? }).current_failure
+        local sink_port: string? = nil
         local flow_ref: any = nil
         local historical = false
         local status, status_err = read_executor(function(db: any): (any?, any)
@@ -314,8 +315,9 @@ function part.attach(M: any, dependencies: any, P: any): ()
                 drives[#drives + 1] = public_drive(row, json_mod)
                 if read_current_failure and row.drive_key == "main" then
                     local declaration = row.applied and row.applied.declaration
-                    if type(declaration) == "table" and declaration.sink_port == "kickside.workflows:run_sink"
+                    if type(declaration) == "table" and type(declaration.sink_port) == "string"
                         and type(declaration.sink_config) == "table" then
+                        sink_port = declaration.sink_port
                         flow_ref = declaration.sink_config.flow_ref
                     end
                 end
@@ -369,7 +371,10 @@ function part.attach(M: any, dependencies: any, P: any): ()
                 status.ledger_counts.unresolved = retained.unresolved
             end
         end
-        if not flow_ref or not read_current_failure then return status, nil end
+        if not sink_port or not flow_ref or not read_current_failure then return status, nil end
+        local port = registry.get(sink_port)
+        if not port or not port.meta or port.meta.type ~= "kickside.automation.port"
+            or port.meta.recurring_target ~= "workflow" then return status, nil end
         local failure, failure_err = read_current_failure(component_id, flow_ref)
         if failure_err then
             (dependencies.logger :: any):named("automation.status"):warn("could not read current Workflow failure")

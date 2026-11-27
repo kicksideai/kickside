@@ -16,7 +16,7 @@ local function request_headers(profile: any): { [string]: string }?
     }
 end
 
-function M.fetch(profile: any): ({ any }?, string?, any?)
+function M.fetch(profile: any, require_list: boolean?): ({ any }?, string?, any?)
     local headers = request_headers(profile)
     if not headers then return nil, "Anthropic API key is required" end
     local base_url = common.configured_base_url(profile, "https://api.anthropic.com")
@@ -26,7 +26,7 @@ function M.fetch(profile: any): ({ any }?, string?, any?)
     })
     if err then return nil, common.transport_error(err) end
 
-    local parsed, perr, diagnostics = common.decode_response(response)
+    local parsed, perr, diagnostics = common.decode_response(response, nil, require_list)
     if not parsed then return nil, perr, diagnostics end
     return common.model_rows(parsed)
 end

@@ -1,33 +1,28 @@
-import { W as o, u as n } from "./wc-runtime-Bcuhsx-0.js";
-import { s, a as p } from "./styles-UELhE1cW.js";
-import "@iconify/vue";
-import { define as i } from "@wippy-fe/proxy";
-const r = { props: { type: "object", properties: {} } }, a = {
-  wippy: r
+import { W as o, l as n } from "./wc-runtime-P07ojyjC.js";
+import { s as i } from "./styles-DIj8rzS3.js";
+import { define as s } from "@wippy-fe/proxy";
+const p = { props: { type: "object", properties: {} } }, r = {
+  wippy: p
 };
 class e extends o {
   static get wippyConfig() {
     return {
-      propsSchema: a.wippy.props,
+      propsSchema: r.wippy.props,
       hostCssKeys: ["themeConfigUrl", "primeVueCssUrl"],
-      inlineCss: s
+      inlineCss: i
     };
   }
   static get vueConfig() {
     return {
-      lazyConfig: p(
-        () => import("./lazy-mount-DpoA5YMZ.js").then((t) => t.mountConfig),
-        "Could not load the connections page. Reload the page to try again.",
-        n
-      )
+      ...n(() => import("./lazy-mount-CiUjYlCC.js").then((t) => t.mountConfig), { surface: "page", loading: "Loading…", failed: "Could not load the connections page. Reload the page to try again.", timeout: 3e4 })
     };
   }
 }
-async function y() {
+async function g() {
   return e;
 }
-i(import.meta.url, e);
+s(import.meta.url, e);
 export {
-  y as webComponent
+  g as webComponent
 };
 //# sourceMappingURL=index.js.map

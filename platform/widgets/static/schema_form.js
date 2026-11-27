@@ -1,13 +1,7 @@
-import { W as o, u as t } from "./wc-runtime-BOOCbdbY.js";
-import { l as r } from "./lazy-BTFbj8TG.js";
-import { s as i } from "./styles-DF6UJ6bF.js";
-import "@iconify/vue";
+import { W as o, l as i } from "./wc-runtime-Vcu3yWjv.js";
+import { s as r } from "./styles-CjMSijHF.js";
 import { define as s } from "@wippy-fe/proxy";
-const n = r(
-  () => import("./SchemaForm-B8irWK-G.js"),
-  { loading: "Loading schema form…", failed: "Could not load the schema form. Reload the page to try again." },
-  t
-), a = {
+const n = {
   type: "object",
   properties: {
     schema: { type: "object", description: "JSON Schema describing the config fields (object or JSON string)." },
@@ -18,26 +12,26 @@ const n = r(
     disabled: { type: "boolean", description: "Disable every control." }
   }
 };
-class e extends o {
+class t extends o {
   reportValidity() {
     return this.shadowRoot?.querySelector("form.sf")?.dispatchEvent(new Event("schema-form-report", { cancelable: !0 })) ?? !1;
   }
   static get wippyConfig() {
     return {
-      propsSchema: a,
+      propsSchema: n,
       hostCssKeys: ["themeConfigUrl"],
-      inlineCss: i
+      inlineCss: r
     };
   }
   static get vueConfig() {
-    return { rootComponent: n };
+    return i(() => import("./SchemaForm-D6SdLeOR.js").then((e) => ({ rootComponent: e.default })), { surface: "compact", loading: "Loading schema form…", failed: "Could not load the schema form. Reload the page to try again.", delay: 200, timeout: 3e4 });
   }
 }
-async function y() {
-  return e;
+async function p() {
+  return t;
 }
-s(import.meta.url, e);
+s(import.meta.url, t);
 export {
-  y as webComponent
+  p as webComponent
 };
 //# sourceMappingURL=schema_form.js.map

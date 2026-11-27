@@ -10,15 +10,24 @@ local RESERVED_METADATA = {
     _execution_identity = true, inherited_identity = true,
 }
 
-function M.merge(destination, extra)
+-- Facts about one sign-in. They live only under `session`: relay compares the
+-- rest of the actor metadata to decide whether a connection keeps its user hub,
+-- so a fact that differs per sign-in must never reach the top level.
+local SESSION_FACTS = {"login_time", "ip_address", "user_agent", "auth_method", "sso_provider"}
+local SESSION_FACT = {}
+for _, key in ipairs(SESSION_FACTS) do SESSION_FACT[key] = true end
+
+function M.merge(destination, extra, skip)
     if type(extra) ~= "table" then return end
     for key, value in pairs(extra) do
-        if not RESERVED_METADATA[key] then destination[key] = value end
+        if not RESERVED_METADATA[key] and not (skip and skip[key]) then destination[key] = value end
     end
 end
 
 function M.actor(user, authority_epochs, scope_id, groups, session_context, extra)
     session_context = type(session_context) == "table" and session_context or {}
+    local session = {}
+    for _, key in ipairs(SESSION_FACTS) do session[key] = session_context[key] end
     local metadata = {
         authority_epochs = authority_epochs,
         user_id = user.user_id,
@@ -27,13 +36,9 @@ function M.actor(user, authority_epochs, scope_id, groups, session_context, extr
         status = user.status,
         security_groups = groups,
         scope_id = scope_id,
-        session = {
-            login_time = session_context.login_time,
-            ip_address = session_context.ip_address,
-            user_agent = session_context.user_agent,
-        },
+        session = session,
     }
-    M.merge(metadata, extra)
+    M.merge(metadata, extra, SESSION_FACT)
     return metadata
 end
 

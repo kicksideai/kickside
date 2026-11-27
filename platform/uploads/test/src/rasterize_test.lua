@@ -319,6 +319,67 @@ local function define_tests()
             test.eq(#script_state(path).calls, 11)
         end)
 
+        test.it("refits only the page exceeding the byte budget and retains its effective quality", function()
+            local path = scripted_document({total = 2, large_page = 2})
+            local id = seed_document(SCRIPTED_MIME, "<!-- page 1 -->\n\n<!-- page 2 -->")
+            local result = run_stage(id, SCRIPTED_MIME, FIXTURE_SIZE, path)
+            test.is_true(result.completed)
+            local pages = rendered_pages(id)
+            test.eq(pages[1].metadata.quality, 90)
+            test.eq(pages[2].metadata.quality, 75)
+            test.eq(pages[2].metadata.dpi, 150)
+            local calls = script_state(path).calls
+            test.eq(#calls, 3)
+            test.eq(#calls[3], 1)
+            test.eq(calls[3][1], 2)
+        end)
+
+        test.it("replaces an oversized cached render even when the extracted scan covers the page", function()
+            local path = scripted_document({total = 1})
+            local id = seed_document(SCRIPTED_MIME, "<!-- page 1 -->")
+            local old, err = artifact_content_repo.create_artifact({upload_id = id, kind = "image",
+                role = "rendered-page", mime_type = "image/jpeg", ordinal = 2001,
+                content = string.rep("x", 3932161), storage_id = STORAGE_ID, metadata = {page = 1}})
+            test.is_nil(err)
+            local _, scan_err = artifact_content_repo.create_artifact({upload_id = id, kind = "image",
+                role = "extracted-image", mime_type = "image/png", ordinal = 1,
+                content = string.rep("x", 60000), storage_id = STORAGE_ID,
+                metadata = {page = 1, width = 200, height = 300}})
+            test.is_nil(scan_err)
+            test.is_true(run_stage(id, SCRIPTED_MIME, FIXTURE_SIZE, path).completed)
+            local pages = page_images.page_set(id, 51200)
+            test.eq(#pages, 1)
+            test.eq(pages[1].artifact_id, old.artifact_id)
+            test.is_true(pages[1].size < 3932161)
+        end)
+
+        test.it("renders an octet-stream scan and fits a poster to the OCR dimensions", function()
+            local id = seed_document("application/pdf", "<!-- page 1 -->")
+            local path = id .. ".pdf"
+            local storage = assert(fs.get(STORAGE_ID))
+            assert(storage:writefile(path, fixtures.poster))
+            local _, err = artifact_content_repo.create_artifact({upload_id = id, kind = "image",
+                role = "extracted-image", mime_type = "application/octet-stream", ordinal = 1,
+                content = string.rep("x", 60000), storage_id = STORAGE_ID, metadata = {page = 1}})
+            test.is_nil(err)
+            local result = run_stage(id, "application/pdf", FIXTURE_SIZE, path)
+            test.is_true(result.completed)
+            local pages = page_images.page_set(id, 51200)
+            test.eq(#pages, 1)
+            local page = pages[1]
+            test.eq(page.role, "rendered-page")
+            test.eq(page.mime_type, "image/jpeg")
+            test.is_true(page.metadata.dpi < 150)
+            test.eq(page.metadata.quality, 90)
+            local bytes = assert(artifact_content_repo.read_artifact_content(id, page.artifact_id))
+            local width, height = page_images.pixel_size(bytes)
+            test.eq(width, page.metadata.width)
+            test.eq(height, page.metadata.height)
+            test.is_true(height > width and height <= 2576)
+            test.is_true(#bytes <= 3932160)
+            test.is_true(run_stage(id, "application/pdf", FIXTURE_SIZE, path).metadata.rasterize_skipped)
+        end)
+
         test.it("renders a page with a large image and an additional small image", function()
             local upload_id = seed_document("application/pdf", "<!-- page 1 -->\n\n<!-- page 2 -->")
             for _, size in ipairs({60000, 100}) do

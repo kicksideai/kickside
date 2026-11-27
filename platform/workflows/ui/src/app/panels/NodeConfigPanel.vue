@@ -290,7 +290,7 @@ function commitTitle() {
         <p class="wf-panel-hint wf-panel-pinned-note"><Icon icon="tabler:lock" aria-hidden="true" /><span>This step is required and can’t be deleted.</span></p>
       </div>
       <div v-else class="wf-panel-foot">
-        <Button severity="danger" @click="emit('remove-node')"><Icon icon="tabler:trash" aria-hidden="true" /><span>Delete step</span></Button>
+        <Button severity="danger" outlined @click="emit('remove-node')"><Icon icon="tabler:trash" aria-hidden="true" /><span>Delete step</span></Button>
       </div>
     </template>
 
