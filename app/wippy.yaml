@@ -35,6 +35,7 @@ exclude:
   - ".wippy/**"
   - "**/node_modules/**"
   - "wippy.lock"
+  - "wippy.lock.runtime.lock"
   - "test/**"
   - "tests/**"
   - "test-support/**"
