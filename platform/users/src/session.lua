@@ -60,11 +60,14 @@ local function mint_current(user, actor_meta_extra, token_meta)
     if authority_err then return nil, authority_err end
     local scope_id, is_admin, scope_groups, resolve_err, resolved = consts.resolve_scope(config, groups)
     if resolve_err then return nil, resolve_err end
+    local request = type(actor_meta_extra) == "table" and actor_meta_extra or {}
     local actor_meta = session_metadata.actor(user, authority_epochs, scope_id, scope_groups,
         {
             login_time = time.now():format_rfc3339(),
-            ip_address = type(actor_meta_extra) == "table" and actor_meta_extra.ip_address or nil,
-            user_agent = type(actor_meta_extra) == "table" and actor_meta_extra.user_agent or nil,
+            ip_address = request.ip_address,
+            user_agent = request.user_agent,
+            auth_method = request.auth_method,
+            sso_provider = request.sso_provider,
         }, actor_meta_extra)
 
     local actor = security.new_actor(tostring(user.user_id), actor_meta)
