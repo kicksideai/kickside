@@ -42,6 +42,8 @@ local DISCOVERED_METADATA_FIELDS = {
     "input_modalities",
     "outputModalities",
     "output_modalities",
+    "supportedGenerationMethods",
+    "supported_generation_methods",
     "supportedActions",
     "supported_actions",
 }

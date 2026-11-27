@@ -237,7 +237,7 @@ function M.has_modality(list: any, value: string): boolean
 end
 
 function M.supported_action(item: any, action: string): boolean
-    local list = item.supportedActions or item.supported_actions
+    local list = item.supportedGenerationMethods or item.supported_generation_methods or item.supportedActions or item.supported_actions
     if type(list) ~= "table" then return false end
     for _, value in ipairs(list) do
         if tostring(value) == action then return true end

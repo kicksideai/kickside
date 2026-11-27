@@ -266,9 +266,9 @@ return {run = test.run_cases(function()
             test.eq(request.url, "https://example.invalid/v1/messages")
             test.eq(assert(json.decode(request.body)).max_tokens, 1)
 
-            http_fixture.prepare_probe('{"models":[{"name":"models/text-embedding-004","supportedActions":["embedContent"]},'
-                .. '{"name":"models/gemini-pro-x","supportedActions":["generateContent"]},'
-                .. '{"name":"models/gemini-flash-x","supportedActions":["generateContent"]}]}')
+            http_fixture.prepare_probe('{"models":[{"name":"models/text-embedding-004","supportedGenerationMethods":["embedContent"]},'
+                .. '{"name":"models/gemini-pro-x","supportedGenerationMethods":["generateContent"]},'
+                .. '{"name":"models/gemini-flash-x","supportedGenerationMethods":["generateContent"]}]}')
             result = assert(google.test_generation(profile(), {}))
             test.eq(result.model, "gemini-flash-x")
             request = assert(http_fixture.probe())
