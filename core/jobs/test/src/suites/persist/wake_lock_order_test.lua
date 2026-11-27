@@ -25,7 +25,7 @@ local function wake_key_transaction(dbtype: string, key: string, done: any, back
     local tx = assert(db:begin())
     if backend then
         local rows = assert(tx:query("SELECT pg_backend_pid() AS pid"))
-        backend:send(tonumber(rows[1].pid))
+        backend:send(assert(math.tointeger(rows[1].pid)))
     end
     local result, err = jobs.wake_tx(tx, key, dbtype)
     if err then tx:rollback() else
@@ -45,7 +45,7 @@ local function wake_job_transaction(dbtype: string, id: string, done: any, backe
         local tx = assert(db:begin())
         if backend and attempt == 1 then
             local rows = assert(tx:query("SELECT pg_backend_pid() AS pid"))
-            backend:send(tonumber(rows[1].pid))
+            backend:send(assert(math.tointeger(rows[1].pid)))
         end
         local result, err = wake.wake_job(tx, id, { control = true }, dbtype)
         if err then tx:rollback() else
@@ -132,7 +132,7 @@ local function define_tests()
                     local other = assert(sql.get("app:db"))
                     local writer = assert(other:begin())
                     local rows = assert(writer:query("SELECT pg_backend_pid() AS pid"))
-                    backend:send(tonumber(rows[1].pid))
+                    backend:send(assert(math.tointeger(rows[1].pid)))
                     local result, err = jobs.enqueue_tx(writer, dbtype, request)
                     writer:rollback()
                     other:release()
