@@ -748,13 +748,14 @@ entries:
       type: test
       suite: kickside_core
       group: KickSide Core / Jobs
-      comment: Slot demand and a later wake in one transaction keep the wake-row then job-row lock order.
+      comment: Single-job writes keep the wake-row then job-row lock order and report a moved wake key as a retryable conflict.
     source: file://suites/persist/wake_lock_order_test.lua
     method: run
     modules: [sql, uuid, time, channel]
     imports:
       test: wippy.test:test
       jobs: kickside.core.jobs:jobs
+      wake: kickside.core.jobs.persist:wake
 
   - name: lease_test
     kind: function.lua
