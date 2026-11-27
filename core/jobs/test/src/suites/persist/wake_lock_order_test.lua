@@ -151,6 +151,57 @@ local function define_tests()
             db:release()
         end)
 
+        test.it("takes the destination wake lock before the job after losing an insert race", function()
+            local db = assert(sql.get("app:db"))
+            local dbtype = tostring(db:type())
+            local scope = uuid.v7()
+            local original = slot_request(scope, "slot", scope .. ":z")
+            local move = slot_request(scope, "slot", scope .. ":a")
+            move.replace = true
+            local creator = assert(db:begin())
+            local first = assert(jobs.enqueue_tx(creator, dbtype, original))
+            if dbtype == sql.type.POSTGRES then
+                local holder = assert(db:begin())
+                assert(holder:execute("INSERT INTO kickside_wake_fanout(key) VALUES ($1)", {move.wake_key}))
+                local backend, done = channel.new(1), channel.new(1)
+                coroutine.spawn(function()
+                    local other = assert(sql.get("app:db"))
+                    local writer = assert(other:begin())
+                    local rows = assert(writer:query("SELECT pg_backend_pid() AS pid"))
+                    backend:send(assert(math.tointeger(rows[1].pid)))
+                    local result, err = jobs.enqueue_tx(writer, dbtype, move)
+                    if err then writer:rollback() else
+                        local _, commit_err = writer:commit()
+                        err = commit_err
+                    end
+                    other:release()
+                    done:send({result = result, err = err})
+                end)
+                local pid = backend:receive()
+                local insert_wait = await_lock_wait(holder, pid)
+                assert(creator:commit())
+                local destination_wait = false
+                for _ = 1, 500 do
+                    local rows = assert(holder:query("SELECT pg_backend_pid() = ANY(pg_blocking_pids($1)) AS blocked", {pid}))
+                    if rows[1].blocked then destination_wait = true; break end
+                    time.sleep("10ms")
+                end
+                local _, lock_err = holder:query("SELECT id FROM kickside_job WHERE id=$1 FOR UPDATE NOWAIT", {first.id})
+                holder:rollback()
+                local attempt = done:receive()
+                test.is_true(insert_wait and destination_wait)
+                test.is_nil(lock_err, tostring(lock_err))
+                test.is_nil(attempt.err, tostring(attempt.err))
+                test.eq(attempt.result.id, first.id)
+            else
+                assert(creator:commit())
+                test.eq(assert(jobs.enqueue(move)).id, first.id)
+            end
+            local rows = assert(db:query("SELECT wake_key FROM kickside_job WHERE id=$1", {first.id}))
+            test.eq(rows[1].wake_key, move.wake_key)
+            db:release()
+        end)
+
         test.it("retries wake-key convergence when the observed slot settles before its lock", function()
             local db = assert(sql.get("app:db"))
             local dbtype = tostring(db:type())

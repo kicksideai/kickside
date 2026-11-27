@@ -241,7 +241,7 @@ local function converge_capacity_group(exec: Executor, existing: table, descript
 end
 
 local function resolve_existing(exec: Executor, dbtype: string, existing: table,
-        params: EnqueueParams, payload: table, max_row_bytes: integer): (string?, error?, string?)
+        params: EnqueueParams, payload: table, max_row_bytes: integer, row_locked: boolean): (string?, error?, string?)
     if params.demand == true and existing.slot ~= true and existing.slot ~= 1 then
         return nil, errors.new({ message = "reusable demand conflicts with a one-shot job identity",
             kind = errors.CONFLICT, retryable = false })
@@ -267,8 +267,8 @@ local function resolve_existing(exec: Executor, dbtype: string, existing: table,
     local descriptor, descriptor_err = capacity.group(existing)
     if descriptor_err then return nil, descriptor_err end
     local target_key = params.slot == true and params.wake_key or nil
-    if (params.slot == true and (existing.wake_key or nil) ~= (params.wake_key or nil))
-        or (descriptor and existing.capacity_group ~= descriptor.group) then
+    if not row_locked and ((params.slot == true and (existing.wake_key or nil) ~= (params.wake_key or nil))
+        or (descriptor and existing.capacity_group ~= descriptor.group)) then
         local locked, lock_err = wake_rows.lock_job(exec :: sql.Transaction, dbtype, existing, target_key,
             "slot", response_error)
         if lock_err then return nil, lock_err end
@@ -343,6 +343,7 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
     if type(existing_rows) ~= "table" then return nil, response_error("identity.rows") end
     local replaced_job_id: string? = nil
     local already = existing_rows[1]
+    local already_locked = false
     if already and params.replace == true then
         local matches, match_err = matching_existing(already, params, payload :: table)
         if match_err then return nil, match_err end
@@ -350,15 +351,17 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
             and already.owner_kind == owner.kind and already.owner_id == owner.id then
             local fence_err = thread_fence.admit(db_or_tx :: sql.Transaction, owner, "enqueue_job")
             if fence_err then return nil, fence_err end
-            local locked, lock_err = wake_rows.lock_job(db_or_tx :: sql.Transaction, dbtype, already, nil,
+            local locked, lock_err = wake_rows.lock_job(db_or_tx :: sql.Transaction, dbtype, already,
+                params.slot == true and params.wake_key or nil,
                 "replace", response_error)
             if lock_err then return nil, lock_err end
             already = locked
+            already_locked = true
         end
     end
     if already then
         local existing_id, resolve_err, replaced = resolve_existing(db_or_tx, dbtype, already,
-            params, payload :: table, (policy :: any).max_row_bytes)
+            params, payload :: table, (policy :: any).max_row_bytes, already_locked)
         if resolve_err then return nil, resolve_err end
         if existing_id then return existing_id, nil, false end
         replaced_job_id = replaced
@@ -442,7 +445,8 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
         if type(rows) ~= "table" then return nil, response_error("conflict.rows") end
         local existing = rows[1]
         if existing and params.replace == true then
-            local locked, lock_err = wake_rows.lock_job(db_or_tx :: sql.Transaction, dbtype, existing, nil,
+            local locked, lock_err = wake_rows.lock_job(db_or_tx :: sql.Transaction, dbtype, existing,
+                params.slot == true and params.wake_key or nil,
                 "conflict", response_error)
             if lock_err then return nil, lock_err end
             existing = locked
@@ -451,7 +455,7 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
             return nil, (errors.new({ message = "enqueue conflict has no active identity", kind = errors.CONFLICT }) :: error)
         end
         local existing_id, resolve_err, replaced = resolve_existing(db_or_tx, dbtype, existing,
-            params, payload :: table, (policy :: any).max_row_bytes)
+            params, payload :: table, (policy :: any).max_row_bytes, params.replace == true)
         if resolve_err then return nil, resolve_err end
         if existing_id then return existing_id, nil, false end
         replaced_job_id = replaced
