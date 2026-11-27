@@ -63,22 +63,42 @@ local function setup_descriptors(plan: any): {string}
     return out
 end
 
-local function install_one(deps: any, component: string): (boolean, string?)
-    local plan, plan_err = deps.plan({ component = component, run_migrations = true })
-    if not plan then return false, message(plan_err) end
-    local blocked = blockers(plan)
-    if #blocked > 0 then return false, "Missing or invalid package settings: " .. table.concat(blocked, ", ") end
-    local result, install_err = deps.install({ component = component, migration_policy = "up" })
-    if not result then return false, message(install_err) end
-    if type(result) == "table" and result.success == false then return false, message(result) end
-    for _, descriptor in ipairs(setup_descriptors(plan)) do
-        local status = deps.setup(descriptor, "status")
-        if not (status and status.ready and status.status == "ready") then
+local function ready(result: any): boolean
+    return type(result) == "table" and result.success == true and result.ready == true and result.status == "ready"
+end
+
+local function finish_setup(deps: any, descriptors: {string}): (boolean, string?)
+    for _, descriptor in ipairs(descriptors) do
+        local status, status_err = deps.setup(descriptor, "status")
+        if not status then return false, "Required setup status unavailable: " .. message(status_err) end
+        if not ready(status) then
+            if status.status == "building" then return false, "Required setup is still building" end
             local applied, apply_err = deps.setup(descriptor, "apply")
-            if not applied then return false, "Required setup failed: " .. message(apply_err) end
+            if not ready(applied) then return false, "Required setup failed: " .. message(apply_err or applied) end
+            local verified, verify_err = deps.setup(descriptor, "status")
+            if not ready(verified) then return false, "Required setup did not become ready: " .. message(verify_err or verified) end
         end
     end
     return true, nil
+end
+
+local function install_one(deps: any, state: any, item: any, installed: boolean): (boolean, string?)
+    if installed and (item.status == "installed" or item.status == "pending") then return true, nil end
+    if not installed or item.descriptors == nil then
+        local plan, plan_err = deps.plan({ component = item.component, run_migrations = true })
+        if not plan then return false, message(plan_err) end
+        local blocked = blockers(plan)
+        if #blocked > 0 then return false, "Missing or invalid package settings: " .. table.concat(blocked, ", ") end
+        item.descriptors = setup_descriptors(plan)
+    end
+    item.status = "installing"
+    deps.write_state(state)
+    if not installed then
+        local result, install_err = deps.install({ component = item.component, migration_policy = "up" })
+        if not result then return false, message(install_err) end
+        if type(result) == "table" and result.success == false then return false, message(result) end
+    end
+    return finish_setup(deps, item.descriptors)
 end
 
 -- Readiness from the configured module list and the stored run state: nil when
@@ -112,8 +132,10 @@ function M.run(deps: any): (any?, string?)
     if previous.source == source and previous.status == "completed" then return previous, nil end
 
     local state = { source = source, status = "running", modules = {} }
+    local prior = {}
+    for _, item in ipairs(previous.modules or {}) do prior[item.component] = item end
     for index, component in ipairs(modules) do
-        state.modules[index] = { component = component, status = "pending" }
+        state.modules[index] = prior[component] or { component = component, status = "pending" }
     end
     deps.write_state(state)
 
@@ -126,16 +148,10 @@ function M.run(deps: any): (any?, string?)
 
     local failed = 0
     for _, item in ipairs(state.modules) do
-        if installed[item.component] then
-            item.status = "installed"
-        else
-            item.status = "installing"
-            deps.write_state(state)
-            local ok, err = install_one(deps, item.component)
-            item.status = ok and "installed" or "failed"
-            item.message = err
-            if not ok then failed = failed + 1 end
-        end
+        local ok, err = install_one(deps, state, item, installed[item.component] == true)
+        item.status = ok and "installed" or "failed"
+        item.message = err
+        if ok then item.descriptors = nil else failed = failed + 1 end
         deps.write_state(state)
     end
 

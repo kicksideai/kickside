@@ -7,6 +7,7 @@ local state = require("state")
 
 local function fake(options)
     local calls = { plan = {}, install = {}, setup = {}, writes = {} }
+    local setup_ready = false
     local deps = {
         env_modules = function() return options.env end,
         read_state = function() return options.state end,
@@ -25,7 +26,8 @@ local function fake(options)
         end,
         setup = function(descriptor, action)
             calls.setup[#calls.setup + 1] = descriptor .. ":" .. action
-            if action == "status" then return { success = true, ready = false, status = "pending" } end
+            if action == "apply" then setup_ready = not options.setup_pending end
+            if not setup_ready then return { success = true, ready = false, status = "pending" } end
             return { success = true, ready = true, status = "ready" }
         end,
     }
@@ -97,6 +99,23 @@ local function define_tests()
             test.contains(result.modules[1].message, "acme.crm:target_db")
         end)
 
+        test.it("retries pending setup after installation without reinstalling the module", function()
+            local deps = fake({ env = "acme/crm", setup_pending = true, plans = {
+                ["acme/crm"] = { requirements = { { name = "required_setup", value = "registry:v1:acme.crm:setup" } } },
+            } })
+            local failed = installer.run(deps)
+            test.eq(failed.status, "failed")
+            test.eq(installer.readiness("acme/crm", failed), "setup_failed")
+
+            local retry, calls = fake({ env = "acme/crm", state = failed, installed = { ["acme/crm"] = true } })
+            local result = installer.run(retry)
+            test.eq(#calls.install, 0)
+            test.eq(#calls.plan, 0)
+            test.eq(calls.setup[2], "acme.crm:setup:apply")
+            test.eq(calls.setup[3], "acme.crm:setup:status")
+            test.eq(result.status, "completed")
+        end)
+
         test.it("runs the required setup the plan declares", function()
             local deps, calls = fake({ env = "acme/crm", plans = {
                 ["acme/crm"] = { requirements = { { name = "required_setup", value = "registry:v1:acme.crm:setup" } } },
@@ -105,6 +124,7 @@ local function define_tests()
             test.eq(result.status, "completed")
             test.eq(calls.setup[1], "acme.crm:setup:status")
             test.eq(calls.setup[2], "acme.crm:setup:apply")
+            test.eq(calls.setup[3], "acme.crm:setup:status")
         end)
     end)
 end

@@ -16,13 +16,13 @@ local function main(): any
         env_modules = function() return env.get("kickside.hub.first_boot:install_modules") end,
         read_state = function()
             local value, read_err = state.read()
-            if read_err then log:warn("first boot state read failed", { error = tostring(read_err) }) end
+            if read_err then error("first boot state read failed: " .. tostring(read_err)) end
             return value
         end,
         write_state = function(value)
             value.updated_at = time.now():utc():format_rfc3339()
             local _, write_err = state.write(value)
-            if write_err then log:warn("first boot state write failed", { error = tostring(write_err) }) end
+            if write_err then error("first boot state write failed: " .. tostring(write_err)) end
         end,
         installed = function()
             local inventory, list_err = hub_service.list_dependencies({ include_entries = false, include_migrations = false })
