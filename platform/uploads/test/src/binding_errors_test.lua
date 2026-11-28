@@ -439,6 +439,7 @@ return {run = test.run_cases(function()
                         local content, read_err = artifacts.read_artifact_content(id, artifact.artifact_id)
                         test.is_nil(content)
                         check(read_err, errors.UNAVAILABLE, "storage_unavailable")
+                        test.is_true(read_err:retryable())
                         test.eq(read_err:details().cause.kind, errors.NOT_FOUND)
 
                         local value, err = invoke("get_content", {upload_id = id}, nil, {extracted_only = true})
@@ -447,6 +448,7 @@ return {run = test.run_cases(function()
                         test.eq(value.error:kind(), errors.UNAVAILABLE)
                         local cause = value.error:details().cause
                         test.eq(cause.details.code, "storage_unavailable")
+                        test.is_true(value.error:retryable())
                         test.eq(cause.details.artifact_id, artifact.artifact_id)
                         test.is_nil(cause.details.cause)
                     end

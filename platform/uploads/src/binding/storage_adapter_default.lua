@@ -58,7 +58,7 @@ end
 local function acquisition_error(err: any): any
     if not errors.is(err, errors.NOT_FOUND) then return err end
     return binding_errors.new(errors.UNAVAILABLE, "Storage resource is unavailable", "storage_unavailable",
-        err:retryable(), err)
+        true, err)
 end
 
 function M.get(storage_id: string, _db_id: string, _staging_id: string, _cloud_id: string?, _query_db: any?): (any?, any?)
