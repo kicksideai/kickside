@@ -299,6 +299,18 @@ entries:
         - kickside.settings:reader_db
         - kickside.settings:reader_secrets
 
+  - name: definitions
+    kind: function.lua
+    meta: { comment: "settings — declaration metadata for one namespace, scoped by the caller's own registry policy (no registry grant of its own)." }
+    source: file://settings.lua
+    method: definitions
+    modules: [store, security, json]
+    imports:
+      settings_defs: kickside.settings:settings_defs
+      settings_cache: kickside.settings:settings_cache
+      settings_writer: kickside.settings.persist:settings_writer
+      settings_types: kickside.settings:settings_types
+
   # ─── Boot warmer ─────────────────────────────────────────────────────
 
   - name: cache_bootloader
@@ -524,6 +536,19 @@ entries:
                 "required": ["success"] }
             format: application/schema+json
 
+      - name: definitions
+        description: definitions({ namespace }) -> { success, definitions[] }. Declaration metadata (never values; no default for a secret) of one namespace, including visible=false and read_access=admin declarations. Answers only the definitions the caller's own registry policy grants (registry.get on the definition entry); a caller with no grant receives an empty list.
+        input_schemas:
+          - definition: |
+              { "type": "object", "properties": { "namespace": { "type": "string" } }, "required": ["namespace"] }
+            format: application/schema+json
+        output_schemas:
+          - definition: |
+              { "type": "object",
+                "properties": { "success": { "type": "boolean" }, "definitions": { "type": "array", "items": { "type": "object" } }, "error": { "type": "string" } },
+                "required": ["success"] }
+            format: application/schema+json
+
   - name: settings_binding
     kind: contract.binding
     meta:
@@ -538,6 +563,7 @@ entries:
           unset: kickside.settings:unset
           list: kickside.settings:list
           get_namespace: kickside.settings:get_namespace
+          definitions: kickside.settings:definitions
 
   - name: dep.wippy.migration
     version: '*'

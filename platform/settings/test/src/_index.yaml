@@ -375,6 +375,28 @@ entries:
       actions: [contract.get, contract.open, contract.call, contract.implementations, contract.security, funcs.call, funcs.security]
       effect: allow
 
+  - name: settings_definitions_policy
+    kind: security.policy
+    meta:
+      comment: Module-style caller - contract access plus registry reach into two fixture definitions only.
+    policy:
+      resources:
+        - kickside.settings:settings
+        - kickside.settings:definitions
+      actions: [contract.get, contract.open, contract.call, contract.implementations, contract.security, funcs.call, funcs.security]
+      effect: allow
+
+  - name: settings_definitions_registry_policy
+    kind: security.policy
+    meta:
+      comment: Grants registry reads on the max_items and internal_flag definitions.
+    policy:
+      resources:
+        - app:setting_max_items
+        - app:setting_internal_flag
+      actions: [registry.get, registry.find]
+      effect: allow
+
   # ─── Settings declarations the contract suite drives ──────────────────
 
   - name: setting_max_items

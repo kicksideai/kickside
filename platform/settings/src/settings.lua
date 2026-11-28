@@ -188,4 +188,34 @@ function M.list(args: any): settings_types.ListResponse
     return { success = true, settings = out }
 end
 
+-- definitions({ namespace }) -> { success, definitions = [...] }: declaration
+-- metadata for one namespace, including backend-only (visible=false) and
+-- read_access=admin declarations, without any value. The scan runs under the
+-- caller's own registry policy (this function carries no registry grant), and
+-- the registry answers only the entries the caller may registry.get.
+function M.definitions(args: any): settings_types.DefinitionsResponse
+    args = args or {}
+    if type(args.namespace) ~= "string" or args.namespace == "" then
+        return { success = false, error = "namespace is required" }
+    end
+    local out: { settings_types.DefinitionRow } = {}
+    for _, def in pairs(defs.all()[args.namespace] or {}) do
+        local default: settings_types.SettingValue? = nil
+        if settings_types.SECRET_TYPES[def.value_type] ~= true then default = def.default end
+        out[#out + 1] = {
+            namespace = def.namespace, key = def.key,
+            value_type = def.value_type, description = def.description,
+            scope = def.scope, editable = def.editable, visible = def.visible,
+            read_access = def.read_access,
+            default = default,
+            schema = def.schema,
+            title = def.title, category = def.category, order = def.order,
+            ui = def.ui, owner = def.owner, control = def.control,
+            confirm_decrease = def.confirm_decrease,
+        }
+    end
+    table.sort(out, function(a, b) return a.key < b.key end)
+    return { success = true, definitions = out }
+end
+
 return M

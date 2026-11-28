@@ -90,6 +90,29 @@ type SettingListRow = {
 
 type ListResponse = { success: boolean, settings: { SettingListRow }?, error: string? }
 
+-- Declaration metadata only: no override value, and no default for a secret.
+type DefinitionRow = {
+    namespace: string,
+    key: string,
+    value_type: string,
+    description: string,
+    scope: string,
+    editable: boolean,
+    visible: boolean,
+    read_access: string?,
+    default: SettingValue?,
+    schema: JsonSchema?,
+    title: string?,
+    category: string?,
+    order: number?,
+    ui: string?,
+    control: ValueControl?,
+    owner: string?,
+    confirm_decrease: DecreaseConfirmation?,
+}
+
+type DefinitionsResponse = { success: boolean, definitions: { DefinitionRow }?, error: string? }
+
 type UpdatedSetting = { namespace: string, key: string, revision: number? }
 type PutResponse = { success: boolean, updated: { UpdatedSetting }?, error: string? }
 
@@ -110,6 +133,8 @@ M.GetResponse = GetResponse
 M.NamespaceResponse = NamespaceResponse
 M.SettingListRow = SettingListRow
 M.ListResponse = ListResponse
+M.DefinitionRow = DefinitionRow
+M.DefinitionsResponse = DefinitionsResponse
 M.UpdatedSetting = UpdatedSetting
 M.PutResponse = PutResponse
 
