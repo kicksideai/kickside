@@ -2,8 +2,8 @@
 -- transaction under the thread row lock and never acquires a connection of its
 -- own.
 --
--- A batch is deduplicated with one lookup per identity kind (event id, external
--- identity, explicit sequence) against the log plus the batch itself, sequenced
+-- A batch is deduplicated by looking up its event ids, external identities
+-- and explicit sequences against the log plus the batch itself, sequenced
 -- after the thread head, and written with multi-row inserts of at most
 -- INSERT_CHUNK rows. A sequence at or below max_pruned_seq names pruned history
 -- and is refused before any write. The append advances the thread head, stamps
@@ -151,18 +151,54 @@ end
 
 type Stored = { [string]: Appended }
 
+-- Match all columns of the existing external identity index, including a NULL
+-- version. Keeping NULL versions separate allows an equality probe in both engines.
+local function load_external(tx: sql.Transaction, thread_id: string, rows: { any }, versioned: boolean, matches: Stored): error?
+    local columns = versioned and "type, source, id, version" or "type, source, id"
+    local version_match = versioned and "e.external_version = k.version" or "e.external_version IS NULL"
+    return each_chunk(rows, function(chunk)
+        local params: { any } = {}
+        local tuples: { string } = {}
+        for i, row in ipairs(chunk) do
+            tuples[i] = "(" .. placeholders(#params + 1, versioned and 4 or 3) .. ")"
+            params[#params + 1] = row.type
+            params[#params + 1] = row.external_source
+            params[#params + 1] = row.external_id
+            if versioned then params[#params + 1] = row.external_version end
+        end
+        params[#params + 1] = thread_id
+        local found, err = tx:query("WITH keys(" .. columns .. ") AS (VALUES " .. table.concat(tuples, ", ") .. ")"
+            .. " SELECT e.id, e.seq, e.subject, e.subject_version, e.type, e.external_source, e.external_id, e.external_version"
+            .. " FROM keys k JOIN kickside_event e ON e.thread_id = $" .. tostring(#params) .. " AND e.type = k.type"
+            .. " AND e.external_source = k.source AND e.external_id = k.id AND " .. version_match, params)
+        found, err = sql_boundary.rows(found, err, "failed to check duplicate external events", "duplicate external events", response_error)
+        if err then return err end
+        for _, r in ipairs(found :: { table }) do
+            local key = external_key(r.type, r.external_source, r.external_id, r.external_version)
+            matches[key] = { event_id = tostring(r.id), seq = int_of(r.seq), duplicate = true,
+                subject = r.subject, subject_version = r.subject_version }
+        end
+        return nil
+    end)
+end
+
 -- Existing events matching the batch's ids, external identities and explicit
 -- sequences, keyed for lookup.
 local function load_existing(tx: sql.Transaction, thread_id: string, rows: { table }): (Stored?, Stored?, Stored?, error?)
     local ids: { any } = {}
-    local external_ids: { any } = {}
+    local versioned: { any } = {}
+    local unversioned: { any } = {}
     local seqs: { any } = {}
     local seen_external: { [string]: boolean } = {}
     for _, row in ipairs(rows) do
         if row.id ~= "" then ids[#ids + 1] = row.id end
-        if row.external_source and row.external_id and not seen_external[row.external_id] then
-            seen_external[row.external_id] = true
-            external_ids[#external_ids + 1] = row.external_id
+        if row.external_source and row.external_id then
+            local key = external_key(row.type, row.external_source, row.external_id, row.external_version)
+            if not seen_external[key] then
+                seen_external[key] = true
+                local group = row.external_version ~= nil and versioned or unversioned
+                group[#group + 1] = row
+            end
         end
         if row.seq ~= nil then seqs[#seqs + 1] = row.seq end
     end
@@ -185,22 +221,9 @@ local function load_existing(tx: sql.Transaction, thread_id: string, rows: { tab
     end)
     if id_err then return nil, nil, nil, id_err end
 
-    local external_err = each_chunk(external_ids, function(chunk)
-        local params: { any } = { thread_id }
-        for _, v in ipairs(chunk) do params[#params + 1] = v end
-        local found, err = tx:query("SELECT id, seq, subject, subject_version, type, external_source, external_id, external_version FROM kickside_event"
-            .. " WHERE thread_id = $1 AND external_id IN (" .. placeholders(2, #chunk) .. ")", params)
-        found, err = sql_boundary.rows(found, err, "failed to check duplicate external events", "duplicate external events", response_error)
-        if err then return err end
-        for _, r in ipairs(found :: { table }) do
-            if r.external_source ~= nil then
-                local version = r.external_version ~= nil and tostring(r.external_version) or nil
-                by_external[external_key(tostring(r.type), tostring(r.external_source), tostring(r.external_id), version)] =
-                    { event_id = tostring(r.id), seq = int_of(r.seq), duplicate = true, subject = r.subject, subject_version = r.subject_version }
-            end
-        end
-        return nil
-    end)
+    local external_err = load_external(tx, thread_id, versioned, true, by_external)
+    if external_err then return nil, nil, nil, external_err end
+    external_err = load_external(tx, thread_id, unversioned, false, by_external)
     if external_err then return nil, nil, nil, external_err end
 
     local seq_err = each_chunk(seqs, function(chunk)
