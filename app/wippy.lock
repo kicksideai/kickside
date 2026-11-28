@@ -3,8 +3,8 @@ directories:
     src: ./src
 modules:
     - name: keeper/keeper
-      version: 0.5.119
-      hash: d27848b9b804555c3c71c6f504b2a1fe89993465c83580818917b00762741e2f
+      version: 0.5.120
+      hash: 78a44d516712d8ebf2f31c83fa0828a7c8e42b8382495a789120d5e2a2f9028d
     - name: kickside/agent-onboarding
       version: 0.1.14
       hash: 7a0b9151440985f54a7319c8980e20f33da2fe53db1d05d834e60ad7aae25804
@@ -12,8 +12,8 @@ modules:
       version: 0.2.26
       hash: 3b2dc483592338a244f1fc07a92ce3410308c4490ce7427bcce44855a5bf3f24
     - name: kickside/automation
-      version: 0.2.47
-      hash: 6690cd15c2bb3836b78f933fbe6fa7b31643fe9e79189973de03470c97cfa7f1
+      version: 0.2.48
+      hash: 958ab182f725807c8d31e2e73be79344a251ac77d9f55c7b7fe5ed12ca5316c4
     - name: kickside/blocks
       version: 0.1.46
       hash: 37a4d0df7949c781cd825533e0177f9b751157a3fb64ac1ec246b453edaa1003
@@ -51,8 +51,8 @@ modules:
       version: 0.1.83
       hash: 7543522c614754bdab7922956840550b9de1923840b04f4182c8bcc6b60ed89e
     - name: kickside/jobs
-      version: 0.1.103
-      hash: ea5828aada396515e026b9ef5a4555449154adecfb58d6b53af534f922e02e66
+      version: 0.1.104
+      hash: a9ee53cbad7f5d80ad19730054a7f000878b1bf0bd30b2a61c6e17509af7cc84
     - name: kickside/knowledge
       version: 0.1.109
       hash: b765205eed0952523a3d93e0d004deb93793350659106c914b05896e3b650b64
@@ -63,11 +63,11 @@ modules:
       version: 0.1.24
       hash: c3d24ea4201ea268b8a5ff1f5948c29060371594367938d36ba6fc95ba149187
     - name: kickside/models
-      version: 0.1.99
-      hash: 12b5114f3afaec3c42e3fae8315da17c5592865323a2192816f936c6db648604
+      version: 0.1.100
+      hash: a08f4d3de1d771ade25dbb652721c6f55e5181f4aa76a19aabe8441cef0e9304
     - name: kickside/oauth
-      version: 0.1.45
-      hash: 882122d2d9252ca4ac8c22af10dc3024602ad71764cd071f2761f8019864d370
+      version: 0.1.46
+      hash: 2f7c3d9f2ac6e2cd25a47b02cf9209e92dd6b665c3029297ed800292673c32aa
     - name: kickside/pdf2image
       version: 0.7.20
       hash: 9594a0ae5b1b71d3ed0eb4261208a82fba1b2a342afe60f8702b3014c0e6e6df
@@ -87,14 +87,14 @@ modules:
       version: 0.1.4
       hash: 7c34777513b974db101deeb15441e0306eba023425f2d571e348d6a72b2ddabb
     - name: kickside/security
-      version: 0.2.32
-      hash: 621759b5fb8f13889ddd0df734416cafff9697f64eefc8390995846fc030676d
+      version: 0.2.33
+      hash: af6b70f6bf57cff6a494df8b837ffa100e832ab69641f19865c381eb908849bc
     - name: kickside/sessions
       version: 0.1.47
       hash: 8ca13731589444c84dbc1e6419193f8879d4ebeb0305258f33c2d40ee7c3184a
     - name: kickside/settings
-      version: 0.3.17
-      hash: 1240fb13d9deb338143267f043c958ce051ffd2f3552e3b12a6d8c37b49583e1
+      version: 0.3.18
+      hash: 66cf278dd09ac5d90d3f7a0b57444b7d31321726d16a6823d383d047ae2f0ee8
     - name: kickside/sso
       version: 0.1.45
       hash: 43b4b3d1bfe4374906f5e7027f1b4f26700b8f861187ff4458917f4be66f4d3a
@@ -108,17 +108,17 @@ modules:
       version: 0.1.56
       hash: d219107a5b41cfa986a7483023560e8794e8ac77a883a1bd024a619b8d3980a4
     - name: kickside/ui
-      version: 0.2.18
-      hash: d37177d26a2e3e7f6d0d65a645294c1636513a8684f3ddc6ba8b509e071e12b5
+      version: 0.2.19
+      hash: b7ef47122437ef5ccd14aa61b49c41693287843f6586e1203248636bb38ebb16
     - name: kickside/uploads
-      version: 0.3.38
-      hash: 3499885a2043bebab9952db000070685d5bb89206efdb129cec40e830650a891
+      version: 0.3.39
+      hash: 60fc72c6cd6dff51f618899fe072a70acaceca189ba0cbcce79e52d6880a478e
     - name: kickside/users
-      version: 0.2.33
-      hash: b8c6c7a447efbfa11e0e014f3758e21b68a96fedaeb792efb180d12a287d8b76
+      version: 0.2.34
+      hash: 6a32a9fd283c79df1a46899eae3e100592c808176fbf3cc59cd82aea6d27ca00
     - name: kickside/widgets
-      version: 0.1.77
-      hash: 3e4caafb9df0e40c7ec9b1092f73a5367ce96a8908992b3aa42095092558209e
+      version: 0.1.78
+      hash: 19a69b7a51d186581ca9c6bf1a976a57d8d861235a90c6c806422e65f92aa0af
     - name: wippy/agent
       version: 0.5.16
       hash: 4b06e6b450a287433d1390bb53a090f0db3977e32eb7d6aac71b06f77027b5d0
