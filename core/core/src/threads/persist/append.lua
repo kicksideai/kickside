@@ -81,7 +81,9 @@ local function int_of(value: any): integer
 end
 
 local function external_key(event_type: string, source: string, id: string, version: string?): string
-    return table.concat({ event_type, source, id }, "\0") .. (version and ("\0v" .. version) or "\0-")
+    -- SQLite text can contain NUL bytes, including within any identity field.
+    return string.format("%d:%s%d:%s%d:%s%s", #event_type, event_type, #source, source,
+        #id, id, version and ("v" .. version) or "-")
 end
 
 local function placeholders(first: integer, count: integer): string

@@ -211,6 +211,31 @@ local function define_tests()
             test.eq(read_rows, 3) -- The thread head and two distinct identities.
         end)
 
+        test.it("keeps SQLite external identities distinct across embedded separators", function()
+            local db = open_db()
+            local dialect = db:type()
+            db:release()
+            if dialect ~= sql.type.SQLITE then return end
+            local thread_id = make_thread()
+            local events = {
+                { event_type = "test.ext", external_identity = { source = "a\0b", id = "c" } },
+                { event_type = "test.ext", external_identity = { source = "a", id = "b\0c" } },
+            }
+            local first, err = in_tx(function(tx)
+                return append.append_tx(tx, { thread_id = thread_id, events = events })
+            end)
+            test.is_nil(err)
+            test.eq(first.events[1].seq, 1)
+            test.eq(first.events[2].seq, 2)
+            local retry, retry_err = in_tx(function(tx)
+                return append.append_tx(tx, { thread_id = thread_id, events = { events[2], events[1] } })
+            end)
+            test.is_nil(retry_err)
+            test.eq(retry.events[1].event_id, first.events[2].event_id)
+            test.eq(retry.events[2].event_id, first.events[1].event_id)
+            test.is_nil(retry.wake_generation)
+        end)
+
         test.it("appends a batch larger than one insert statement", function()
             local thread_id = make_thread()
             local events: { table } = {}
