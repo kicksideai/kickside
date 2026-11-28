@@ -319,6 +319,21 @@ local function define_tests()
             test.eq(#script_state(path).calls, 11)
         end)
 
+        test.it("keeps individual failures when a rescued page exceeds the image limit", function()
+            local path = scripted_document({total = 2, fail_pages = {1}, large_page = 2,
+                always_large = true, failure = PRIVATE_ERROR})
+            local id = seed_document(SCRIPTED_MIME, "")
+            local result = run_stage(id, SCRIPTED_MIME, FIXTURE_SIZE, path)
+            test.eq(result.completed, false)
+            local failures = result.metadata.rasterize_failures
+            test.eq(#failures, 2)
+            test.eq(failures[1].page, 1)
+            test.eq(failures[1].code, "render_failed")
+            test.eq(failures[2].page, 2)
+            test.eq(failures[2].code, "image_too_large")
+            test.eq(#rendered_pages(id), 0)
+        end)
+
         test.it("refits only the page exceeding the byte budget and retains its effective quality", function()
             local path = scripted_document({total = 2, large_page = 2})
             local id = seed_document(SCRIPTED_MIME, "<!-- page 1 -->\n\n<!-- page 2 -->")
