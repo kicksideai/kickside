@@ -77,6 +77,7 @@ local consts = {
         INVALID_USER_STATUS = "Invalid user status",
 
         -- Authentication errors
+        HANDOFF_REJECTED = "Invalid or expired sign-in link",
         AUTHENTICATION_FAILED = "Authentication failed",
         INSUFFICIENT_PERMISSIONS = "Insufficient permissions",
         TOKEN_CREATION_FAILED = "Failed to create authentication token",

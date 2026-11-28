@@ -1,6 +1,7 @@
 -- SPDX-License-Identifier: LicenseRef-KickSide-Community-1.0
 local test = require("test")
 local json = require("json")
+local sql = require("sql")
 local env = require("env")
 local time = require("time")
 local base64 = require("base64")
@@ -148,6 +149,28 @@ local function define_tests()
             status, body = post(token)
             test.eq(status, 401)
             test.is_false(body.success)
+        end)
+
+        test.it("retries the same link after a session index write fails", function()
+            local db = assert(sql.get("app:db"))
+            local create, remove
+            if db:type() == sql.type.POSTGRES then
+                create = [[ALTER TABLE kickside_user_sessions ADD CONSTRAINT handoff_index_fault
+                    CHECK (user_id <> 'handoff_test_user') NOT VALID]]
+                remove = "ALTER TABLE kickside_user_sessions DROP CONSTRAINT handoff_index_fault"
+            else
+                create = [[CREATE TRIGGER handoff_index_fault BEFORE INSERT ON kickside_user_sessions
+                    WHEN NEW.user_id='handoff_test_user' BEGIN SELECT RAISE(ABORT, 'index fixture'); END]]
+                remove = "DROP TRIGGER handoff_index_fault"
+            end
+            local token = sign({email = EMAIL, exp = time.now():unix() + 120, nonce = nonce()})
+            assert(db:execute(create))
+            local ok, status = pcall(post, token)
+            assert(db:execute(remove))
+            db:release()
+            test.is_true(ok)
+            test.eq(status, 500)
+            test.eq(post(token), 200)
         end)
 
         test.it("refuses an unknown user", function()

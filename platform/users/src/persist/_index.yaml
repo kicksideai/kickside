@@ -139,6 +139,7 @@ entries:
     modules:
       - sql
     imports:
+      handoff_nonce_repo: kickside.users.persist:handoff_nonce_repo
       policy_coverage: kickside.security:policy_coverage
       credential_eligibility: kickside.users.persist:credential_eligibility
       user_consts: kickside.users:consts
@@ -214,7 +215,7 @@ entries:
   - name: handoff_nonce_repo
     kind: library.lua
     source: file://handoff_nonce_repo.lua
-    modules: [sql]
+    modules: [time]
     imports:
       user_consts: kickside.users:consts
       user_repo_support: kickside.users.persist:user_repo_support

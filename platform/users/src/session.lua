@@ -48,7 +48,7 @@ end
 -- token_meta is merged into the stored token meta. Returns
 -- { token, actor, scope, scope_id, is_admin, expiration, security_groups } or
 -- (nil, err).
-local function mint_current(user, actor_meta_extra, token_meta)
+local function mint_current(user, actor_meta_extra, token_meta, handoff)
     local config = consts.get_config()
     local expiration, expiration_err = token_expiration(config.token_expiration)
     if expiration_err then return nil, expiration_err end
@@ -104,11 +104,11 @@ local function mint_current(user, actor_meta_extra, token_meta)
     -- store key; on any failure the exact just-created store entry is deleted and
     -- the bearer token is never returned.
     local _, index_err = session_index.record_minted(
-        token, tostring(user.user_id), user.auth_generation, expiry)
+        token, tostring(user.user_id), user.auth_generation, expiry, handoff)
     if index_err then
         local _, discard_err = session_index.discard_minted(token)
         if discard_err then return nil, discard_err end
-        if index_err == consts.ERROR.SESSION_GENERATION_CHANGED then
+        if index_err == consts.ERROR.SESSION_GENERATION_CHANGED or index_err == consts.ERROR.HANDOFF_REJECTED then
             return nil, index_err
         end
         log:error("session mint discarded because it could not be indexed atomically", {
@@ -130,7 +130,7 @@ local function mint_current(user, actor_meta_extra, token_meta)
     }
 end
 
-function M.mint(user, actor_meta_extra, token_meta)
+function M.mint(user, actor_meta_extra, token_meta, handoff)
     while true do
         local current, read_err = user_groups_repo.get_user_with_groups(user.user_id)
         if read_err then return nil, read_err end
@@ -139,7 +139,7 @@ function M.mint(user, actor_meta_extra, token_meta)
         if current.status ~= consts.USER_STATUS.ACTIVE or current.password_hash ~= user.password_hash then
             return nil, consts.ERROR.AUTHENTICATION_FAILED
         end
-        local minted, mint_err = mint_current(current, actor_meta_extra, token_meta)
+        local minted, mint_err = mint_current(current, actor_meta_extra, token_meta, handoff)
         if mint_err ~= consts.ERROR.SESSION_GENERATION_CHANGED then return minted, mint_err end
     end
 end

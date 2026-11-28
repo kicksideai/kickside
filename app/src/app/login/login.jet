@@ -29,35 +29,51 @@
           window.location.pathname + window.location.search,
         );
         if (handoff) {
-          fetch("/api/public/user/handoff", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token: handoff }),
-          })
-            .then(function (res) {
-              return res.ok ? res.json() : {};
-            })
-            .then(function (data) {
-              if (!data.success || !data.token) throw new Error();
-              localStorage.setItem(
-                "@wippy_token_info",
-                JSON.stringify({ token: data.token }),
-              );
-              window.location.replace("/");
-            })
-            .catch(function () {
-              var show = function () {
-                var el = document.querySelector("#error");
-                el.textContent =
-                  "This sign-in link is invalid or expired. Sign in with your password.";
-                el.style.display = "block";
-              };
-              if (document.readyState === "loading") {
-                window.addEventListener("DOMContentLoaded", show);
-              } else {
-                show();
+          function showHandoffError(message, retryable) {
+            function show() {
+              var el = document.querySelector("#error");
+              el.textContent = message;
+              el.style.display = "block";
+              if (retryable) {
+                var retry = document.createElement("button");
+                retry.type = "button";
+                retry.textContent = "Try again";
+                retry.addEventListener("click", function () {
+                  retry.disabled = true;
+                  exchange();
+                }, { once: true });
+                el.append(" ", retry);
               }
-            });
+            }
+            if (document.readyState === "loading") {
+              document.addEventListener("DOMContentLoaded", show, { once: true });
+            } else {
+              show();
+            }
+          }
+
+          async function exchange() {
+            try {
+              var res = await fetch("/api/public/user/handoff", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token: handoff }),
+              });
+              if (res.status === 401 || res.status === 400) {
+                handoff = null;
+                showHandoffError("This sign-in link is invalid or expired. Request a new link.", false);
+                return;
+              }
+              if (!res.ok) throw new Error();
+              var data = await res.json();
+              if (!data.success || !data.token) throw new Error();
+              localStorage.setItem("@wippy_token_info", JSON.stringify({ token: data.token }));
+              window.location.replace("/");
+            } catch {
+              showHandoffError("Sign-in could not be completed. Try again or request a new link.", true);
+            }
+          }
+          exchange();
           return;
         }
         if (token) {

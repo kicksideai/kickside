@@ -11,7 +11,7 @@ local session = require("session")
 local handoff_token = require("handoff_token")
 local handoff_nonce_repo = require("handoff_nonce_repo")
 
-local function respond_with_session(req, res, verified)
+local function respond_with_session(req, res, verified, handoff)
     local actor_meta = {
         ip_address = req:remote_addr() or "unknown",
         user_agent = req:header("User-Agent") or "unknown",
@@ -21,8 +21,13 @@ local function respond_with_session(req, res, verified)
         user_agent = req:header("User-Agent") or "unknown",
     }
 
-    local minted, mint_err = session.mint(verified, actor_meta, token_meta)
+    local minted, mint_err = session.mint(verified, actor_meta, token_meta, handoff)
     if not minted then
+        if handoff and mint_err == consts.ERROR.HANDOFF_REJECTED then
+            res:set_status(http.STATUS.UNAUTHORIZED)
+            res:write_json({success = false, error = consts.ERROR.HANDOFF_REJECTED})
+            return
+        end
         local kind, retryable
         if type(mint_err) == "userdata" then
             local native = mint_err :: error
@@ -195,24 +200,19 @@ local function handoff()
         res:write_json({ success = false, error = "Authentication system error" })
         return
     end
-    local fresh, claim_err = handoff_nonce_repo.claim(claims.nonce, claims.exp, now)
-    if claim_err then
-        res:set_status(http.STATUS.INTERNAL_ERROR)
-        res:write_json({ success = false, error = "Authentication system error" })
-        return
-    end
-    if not fresh then
-        rejected()
-        return
-    end
-
     if not user or user.status ~= consts.USER_STATUS.ACTIVE
         or user.bot_account == true or tonumber(user.bot_account) == 1 then
+        local _, claim_err = handoff_nonce_repo.claim(claims.nonce, claims.exp)
+        if claim_err then
+            res:set_status(http.STATUS.INTERNAL_ERROR)
+            res:write_json({ success = false, error = "Authentication system error" })
+            return
+        end
         rejected()
         return
     end
 
-    respond_with_session(req, res, user)
+    respond_with_session(req, res, user, claims)
 end
 
 return {

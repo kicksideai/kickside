@@ -800,7 +800,7 @@ entries:
     security:
       actor: {id: app:test_runner}
       policies: [app:test_runtime]
-    modules: [registry, http_client, json, env, time, base64, crypto]
+    modules: [registry, http_client, json, env, time, base64, crypto, sql]
     imports:
       test: wippy.test:test
       handoff: kickside.users:handoff
