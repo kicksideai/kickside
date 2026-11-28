@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.40](https://github.com/kicksideai/kickside/compare/uploads-v0.3.39...uploads-v0.3.40) (2026-11-28)
+
+
+### Bug Fixes
+
+* **uploads:** preserve page failures after a successful render probe ([#1014](https://github.com/kicksideai/kickside/issues/1014)) ([455b310](https://github.com/kicksideai/kickside/commit/455b310ec8c2445871d0b55ef691e8d83ac940c1))
+* **uploads:** select OCR pages from one artifact snapshot ([#1016](https://github.com/kicksideai/kickside/issues/1016)) ([eba6b99](https://github.com/kicksideai/kickside/commit/eba6b9927fd4bd55dc7ae0b0f8c8b88d42867544))
+
 ## [0.3.39](https://github.com/kicksideai/kickside/compare/uploads-v0.3.38...uploads-v0.3.39) (2026-11-28)
 
 
