@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.56](https://github.com/kicksideai/kickside/compare/core-v0.3.55...core-v0.3.56) (2026-11-28)
+
+
+### Bug Fixes
+
+* **core:** reject mismatched subjects throughout guarded append batches ([#1009](https://github.com/kicksideai/kickside/issues/1009)) ([c247b4f](https://github.com/kicksideai/kickside/commit/c247b4f2cf9f7d02e91b7b37783432507c30d2eb))
+
+
+### Performance Improvements
+
+* **core:** bound append retries by full external identity ([#1008](https://github.com/kicksideai/kickside/issues/1008)) ([5440847](https://github.com/kicksideai/kickside/commit/54408476ef22f822ad199c805cb2c988a40f8bf5))
+
 ## [0.3.55](https://github.com/kicksideai/kickside/compare/core-v0.3.54...core-v0.3.55) (2026-11-24)
 
 
