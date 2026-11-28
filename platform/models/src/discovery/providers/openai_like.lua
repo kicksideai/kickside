@@ -153,7 +153,6 @@ function M.test(profile: any, opts: any): (any?, string?, any?)
             model = model,
             messages = { { role = "user", content = "ping" } },
             max_tokens = 1,
-            temperature = 0,
             stream = false,
         })
     end

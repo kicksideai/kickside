@@ -85,7 +85,6 @@ local function handler()
     local started = time.now():unix_nano()
     local response, gen_err = llm.generate(p, {
         model = data.name,
-        temperature = 0,
         max_tokens = max_out,
     })
     local elapsed_ms = math.floor((time.now():unix_nano() - started) / 1000000)
