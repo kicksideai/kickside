@@ -189,6 +189,48 @@ return {run = test.run_cases(function()
             end)
         end
 
+        test.it("retires the exact filtered pin and dependent stage through native reset", function()
+            with_execution(function(_job, cursor)
+                local db = assert(sql.get(DATABASE))
+                assert(db:execute([[CREATE TABLE IF NOT EXISTS projection_checkpoint_stage_fixture (
+                    cursor_id TEXT PRIMARY KEY, reset_generation BIGINT NOT NULL, event_id TEXT NOT NULL,
+                    FOREIGN KEY(cursor_id,reset_generation,event_id)
+                        REFERENCES kickside_filtered_checkpoint_pin(cursor_id,reset_generation,event_id) ON DELETE CASCADE
+                )]]))
+                local event_id = tostring(assert(db:query(
+                    "SELECT id FROM kickside_event WHERE thread_id=$1 AND seq=1", {cursor.thread_id}))[1].id)
+                local projection = assert(db:query("SELECT reset_generation FROM kickside_projection WHERE id=$1",
+                    {cursor.projection_id}))[1]
+                local position = "f:" .. assert(json.encode({event_id, 1, 1, 1}))
+                local tx = assert(db:begin())
+                assert(tx:execute([[INSERT INTO kickside_filtered_checkpoint_pin
+                    (cursor_id,reset_generation,event_id,projection_id) VALUES($1,$2,$3,$4)]],
+                    {cursor.id,projection.reset_generation,event_id,cursor.projection_id}))
+                assert(tx:execute("INSERT INTO projection_checkpoint_stage_fixture VALUES($1,$2,$3)",
+                    {cursor.id,projection.reset_generation,event_id}))
+                assert(tx:execute("UPDATE kickside_projection_cursor SET continuation=$1 WHERE id=$2",
+                    {position,cursor.id}))
+                assert(select(2, tx:commit()) == nil)
+                assert(projections.pause(db, cursor.thread_id, {cursor_id=cursor.id}))
+                local paused = snapshot(db,cursor.id)
+                test.eq(paused.continuation,position)
+                test.eq(tonumber(assert(db:query("SELECT active_filtered_pins FROM kickside_projection WHERE id=$1",
+                    {cursor.projection_id}))[1].active_filtered_pins),1)
+                assert(projections.register_projection(db,cursor.thread_id,{kind="checkpoint-fixture",
+                    system_identity=true,worker_ref="func://app:test_count_worker",reset=true,start_seq=0}))
+                local after = snapshot(db,cursor.id)
+                test.eq(after.continuation,"")
+                test.eq(tonumber(after.last_seq),0)
+                test.eq(#assert(db:query("SELECT cursor_id FROM projection_checkpoint_stage_fixture WHERE cursor_id=$1",
+                    {cursor.id})),0)
+                test.eq(#assert(db:query("SELECT cursor_id FROM kickside_filtered_checkpoint_pin WHERE cursor_id=$1",
+                    {cursor.id})),0)
+                test.eq(tonumber(assert(db:query("SELECT active_filtered_pins FROM kickside_projection WHERE id=$1",
+                    {cursor.projection_id}))[1].active_filtered_pins),0)
+                db:release()
+            end)
+        end)
+
         test.it("rolls back the owner mutation when the trusted writer fails", function()
             with_execution(function(job, current)
                 local receipt, err = apply.checkpoint(DATABASE, job, current, 2, {last_seq = 1}, function(tx)

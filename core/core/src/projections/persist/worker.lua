@@ -49,6 +49,7 @@ type Binding = {
     target_id: string,
     checkpointed_apply: boolean?,
     filtered_checkpoint: boolean?,
+    filtered_continuation: boolean?,
     registered_checkpoint: table?,
     component_owned: boolean?,
 }
@@ -243,8 +244,12 @@ local function validate_declaration(binding: table, system_identity: boolean?, o
     if checkpointed and expected ~= types.WORKER_RUNTIME.PROC then
         return nil, errors.new({kind = errors.INVALID, message = "checkpointed apply requires a supervised process worker"})
     end
+    if meta.filtered_continuation == true and (not meta.filtered_checkpoint or registered_writer) then
+        return nil, errors.new({kind = errors.INVALID, message = "continuation requires a declared filtered owner"})
+    end
     return { worker_ref = scheme_for(expected) .. target_id, worker_runtime = expected, target_id = target_id,
         checkpointed_apply = checkpointed or nil, filtered_checkpoint = meta.filtered_checkpoint == true or nil,
+        filtered_continuation = meta.filtered_continuation == true or nil,
         registered_checkpoint = registered,
         component_owned = meta.component_owned == true or nil }, nil
 end
@@ -290,6 +295,7 @@ local function validate(binding: table, system_identity: boolean?, owner_revisio
     return {worker_ref = admitted.worker_ref, worker_runtime = admitted.worker_runtime,
         target_id = admitted.target_id, checkpointed_apply = admitted.checkpointed_apply,
         filtered_checkpoint = admitted.filtered_checkpoint, registered_checkpoint = admitted.registered_checkpoint,
+        filtered_continuation = admitted.filtered_continuation,
         component_owned = admitted.component_owned}, nil
 end
 
@@ -725,6 +731,10 @@ function worker.run_proc_supervised(binding: table, worker_input: table, opts: S
                     range.to_seq = assignment.prefetched_last
                     range.filter = proof.registered and proof.registered.filter or assignment.cursor.body.events.input
                     range.reset_generation = assignment.cursor.reset_generation
+                    if validated.filtered_continuation and not proof.registered then
+                        local first = worker_input.events[1]
+                        if first then range.first_input = {id = first.id, seq = first.seq} end
+                    end
                     if proof.registered then
                         range.registered = proof.registered
                         range.inputs = {}

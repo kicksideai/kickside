@@ -328,6 +328,10 @@ local function run_checkpointed(binding: table, input: table, host: string, db_i
     if latest.status ~= "active" or latest.generation ~= current.generation then
         return apply.advance(db_id, job, current, first, {last_seq = first})
     end
+    if binding.filtered_continuation and owner and apply.backfilled_pin_error(run_err) then
+        local reselected, reselect_err = apply.reselect_filtered_pin(db_id, job, current, owner)
+        return reselected, reselect_err, (not reselected and latest or nil), owner
+    end
     if run_err then return nil, run_err, latest, owner end
     if type(result) ~= "table" or result.checkpointed ~= true then
         return nil, response_error("checkpoint.worker_receipt"), latest, owner
@@ -413,9 +417,9 @@ local function attempt(connection: sql.DB, db_id: string, job: table, current: t
             local read_err
             pinned, read_err = apply.continuation(current)
             if read_err then return nil, release(db, read_err), current end
-            -- A committed partial step already selected its event. Explicit
-            -- backfills below that sequence follow the forward-only cursor.
-            if pinned then from = pinned.seq end
+            -- Checkpoint resumption for ordinary pins uses their exact event.
+            -- Filtered pins also check the unpublished prefix for a backfill.
+            if pinned and not pinned.filtered then from = pinned.seq end
             target = head
         else
             local post_err: error? = nil
@@ -477,17 +481,31 @@ local function attempt(connection: sql.DB, db_id: string, job: table, current: t
         end
         if binding.filtered_checkpoint then
             types = event_types(body)
-            if not checkpoint_owner or not types or pinned then
+            if not checkpoint_owner or not types or (pinned and not binding.filtered_continuation) then
                 return nil, release(db, response_error("filtered checkpoint declaration"))
             end
-            target = math.min(head, last + page_size)
+            target = pinned and pinned.seq or math.min(head, last + page_size)
         end
         local fence, fence_err = input_fence(db, current, job, acl, owned)
         if fence_err then return nil, release(db, fence_err) end
-        local events, events_err = worker.query_event_rows(db, tostring(current.thread_id), from, target, page_size, types, fence)
+        local limit = pinned and pinned.filtered and 1 or page_size
+        local events, events_err = worker.query_event_rows(db, tostring(current.thread_id), from, target, limit, types, fence)
         if events_err then return nil, release(db, events_err) end
         if type(events) ~= "table" then return nil, release(db, response_error("events")) end
         local batch = events :: table[]
+        local first = batch[1]
+        local eligible_seq = first and tonumber(first.seq)
+        if pinned and pinned.filtered and binding.filtered_continuation and eligible_seq and eligible_seq < pinned.seq then
+            local release_err = release(db, nil)
+            if release_err then return nil, release_err end
+            local reselected, reselect_err = apply.reselect_filtered_pin(db_id, job, current, checkpoint_owner)
+            return reselected, reselect_err, (not reselected and current or nil), checkpoint_owner
+        end
+        if pinned and binding.filtered_checkpoint and (#batch ~= 1 or batch[1].id ~= pinned.event_id
+            or tonumber(batch[1].seq) ~= pinned.seq) then
+            return nil, release(db, errors.new({kind = errors.NOT_FOUND, retryable = false,
+                message = "pinned filtered checkpoint input is missing"})), current, checkpoint_owner
+        end
         if binding.checkpointed_apply and not binding.filtered_checkpoint and (#batch == 0 or (pinned and batch[1].id ~= pinned.event_id)) then
             return nil, release(db, errors.new({kind = errors.NOT_FOUND, retryable = false,
                 message = "projection checkpoint input is missing"})), current

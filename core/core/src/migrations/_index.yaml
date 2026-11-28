@@ -306,3 +306,15 @@ entries:
       register: kickside.core.projections.persist:register
       threads_writer: kickside.core.threads.persist:writer
     method: migrate
+
+  - name: 23_filtered_checkpoint_pins
+    kind: function.lua
+    meta:
+      type: migration
+      target_db: ""
+      depends_on: [ns:wippy.migration, kickside.core.migrations:22_legacy_projection_slots]
+      timestamp: "2026-11-21T21:00:00Z"
+    source: file://23_filtered_checkpoint_pins.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

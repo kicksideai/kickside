@@ -28,8 +28,9 @@ local M = {}
 
 type CheckpointWriter = (sql.Transaction, string) -> (boolean?, error?)
 type RangeInput = {id: string, seq: number}
-type Checkpoint = {write: CheckpointWriter?, first_seq: number?, owner: table?, manifest: {RangeInput}?, filter: table?,
-    registered: table?}
+type Checkpoint = {
+    first_input: RangeInput?,write: CheckpointWriter?, first_seq: number?, owner: table?, manifest: {RangeInput}?, filter: table?,
+    registered: table?, reselect: boolean?}
 
 local function invalid(message: string): error
     return (errors.new({ message = message, kind = errors.INVALID, retryable = false }) :: error)
@@ -175,13 +176,14 @@ function M.continuation(cursor: table): (table?, error?)
     local raw = cursor.continuation or ""
     if raw == "" then return nil, nil end
     if type(raw) ~= "string" or #raw > 96 then return nil, response_error("cursor.continuation") end
-    local decoded, err = json.decode(raw)
+    local tagged = string.sub(raw, 1, 2) == "f:"
+    local decoded, err = json.decode(tagged and string.sub(raw, 3) or raw)
     if err or type(decoded) ~= "table" or #decoded ~= 4 or type(decoded[1]) ~= "string"
         or #decoded[1] ~= 36 or type(decoded[2]) ~= "number" or decoded[2] <= 0
         or math.tointeger(decoded[2]) == nil or not step_index(decoded[3]) or not step_index(decoded[4]) then
         return nil, response_error("cursor.continuation")
     end
-    return {event_id = decoded[1], seq = decoded[2], item = decoded[3], step = decoded[4]}, nil
+    return {event_id = decoded[1], seq = decoded[2], item = decoded[3], step = decoded[4], filtered = tagged}, nil
 end
 
 local function checkpoint_event(tx: sql.Transaction, thread_id: string, prior: number, pinned: table?): (table?, error?)
@@ -250,8 +252,10 @@ end
 
 -- Scan only identity columns over the assigned physical interval. A caller may
 -- close a prefix before the next eligible event, including across excluded rows.
+local BACKFILLED_PIN = "projection_checkpoint_earlier_input"
+
 local function check_range(tx: sql.Transaction, thread_id: string, prior: number, last: number,
-        filter: table, manifest: {RangeInput}): error?
+        filter: table, manifest: {RangeInput}, pinned: table?): error?
     local marks, types = {}, {}
     for index, declaration in ipairs(filter) do
         marks[index], types[index] = "?", declaration.type
@@ -262,6 +266,12 @@ local function check_range(tx: sql.Transaction, thread_id: string, prior: number
         :order_by("seq"):limit(#manifest + 1):run_with(tx):query()
     if err then return errors.wrap(err, "projection checkpoint range read failed") end
     if type(rows) ~= "table" then return response_error("checkpoint.range") end
+    local first = rows[1]
+    local first_seq = first and tonumber(first.seq)
+    if pinned and first_seq and first_seq > prior and first_seq < pinned.seq then
+        return errors.new({kind = errors.CONFLICT, retryable = true, message = "eligible input precedes the projection pin",
+            details = {code = BACKFILLED_PIN}})
+    end
     if #rows == #manifest then
         for index, row in ipairs(rows) do
             local expected = manifest[index]
@@ -272,6 +282,11 @@ local function check_range(tx: sql.Transaction, thread_id: string, prior: number
         return nil
     end
     return errors.new({kind = errors.CONFLICT, retryable = true, message = "projection checkpoint input changed"})
+end
+
+function M.backfilled_pin_error(err: error?): boolean
+    local details = err and err:details()
+    return type(details) == "table" and details.code == BACKFILLED_PIN
 end
 
 local function advance_tx(db: sql.DB, job: table, snapshot: table, prefetched_last: number, output: table,
@@ -381,24 +396,63 @@ local function advance_tx(db: sql.DB, job: table, snapshot: table, prefetched_la
     if (effect or (checkpoint and checkpoint.manifest)) and (tonumber(source_thread.max_pruned_seq) or 0) > prior then
         return abort(errors.new({kind = errors.NOT_FOUND, retryable = false, message = "projection checkpoint input was pruned"}))
     end
+    local logical_event: table? = nil
     if checkpoint and checkpoint.manifest then
         if last > current_head then return abort(invalid("filtered checkpoint exceeds the current thread head")) end
-        if partial or (cursor.continuation or "") ~= "" then
-            return abort(invalid("a filtered checkpoint cannot continue inside an event"))
-        end
         if not checkpoint.filter then return abort(invalid("filtered checkpoint requires an input filter")) end
-        local range_err = check_range(tx, snapshot.thread_id, prior, last, checkpoint.filter, checkpoint.manifest)
+        local range_end = last
+        local filtered_pin: table? = nil
+        if partial or (cursor.continuation or "") ~= "" then
+            local first = checkpoint.first_input
+            if not first or #checkpoint.manifest ~= 1 then
+                return abort(invalid("a filtered checkpoint cannot continue inside an event"))
+            end
+            local pinned, pin_err = M.continuation(snapshot)
+            if pin_err then return abort(pin_err) end
+            local entry = checkpoint.manifest[1]
+            if entry.id ~= first.id or entry.seq ~= first.seq or first.seq <= prior
+                or first.seq > prefetched_last or first.seq > current_head
+                or (pinned and (pinned.event_id ~= first.id or pinned.seq ~= first.seq)) then
+                return abort(invalid("continuation does not match the first offered eligible event"))
+            end
+            logical_event, range_end = first, first.seq
+            if pinned and pinned.filtered then filtered_pin = pinned end
+        end
+        local range_err = check_range(tx, snapshot.thread_id, prior, range_end, checkpoint.filter,
+            checkpoint.manifest, filtered_pin)
+        if checkpoint.reselect then
+            if not M.backfilled_pin_error(range_err) then
+                return abort(range_err or response_error("checkpoint.reselect_earlier_input"))
+            end
+            local now = clock.now(dbtype)
+            local cleared, clear_err = tx:execute([[UPDATE kickside_projection_cursor
+                SET continuation='', generation=generation+1, last_error=NULL, updated_at=$1
+                WHERE id=$2 AND generation=$3 AND last_seq=$4 AND continuation=$5 AND status='active']],
+                {now, snapshot.id, snapshot.generation, prior, snapshot.continuation})
+            local pin_err = write_error(cleared, clear_err, "projection pin retirement failed", "checkpoint.retire")
+            if pin_err then return abort(pin_err) end
+            if cleared.rows_affected ~= 1 then return abort(response_error("checkpoint.retire")) end
+            local done, done_err = completion(tx, job, {rearm = now})
+            if done_err then return abort(done_err) end
+            local _, commit_err = tx:commit()
+            if commit_err then return nil, errors.wrap(commit_err, "projection pin retirement commit failed") end
+            return {self_completed = true, completion = done, last_seq = prior, reselected = true}, nil
+        end
         if range_err then return abort(range_err) end
     end
     if effect then
         if output.last_seq == nil or (partial and last ~= prior) or (not partial and last <= prior) then
             return abort(invalid("projection checkpoint must consume the next complete event"))
         end
-        if not checkpoint.manifest then
+        if not checkpoint.manifest or logical_event then
             local pinned, pin_err = M.continuation(snapshot)
             if pin_err then return abort(pin_err) end
-            local event, event_err = checkpoint_event(tx, snapshot.thread_id, prior, pinned)
-            if event_err then return abort(event_err) end
+            local event = logical_event
+            if not event then
+                local event_err
+                event, event_err = checkpoint_event(tx, snapshot.thread_id, prior, pinned)
+                if event_err then return abort(event_err) end
+            end
             if not event then return abort(response_error("checkpoint.event")) end
             local event_seq = tonumber(event.seq)
             if event_seq <= prior or event_seq > current_head or event_seq > prefetched_last
@@ -413,6 +467,17 @@ local function advance_tx(db: sql.DB, job: table, snapshot: table, prefetched_la
                 if position_err then return abort(position_err) end
                 if not next_value then return abort(response_error("cursor.continuation")) end
                 continuation = next_value
+                if checkpoint.first_input then
+                    continuation = "f:" .. continuation
+                    if not pinned then
+                        local inserted, pin_write_err = tx:execute([[INSERT INTO kickside_filtered_checkpoint_pin
+                            (cursor_id,reset_generation,event_id,projection_id) VALUES ($1,$2,$3,$4)]],
+                            {snapshot.id,snapshot.reset_generation,event.id,snapshot.projection_id})
+                        local pin_err = write_error(inserted, pin_write_err, "failed to create filtered checkpoint pin", "checkpoint.pin")
+                        if pin_err then return abort(pin_err) end
+                        if inserted.rows_affected ~= 1 then return abort(response_error("checkpoint.pin")) end
+                    end
+                end
             end
         end
         local ok, written, effect_err = pcall(effect, tx, dbtype)
@@ -723,12 +788,16 @@ function M.checkpoint(target_db: string, job: table, snapshot: table, prefetched
     end
     local filter: table? = nil
     if proof ~= nil then filter = proof.filter end
+    local first_input = type(proof) == "table" and not registered and proof.first_input or nil
+    local partial = output.continuation ~= nil and type(first_input) == "table"
     if filter or manifest ~= nil then
         if type(filter) ~= "table" or type(manifest) ~= "table" or #manifest == 0
             or proof.from_seq ~= snapshot.last_seq or proof.to_seq ~= prefetched_last
             or proof.reset_generation ~= snapshot.reset_generation or type(output.last_seq) ~= "number"
-            or output.last_seq ~= math.floor(output.last_seq) or output.last_seq <= proof.from_seq
-            or output.last_seq > proof.to_seq or #manifest > output.last_seq - proof.from_seq then
+            or output.last_seq ~= math.floor(output.last_seq)
+            or (partial and (output.last_seq ~= proof.from_seq or #manifest ~= 1))
+            or (not partial and (output.last_seq <= proof.from_seq or #manifest > output.last_seq - proof.from_seq))
+            or output.last_seq > proof.to_seq then
             return nil, invalid("filtered checkpoint is outside its assigned range")
         end
     end
@@ -743,7 +812,25 @@ function M.checkpoint(target_db: string, job: table, snapshot: table, prefetched
         filter = authority.filter
     end
     return advance(db_id, job, snapshot, prefetched_last, output, {write = write, owner = proof and proof.owner,
-        manifest = manifest, filter = filter, registered = authority})
+        manifest = manifest, filter = filter, registered = authority, first_input = first_input})
+end
+
+-- Invoked by the Core scheduler after private admission. Verify the live
+-- owner, cursor, exact assignment, lease, and earlier input in the same tx.
+function M.reselect_filtered_pin(db_id: string, job: table, snapshot: table, owner: table): (table?, error?)
+    local _, db_err = shared_db(db_id)
+    if db_err then return nil, db_err end
+    local pin, pin_err = M.continuation(snapshot)
+    if pin_err then return nil, pin_err end
+    local prior = tonumber(snapshot.last_seq)
+    local filter = snapshot.body.events and snapshot.body.events.input
+    if not pin or not pin.filtered or not prior or pin.seq <= prior or type(filter) ~= "table"
+        or #filter == 0 or type(owner) ~= "table" or owner.component_id ~= snapshot.thread_id then
+        return nil, invalid("projection reselection requires its admitted filtered pin")
+    end
+    local offered = {id = pin.event_id, seq = pin.seq}
+    return advance(db_id, job, snapshot, pin.seq, {last_seq = prior},
+        {owner = owner, manifest = {offered}, first_input = offered, filter = filter, reselect = true})
 end
 
 function M.finish_checkpointed(target_db: string, job: table, snapshot: table, first_seq: number,

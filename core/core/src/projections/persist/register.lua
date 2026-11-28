@@ -826,7 +826,12 @@ function writer.register_projection_tx(tx: sql.Transaction, dbtype: string, thre
     if declaration_changed and not convergence then
         local fence = sql.builder.update("kickside_projection_cursor")
             :set("generation", sql.builder.expr("generation + 1")):set("updated_at", now)
-        if worker_changed then fence = fence:set("continuation", "") end
+        if worker_changed then
+            fence = fence:set("continuation", "")
+        else
+            fence = fence:set("continuation", sql.builder.expr(
+                "CASE WHEN substr(continuation,1,2)='f:' THEN '' ELSE continuation END"))
+        end
         fence = fence:set("pending_transition", nil):set("pending_transition_seq", nil)
         local fenced, fence_err = fence
             :where(sql.builder.eq({ projection_id = projection_id })):run_with(tx):exec()
