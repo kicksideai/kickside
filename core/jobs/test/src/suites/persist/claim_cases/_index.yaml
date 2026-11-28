@@ -111,6 +111,7 @@ entries:
   imports:
     test: wippy.test:test
     job_types: kickside.core.jobs:types
+    clock: kickside.core.jobs:clock
     claim: kickside.core.jobs.persist:claim
     reclaim: kickside.core.jobs.persist:reclaim
     jobs: kickside.core.jobs:jobs

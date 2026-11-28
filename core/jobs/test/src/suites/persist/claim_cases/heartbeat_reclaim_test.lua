@@ -3,6 +3,7 @@ local sql = require("sql")
 local uuid = require("uuid")
 local job_types = require("job_types")
 local claim = require("claim")
+local clock = require("clock")
 local reclaim = require("reclaim")
 local jobs = require("jobs")
 local lifecycle = require("lifecycle")
@@ -62,7 +63,9 @@ local function define_tests()
                 local err = lifecycle.heartbeat_job(db, job :: table, dbtype)
                 test.is_nil(err)
                 local after = row_of(db, job.id).lease_until
-                test.is_true(after >= before)
+                -- PostgreSQL may omit trailing fractional zeros when reading a timestamp.
+                test.is_true(assert(clock.parse(after)):unix_nano() >= assert(clock.parse(before)):unix_nano(),
+                    "heartbeat shortened lease from " .. before .. " to " .. after)
             end)
         end)
 
