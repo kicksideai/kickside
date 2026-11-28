@@ -413,6 +413,66 @@ local function define_tests()
             s:unset({ namespace = NS, key = "internal_flag" })
         end)
 
+        test.it("definitions answers backend-only and admin-only declarations as metadata without values", function()
+            local s = open_settings()
+            test.eq(s:set({ namespace = NS, key = "internal_flag", value = true }).success, true)
+            test.eq(s:set({ namespace = NS, key = "api_token", value = "definitions-secret" }).success, true)
+            local r = s:definitions({ namespace = NS })
+            test.eq(r.success, true, tostring(r.error))
+            local by_key = {}
+            for _, d in ipairs(r.definitions) do
+                test.eq(d.namespace, NS)
+                test.is_nil(d.value)
+                by_key[d.key] = d
+            end
+            test.not_nil(by_key.internal_flag)
+            test.eq(by_key.internal_flag.visible, false)
+            test.eq(by_key.internal_flag.value_type, "bool")
+            test.eq(by_key.internal_flag.default, false)
+            test.not_nil(by_key.admin_state)
+            test.eq(by_key.admin_state.read_access, "admin")
+            test.eq(by_key.max_items.default, 50)
+            test.eq(by_key.api_token.value_type, "secret")
+            test.is_nil(by_key.api_token.default)
+            test.is_nil(by_key.other_ns)
+            test.eq(#s:definitions({ namespace = "kickside.settings.unknown" }).definitions, 0)
+            s:unset({ namespace = NS, key = "internal_flag" })
+            s:unset({ namespace = NS, key = "api_token" })
+        end)
+
+        test.it("definitions requires a namespace", function()
+            local r = open_settings():definitions({})
+            test.eq(r.success, false)
+            test.eq(r.error, "namespace is required")
+        end)
+
+        test.it("definitions answers only declarations the caller's registry policy grants", function()
+            local def, derr = contract.get("kickside.settings:settings")
+            test.is_nil(derr)
+            local module_scope = security.new_scope({
+                assert(security.policy("app:settings_definitions_policy")),
+                assert(security.policy("app:settings_definitions_registry_policy")),
+            })
+            local caller = (def :: any):with_actor(security.new_actor("module", {})):with_scope(module_scope):open()
+            local r = caller:definitions({ namespace = NS })
+            test.eq(r.success, true, tostring(r.error))
+            local keys = {}
+            for _, d in ipairs(r.definitions) do keys[#keys + 1] = d.key end
+            table.sort(keys)
+            test.eq(table.concat(keys, ","), "internal_flag,max_items")
+        end)
+
+        test.it("definitions answers nothing to a caller with no registry grant", function()
+            local def = assert(contract.get("kickside.settings:settings"))
+            local caller = (def :: any):with_actor(security.new_actor("nobody", {}))
+                :with_scope(scope("app:settings_definitions_policy")):open()
+            local r = caller:definitions({ namespace = NS })
+            test.eq(r.success, true, tostring(r.error))
+            test.eq(#r.definitions, 0)
+            local ordinary = open_settings_as("user", "app:settings_user_runtime_policy"):definitions({ namespace = NS })
+            test.eq(#(ordinary.definitions or {}), 0)
+        end)
+
         test.it("list surfaces a declared per-setting schema", function()
             local found = nil
             for _, e in ipairs(open_settings():list({ namespace = NS }).settings) do
