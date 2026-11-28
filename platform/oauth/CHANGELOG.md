@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.46](https://github.com/kicksideai/kickside/compare/oauth-v0.1.45...oauth-v0.1.46) (2026-11-28)
+
+
+### Features
+
+* connect accounts from the chat; nav fan-out, surface base-path and shell link fixes ([#998](https://github.com/kicksideai/kickside/issues/998)) ([ae4a7df](https://github.com/kicksideai/kickside/commit/ae4a7df5ee8fdc77a93d88b1d3834c9599d008ce))
+
 ## [0.1.45](https://github.com/kicksideai/kickside/compare/oauth-v0.1.44...oauth-v0.1.45) (2026-11-19)
 
 

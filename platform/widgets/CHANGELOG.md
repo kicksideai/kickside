@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.78](https://github.com/kicksideai/kickside/compare/widgets-v0.1.77...widgets-v0.1.78) (2026-11-28)
+
+
+### Bug Fixes
+
+* **widgets:** restore catalog routing and theme tokens ([#999](https://github.com/kicksideai/kickside/issues/999)) ([a2bf952](https://github.com/kicksideai/kickside/commit/a2bf95249ffd97d0db94051a155afcd221d3923f))
+
 ## [0.1.77](https://github.com/kicksideai/kickside/compare/widgets-v0.1.76...widgets-v0.1.77) (2026-11-25)
 
 

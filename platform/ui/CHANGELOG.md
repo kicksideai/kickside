@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.19](https://github.com/kicksideai/kickside/compare/ui-v0.2.18...ui-v0.2.19) (2026-11-28)
+
+
+### Features
+
+* connect accounts from the chat; nav fan-out, surface base-path and shell link fixes ([#998](https://github.com/kicksideai/kickside/issues/998)) ([ae4a7df](https://github.com/kicksideai/kickside/commit/ae4a7df5ee8fdc77a93d88b1d3834c9599d008ce))
+
 ## [0.2.18](https://github.com/kicksideai/kickside/compare/ui-v0.2.17...ui-v0.2.18) (2026-11-25)
 
 

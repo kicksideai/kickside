@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.33](https://github.com/kicksideai/kickside/compare/security-v0.2.32...security-v0.2.33) (2026-11-28)
+
+
+### Bug Fixes
+
+* **app:** restore locked boot and correct foundation regressions ([#1004](https://github.com/kicksideai/kickside/issues/1004)) ([5186e31](https://github.com/kicksideai/kickside/commit/5186e3128bac9e920e168c93e7a3110fe57541fa))
+
 ## [0.2.32](https://github.com/kicksideai/kickside/compare/security-v0.2.31...security-v0.2.32) (2026-11-25)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.27](https://github.com/kicksideai/kickside/compare/workflows-v0.2.26...workflows-v0.2.27) (2026-11-28)
+
+
+### Bug Fixes
+
+* **app:** restore locked boot and correct foundation regressions ([#1004](https://github.com/kicksideai/kickside/issues/1004)) ([5186e31](https://github.com/kicksideai/kickside/commit/5186e3128bac9e920e168c93e7a3110fe57541fa))
+
 ## [0.2.26](https://github.com/kicksideai/kickside/compare/workflows-v0.2.25...workflows-v0.2.26) (2026-11-25)
 
 

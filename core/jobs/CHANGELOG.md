@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.104](https://github.com/kicksideai/kickside/compare/jobs-v0.1.103...jobs-v0.1.104) (2026-11-28)
+
+
+### Bug Fixes
+
+* **jobs:** correct completion, worker retries and claim defaults ([#995](https://github.com/kicksideai/kickside/issues/995)) ([201c0ba](https://github.com/kicksideai/kickside/commit/201c0bab39c2c394782215cd17aa1a23360e1a52))
+* **jobs:** lock wake rows before job rows for single-job writes ([#1000](https://github.com/kicksideai/kickside/issues/1000)) ([22b6435](https://github.com/kicksideai/kickside/commit/22b643513674acea0a18fb8f2fbdd9483c30f80f))
+
 ## [0.1.103](https://github.com/kicksideai/kickside/compare/jobs-v0.1.102...jobs-v0.1.103) (2026-11-24)
 
 
