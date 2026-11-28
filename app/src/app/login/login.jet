@@ -11,19 +11,71 @@
       // SSO return leg: the callback redirects here with #sso_token or
       // #sso_error. Consume the fragment before anything renders so the
       // token never lingers in the URL and lands in the same storage the
-      // password flow uses.
+      // password flow uses. /login/handoff#token= carries a one-time
+      // sign-in token from the deploying platform instead.
       (function () {
         var h = window.location.hash;
         if (!h || h.length < 2) return;
         var params = new URLSearchParams(h.slice(1));
+        var handoff = window.location.pathname === "/login/handoff"
+          ? params.get("token")
+          : null;
         var token = params.get("sso_token");
         var err = params.get("sso_error");
-        if (!token && !err) return;
+        if (!handoff && !token && !err) return;
         history.replaceState(
           null,
           "",
           window.location.pathname + window.location.search,
         );
+        if (handoff) {
+          function showHandoffError(message, retryable) {
+            function show() {
+              var el = document.querySelector("#error");
+              el.textContent = message;
+              el.style.display = "block";
+              if (retryable) {
+                var retry = document.createElement("button");
+                retry.type = "button";
+                retry.textContent = "Try again";
+                retry.addEventListener("click", function () {
+                  retry.disabled = true;
+                  exchange();
+                }, { once: true });
+                el.append(" ", retry);
+              }
+            }
+            if (document.readyState === "loading") {
+              document.addEventListener("DOMContentLoaded", show, { once: true });
+            } else {
+              show();
+            }
+          }
+
+          async function exchange() {
+            try {
+              var res = await fetch("/api/public/user/handoff", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ token: handoff }),
+              });
+              if (res.status === 401 || res.status === 400) {
+                handoff = null;
+                showHandoffError("This sign-in link is invalid or expired. Request a new link.", false);
+                return;
+              }
+              if (!res.ok) throw new Error();
+              var data = await res.json();
+              if (!data.success || !data.token) throw new Error();
+              localStorage.setItem("@wippy_token_info", JSON.stringify({ token: data.token }));
+              window.location.replace("/");
+            } catch {
+              showHandoffError("Sign-in could not be completed. Try again or request a new link.", true);
+            }
+          }
+          exchange();
+          return;
+        }
         if (token) {
           localStorage.setItem(
             "@wippy_token_info",

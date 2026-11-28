@@ -179,6 +179,7 @@ entries:
       "variables": {
         "PUBLIC_API_URL": "",
         "KICKSIDE_USERS_DEFAULT_ADMIN_EMAIL": "${inputs.admin_email}",
+        "KICKSIDE_INSTALL_MODULES": "${inputs.hub_modules}",
         "KICKSIDE_PG_HOST": {
           "$ref": {
             "resource_id": "${env.id}/database",
@@ -209,6 +210,11 @@ entries:
           "name": "KICKSIDE_PG_PASSWORD",
           "secret_name": "database-password",
           "key": "password"
+        },
+        {
+          "name": "KICKSIDE_HANDOFF_SECRET",
+          "secret_name": "handoff-secret",
+          "key": "secret"
         }
       ],
       "command": [
@@ -268,6 +274,10 @@ entries:
         },
         "hub-token": {
           "target": "hub-token",
+          "kind": "configure"
+        },
+        "handoff-secret": {
+          "target": "handoff-secret",
           "kind": "configure"
         },
         "network": {
@@ -412,6 +422,85 @@ entries:
           "target": "secret-material",
           "kind": "configure"
         }
+      },
+      "compensation": "delete_on_fail"
+    }
+- name: deployment_hub_modules
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_hub_modules.input
+      path: .value
+  meta:
+    value_kind: cloud.input
+    value_type: string
+  default: |
+    {
+      "name": "hub_modules",
+      "type": "string",
+      "description": "Comma-separated hub modules (org/name) to install on first boot.",
+      "maxLength": 2600
+    }
+- name: deployment_handoff_secret
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_handoff_secret.input
+      path: .value
+  meta:
+    value_kind: cloud.input
+    value_type: string
+  default: |
+    {
+      "name": "handoff_secret",
+      "type": "string",
+      "format": "password",
+      "secret": true,
+      "writeOnly": true,
+      "minLength": 43,
+      "maxLength": 128
+    }
+- name: deployment_handoff_secret_secret
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_handoff_secret_secret.input
+      path: .value
+  meta:
+    value_kind: cloud.secret
+    value_type: string
+  default: |
+    {
+      "name": "handoff-secret",
+      "reference": {
+        "$ref": {
+          "resource_id": "${env.id}/platform-secret-material",
+          "output_key": "HANDOFF_SECRET"
+        }
+      },
+      "key": "secret",
+      "source_key": "HANDOFF_SECRET",
+      "dependencies": {
+        "material": {
+          "target": "platform-secret-material",
+          "kind": "configure"
+        }
+      },
+      "compensation": "delete_on_fail"
+    }
+# The secret bundle of an existing environment is stored once and never gains
+# keys, so the optional handoff secret lives in its own bundle. A missing
+# input imports as an empty value, and an empty secret sets no variable.
+- name: deployment_platform_secret_material
+  kind: ns.requirement
+  targets:
+    - entry: app.deployment:deployment_platform_secret_material.input
+      path: .value
+  meta:
+    value_kind: cloud.secret_material
+    value_type: string
+  default: |
+    {
+      "name": "platform-secret-material",
+      "import": {
+        "HANDOFF_SECRET": "handoff_secret"
       },
       "compensation": "delete_on_fail"
     }
@@ -596,5 +685,21 @@ entries:
   value: null
 
 - name: deployment_secret_material.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_hub_modules.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_handoff_secret.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_handoff_secret_secret.input
+  kind: registry.entry
+  value: null
+
+- name: deployment_platform_secret_material.input
   kind: registry.entry
   value: null

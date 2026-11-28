@@ -1,5 +1,5 @@
 import { W as t, l as n, P as i } from "./wc-runtime-Chhe4T5p.js";
-import { s as r } from "./styles-CWE-Yg9I.js";
+import { s as r } from "./styles-B_czazfH.js";
 import { define as s } from "@wippy-fe/proxy";
 class e extends t {
   static get wippyConfig() {
@@ -10,7 +10,7 @@ class e extends t {
     };
   }
   static get vueConfig() {
-    return n(() => import("./OnboardRecommendations-DbVlsTM8.js").then((o) => ({ rootComponent: o.default, plugins: [i] })), { surface: "compact", loading: "Loading module recommendations…", failed: "Could not load module recommendations. Reload the page to try again.", delay: 200, timeout: 3e4 });
+    return n(() => import("./OnboardRecommendations-DXMMVMf1.js").then((o) => ({ rootComponent: o.default, plugins: [i] })), { surface: "compact", loading: "Loading module recommendations…", failed: "Could not load module recommendations. Reload the page to try again.", delay: 200, timeout: 3e4 });
   }
 }
 async function u() {

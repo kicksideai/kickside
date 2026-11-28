@@ -1,6 +1,6 @@
 import { W as o, l as i } from "./wc-runtime-DYOSFvWw.js";
 import { E as n } from "./provider-tags-C0mtMONl.js";
-import { s } from "./styles-JRSdLrvT.js";
+import { s } from "./styles-DH9RQd1B.js";
 import { define as p } from "@wippy-fe/proxy";
 const a = { props: { type: "object", properties: {} } }, l = {
   wippy: a
@@ -15,7 +15,7 @@ class r extends o {
   }
   static get vueConfig() {
     return {
-      ...i(() => import("./lazy-mount-gjLmW_Sl.js").then((t) => t.mountConfig), { surface: "page", loading: "Loading…", failed: "Could not load Models. Reload the page to try again.", timeout: 3e4 })
+      ...i(() => import("./lazy-mount-B5c-vQbK.js").then((t) => t.mountConfig), { surface: "page", loading: "Loading…", failed: "Could not load Models. Reload the page to try again.", timeout: 3e4 })
     };
   }
 }
@@ -40,7 +40,7 @@ function g(e) {
     }
     static get vueConfig() {
       return {
-        ...i(() => import("./provider-editor-mount-C9vVWd7m.js").then((t) => t.editorMountConfig(e)), { surface: "page", loading: "Loading…", failed: "Could not load the provider editor. Reload the page to try again.", timeout: 3e4 })
+        ...i(() => import("./provider-editor-mount-CjK5UEb_.js").then((t) => t.editorMountConfig(e)), { surface: "page", loading: "Loading…", failed: "Could not load the provider editor. Reload the page to try again.", timeout: 3e4 })
       };
     }
   };

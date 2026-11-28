@@ -149,13 +149,46 @@ function M.transport_error(err: any, label: string?): (string, any?)
     return M.failure_message(label or "provider request failed", diagnostics), diagnostics
 end
 
+M.ERROR_TYPES = {
+    NO_CREDITS = "insufficient_credits",
+    INVALID_KEY = "invalid_key",
+    RATE_LIMITED = "rate_limited",
+}
+
+-- Provider error bodies carry error.type/code/message (Anthropic, OpenAI) or
+-- error.status/details[].reason (Google). The status code alone cannot tell an
+-- empty balance from a bad key: Anthropic answers 400 and OpenAI 429.
+function M.classify_response(status: number?, body: any): string?
+    local parsed = type(body) == "string" and json.decode(body) or nil
+    local err = type(parsed) == "table" and type(parsed.error) == "table" and parsed.error or {}
+    local code = tostring(err.code or ""):lower()
+    local kind = tostring(err.type or err.status or ""):lower()
+    local message = tostring(err.message or ""):lower()
+    local reasons = {}
+    for _, detail in ipairs(type(err.details) == "table" and err.details or {}) do
+        if type(detail) == "table" and detail.reason then reasons[tostring(detail.reason)] = true end
+    end
+
+    if status == 402 or code == "insufficient_quota" or kind == "insufficient_quota"
+        or message:find("credit balance is too low", 1, true) then
+        return M.ERROR_TYPES.NO_CREDITS
+    end
+    if status == 401 or status == 403 or reasons.API_KEY_INVALID or kind == "authentication_error"
+        or code == "invalid_api_key" then
+        return M.ERROR_TYPES.INVALID_KEY
+    end
+    if status == 429 then return M.ERROR_TYPES.RATE_LIMITED end
+    return nil
+end
+
 function M.response_error(response: any, label: string?): (string, any?)
     local status = response and tonumber(response.status_code)
     local diagnostics = nil
     if status then
         local error_type = llm_mapper.classify_error({status_code = status})
         local mapping = llm_output.ERROR_KIND_MAP[error_type]
-        diagnostics = {kind = mapping.kind, retryable = mapping.retryable, status_code = status}
+        diagnostics = {kind = mapping.kind, retryable = mapping.retryable, status_code = status,
+            error_type = M.classify_response(status, response.body)}
     end
     return M.failure_message(label or "provider request failed", diagnostics), diagnostics
 end
@@ -220,7 +253,7 @@ function M.has_modality(list: any, value: string): boolean
 end
 
 function M.supported_action(item: any, action: string): boolean
-    local list = item.supportedActions or item.supported_actions
+    local list = item.supportedGenerationMethods or item.supported_generation_methods or item.supportedActions or item.supported_actions
     if type(list) ~= "table" then return false end
     for _, value in ipairs(list) do
         if tostring(value) == action then return true end

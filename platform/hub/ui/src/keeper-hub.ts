@@ -95,6 +95,18 @@ export interface HubMigrationsEntry {
   [k: string]: unknown
 }
 
+export type FirstBootModuleStatus = 'pending' | 'installing' | 'installed' | 'failed'
+
+export interface FirstBootInstallStatus {
+  retryable?: boolean
+  success: boolean
+  configured: boolean
+  status?: 'pending' | 'running' | 'completed' | 'failed'
+  message?: string
+  updated_at?: string
+  modules: { component: string; status: FirstBootModuleStatus; message?: string }[]
+}
+
 export interface HubRequiredSetupStatus {
   success: boolean
   descriptor: string
@@ -451,6 +463,10 @@ export function keeperHub(api: Api) {
 
     requiredSetupStatus(descriptor: string) {
       return unwrap<HubRequiredSetupStatus>(api.get('/api/v1/hub/required-setup', { params: { descriptor } }))
+    },
+
+    firstBootStatus() {
+      return unwrap<FirstBootInstallStatus>(api.get('/api/v1/hub/first-boot'))
     },
 
     applyRequiredSetup(descriptor: string) {

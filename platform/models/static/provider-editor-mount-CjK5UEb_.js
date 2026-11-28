@@ -1,6 +1,6 @@
 import { P as r, n as i, o as s } from "./wc-runtime-DYOSFvWw.js";
 import { defineComponent as u, h as m } from "vue";
-import { c as a } from "./ProviderProfileEditor.vue_vue_type_script_setup_true_lang-Bk2OLic6.js";
+import { c as a } from "./ProviderProfileEditor.vue_vue_type_script_setup_true_lang-CXW3wYHb.js";
 function p(o) {
   return u({
     name: `provider-editor-${o}`,
@@ -22,4 +22,4 @@ function v(o) {
 export {
   v as editorMountConfig
 };
-//# sourceMappingURL=provider-editor-mount-C9vVWd7m.js.map
+//# sourceMappingURL=provider-editor-mount-CjK5UEb_.js.map

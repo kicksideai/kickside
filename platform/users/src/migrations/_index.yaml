@@ -163,3 +163,16 @@ entries:
       migration: wippy.migration:migration
       session_schema: kickside.users.migrations:session_schema
     method: migrate
+
+  - name: 16_handoff_nonces
+    kind: function.lua
+    meta:
+      type: migration
+      tags: [kickside_user, auth, security]
+      comment: Store used one-time sign-in nonces until they expire.
+      depends_on: [ns:wippy.migration]
+      timestamp: "2026-11-24T00:00:16Z"
+    source: file://16_handoff_nonces.lua
+    imports:
+      migration: wippy.migration:migration
+    method: migrate

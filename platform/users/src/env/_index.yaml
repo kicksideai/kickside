@@ -65,6 +65,17 @@ entries:
     default: ""
     variable: KICKSIDE_USERS_DEFAULT_ADMIN_PASSWORD
 
+  # kickside.users.env:handoff_secret
+  - name: handoff_secret
+    kind: env.variable
+    meta:
+      comment: Shared secret that signs one-time sign-in tokens; empty disables handoff sign-in
+      icon: tabler:key
+      private: true
+    storage: kickside.users.env:envs
+    default: ""
+    variable: KICKSIDE_HANDOFF_SECRET
+
   # kickside.users.env:default_group_id
   - name: default_group_id
     kind: env.variable

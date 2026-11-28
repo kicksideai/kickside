@@ -40,13 +40,15 @@ end
 -- create saves a profile and, when it is enabled, tests it (every *_env reference, then the
 -- provider probe), so its status is the test's outcome; the test failing leaves the profile
 -- saved and unhealthy with the reason.
-function M.create(input: any): (any?, any?)
+function M.create(input: any, generation: boolean?): (any?, any?, any?)
     local profile, err = models_repo.create_profile(input)
     if not profile then return nil, err end
     record("created", profile.id, profile)
     if profile.enabled == false then return profile end
-    model_discovery.test(profile.id, {})
-    return M.get(profile.id)
+    local result, _, diagnostics = model_discovery.test(profile.id, {generation = generation == true})
+    local saved, read_err = M.get(profile.id)
+    return saved, read_err, {success = result ~= nil,
+        error_type = diagnostics and diagnostics.error_type or nil}
 end
 
 function M.update(id: any, input: any): (any?, any?)

@@ -60,3 +60,11 @@ entries:
     method: GET
     func: handler
     path: /login
+
+  - name: handoff_endpoint
+    kind: http.endpoint
+    meta:
+      router: app:web
+    method: GET
+    func: handler
+    path: /login/handoff

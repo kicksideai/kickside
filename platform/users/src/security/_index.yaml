@@ -101,6 +101,17 @@ entries:
         - env.get
       effect: allow
 
+  - name: handoff_env_read
+    kind: security.policy
+    meta:
+      comment: Handoff sign-in may read the shared handoff secret.
+    policy:
+      resources:
+        - kickside.users.env:handoff_secret
+      actions:
+        - env.get
+      effect: allow
+
   - name: login_actor_create
     kind: security.policy
     meta:

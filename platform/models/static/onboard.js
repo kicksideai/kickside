@@ -1,5 +1,5 @@
 import { W as o, l as s, P as i } from "./wc-runtime-DYOSFvWw.js";
-import { s as r } from "./styles-JRSdLrvT.js";
+import { s as r } from "./styles-DH9RQd1B.js";
 import { define as n } from "@wippy-fe/proxy";
 class e extends o {
   static get wippyConfig() {
@@ -10,7 +10,7 @@ class e extends o {
     };
   }
   static get vueConfig() {
-    return s(() => import("./Onboard-pnGjbhxJ.js").then((t) => ({ rootComponent: t.default, plugins: [i] })), { surface: "compact", loading: "Loading model setup…", failed: "Could not load the model setup. Reload the page to try again.", delay: 200, timeout: 3e4 });
+    return s(() => import("./Onboard-BrAeRfRZ.js").then((t) => ({ rootComponent: t.default, plugins: [i] })), { surface: "compact", loading: "Loading model setup…", failed: "Could not load the model setup. Reload the page to try again.", delay: 200, timeout: 3e4 });
   }
 }
 async function u() {

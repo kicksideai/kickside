@@ -8,7 +8,8 @@ import { isBuiltInEditorTag, specForProviderTag } from '../providerSpecs.ts'
 import { useModelsApi } from './useModelsApi.ts'
 import { makeLookups, profileEndpoint, statusLabel, statusSeverity } from './presenters.ts'
 import { usableFastModelContext } from '../modelReadiness.ts'
-import { Avatar, Button, Notice, SelectField, Spinner } from './shared'
+import { connectFailure, type ProviderErrorType } from '../providerBilling.ts'
+import { Avatar, Button, Notice, SelectField, Spinner, Toggle } from './shared'
 import ModelEditor from './ModelEditor.vue'
 import ProviderProfileEditor from './ProviderProfileEditor.vue'
 
@@ -32,6 +33,7 @@ const selectedPreset = ref<Preset | null>(null)
 const editingModel = ref<ModelCard | null>(null)
 const connectMsg = ref('')
 const connectFail = ref('')
+const connectBillingUrl = ref('')
 // busy spans discovery so the form cannot be resubmitted.
 const busy = ref(false)
 
@@ -41,6 +43,8 @@ const busy = ref(false)
 const onboardingPresets = computed(() => presets.value.filter(p => p.onboarding !== false))
 
 const selectedProviderId = computed(() => selectedPreset.value?.provider_id || COMPAT_PROVIDER)
+const generationCheck = ref(false)
+const offersGenerationCheck = computed(() => ['wippy.llm.claude:provider', 'wippy.llm.google.generative_ai:provider'].includes(selectedProviderId.value))
 const selectedAdapter = computed(() => lookups.adapterFor(selectedProviderId.value))
 const selectedEditorTag = computed(
   () => selectedPreset.value?.profile_editor_tag || selectedAdapter.value?.profile_editor_tag || COMPAT_EDITOR,
@@ -107,8 +111,10 @@ function skipModelSetup() {
   finish()
 }
 
-function showConnectFailure(message: string) {
-  connectFail.value = message
+function showConnectFailure(message: string, errorType?: ProviderErrorType, providerId = '') {
+  const failure = connectFailure(message, errorType, providerId)
+  connectFail.value = failure.message
+  connectBillingUrl.value = failure.errorType === 'insufficient_credits' ? (failure.billingUrl ?? '') : ''
   // Connection failures belong to the inline result. Keeping the store-level
   // copy as well made the review stage render the exact same error twice.
   error.value = ''
@@ -118,11 +124,14 @@ function goPick() {
   selectedPreset.value = null
   connectMsg.value = ''
   connectFail.value = ''
+  connectBillingUrl.value = ''
   stage.value = 'pick'
 }
 function pickPreset(preset: Preset) {
+  generationCheck.value = false
   selectedPreset.value = preset
   connectFail.value = ''
+  connectBillingUrl.value = ''
   stage.value = 'connect'
 }
 function cancelConnect() {
@@ -135,20 +144,24 @@ async function connect(payload: Record<string, unknown>) {
   if (busy.value) return
   busy.value = true
   connectFail.value = ''
+  connectBillingUrl.value = ''
   try {
-    payload.enabled = true
-    const before = new Set(profiles.value.map(p => p.id))
-    connectMsg.value = 'Saving connection…'
-    const ok = await store.saveProfile('create', '', payload)
-    if (!ok) { showConnectFailure(error.value || 'Could not save the connection.'); return }
+    connectMsg.value = 'Saving and testing the connection…'
+    const created = await store.createProfile({ ...payload, enabled: true }, offersGenerationCheck.value && generationCheck.value)
+    if (!created) { showConnectFailure(error.value || 'Could not save the connection.'); return }
 
-    const created = profiles.value.find(p => !before.has(p.id))
-    if (created) {
-      connectMsg.value = 'Verifying key and importing models…'
-      const r = await store.discover(created.id)
+    const { profile, check } = created
+    if (check?.success === false || profile.status === 'unhealthy') {
+      showConnectFailure(profile.message || 'Connection test failed.', check?.error_type, profile.provider_id)
+    } else {
+      connectMsg.value = 'Importing models…'
+      const result = await store.discover(profile.id)
       await store.loadClasses()
-      if (!r.ok) showConnectFailure(r.message)
-      else { connectMsg.value = 'Selecting sensible defaults…'; await autoSelectDefaults(false) }
+      if (!result.ok) showConnectFailure(result.message, result.errorType, profile.provider_id)
+      else {
+        connectMsg.value = 'Selecting sensible defaults…'
+        await autoSelectDefaults(false)
+      }
     }
     stage.value = 'review'
   } finally {
@@ -357,6 +370,8 @@ onMounted(async () => {
         </div>
 
         <template v-else>
+          <Toggle v-if="offersGenerationCheck" v-model="generationCheck"
+            label="Test generation with one output token (provider charges may apply)" />
           <ProviderProfileEditor
             v-if="useBuiltInEditor"
             :spec-key="spec.key"
@@ -379,6 +394,7 @@ onMounted(async () => {
           />
           <div v-if="connectFail" class="ob-result fail">
             <Icon icon="tabler:circle-x" aria-hidden="true" /><span>{{ connectFail }}</span>
+            <a v-if="connectBillingUrl" class="ob-billing-link" :href="connectBillingUrl" target="_blank" rel="noopener noreferrer">Add credits</a>
           </div>
         </template>
       </section>
@@ -399,6 +415,7 @@ onMounted(async () => {
       <section v-else class="ob-stage">
         <div v-if="connectFail" class="ob-result fail">
           <Icon icon="tabler:circle-x" aria-hidden="true" /><span>{{ connectFail }}</span>
+          <a v-if="connectBillingUrl" class="ob-billing-link" :href="connectBillingUrl" target="_blank" rel="noopener noreferrer">Add credits</a>
         </div>
 
         <div class="ob-block">

@@ -286,6 +286,125 @@ return {run = test.run_cases(function()
         end)
     end)
 
+    test.describe("provider error classification", function()
+        local anthropic, google = adapters[2], adapters[3]
+        local cases = {
+            {"HTTP 401", openai, 401, "{}", "invalid_key"},
+            {"HTTP 403", openai, 403, "{}", "invalid_key"},
+            {"HTTP 402", openai, 402, "{}", "insufficient_credits"},
+            {"Anthropic 400 low credit balance", anthropic, 400,
+                '{"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API."}}',
+                "insufficient_credits"},
+            {"OpenAI 429 insufficient_quota", openai, 429,
+                '{"error":{"message":"You exceeded your current quota.","type":"insufficient_quota","code":"insufficient_quota"}}',
+                "insufficient_credits"},
+            {"plain 429", openai, 429, '{"error":{"message":"Rate limit reached","type":"requests"}}', "rate_limited"},
+            {"429 linking to billing help", openai, 429,
+                '{"error":{"code":"rate_limit_exceeded","message":"Rate limit reached. See the billing page for limits."}}',
+                "rate_limited"},
+            {"400 mentioning a billing field", openai, 400,
+                '{"error":{"code":"invalid_request_error","message":"Invalid billing address field"}}', nil},
+            {"403 invalid key linking to billing help", openai, 403,
+                '{"error":{"code":"invalid_api_key","message":"Check your project key and billing settings."}}',
+                "invalid_key"},
+            {"Google 400 invalid key", google, 400,
+                '{"error":{"code":400,"message":"API key not valid.","status":"INVALID_ARGUMENT","details":[{"reason":"API_KEY_INVALID"}]}}',
+                "invalid_key"},
+            {"other 400", anthropic, 400, '{"error":{"type":"invalid_request_error","message":"max_tokens"}}', nil},
+        }
+        for _, row in ipairs(cases) do
+            test.it("classifies " .. row[1], function()
+                http_fixture.prepare({status_code = row[3], body = row[4]}, nil)
+                local probe = row[2].test_generation or row[2].test
+                local result, message, diagnostics = probe(profile(), {model = "probe-model"})
+                test.is_nil(result)
+                test.not_nil(diagnostics)
+                test.eq(diagnostics.status_code, row[3])
+                test.eq(diagnostics.error_type, row[5])
+                test.is_nil((assert(json.encode({message, diagnostics})):find("credit balance is too low", 1, true)))
+            end)
+        end
+
+        test.it("runs exactly the requested check when creating an enabled profile", function()
+            local service = require("profile_service")
+            local calls = {}
+            local original = discovery.adapter_for
+            discovery.adapter_for = function()
+                return {
+                    test = function()
+                        calls[#calls + 1] = "connection"
+                        return {success = true}
+                    end,
+                    test_generation = function()
+                        calls[#calls + 1] = "generation"
+                        return nil, "fixture", {status_code = 429, error_type = "rate_limited"}
+                    end,
+                }
+            end
+            local ids = {}
+            local ok, err = pcall(function()
+                for _, generation in ipairs({false, true}) do
+                    local saved, save_err, check = service.create({name = "Onboarding check",
+                        provider_id = "wippy.llm.openai_compat:provider", api_key = "test-key"}, generation)
+                    test.is_nil(save_err)
+                    ids[#ids + 1] = saved.id
+                    test.eq(check.success, not generation)
+                    test.eq(check.error_type, generation and "rate_limited" or nil)
+                    test.eq(saved.status, generation and "unhealthy" or "healthy")
+                end
+                test.eq(table.concat(calls, ","), "connection,generation")
+            end)
+            discovery.adapter_for = original
+            for _, id in ipairs(ids) do assert(repo.delete_profile(id)) end
+            if not ok then error(err) end
+        end)
+
+        test.it("does not return the provider body", function()
+            http_fixture.prepare({status_code = 402, body = sentinel}, nil)
+            local _, message, diagnostics = openai.test(profile(), {model = "probe-model"})
+            test.eq(diagnostics.error_type, "insufficient_credits")
+            test.is_nil((assert(json.encode({message, diagnostics})):find(sentinel, 1, true)))
+        end)
+
+        test.it("keeps ordinary connection checks list-only for Anthropic and Google", function()
+            local saved = assert(repo.create_profile({name = "List-only connection check",
+                provider_id = "wippy.llm.openai_compat:provider", api_key = "test-key",
+                config = {base_url = "https://example.invalid"}}))
+            local original = discovery.adapter_for
+            local ok, err = pcall(function()
+                for _, adapter in ipairs({anthropic, google}) do
+                    discovery.adapter_for = function() return adapter end
+                    http_fixture.prepare_probe('{"models":[{"id":"sample","supportedActions":["generateContent"]}]}')
+                    test.eq(assert(discovery.test(saved.id, {})).mode, "models")
+                    test.is_nil(http_fixture.probe())
+                    assert(discovery.test(saved.id, {generation = true}))
+                    test.not_nil(http_fixture.probe())
+                end
+            end)
+            discovery.adapter_for = original
+            assert(repo.delete_profile(saved.id))
+            if not ok then error(err, 0) end
+        end)
+
+        test.it("probes Anthropic and Google with one generated token", function()
+            http_fixture.prepare_probe('{"data":[{"id":"claude-opus-x"},{"id":"claude-haiku-x"}]}')
+            local result = assert(anthropic.test_generation(profile(), {}))
+            test.eq(result.model, "claude-haiku-x")
+            local request = assert(http_fixture.probe())
+            test.eq(request.url, "https://example.invalid/v1/messages")
+            test.eq(assert(json.decode(request.body)).max_tokens, 1)
+
+            http_fixture.prepare_probe('{"models":[{"name":"models/text-embedding-004","supportedGenerationMethods":["embedContent"]},'
+                .. '{"name":"models/gemini-pro-x","supportedGenerationMethods":["generateContent"]},'
+                .. '{"name":"models/gemini-flash-x","supportedGenerationMethods":["generateContent"]}]}')
+            result = assert(google.test_generation(profile(), {}))
+            test.eq(result.model, "gemini-flash-x")
+            request = assert(http_fixture.probe())
+            test.eq(request.url, "https://example.invalid/models/gemini-flash-x:generateContent")
+            test.eq(assert(json.decode(request.body)).generationConfig.maxOutputTokens, 1)
+        end)
+    end)
+
     test.describe("safe discovery diagnostics", function()
         for _, row in ipairs({{401, errors.PERMISSION_DENIED, false}, {429, errors.RATE_LIMITED, true},
             {503, errors.UNAVAILABLE, true}}) do

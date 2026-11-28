@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { api } from '@wippy-fe/proxy'
 import type { Adapter, ClassGroup, ImportReport, ModelCard, Preset, Profile } from '../types.ts'
+import { errorTypeOf, type ProviderErrorType } from '../providerBilling.ts'
 
 // Admin data store for the models surface. Owns the four admin collections, the
 // load lifecycle, and the profile / card mutations. Every mutation reloads the
@@ -12,6 +13,12 @@ function messageOf(e: unknown, fallback: string): string {
   if (typeof data?.message === 'string' && data.message) return data.message
   return e instanceof Error ? e.message : fallback
 }
+
+function errorTypeFromError(e: unknown): ProviderErrorType | undefined {
+  return errorTypeOf((e as any)?.response?.data ?? (e as any)?.data)
+}
+
+type CheckResult = { ok: boolean; message: string; errorType?: ProviderErrorType }
 
 export function useModelsApi() {
   const adapters = ref<Adapter[]>([])
@@ -74,10 +81,21 @@ export function useModelsApi() {
     }
   }
 
-  function saveProfile(mode: 'create' | 'edit', id: string, body: Record<string, unknown>): Promise<boolean> {
+  async function createProfile(body: Record<string, unknown>, generation = false) {
+    let created: { profile: Profile; check?: { success: boolean; error_type?: ProviderErrorType } } | undefined
+    await mutate(async () => {
+      const { data } = await api.post('/api/v1/models/provider-profiles',
+        generation ? { ...body, test_generation: true } : body)
+      if (!data?.profile?.id) throw new Error('Provider profile creation returned no profile')
+      created = { profile: data.profile, check: data.connection_test }
+    }, 'failed to save profile')
+    return created
+  }
+
+  async function saveProfile(mode: 'create' | 'edit', id: string, body: Record<string, unknown>): Promise<boolean> {
+    if (mode === 'create') return Boolean(await createProfile(body))
     return mutate(async () => {
-      if (mode === 'edit') await api.put(`/api/v1/models/provider-profiles/${encodeURIComponent(id)}`, body)
-      else await api.post('/api/v1/models/provider-profiles', body)
+      await api.put(`/api/v1/models/provider-profiles/${encodeURIComponent(id)}`, body)
     }, 'failed to save profile')
   }
 
@@ -126,7 +144,7 @@ export function useModelsApi() {
     return ok ? report : null
   }
 
-  async function discover(id: string): Promise<{ ok: boolean; message: string }> {
+  async function discover(id: string): Promise<CheckResult> {
     discovering.value = id
     error.value = ''
     try {
@@ -134,12 +152,12 @@ export function useModelsApi() {
       await load()
       if (data && data.success === false) {
         error.value = data.error || 'connection failed'
-        return { ok: false, message: error.value }
+        return { ok: false, message: error.value, errorType: errorTypeOf(data) }
       }
       return { ok: true, message: 'Connection succeeded' }
     } catch (e) {
       error.value = messageOf(e, 'connection failed')
-      return { ok: false, message: error.value }
+      return { ok: false, message: error.value, errorType: errorTypeFromError(e) }
     } finally {
       discovering.value = ''
     }
@@ -148,21 +166,21 @@ export function useModelsApi() {
   // Authenticated connection check against the provider. Unlike discovery, this
   // does not create model cards; OpenAI-compatible profiles can use test_model
   // for a real chat-completions probe.
-  async function testProfile(id: string): Promise<{ ok: boolean; message: string }> {
+  async function testProfile(id: string, generation = false): Promise<CheckResult> {
     error.value = ''
     try {
-      const { data } = await api.post(`/api/v1/models/provider-profiles/${encodeURIComponent(id)}/test`, {})
+      const { data } = await api.post(`/api/v1/models/provider-profiles/${encodeURIComponent(id)}/test`, generation ? { generation: true } : {})
       await load()
       if (data && data.success === false) {
         error.value = data.error || 'connection test failed'
-        return { ok: false, message: error.value }
+        return { ok: false, message: error.value, errorType: errorTypeOf(data) }
       }
       return { ok: true, message: data?.message || 'Connection test succeeded' }
     } catch (e) {
       const message = messageOf(e, 'connection test failed')
       await load()
       error.value = message
-      return { ok: false, message }
+      return { ok: false, message, errorType: errorTypeFromError(e) }
     }
   }
 
@@ -187,7 +205,7 @@ export function useModelsApi() {
   return {
     adapters, presets, profiles, models, classes,
     loading, saving, discovering, probing, error,
-    load, loadClasses, saveProfile, deleteProfile, saveCard, saveCards, deleteCard, discover, testProfile, testModel,
+    load, loadClasses, createProfile, saveProfile, deleteProfile, saveCard, saveCards, deleteCard, discover, testProfile, testModel,
     exportSetup, importSetup,
   }
 }

@@ -47,6 +47,10 @@ entries:
         path: ".groups +="
       - entry: kickside.hub.instruments:required_setup_endpoint_access
         path: ".groups +="
+      - entry: kickside.hub.first_boot:status_endpoint_access
+        path: ".groups +="
+      - entry: kickside.hub.first_boot:service
+        path: ".lifecycle.security.groups +="
   # App-composition agent for the admin-only onboarding instruments step. The
   # app invokes it through its narrow one-shot endpoint; it is not discoverable
   # through ordinary agent lists or available as a user-started session.

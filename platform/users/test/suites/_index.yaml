@@ -791,3 +791,19 @@ entries:
       user_repo: kickside.users.persist:user_repo
       user_groups_repo: kickside.users.persist:user_groups_repo
       user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+
+  - name: handoff_test
+    kind: function.lua
+    meta: {type: test, suite: users}
+    source: file://handoff_test.lua
+    method: run
+    security:
+      actor: {id: app:test_runner}
+      policies: [app:test_runtime]
+    modules: [registry, http_client, json, env, time, base64, crypto, sql]
+    imports:
+      test: wippy.test:test
+      handoff: kickside.users:handoff
+      user_repo: kickside.users.persist:user_repo
+      user_lifecycle_repo: kickside.users.persist:user_lifecycle_repo
+      user_group_sources_repo: kickside.users.persist:user_group_sources_repo

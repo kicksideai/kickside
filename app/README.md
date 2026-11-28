@@ -99,6 +99,15 @@ Bootstrap credentials are read only on the first boot of a fresh database.
 `PUBLIC_API_URL` must match the address users reach the app on — set it in the
 environment or via the `local` profile vars when running behind a proxy.
 
+A deploying platform can also set these optional variables:
+
+- `KICKSIDE_INSTALL_MODULES`: comma-separated Hub modules (`org/name`, at most
+  20) that the first boot installs. Administrators see the progress on the
+  Modules page; a finished run is not repeated.
+- `KICKSIDE_HANDOFF_SECRET`: shared secret for one-time sign-in links
+  (`/login/handoff#token=...`, verified by `POST /api/public/user/handoff`).
+  Empty disables handoff sign-in.
+
 ## Postgres
 
 The packed profiles work identically in a direct Hub run and in a source

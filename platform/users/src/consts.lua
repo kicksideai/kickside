@@ -13,7 +13,8 @@ local consts = {
         DEFAULT_ADMIN_EMAIL = "kickside.users.env:default_admin_email",
         DEFAULT_ADMIN_PASSWORD = "kickside.users.env:default_admin_password",
         ADMIN_INIT_ENABLED = "kickside.users.env:admin_init_enabled",
-        TOKEN_EXPIRATION = "kickside.users.env:token_expiration"
+        TOKEN_EXPIRATION = "kickside.users.env:token_expiration",
+        HANDOFF_SECRET = "kickside.users.env:handoff_secret"
     },
 
     -- Internal Resource IDs
@@ -76,6 +77,7 @@ local consts = {
         INVALID_USER_STATUS = "Invalid user status",
 
         -- Authentication errors
+        HANDOFF_REJECTED = "Invalid or expired sign-in link",
         AUTHENTICATION_FAILED = "Authentication failed",
         INSUFFICIENT_PERMISSIONS = "Insufficient permissions",
         TOKEN_CREATION_FAILED = "Failed to create authentication token",

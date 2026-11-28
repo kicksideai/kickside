@@ -1,4 +1,5 @@
 local errors = require("errors")
+local handoff_nonce_repo = require("handoff_nonce_repo")
 local eligibility = require("credential_eligibility")
 -- Maps minted sessions to the account that owns them without retaining a bearer
 -- credential. The SQL token store and this index share one database, so account
@@ -117,7 +118,7 @@ end
 -- key. It holds the account lock that every invalidation takes: either
 -- revocation wins and mint fails, or mint commits first and revocation deletes
 -- its index and token-store rows before it returns.
-function M.record_minted(token, user_id, expected_generation, expires_at)
+function M.record_minted(token, user_id, expected_generation, expires_at, handoff)
     local token_key, key_err = M.token_key(token)
     if key_err then return nil, key_err end
     if not user_id or user_id == "" then
@@ -164,6 +165,10 @@ function M.record_minted(token, user_id, expected_generation, expires_at)
         return nil, consts.ERROR.SESSION_GENERATION_CHANGED
     end
 
+    if handoff then
+        local fresh, claim_err = handoff_nonce_repo.claim_in(tx, handoff.nonce, handoff.exp)
+        if not fresh then return rollback_and_release(db, tx, claim_err or consts.ERROR.HANDOFF_REJECTED) end
+    end
     local row = { token_key = token_key, user_id = tostring(user_id), auth_generation = expected }
     if expires_at and expires_at ~= "" then row.expires_at = expires_at end
     local _, insert_err = sql.builder.insert(SESSIONS):set_map(row):run_with(tx):exec()

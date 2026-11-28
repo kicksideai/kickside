@@ -767,3 +767,20 @@ wippy-loading, wippy-error { height: 100%; }
 .km-dialog::backdrop { background: var(--p-mask-background); }
 .km-ai-proposal { margin-top: 12px; padding: 12px; border: 1px solid var(--p-primary-color); border-radius: var(--kx-radius-8); background: color-mix(in srgb, var(--p-primary-color) 6%, var(--p-content-background)); }
 .km-ai-proposal p { margin: 8px 0; color: var(--p-text-muted-color); }
+
+/* first-boot install state */
+.km-first-boot {
+  margin: 12px var(--system-surface-gutter) 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--p-content-border-color);
+  font-size: 13px;
+}
+.km-first-boot-title { margin: 0 0 6px; font-weight: 600; }
+.km-first-boot-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.km-first-boot-item { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.km-first-boot-name { font-family: var(--p-font-mono, monospace); }
+.km-first-boot-state { color: var(--p-text-muted-color); }
+.km-first-boot-msg { margin: 0; color: var(--p-text-muted-color); flex-basis: 100%; }
+.km-first-boot-installed { color: var(--p-success-600, var(--p-success-500)); }
+.km-first-boot-failed { color: var(--p-danger-600, var(--p-danger-500)); }

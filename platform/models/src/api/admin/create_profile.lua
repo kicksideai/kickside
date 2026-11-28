@@ -22,7 +22,7 @@ local function handler()
         return
     end
 
-    local profile, perr = profile_service.create(data)
+    local profile, perr, check = profile_service.create(data, type(data) == "table" and data.test_generation == true)
     if not profile then
         if errors.is(perr, errors.INVALID) then
             http_params.bad_request(res, perr:message(), perr)
@@ -34,7 +34,7 @@ local function handler()
     end
 
     res:set_status(http.STATUS.CREATED)
-    res:write_json({ success = true, profile = profile })
+    res:write_json({ success = true, profile = profile, connection_test = check })
 end
 
 return { handler = handler }

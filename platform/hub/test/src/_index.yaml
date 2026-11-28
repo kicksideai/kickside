@@ -303,3 +303,42 @@ entries:
     imports:
       test: wippy.test:test
       setup: kickside.hub.api:required_setup_runtime
+
+  - name: first_boot_test
+    kind: function.lua
+    meta: {type: test, suite: kickside_hub}
+    source: file://first_boot_test.lua
+    method: run
+    modules: [funcs, security]
+    security:
+      actor: {id: app:first_boot_test}
+      policies: [app:admin]
+    imports:
+      test: wippy.test:test
+      installer: kickside.hub.first_boot:installer
+      state: kickside.hub.first_boot:state
+
+  - name: first_boot_state_probe
+    kind: function.lua
+    source: file://first_boot_state_probe.lua
+    method: run
+    modules: [contract]
+    imports:
+      state: kickside.hub.first_boot:state
+    security:
+      actor:
+        id: app:first_boot_state_probe
+      policies:
+        - kickside.hub.first_boot:readiness_read
+
+  - name: first_boot_state_denied_probe
+    kind: function.lua
+    source: file://first_boot_state_probe.lua
+    method: run
+    modules: [contract]
+    imports:
+      state: kickside.hub.first_boot:state
+    security:
+      actor:
+        id: app:first_boot_state_denied_probe
+      policies: []
