@@ -395,6 +395,26 @@ local function define_tests()
             test.is_true(run_stage(id, "application/pdf", FIXTURE_SIZE, path).metadata.rasterize_skipped)
         end)
 
+        test.it("reuses and orders mixed numeric and string page identities", function()
+            local id = seed_document(SCRIPTED_MIME, "<!-- page 1 -->\n\n<!-- page 2 -->")
+            for page = 1, 2 do
+                local _, err = artifact_content_repo.create_artifact({upload_id = id, kind = "image",
+                    role = page == 1 and "extracted-image" or "rendered-page", mime_type = "image/png",
+                    ordinal = 2000 + page, content = string.rep("I", 60000),
+                    storage_id = STORAGE_ID, metadata = {page = page == 1 and page or tostring(page),
+                        width = 100, height = 200}})
+                test.is_nil(err)
+            end
+            local images = page_images.page_set(id, 51200)
+            test.eq(#images, 2)
+            test.eq(images[1].metadata.page, 1)
+            test.eq(images[2].metadata.page, 2)
+            local path = scripted_document({total = 2})
+            local result = run_stage(id, SCRIPTED_MIME, FIXTURE_SIZE, path)
+            test.is_true(result.metadata.rasterize_skipped)
+            test.eq(#script_state(path).calls, 1)
+        end)
+
         test.it("renders a page with a large image and an additional small image", function()
             local upload_id = seed_document("application/pdf", "<!-- page 1 -->\n\n<!-- page 2 -->")
             for _, size in ipairs({60000, 100}) do

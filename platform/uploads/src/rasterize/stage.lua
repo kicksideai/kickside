@@ -326,11 +326,11 @@ local function process(params: any): any
         end
         return true
     end
+    local cached, candidates = page_images.page_candidates(upload_id, min_page_bytes)
     local extracted = {}
-    for _, image in ipairs(page_images.extracted_pages(upload_id, min_page_bytes)) do
+    for _, image in ipairs(candidates) do
         if usable(image) then extracted[#extracted + 1] = image end
     end
-    local cached = page_images.rendered(upload_id)
     if #cached == 0 and page_images.complete_coverage(extracted, total) then
         log:info("pages already extracted by doc2md; skipping rasterize", {
             upload_id = upload_id, total_pages = total, extracted_pages = #extracted,
