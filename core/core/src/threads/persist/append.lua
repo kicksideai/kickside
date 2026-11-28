@@ -282,6 +282,12 @@ local function safe_receipts(tx: sql.Transaction, id: string, options: AppendOpt
     return nil
 end
 
+local function subject_mismatch(row: table, match: Appended): error
+    return errors.new({ message = "event subject mismatch", kind = errors.CONFLICT, retryable = false,
+        details = { reason = "event_subject_mismatch", event_id = match.event_id,
+            subject = row.subject, stored_subject = match.subject } })
+end
+
 -- append_events_tx appends one thread's batch of writer-shaped events
 -- ({ id?, type?, role?, body_json?, seq?, content?, external?, trace_context?,
 -- created_at? }). An event carrying an explicit seq keeps it; the rest are
@@ -346,10 +352,7 @@ function append.append_events_tx(tx: sql.Transaction, thread_id: string, events:
             local match = (row.id ~= "" and ids[row.id]) or (ext and externals[ext])
             if not match then break end
             if row.subject ~= match.subject then
-                local conflict = errors.new({ message = "event subject mismatch", kind = errors.CONFLICT, retryable = false,
-                    details = { reason = "event_subject_mismatch", event_id = match.event_id,
-                        subject = row.subject, stored_subject = match.subject } })
-                return nil, safe_conflict(tx, id, options, conflict)
+                return nil, safe_conflict(tx, id, options, subject_mismatch(row, match))
             end
             retry[index] = match :: Appended
         end
@@ -397,6 +400,9 @@ function append.append_events_tx(tx: sql.Transaction, thread_id: string, events:
             match = seqs[tostring(row.seq)]
         end
         if match then
+            if options.expect ~= nil and row.subject ~= match.subject then
+                return nil, safe_conflict(tx, id, options, subject_mismatch(row, match))
+            end
             duplicates = duplicates + 1
             answered[index] = match
         else

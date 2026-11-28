@@ -126,6 +126,27 @@ local function define_tests()
                 test.eq(version(id, "different"), 0)
             end
         end)
+        test.it("rejects mismatched subjects after a fresh event in a guarded batch", function()
+            for _, stored in ipairs({ false, true }) do
+                local id = scaffold.make_thread()
+                local original = { id = uuid.v7(), subject = "original" }
+                local head = 0
+                if stored then
+                    test.is_nil(select(2, write(id, { original }, { head = 0 })))
+                    head = 1
+                end
+                local result, err = write(id, {
+                    stored and { subject = "fresh" } or original,
+                    { id = original.id, subject = "different" },
+                }, { head = head })
+                test.is_nil(result)
+                conflict(err, "event_subject_mismatch")
+                test.eq(#scaffold.seqs_of(id), head)
+                test.eq(version(id, "original"), head)
+                test.eq(version(id, "fresh"), 0)
+                test.eq(version(id, "different"), 0)
+            end
+        end)
         test.it("refuses seq-only collisions with a matching expectation", function()
             local id = scaffold.make_thread()
             test.is_nil(select(2, write(id, { { subject = "settings" } }, nil)))
