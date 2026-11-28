@@ -55,6 +55,24 @@ local function head_of(thread_id: string): integer
     return math.floor(tonumber(query("SELECT event_count FROM kickside_thread WHERE id = $1", { thread_id })[1].event_count) :: number)
 end
 
+local function count_reads(tx: sql.Transaction, observe: (integer) -> ()): sql.Transaction
+    return {
+        query = function(_, statement: string, ...)
+            local rows, err = tx:query(statement, ...)
+            if rows then observe(#rows) end
+            return rows, err
+        end,
+        execute = function(_, statement: string, ...) return tx:execute(statement, ...) end,
+        prepare = function(_, statement: string) return tx:prepare(statement) end,
+        savepoint = function(_, name: string) return tx:savepoint(name) end,
+        rollback_to = function(_, name: string) return tx:rollback_to(name) end,
+        release = function(_, name: string) return tx:release(name) end,
+        db_type = function() return tx:db_type() end,
+        commit = function() return tx:commit() end,
+        rollback = function(_, name: string?) return tx:rollback(name) end,
+    }
+end
+
 local function define_tests()
     test.describe("Threads append_tx", function()
         test.it("refuses malformed metadata without committing any part of a batch", function()
@@ -97,17 +115,7 @@ local function define_tests()
             local rows, lock_err = tx:query("SELECT id,event_count,max_pruned_seq,deleting_at FROM kickside_thread WHERE id=$1" .. suffix, { thread_id })
             test.is_nil(lock_err)
             local reads = 0
-            local probe: sql.Transaction = {
-                query = function(_, statement: string, ...) reads = reads + 1; return tx:query(statement, ...) end,
-                execute = function(_, statement: string, ...) return tx:execute(statement, ...) end,
-                prepare = function(_, statement: string) return tx:prepare(statement) end,
-                savepoint = function(_, name: string) return tx:savepoint(name) end,
-                rollback_to = function(_, name: string) return tx:rollback_to(name) end,
-                release = function(_, name: string) return tx:release(name) end,
-                db_type = function() return tx:db_type() end,
-                commit = function() return tx:commit() end,
-                rollback = function(_, name: string?) return tx:rollback(name) end,
-            }
+            local probe = count_reads(tx, function(_) reads = reads + 1 end)
             local retried, retry_err = append.append_events_tx(probe, thread_id,
                 { { id = first.events[1].event_id, type = "test.snapshot" } }, { locked_thread = rows[1] })
             tx:rollback()
@@ -177,6 +185,55 @@ local function define_tests()
             test.eq(again.events[1].seq, 1)
             test.eq(head_of(thread_id), 2)
             test.is_nil(again.wake_generation)
+        end)
+
+        test.it("reads only requested external identities from a version history", function()
+            local id = make_thread()
+            local events: { table } = {}
+            for i = 1, append.LOOKUP_CHUNK + 1 do
+                events[i] = { event_type = "test.version", external_identity = { source = "sync", id = "same", version = tostring(i) } }
+            end
+            events[#events + 1] = { event_type = "test.version", external_identity = { source = "sync", id = "same" } }
+            local first, err = in_tx(function(tx)
+                return append.append_tx(tx, { thread_id = id, events = events })
+            end)
+            test.is_nil(err)
+            local read_rows = 0
+            local retry, retry_err = in_tx(function(tx)
+                local counted = count_reads(tx, function(n) read_rows = read_rows + n end)
+                return append.append_tx(counted, { thread_id = id, events = { events[1], events[#events], events[1] } })
+            end)
+            test.is_nil(retry_err)
+            test.eq(retry.events[1].event_id, first.events[1].event_id)
+            test.eq(retry.events[2].event_id, first.events[#events].event_id)
+            test.eq(retry.events[3].event_id, first.events[1].event_id)
+            test.is_nil(retry.wake_generation)
+            test.eq(read_rows, 3) -- The thread head and two distinct identities.
+        end)
+
+        test.it("keeps SQLite external identities distinct across embedded separators", function()
+            local db = open_db()
+            local dialect = db:type()
+            db:release()
+            if dialect ~= sql.type.SQLITE then return end
+            local thread_id = make_thread()
+            local events = {
+                { event_type = "test.ext", external_identity = { source = "a\0b", id = "c" } },
+                { event_type = "test.ext", external_identity = { source = "a", id = "b\0c" } },
+            }
+            local first, err = in_tx(function(tx)
+                return append.append_tx(tx, { thread_id = thread_id, events = events })
+            end)
+            test.is_nil(err)
+            test.eq(first.events[1].seq, 1)
+            test.eq(first.events[2].seq, 2)
+            local retry, retry_err = in_tx(function(tx)
+                return append.append_tx(tx, { thread_id = thread_id, events = { events[2], events[1] } })
+            end)
+            test.is_nil(retry_err)
+            test.eq(retry.events[1].event_id, first.events[2].event_id)
+            test.eq(retry.events[2].event_id, first.events[1].event_id)
+            test.is_nil(retry.wake_generation)
         end)
 
         test.it("appends a batch larger than one insert statement", function()
