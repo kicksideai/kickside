@@ -272,6 +272,12 @@ local function define_tests()
                 {ledger_owner,UNRESOLVED+90000,UNRESOLVED+100000})
             h.exec("ANALYZE kickside_trigger_item_ledger")
             h.exec("ANALYZE kickside_automation_prepared")
+            -- Measure the owner lookup with unrelated drives present. With just the
+            -- four setup rows PostgreSQL can read the entire table in one page.
+            h.exec([[WITH RECURSIVE n(x) AS (SELECT 1 UNION ALL SELECT x+1 FROM n WHERE x<1000)
+                INSERT INTO kickside_automation_drive (automation_id,drive_key,source_kind,enabled)
+                SELECT $1,'scale-neighbor-' || CAST(x AS TEXT),'collection',false FROM n]],{id})
+            h.exec("ANALYZE kickside_automation_drive")
             -- Pending controls do not hold expired dead work or hide its deadline.
             h.exec([[INSERT INTO kickside_automation_command
                 (automation_id,generation,pending_request_id,pending_digest,pending_kind,pending_input_json,pending_drives_json,pending_step)
@@ -385,6 +391,7 @@ local function define_tests()
             h.exec("DELETE FROM kickside_automation_delivery_history WHERE automation_id=$1",{id})
             h.exec("DELETE FROM kickside_trigger_item_ledger WHERE owner_id=$1",{ledger_owner})
             h.exec("DELETE FROM kickside_automation_command WHERE automation_id=$1",{ledger_owner})
+            h.exec("DELETE FROM kickside_automation_drive WHERE automation_id=$1 AND drive_key LIKE 'scale-neighbor-%'",{id})
         end)
     end)
 end
