@@ -79,12 +79,23 @@ function M.ocr_image_error(mime: any, size: number, edge: number, max_bytes: num
     return nil
 end
 
+-- Old artifact metadata can carry page numbers as strings. Normalize the read
+-- result so the rasterizer and OCR both use numeric page keys.
+local function normalize_page(image: any): ()
+    local meta = image.metadata
+    if type(meta) == "table" and type(meta.page) == "string" then
+        meta.page = tonumber(meta.page) or meta.page
+    end
+end
+
 -- Rendered-page screenshots produced by the rasterizer.
-function M.rendered(upload_id: string): { any }
-    local artifacts = document_artifacts(upload_id)
+local function rendered_images(artifacts: { any }): { any }
     local out = {}
     for _, a in ipairs(artifacts) do
-        if a.kind == "image" and a.role == "rendered-page" then out[#out + 1] = a end
+        if a.kind == "image" and a.role == "rendered-page" then
+            normalize_page(a)
+            out[#out + 1] = a
+        end
     end
     return sorted_by_ordinal(out)
 end
@@ -92,18 +103,22 @@ end
 -- doc2md-extracted images large enough to be full pages (a page scan, not a logo or
 -- inline figure). Byte size is the page-size proxy: a scanned page is substantial,
 -- decorations are not. When in doubt the set is smaller, so the rasterizer renders.
-function M.extracted_pages(upload_id: string, min_bytes: integer): { any }
-    local artifacts = document_artifacts(upload_id)
+local function extracted_images(artifacts: { any }, min_bytes: integer): ({ any }, boolean)
+    local legacy = true
     local counts = {}
     for _, a in ipairs(artifacts) do
         local page = type(a.metadata) == "table" and tonumber(a.metadata.page) or nil
-        if a.kind == "image" and a.role == "extracted-image" and page then counts[page] = (counts[page] or 0) + 1 end
+        if a.kind == "image" and a.role == "extracted-image" and type(a.metadata) == "table" and a.metadata.page ~= nil then
+            legacy = false
+            if page then counts[page] = (counts[page] or 0) + 1 end
+        end
     end
     local out = {}
     for _, a in ipairs(artifacts) do
         if a.kind == "image" and a.role == "extracted-image" and (tonumber(a.size) or 0) >= min_bytes then
             local page = type(a.metadata) == "table" and tonumber(a.metadata.page) or nil
             if not page or (counts[page] == 1 and (not a.metadata.image_count or a.metadata.image_count == 1)) then
+                normalize_page(a)
                 out[#out + 1] = a
             end
         end
@@ -113,7 +128,21 @@ function M.extracted_pages(upload_id: string, min_bytes: integer): { any }
         local bp = type(b.metadata) == "table" and tonumber(b.metadata.page) or nil
         return (ap or tonumber(a.ordinal) or 0) < (bp or tonumber(b.ordinal) or 0)
     end)
-    return out
+    return out, legacy
+end
+
+function M.rendered(upload_id: string): { any }
+    return rendered_images(document_artifacts(upload_id))
+end
+
+function M.extracted_pages(upload_id: string, min_bytes: integer): { any }
+    return (extracted_images(document_artifacts(upload_id), min_bytes))
+end
+
+function M.page_candidates(upload_id: string, min_bytes: integer): ({ any }, { any }, boolean)
+    local artifacts = document_artifacts(upload_id)
+    local extracted, legacy = extracted_images(artifacts, min_bytes)
+    return rendered_images(artifacts), extracted, legacy
 end
 
 function M.complete_coverage(images: { any }, total: integer): boolean
@@ -148,14 +177,8 @@ end
 -- Screenshots take precedence for their page; uniquely numbered extracted scans
 -- supply the remaining pages. Unnumbered artifacts retain the earlier selection.
 function M.page_set(upload_id: string, min_bytes: integer): ({ any }, string)
-    local rendered = M.rendered(upload_id)
-    local extracted = M.extracted_pages(upload_id, min_bytes)
+    local rendered, extracted, legacy = M.page_candidates(upload_id, min_bytes)
     local numbered = M.numbered_images(extracted)
-    local legacy = true
-    for _, artifact in ipairs(document_artifacts(upload_id)) do
-        if artifact.kind == "image" and artifact.role == "extracted-image"
-            and type(artifact.metadata) == "table" and artifact.metadata.page ~= nil then legacy = false; break end
-    end
     if next(numbered) == nil and legacy then
         if #rendered > 0 then return rendered, "rendered" end
         return extracted, "extracted"
