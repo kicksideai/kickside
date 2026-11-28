@@ -30,8 +30,8 @@ modules:
       version: 0.3.13
       hash: a13d0a4d5f949d6d75aeaaf2fa9d14b25fb95acdaca31d03df56ff193ed4ac57
     - name: kickside/core
-      version: 0.3.55
-      hash: 21728c596b3fea5097678b1e7213cb7bff95c08e15308f8de61fa7e6069a8f77
+      version: 0.3.56
+      hash: 142680bbd2676de04096f92b0bf8d54c0467d8fad01d509aecb65811aa70541e
     - name: kickside/dashboard
       version: 0.1.25
       hash: dd473eda043ed80b0c25e408641b8f49ca5df79893b92ff70a0ac100f9b7d3d5
