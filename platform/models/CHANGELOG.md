@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.100](https://github.com/kicksideai/kickside/compare/models-v0.1.99...models-v0.1.100) (2026-11-28)
+
+
+### Features
+
+* **models:** answer every route of a card from the cards contract ([#991](https://github.com/kicksideai/kickside/issues/991)) ([0e91c29](https://github.com/kicksideai/kickside/commit/0e91c2963e7ad96768d2bac84197bb922da98ad1))
+* **models:** answer the provider models a profile serves ([#984](https://github.com/kicksideai/kickside/issues/984)) ([0912d60](https://github.com/kicksideai/kickside/commit/0912d60042e9a238f1c55b35e48e7bc1f83cd786))
+
+
+### Bug Fixes
+
+* **app:** restore locked boot and correct foundation regressions ([#1004](https://github.com/kicksideai/kickside/issues/1004)) ([5186e31](https://github.com/kicksideai/kickside/commit/5186e3128bac9e920e168c93e7a3110fe57541fa))
+* **models:** omit temperature from generation health probes ([#1005](https://github.com/kicksideai/kickside/issues/1005)) ([faf28b3](https://github.com/kicksideai/kickside/commit/faf28b3ea21e8c76094ac484a6ed9f0f73c2f4fd))
+
 ## [0.1.99](https://github.com/kicksideai/kickside/compare/models-v0.1.98...models-v0.1.99) (2026-11-25)
 
 

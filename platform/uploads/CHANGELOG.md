@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.39](https://github.com/kicksideai/kickside/compare/uploads-v0.3.38...uploads-v0.3.39) (2026-11-28)
+
+
+### Bug Fixes
+
+* **uploads:** retry reads when the storage resource is unavailable ([#1006](https://github.com/kicksideai/kickside/issues/1006)) ([3772a7b](https://github.com/kicksideai/kickside/commit/3772a7b70dd2571c715f0971b7b640be70f2f30b))
+
 ## [0.3.38](https://github.com/kicksideai/kickside/compare/uploads-v0.3.37...uploads-v0.3.38) (2026-11-26)
 
 

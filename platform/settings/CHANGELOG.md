@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.18](https://github.com/kicksideai/kickside/compare/settings-v0.3.17...settings-v0.3.18) (2026-11-28)
+
+
+### Features
+
+* **settings:** add definitions contract method ([#1002](https://github.com/kicksideai/kickside/issues/1002)) ([b538dc3](https://github.com/kicksideai/kickside/commit/b538dc3bb072575ee692ad7e78156f11d5393235))
+
 ## [0.3.17](https://github.com/kicksideai/kickside/compare/settings-v0.3.16...settings-v0.3.17) (2026-11-25)
 
 

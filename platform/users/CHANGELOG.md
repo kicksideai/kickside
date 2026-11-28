@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.34](https://github.com/kicksideai/kickside/compare/users-v0.2.33...users-v0.2.34) (2026-11-28)
+
+
+### Bug Fixes
+
+* **users:** keep SSO sign-in facts under session metadata ([#996](https://github.com/kicksideai/kickside/issues/996)) ([a280ad4](https://github.com/kicksideai/kickside/commit/a280ad4883e455d45177a034585ad677c509890d))
+
 ## [0.2.33](https://github.com/kicksideai/kickside/compare/users-v0.2.32...users-v0.2.33) (2026-11-25)
 
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.11](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.10...ui-kit-v1.7.11) (2026-11-28)
+
+
+### Bug Fixes
+
+* **widgets:** restore catalog routing and theme tokens ([#999](https://github.com/kicksideai/kickside/issues/999)) ([a2bf952](https://github.com/kicksideai/kickside/commit/a2bf95249ffd97d0db94051a155afcd221d3923f))
+
 ## [1.7.10](https://github.com/kicksideai/kickside/compare/ui-kit-v1.7.9...ui-kit-v1.7.10) (2026-11-24)
 
 

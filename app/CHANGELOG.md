@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.66](https://github.com/kicksideai/kickside/compare/kickside-v0.2.65...kickside-v0.2.66) (2026-11-28)
+
+
+### Features
+
+* connect accounts from the chat; nav fan-out, surface base-path and shell link fixes ([#998](https://github.com/kicksideai/kickside/issues/998)) ([ae4a7df](https://github.com/kicksideai/kickside/commit/ae4a7df5ee8fdc77a93d88b1d3834c9599d008ce))
+
+
+### Bug Fixes
+
+* **app:** restore locked boot and correct foundation regressions ([#1004](https://github.com/kicksideai/kickside/issues/1004)) ([5186e31](https://github.com/kicksideai/kickside/commit/5186e3128bac9e920e168c93e7a3110fe57541fa))
+* **widgets:** restore catalog routing and theme tokens ([#999](https://github.com/kicksideai/kickside/issues/999)) ([a2bf952](https://github.com/kicksideai/kickside/commit/a2bf95249ffd97d0db94051a155afcd221d3923f))
+
 ## [0.2.65](https://github.com/kicksideai/kickside/compare/kickside-v0.2.64...kickside-v0.2.65) (2026-11-26)
 
 
