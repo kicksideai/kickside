@@ -741,6 +741,22 @@ entries:
       config: kickside.core.jobs:config
       job_fixture: app:job_fixture
 
+  - name: wake_lock_order_test
+    kind: function.lua
+    meta:
+      title: Job Wake Lock Order
+      type: test
+      suite: kickside_core
+      group: KickSide Core / Jobs
+      comment: Single-job writes keep the wake-row then job-row lock order and report a moved wake key as a retryable conflict.
+    source: file://suites/persist/wake_lock_order_test.lua
+    method: run
+    modules: [sql, uuid, time, channel]
+    imports:
+      test: wippy.test:test
+      jobs: kickside.core.jobs:jobs
+      wake: kickside.core.jobs.persist:wake
+
   - name: lease_test
     kind: function.lua
     meta:
@@ -2274,6 +2290,7 @@ entries:
       lifecycle_cancel: kickside.core.jobs.persist:lifecycle_cancel
       capacity: app:enqueue_capacity_native_source
       dead_outcome: app:enqueue_dead_outcome_native_source
+      wake_rows: kickside.core.jobs.persist:wake_rows
 
   - name: enqueue_native_test
     kind: function.lua
@@ -3471,6 +3488,7 @@ entries:
       row_bytes: app:wake_native_row_bytes
       funcs: app:wake_native_funcs
       sql_boundary: kickside.core.jobs.persist:sql_boundary
+      wake_rows: kickside.core.jobs.persist:wake_rows
   - name: wake_native_test
     kind: function.lua
     source: file://wake_native_test.lua

@@ -7,6 +7,7 @@ local row_bytes = require("row_bytes")
 local boundary = require("sql_boundary")
 local job_types = require("job_types")
 local lease_release = require("lease_release")
+local wake_rows = require("wake_rows")
 
 local wake = {}
 type DialectTransaction = { db_type: (any) -> (string?, error?) }
@@ -422,14 +423,13 @@ end
 
 -- wake_job wakes one job by id (CONTRACTS jobs.wake_job) and returns
 -- { woken, scheduled_at? }; an inactive or missing job is not woken.
-local function wake_job_tx(db, id, opts, dbtype)
+local function wake_locked_job(db, id, opts, dbtype, job)
     local now = clock.now(dbtype)
     local policy, policy_err = read_policy()
     if policy_err then return nil, policy_err end
     local control = type(opts) == "table" and opts.control == true
-    local found, advance, consumes_rearm = false, false, false
+    local advance, consumes_rearm = false, false
     local size_err = row_bytes.check_update(db, "kickside_job", id, function(row)
-        found = true
         local err
         advance, consumes_rearm, err = demand_transition(row, now, control)
         if err then return nil, err end
@@ -445,9 +445,8 @@ local function wake_job_tx(db, id, opts, dbtype)
             changes.wake_demand_at = now
         end
         return changes
-    end, (policy :: any).max_row_bytes, "wake_job")
+    end, (policy :: any).max_row_bytes, "wake_job", job)
     if size_err then return nil, size_err end
-    if not found then return { woken = false }, nil end
     local update = sql.builder.update("kickside_job")
         :where(sql.builder.eq({ id = id }))
         :where("status IN ('pending','running')")
@@ -472,18 +471,23 @@ local function wake_job_tx(db, id, opts, dbtype)
     return {woken = true, scheduled_at = rows[1].scheduled_at}, nil
 end
 
+local function wake_job_tx(db, id, opts, dbtype)
+    local job, err = wake_rows.lock_job_id(db, dbtype, id, "job", response_error)
+    if err then return nil, err end
+    if not job then return { woken = false }, nil end
+    return wake_locked_job(db, id, opts, dbtype, job)
+end
+
 -- An addressed waiter publishes dispatch demand without changing an already
 -- due slot's schedule or retry state. The request lasts until the slot parks.
 local function ensure_due_tx(db, id, opts, dbtype)
-    local lock = dbtype == sql.type.POSTGRES and " FOR UPDATE" or ""
-    local rows, read_err = db:query("SELECT * FROM kickside_job WHERE id=$1" .. lock, { id })
-    rows, read_err = boundary.bounded_rows(rows, read_err, "addressed wake read failed", "addressed", 0, 1, response_error)
+    local job, read_err = wake_rows.lock_job_id(db, dbtype, id, "addressed", response_error)
     if read_err then return nil, read_err end
-    local job = rows[1]
+    if not job then return { woken = false }, nil end
     local result
-    if job and job.status == "running" then
+    if job.status == "running" then
         result = { woken = true, scheduled_at = job.scheduled_at, already_due = true }
-    elseif job and job.status == "pending" and (job.wake_enabled == true or tonumber(job.wake_enabled) == 1)
+    elseif job.status == "pending" and (job.wake_enabled == true or tonumber(job.wake_enabled) == 1)
         and job.scheduled_at ~= nil then
         local scheduled, scheduled_err = clock.parse(job.scheduled_at)
         if scheduled_err then return nil, scheduled_err end
@@ -495,10 +499,10 @@ local function ensure_due_tx(db, id, opts, dbtype)
     end
     if not result then
         local wake_err
-        result, wake_err = wake_job_tx(db, id, opts, dbtype)
+        result, wake_err = wake_locked_job(db, id, opts, dbtype, job)
         if wake_err then return nil, wake_err end
     end
-    if result and result.woken then
+    if result and result.woken and job.dispatch_requested_at == nil then
         local now = clock.now(dbtype)
         local policy, policy_err = read_policy()
         if policy_err then return nil, policy_err end

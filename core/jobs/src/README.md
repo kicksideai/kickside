@@ -294,6 +294,13 @@ prelock without waking it unless it independently qualifies for a supplied key.
 With no fan-out job locks, completion takes its sole job lock itself. Wake keys
 are published before any job row is locked.
 
+Within one transaction, Jobs locks wake rows by ascending key before job rows by
+ascending ID. `enqueue_tx` changes to an existing slot and `wake_job` lock the
+job's current and requested wake rows before the job row. A caller transaction
+can therefore combine them with a later `wake_tx` of the same key, while a
+concurrent wake of that key waits on the wake row and does not hold its job
+rows. A transaction that wakes several keys wakes them in one `wake_multi` call.
+
 ## Live performance policy
 
 The editable policy paths are Settings definitions in namespace

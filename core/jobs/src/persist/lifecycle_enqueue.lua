@@ -16,6 +16,7 @@ local sql_boundary = require("sql_boundary")
 local capacity = require("capacity")
 local dead_outcome = require("dead_outcome")
 local lifecycle_cancel = require("lifecycle_cancel")
+local wake_rows = require("wake_rows")
 
 local enqueue = {}
 type Executor = sql.DB | sql.Transaction
@@ -239,7 +240,7 @@ local function converge_capacity_group(exec: Executor, existing: table, descript
 end
 
 local function resolve_existing(exec: Executor, dbtype: string, existing: table,
-        params: EnqueueParams, payload: table, max_row_bytes: integer): (string?, error?, string?)
+        params: EnqueueParams, payload: table, max_row_bytes: integer, row_locked: boolean): (string?, error?, string?)
     if params.demand == true and existing.slot ~= true and existing.slot ~= 1 then
         return nil, errors.new({ message = "reusable demand conflicts with a one-shot job identity",
             kind = errors.CONFLICT, retryable = false })
@@ -264,6 +265,18 @@ local function resolve_existing(exec: Executor, dbtype: string, existing: table,
     end
     local descriptor, descriptor_err = capacity.group(existing)
     if descriptor_err then return nil, descriptor_err end
+    local target_key = params.slot == true and params.wake_key or nil
+    if not row_locked and ((params.slot == true and (existing.wake_key or nil) ~= (params.wake_key or nil))
+        or (descriptor and existing.capacity_group ~= descriptor.group)) then
+        local locked, lock_err = wake_rows.lock_job(exec :: sql.Transaction, dbtype, existing, target_key,
+            "slot", response_error)
+        if lock_err then return nil, lock_err end
+        if not locked then
+            return nil, errors.new({message = "job settled during slot convergence", kind = errors.CONFLICT,
+                retryable = true, details = {job_id = tostring(existing.id)}})
+        end
+        existing = locked
+    end
     local capacity_err = converge_capacity_group(exec, existing, descriptor, max_row_bytes)
     if capacity_err then return nil, capacity_err end
     local key_err = converge_wake_key(exec, existing, params, max_row_bytes)
@@ -271,13 +284,12 @@ local function resolve_existing(exec: Executor, dbtype: string, existing: table,
     return tostring(existing.id), nil, nil
 end
 
-local function active_identity(exec: Executor, dbtype: string, identity: string, lock: boolean?): (table[]?, error?)
-    local query = sql.builder.select("id", "status", "job_type", "worker_ref", "payload", "owner_kind", "owner_id",
+local function active_identity(exec: Executor, identity: string): (table[]?, error?)
+    return sql.builder.select("id", "status", "job_type", "worker_ref", "payload", "owner_kind", "owner_id",
         "slot", "wake_key", "concurrency_key", "capacity_group", "lease_policy")
         :from("kickside_job"):where(sql.builder.eq({job_identity = identity}))
         :where("status IN ('pending','running')"):limit(1)
-    if lock and dbtype == sql.type.POSTGRES then query = query:suffix("FOR UPDATE") end
-    return query:run_with(exec):query()
+        :run_with(exec):query()
 end
 
 local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: EnqueueParams): (string?, error?, boolean?, string?)
@@ -318,13 +330,14 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
     local job_identity, identity_err = identity_parts(params, id)
     if identity_err then return nil, identity_err end
     local owner = params.owner_locator :: table
-    local existing_rows, existing_err = active_identity(db_or_tx, dbtype, job_identity :: string)
+    local existing_rows, existing_err = active_identity(db_or_tx, job_identity :: string)
     if existing_err then
         return nil, errors.wrap(existing_err, "enqueue identity lookup failed")
     end
     if type(existing_rows) ~= "table" then return nil, response_error("identity.rows") end
     local replaced_job_id: string? = nil
     local already = existing_rows[1]
+    local already_locked = false
     if already and params.replace == true then
         local matches, match_err = matching_existing(already, params, payload :: table)
         if match_err then return nil, match_err end
@@ -332,15 +345,17 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
             and already.owner_kind == owner.kind and already.owner_id == owner.id then
             local fence_err = thread_fence.admit(db_or_tx :: sql.Transaction, owner, "enqueue_job")
             if fence_err then return nil, fence_err end
-            local locked, lock_err = active_identity(db_or_tx, dbtype, job_identity :: string, true)
-            if lock_err then return nil, errors.wrap(lock_err, "enqueue replacement lookup failed") end
-            if type(locked) ~= "table" then return nil, response_error("replace.rows") end
-            already = locked[1]
+            local locked, lock_err = wake_rows.lock_job(db_or_tx :: sql.Transaction, dbtype, already,
+                params.slot == true and params.wake_key or nil,
+                "replace", response_error)
+            if lock_err then return nil, lock_err end
+            already = locked
+            already_locked = true
         end
     end
     if already then
         local existing_id, resolve_err, replaced = resolve_existing(db_or_tx, dbtype, already,
-            params, payload :: table, (policy :: any).max_row_bytes)
+            params, payload :: table, (policy :: any).max_row_bytes, already_locked)
         if resolve_err then return nil, resolve_err end
         if existing_id then return existing_id, nil, false end
         replaced_job_id = replaced
@@ -419,17 +434,24 @@ local function enqueue_job_tx(db_or_tx: Executor, dbtype: string, params: Enqueu
     if proof_err then return nil, proof_err end
     if inserted_count == nil then return nil, response_error("insert.count") end
     if inserted_count < 1 then
-        local rows, lookup_err = active_identity(db_or_tx, dbtype, job_identity :: string, params.replace == true)
+        local rows, lookup_err = active_identity(db_or_tx, job_identity :: string)
         if lookup_err then
             return nil, errors.wrap(lookup_err, "enqueue conflict lookup failed")
         end
         if type(rows) ~= "table" then return nil, response_error("conflict.rows") end
         local existing = rows[1]
+        if existing and params.replace == true then
+            local locked, lock_err = wake_rows.lock_job(db_or_tx :: sql.Transaction, dbtype, existing,
+                params.slot == true and params.wake_key or nil,
+                "conflict", response_error)
+            if lock_err then return nil, lock_err end
+            existing = locked
+        end
         if not existing then
             return nil, (errors.new({ message = "enqueue conflict has no active identity", kind = errors.CONFLICT }) :: error)
         end
         local existing_id, resolve_err, replaced = resolve_existing(db_or_tx, dbtype, existing,
-            params, payload :: table, (policy :: any).max_row_bytes)
+            params, payload :: table, (policy :: any).max_row_bytes, params.replace == true)
         if resolve_err then return nil, resolve_err end
         if existing_id then return existing_id, nil, false end
         replaced_job_id = replaced
