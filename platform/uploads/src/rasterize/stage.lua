@@ -227,7 +227,7 @@ local function render_pages(params: any, entry: any, ref: any, selected: { integ
             render_err.page = selector[1]
             failures[#failures + 1] = render_err
         else
-            local before = #failures
+            local all_probes_failed = true
             for _, number in ipairs(selector) do
                 local single, single_err, probe_diagnostic = render_call(entry, ref, { number }, opts, "single_page_probe")
                 if single_err ~= nil then
@@ -235,11 +235,12 @@ local function render_pages(params: any, entry: any, ref: any, selected: { integ
                     single_err.page = number
                     failures[#failures + 1] = single_err
                 else
+                    all_probes_failed = false
                     local store_err = store_all(single :: { any })
                     if store_err then return rendered, failures, store_err, diagnostic end
                 end
             end
-            if not diagnosed and #failures - before == #selector then return rendered, { render_err }, nil, batch_diagnostic end
+            if not diagnosed and all_probes_failed then return rendered, { render_err }, nil, batch_diagnostic end
             diagnosed = true
         end
         page = last + 1
